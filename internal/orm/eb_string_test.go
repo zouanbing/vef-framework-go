@@ -1,23 +1,32 @@
-package orm
+package orm_test
 
 import (
 	"strings"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/ilxqx/vef-framework-go/internal/orm"
 )
 
-// StringFunctionsTestSuite tests string manipulation methods of ExprBuilder
+func init() {
+	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+		return &EBStringFunctionsTestSuite{OrmTestSuite: base}
+	})
+}
+
+// EBStringFunctionsTestSuite tests string manipulation methods of orm.ExprBuilder
 // including Concat, ConcatWithSep, SubString, Upper, Lower, Trim, TrimLeft,
 // TrimRight, Length, CharLength, Position, Left, Right, Repeat, Replace, and Reverse.
 //
 // This suite verifies cross-database compatibility for string functions across
 // PostgreSQL, MySQL, and SQLite, handling database-specific limitations appropriately.
-type StringFunctionsTestSuite struct {
+type EBStringFunctionsTestSuite struct {
 	*OrmTestSuite
 }
 
 // TestConcat tests the Concat function.
-func (suite *StringFunctionsTestSuite) TestConcat() {
+func (suite *EBStringFunctionsTestSuite) TestConcat() {
 	suite.T().Logf("Testing Concat function for %s", suite.dbType)
 
 	suite.Run("ConcatTitleAndStatus", func() {
@@ -33,10 +42,10 @@ func (suite *StringFunctionsTestSuite) TestConcat() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Concat(eb.Column("title"), "' - '", eb.Column("status"))
 			}, "title_and_status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Concat("'[', ", eb.Column("status"), "'] '", eb.Column("title"))
 			}, "multi_concat").
 			OrderBy("title").
@@ -58,7 +67,7 @@ func (suite *StringFunctionsTestSuite) TestConcat() {
 }
 
 // TestConcatWithSep tests the ConcatWithSep function.
-func (suite *StringFunctionsTestSuite) TestConcatWithSep() {
+func (suite *EBStringFunctionsTestSuite) TestConcatWithSep() {
 	suite.T().Logf("Testing ConcatWithSep function for %s", suite.dbType)
 
 	suite.Run("ConcatWithDashSeparator", func() {
@@ -72,7 +81,7 @@ func (suite *StringFunctionsTestSuite) TestConcatWithSep() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ConcatWithSep(" - ", eb.Column("title"), eb.Column("status"))
 			}, "joined").
 			OrderBy("id").
@@ -91,7 +100,7 @@ func (suite *StringFunctionsTestSuite) TestConcatWithSep() {
 
 // TestSubString tests the SubString function.
 // SubString extracts a substring from a string starting at a 1-based position.
-func (suite *StringFunctionsTestSuite) TestSubString() {
+func (suite *EBStringFunctionsTestSuite) TestSubString() {
 	suite.T().Logf("Testing SubString function for %s", suite.dbType)
 
 	suite.Run("ExtractSubstrings", func() {
@@ -106,10 +115,10 @@ func (suite *StringFunctionsTestSuite) TestSubString() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.SubString(eb.Column("title"), 1, 5)
 			}, "first5_chars").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.SubString(eb.Column("title"), 3, 3)
 			}, "middle3_chars").
 			OrderBy("title").
@@ -132,7 +141,7 @@ func (suite *StringFunctionsTestSuite) TestSubString() {
 }
 
 // TestUpper tests the Upper function.
-func (suite *StringFunctionsTestSuite) TestUpper() {
+func (suite *EBStringFunctionsTestSuite) TestUpper() {
 	suite.T().Logf("Testing Upper function for %s", suite.dbType)
 
 	suite.Run("ConvertToUppercase", func() {
@@ -148,10 +157,10 @@ func (suite *StringFunctionsTestSuite) TestUpper() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Upper(eb.Column("title"))
 			}, "upper_title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Upper(eb.Column("status"))
 			}, "upper_status").
 			OrderBy("title").
@@ -170,7 +179,7 @@ func (suite *StringFunctionsTestSuite) TestUpper() {
 }
 
 // TestLower tests the Lower function.
-func (suite *StringFunctionsTestSuite) TestLower() {
+func (suite *EBStringFunctionsTestSuite) TestLower() {
 	suite.T().Logf("Testing Lower function for %s", suite.dbType)
 
 	suite.Run("ConvertToLowercase", func() {
@@ -186,10 +195,10 @@ func (suite *StringFunctionsTestSuite) TestLower() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Lower(eb.Column("title"))
 			}, "lower_title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Lower(eb.Column("status"))
 			}, "lower_status").
 			OrderBy("title").
@@ -208,7 +217,7 @@ func (suite *StringFunctionsTestSuite) TestLower() {
 }
 
 // TestTrim tests the Trim function.
-func (suite *StringFunctionsTestSuite) TestTrim() {
+func (suite *EBStringFunctionsTestSuite) TestTrim() {
 	suite.T().Logf("Testing Trim function for %s", suite.dbType)
 
 	suite.Run("TrimWhitespace", func() {
@@ -222,7 +231,7 @@ func (suite *StringFunctionsTestSuite) TestTrim() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Trim(eb.Column("status"))
 			}, "trimmed_status").
 			OrderBy("status").
@@ -243,7 +252,7 @@ func (suite *StringFunctionsTestSuite) TestTrim() {
 }
 
 // TestTrimLeft tests the TrimLeft function.
-func (suite *StringFunctionsTestSuite) TestTrimLeft() {
+func (suite *EBStringFunctionsTestSuite) TestTrimLeft() {
 	suite.T().Logf("Testing TrimLeft function for %s", suite.dbType)
 
 	suite.Run("TrimLeadingWhitespace", func() {
@@ -258,10 +267,10 @@ func (suite *StringFunctionsTestSuite) TestTrimLeft() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Concat("   ", eb.Column("status"), "   ")
 			}, "original").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.TrimLeft(eb.Concat("   ", eb.Column("status"), "   "))
 			}, "left_trimmed").
 			Limit(3).
@@ -280,7 +289,7 @@ func (suite *StringFunctionsTestSuite) TestTrimLeft() {
 }
 
 // TestTrimRight tests the TrimRight function.
-func (suite *StringFunctionsTestSuite) TestTrimRight() {
+func (suite *EBStringFunctionsTestSuite) TestTrimRight() {
 	suite.T().Logf("Testing TrimRight function for %s", suite.dbType)
 
 	suite.Run("TrimTrailingWhitespace", func() {
@@ -295,10 +304,10 @@ func (suite *StringFunctionsTestSuite) TestTrimRight() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Concat("   ", eb.Column("status"), "   ")
 			}, "original").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.TrimRight(eb.Concat("   ", eb.Column("status"), "   "))
 			}, "right_trimmed").
 			Limit(3).
@@ -317,7 +326,7 @@ func (suite *StringFunctionsTestSuite) TestTrimRight() {
 }
 
 // TestLength tests the Length function.
-func (suite *StringFunctionsTestSuite) TestLength() {
+func (suite *EBStringFunctionsTestSuite) TestLength() {
 	suite.T().Logf("Testing Length function for %s", suite.dbType)
 
 	suite.Run("CalculateStringLength", func() {
@@ -333,10 +342,10 @@ func (suite *StringFunctionsTestSuite) TestLength() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Length(eb.Column("title"))
 			}, "title_length").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Length(eb.Column("status"))
 			}, "status_length").
 			OrderBy("title").
@@ -356,7 +365,7 @@ func (suite *StringFunctionsTestSuite) TestLength() {
 }
 
 // TestCharLength tests the CharLength function.
-func (suite *StringFunctionsTestSuite) TestCharLength() {
+func (suite *EBStringFunctionsTestSuite) TestCharLength() {
 	suite.T().Logf("Testing CharLength function for %s", suite.dbType)
 
 	suite.Run("CalculateCharacterLength", func() {
@@ -370,7 +379,7 @@ func (suite *StringFunctionsTestSuite) TestCharLength() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CharLength(eb.Column("title"))
 			}, "char_len").
 			OrderBy("id").
@@ -389,7 +398,7 @@ func (suite *StringFunctionsTestSuite) TestCharLength() {
 
 // TestPosition tests the Position function.
 // Position finds the position of a substring within a string (1-based, 0 if not found).
-func (suite *StringFunctionsTestSuite) TestPosition() {
+func (suite *EBStringFunctionsTestSuite) TestPosition() {
 	suite.T().Logf("Testing Position function for %s", suite.dbType)
 
 	suite.Run("FindSubstringPosition", func() {
@@ -403,7 +412,7 @@ func (suite *StringFunctionsTestSuite) TestPosition() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Position("o", eb.Column("title"))
 			}, "pos").
 			OrderBy("id").
@@ -421,7 +430,7 @@ func (suite *StringFunctionsTestSuite) TestPosition() {
 }
 
 // TestLeft tests the Left function.
-func (suite *StringFunctionsTestSuite) TestLeft() {
+func (suite *EBStringFunctionsTestSuite) TestLeft() {
 	suite.T().Logf("Testing Left function for %s", suite.dbType)
 
 	suite.Run("ExtractLeftmostCharacters", func() {
@@ -435,7 +444,7 @@ func (suite *StringFunctionsTestSuite) TestLeft() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Left(eb.Column("title"), 10)
 			}, "left_part").
 			OrderBy("id").
@@ -453,7 +462,7 @@ func (suite *StringFunctionsTestSuite) TestLeft() {
 }
 
 // TestRight tests the Right function.
-func (suite *StringFunctionsTestSuite) TestRight() {
+func (suite *EBStringFunctionsTestSuite) TestRight() {
 	suite.T().Logf("Testing Right function for %s", suite.dbType)
 
 	suite.Run("ExtractRightmostCharacters", func() {
@@ -467,7 +476,7 @@ func (suite *StringFunctionsTestSuite) TestRight() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Right(eb.Column("title"), 5)
 			}, "right_part").
 			OrderBy("id").
@@ -485,7 +494,7 @@ func (suite *StringFunctionsTestSuite) TestRight() {
 }
 
 // TestRepeat tests the Repeat function.
-func (suite *StringFunctionsTestSuite) TestRepeat() {
+func (suite *EBStringFunctionsTestSuite) TestRepeat() {
 	suite.T().Logf("Testing Repeat function for %s", suite.dbType)
 
 	suite.Run("RepeatString", func() {
@@ -499,7 +508,7 @@ func (suite *StringFunctionsTestSuite) TestRepeat() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Repeat("*", 5)
 			}, "repeated").
 			Limit(3).
@@ -516,7 +525,7 @@ func (suite *StringFunctionsTestSuite) TestRepeat() {
 }
 
 // TestReplace tests the Replace function.
-func (suite *StringFunctionsTestSuite) TestReplace() {
+func (suite *EBStringFunctionsTestSuite) TestReplace() {
 	suite.T().Logf("Testing Replace function for %s", suite.dbType)
 
 	suite.Run("ReplaceSubstring", func() {
@@ -530,7 +539,7 @@ func (suite *StringFunctionsTestSuite) TestReplace() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Replace(eb.Column("status"), "'draft'", "'DRAFT'")
 			}, "replaced_status").
 			OrderBy("status").
@@ -550,7 +559,7 @@ func (suite *StringFunctionsTestSuite) TestReplace() {
 
 // TestReverse tests the Reverse function.
 // Reverse reverses a string (not supported on SQLite).
-func (suite *StringFunctionsTestSuite) TestReverse() {
+func (suite *EBStringFunctionsTestSuite) TestReverse() {
 	suite.T().Logf("Testing Reverse function for %s", suite.dbType)
 
 	suite.Run("ReverseString", func() {
@@ -568,7 +577,7 @@ func (suite *StringFunctionsTestSuite) TestReverse() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Reverse(eb.Column("title"))
 			}, "reversed").
 			Limit(3).
@@ -586,7 +595,7 @@ func (suite *StringFunctionsTestSuite) TestReverse() {
 
 // TestCombinedStringFunctions tests using multiple string functions together.
 // This verifies that string functions can be nested and combined.
-func (suite *StringFunctionsTestSuite) TestCombinedStringFunctions() {
+func (suite *EBStringFunctionsTestSuite) TestCombinedStringFunctions() {
 	suite.T().Logf("Testing combined string functions for %s", suite.dbType)
 
 	suite.Run("NestedStringFunctions", func() {
@@ -602,13 +611,13 @@ func (suite *StringFunctionsTestSuite) TestCombinedStringFunctions() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Upper(eb.Column("title"))
 			}, "upper_title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Lower(eb.Column("title"))
 			}, "lower_title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Concat(
 					eb.Upper(eb.SubString(eb.Column("title"), 1, 3)),
 					"...",
@@ -633,7 +642,7 @@ func (suite *StringFunctionsTestSuite) TestCombinedStringFunctions() {
 }
 
 // TestContains tests the Contains function (case-sensitive substring check).
-func (suite *StringFunctionsTestSuite) TestContains() {
+func (suite *EBStringFunctionsTestSuite) TestContains() {
 	suite.T().Logf("Testing Contains function for %s", suite.dbType)
 
 	suite.Run("ContainsSubstring", func() {
@@ -649,10 +658,10 @@ func (suite *StringFunctionsTestSuite) TestContains() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Contains(eb.Column("title"), "'Post'")
 			}, "contains_post").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Contains(eb.Column("title"), "'Guide'")
 			}, "contains_guide").
 			OrderBy("id").
@@ -686,7 +695,7 @@ func (suite *StringFunctionsTestSuite) TestContains() {
 }
 
 // TestStartsWith tests the StartsWith function (case-sensitive prefix check).
-func (suite *StringFunctionsTestSuite) TestStartsWith() {
+func (suite *EBStringFunctionsTestSuite) TestStartsWith() {
 	suite.T().Logf("Testing StartsWith function for %s", suite.dbType)
 
 	suite.Run("StartsWithPrefix", func() {
@@ -702,10 +711,10 @@ func (suite *StringFunctionsTestSuite) TestStartsWith() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.StartsWith(eb.Column("title"), "'G'")
 			}, "starts_with_g").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.StartsWith(eb.Column("title"), "'P'")
 			}, "starts_with_p").
 			OrderBy("id").
@@ -739,7 +748,7 @@ func (suite *StringFunctionsTestSuite) TestStartsWith() {
 }
 
 // TestEndsWith tests the EndsWith function (case-sensitive suffix check).
-func (suite *StringFunctionsTestSuite) TestEndsWith() {
+func (suite *EBStringFunctionsTestSuite) TestEndsWith() {
 	suite.T().Logf("Testing EndsWith function for %s", suite.dbType)
 
 	suite.Run("EndsWithSuffix", func() {
@@ -755,10 +764,10 @@ func (suite *StringFunctionsTestSuite) TestEndsWith() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.EndsWith(eb.Column("title"), "'e'")
 			}, "ends_with_e").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.EndsWith(eb.Column("title"), "'t'")
 			}, "ends_with_t").
 			OrderBy("id").
@@ -792,7 +801,7 @@ func (suite *StringFunctionsTestSuite) TestEndsWith() {
 }
 
 // TestContainsIgnoreCase tests the ContainsIgnoreCase function (case-insensitive substring check).
-func (suite *StringFunctionsTestSuite) TestContainsIgnoreCase() {
+func (suite *EBStringFunctionsTestSuite) TestContainsIgnoreCase() {
 	suite.T().Logf("Testing ContainsIgnoreCase function for %s", suite.dbType)
 
 	suite.Run("ContainsSubstringIgnoreCase", func() {
@@ -808,10 +817,10 @@ func (suite *StringFunctionsTestSuite) TestContainsIgnoreCase() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ContainsIgnoreCase(eb.Column("title"), "'post'")
 			}, "contains_post").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ContainsIgnoreCase(eb.Column("title"), "'GUIDE'")
 			}, "contains_guide").
 			OrderBy("id").
@@ -846,7 +855,7 @@ func (suite *StringFunctionsTestSuite) TestContainsIgnoreCase() {
 }
 
 // TestStartsWithIgnoreCase tests the StartsWithIgnoreCase function (case-insensitive prefix check).
-func (suite *StringFunctionsTestSuite) TestStartsWithIgnoreCase() {
+func (suite *EBStringFunctionsTestSuite) TestStartsWithIgnoreCase() {
 	suite.T().Logf("Testing StartsWithIgnoreCase function for %s", suite.dbType)
 
 	suite.Run("StartsWithPrefixIgnoreCase", func() {
@@ -862,10 +871,10 @@ func (suite *StringFunctionsTestSuite) TestStartsWithIgnoreCase() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.StartsWithIgnoreCase(eb.Column("title"), "'g'")
 			}, "starts_with_g").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.StartsWithIgnoreCase(eb.Column("title"), "'p'")
 			}, "starts_with_p").
 			OrderBy("id").
@@ -900,7 +909,7 @@ func (suite *StringFunctionsTestSuite) TestStartsWithIgnoreCase() {
 }
 
 // TestEndsWithIgnoreCase tests the EndsWithIgnoreCase function (case-insensitive suffix check).
-func (suite *StringFunctionsTestSuite) TestEndsWithIgnoreCase() {
+func (suite *EBStringFunctionsTestSuite) TestEndsWithIgnoreCase() {
 	suite.T().Logf("Testing EndsWithIgnoreCase function for %s", suite.dbType)
 
 	suite.Run("EndsWithSuffixIgnoreCase", func() {
@@ -916,10 +925,10 @@ func (suite *StringFunctionsTestSuite) TestEndsWithIgnoreCase() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.EndsWithIgnoreCase(eb.Column("title"), "'E'")
 			}, "ends_with_e").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.EndsWithIgnoreCase(eb.Column("title"), "'T'")
 			}, "ends_with_t").
 			OrderBy("id").

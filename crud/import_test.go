@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/stretchr/testify/suite"
 	"github.com/uptrace/bun"
 
 	"github.com/ilxqx/vef-framework-go/api"
@@ -18,6 +19,17 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
 )
+
+func init() {
+	registry.Add(func(base *BaseSuite) suite.TestingSuite {
+		return &ImportTestSuite{BaseSuite: BaseSuite{
+			ctx:      base.ctx,
+			db:       base.db,
+			dbType:   base.dbType,
+			dsConfig: base.dsConfig,
+		}}
+	})
+}
 
 // ImportUser is the test model for import tests (uses tabular tags).
 type ImportUser struct {

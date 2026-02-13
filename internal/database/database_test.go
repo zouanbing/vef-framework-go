@@ -1,4 +1,4 @@
-package database
+package database_test
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	"github.com/uptrace/bun"
 
 	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/ilxqx/vef-framework-go/internal/database"
 	"github.com/ilxqx/vef-framework-go/internal/database/sqlguard"
 	"github.com/ilxqx/vef-framework-go/internal/testx"
 )
@@ -28,18 +29,8 @@ type DatabaseTestSuite struct {
 func (suite *DatabaseTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 
-	suite.postgresContainer = testx.NewPostgresContainer(suite.ctx, &suite.Suite)
-	suite.mysqlContainer = testx.NewMySQLContainer(suite.ctx, &suite.Suite)
-}
-
-func (suite *DatabaseTestSuite) TearDownSuite() {
-	if suite.postgresContainer != nil {
-		suite.postgresContainer.Terminate(suite.ctx, &suite.Suite)
-	}
-
-	if suite.mysqlContainer != nil {
-		suite.mysqlContainer.Terminate(suite.ctx, &suite.Suite)
-	}
+	suite.postgresContainer = testx.NewPostgresContainer(suite.ctx, suite.T())
+	suite.mysqlContainer = testx.NewMySQLContainer(suite.ctx, suite.T())
 }
 
 // TestSQLiteConnection tests SQLite in-memory database connection and basic operations.
@@ -48,7 +39,7 @@ func (suite *DatabaseTestSuite) TestSQLiteConnection() {
 		Type: config.SQLite,
 	}
 
-	db, err := New(config)
+	db, err := database.New(config)
 	suite.Require().NoError(err, "SQLite connection should succeed")
 	suite.Require().NotNil(db, "Database instance should not be nil")
 
@@ -63,7 +54,7 @@ func (suite *DatabaseTestSuite) TestSQLiteWithOptions() {
 		Type: config.SQLite,
 	}
 
-	db, err := New(config, DisableQueryHook())
+	db, err := database.New(config, database.DisableQueryHook())
 	suite.Require().NoError(err, "SQLite with custom options should succeed")
 	suite.Require().NotNil(db, "Database instance should not be nil")
 
@@ -76,7 +67,7 @@ func (suite *DatabaseTestSuite) TestSQLiteWithOptions() {
 func (suite *DatabaseTestSuite) TestPostgreSQLConnection() {
 	config := suite.postgresContainer.DsConfig
 
-	db, err := New(config)
+	db, err := database.New(config)
 	suite.Require().NoError(err, "PostgreSQL connection should succeed")
 	suite.Require().NotNil(db, "Database instance should not be nil")
 
@@ -89,7 +80,7 @@ func (suite *DatabaseTestSuite) TestPostgreSQLConnection() {
 func (suite *DatabaseTestSuite) TestMySQLConnection() {
 	config := suite.mysqlContainer.DsConfig
 
-	db, err := New(config)
+	db, err := database.New(config)
 	suite.Require().NoError(err, "MySQL connection should succeed")
 	suite.Require().NotNil(db, "Database instance should not be nil")
 
@@ -104,7 +95,7 @@ func (suite *DatabaseTestSuite) TestUnsupportedDatabaseType() {
 		Type: "unsupported",
 	}
 
-	db, err := New(config)
+	db, err := database.New(config)
 	suite.Error(err, "Should return error for unsupported database type")
 	suite.Nil(db, "Database instance should be nil on error")
 	suite.Contains(err.Error(), "unsupported database type", "Error message should mention unsupported type")
@@ -116,7 +107,7 @@ func (suite *DatabaseTestSuite) TestSQLiteInMemoryMode() {
 		Type: config.SQLite,
 	}
 
-	db, err := New(config)
+	db, err := database.New(config)
 	suite.Require().NoError(err, "In-memory SQLite connection should succeed")
 	suite.Require().NotNil(db, "Database instance should not be nil")
 
@@ -143,7 +134,7 @@ func (suite *DatabaseTestSuite) TestSQLiteFileMode() {
 		Path: tempFile.Name(),
 	}
 
-	db, err := New(config)
+	db, err := database.New(config)
 	suite.Require().NoError(err, "File-based SQLite connection should succeed")
 	suite.Require().NotNil(db, "Database instance should not be nil")
 
@@ -161,7 +152,7 @@ func (suite *DatabaseTestSuite) TestMySQLValidation() {
 		User: "root",
 	}
 
-	db, err := New(config)
+	db, err := database.New(config)
 	suite.Error(err, "Should return error when database name is missing")
 	suite.Nil(db, "Database instance should be nil on validation error")
 	suite.Contains(err.Error(), "database name is required", "Error message should mention missing database name")
@@ -173,14 +164,14 @@ func (suite *DatabaseTestSuite) TestConnectionPoolConfiguration() {
 		Type: config.SQLite,
 	}
 
-	customPoolConfig := &ConnectionPoolConfig{
+	customPoolConfig := &database.ConnectionPoolConfig{
 		MaxIdleConns:    5,
 		MaxOpenConns:    10,
 		ConnMaxIdleTime: 1 * time.Minute,
 		ConnMaxLifetime: 5 * time.Minute,
 	}
 
-	db, err := New(config, WithConnectionPool(customPoolConfig))
+	db, err := database.New(config, database.WithConnectionPool(customPoolConfig))
 	suite.Require().NoError(err, "Connection with custom pool config should succeed")
 	suite.Require().NotNil(db, "Database instance should not be nil")
 
@@ -279,7 +270,7 @@ func (suite *SQLGuardTestSuite) createTestDB(enableGuard bool) *bun.DB {
 		EnableSQLGuard: enableGuard,
 	}
 
-	db, err := New(cfg)
+	db, err := database.New(cfg)
 	suite.Require().NoError(err)
 
 	// Create test table using raw SQL (unquoted)

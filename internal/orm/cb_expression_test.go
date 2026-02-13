@@ -1,21 +1,35 @@
-package orm
+package orm_test
 
-// ExpressionOperationsTestSuite tests expression-based condition methods.
+import (
+	"github.com/stretchr/testify/suite"
+
+	"github.com/ilxqx/vef-framework-go/internal/orm"
+)
+
+func init() {
+	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+		return &CBExpressionOperationsTestSuite{
+			ConditionBuilderTestSuite: &ConditionBuilderTestSuite{OrmTestSuite: base},
+		}
+	})
+}
+
+// CBExpressionOperationsTestSuite tests expression-based condition methods.
 // Covers: EqualsExpr, NotEqualsExpr, GreaterThanExpr, LessThanExpr, Expr, and their Or variants.
-type ExpressionOperationsTestSuite struct {
+type CBExpressionOperationsTestSuite struct {
 	*ConditionBuilderTestSuite
 }
 
 // TestEqualsExpr tests the EqualsExpr and OrEqualsExpr conditions.
-func (suite *ExpressionOperationsTestSuite) TestEqualsExpr() {
+func (suite *CBExpressionOperationsTestSuite) TestEqualsExpr() {
 	suite.T().Logf("Testing EqualsExpr condition for %s", suite.dbType)
 
 	suite.Run("BasicEqualsExpr", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
-					cb.EqualsExpr("age", func(eb ExprBuilder) any {
+				Where(func(cb orm.ConditionBuilder) {
+					cb.EqualsExpr("age", func(eb orm.ExprBuilder) any {
 						return eb.Expr("?", 30)
 					})
 				}),
@@ -31,10 +45,10 @@ func (suite *ExpressionOperationsTestSuite) TestEqualsExpr() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
-					cb.EqualsExpr("age", func(eb ExprBuilder) any {
+				Where(func(cb orm.ConditionBuilder) {
+					cb.EqualsExpr("age", func(eb orm.ExprBuilder) any {
 						return eb.Expr("?", 25)
-					}).OrEqualsExpr("age", func(eb ExprBuilder) any {
+					}).OrEqualsExpr("age", func(eb orm.ExprBuilder) any {
 						return eb.Expr("?", 35)
 					})
 				}).
@@ -48,15 +62,15 @@ func (suite *ExpressionOperationsTestSuite) TestEqualsExpr() {
 }
 
 // TestNotEqualsExpr tests the NotEqualsExpr and OrNotEqualsExpr conditions.
-func (suite *ExpressionOperationsTestSuite) TestNotEqualsExpr() {
+func (suite *CBExpressionOperationsTestSuite) TestNotEqualsExpr() {
 	suite.T().Logf("Testing NotEqualsExpr condition for %s", suite.dbType)
 
 	suite.Run("BasicNotEqualsExpr", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
-					cb.NotEqualsExpr("age", func(eb ExprBuilder) any {
+				Where(func(cb orm.ConditionBuilder) {
+					cb.NotEqualsExpr("age", func(eb orm.ExprBuilder) any {
 						return eb.Expr("?", 30)
 					})
 				}).
@@ -76,10 +90,10 @@ func (suite *ExpressionOperationsTestSuite) TestNotEqualsExpr() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
-					cb.NotEqualsExpr("age", func(eb ExprBuilder) any {
+				Where(func(cb orm.ConditionBuilder) {
+					cb.NotEqualsExpr("age", func(eb orm.ExprBuilder) any {
 						return eb.Expr("?", 25)
-					}).OrNotEqualsExpr("age", func(eb ExprBuilder) any {
+					}).OrNotEqualsExpr("age", func(eb orm.ExprBuilder) any {
 						return eb.Expr("?", 30)
 					})
 				}).
@@ -93,15 +107,15 @@ func (suite *ExpressionOperationsTestSuite) TestNotEqualsExpr() {
 }
 
 // TestGreaterThanExpr tests the GreaterThanExpr and OrGreaterThanExpr conditions.
-func (suite *ExpressionOperationsTestSuite) TestGreaterThanExpr() {
+func (suite *CBExpressionOperationsTestSuite) TestGreaterThanExpr() {
 	suite.T().Logf("Testing GreaterThanExpr condition for %s", suite.dbType)
 
 	suite.Run("BasicGreaterThanExpr", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
-					cb.GreaterThanExpr("age", func(eb ExprBuilder) any {
+				Where(func(cb orm.ConditionBuilder) {
+					cb.GreaterThanExpr("age", func(eb orm.ExprBuilder) any {
 						return eb.Expr("?", 30)
 					})
 				}),
@@ -117,10 +131,10 @@ func (suite *ExpressionOperationsTestSuite) TestGreaterThanExpr() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
-					cb.GreaterThanExpr("age", func(eb ExprBuilder) any {
+				Where(func(cb orm.ConditionBuilder) {
+					cb.GreaterThanExpr("age", func(eb orm.ExprBuilder) any {
 						return eb.Expr("?", 30)
-					}).OrGreaterThanExpr("age", func(eb ExprBuilder) any {
+					}).OrGreaterThanExpr("age", func(eb orm.ExprBuilder) any {
 						return eb.Expr("?", 24)
 					})
 				}).
@@ -134,15 +148,15 @@ func (suite *ExpressionOperationsTestSuite) TestGreaterThanExpr() {
 }
 
 // TestLessThanExpr tests the LessThanExpr and OrLessThanExpr conditions.
-func (suite *ExpressionOperationsTestSuite) TestLessThanExpr() {
+func (suite *CBExpressionOperationsTestSuite) TestLessThanExpr() {
 	suite.T().Logf("Testing LessThanExpr condition for %s", suite.dbType)
 
 	suite.Run("BasicLessThanExpr", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
-					cb.LessThanExpr("age", func(eb ExprBuilder) any {
+				Where(func(cb orm.ConditionBuilder) {
+					cb.LessThanExpr("age", func(eb orm.ExprBuilder) any {
 						return eb.Expr("?", 30)
 					})
 				}),
@@ -158,10 +172,10 @@ func (suite *ExpressionOperationsTestSuite) TestLessThanExpr() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
-					cb.LessThanExpr("age", func(eb ExprBuilder) any {
+				Where(func(cb orm.ConditionBuilder) {
+					cb.LessThanExpr("age", func(eb orm.ExprBuilder) any {
 						return eb.Expr("?", 26)
-					}).OrLessThanExpr("age", func(eb ExprBuilder) any {
+					}).OrLessThanExpr("age", func(eb orm.ExprBuilder) any {
 						return eb.Expr("?", 31)
 					})
 				}).
@@ -175,15 +189,15 @@ func (suite *ExpressionOperationsTestSuite) TestLessThanExpr() {
 }
 
 // TestExpr tests the Expr and OrExpr conditions.
-func (suite *ExpressionOperationsTestSuite) TestExpr() {
+func (suite *CBExpressionOperationsTestSuite) TestExpr() {
 	suite.T().Logf("Testing Expr condition for %s", suite.dbType)
 
 	suite.Run("BasicExpr", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
-					cb.Expr(func(eb ExprBuilder) any {
+				Where(func(cb orm.ConditionBuilder) {
+					cb.Expr(func(eb orm.ExprBuilder) any {
 						return eb.Expr("age > ?", 30)
 					})
 				}),
@@ -199,10 +213,10 @@ func (suite *ExpressionOperationsTestSuite) TestExpr() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
-					cb.Expr(func(eb ExprBuilder) any {
+				Where(func(cb orm.ConditionBuilder) {
+					cb.Expr(func(eb orm.ExprBuilder) any {
 						return eb.Expr("age = ?", 25)
-					}).OrExpr(func(eb ExprBuilder) any {
+					}).OrExpr(func(eb orm.ExprBuilder) any {
 						return eb.Expr("age = ?", 35)
 					})
 				}).
@@ -218,8 +232,8 @@ func (suite *ExpressionOperationsTestSuite) TestExpr() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
-					cb.Expr(func(eb ExprBuilder) any {
+				Where(func(cb orm.ConditionBuilder) {
+					cb.Expr(func(eb orm.ExprBuilder) any {
 						return eb.Expr("age BETWEEN ? AND ?", 25, 35)
 					})
 				}).

@@ -2,8 +2,9 @@ package testx
 
 import (
 	"context"
+	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -12,17 +13,12 @@ import (
 )
 
 type PostgresContainer struct {
-	container *postgres.PostgresContainer
-	DsConfig  *config.DatasourceConfig
+	DsConfig *config.DatasourceConfig
 }
 
-func (c *PostgresContainer) Terminate(ctx context.Context, s *suite.Suite) {
-	if err := c.container.Terminate(ctx); err != nil {
-		s.T().Logf("Failed to terminate postgres container: %v", err)
-	}
-}
+func NewPostgresContainer(ctx context.Context, t testing.TB) *PostgresContainer {
+	t.Helper()
 
-func NewPostgresContainer(ctx context.Context, s *suite.Suite) *PostgresContainer {
 	container, err := postgres.Run(
 		ctx,
 		PostgresImage,
@@ -35,17 +31,22 @@ func NewPostgresContainer(ctx context.Context, s *suite.Suite) *PostgresContaine
 				WithStartupTimeout(DefaultContainerTimeout),
 		),
 	)
-	s.Require().NoError(err)
-	s.T().Log("PostgreSQL container started successfully")
+	require.NoError(t, err)
+	t.Log("PostgreSQL container started successfully")
+
+	t.Cleanup(func() {
+		if err := container.Terminate(ctx); err != nil {
+			t.Logf("Failed to terminate postgres container: %v", err)
+		}
+	})
 
 	host, err := container.Host(ctx)
-	s.Require().NoError(err)
+	require.NoError(t, err)
 
 	port, err := container.MappedPort(ctx, "5432")
-	s.Require().NoError(err)
+	require.NoError(t, err)
 
 	return &PostgresContainer{
-		container: container,
 		DsConfig: &config.DatasourceConfig{
 			Type:     "postgres",
 			Host:     host,

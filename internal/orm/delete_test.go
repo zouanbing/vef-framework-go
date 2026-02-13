@@ -1,10 +1,19 @@
-package orm
+package orm_test
 
 import (
 	"fmt"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/ilxqx/vef-framework-go/internal/orm"
 )
+
+func init() {
+	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+		return &DeleteTestSuite{OrmTestSuite: base}
+	})
+}
 
 // DeleteTestSuite tests DELETE operations including CTE, table sources, filtering,
 // ordering, limiting, returning, force delete, conditional application, and execution methods
@@ -28,17 +37,17 @@ func (suite *DeleteTestSuite) TestCTE() {
 		suite.NoError(err, "Should insert test users for CTE")
 
 		result, err := suite.db.NewDelete().
-			With("inactive_users", func(query SelectQuery) {
+			With("inactive_users", func(query orm.SelectQuery) {
 				query.Model((*User)(nil)).
 					Select("id").
-					Where(func(cb ConditionBuilder) {
+					Where(func(cb orm.ConditionBuilder) {
 						cb.Equals("is_active", false).
 							StartsWith("email", "cte_basic_")
 					})
 			}).
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
-				cb.InSubQuery("id", func(subquery SelectQuery) {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.InSubQuery("id", func(subquery orm.SelectQuery) {
 					subquery.Table("inactive_users").Select("id")
 				})
 			}).
@@ -54,7 +63,7 @@ func (suite *DeleteTestSuite) TestCTE() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("email", "cte_basic_")
 			}).
 			Exec(suite.ctx)
@@ -83,8 +92,8 @@ func (suite *DeleteTestSuite) TestCTE() {
 		result, err := suite.db.NewDelete().
 			WithValues("target_statuses", &statusValues).
 			Model((*Post)(nil)).
-			Where(func(cb ConditionBuilder) {
-				cb.InSubQuery("status", func(subquery SelectQuery) {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.InSubQuery("status", func(subquery orm.SelectQuery) {
 					subquery.Table("target_statuses").Select("status")
 				}).
 					StartsWith("title", "CTE Values Post")
@@ -101,7 +110,7 @@ func (suite *DeleteTestSuite) TestCTE() {
 
 		_, err = suite.db.NewDelete().
 			Model((*Post)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("title", "CTE Values Post")
 			}).
 			Exec(suite.ctx)
@@ -133,23 +142,23 @@ func (suite *DeleteTestSuite) TestCTE() {
 		suite.NoError(err, "Should insert test posts for recursive CTE")
 
 		result, err := suite.db.NewDelete().
-			WithRecursive("category_tree", func(query SelectQuery) {
+			WithRecursive("category_tree", func(query orm.SelectQuery) {
 				query.Model((*Category)(nil)).
 					Select("id", "parent_id").
-					Where(func(cb ConditionBuilder) {
+					Where(func(cb orm.ConditionBuilder) {
 						cb.Equals("name", "Parent Category")
 					}).
-					UnionAll(func(unionQuery SelectQuery) {
+					UnionAll(func(unionQuery orm.SelectQuery) {
 						unionQuery.Model((*Category)(nil)).
 							Select("id", "parent_id").
-							JoinTable("category_tree", func(cb ConditionBuilder) {
+							JoinTable("category_tree", func(cb orm.ConditionBuilder) {
 								cb.EqualsColumn("parent_id", "ct.id")
 							}, "ct")
 					})
 			}).
 			Model((*Post)(nil)).
-			Where(func(cb ConditionBuilder) {
-				cb.InSubQuery("category_id", func(subquery SelectQuery) {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.InSubQuery("category_id", func(subquery orm.SelectQuery) {
 					subquery.Table("category_tree").Select("id")
 				})
 			}).
@@ -162,7 +171,7 @@ func (suite *DeleteTestSuite) TestCTE() {
 
 		_, err = suite.db.NewDelete().
 			Model((*Post)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("title", "Recursive Post")
 			}).
 			Exec(suite.ctx)
@@ -170,7 +179,7 @@ func (suite *DeleteTestSuite) TestCTE() {
 
 		_, err = suite.db.NewDelete().
 			Model((*Category)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Contains("name", "Category")
 			}).
 			Exec(suite.ctx)
@@ -193,7 +202,7 @@ func (suite *DeleteTestSuite) TestTableSource() {
 
 		result, err := suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "table1@example.com")
 			}).
 			Exec(suite.ctx)
@@ -208,7 +217,7 @@ func (suite *DeleteTestSuite) TestTableSource() {
 
 		result, err = suite.db.NewDelete().
 			ModelTable("test_user", "u").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("u.email", "table2@example.com")
 			}).
 			Exec(suite.ctx)
@@ -233,7 +242,7 @@ func (suite *DeleteTestSuite) TestTableSource() {
 
 		result, err := suite.db.NewDelete().
 			Table("test_post", "p").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("p.title", "Table Source Post").
 					Equals("p.status", "draft")
 			}).
@@ -249,7 +258,7 @@ func (suite *DeleteTestSuite) TestTableSource() {
 
 		result, err = suite.db.NewDelete().
 			TableFrom((*Post)(nil), "p").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("p.title", "Table Source Post").
 					Equals("p.status", "published")
 			}).
@@ -274,7 +283,7 @@ func (suite *DeleteTestSuite) TestTableSource() {
 
 		result, err := suite.db.NewDelete().
 			Table("test_user", "u").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("u.email", "expr@example.com")
 			}).
 			Exec(suite.ctx)
@@ -305,10 +314,10 @@ func (suite *DeleteTestSuite) TestFiltering() {
 
 		result, err := suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("is_active", false)
 			}).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("email", "filter")
 			}).
 			Exec(suite.ctx)
@@ -323,7 +332,7 @@ func (suite *DeleteTestSuite) TestFiltering() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("email", "filter")
 			}).
 			Exec(suite.ctx)
@@ -343,7 +352,7 @@ func (suite *DeleteTestSuite) TestFiltering() {
 
 		result, err := suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.PKEquals(testUser.ID)
 			}).
 			Exec(suite.ctx)
@@ -369,10 +378,10 @@ func (suite *DeleteTestSuite) TestFiltering() {
 
 		result, err := suite.db.NewDelete().
 			Model((*Post)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("title", "Complex Filter").
 					Equals("status", "published").
-					Group(func(innerCb ConditionBuilder) {
+					Group(func(innerCb orm.ConditionBuilder) {
 						innerCb.LessThan("view_count", 100).OrEquals("user_id", "user2")
 					})
 			}).
@@ -388,7 +397,7 @@ func (suite *DeleteTestSuite) TestFiltering() {
 
 		_, err = suite.db.NewDelete().
 			Model((*Post)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("title", "Complex Filter")
 			}).
 			Exec(suite.ctx)
@@ -414,11 +423,11 @@ func (suite *DeleteTestSuite) TestFiltering() {
 
 		result, err := suite.db.NewDelete().
 			Model((*Post)(nil)).
-			Where(func(cb ConditionBuilder) {
-				cb.InSubQuery("user_id", func(subquery SelectQuery) {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.InSubQuery("user_id", func(subquery orm.SelectQuery) {
 					subquery.Model((*User)(nil)).
 						Select("id").
-						Where(func(cb ConditionBuilder) {
+						Where(func(cb orm.ConditionBuilder) {
 							cb.Equals("is_active", false).
 								StartsWith("email", "subquser")
 						})
@@ -437,7 +446,7 @@ func (suite *DeleteTestSuite) TestFiltering() {
 
 		_, err = suite.db.NewDelete().
 			Model((*Post)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("title", "Subquery Post")
 			}).
 			Exec(suite.ctx)
@@ -445,7 +454,7 @@ func (suite *DeleteTestSuite) TestFiltering() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("email", "subquser")
 			}).
 			Exec(suite.ctx)
@@ -476,7 +485,7 @@ func (suite *DeleteTestSuite) TestOrdering() {
 
 		result, err := suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("email", "order_")
 			}).
 			OrderBy("age").
@@ -493,7 +502,7 @@ func (suite *DeleteTestSuite) TestOrdering() {
 
 		err = suite.db.NewSelect().
 			Model(&remainingUsers).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("email", "order_")
 			}).
 			OrderBy("age").
@@ -506,7 +515,7 @@ func (suite *DeleteTestSuite) TestOrdering() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("email", "order_")
 			}).
 			Exec(suite.ctx)
@@ -525,7 +534,7 @@ func (suite *DeleteTestSuite) TestOrdering() {
 
 		result, err := suite.db.NewDelete().
 			Model((*Post)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("title", "Order Post")
 			}).
 			OrderByDesc("view_count").
@@ -542,7 +551,7 @@ func (suite *DeleteTestSuite) TestOrdering() {
 
 		err = suite.db.NewSelect().
 			Model(&remainingPosts).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("title", "Order Post")
 			}).
 			OrderByDesc("view_count").
@@ -555,7 +564,7 @@ func (suite *DeleteTestSuite) TestOrdering() {
 
 		_, err = suite.db.NewDelete().
 			Model((*Post)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("title", "Order Post")
 			}).
 			Exec(suite.ctx)
@@ -574,12 +583,12 @@ func (suite *DeleteTestSuite) TestOrdering() {
 
 		result, err := suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("email", "exprorder")
 			}).
-			OrderByExpr(func(eb ExprBuilder) any {
-				return eb.Case(func(cb CaseBuilder) {
-					cb.When(func(cond ConditionBuilder) {
+			OrderByExpr(func(eb orm.ExprBuilder) any {
+				return eb.Case(func(cb orm.CaseBuilder) {
+					cb.When(func(cond orm.ConditionBuilder) {
 						cond.IsTrue("is_active")
 					}).Then(eb.Column("age"))
 					cb.Else(eb.Literal("0"))
@@ -598,7 +607,7 @@ func (suite *DeleteTestSuite) TestOrdering() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("email", "exprorder")
 			}).
 			Exec(suite.ctx)
@@ -630,7 +639,7 @@ func (suite *DeleteTestSuite) TestLimit() {
 
 		result, err := suite.db.NewDelete().
 			Model((*Post)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("title", "Limit Post")
 			}).
 			Limit(2).
@@ -646,7 +655,7 @@ func (suite *DeleteTestSuite) TestLimit() {
 
 		err = suite.db.NewSelect().
 			Model(&remainingPosts).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("title", "Limit Post")
 			}).
 			Scan(suite.ctx)
@@ -657,7 +666,7 @@ func (suite *DeleteTestSuite) TestLimit() {
 
 		_, err = suite.db.NewDelete().
 			Model((*Post)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("title", "Limit Post")
 			}).
 			Exec(suite.ctx)
@@ -676,7 +685,7 @@ func (suite *DeleteTestSuite) TestLimit() {
 
 		result, err := suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("email", "limituser")
 			}).
 			OrderBy("age").
@@ -693,7 +702,7 @@ func (suite *DeleteTestSuite) TestLimit() {
 
 		err = suite.db.NewSelect().
 			Model(&remainingUsers).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("email", "limituser")
 			}).
 			OrderBy("age").
@@ -706,7 +715,7 @@ func (suite *DeleteTestSuite) TestLimit() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("email", "limituser")
 			}).
 			Exec(suite.ctx)
@@ -724,7 +733,7 @@ func (suite *DeleteTestSuite) TestLimit() {
 
 		result, err := suite.db.NewDelete().
 			Model((*Post)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("title", "Edge Limit")
 			}).
 			Limit(10).
@@ -770,7 +779,7 @@ func (suite *DeleteTestSuite) TestReturning() {
 
 		err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("email", "return")
 			}).
 			Returning("id", "name", "email").
@@ -790,7 +799,7 @@ func (suite *DeleteTestSuite) TestReturning() {
 
 		err = suite.db.NewSelect().
 			Model(&deletedUsers).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("email", "return")
 			}).
 			Scan(suite.ctx)
@@ -812,7 +821,7 @@ func (suite *DeleteTestSuite) TestReturning() {
 
 		err = suite.db.NewDelete().
 			Model((*Post)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("title", "Return All Post")
 			}).
 			ReturningAll().
@@ -843,7 +852,7 @@ func (suite *DeleteTestSuite) TestReturning() {
 
 		result, err := suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "returnnone@example.com")
 			}).
 			ReturningNone().
@@ -874,7 +883,7 @@ func (suite *DeleteTestSuite) TestForceDelete() {
 
 		result, err := suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "force1@example.com")
 			}).
 			ForceDelete().
@@ -890,7 +899,7 @@ func (suite *DeleteTestSuite) TestForceDelete() {
 
 		err = suite.db.NewSelect().
 			Model(&deletedUser).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "force1@example.com")
 			}).
 			Scan(suite.ctx)
@@ -900,7 +909,7 @@ func (suite *DeleteTestSuite) TestForceDelete() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "force2@example.com")
 			}).
 			Exec(suite.ctx)
@@ -918,7 +927,7 @@ func (suite *DeleteTestSuite) TestForceDelete() {
 
 		result, err := suite.db.NewDelete().
 			Model((*Post)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("title", "Force Post")
 			}).
 			ForceDelete().
@@ -934,7 +943,7 @@ func (suite *DeleteTestSuite) TestForceDelete() {
 
 		err = suite.db.NewSelect().
 			Model(&deletedPosts).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("title", "Force Post")
 			}).
 			Scan(suite.ctx)
@@ -962,13 +971,13 @@ func (suite *DeleteTestSuite) TestApply() {
 		result, err := suite.db.NewDelete().
 			Model((*User)(nil)).
 			Apply(
-				func(query DeleteQuery) {
-					query.Where(func(cb ConditionBuilder) {
+				func(query orm.DeleteQuery) {
+					query.Where(func(cb orm.ConditionBuilder) {
 						cb.StartsWith("email", "apply")
 					})
 				},
-				func(query DeleteQuery) {
-					query.Where(func(cb ConditionBuilder) {
+				func(query orm.DeleteQuery) {
+					query.Where(func(cb orm.ConditionBuilder) {
 						cb.Equals("is_active", false)
 					})
 				},
@@ -985,7 +994,7 @@ func (suite *DeleteTestSuite) TestApply() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("email", "apply")
 			}).
 			Exec(suite.ctx)
@@ -1003,12 +1012,12 @@ func (suite *DeleteTestSuite) TestApply() {
 
 		result, err := suite.db.NewDelete().
 			Model((*Post)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("title", "ApplyIf Post")
 			}).
 			ApplyIf(true,
-				func(query DeleteQuery) {
-					query.Where(func(cb ConditionBuilder) {
+				func(query orm.DeleteQuery) {
+					query.Where(func(cb orm.ConditionBuilder) {
 						cb.Equals("status", "draft")
 					})
 				},
@@ -1025,7 +1034,7 @@ func (suite *DeleteTestSuite) TestApply() {
 
 		_, err = suite.db.NewDelete().
 			Model((*Post)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("title", "ApplyIf Post")
 			}).
 			Exec(suite.ctx)
@@ -1043,12 +1052,12 @@ func (suite *DeleteTestSuite) TestApply() {
 
 		result, err := suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("email", "applyfalse")
 			}).
 			ApplyIf(false,
-				func(query DeleteQuery) {
-					query.Where(func(cb ConditionBuilder) {
+				func(query orm.DeleteQuery) {
+					query.Where(func(cb orm.ConditionBuilder) {
 						cb.Equals("is_active", false)
 					})
 				},
@@ -1080,7 +1089,7 @@ func (suite *DeleteTestSuite) TestExecution() {
 
 		result, err := suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("email", "exec")
 			}).
 			Exec(suite.ctx)
@@ -1097,7 +1106,7 @@ func (suite *DeleteTestSuite) TestExecution() {
 	suite.Run("ExecNoRows", func() {
 		result, err := suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "nonexistent@example.com")
 			}).
 			Exec(suite.ctx)
@@ -1136,7 +1145,7 @@ func (suite *DeleteTestSuite) TestExecution() {
 
 		err = suite.db.NewDelete().
 			Model((*Post)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("title", "Scan Post")
 			}).
 			Returning("id", "title", "status").
@@ -1155,7 +1164,7 @@ func (suite *DeleteTestSuite) TestExecution() {
 	suite.Run("ErrorHandling", func() {
 		_, err := suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("invalid_field", "value")
 			}).
 			Exec(suite.ctx)
@@ -1175,7 +1184,7 @@ func (suite *DeleteTestSuite) TestExecution() {
 
 		result, err := suite.db.NewDelete().
 			Model((*SimpleModel)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("name", "Exec Simple")
 			}).
 			Exec(suite.ctx)
@@ -1207,7 +1216,7 @@ func (suite *DeleteTestSuite) TestExecution() {
 
 		result, err := suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("email", "perf-")
 			}).
 			Exec(suite.ctx)

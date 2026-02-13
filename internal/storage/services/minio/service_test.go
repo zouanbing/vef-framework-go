@@ -39,7 +39,7 @@ func (suite *MinIOServiceTestSuite) SetupSuite() {
 	suite.testObjectData = []byte("Hello, MinIO Test!")
 	suite.testContentType = "text/plain"
 
-	suite.minioContainer = testx.NewMinIOContainer(suite.ctx, &suite.Suite)
+	suite.minioContainer = testx.NewMinIOContainer(suite.ctx, suite.T())
 
 	provider, err := New(*suite.minioContainer.MinIOConfig, &config.AppConfig{})
 	suite.Require().NoError(err, "NewMinIOService should succeed")
@@ -67,10 +67,6 @@ func (suite *MinIOServiceTestSuite) TearDownSuite() {
 	}
 
 	_ = suite.minioClient.RemoveBucket(suite.ctx, suite.testBucketName)
-
-	if suite.minioContainer != nil {
-		suite.minioContainer.Terminate(suite.ctx, &suite.Suite)
-	}
 }
 
 func (suite *MinIOServiceTestSuite) SetupTest() {

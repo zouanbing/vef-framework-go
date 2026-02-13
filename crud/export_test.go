@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/stretchr/testify/suite"
 	"github.com/uptrace/bun"
 
 	"github.com/ilxqx/vef-framework-go/api"
@@ -13,6 +14,17 @@ import (
 	"github.com/ilxqx/vef-framework-go/excel"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 )
+
+func init() {
+	registry.Add(func(base *BaseSuite) suite.TestingSuite {
+		return &ExportTestSuite{BaseSuite: BaseSuite{
+			ctx:      base.ctx,
+			db:       base.db,
+			dbType:   base.dbType,
+			dsConfig: base.dsConfig,
+		}}
+	})
+}
 
 // ExportUser is the test model for export tests (uses tabular tags).
 type ExportUser struct {

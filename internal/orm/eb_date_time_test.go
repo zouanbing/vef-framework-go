@@ -1,12 +1,21 @@
-package orm
+package orm_test
 
 import (
 	"time"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/ilxqx/vef-framework-go/internal/orm"
 )
 
-// DateTimeFunctionsTestSuite tests date and time manipulation methods of ExprBuilder
+func init() {
+	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+		return &EBDateTimeFunctionsTestSuite{OrmTestSuite: base}
+	})
+}
+
+// EBDateTimeFunctionsTestSuite tests date and time manipulation methods of orm.ExprBuilder
 // including CurrentDate, CurrentTime, CurrentTimestamp, Now, date extraction functions
 // (ExtractYear, ExtractMonth, ExtractDay, ExtractHour, ExtractMinute, ExtractSecond),
 // DateTrunc, DateAdd, DateSubtract, DateDiff, and Age.
@@ -14,13 +23,13 @@ import (
 // This suite verifies cross-database compatibility for date/time functions across
 // PostgreSQL, MySQL, and SQLite. Note that SQLite has limited support for many
 // date/time functions and some tests are skipped accordingly.
-type DateTimeFunctionsTestSuite struct {
+type EBDateTimeFunctionsTestSuite struct {
 	*OrmTestSuite
 }
 
 // TestCurrentDate tests the CurrentDate function.
 // CurrentDate returns the current date without time component.
-func (suite *DateTimeFunctionsTestSuite) TestCurrentDate() {
+func (suite *EBDateTimeFunctionsTestSuite) TestCurrentDate() {
 	suite.T().Logf("Testing CurrentDate function for %s", suite.dbType)
 
 	// Test 1: Get current date using CurrentDate()
@@ -33,7 +42,7 @@ func (suite *DateTimeFunctionsTestSuite) TestCurrentDate() {
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CurrentDate()
 			}, "current_date").
 			Limit(1).
@@ -51,7 +60,7 @@ func (suite *DateTimeFunctionsTestSuite) TestCurrentDate() {
 
 // TestCurrentTime tests the CurrentTime function.
 // CurrentTime returns the current time without date component.
-func (suite *DateTimeFunctionsTestSuite) TestCurrentTime() {
+func (suite *EBDateTimeFunctionsTestSuite) TestCurrentTime() {
 	suite.T().Logf("Testing CurrentTime function for %s", suite.dbType)
 
 	// Test 1: Get current time using CurrentTime()
@@ -64,7 +73,7 @@ func (suite *DateTimeFunctionsTestSuite) TestCurrentTime() {
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CurrentTime()
 			}, "current_time").
 			Limit(1).
@@ -79,7 +88,7 @@ func (suite *DateTimeFunctionsTestSuite) TestCurrentTime() {
 
 // TestCurrentTimestamp tests the CurrentTimestamp function.
 // CurrentTimestamp returns the current date and time.
-func (suite *DateTimeFunctionsTestSuite) TestCurrentTimestamp() {
+func (suite *EBDateTimeFunctionsTestSuite) TestCurrentTimestamp() {
 	suite.T().Logf("Testing CurrentTimestamp function for %s", suite.dbType)
 
 	// Test 1: Get current timestamp using CurrentTimestamp()
@@ -92,7 +101,7 @@ func (suite *DateTimeFunctionsTestSuite) TestCurrentTimestamp() {
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CurrentTimestamp()
 			}, "current_timestamp").
 			Limit(1).
@@ -110,7 +119,7 @@ func (suite *DateTimeFunctionsTestSuite) TestCurrentTimestamp() {
 
 // TestNow tests the Now function.
 // Now returns the current timestamp (alias for CurrentTimestamp).
-func (suite *DateTimeFunctionsTestSuite) TestNow() {
+func (suite *EBDateTimeFunctionsTestSuite) TestNow() {
 	suite.T().Logf("Testing Now function for %s", suite.dbType)
 
 	// Test 1: Get current timestamp using Now()
@@ -123,7 +132,7 @@ func (suite *DateTimeFunctionsTestSuite) TestNow() {
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Now()
 			}, "now").
 			Limit(1).
@@ -151,16 +160,16 @@ func (suite *DateTimeFunctionsTestSuite) TestNow() {
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CurrentDate()
 			}, "current_date").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CurrentTime()
 			}, "current_time").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CurrentTimestamp()
 			}, "current_timestamp").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Now()
 			}, "now").
 			Limit(1).
@@ -179,7 +188,7 @@ func (suite *DateTimeFunctionsTestSuite) TestNow() {
 
 // TestExtractYear tests the ExtractYear function.
 // ExtractYear extracts the year from a date/timestamp.
-func (suite *DateTimeFunctionsTestSuite) TestExtractYear() {
+func (suite *EBDateTimeFunctionsTestSuite) TestExtractYear() {
 	suite.T().Logf("Testing ExtractYear function for %s", suite.dbType)
 
 	// Test 1: Extract year from created_at column
@@ -194,7 +203,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractYear() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ExtractYear(eb.Column("created_at"))
 			}, "year").
 			OrderBy("created_at").
@@ -213,7 +222,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractYear() {
 
 // TestExtractMonth tests the ExtractMonth function.
 // ExtractMonth extracts the month from a date/timestamp.
-func (suite *DateTimeFunctionsTestSuite) TestExtractMonth() {
+func (suite *EBDateTimeFunctionsTestSuite) TestExtractMonth() {
 	suite.T().Logf("Testing ExtractMonth function for %s", suite.dbType)
 
 	// Test 1: Extract month from created_at column
@@ -228,7 +237,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractMonth() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ExtractMonth(eb.Column("created_at"))
 			}, "month").
 			OrderBy("created_at").
@@ -248,7 +257,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractMonth() {
 
 // TestExtractDay tests the ExtractDay function.
 // ExtractDay extracts the day from a date/timestamp.
-func (suite *DateTimeFunctionsTestSuite) TestExtractDay() {
+func (suite *EBDateTimeFunctionsTestSuite) TestExtractDay() {
 	suite.T().Logf("Testing ExtractDay function for %s", suite.dbType)
 
 	// Test 1: Extract day from created_at column
@@ -263,7 +272,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractDay() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ExtractDay(eb.Column("created_at"))
 			}, "day").
 			OrderBy("created_at").
@@ -283,7 +292,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractDay() {
 
 // TestExtractHour tests the ExtractHour function.
 // ExtractHour extracts the hour from a timestamp.
-func (suite *DateTimeFunctionsTestSuite) TestExtractHour() {
+func (suite *EBDateTimeFunctionsTestSuite) TestExtractHour() {
 	suite.T().Logf("Testing ExtractHour function for %s", suite.dbType)
 
 	// Test 1: Extract hour from created_at column
@@ -298,7 +307,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractHour() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ExtractHour(eb.Column("created_at"))
 			}, "hour").
 			OrderBy("created_at").
@@ -318,7 +327,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractHour() {
 
 // TestExtractMinute tests the ExtractMinute function.
 // ExtractMinute extracts the minute from a timestamp.
-func (suite *DateTimeFunctionsTestSuite) TestExtractMinute() {
+func (suite *EBDateTimeFunctionsTestSuite) TestExtractMinute() {
 	suite.T().Logf("Testing ExtractMinute function for %s", suite.dbType)
 
 	// Test 1: Extract minute from created_at column
@@ -333,7 +342,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractMinute() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ExtractMinute(eb.Column("created_at"))
 			}, "minute").
 			OrderBy("created_at").
@@ -353,7 +362,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractMinute() {
 
 // TestExtractSecond tests the ExtractSecond function.
 // ExtractSecond extracts the second from a timestamp.
-func (suite *DateTimeFunctionsTestSuite) TestExtractSecond() {
+func (suite *EBDateTimeFunctionsTestSuite) TestExtractSecond() {
 	suite.T().Logf("Testing ExtractSecond function for %s", suite.dbType)
 
 	// Test 1: Extract second from created_at column
@@ -369,7 +378,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractSecond() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "created_at").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ExtractSecond(eb.Column("created_at"))
 			}, "second").
 			OrderBy("id").
@@ -403,22 +412,22 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractSecond() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ExtractYear(eb.Column("created_at"))
 			}, "year").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ExtractMonth(eb.Column("created_at"))
 			}, "month").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ExtractDay(eb.Column("created_at"))
 			}, "day").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ExtractHour(eb.Column("created_at"))
 			}, "hour").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ExtractMinute(eb.Column("created_at"))
 			}, "minute").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ExtractSecond(eb.Column("created_at"))
 			}, "second").
 			OrderBy("created_at").
@@ -450,7 +459,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractSecond() {
 
 // TestDateTrunc tests the DateTrunc function.
 // DateTrunc truncates date/timestamp to specified precision.
-func (suite *DateTimeFunctionsTestSuite) TestDateTrunc() {
+func (suite *EBDateTimeFunctionsTestSuite) TestDateTrunc() {
 	suite.T().Logf("Testing DateTrunc function for %s", suite.dbType)
 
 	// Test 1: Truncate to different precisions (year, month, day, hour)
@@ -468,17 +477,17 @@ func (suite *DateTimeFunctionsTestSuite) TestDateTrunc() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateTrunc(UnitYear, eb.Column("created_at"))
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateTrunc(orm.UnitYear, eb.Column("created_at"))
 			}, "trunc_year").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateTrunc(UnitMonth, eb.Column("created_at"))
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateTrunc(orm.UnitMonth, eb.Column("created_at"))
 			}, "trunc_month").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateTrunc(UnitDay, eb.Column("created_at"))
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateTrunc(orm.UnitDay, eb.Column("created_at"))
 			}, "trunc_day").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateTrunc(UnitHour, eb.Column("created_at"))
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateTrunc(orm.UnitHour, eb.Column("created_at"))
 			}, "trunc_hour").
 			OrderBy("created_at").
 			Limit(5).
@@ -501,7 +510,7 @@ func (suite *DateTimeFunctionsTestSuite) TestDateTrunc() {
 }
 
 // TestDateAdd tests the DateAdd function.
-func (suite *DateTimeFunctionsTestSuite) TestDateAdd() {
+func (suite *EBDateTimeFunctionsTestSuite) TestDateAdd() {
 	suite.T().Logf("Testing DateAdd function for %s", suite.dbType)
 
 	// Test 1: Add different date intervals (7 days, 3 months, 1 year)
@@ -518,14 +527,14 @@ func (suite *DateTimeFunctionsTestSuite) TestDateAdd() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateAdd(eb.Column("created_at"), 7, UnitDay)
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateAdd(eb.Column("created_at"), 7, orm.UnitDay)
 			}, "added_days").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateAdd(eb.Column("created_at"), 3, UnitMonth)
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateAdd(eb.Column("created_at"), 3, orm.UnitMonth)
 			}, "added_months").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateAdd(eb.Column("created_at"), 1, UnitYear)
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateAdd(eb.Column("created_at"), 1, orm.UnitYear)
 			}, "added_years").
 			OrderBy("created_at").
 			Limit(5).
@@ -558,14 +567,14 @@ func (suite *DateTimeFunctionsTestSuite) TestDateAdd() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateAdd(eb.Column("created_at"), 30, UnitSecond)
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateAdd(eb.Column("created_at"), 30, orm.UnitSecond)
 			}, "added_seconds").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateAdd(eb.Column("created_at"), 45, UnitMinute)
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateAdd(eb.Column("created_at"), 45, orm.UnitMinute)
 			}, "added_minutes").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateAdd(eb.Column("created_at"), 2, UnitHour)
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateAdd(eb.Column("created_at"), 2, orm.UnitHour)
 			}, "added_hours").
 			OrderBy("created_at").
 			Limit(5).
@@ -586,7 +595,7 @@ func (suite *DateTimeFunctionsTestSuite) TestDateAdd() {
 }
 
 // TestDateSubtract tests the DateSubtract function.
-func (suite *DateTimeFunctionsTestSuite) TestDateSubtract() {
+func (suite *EBDateTimeFunctionsTestSuite) TestDateSubtract() {
 	suite.T().Logf("Testing DateSubtract function for %s", suite.dbType)
 
 	// Test 1: Subtract different date intervals (5 days, 2 months, 1 year)
@@ -603,14 +612,14 @@ func (suite *DateTimeFunctionsTestSuite) TestDateSubtract() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateSubtract(eb.Column("created_at"), 5, UnitDay)
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateSubtract(eb.Column("created_at"), 5, orm.UnitDay)
 			}, "subtracted_days").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateSubtract(eb.Column("created_at"), 2, UnitMonth)
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateSubtract(eb.Column("created_at"), 2, orm.UnitMonth)
 			}, "subtracted_months").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateSubtract(eb.Column("created_at"), 1, UnitYear)
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateSubtract(eb.Column("created_at"), 1, orm.UnitYear)
 			}, "subtracted_years").
 			OrderBy("created_at").
 			Limit(5).
@@ -643,14 +652,14 @@ func (suite *DateTimeFunctionsTestSuite) TestDateSubtract() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateSubtract(eb.Column("created_at"), 45, UnitSecond)
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateSubtract(eb.Column("created_at"), 45, orm.UnitSecond)
 			}, "subtracted_seconds").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateSubtract(eb.Column("created_at"), 30, UnitMinute)
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateSubtract(eb.Column("created_at"), 30, orm.UnitMinute)
 			}, "subtracted_minutes").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateSubtract(eb.Column("created_at"), 3, UnitHour)
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateSubtract(eb.Column("created_at"), 3, orm.UnitHour)
 			}, "subtracted_hours").
 			OrderBy("created_at").
 			Limit(5).
@@ -672,7 +681,7 @@ func (suite *DateTimeFunctionsTestSuite) TestDateSubtract() {
 
 // TestDateDiff tests the DateDiff function.
 // Returns the difference between two dates in the specified unit.
-func (suite *DateTimeFunctionsTestSuite) TestDateDiff() {
+func (suite *EBDateTimeFunctionsTestSuite) TestDateDiff() {
 	suite.T().Logf("Testing DateDiff function for %s", suite.dbType)
 
 	// Test 1: Calculate time differences in time units (seconds, minutes, hours)
@@ -690,14 +699,14 @@ func (suite *DateTimeFunctionsTestSuite) TestDateDiff() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at", "updated_at").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateDiff(eb.Column("created_at"), eb.Column("updated_at"), UnitSecond)
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateDiff(eb.Column("created_at"), eb.Column("updated_at"), orm.UnitSecond)
 			}, "seconds_diff").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateDiff(eb.Column("created_at"), eb.Column("updated_at"), UnitMinute)
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateDiff(eb.Column("created_at"), eb.Column("updated_at"), orm.UnitMinute)
 			}, "minutes_diff").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateDiff(eb.Column("created_at"), eb.Column("updated_at"), UnitHour)
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateDiff(eb.Column("created_at"), eb.Column("updated_at"), orm.UnitHour)
 			}, "hours_diff").
 			OrderBy("created_at").
 			Limit(5).
@@ -739,14 +748,14 @@ func (suite *DateTimeFunctionsTestSuite) TestDateDiff() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at", "updated_at").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateDiff(eb.Column("created_at"), eb.Column("updated_at"), UnitDay)
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateDiff(eb.Column("created_at"), eb.Column("updated_at"), orm.UnitDay)
 			}, "days_diff").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateDiff(eb.Column("created_at"), eb.Column("updated_at"), UnitMonth)
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateDiff(eb.Column("created_at"), eb.Column("updated_at"), orm.UnitMonth)
 			}, "months_diff").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateDiff(eb.Column("created_at"), eb.Column("updated_at"), UnitYear)
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateDiff(eb.Column("created_at"), eb.Column("updated_at"), orm.UnitYear)
 			}, "years_diff").
 			OrderBy("created_at").
 			Limit(5).
@@ -777,7 +786,7 @@ func (suite *DateTimeFunctionsTestSuite) TestDateDiff() {
 // TestAge tests the Age function.
 // Age returns the age (interval) between two timestamps in PostgreSQL-compatible format.
 // Returns a string in format: "X years Y mons Z days".
-func (suite *DateTimeFunctionsTestSuite) TestAge() {
+func (suite *EBDateTimeFunctionsTestSuite) TestAge() {
 	suite.T().Logf("Testing Age function for %s", suite.dbType)
 
 	// Test 1: Calculate age interval between updated_at and created_at
@@ -794,13 +803,13 @@ func (suite *DateTimeFunctionsTestSuite) TestAge() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "created_at", "updated_at").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				// Calculate age between created_at and updated_at
 				return eb.Age(eb.Column("created_at"), eb.Column("updated_at"))
 			}, "age").
 			// Only select records where updated_at >= created_at to avoid negative intervals
 			// which SQLite cannot handle properly
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.GreaterThanOrEqualColumn("updated_at", "created_at")
 			}).
 			Limit(5).
@@ -833,7 +842,7 @@ func (suite *DateTimeFunctionsTestSuite) TestAge() {
 		// Test with known dates: from 1957-06-13 to 2001-04-10
 		// Expected PostgreSQL result: "43 years 9 mons 27 days"
 		err := suite.db.NewSelect().
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Age(
 					eb.Literal("1957-06-13"),
 					eb.Literal("2001-04-10"),
@@ -861,7 +870,7 @@ func (suite *DateTimeFunctionsTestSuite) TestAge() {
 
 // TestCombinedDateTimeFunctions tests using multiple date/time functions together.
 // This verifies that date/time functions can be nested and combined.
-func (suite *DateTimeFunctionsTestSuite) TestCombinedDateTimeFunctions() {
+func (suite *EBDateTimeFunctionsTestSuite) TestCombinedDateTimeFunctions() {
 	suite.T().Logf("Testing combined date/time functions for %s", suite.dbType)
 
 	// Test 1: Nest and combine multiple date/time functions (Extract, DateDiff, DateTrunc, Now)
@@ -878,18 +887,18 @@ func (suite *DateTimeFunctionsTestSuite) TestCombinedDateTimeFunctions() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ExtractYear(eb.Column("created_at"))
 			}, "year").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.DateDiff(
-					eb.DateTrunc(UnitMonth, eb.Column("created_at")),
-					eb.DateTrunc(UnitMonth, eb.Now()),
-					UnitMonth,
+					eb.DateTrunc(orm.UnitMonth, eb.Column("created_at")),
+					eb.DateTrunc(orm.UnitMonth, eb.Now()),
+					orm.UnitMonth,
 				)
 			}, "months_from_now").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateTrunc(UnitDay, eb.Column("created_at"))
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateTrunc(orm.UnitDay, eb.Column("created_at"))
 			}, "formatted_date").
 			OrderBy("created_at").
 			Limit(5).

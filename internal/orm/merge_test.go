@@ -1,12 +1,21 @@
-package orm
+package orm_test
 
 import (
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/ilxqx/vef-framework-go/internal/orm"
 )
+
+func init() {
+	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+		return &MergeTestSuite{OrmTestSuite: base}
+	})
+}
 
 // MergeTestSuite tests MERGE operations (PostgreSQL 15+).
 // PostgreSQL 15+ supports the SQL standard MERGE statement (ISO/IEC 9075-2:2016).
-// This suite covers all interface methods from MergeQuery, MergeWhenBuilder, MergeUpdateBuilder, and MergeInsertBuilder.
+// This suite covers all interface methods from orm.MergeQuery, orm.MergeWhenBuilder, orm.MergeUpdateBuilder, and orm.MergeInsertBuilder.
 type MergeTestSuite struct {
 	*OrmTestSuite
 }
@@ -37,7 +46,7 @@ func (suite *MergeTestSuite) TestBasicMerge() {
 	defer func() {
 		_, _ = suite.db.NewDelete().
 			Model(&User{}).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.In("id", []string{"user4", "user5"})
 			}).
 			Exec(suite.ctx)
@@ -49,15 +58,15 @@ func (suite *MergeTestSuite) TestBasicMerge() {
 		Model(&User{}).
 		WithValues("_source_data", &sourceData).
 		UsingTable("_source_data").
-		On(func(cb ConditionBuilder) {
+		On(func(cb orm.ConditionBuilder) {
 			cb.EqualsColumn("u.id", "_source_data.id")
 		}).
 		WhenMatched().
-		ThenUpdate(func(ub MergeUpdateBuilder) {
+		ThenUpdate(func(ub orm.MergeUpdateBuilder) {
 			ub.SetColumns("name", "email", "age", "is_active")
 		}).
 		WhenNotMatched().
-		ThenInsert(func(ib MergeInsertBuilder) {
+		ThenInsert(func(ib orm.MergeInsertBuilder) {
 			ib.Values("id", "name", "email", "age", "is_active")
 		}).
 		Exec(suite.ctx)
@@ -74,7 +83,7 @@ func (suite *MergeTestSuite) TestBasicMerge() {
 
 	err = suite.db.NewSelect().
 		Model(&newUsers).
-		Where(func(cb ConditionBuilder) {
+		Where(func(cb orm.ConditionBuilder) {
 			cb.In("id", []string{"user4", "user5"})
 		}).
 		OrderBy("name").
@@ -99,20 +108,20 @@ func (suite *MergeTestSuite) TestCteMethods() {
 	suite.Run("WithNamedCTE", func() {
 		result, err := suite.db.NewMerge().
 			Model(&Post{}).
-			With("high_view_posts", func(sq SelectQuery) {
+			With("high_view_posts", func(sq orm.SelectQuery) {
 				sq.Model(&Post{}).
 					Select("id", "title", "view_count").
-					Where(func(cb ConditionBuilder) {
+					Where(func(cb orm.ConditionBuilder) {
 						cb.GreaterThan("view_count", 50)
 					})
 			}).
 			UsingTable("high_view_posts").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("p.id", "high_view_posts.id")
 			}).
 			WhenMatched().
-			ThenUpdate(func(ub MergeUpdateBuilder) {
-				ub.SetExpr("view_count", func(eb ExprBuilder) any {
+			ThenUpdate(func(ub orm.MergeUpdateBuilder) {
+				ub.SetExpr("view_count", func(eb orm.ExprBuilder) any {
 					return eb.Expr("? + 1", eb.Column("high_view_posts.view_count"))
 				})
 			}).
@@ -143,7 +152,7 @@ func (suite *MergeTestSuite) TestCteMethods() {
 		defer func() {
 			_, _ = suite.db.NewDelete().
 				Model(&User{}).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.In("id", []string{"cte1", "cte2"})
 				}).
 				Exec(suite.ctx)
@@ -153,11 +162,11 @@ func (suite *MergeTestSuite) TestCteMethods() {
 			Model(&User{}).
 			WithValues("cte_source", &sourceData).
 			UsingTable("cte_source").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "cte_source.id")
 			}).
 			WhenNotMatched().
-			ThenInsert(func(ib MergeInsertBuilder) {
+			ThenInsert(func(ib orm.MergeInsertBuilder) {
 				ib.Values("id", "name", "email", "age")
 			}).
 			Exec(suite.ctx)
@@ -192,7 +201,7 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 		defer func() {
 			_, _ = suite.db.NewDelete().
 				Model(&User{}).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("id", "mt1")
 				}).
 				Exec(suite.ctx)
@@ -203,11 +212,11 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 			ModelTable("test_user").
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
 			WhenNotMatched().
-			ThenInsert(func(ib MergeInsertBuilder) {
+			ThenInsert(func(ib orm.MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
 			Exec(suite.ctx)
@@ -233,7 +242,7 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 		defer func() {
 			_, _ = suite.db.NewDelete().
 				Model(&User{}).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("id", "mt2")
 				}).
 				Exec(suite.ctx)
@@ -244,11 +253,11 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 			ModelTable("test_user", "u").
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
 			WhenNotMatched().
-			ThenInsert(func(ib MergeInsertBuilder) {
+			ThenInsert(func(ib orm.MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
 			Exec(suite.ctx)
@@ -274,7 +283,7 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 		defer func() {
 			_, _ = suite.db.NewDelete().
 				Model(&User{}).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("id", "t1")
 				}).
 				Exec(suite.ctx)
@@ -285,11 +294,11 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 			Table("test_user").
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
 			WhenNotMatched().
-			ThenInsert(func(ib MergeInsertBuilder) {
+			ThenInsert(func(ib orm.MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
 			Exec(suite.ctx)
@@ -315,7 +324,7 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 		defer func() {
 			_, _ = suite.db.NewDelete().
 				Model(&User{}).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("id", "t2")
 				}).
 				Exec(suite.ctx)
@@ -326,11 +335,11 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 			Table("test_user", "u").
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
 			WhenNotMatched().
-			ThenInsert(func(ib MergeInsertBuilder) {
+			ThenInsert(func(ib orm.MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
 			Exec(suite.ctx)
@@ -356,7 +365,7 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 		defer func() {
 			_, _ = suite.db.NewDelete().
 				Model(&User{}).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("id", "te1")
 				}).
 				Exec(suite.ctx)
@@ -364,16 +373,16 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 
 		result, err := suite.db.NewMerge().
 			Model(&User{}).
-			TableExpr(func(eb ExprBuilder) any {
+			TableExpr(func(eb orm.ExprBuilder) any {
 				return eb.Expr("test_user")
 			}, "u").
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
 			WhenNotMatched().
-			ThenInsert(func(ib MergeInsertBuilder) {
+			ThenInsert(func(ib orm.MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
 			Exec(suite.ctx)
@@ -399,7 +408,7 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 		defer func() {
 			_, _ = suite.db.NewDelete().
 				Model(&User{}).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("id", "tsq1")
 				}).
 				Exec(suite.ctx)
@@ -407,20 +416,20 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 
 		result, err := suite.db.NewMerge().
 			Model(&User{}).
-			TableSubQuery(func(sq SelectQuery) {
+			TableSubQuery(func(sq orm.SelectQuery) {
 				sq.Model(&User{}).
 					Select("id", "name", "email").
-					Where(func(cb ConditionBuilder) {
+					Where(func(cb orm.ConditionBuilder) {
 						cb.IsNotNull("email")
 					})
 			}, "active_users").
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
 			WhenNotMatched().
-			ThenInsert(func(ib MergeInsertBuilder) {
+			ThenInsert(func(ib orm.MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
 			Exec(suite.ctx)
@@ -455,7 +464,7 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 		defer func() {
 			_, _ = suite.db.NewDelete().
 				Model(&User{}).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("id", "ua1")
 				}).
 				Exec(suite.ctx)
@@ -465,11 +474,11 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 			Model(&User{}).
 			WithValues("_source_data", &sourceData).
 			UsingTable("_source_data", "src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "src.id")
 			}).
 			WhenNotMatched().
-			ThenInsert(func(ib MergeInsertBuilder) {
+			ThenInsert(func(ib orm.MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
 			Exec(suite.ctx)
@@ -497,12 +506,12 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 			Model(&Post{}).
 			WithValues("_post_updates", &sourceData).
 			UsingTable("_post_updates").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("p.id", "_post_updates.id")
 			}).
 			WhenMatched().
-			ThenUpdate(func(ub MergeUpdateBuilder) {
-				ub.SetExpr("view_count", func(eb ExprBuilder) any {
+			ThenUpdate(func(ub orm.MergeUpdateBuilder) {
+				ub.SetExpr("view_count", func(eb orm.ExprBuilder) any {
 					return eb.Add(eb.Column("_post_updates.view_count"), 1)
 				})
 			}).
@@ -531,12 +540,12 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 			Model(&Post{}).
 			WithValues("_post_updates", &sourceData).
 			UsingTable("_post_updates", "src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("p.id", "src.id")
 			}).
 			WhenMatched().
-			ThenUpdate(func(ub MergeUpdateBuilder) {
-				ub.SetExpr("view_count", func(eb ExprBuilder) any {
+			ThenUpdate(func(ub orm.MergeUpdateBuilder) {
+				ub.SetExpr("view_count", func(eb orm.ExprBuilder) any {
 					return eb.Expr("? + 1", eb.Column("src.view_count"))
 				})
 			}).
@@ -563,7 +572,7 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 		defer func() {
 			_, _ = suite.db.NewDelete().
 				Model(&User{}).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("id", "ue1")
 				}).
 				Exec(suite.ctx)
@@ -573,11 +582,11 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 			Model(&User{}).
 			WithValues("_temp", &sourceData).
 			UsingTable("_temp").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_temp.id")
 			}).
 			WhenNotMatched().
-			ThenInsert(func(ib MergeInsertBuilder) {
+			ThenInsert(func(ib orm.MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
 			Exec(suite.ctx)
@@ -603,7 +612,7 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 		defer func() {
 			_, _ = suite.db.NewDelete().
 				Model(&User{}).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("id", "uea1")
 				}).
 				Exec(suite.ctx)
@@ -613,11 +622,11 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 			Model(&User{}).
 			WithValues("_temp", &sourceData).
 			UsingTable("_temp", "src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "src.id")
 			}).
 			WhenNotMatched().
-			ThenInsert(func(ib MergeInsertBuilder) {
+			ThenInsert(func(ib orm.MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
 			Exec(suite.ctx)
@@ -633,19 +642,19 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 	suite.Run("UsingSubQueryBasic", func() {
 		result, err := suite.db.NewMerge().
 			Model(&Post{}).
-			UsingSubQuery(func(sq SelectQuery) {
+			UsingSubQuery(func(sq orm.SelectQuery) {
 				sq.Model(&Post{}).
 					Select("id", "title", "view_count").
-					Where(func(cb ConditionBuilder) {
+					Where(func(cb orm.ConditionBuilder) {
 						cb.Equals("status", "published")
 					})
 			}, "src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("p.id", "src.id")
 			}).
 			WhenMatched().
-			ThenUpdate(func(ub MergeUpdateBuilder) {
-				ub.SetExpr("view_count", func(eb ExprBuilder) any {
+			ThenUpdate(func(ub orm.MergeUpdateBuilder) {
+				ub.SetExpr("view_count", func(eb orm.ExprBuilder) any {
 					return eb.Add(eb.Column("src.view_count"), 5)
 				})
 			}).
@@ -684,7 +693,7 @@ func (suite *MergeTestSuite) TestReturningMethods() {
 		defer func() {
 			_, _ = suite.db.NewDelete().
 				Model(&User{}).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.In("id", []string{"ret1", "ret2"})
 				}).
 				Exec(suite.ctx)
@@ -701,11 +710,11 @@ func (suite *MergeTestSuite) TestReturningMethods() {
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
 			WhenNotMatched().
-			ThenInsert(func(ib MergeInsertBuilder) {
+			ThenInsert(func(ib orm.MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
 			Returning("id", "name").
@@ -732,7 +741,7 @@ func (suite *MergeTestSuite) TestReturningMethods() {
 		defer func() {
 			_, _ = suite.db.NewDelete().
 				Model(&User{}).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("id", "reta1")
 				}).
 				Exec(suite.ctx)
@@ -744,11 +753,11 @@ func (suite *MergeTestSuite) TestReturningMethods() {
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
 			WhenNotMatched().
-			ThenInsert(func(ib MergeInsertBuilder) {
+			ThenInsert(func(ib orm.MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
 			ReturningAll().
@@ -775,7 +784,7 @@ func (suite *MergeTestSuite) TestReturningMethods() {
 		defer func() {
 			_, _ = suite.db.NewDelete().
 				Model(&User{}).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("id", "retn1")
 				}).
 				Exec(suite.ctx)
@@ -785,11 +794,11 @@ func (suite *MergeTestSuite) TestReturningMethods() {
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
 			WhenNotMatched().
-			ThenInsert(func(ib MergeInsertBuilder) {
+			ThenInsert(func(ib orm.MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
 			ReturningNone().
@@ -825,7 +834,7 @@ func (suite *MergeTestSuite) TestWhenNotMatchedByTarget() {
 		defer func() {
 			_, _ = suite.db.NewDelete().
 				Model(&User{}).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("id", "wnmbt1")
 				}).
 				Exec(suite.ctx)
@@ -835,11 +844,11 @@ func (suite *MergeTestSuite) TestWhenNotMatchedByTarget() {
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
 			WhenNotMatchedByTarget().
-			ThenInsert(func(ib MergeInsertBuilder) {
+			ThenInsert(func(ib orm.MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
 			Exec(suite.ctx)
@@ -868,7 +877,7 @@ func (suite *MergeTestSuite) TestWhenNotMatchedByTarget() {
 		defer func() {
 			_, _ = suite.db.NewDelete().
 				Model(&User{}).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.In("id", []string{"wnmbtc1", "wnmbtc2"})
 				}).
 				Exec(suite.ctx)
@@ -878,13 +887,13 @@ func (suite *MergeTestSuite) TestWhenNotMatchedByTarget() {
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
-			WhenNotMatchedByTarget(func(cb ConditionBuilder) {
+			WhenNotMatchedByTarget(func(cb orm.ConditionBuilder) {
 				cb.IsNotNull("_src.name").NotEquals("_src.name", "")
 			}).
-			ThenInsert(func(ib MergeInsertBuilder) {
+			ThenInsert(func(ib orm.MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
 			Exec(suite.ctx)
@@ -926,7 +935,7 @@ func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
 		defer func() {
 			_, _ = suite.db.NewDelete().
 				Model(&User{}).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.In("id", []string{"wnmbs1", "wnmbs2"})
 				}).
 				Exec(suite.ctx)
@@ -947,18 +956,18 @@ func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
 			WhenMatched().
-			ThenUpdate(func(ub MergeUpdateBuilder) {
+			ThenUpdate(func(ub orm.MergeUpdateBuilder) {
 				ub.SetColumns("name", "email")
 			}).
-			WhenNotMatchedBySource(func(cb ConditionBuilder) {
+			WhenNotMatchedBySource(func(cb orm.ConditionBuilder) {
 				// Only update our test users, not fixture users
 				cb.In("u.id", []string{"wnmbs1", "wnmbs2"})
 			}).
-			ThenUpdate(func(ub MergeUpdateBuilder) {
+			ThenUpdate(func(ub orm.MergeUpdateBuilder) {
 				ub.Set("is_active", false)
 			}).
 			Exec(suite.ctx)
@@ -975,7 +984,7 @@ func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
 
 		err = suite.db.NewSelect().
 			Model(&users).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.In("id", []string{"wnmbs1", "wnmbs2"})
 			}).
 			OrderBy("id").
@@ -1015,7 +1024,7 @@ func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
 		defer func() {
 			_, _ = suite.db.NewDelete().
 				Model(&User{}).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.In("id", []string{"wnmbsc1", "wnmbsc2", "wnmbsc3"})
 				}).
 				Exec(suite.ctx)
@@ -1036,19 +1045,19 @@ func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
 			WhenMatched().
-			ThenUpdate(func(ub MergeUpdateBuilder) {
+			ThenUpdate(func(ub orm.MergeUpdateBuilder) {
 				ub.SetColumns("name", "email")
 			}).
-			WhenNotMatchedBySource(func(cb ConditionBuilder) {
+			WhenNotMatchedBySource(func(cb orm.ConditionBuilder) {
 				// Only update our test users that are active
 				cb.In("u.id", []string{"wnmbsc1", "wnmbsc2", "wnmbsc3"}).
 					Equals("u.is_active", true)
 			}).
-			ThenUpdate(func(ub MergeUpdateBuilder) {
+			ThenUpdate(func(ub orm.MergeUpdateBuilder) {
 				ub.Set("is_active", false)
 			}).
 			Exec(suite.ctx)
@@ -1065,7 +1074,7 @@ func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
 
 		err = suite.db.NewSelect().
 			Model(&users).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.In("id", []string{"wnmbsc1", "wnmbsc2", "wnmbsc3"})
 			}).
 			OrderBy("id").
@@ -1111,7 +1120,7 @@ func (suite *MergeTestSuite) TestThenDoNothing() {
 		defer func() {
 			_, _ = suite.db.NewDelete().
 				Model(&User{}).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("id", "dnm1")
 				}).
 				Exec(suite.ctx)
@@ -1121,13 +1130,13 @@ func (suite *MergeTestSuite) TestThenDoNothing() {
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
 			WhenMatched().
 			ThenDoNothing().
 			WhenNotMatched().
-			ThenInsert(func(ib MergeInsertBuilder) {
+			ThenInsert(func(ib orm.MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
 			Exec(suite.ctx)
@@ -1155,11 +1164,11 @@ func (suite *MergeTestSuite) TestThenDoNothing() {
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
 			WhenMatched().
-			ThenUpdate(func(ub MergeUpdateBuilder) {
+			ThenUpdate(func(ub orm.MergeUpdateBuilder) {
 				ub.SetColumns("name")
 			}).
 			WhenNotMatched().
@@ -1195,11 +1204,11 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
 			WhenMatched().
-			ThenUpdate(func(ub MergeUpdateBuilder) {
+			ThenUpdate(func(ub orm.MergeUpdateBuilder) {
 				ub.Set("name", "Set Single Value")
 			}).
 			Exec(suite.ctx)
@@ -1225,11 +1234,11 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
 			WhenMatched().
-			ThenUpdate(func(ub MergeUpdateBuilder) {
+			ThenUpdate(func(ub orm.MergeUpdateBuilder) {
 				ub.Set("name", "Set Multiple Values").
 					Set("age", 40)
 			}).
@@ -1255,12 +1264,12 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 			Model(&Post{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("p.id", "_src.id")
 			}).
 			WhenMatched().
-			ThenUpdate(func(ub MergeUpdateBuilder) {
-				ub.SetExpr("view_count", func(eb ExprBuilder) any {
+			ThenUpdate(func(ub orm.MergeUpdateBuilder) {
+				ub.SetExpr("view_count", func(eb orm.ExprBuilder) any {
 					return eb.Expr("? + ?", eb.Column("p.view_count"), 10)
 				})
 			}).
@@ -1287,11 +1296,11 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
 			WhenMatched().
-			ThenUpdate(func(ub MergeUpdateBuilder) {
+			ThenUpdate(func(ub orm.MergeUpdateBuilder) {
 				ub.SetColumns("name", "email")
 			}).
 			Exec(suite.ctx)
@@ -1321,11 +1330,11 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
 			WhenMatched().
-			ThenUpdate(func(ub MergeUpdateBuilder) {
+			ThenUpdate(func(ub orm.MergeUpdateBuilder) {
 				ub.SetAll("id", "created_at", "created_by", "updated_at", "updated_by", "deleted_at", "deleted_by", "meta")
 			}).
 			Exec(suite.ctx)
@@ -1358,7 +1367,7 @@ func (suite *MergeTestSuite) TestThenInsert() {
 		defer func() {
 			_, _ = suite.db.NewDelete().
 				Model(&User{}).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("id", "val1")
 				}).
 				Exec(suite.ctx)
@@ -1368,11 +1377,11 @@ func (suite *MergeTestSuite) TestThenInsert() {
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
 			WhenNotMatched().
-			ThenInsert(func(ib MergeInsertBuilder) {
+			ThenInsert(func(ib orm.MergeInsertBuilder) {
 				ib.Value("id", "val1").
 					Value("name", "Value Single User").
 					Value("email", "val1@example.com")
@@ -1398,7 +1407,7 @@ func (suite *MergeTestSuite) TestThenInsert() {
 		defer func() {
 			_, _ = suite.db.NewDelete().
 				Model(&User{}).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("id", "valm1")
 				}).
 				Exec(suite.ctx)
@@ -1408,11 +1417,11 @@ func (suite *MergeTestSuite) TestThenInsert() {
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
 			WhenNotMatched().
-			ThenInsert(func(ib MergeInsertBuilder) {
+			ThenInsert(func(ib orm.MergeInsertBuilder) {
 				ib.Value("id", "valm1").
 					Value("name", "Value Multiple User").
 					Value("email", "valm1@example.com").
@@ -1440,7 +1449,7 @@ func (suite *MergeTestSuite) TestThenInsert() {
 		defer func() {
 			_, _ = suite.db.NewDelete().
 				Model(&User{}).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("id", "vale1")
 				}).
 				Exec(suite.ctx)
@@ -1450,14 +1459,14 @@ func (suite *MergeTestSuite) TestThenInsert() {
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
 			WhenNotMatched().
-			ThenInsert(func(ib MergeInsertBuilder) {
+			ThenInsert(func(ib orm.MergeInsertBuilder) {
 				ib.Value("id", "vale1").
 					Value("email", "vale1@example.com").
-					ValueExpr("name", func(eb ExprBuilder) any {
+					ValueExpr("name", func(eb orm.ExprBuilder) any {
 						return eb.Concat(eb.Column("_src.name"), " (Expression)")
 					})
 			}).
@@ -1484,7 +1493,7 @@ func (suite *MergeTestSuite) TestThenInsert() {
 		defer func() {
 			_, _ = suite.db.NewDelete().
 				Model(&User{}).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("id", "vals1")
 				}).
 				Exec(suite.ctx)
@@ -1494,11 +1503,11 @@ func (suite *MergeTestSuite) TestThenInsert() {
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
 			WhenNotMatched().
-			ThenInsert(func(ib MergeInsertBuilder) {
+			ThenInsert(func(ib orm.MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
 			Exec(suite.ctx)
@@ -1528,7 +1537,7 @@ func (suite *MergeTestSuite) TestThenInsert() {
 		defer func() {
 			_, _ = suite.db.NewDelete().
 				Model(&User{}).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("id", "vala1")
 				}).
 				Exec(suite.ctx)
@@ -1538,11 +1547,11 @@ func (suite *MergeTestSuite) TestThenInsert() {
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
-			On(func(cb ConditionBuilder) {
+			On(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "_src.id")
 			}).
 			WhenNotMatched().
-			ThenInsert(func(ib MergeInsertBuilder) {
+			ThenInsert(func(ib orm.MergeInsertBuilder) {
 				ib.ValuesAll("created_at", "created_by", "updated_at", "updated_by", "deleted_at", "deleted_by", "meta")
 			}).
 			Exec(suite.ctx)
@@ -1588,7 +1597,7 @@ func (suite *MergeTestSuite) TestThenDelete() {
 	defer func() {
 		_, _ = suite.db.NewDelete().
 			Model(&Post{}).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.In("id", []string{"merge_test_1", "merge_test_2"})
 			}).
 			Exec(suite.ctx)
@@ -1612,14 +1621,14 @@ func (suite *MergeTestSuite) TestThenDelete() {
 		Model(&Post{}).
 		WithValues("_source_data", &sourceData).
 		UsingTable("_source_data").
-		On(func(cb ConditionBuilder) {
+		On(func(cb orm.ConditionBuilder) {
 			cb.EqualsColumn("p.id", "_source_data.id")
 		}).
 		WhenMatched().
-		ThenUpdate(func(ub MergeUpdateBuilder) {
+		ThenUpdate(func(ub orm.MergeUpdateBuilder) {
 			ub.SetColumns("title", "status", "view_count")
 		}).
-		WhenNotMatchedBySource(func(cb ConditionBuilder) {
+		WhenNotMatchedBySource(func(cb orm.ConditionBuilder) {
 			cb.LessThan("p.view_count", 30)
 		}).
 		ThenDelete().
@@ -1637,7 +1646,7 @@ func (suite *MergeTestSuite) TestThenDelete() {
 
 	err = suite.db.NewSelect().
 		Model(&remainingPosts).
-		Where(func(cb ConditionBuilder) {
+		Where(func(cb orm.ConditionBuilder) {
 			cb.StartsWith("id", "merge_test_")
 		}).
 		OrderBy("id").
@@ -1677,7 +1686,7 @@ func (suite *MergeTestSuite) TestMergeWithConditions() {
 	defer func() {
 		_, _ = suite.db.NewDelete().
 			Model(&Post{}).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("id", "new1")
 			}).
 			Exec(suite.ctx)
@@ -1689,19 +1698,19 @@ func (suite *MergeTestSuite) TestMergeWithConditions() {
 		Model(&Post{}).
 		WithValues("_source_data", &sourceData).
 		UsingTable("_source_data").
-		On(func(cb ConditionBuilder) {
+		On(func(cb orm.ConditionBuilder) {
 			cb.EqualsColumn("p.id", "_source_data.id")
 		}).
-		WhenMatched(func(cb ConditionBuilder) {
+		WhenMatched(func(cb orm.ConditionBuilder) {
 			cb.GreaterThanColumn("_source_data.view_count", "p.view_count")
 		}).
-		ThenUpdate(func(ub MergeUpdateBuilder) {
+		ThenUpdate(func(ub orm.MergeUpdateBuilder) {
 			ub.SetColumns("title", "status", "view_count")
 		}).
-		WhenNotMatched(func(cb ConditionBuilder) {
+		WhenNotMatched(func(cb orm.ConditionBuilder) {
 			cb.IsNotNull("_source_data.status").NotEquals("_source_data.status", "")
 		}).
-		ThenInsert(func(ib MergeInsertBuilder) {
+		ThenInsert(func(ib orm.MergeInsertBuilder) {
 			ib.Values("id", "title", "status", "view_count")
 		}).
 		Exec(suite.ctx)
@@ -1718,7 +1727,7 @@ func (suite *MergeTestSuite) TestMergeWithConditions() {
 
 	err = suite.db.NewSelect().
 		Model(&updatedPosts).
-		Where(func(cb ConditionBuilder) {
+		Where(func(cb orm.ConditionBuilder) {
 			cb.In("id", []string{"post1", "post2", "new1"})
 		}).
 		OrderBy("id").

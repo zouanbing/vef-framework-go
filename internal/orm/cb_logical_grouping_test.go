@@ -1,21 +1,35 @@
-package orm
+package orm_test
 
-// LogicalGroupingTestSuite tests logical grouping condition methods.
+import (
+	"github.com/stretchr/testify/suite"
+
+	"github.com/ilxqx/vef-framework-go/internal/orm"
+)
+
+func init() {
+	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+		return &CBLogicalGroupingTestSuite{
+			ConditionBuilderTestSuite: &ConditionBuilderTestSuite{OrmTestSuite: base},
+		}
+	})
+}
+
+// CBLogicalGroupingTestSuite tests logical grouping condition methods.
 // Covers: Group, OrGroup (4 methods total including nested scenarios).
-type LogicalGroupingTestSuite struct {
+type CBLogicalGroupingTestSuite struct {
 	*ConditionBuilderTestSuite
 }
 
 // TestGroup tests the Group condition for AND grouping.
-func (suite *LogicalGroupingTestSuite) TestGroup() {
+func (suite *CBLogicalGroupingTestSuite) TestGroup() {
 	suite.T().Logf("Testing Group condition for %s", suite.dbType)
 
 	suite.Run("BasicGroup", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
-					cb.Group(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
+					cb.Group(func(cb orm.ConditionBuilder) {
 						cb.Equals("is_active", true).
 							GreaterThan("age", 25)
 					})
@@ -37,10 +51,10 @@ func (suite *LogicalGroupingTestSuite) TestGroup() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
-					cb.Group(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
+					cb.Group(func(cb orm.ConditionBuilder) {
 						cb.Equals("is_active", true)
-					}).Group(func(cb ConditionBuilder) {
+					}).Group(func(cb orm.ConditionBuilder) {
 						cb.GreaterThan("age", 25)
 					})
 				}).
@@ -56,10 +70,10 @@ func (suite *LogicalGroupingTestSuite) TestGroup() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
-					cb.Group(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
+					cb.Group(func(cb orm.ConditionBuilder) {
 						cb.Equals("is_active", true).
-							Group(func(cb ConditionBuilder) {
+							Group(func(cb orm.ConditionBuilder) {
 								cb.GreaterThan("age", 20).
 									LessThan("age", 40)
 							})
@@ -80,15 +94,15 @@ func (suite *LogicalGroupingTestSuite) TestGroup() {
 }
 
 // TestOrGroup tests the OrGroup condition for OR grouping.
-func (suite *LogicalGroupingTestSuite) TestOrGroup() {
+func (suite *CBLogicalGroupingTestSuite) TestOrGroup() {
 	suite.T().Logf("Testing OrGroup condition for %s", suite.dbType)
 
 	suite.Run("BasicOrGroup", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
-					cb.OrGroup(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
+					cb.OrGroup(func(cb orm.ConditionBuilder) {
 						cb.Equals("age", 25).
 							OrEquals("age", 35)
 					})
@@ -107,10 +121,10 @@ func (suite *LogicalGroupingTestSuite) TestOrGroup() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
-					cb.Group(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
+					cb.Group(func(cb orm.ConditionBuilder) {
 						cb.Equals("is_active", true)
-					}).OrGroup(func(cb ConditionBuilder) {
+					}).OrGroup(func(cb orm.ConditionBuilder) {
 						cb.Equals("age", 25).
 							Equals("age", 35)
 					})
@@ -128,11 +142,11 @@ func (suite *LogicalGroupingTestSuite) TestOrGroup() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
-					cb.Group(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
+					cb.Group(func(cb orm.ConditionBuilder) {
 						cb.Equals("is_active", true).
 							GreaterThan("age", 25)
-					}).OrGroup(func(cb ConditionBuilder) {
+					}).OrGroup(func(cb orm.ConditionBuilder) {
 						cb.Contains("name", "Alice").
 							OrContains("name", "Bob")
 					})
@@ -150,12 +164,12 @@ func (suite *LogicalGroupingTestSuite) TestOrGroup() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
-					cb.Group(func(cb ConditionBuilder) {
-						cb.Group(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
+					cb.Group(func(cb orm.ConditionBuilder) {
+						cb.Group(func(cb orm.ConditionBuilder) {
 							cb.GreaterThan("age", 20).
 								LessThan("age", 40)
-						}).OrGroup(func(cb ConditionBuilder) {
+						}).OrGroup(func(cb orm.ConditionBuilder) {
 							cb.GreaterThan("age", 50)
 						})
 					}).Equals("is_active", true)
@@ -170,7 +184,7 @@ func (suite *LogicalGroupingTestSuite) TestOrGroup() {
 }
 
 // TestComplexLogicalCombinations tests complex combinations of Group and OrGroup.
-func (suite *LogicalGroupingTestSuite) TestComplexLogicalCombinations() {
+func (suite *CBLogicalGroupingTestSuite) TestComplexLogicalCombinations() {
 	suite.T().Logf("Testing complex logical combinations for %s", suite.dbType)
 
 	suite.Run("ThreeLevelNesting", func() {
@@ -178,13 +192,13 @@ func (suite *LogicalGroupingTestSuite) TestComplexLogicalCombinations() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
-					cb.Group(func(cb ConditionBuilder) {
-						cb.Group(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
+					cb.Group(func(cb orm.ConditionBuilder) {
+						cb.Group(func(cb orm.ConditionBuilder) {
 							cb.Equals("age", 25).
 								OrEquals("age", 30)
 						}).Equals("is_active", true)
-					}).OrGroup(func(cb ConditionBuilder) {
+					}).OrGroup(func(cb orm.ConditionBuilder) {
 						cb.Equals("age", 35).
 							Contains("name", "Charlie")
 					})
@@ -202,11 +216,11 @@ func (suite *LogicalGroupingTestSuite) TestComplexLogicalCombinations() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
-					cb.OrGroup(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
+					cb.OrGroup(func(cb orm.ConditionBuilder) {
 						cb.Equals("age", 25).
 							OrEquals("age", 30)
-					}).OrGroup(func(cb ConditionBuilder) {
+					}).OrGroup(func(cb orm.ConditionBuilder) {
 						cb.Equals("is_active", true).
 							OrContains("name", "Alice")
 					})

@@ -1,13 +1,21 @@
-package orm
+package orm_test
 
 import (
 	"database/sql"
 	"time"
 
+	"github.com/stretchr/testify/suite"
 	"github.com/uptrace/bun"
 
 	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/ilxqx/vef-framework-go/internal/orm"
 )
+
+func init() {
+	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+		return &UpdateTestSuite{OrmTestSuite: base}
+	})
+}
 
 // UpdateTestSuite tests UPDATE operations including CTE operations, table sources,
 // selection methods, filter operations, column updates, flags, ordering, RETURNING clause,
@@ -23,17 +31,17 @@ func (suite *UpdateTestSuite) TestCTE() {
 	suite.Run("WithBasicCTE", func() {
 		// Create CTE of active users, then update posts from those users
 		result, err := suite.db.NewUpdate().
-			With("active_users", func(query SelectQuery) {
+			With("active_users", func(query orm.SelectQuery) {
 				query.Model((*User)(nil)).
 					Select("id").
-					Where(func(cb ConditionBuilder) {
+					Where(func(cb orm.ConditionBuilder) {
 						cb.IsTrue("is_active")
 					})
 			}).
 			Model((*Post)(nil)).
 			Set("updated_by", "cte_test").
-			Where(func(cb ConditionBuilder) {
-				cb.InSubQuery("user_id", func(subquery SelectQuery) {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.InSubQuery("user_id", func(subquery orm.SelectQuery) {
 					subquery.Table("active_users").Select("id")
 				})
 			}).
@@ -54,7 +62,7 @@ func (suite *UpdateTestSuite) TestCTE() {
 
 		err := suite.db.NewSelect().
 			Model(&postsToUpdate).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.In("status", []string{"published", "draft"})
 			}).
 			OrderBy("id").
@@ -82,10 +90,10 @@ func (suite *UpdateTestSuite) TestCTE() {
 			WithValues("status_map", &mappings).
 			Model((*Post)(nil)).
 			Table("status_map", "sm").
-			SetExpr("status", func(eb ExprBuilder) any {
+			SetExpr("status", func(eb orm.ExprBuilder) any {
 				return eb.Column("sm.new_status")
 			}).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("status", "sm.old_status").
 					In("id", postIDs) // Only update the specific posts we selected
 			}).
@@ -106,7 +114,7 @@ func (suite *UpdateTestSuite) TestTableSource() {
 		result, err := suite.db.NewUpdate().
 			Model((*User)(nil)).
 			Set("updated_by", "model_test").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "alice@example.com")
 			}).
 			Exec(suite.ctx)
@@ -124,7 +132,7 @@ func (suite *UpdateTestSuite) TestTableSource() {
 			Model((*User)(nil)).
 			ModelTable("test_user", "u").
 			Set("updated_by", "model_table_test").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("u.email", "alice@example.com")
 			}).
 			Exec(suite.ctx)
@@ -148,7 +156,7 @@ func (suite *UpdateTestSuite) TestTableSource() {
 		result, err := suite.db.NewUpdate().
 			Table("test_post", "p").
 			Set("status", "published").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("p.title", "Table Direct Post")
 			}).
 			Exec(suite.ctx)
@@ -173,7 +181,7 @@ func (suite *UpdateTestSuite) TestTableSource() {
 		result, err := suite.db.NewUpdate().
 			TableFrom((*Post)(nil), "p").
 			Set("status", "archived").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("p.title", "TableFrom Post")
 			}).
 			Exec(suite.ctx)
@@ -212,14 +220,14 @@ func (suite *UpdateTestSuite) TestTableSource() {
 
 		result, err = suite.db.NewUpdate().
 			Model((*Post)(nil)).
-			TableExpr(func(eb ExprBuilder) any {
-				return eb.SubQuery(func(sq SelectQuery) {
+			TableExpr(func(eb orm.ExprBuilder) any {
+				return eb.SubQuery(func(sq orm.SelectQuery) {
 					sq.Model((*User)(nil))
 				})
 			}, "u").
 			Set("status", "archived").
 			Set("updated_by", "multi_table_update").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("user_id", "u.id").
 					IsFalse("u.is_active")
 			}).
@@ -245,7 +253,7 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 
 		err := suite.db.NewSelect().
 			Model(&existingUser).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "alice@example.com")
 			}).
 			Scan(suite.ctx)
@@ -257,7 +265,7 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 
 		// Create a NEW user instance (not from database query)
 		user := User{
-			Model: Model{
+			Model: orm.Model{
 				ID: userID,
 			},
 			Name: "Alice Updated",
@@ -280,7 +288,7 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 
 		err = suite.db.NewSelect().
 			Model(&updatedUser).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.PKEquals(userID)
 			}).
 			Scan(suite.ctx)
@@ -300,7 +308,7 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 
 		err := suite.db.NewSelect().
 			Model(&user).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "bob@example.com")
 			}).
 			Scan(suite.ctx)
@@ -328,7 +336,7 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 
 		err = suite.db.NewSelect().
 			Model(&updatedUser).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.PKEquals(user.ID)
 			}).
 			Scan(suite.ctx)
@@ -348,7 +356,7 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 
 		err := suite.db.NewSelect().
 			Model(&user).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "charlie@example.com")
 			}).
 			Scan(suite.ctx)
@@ -379,7 +387,7 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 
 		err = suite.db.NewSelect().
 			Model(&updatedUser).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.PKEquals(user.ID)
 			}).
 			Scan(suite.ctx)
@@ -399,7 +407,7 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 
 		err := suite.db.NewSelect().
 			Model(&user).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "alice@example.com")
 			}).
 			Scan(suite.ctx)
@@ -433,7 +441,7 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 
 		err = suite.db.NewSelect().
 			Model(&updatedUser).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.PKEquals(user.ID)
 			}).
 			Scan(suite.ctx)
@@ -456,7 +464,7 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 		result, err := suite.db.NewUpdate().
 			Model((*User)(nil)).
 			Set("updated_by", "where_test").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.IsTrue("is_active")
 			}).
 			Exec(suite.ctx)
@@ -482,7 +490,7 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 		result, err := suite.db.NewUpdate().
 			Model((*User)(nil)).
 			Set("updated_by", "where_pk_test").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
@@ -498,7 +506,7 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 	suite.Run("WhereDeletedAndIncludeDeleted", func() {
 		type SoftDeleteArticle struct {
 			bun.BaseModel `bun:"table:test_update_soft_delete,alias:tusd"`
-			Model
+			orm.Model
 
 			Title     string    `json:"title" bun:"title,notnull"`
 			Status    string    `json:"status" bun:"status,notnull"`
@@ -527,7 +535,7 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 
 		_, err = suite.db.NewDelete().
 			Model((*SoftDeleteArticle)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("id", records[0].ID)
 			}).
 			Exec(suite.ctx)
@@ -536,7 +544,7 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 		result, err := suite.db.NewUpdate().
 			Model((*SoftDeleteArticle)(nil)).
 			Set("status", "archived").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("id", records[0].ID)
 			}).
 			WhereDeleted().
@@ -550,7 +558,7 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 			Model((*SoftDeleteArticle)(nil)).
 			Set("status", "reviewed").
 			IncludeDeleted().
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.In("id", []string{records[0].ID, records[1].ID})
 			}).
 			Exec(suite.ctx)
@@ -564,7 +572,7 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 		err = suite.db.NewSelect().
 			Model(&fetched).
 			IncludeDeleted().
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.In("id", []string{records[0].ID, records[1].ID})
 			}).
 			OrderBy("title").
@@ -592,7 +600,7 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 
 	err := suite.db.NewSelect().
 		Model(&post).
-		Where(func(cb ConditionBuilder) {
+		Where(func(cb orm.ConditionBuilder) {
 			cb.Contains("title", "Introduction")
 		}).
 		Scan(suite.ctx)
@@ -605,7 +613,7 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 
 		err := suite.db.NewSelect().
 			Model(&post).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("title", "Database Design Basics")
 			}).
 			Scan(suite.ctx)
@@ -634,7 +642,7 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 
 		err = suite.db.NewSelect().
 			Model(&updatedPost).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.PKEquals(post.ID)
 			}).
 			Scan(suite.ctx)
@@ -653,7 +661,7 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 
 		err := suite.db.NewSelect().
 			Model(&post).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("title", "Machine Learning Basics")
 			}).
 			Scan(suite.ctx)
@@ -668,7 +676,7 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 		// Use ColumnExpr to override model's view_count with an expression
 		result, err := suite.db.NewUpdate().
 			Model(&post).
-			ColumnExpr("view_count", func(eb ExprBuilder) any {
+			ColumnExpr("view_count", func(eb orm.ExprBuilder) any {
 				// Increment view_count by 100
 				return eb.Add(eb.Column("view_count"), 100)
 			}).
@@ -685,7 +693,7 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 
 		err = suite.db.NewSelect().
 			Model(&updatedPost).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.PKEquals(post.ID)
 			}).
 			Scan(suite.ctx)
@@ -701,7 +709,7 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 		result, err := suite.db.NewUpdate().
 			Model((*Post)(nil)).
 			Set("updated_by", "set_test").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.PKEquals(post.ID)
 			}).
 			Exec(suite.ctx)
@@ -717,10 +725,10 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 	suite.Run("SetExprMethod", func() {
 		result, err := suite.db.NewUpdate().
 			Model((*Post)(nil)).
-			SetExpr("title", func(eb ExprBuilder) any {
+			SetExpr("title", func(eb orm.ExprBuilder) any {
 				return eb.Concat(eb.Column("title"), " [Updated]")
 			}).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.PKEquals(post.ID)
 			}).
 			Exec(suite.ctx)
@@ -743,7 +751,7 @@ func (suite *UpdateTestSuite) TestUpdateFlags() {
 
 		err := suite.db.NewSelect().
 			Model(&user).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "alice@example.com")
 			}).
 			Scan(suite.ctx)
@@ -751,7 +759,7 @@ func (suite *UpdateTestSuite) TestUpdateFlags() {
 
 		// Update with a full User model but only set Name, leave Age as zero
 		partialUpdate := &User{
-			Model: Model{ID: user.ID},
+			Model: orm.Model{ID: user.ID},
 			Name:  "Alice Updated with OmitZero",
 			// Age will be zero, OmitZero should skip it
 		}
@@ -815,7 +823,7 @@ func (suite *UpdateTestSuite) TestUpdateFlags() {
 
 			err = suite.db.NewSelect().
 				Model(&updatedPost).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.PKEquals(post.ID)
 				}).
 				Scan(suite.ctx)
@@ -844,7 +852,7 @@ func (suite *UpdateTestSuite) TestOrderingAndLimits() {
 		result, err := suite.db.NewUpdate().
 			Model((*Post)(nil)).
 			Set("updated_by", "order_test").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "published")
 			}).
 			OrderBy("title").
@@ -862,7 +870,7 @@ func (suite *UpdateTestSuite) TestOrderingAndLimits() {
 		_, err := suite.db.NewUpdate().
 			Model((*Post)(nil)).
 			Set("updated_by", "order_desc_test").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "draft")
 			}).
 			OrderByDesc("view_count").
@@ -877,10 +885,10 @@ func (suite *UpdateTestSuite) TestOrderingAndLimits() {
 		_, err := suite.db.NewUpdate().
 			Model((*Post)(nil)).
 			Set("updated_by", "order_expr_test").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.NotEquals("status", "deleted")
 			}).
-			OrderByExpr(func(eb ExprBuilder) any {
+			OrderByExpr(func(eb orm.ExprBuilder) any {
 				return eb.Column("view_count")
 			}).
 			Limit(1).
@@ -894,7 +902,7 @@ func (suite *UpdateTestSuite) TestOrderingAndLimits() {
 		result, err := suite.db.NewUpdate().
 			Model((*User)(nil)).
 			Set("updated_by", "limit_test").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.IsTrue("is_active")
 			}).
 			Limit(1).
@@ -928,7 +936,7 @@ func (suite *UpdateTestSuite) TestReturningClause() {
 		err := suite.db.NewUpdate().
 			Model((*User)(nil)).
 			Set("age", 28).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "bob@example.com")
 			}).
 			Returning("id", "name", "age").
@@ -954,7 +962,7 @@ func (suite *UpdateTestSuite) TestReturningClause() {
 		err := suite.db.NewUpdate().
 			Model((*User)(nil)).
 			Set("age", 29).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "charlie@example.com")
 			}).
 			ReturningAll().
@@ -971,7 +979,7 @@ func (suite *UpdateTestSuite) TestReturningClause() {
 		result, err := suite.db.NewUpdate().
 			Model((*User)(nil)).
 			Set("age", 30).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "alice@example.com")
 			}).
 			ReturningNone().
@@ -991,13 +999,13 @@ func (suite *UpdateTestSuite) TestApplyMethods() {
 	suite.T().Logf("Testing Apply methods for %s", suite.dbType)
 
 	suite.Run("ApplyBasic", func() {
-		applyActive := func(query UpdateQuery) {
-			query.Where(func(cb ConditionBuilder) {
+		applyActive := func(query orm.UpdateQuery) {
+			query.Where(func(cb orm.ConditionBuilder) {
 				cb.IsTrue("is_active")
 			})
 		}
 
-		applyUpdatedBy := func(query UpdateQuery) {
+		applyUpdatedBy := func(query orm.UpdateQuery) {
 			query.Set("updated_by", "apply_test")
 		}
 
@@ -1016,8 +1024,8 @@ func (suite *UpdateTestSuite) TestApplyMethods() {
 	})
 
 	suite.Run("ApplyIfTrue", func() {
-		addFilter := func(query UpdateQuery) {
-			query.Where(func(cb ConditionBuilder) {
+		addFilter := func(query orm.UpdateQuery) {
+			query.Where(func(cb orm.ConditionBuilder) {
 				cb.GreaterThan("age", 25)
 			})
 		}
@@ -1025,7 +1033,7 @@ func (suite *UpdateTestSuite) TestApplyMethods() {
 		result, err := suite.db.NewUpdate().
 			Model((*User)(nil)).
 			Set("updated_by", "apply_if_true").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.IsTrue("is_active")
 			}).
 			ApplyIf(true, addFilter).
@@ -1040,8 +1048,8 @@ func (suite *UpdateTestSuite) TestApplyMethods() {
 	})
 
 	suite.Run("ApplyIfFalse", func() {
-		addFilter := func(query UpdateQuery) {
-			query.Where(func(cb ConditionBuilder) {
+		addFilter := func(query orm.UpdateQuery) {
+			query.Where(func(cb orm.ConditionBuilder) {
 				cb.LessThan("age", 18)
 			})
 		}
@@ -1049,7 +1057,7 @@ func (suite *UpdateTestSuite) TestApplyMethods() {
 		result, err := suite.db.NewUpdate().
 			Model((*User)(nil)).
 			Set("updated_by", "apply_if_false").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.IsTrue("is_active")
 			}).
 			ApplyIf(false, addFilter).
@@ -1072,7 +1080,7 @@ func (suite *UpdateTestSuite) TestExecution() {
 		result, err := suite.db.NewUpdate().
 			Model((*User)(nil)).
 			Set("age", 40).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "alice@example.com")
 			}).
 			Exec(suite.ctx)
@@ -1101,7 +1109,7 @@ func (suite *UpdateTestSuite) TestExecution() {
 		err := suite.db.NewUpdate().
 			Model((*User)(nil)).
 			Set("age", 41).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "bob@example.com")
 			}).
 			Returning("id", "name").
@@ -1118,7 +1126,7 @@ func (suite *UpdateTestSuite) TestExecution() {
 		result, err := suite.db.NewUpdate().
 			Model((*User)(nil)).
 			Set("age", 999).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "nonexistent@example.com")
 			}).
 			Exec(suite.ctx)
@@ -1136,7 +1144,7 @@ func (suite *UpdateTestSuite) TestExecution() {
 		_, err := suite.db.NewUpdate().
 			Model((*User)(nil)).
 			Set("nonexistent_field", "value").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "alice@example.com")
 			}).
 			Exec(suite.ctx)

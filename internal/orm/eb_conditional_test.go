@@ -1,14 +1,26 @@
-package orm
+package orm_test
 
-// ConditionalFunctionsTestSuite tests conditional function methods of ExprBuilder
+import (
+	"github.com/stretchr/testify/suite"
+
+	"github.com/ilxqx/vef-framework-go/internal/orm"
+)
+
+func init() {
+	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+		return &EBConditionalFunctionsTestSuite{OrmTestSuite: base}
+	})
+}
+
+// EBConditionalFunctionsTestSuite tests conditional function methods of orm.ExprBuilder
 // including Coalesce (returns first non-null value), NullIf (returns NULL when equal),
 // and IfNull (returns default when NULL).
-type ConditionalFunctionsTestSuite struct {
+type EBConditionalFunctionsTestSuite struct {
 	*OrmTestSuite
 }
 
 // TestCoalesce tests the Coalesce function.
-func (suite *ConditionalFunctionsTestSuite) TestCoalesce() {
+func (suite *EBConditionalFunctionsTestSuite) TestCoalesce() {
 	suite.T().Logf("Testing Coalesce function for %s", suite.dbType)
 
 	suite.Run("CoalesceWithDefaults", func() {
@@ -26,13 +38,13 @@ func (suite *ConditionalFunctionsTestSuite) TestCoalesce() {
 			Model((*Post)(nil)).
 			Select("title").
 			SelectAs("description", "description").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Coalesce(eb.Column("description"), "'No description available'")
 			}, "safe_desc").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Coalesce(eb.Column("description"), eb.Column("title"), "'Untitled'")
 			}, "multi_coalesce").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Coalesce(eb.Expr("NULL"), eb.Column("view_count"), 0)
 			}, "coalesce_number").
 			OrderBy("title").
@@ -60,7 +72,7 @@ func (suite *ConditionalFunctionsTestSuite) TestCoalesce() {
 }
 
 // TestNullIf tests the NullIf function.
-func (suite *ConditionalFunctionsTestSuite) TestNullIf() {
+func (suite *EBConditionalFunctionsTestSuite) TestNullIf() {
 	suite.T().Logf("Testing NullIf function for %s", suite.dbType)
 
 	suite.Run("NullIfEqualityCheck", func() {
@@ -76,10 +88,10 @@ func (suite *ConditionalFunctionsTestSuite) TestNullIf() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.NullIf(eb.Column("status"), "'draft'")
 			}, "check_draft").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.NullIf(eb.Column("view_count"), 0)
 			}, "check_views").
 			OrderBy("title").
@@ -104,7 +116,7 @@ func (suite *ConditionalFunctionsTestSuite) TestNullIf() {
 }
 
 // TestIfNull tests the IfNull function.
-func (suite *ConditionalFunctionsTestSuite) TestIfNull() {
+func (suite *EBConditionalFunctionsTestSuite) TestIfNull() {
 	suite.T().Logf("Testing IfNull function for %s", suite.dbType)
 
 	suite.Run("IfNullWithDefaults", func() {
@@ -119,10 +131,10 @@ func (suite *ConditionalFunctionsTestSuite) TestIfNull() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.IfNull(eb.Column("description"), "'[No description]'")
 			}, "description").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.IfNull(eb.Expr("NULL"), eb.Column("view_count"))
 			}, "view_count").
 			OrderBy("title").
@@ -143,7 +155,7 @@ func (suite *ConditionalFunctionsTestSuite) TestIfNull() {
 }
 
 // TestCombinedConditionalFunctions tests multiple conditional functions working together.
-func (suite *ConditionalFunctionsTestSuite) TestCombinedConditionalFunctions() {
+func (suite *EBConditionalFunctionsTestSuite) TestCombinedConditionalFunctions() {
 	suite.T().Logf("Testing combined conditional functions for %s", suite.dbType)
 
 	suite.Run("NestedConditionalFunctions", func() {
@@ -161,23 +173,23 @@ func (suite *ConditionalFunctionsTestSuite) TestCombinedConditionalFunctions() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.IfNull(eb.Column("status"), "'unknown'")
 			}, "safe_status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Coalesce(eb.NullIf(eb.Column("status"), "'draft'"), "'Working Draft'")
 			}, "display_status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Coalesce(eb.Column("description"), eb.Column("title"))
 			}, "desc_or_title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Coalesce(
 					eb.NullIf(
-						eb.Case(func(cb CaseBuilder) {
-							cb.When(func(cond ConditionBuilder) {
+						eb.Case(func(cb orm.CaseBuilder) {
+							cb.When(func(cond orm.ConditionBuilder) {
 								cond.GreaterThan("view_count", 100)
 							}).Then("'High'").
-								When(func(cond ConditionBuilder) {
+								When(func(cond orm.ConditionBuilder) {
 									cond.GreaterThan("view_count", 50)
 								}).Then("'Medium'").
 								Else("'Low'")
@@ -207,7 +219,7 @@ func (suite *ConditionalFunctionsTestSuite) TestCombinedConditionalFunctions() {
 }
 
 // TestCoalesceBoundaryConditions tests Coalesce function with boundary conditions.
-func (suite *ConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
+func (suite *EBConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
 	suite.T().Logf("Testing Coalesce boundary conditions for %s", suite.dbType)
 
 	suite.Run("CoalesceSingleArgument", func() {
@@ -222,7 +234,7 @@ func (suite *ConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Coalesce(eb.Column("title"), eb.Column("title"))
 			}, "single_value").
 			OrderBy("id").
@@ -250,7 +262,7 @@ func (suite *ConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Coalesce(eb.Expr("NULL"), eb.Expr("NULL"), eb.Expr("NULL"))
 			}, "all_null_val").
 			OrderBy("id").
@@ -278,7 +290,7 @@ func (suite *ConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Coalesce(
 					eb.Expr("NULL"),
 					eb.Expr("NULL"),
@@ -302,7 +314,7 @@ func (suite *ConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
 }
 
 // TestNullIfWithNullArguments tests NullIf function with NULL arguments.
-func (suite *ConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
+func (suite *EBConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
 	suite.T().Logf("Testing NullIf with NULL arguments for %s", suite.dbType)
 
 	suite.Run("NullIfFirstArgumentNull", func() {
@@ -317,7 +329,7 @@ func (suite *ConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.NullIf(eb.Expr("NULL"), "'value'")
 			}, "result").
 			OrderBy("id").
@@ -345,7 +357,7 @@ func (suite *ConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.NullIf(eb.Column("status"), eb.Expr("NULL"))
 			}, "result").
 			OrderBy("id").
@@ -373,7 +385,7 @@ func (suite *ConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.NullIf(eb.Expr("NULL"), eb.Expr("NULL"))
 			}, "result").
 			OrderBy("id").
@@ -391,7 +403,7 @@ func (suite *ConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
 }
 
 // TestIfNullWithNullArguments tests IfNull function with NULL arguments.
-func (suite *ConditionalFunctionsTestSuite) TestIfNullWithNullArguments() {
+func (suite *EBConditionalFunctionsTestSuite) TestIfNullWithNullArguments() {
 	suite.T().Logf("Testing IfNull with NULL arguments for %s", suite.dbType)
 
 	suite.Run("IfNullDefaultValueNull", func() {
@@ -406,7 +418,7 @@ func (suite *ConditionalFunctionsTestSuite) TestIfNullWithNullArguments() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.IfNull(eb.Expr("NULL"), eb.Expr("NULL"))
 			}, "result").
 			OrderBy("id").
@@ -435,10 +447,10 @@ func (suite *ConditionalFunctionsTestSuite) TestIfNullWithNullArguments() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.IfNull(eb.Column("status"), eb.Expr("NULL"))
 			}, "result").
-			Where(func(cond ConditionBuilder) {
+			Where(func(cond orm.ConditionBuilder) {
 				cond.IsNotNull("status")
 			}).
 			OrderBy("id").
@@ -457,7 +469,7 @@ func (suite *ConditionalFunctionsTestSuite) TestIfNullWithNullArguments() {
 }
 
 // TestConditionalFunctionsSpecialValues tests conditional functions with special values.
-func (suite *ConditionalFunctionsTestSuite) TestConditionalFunctionsSpecialValues() {
+func (suite *EBConditionalFunctionsTestSuite) TestConditionalFunctionsSpecialValues() {
 	suite.T().Logf("Testing conditional functions with special values for %s", suite.dbType)
 
 	suite.Run("EmptyStringVsNull", func() {
@@ -475,16 +487,16 @@ func (suite *ConditionalFunctionsTestSuite) TestConditionalFunctionsSpecialValue
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
-			SelectExpr(func(_ ExprBuilder) any {
+			SelectExpr(func(_ orm.ExprBuilder) any {
 				return ""
 			}, "empty_not_null").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Coalesce("", "default")
 			}, "coalesce_empty").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Coalesce(eb.NullIf("", ""), "was_empty")
 			}, "nullif_empty").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.IfNull("", "default")
 			}, "ifnull_empty_result").
 			OrderBy("id").
@@ -520,16 +532,16 @@ func (suite *ConditionalFunctionsTestSuite) TestConditionalFunctionsSpecialValue
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Expr("0")
 			}, "zero_not_null").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Coalesce(0, 999)
 			}, "coalesce_zero").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Coalesce(eb.NullIf(0, 0), 888)
 			}, "nullif_zero").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.IfNull(0, 777)
 			}, "ifnull_zero_result").
 			OrderBy("id").

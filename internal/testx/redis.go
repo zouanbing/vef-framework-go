@@ -2,8 +2,9 @@ package testx
 
 import (
 	"context"
+	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/redis"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -12,17 +13,12 @@ import (
 )
 
 type RedisContainer struct {
-	container *redis.RedisContainer
 	RdsConfig *config.RedisConfig
 }
 
-func (c *RedisContainer) Terminate(ctx context.Context, s *suite.Suite) {
-	if err := c.container.Terminate(ctx); err != nil {
-		s.T().Logf("Failed to terminate redis container: %v", err)
-	}
-}
+func NewRedisContainer(ctx context.Context, t testing.TB) *RedisContainer {
+	t.Helper()
 
-func NewRedisContainer(ctx context.Context, s *suite.Suite) *RedisContainer {
 	container, err := redis.Run(
 		ctx,
 		RedisImage,
@@ -31,17 +27,22 @@ func NewRedisContainer(ctx context.Context, s *suite.Suite) *RedisContainer {
 				WithStartupTimeout(DefaultContainerTimeout),
 		),
 	)
-	s.Require().NoError(err)
-	s.T().Log("Redis container started successfully")
+	require.NoError(t, err)
+	t.Log("Redis container started successfully")
+
+	t.Cleanup(func() {
+		if err := container.Terminate(ctx); err != nil {
+			t.Logf("Failed to terminate redis container: %v", err)
+		}
+	})
 
 	host, err := container.Host(ctx)
-	s.Require().NoError(err)
+	require.NoError(t, err)
 
 	port, err := container.MappedPort(ctx, "6379")
-	s.Require().NoError(err)
+	require.NoError(t, err)
 
 	return &RedisContainer{
-		container: container,
 		RdsConfig: &config.RedisConfig{
 			Host:     host,
 			Port:     uint16(port.Int()),

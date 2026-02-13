@@ -1,13 +1,25 @@
-package orm
+package orm_test
 
-// UtilityFunctionsTestSuite tests utility expression methods of ExprBuilder
+import (
+	"github.com/stretchr/testify/suite"
+
+	"github.com/ilxqx/vef-framework-go/internal/orm"
+)
+
+func init() {
+	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+		return &EBUtilityFunctionsTestSuite{OrmTestSuite: base}
+	})
+}
+
+// EBUtilityFunctionsTestSuite tests utility expression methods of orm.ExprBuilder
 // including Decode and other utility functions.
-type UtilityFunctionsTestSuite struct {
+type EBUtilityFunctionsTestSuite struct {
 	*OrmTestSuite
 }
 
 // TestDecode tests the Decode utility function.
-func (suite *UtilityFunctionsTestSuite) TestDecode() {
+func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 	suite.T().Logf("Testing Decode utility function for %s", suite.dbType)
 
 	// Test 1: DECODE for status mapping with string results
@@ -24,7 +36,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Decode(
 					eb.Column("status"),
 					"published", "Published Article",
@@ -73,7 +85,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Decode(
 					eb.Column("status"),
 					"published", 1,
@@ -123,7 +135,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Decode(
 					eb.Column("status"),
 					"published", "Published Article",
@@ -132,7 +144,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 					"Unknown Status",
 				)
 			}, "status_desc").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Decode(
 					eb.Column("status"),
 					"published", 1,
@@ -185,7 +197,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Decode(eb.Column("status"))
 			}, "result").
 			Limit(1).
@@ -214,7 +226,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Decode(
 					eb.Column("status"),
 					"published", "Live",
@@ -259,7 +271,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Decode(
 					eb.Column("status"),
 					"published", "Public",
@@ -309,7 +321,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "description").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Decode(
 					eb.IsNull("description"),
 					eb.Literal(true), "No Description",
@@ -356,27 +368,27 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "view_count").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Case(func(cb CaseBuilder) {
-					cb.When(func(cond ConditionBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Case(func(cb orm.CaseBuilder) {
+					cb.When(func(cond orm.ConditionBuilder) {
 						cond.GreaterThan("view_count", 80)
 					}).
 						Then("High").
-						When(func(cond ConditionBuilder) {
+						When(func(cond orm.ConditionBuilder) {
 							cond.GreaterThan("view_count", 30)
 						}).
 						Then("Medium").
 						Else("Low")
 				})
 			}, "view_category").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Decode(
-					eb.Case(func(cb CaseBuilder) {
-						cb.When(func(cond ConditionBuilder) {
+					eb.Case(func(cb orm.CaseBuilder) {
+						cb.When(func(cond orm.ConditionBuilder) {
 							cond.GreaterThan("view_count", 80)
 						}).
 							Then("High").
-							When(func(cond ConditionBuilder) {
+							When(func(cond orm.ConditionBuilder) {
 								cond.GreaterThan("view_count", 30)
 							}).
 							Then("Medium").

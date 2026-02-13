@@ -1,14 +1,26 @@
-package orm
+package orm_test
 
-// ComparisonExpressionsTestSuite tests comparison expression methods of ExprBuilder
+import (
+	"github.com/stretchr/testify/suite"
+
+	"github.com/ilxqx/vef-framework-go/internal/orm"
+)
+
+func init() {
+	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+		return &EBComparisonExpressionsTestSuite{OrmTestSuite: base}
+	})
+}
+
+// EBComparisonExpressionsTestSuite tests comparison expression methods of orm.ExprBuilder
 // including Equals, NotEquals, GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual,
 // Between, NotBetween, In, and NotIn.
-type ComparisonExpressionsTestSuite struct {
+type EBComparisonExpressionsTestSuite struct {
 	*OrmTestSuite
 }
 
 // TestEquals tests the Equals comparison operator.
-func (suite *ComparisonExpressionsTestSuite) TestEquals() {
+func (suite *EBComparisonExpressionsTestSuite) TestEquals() {
 	suite.T().Logf("Testing Equals comparison for %s", suite.dbType)
 
 	// Test 1: Simple equals with string
@@ -24,8 +36,8 @@ func (suite *ComparisonExpressionsTestSuite) TestEquals() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status").
-			Where(func(cb ConditionBuilder) {
-				cb.Expr(func(eb ExprBuilder) any {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.Equals(eb.Column("status"), "published")
 				})
 			}).
@@ -55,8 +67,8 @@ func (suite *ComparisonExpressionsTestSuite) TestEquals() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "view_count").
-			Where(func(cb ConditionBuilder) {
-				cb.Expr(func(eb ExprBuilder) any {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.Equals(eb.Column("view_count"), 42)
 				})
 			}).
@@ -84,7 +96,7 @@ func (suite *ComparisonExpressionsTestSuite) TestEquals() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Equals(eb.Column("status"), "published")
 			}, "is_published").
 			OrderBy("id").
@@ -107,7 +119,7 @@ func (suite *ComparisonExpressionsTestSuite) TestEquals() {
 }
 
 // TestNotEquals tests the NotEquals comparison operator.
-func (suite *ComparisonExpressionsTestSuite) TestNotEquals() {
+func (suite *EBComparisonExpressionsTestSuite) TestNotEquals() {
 	suite.T().Logf("Testing NotEquals comparison for %s", suite.dbType)
 
 	// Test 1: Simple NotEquals with string
@@ -123,8 +135,8 @@ func (suite *ComparisonExpressionsTestSuite) TestNotEquals() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status").
-			Where(func(cb ConditionBuilder) {
-				cb.Expr(func(eb ExprBuilder) any {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.NotEquals(eb.Column("status"), "draft")
 				})
 			}).
@@ -153,8 +165,8 @@ func (suite *ComparisonExpressionsTestSuite) TestNotEquals() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
-			Where(func(cb ConditionBuilder) {
-				cb.Expr(func(eb ExprBuilder) any {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.NotEquals(eb.Column("view_count"), 0)
 				})
 			}).
@@ -184,7 +196,7 @@ func (suite *ComparisonExpressionsTestSuite) TestNotEquals() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.NotEquals(eb.Column("status"), "draft")
 			}, "not_draft").
 			OrderBy("id").
@@ -207,7 +219,7 @@ func (suite *ComparisonExpressionsTestSuite) TestNotEquals() {
 }
 
 // TestGreaterThan tests the GreaterThan comparison operator.
-func (suite *ComparisonExpressionsTestSuite) TestGreaterThan() {
+func (suite *EBComparisonExpressionsTestSuite) TestGreaterThan() {
 	suite.T().Logf("Testing GreaterThan comparison for %s", suite.dbType)
 
 	// Test 1: Simple GreaterThan
@@ -223,8 +235,8 @@ func (suite *ComparisonExpressionsTestSuite) TestGreaterThan() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "view_count").
-			Where(func(cb ConditionBuilder) {
-				cb.Expr(func(eb ExprBuilder) any {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.GreaterThan(eb.Column("view_count"), 50)
 				})
 			}).
@@ -254,7 +266,7 @@ func (suite *ComparisonExpressionsTestSuite) TestGreaterThan() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.GreaterThan(eb.Column("view_count"), 80)
 			}, "is_high_view").
 			OrderBy("view_count").
@@ -277,7 +289,7 @@ func (suite *ComparisonExpressionsTestSuite) TestGreaterThan() {
 }
 
 // TestGreaterThanOrEqual tests the GreaterThanOrEqual comparison operator.
-func (suite *ComparisonExpressionsTestSuite) TestGreaterThanOrEqual() {
+func (suite *EBComparisonExpressionsTestSuite) TestGreaterThanOrEqual() {
 	suite.T().Logf("Testing GreaterThanOrEqual comparison for %s", suite.dbType)
 
 	// Test 1: Simple GreaterThanOrEqual
@@ -293,8 +305,8 @@ func (suite *ComparisonExpressionsTestSuite) TestGreaterThanOrEqual() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "view_count").
-			Where(func(cb ConditionBuilder) {
-				cb.Expr(func(eb ExprBuilder) any {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.GreaterThanOrEqual(eb.Column("view_count"), 30)
 				})
 			}).
@@ -323,8 +335,8 @@ func (suite *ComparisonExpressionsTestSuite) TestGreaterThanOrEqual() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
-			Where(func(cb ConditionBuilder) {
-				cb.Expr(func(eb ExprBuilder) any {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.GreaterThanOrEqual(eb.Column("view_count"), 42)
 				})
 			}).
@@ -341,7 +353,7 @@ func (suite *ComparisonExpressionsTestSuite) TestGreaterThanOrEqual() {
 }
 
 // TestLessThan tests the LessThan comparison operator.
-func (suite *ComparisonExpressionsTestSuite) TestLessThan() {
+func (suite *EBComparisonExpressionsTestSuite) TestLessThan() {
 	suite.T().Logf("Testing LessThan comparison for %s", suite.dbType)
 
 	// Test 1: Simple LessThan
@@ -357,8 +369,8 @@ func (suite *ComparisonExpressionsTestSuite) TestLessThan() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "view_count").
-			Where(func(cb ConditionBuilder) {
-				cb.Expr(func(eb ExprBuilder) any {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.LessThan(eb.Column("view_count"), 70)
 				})
 			}).
@@ -388,7 +400,7 @@ func (suite *ComparisonExpressionsTestSuite) TestLessThan() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.LessThan(eb.Column("view_count"), 30)
 			}, "is_low_view").
 			OrderBy("view_count").
@@ -411,7 +423,7 @@ func (suite *ComparisonExpressionsTestSuite) TestLessThan() {
 }
 
 // TestLessThanOrEqual tests the LessThanOrEqual comparison operator.
-func (suite *ComparisonExpressionsTestSuite) TestLessThanOrEqual() {
+func (suite *EBComparisonExpressionsTestSuite) TestLessThanOrEqual() {
 	suite.T().Logf("Testing LessThanOrEqual comparison for %s", suite.dbType)
 
 	// Test 1: Simple LessThanOrEqual
@@ -427,8 +439,8 @@ func (suite *ComparisonExpressionsTestSuite) TestLessThanOrEqual() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "view_count").
-			Where(func(cb ConditionBuilder) {
-				cb.Expr(func(eb ExprBuilder) any {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.LessThanOrEqual(eb.Column("view_count"), 50)
 				})
 			}).
@@ -457,8 +469,8 @@ func (suite *ComparisonExpressionsTestSuite) TestLessThanOrEqual() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
-			Where(func(cb ConditionBuilder) {
-				cb.Expr(func(eb ExprBuilder) any {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.LessThanOrEqual(eb.Column("view_count"), 42)
 				})
 			}).
@@ -475,7 +487,7 @@ func (suite *ComparisonExpressionsTestSuite) TestLessThanOrEqual() {
 }
 
 // TestBetween tests the Between comparison operator.
-func (suite *ComparisonExpressionsTestSuite) TestBetween() {
+func (suite *EBComparisonExpressionsTestSuite) TestBetween() {
 	suite.T().Logf("Testing Between comparison for %s", suite.dbType)
 
 	// Test 1: Simple Between with integers
@@ -491,8 +503,8 @@ func (suite *ComparisonExpressionsTestSuite) TestBetween() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "view_count").
-			Where(func(cb ConditionBuilder) {
-				cb.Expr(func(eb ExprBuilder) any {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.Between(eb.Column("view_count"), 30, 70)
 				})
 			}).
@@ -520,8 +532,8 @@ func (suite *ComparisonExpressionsTestSuite) TestBetween() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
-			Where(func(cb ConditionBuilder) {
-				cb.Expr(func(eb ExprBuilder) any {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.Between(eb.Column("view_count"), 42, 42)
 				})
 			}).
@@ -548,7 +560,7 @@ func (suite *ComparisonExpressionsTestSuite) TestBetween() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Between(eb.Column("view_count"), 30, 80)
 			}, "is_medium_view").
 			OrderBy("view_count").
@@ -571,7 +583,7 @@ func (suite *ComparisonExpressionsTestSuite) TestBetween() {
 }
 
 // TestNotBetween tests the NotBetween comparison operator.
-func (suite *ComparisonExpressionsTestSuite) TestNotBetween() {
+func (suite *EBComparisonExpressionsTestSuite) TestNotBetween() {
 	suite.T().Logf("Testing NotBetween comparison for %s", suite.dbType)
 
 	// Test 1: Simple NotBetween
@@ -587,8 +599,8 @@ func (suite *ComparisonExpressionsTestSuite) TestNotBetween() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "view_count").
-			Where(func(cb ConditionBuilder) {
-				cb.Expr(func(eb ExprBuilder) any {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.NotBetween(eb.Column("view_count"), 30, 70)
 				})
 			}).
@@ -617,7 +629,7 @@ func (suite *ComparisonExpressionsTestSuite) TestNotBetween() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.NotBetween(eb.Column("view_count"), 30, 80)
 			}, "is_extreme_view").
 			OrderBy("view_count").
@@ -640,7 +652,7 @@ func (suite *ComparisonExpressionsTestSuite) TestNotBetween() {
 }
 
 // TestIn tests the In comparison operator.
-func (suite *ComparisonExpressionsTestSuite) TestIn() {
+func (suite *EBComparisonExpressionsTestSuite) TestIn() {
 	suite.T().Logf("Testing In comparison for %s", suite.dbType)
 
 	// Test 1: Simple In with strings
@@ -656,8 +668,8 @@ func (suite *ComparisonExpressionsTestSuite) TestIn() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status").
-			Where(func(cb ConditionBuilder) {
-				cb.Expr(func(eb ExprBuilder) any {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.In(eb.Column("status"), "published", "review")
 				})
 			}).
@@ -685,8 +697,8 @@ func (suite *ComparisonExpressionsTestSuite) TestIn() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
-			Where(func(cb ConditionBuilder) {
-				cb.Expr(func(eb ExprBuilder) any {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.In(eb.Column("view_count"), 23, 42, 85, 96)
 				})
 			}).
@@ -715,8 +727,8 @@ func (suite *ComparisonExpressionsTestSuite) TestIn() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "status").
-			Where(func(cb ConditionBuilder) {
-				cb.Expr(func(eb ExprBuilder) any {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.In(eb.Column("status"), "draft")
 				})
 			}).
@@ -745,7 +757,7 @@ func (suite *ComparisonExpressionsTestSuite) TestIn() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.In(eb.Column("status"), "published", "review")
 			}, "is_active_status").
 			OrderBy("id").
@@ -768,7 +780,7 @@ func (suite *ComparisonExpressionsTestSuite) TestIn() {
 }
 
 // TestNotIn tests the NotIn comparison operator.
-func (suite *ComparisonExpressionsTestSuite) TestNotIn() {
+func (suite *EBComparisonExpressionsTestSuite) TestNotIn() {
 	suite.T().Logf("Testing NotIn comparison for %s", suite.dbType)
 
 	// Test 1: Simple NotIn with strings
@@ -784,8 +796,8 @@ func (suite *ComparisonExpressionsTestSuite) TestNotIn() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status").
-			Where(func(cb ConditionBuilder) {
-				cb.Expr(func(eb ExprBuilder) any {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.NotIn(eb.Column("status"), "draft", "archived")
 				})
 			}).
@@ -813,8 +825,8 @@ func (suite *ComparisonExpressionsTestSuite) TestNotIn() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
-			Where(func(cb ConditionBuilder) {
-				cb.Expr(func(eb ExprBuilder) any {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.NotIn(eb.Column("view_count"), 0, 10, 20)
 				})
 			}).
@@ -845,7 +857,7 @@ func (suite *ComparisonExpressionsTestSuite) TestNotIn() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.NotIn(eb.Column("status"), "draft", "archived")
 			}, "is_not_excluded").
 			OrderBy("id").
@@ -868,7 +880,7 @@ func (suite *ComparisonExpressionsTestSuite) TestNotIn() {
 }
 
 // TestCombinedComparisons tests using multiple comparison operators together.
-func (suite *ComparisonExpressionsTestSuite) TestCombinedComparisons() {
+func (suite *EBComparisonExpressionsTestSuite) TestCombinedComparisons() {
 	suite.T().Logf("Testing combined comparison operators for %s", suite.dbType)
 
 	// Test 1: Combined comparisons in SELECT
@@ -886,13 +898,13 @@ func (suite *ComparisonExpressionsTestSuite) TestCombinedComparisons() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.GreaterThan(eb.Column("view_count"), 80)
 			}, "is_high_view").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Between(eb.Column("view_count"), 30, 80)
 			}, "is_medium_view").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.LessThan(eb.Column("view_count"), 30)
 			}, "is_low_view").
 			OrderBy("view_count").
@@ -925,7 +937,7 @@ func (suite *ComparisonExpressionsTestSuite) TestCombinedComparisons() {
 }
 
 // TestIsTrue tests the IsTrue comparison operator for boolean expressions.
-func (suite *ComparisonExpressionsTestSuite) TestIsTrue() {
+func (suite *EBComparisonExpressionsTestSuite) TestIsTrue() {
 	suite.T().Logf("Testing IsTrue comparison for %s", suite.dbType)
 
 	suite.Run("IsTrueOnBooleanColumn", func() {
@@ -940,8 +952,8 @@ func (suite *ComparisonExpressionsTestSuite) TestIsTrue() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name", "is_active").
-			Where(func(cb ConditionBuilder) {
-				cb.Expr(func(eb ExprBuilder) any {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.IsTrue(eb.Column("is_active"))
 				})
 			}).
@@ -971,11 +983,11 @@ func (suite *ComparisonExpressionsTestSuite) TestIsTrue() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "view_count").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.IsTrue(eb.GreaterThan(eb.Column("view_count"), 50))
 			}, "is_popular").
-			Where(func(cb ConditionBuilder) {
-				cb.Expr(func(eb ExprBuilder) any {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.IsTrue(eb.GreaterThan(eb.Column("view_count"), 50))
 				})
 			}).
@@ -995,7 +1007,7 @@ func (suite *ComparisonExpressionsTestSuite) TestIsTrue() {
 }
 
 // TestIsFalse tests the IsFalse comparison operator for boolean expressions.
-func (suite *ComparisonExpressionsTestSuite) TestIsFalse() {
+func (suite *EBComparisonExpressionsTestSuite) TestIsFalse() {
 	suite.T().Logf("Testing IsFalse comparison for %s", suite.dbType)
 
 	suite.Run("IsFalseOnBooleanColumn", func() {
@@ -1010,8 +1022,8 @@ func (suite *ComparisonExpressionsTestSuite) TestIsFalse() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name", "is_active").
-			Where(func(cb ConditionBuilder) {
-				cb.Expr(func(eb ExprBuilder) any {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.IsFalse(eb.Column("is_active"))
 				})
 			}).
@@ -1041,11 +1053,11 @@ func (suite *ComparisonExpressionsTestSuite) TestIsFalse() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "view_count").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.IsFalse(eb.GreaterThan(eb.Column("view_count"), 50))
 			}, "is_not_popular").
-			Where(func(cb ConditionBuilder) {
-				cb.Expr(func(eb ExprBuilder) any {
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.IsFalse(eb.GreaterThan(eb.Column("view_count"), 50))
 				})
 			}).

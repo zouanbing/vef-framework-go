@@ -35,18 +35,8 @@ type SchemaResourceTestSuite struct {
 func (suite *SchemaResourceTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 
-	suite.postgresContainer = testx.NewPostgresContainer(suite.ctx, &suite.Suite)
-	suite.mysqlContainer = testx.NewMySQLContainer(suite.ctx, &suite.Suite)
-}
-
-func (suite *SchemaResourceTestSuite) TearDownSuite() {
-	if suite.postgresContainer != nil {
-		suite.postgresContainer.Terminate(suite.ctx, &suite.Suite)
-	}
-
-	if suite.mysqlContainer != nil {
-		suite.mysqlContainer.Terminate(suite.ctx, &suite.Suite)
-	}
+	suite.postgresContainer = testx.NewPostgresContainer(suite.ctx, suite.T())
+	suite.mysqlContainer = testx.NewMySQLContainer(suite.ctx, suite.T())
 }
 
 func (suite *SchemaResourceTestSuite) TestPostgresResource() {

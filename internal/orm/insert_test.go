@@ -1,16 +1,24 @@
-package orm
+package orm_test
 
 import (
 	"fmt"
 	"time"
 
 	"github.com/samber/lo"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/ilxqx/vef-framework-go/internal/orm"
 )
 
-// InsertTestSuite tests INSERT operations following InsertQuery interface method order.
-// Tests cover all InsertQuery methods including CTE, table specification, column selection,
+func init() {
+	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+		return &InsertTestSuite{OrmTestSuite: base}
+	})
+}
+
+// InsertTestSuite tests INSERT operations following orm.InsertQuery interface method order.
+// Tests cover all orm.InsertQuery methods including CTE, table specification, column selection,
 // column values, conflict handling, RETURNING clause, Apply functions, bulk operations, and error handling.
 type InsertTestSuite struct {
 	*OrmTestSuite
@@ -38,7 +46,7 @@ func (suite *InsertTestSuite) TestBasicInsert() {
 
 		err = suite.db.NewSelect().
 			Model(&retrieved).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "john@example.com")
 			}).
 			Scan(suite.ctx)
@@ -50,7 +58,7 @@ func (suite *InsertTestSuite) TestBasicInsert() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "john@example.com")
 			}).
 			Exec(suite.ctx)
@@ -76,7 +84,7 @@ func (suite *InsertTestSuite) TestBasicInsert() {
 
 		err = suite.db.NewSelect().
 			Model(&retrieved).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.In("email", []any{"jane@example.com", "mike@example.com"})
 			}).
 			Scan(suite.ctx)
@@ -85,7 +93,7 @@ func (suite *InsertTestSuite) TestBasicInsert() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.In("email", []any{"jane@example.com", "mike@example.com"})
 			}).
 			Exec(suite.ctx)
@@ -111,10 +119,10 @@ func (suite *InsertTestSuite) TestCTE() {
 		}
 
 		_, err := suite.db.NewInsert().
-			With("existing_tech", func(sq SelectQuery) {
+			With("existing_tech", func(sq orm.SelectQuery) {
 				sq.Model((*Category)(nil)).
 					Select("name", "description").
-					Where(func(cb ConditionBuilder) {
+					Where(func(cb orm.ConditionBuilder) {
 						cb.Equals("name", "Technology")
 					})
 			}).
@@ -127,7 +135,7 @@ func (suite *InsertTestSuite) TestCTE() {
 
 		_, err = suite.db.NewDelete().
 			Model((*Category)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.PKEquals(category.ID)
 			}).
 			Exec(suite.ctx)
@@ -162,7 +170,7 @@ func (suite *InsertTestSuite) TestCTE() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "cte@example.com")
 			}).
 			Exec(suite.ctx)
@@ -178,10 +186,10 @@ func (suite *InsertTestSuite) TestCTE() {
 		}
 
 		_, err := suite.db.NewInsert().
-			WithRecursive("user_hierarchy", func(sq SelectQuery) {
+			WithRecursive("user_hierarchy", func(sq orm.SelectQuery) {
 				sq.Model((*User)(nil)).
 					Select("id", "name").
-					Where(func(cb ConditionBuilder) {
+					Where(func(cb orm.ConditionBuilder) {
 						cb.IsNotNull("id")
 					}).
 					Limit(1)
@@ -195,7 +203,7 @@ func (suite *InsertTestSuite) TestCTE() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "recursive@example.com")
 			}).
 			Exec(suite.ctx)
@@ -227,7 +235,7 @@ func (suite *InsertTestSuite) TestTableSpecification() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
@@ -259,7 +267,7 @@ func (suite *InsertTestSuite) TestColumnSelection() {
 
 		err = suite.db.NewSelect().
 			Model(&retrieved).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.PKEquals(user.ID)
 			}).
 			Scan(suite.ctx)
@@ -271,7 +279,7 @@ func (suite *InsertTestSuite) TestColumnSelection() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
@@ -302,7 +310,7 @@ func (suite *InsertTestSuite) TestColumnValues() {
 
 		err = suite.db.NewSelect().
 			Model(&retrieved).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "column@example.com")
 			}).
 			Scan(suite.ctx)
@@ -314,7 +322,7 @@ func (suite *InsertTestSuite) TestColumnValues() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
@@ -331,7 +339,7 @@ func (suite *InsertTestSuite) TestColumnValues() {
 
 		_, err := suite.db.NewInsert().
 			Model(user).
-			ColumnExpr("name", func(eb ExprBuilder) any {
+			ColumnExpr("name", func(eb orm.ExprBuilder) any {
 				return eb.Upper(eb.Literal("Expr User"))
 			}).
 			Exec(suite.ctx)
@@ -342,7 +350,7 @@ func (suite *InsertTestSuite) TestColumnValues() {
 
 		err = suite.db.NewSelect().
 			Model(&retrieved).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "expr@example.com")
 			}).
 			Scan(suite.ctx)
@@ -353,7 +361,7 @@ func (suite *InsertTestSuite) TestColumnValues() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
@@ -381,7 +389,7 @@ func (suite *InsertTestSuite) TestColumnValues() {
 
 		err = suite.db.NewSelect().
 			Model(&retrieved).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "multi@example.com")
 			}).
 			Scan(suite.ctx)
@@ -395,7 +403,7 @@ func (suite *InsertTestSuite) TestColumnValues() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
@@ -429,7 +437,7 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 
 		_, err = suite.db.NewInsert().
 			Model(duplicate).
-			OnConflict(func(cb ConflictBuilder) {
+			OnConflict(func(cb orm.ConflictBuilder) {
 				cb.Columns("email").DoNothing()
 			}).
 			Exec(suite.ctx)
@@ -439,7 +447,7 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 
 		err = suite.db.NewSelect().
 			Model(&retrieved).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "conflict@example.com")
 			}).
 			Scan(suite.ctx)
@@ -451,7 +459,7 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "conflict@example.com")
 			}).
 			Exec(suite.ctx)
@@ -480,7 +488,7 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 
 		_, err = suite.db.NewInsert().
 			Model(update).
-			OnConflict(func(cb ConflictBuilder) {
+			OnConflict(func(cb orm.ConflictBuilder) {
 				cb.Columns("email").DoUpdate().
 					Set("name", "Update Modified").
 					Set("age", 35).
@@ -493,7 +501,7 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 
 		err = suite.db.NewSelect().
 			Model(&retrieved).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "update-conflict@example.com")
 			}).
 			Scan(suite.ctx)
@@ -507,7 +515,7 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "update-conflict@example.com")
 			}).
 			Exec(suite.ctx)
@@ -536,10 +544,10 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 
 		_, err = suite.db.NewInsert().
 			Model(update).
-			OnConflict(func(cb ConflictBuilder) {
+			OnConflict(func(cb orm.ConflictBuilder) {
 				cb.Columns("email").DoUpdate().
 					Set("age", 45).
-					Where(func(wcb ConditionBuilder) {
+					Where(func(wcb orm.ConditionBuilder) {
 						wcb.GreaterThan("age", 35)
 					})
 			}).
@@ -550,7 +558,7 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 
 		err = suite.db.NewSelect().
 			Model(&retrieved).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "conditional@example.com")
 			}).
 			Scan(suite.ctx)
@@ -561,7 +569,7 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "conditional@example.com")
 			}).
 			Exec(suite.ctx)
@@ -602,7 +610,7 @@ func (suite *InsertTestSuite) TestReturning() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
@@ -632,7 +640,7 @@ func (suite *InsertTestSuite) TestReturning() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
@@ -658,7 +666,7 @@ func (suite *InsertTestSuite) TestReturning() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
@@ -678,7 +686,7 @@ func (suite *InsertTestSuite) TestApply() {
 			IsActive: true,
 		}
 
-		applyFunc := func(q InsertQuery) {
+		applyFunc := func(q orm.InsertQuery) {
 			q.Column("name", "Applied Name")
 		}
 
@@ -693,7 +701,7 @@ func (suite *InsertTestSuite) TestApply() {
 
 		err = suite.db.NewSelect().
 			Model(&retrieved).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "apply@example.com")
 			}).
 			Scan(suite.ctx)
@@ -704,7 +712,7 @@ func (suite *InsertTestSuite) TestApply() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
@@ -719,7 +727,7 @@ func (suite *InsertTestSuite) TestApply() {
 			IsActive: true,
 		}
 
-		applyFunc := func(q InsertQuery) {
+		applyFunc := func(q orm.InsertQuery) {
 			q.Column("name", "Modified Name")
 		}
 
@@ -734,7 +742,7 @@ func (suite *InsertTestSuite) TestApply() {
 
 		err = suite.db.NewSelect().
 			Model(&retrieved1).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "cond1@example.com")
 			}).
 			Scan(suite.ctx)
@@ -759,7 +767,7 @@ func (suite *InsertTestSuite) TestApply() {
 
 		err = suite.db.NewSelect().
 			Model(&retrieved2).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "cond2@example.com")
 			}).
 			Scan(suite.ctx)
@@ -770,7 +778,7 @@ func (suite *InsertTestSuite) TestApply() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.In("email", []any{"cond1@example.com", "cond2@example.com"})
 			}).
 			Exec(suite.ctx)
@@ -785,13 +793,13 @@ func (suite *InsertTestSuite) TestApply() {
 			IsActive: false,
 		}
 
-		fn1 := func(q InsertQuery) {
+		fn1 := func(q orm.InsertQuery) {
 			q.Column("name", "Step 1")
 		}
-		fn2 := func(q InsertQuery) {
+		fn2 := func(q orm.InsertQuery) {
 			q.Column("age", 25)
 		}
-		fn3 := func(q InsertQuery) {
+		fn3 := func(q orm.InsertQuery) {
 			q.Column("is_active", true)
 		}
 
@@ -806,7 +814,7 @@ func (suite *InsertTestSuite) TestApply() {
 
 		err = suite.db.NewSelect().
 			Model(&retrieved).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "multi-apply@example.com")
 			}).
 			Scan(suite.ctx)
@@ -820,7 +828,7 @@ func (suite *InsertTestSuite) TestApply() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
@@ -846,7 +854,7 @@ func (suite *InsertTestSuite) TestApply() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
@@ -888,7 +896,7 @@ func (suite *InsertTestSuite) TestBulkInsert() {
 
 		err = suite.db.NewSelect().
 			Model(&retrieved).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("email", "batch")
 			}).
 			Scan(suite.ctx)
@@ -897,7 +905,7 @@ func (suite *InsertTestSuite) TestBulkInsert() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("email", "batch")
 			}).
 			Exec(suite.ctx)
@@ -947,7 +955,7 @@ func (suite *InsertTestSuite) TestBulkInsert() {
 
 		_, err = suite.db.NewDelete().
 			Model((*Post)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.StartsWith("title", "Bulk Post")
 			}).
 			Exec(suite.ctx)
@@ -955,7 +963,7 @@ func (suite *InsertTestSuite) TestBulkInsert() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.In("email", []any{"author1@bulk.com", "author2@bulk.com"})
 			}).
 			Exec(suite.ctx)
@@ -996,7 +1004,7 @@ func (suite *InsertTestSuite) TestErrorHandling() {
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "unique@example.com")
 			}).
 			Exec(suite.ctx)

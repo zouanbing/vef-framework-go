@@ -1,13 +1,27 @@
-package orm
+package orm_test
 
-// PrimaryKeyConditionsTestSuite tests primary key condition methods.
+import (
+	"github.com/stretchr/testify/suite"
+
+	"github.com/ilxqx/vef-framework-go/internal/orm"
+)
+
+func init() {
+	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+		return &CBPrimaryKeyConditionsTestSuite{
+			ConditionBuilderTestSuite: &ConditionBuilderTestSuite{OrmTestSuite: base},
+		}
+	})
+}
+
+// CBPrimaryKeyConditionsTestSuite tests primary key condition methods.
 // Covers: PKEquals, PKNotEquals, PKIn, PKNotIn and their Or variants (8 methods total).
-type PrimaryKeyConditionsTestSuite struct {
+type CBPrimaryKeyConditionsTestSuite struct {
 	*ConditionBuilderTestSuite
 }
 
 // TestPKEquals tests the PKEquals and OrPKEquals conditions.
-func (suite *PrimaryKeyConditionsTestSuite) TestPKEquals() {
+func (suite *CBPrimaryKeyConditionsTestSuite) TestPKEquals() {
 	suite.T().Logf("Testing PKEquals condition for %s", suite.dbType)
 
 	suite.Run("BasicPKEquals", func() {
@@ -24,7 +38,7 @@ func (suite *PrimaryKeyConditionsTestSuite) TestPKEquals() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.PKEquals(firstUser.ID)
 				}),
 		)
@@ -50,7 +64,7 @@ func (suite *PrimaryKeyConditionsTestSuite) TestPKEquals() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.PKEquals(allUsers[0].ID).
 						OrPKEquals(allUsers[1].ID)
 				}).
@@ -66,7 +80,7 @@ func (suite *PrimaryKeyConditionsTestSuite) TestPKEquals() {
 }
 
 // TestPKNotEquals tests the PKNotEquals and OrPKNotEquals conditions.
-func (suite *PrimaryKeyConditionsTestSuite) TestPKNotEquals() {
+func (suite *CBPrimaryKeyConditionsTestSuite) TestPKNotEquals() {
 	suite.T().Logf("Testing PKNotEquals condition for %s", suite.dbType)
 
 	suite.Run("BasicPKNotEquals", func() {
@@ -83,7 +97,7 @@ func (suite *PrimaryKeyConditionsTestSuite) TestPKNotEquals() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.PKNotEquals(firstUser.ID)
 				}).
 				OrderBy("id"),
@@ -111,7 +125,7 @@ func (suite *PrimaryKeyConditionsTestSuite) TestPKNotEquals() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.PKNotEquals(allUsers[0].ID).
 						OrPKNotEquals(allUsers[1].ID)
 				}).
@@ -125,7 +139,7 @@ func (suite *PrimaryKeyConditionsTestSuite) TestPKNotEquals() {
 }
 
 // TestPKIn tests the PKIn and OrPKIn conditions.
-func (suite *PrimaryKeyConditionsTestSuite) TestPKIn() {
+func (suite *CBPrimaryKeyConditionsTestSuite) TestPKIn() {
 	suite.T().Logf("Testing PKIn condition for %s", suite.dbType)
 
 	suite.Run("BasicPKIn", func() {
@@ -145,7 +159,7 @@ func (suite *PrimaryKeyConditionsTestSuite) TestPKIn() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.PKIn(ids)
 				}).
 				OrderBy("id"),
@@ -171,7 +185,7 @@ func (suite *PrimaryKeyConditionsTestSuite) TestPKIn() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.PKIn([]string{allUsers[0].ID}).
 						OrPKIn([]string{allUsers[1].ID})
 				}).
@@ -185,7 +199,7 @@ func (suite *PrimaryKeyConditionsTestSuite) TestPKIn() {
 }
 
 // TestPKNotIn tests the PKNotIn and OrPKNotIn conditions.
-func (suite *PrimaryKeyConditionsTestSuite) TestPKNotIn() {
+func (suite *CBPrimaryKeyConditionsTestSuite) TestPKNotIn() {
 	suite.T().Logf("Testing PKNotIn condition for %s", suite.dbType)
 
 	suite.Run("BasicPKNotIn", func() {
@@ -202,7 +216,7 @@ func (suite *PrimaryKeyConditionsTestSuite) TestPKNotIn() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.PKNotIn([]string{firstUser.ID})
 				}).
 				OrderBy("id"),
@@ -230,7 +244,7 @@ func (suite *PrimaryKeyConditionsTestSuite) TestPKNotIn() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.PKNotIn([]string{allUsers[0].ID}).
 						OrPKNotIn([]string{allUsers[1].ID})
 				}).

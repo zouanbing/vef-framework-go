@@ -1,12 +1,21 @@
-package orm
+package orm_test
 
 import (
 	"strings"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/ilxqx/vef-framework-go/internal/orm"
 )
 
-// WindowFunctionsTestSuite tests window function methods of ExprBuilder including
+func init() {
+	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+		return &EBWindowFunctionsTestSuite{OrmTestSuite: base}
+	})
+}
+
+// EBWindowFunctionsTestSuite tests window function methods of orm.ExprBuilder including
 // ranking functions (RowNumber, Rank, DenseRank, PercentRank, CumeDist, NTile),
 // offset functions (Lag, Lead), value functions (FirstValue, LastValue, NthValue),
 // and aggregate window functions (WinCount, WinSum, WinAvg, WinMin, WinMax, WinStringAgg,
@@ -15,12 +24,12 @@ import (
 //
 // This suite verifies cross-database compatibility for window functions across
 // PostgreSQL, MySQL, and SQLite, handling database-specific features appropriately.
-type WindowFunctionsTestSuite struct {
+type EBWindowFunctionsTestSuite struct {
 	*OrmTestSuite
 }
 
 // TestRowNumber tests the ROW_NUMBER window function.
-func (suite *WindowFunctionsTestSuite) TestRowNumber() {
+func (suite *EBWindowFunctionsTestSuite) TestRowNumber() {
 	suite.T().Logf("Testing RowNumber function for %s", suite.dbType)
 
 	suite.Run("SequentialRowNumbers", func() {
@@ -36,8 +45,8 @@ func (suite *WindowFunctionsTestSuite) TestRowNumber() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name", "age").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.RowNumber(func(rn RowNumberBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.RowNumber(func(rn orm.RowNumberBuilder) {
 					rn.Over().OrderBy("age")
 				})
 			}, "row_num").
@@ -57,7 +66,7 @@ func (suite *WindowFunctionsTestSuite) TestRowNumber() {
 }
 
 // TestRank tests the RANK window function.
-func (suite *WindowFunctionsTestSuite) TestRank() {
+func (suite *EBWindowFunctionsTestSuite) TestRank() {
 	suite.T().Logf("Testing Rank function for %s", suite.dbType)
 
 	suite.Run("RankPartitionedByStatus", func() {
@@ -74,8 +83,8 @@ func (suite *WindowFunctionsTestSuite) TestRank() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status", "view_count").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Rank(func(r RankBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Rank(func(r orm.RankBuilder) {
 					r.Over().PartitionBy("status").OrderByDesc("view_count")
 				})
 			}, "rank").
@@ -103,7 +112,7 @@ func (suite *WindowFunctionsTestSuite) TestRank() {
 }
 
 // TestDenseRank tests the DENSE_RANK window function.
-func (suite *WindowFunctionsTestSuite) TestDenseRank() {
+func (suite *EBWindowFunctionsTestSuite) TestDenseRank() {
 	suite.T().Logf("Testing DenseRank function for %s", suite.dbType)
 
 	suite.Run("DenseRankPartitionedByStatus", func() {
@@ -121,13 +130,13 @@ func (suite *WindowFunctionsTestSuite) TestDenseRank() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status", "view_count").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Rank(func(r RankBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Rank(func(r orm.RankBuilder) {
 					r.Over().PartitionBy("status").OrderByDesc("view_count")
 				})
 			}, "rank").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DenseRank(func(dr DenseRankBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DenseRank(func(dr orm.DenseRankBuilder) {
 					dr.Over().PartitionBy("status").OrderByDesc("view_count")
 				})
 			}, "dense_rank").
@@ -156,7 +165,7 @@ func (suite *WindowFunctionsTestSuite) TestDenseRank() {
 }
 
 // TestPercentRank tests the PERCENT_RANK window function.
-func (suite *WindowFunctionsTestSuite) TestPercentRank() {
+func (suite *EBWindowFunctionsTestSuite) TestPercentRank() {
 	suite.T().Logf("Testing PercentRank function for %s", suite.dbType)
 
 	suite.Run("PercentRankByViewCount", func() {
@@ -173,13 +182,13 @@ func (suite *WindowFunctionsTestSuite) TestPercentRank() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "status", "view_count").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Rank(func(r RankBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Rank(func(r orm.RankBuilder) {
 					r.Over().PartitionBy("status").OrderByDesc("view_count")
 				})
 			}, "rank_in_status").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.PercentRank(func(pr PercentRankBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.PercentRank(func(pr orm.PercentRankBuilder) {
 					pr.Over().OrderByDesc("view_count")
 				})
 			}, "percent_of_total").
@@ -201,7 +210,7 @@ func (suite *WindowFunctionsTestSuite) TestPercentRank() {
 }
 
 // TestCumeDist tests the CUME_DIST window function.
-func (suite *WindowFunctionsTestSuite) TestCumeDist() {
+func (suite *EBWindowFunctionsTestSuite) TestCumeDist() {
 	suite.T().Logf("Testing CumeDist function for %s", suite.dbType)
 
 	suite.Run("CumeDistByViewCount", func() {
@@ -216,8 +225,8 @@ func (suite *WindowFunctionsTestSuite) TestCumeDist() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.CumeDist(func(cdb CumeDistBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.CumeDist(func(cdb orm.CumeDistBuilder) {
 					cdb.Over().OrderBy("view_count")
 				})
 			}, "cume_dist").
@@ -237,7 +246,7 @@ func (suite *WindowFunctionsTestSuite) TestCumeDist() {
 }
 
 // TestNtile tests the NTILE window function.
-func (suite *WindowFunctionsTestSuite) TestNtile() {
+func (suite *EBWindowFunctionsTestSuite) TestNtile() {
 	suite.T().Logf("Testing NTile function for %s", suite.dbType)
 
 	suite.Run("QuartilesUsingNtile", func() {
@@ -252,8 +261,8 @@ func (suite *WindowFunctionsTestSuite) TestNtile() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("name", "age").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.NTile(func(nb NTileBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.NTile(func(nb orm.NTileBuilder) {
 					nb.Buckets(4).Over().OrderBy("age")
 				})
 			}, "quartile").
@@ -273,7 +282,7 @@ func (suite *WindowFunctionsTestSuite) TestNtile() {
 }
 
 // TestLag tests the LAG window function.
-func (suite *WindowFunctionsTestSuite) TestLag() {
+func (suite *EBWindowFunctionsTestSuite) TestLag() {
 	suite.T().Logf("Testing Lag function for %s", suite.dbType)
 
 	suite.Run("LagWithDefaultOffset", func() {
@@ -288,8 +297,8 @@ func (suite *WindowFunctionsTestSuite) TestLag() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "view_count").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Lag(func(lb LagBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Lag(func(lb orm.LagBuilder) {
 					lb.Column("view_count").Over().OrderBy("view_count")
 				})
 			}, "prev_view_count").
@@ -319,8 +328,8 @@ func (suite *WindowFunctionsTestSuite) TestLag() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "view_count").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Lag(func(lb LagBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Lag(func(lb orm.LagBuilder) {
 					lb.Column("view_count").Offset(2).Over().OrderBy("view_count")
 				})
 			}, "prev2_view_count").
@@ -342,7 +351,7 @@ func (suite *WindowFunctionsTestSuite) TestLag() {
 }
 
 // TestLead tests the LEAD window function.
-func (suite *WindowFunctionsTestSuite) TestLead() {
+func (suite *EBWindowFunctionsTestSuite) TestLead() {
 	suite.T().Logf("Testing Lead function for %s", suite.dbType)
 
 	suite.Run("LeadWithDefaultOffset", func() {
@@ -357,8 +366,8 @@ func (suite *WindowFunctionsTestSuite) TestLead() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "view_count").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Lead(func(lb LeadBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Lead(func(lb orm.LeadBuilder) {
 					lb.Column("view_count").Over().OrderBy("view_count")
 				})
 			}, "next_view_count").
@@ -390,13 +399,13 @@ func (suite *WindowFunctionsTestSuite) TestLead() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "view_count").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Lead(func(lb LeadBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Lead(func(lb orm.LeadBuilder) {
 					lb.Column("view_count").Offset(2).Over().OrderBy("view_count")
 				})
 			}, "next2_view_count").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Lead(func(lb LeadBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Lead(func(lb orm.LeadBuilder) {
 					lb.Column("view_count").Offset(2).DefaultValue(-1).Over().OrderBy("view_count")
 				})
 			}, "next2_or_default").
@@ -417,7 +426,7 @@ func (suite *WindowFunctionsTestSuite) TestLead() {
 }
 
 // TestFirstValue tests the FIRST_VALUE window function.
-func (suite *WindowFunctionsTestSuite) TestFirstValue() {
+func (suite *EBWindowFunctionsTestSuite) TestFirstValue() {
 	suite.T().Logf("Testing FirstValue function for %s", suite.dbType)
 
 	suite.Run("FirstValuePartitionedByStatus", func() {
@@ -433,8 +442,8 @@ func (suite *WindowFunctionsTestSuite) TestFirstValue() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "status", "view_count").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.FirstValue(func(fvb FirstValueBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.FirstValue(func(fvb orm.FirstValueBuilder) {
 					fvb.Column("view_count").Over().PartitionBy("status").OrderBy("view_count")
 				})
 			}, "first_in_status").
@@ -465,7 +474,7 @@ func (suite *WindowFunctionsTestSuite) TestFirstValue() {
 }
 
 // TestLastValue tests the LAST_VALUE window function.
-func (suite *WindowFunctionsTestSuite) TestLastValue() {
+func (suite *EBWindowFunctionsTestSuite) TestLastValue() {
 	suite.T().Logf("Testing LastValue function for %s", suite.dbType)
 
 	suite.Run("LastValuePartitionedByStatus", func() {
@@ -481,8 +490,8 @@ func (suite *WindowFunctionsTestSuite) TestLastValue() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "status", "view_count").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.LastValue(func(lvb LastValueBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.LastValue(func(lvb orm.LastValueBuilder) {
 					lvb.Column("view_count").Over().PartitionBy("status").OrderBy("view_count").Rows().UnboundedPreceding().And().UnboundedFollowing()
 				})
 			}, "last_in_status").
@@ -513,7 +522,7 @@ func (suite *WindowFunctionsTestSuite) TestLastValue() {
 }
 
 // TestNthValue tests the NTH_VALUE window function.
-func (suite *WindowFunctionsTestSuite) TestNthValue() {
+func (suite *EBWindowFunctionsTestSuite) TestNthValue() {
 	suite.T().Logf("Testing NthValue function for %s", suite.dbType)
 
 	suite.Run("SecondValueInPartition", func() {
@@ -528,8 +537,8 @@ func (suite *WindowFunctionsTestSuite) TestNthValue() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status", "view_count").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.NthValue(func(nvb NthValueBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.NthValue(func(nvb orm.NthValueBuilder) {
 					nvb.Column("view_count").N(2).Over().PartitionBy("status").OrderBy("view_count").Rows().UnboundedPreceding().And().UnboundedFollowing()
 				})
 			}, "second_from_end").
@@ -544,7 +553,7 @@ func (suite *WindowFunctionsTestSuite) TestNthValue() {
 }
 
 // TestWinCount tests the COUNT window function.
-func (suite *WindowFunctionsTestSuite) TestWinCount() {
+func (suite *EBWindowFunctionsTestSuite) TestWinCount() {
 	suite.T().Logf("Testing WinCount function for %s", suite.dbType)
 
 	suite.Run("RunningCount", func() {
@@ -559,8 +568,8 @@ func (suite *WindowFunctionsTestSuite) TestWinCount() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("name", "age").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.WinCount(func(wc WindowCountBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinCount(func(wc orm.WindowCountBuilder) {
 					wc.All().Over().OrderBy("age").Rows().UnboundedPreceding()
 				})
 			}, "running_count").
@@ -580,7 +589,7 @@ func (suite *WindowFunctionsTestSuite) TestWinCount() {
 }
 
 // TestWinSum tests the SUM window function.
-func (suite *WindowFunctionsTestSuite) TestWinSum() {
+func (suite *EBWindowFunctionsTestSuite) TestWinSum() {
 	suite.T().Logf("Testing WinSum function for %s", suite.dbType)
 
 	suite.Run("RunningTotal", func() {
@@ -595,8 +604,8 @@ func (suite *WindowFunctionsTestSuite) TestWinSum() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("name", "age").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.WinSum(func(ws WindowSumBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinSum(func(ws orm.WindowSumBuilder) {
 					ws.Column("age").Over().OrderBy("age").Rows().UnboundedPreceding()
 				})
 			}, "running_total").
@@ -627,8 +636,8 @@ func (suite *WindowFunctionsTestSuite) TestWinSum() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "status", "view_count").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.WinSum(func(ws WindowSumBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinSum(func(ws orm.WindowSumBuilder) {
 					ws.Column("view_count").Over().PartitionBy("status").OrderByDesc("view_count").Rows().UnboundedPreceding()
 				})
 			}, "cumulative_views").
@@ -648,7 +657,7 @@ func (suite *WindowFunctionsTestSuite) TestWinSum() {
 }
 
 // TestWinAvg tests the AVG window function.
-func (suite *WindowFunctionsTestSuite) TestWinAvg() {
+func (suite *EBWindowFunctionsTestSuite) TestWinAvg() {
 	suite.T().Logf("Testing WinAvg function for %s", suite.dbType)
 
 	suite.Run("MovingAverage", func() {
@@ -663,8 +672,8 @@ func (suite *WindowFunctionsTestSuite) TestWinAvg() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("name", "age").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.WinAvg(func(wa WindowAvgBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinAvg(func(wa orm.WindowAvgBuilder) {
 					wa.Column("age").Over().OrderBy("age").Rows().UnboundedPreceding()
 				})
 			}, "moving_avg").
@@ -694,8 +703,8 @@ func (suite *WindowFunctionsTestSuite) TestWinAvg() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "view_count").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.WinAvg(func(wab WindowAvgBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinAvg(func(wab orm.WindowAvgBuilder) {
 					wab.Column("view_count").Over().OrderBy("view_count").Rows().Preceding(2).And().CurrentRow()
 				})
 			}, "mov_avg").
@@ -710,7 +719,7 @@ func (suite *WindowFunctionsTestSuite) TestWinAvg() {
 }
 
 // TestWinMin tests the MIN window function.
-func (suite *WindowFunctionsTestSuite) TestWinMin() {
+func (suite *EBWindowFunctionsTestSuite) TestWinMin() {
 	suite.T().Logf("Testing WinMin function for %s", suite.dbType)
 
 	suite.Run("MinInStatusPartition", func() {
@@ -726,8 +735,8 @@ func (suite *WindowFunctionsTestSuite) TestWinMin() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count", "status").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.WinMin(func(wmb WindowMinBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinMin(func(wmb orm.WindowMinBuilder) {
 					wmb.Column("view_count").Over().PartitionBy("status")
 				})
 			}, "min_in_status").
@@ -747,7 +756,7 @@ func (suite *WindowFunctionsTestSuite) TestWinMin() {
 }
 
 // TestWinMax tests the MAX window function.
-func (suite *WindowFunctionsTestSuite) TestWinMax() {
+func (suite *EBWindowFunctionsTestSuite) TestWinMax() {
 	suite.T().Logf("Testing WinMax function for %s", suite.dbType)
 
 	suite.Run("MaxInStatusPartition", func() {
@@ -763,8 +772,8 @@ func (suite *WindowFunctionsTestSuite) TestWinMax() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count", "status").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.WinMax(func(wmb WindowMaxBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinMax(func(wmb orm.WindowMaxBuilder) {
 					wmb.Column("view_count").Over().PartitionBy("status")
 				})
 			}, "max_in_status").
@@ -785,7 +794,7 @@ func (suite *WindowFunctionsTestSuite) TestWinMax() {
 
 // TestWinStringAgg tests the STRING_AGG window function.
 // Note: MySQL does not support GROUP_CONCAT as a window function.
-func (suite *WindowFunctionsTestSuite) TestWinStringAgg() {
+func (suite *EBWindowFunctionsTestSuite) TestWinStringAgg() {
 	suite.T().Logf("Testing WinStringAgg function for %s", suite.dbType)
 
 	suite.Run("StringAggPartitionedByStatus", func() {
@@ -806,8 +815,8 @@ func (suite *WindowFunctionsTestSuite) TestWinStringAgg() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "status").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.WinStringAgg(func(wsab WindowStringAggBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinStringAgg(func(wsab orm.WindowStringAggBuilder) {
 					wsab.Column("title").Separator(", ").Over().PartitionBy("status")
 				})
 			}, "title_agg").
@@ -827,7 +836,7 @@ func (suite *WindowFunctionsTestSuite) TestWinStringAgg() {
 }
 
 // TestWinArrayAgg tests the ARRAY_AGG window function (PostgreSQL only).
-func (suite *WindowFunctionsTestSuite) TestWinArrayAgg() {
+func (suite *EBWindowFunctionsTestSuite) TestWinArrayAgg() {
 	suite.T().Logf("Testing WinArrayAgg function for %s", suite.dbType)
 
 	suite.Run("ArrayAggPartitionedByStatus", func() {
@@ -846,8 +855,8 @@ func (suite *WindowFunctionsTestSuite) TestWinArrayAgg() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "status").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.WinArrayAgg(func(waab WindowArrayAggBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinArrayAgg(func(waab orm.WindowArrayAggBuilder) {
 					waab.Column("view_count").Over().PartitionBy("status")
 				})
 			}, "view_counts").
@@ -868,7 +877,7 @@ func (suite *WindowFunctionsTestSuite) TestWinArrayAgg() {
 
 // TestWinStdDev tests the STDDEV window function.
 // Note: SQLite does not support statistical functions.
-func (suite *WindowFunctionsTestSuite) TestWinStdDev() {
+func (suite *EBWindowFunctionsTestSuite) TestWinStdDev() {
 	suite.T().Logf("Testing WinStdDev function for %s", suite.dbType)
 
 	suite.Run("StdDevInStatusPartition", func() {
@@ -890,8 +899,8 @@ func (suite *WindowFunctionsTestSuite) TestWinStdDev() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count", "status").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.WinStdDev(func(wsb WindowStdDevBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinStdDev(func(wsb orm.WindowStdDevBuilder) {
 					wsb.Column("view_count").Over().PartitionBy("status")
 				})
 			}, "stddev_in_status").
@@ -912,7 +921,7 @@ func (suite *WindowFunctionsTestSuite) TestWinStdDev() {
 
 // TestWinVariance tests the VARIANCE window function.
 // Note: SQLite does not support statistical functions.
-func (suite *WindowFunctionsTestSuite) TestWinVariance() {
+func (suite *EBWindowFunctionsTestSuite) TestWinVariance() {
 	suite.T().Logf("Testing WinVariance function for %s", suite.dbType)
 
 	suite.Run("VarianceInStatusPartition", func() {
@@ -934,8 +943,8 @@ func (suite *WindowFunctionsTestSuite) TestWinVariance() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count", "status").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.WinVariance(func(wvb WindowVarianceBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinVariance(func(wvb orm.WindowVarianceBuilder) {
 					wvb.Column("view_count").Over().PartitionBy("status")
 				})
 			}, "variance_in_status").
@@ -955,7 +964,7 @@ func (suite *WindowFunctionsTestSuite) TestWinVariance() {
 }
 
 // TestWinJSONObjectAgg tests the JSON_OBJECT_AGG window function.
-func (suite *WindowFunctionsTestSuite) TestWinJSONObjectAgg() {
+func (suite *EBWindowFunctionsTestSuite) TestWinJSONObjectAgg() {
 	suite.T().Logf("Testing WinJSONObjectAgg function for %s", suite.dbType)
 
 	suite.Run("JSONObjectAggPartitionedByStatus", func() {
@@ -970,8 +979,8 @@ func (suite *WindowFunctionsTestSuite) TestWinJSONObjectAgg() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "status").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.WinJSONObjectAgg(func(wjoab WindowJSONObjectAggBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinJSONObjectAgg(func(wjoab orm.WindowJSONObjectAggBuilder) {
 					wjoab.KeyColumn("id").Column("title").Over().PartitionBy("status")
 				})
 			}, "json_object_agg").
@@ -992,7 +1001,7 @@ func (suite *WindowFunctionsTestSuite) TestWinJSONObjectAgg() {
 }
 
 // TestWinJSONArrayAgg tests the JSON_ARRAY_AGG window function.
-func (suite *WindowFunctionsTestSuite) TestWinJSONArrayAgg() {
+func (suite *EBWindowFunctionsTestSuite) TestWinJSONArrayAgg() {
 	suite.T().Logf("Testing WinJSONArrayAgg function for %s", suite.dbType)
 
 	suite.Run("JSONArrayAggPartitionedByStatus", func() {
@@ -1007,8 +1016,8 @@ func (suite *WindowFunctionsTestSuite) TestWinJSONArrayAgg() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "status").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.WinJSONArrayAgg(func(wjaab WindowJSONArrayAggBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinJSONArrayAgg(func(wjaab orm.WindowJSONArrayAggBuilder) {
 					wjaab.Column("title").Over().PartitionBy("status")
 				})
 			}, "json_array_agg").
@@ -1032,7 +1041,7 @@ func (suite *WindowFunctionsTestSuite) TestWinJSONArrayAgg() {
 // WinBitOr performs bitwise OR within a window frame.
 // Note: PostgreSQL and MySQL support native BIT_OR.
 // SQLite simulates it using MAX with CASE for boolean-like operations.
-func (suite *WindowFunctionsTestSuite) TestWinBitOr() {
+func (suite *EBWindowFunctionsTestSuite) TestWinBitOr() {
 	suite.T().Logf("Testing WinBitOr function for %s", suite.dbType)
 
 	suite.Run("BitOrInStatusPartition", func() {
@@ -1048,8 +1057,8 @@ func (suite *WindowFunctionsTestSuite) TestWinBitOr() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count", "status").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.WinBitOr(func(wbob WindowBitOrBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinBitOr(func(wbob orm.WindowBitOrBuilder) {
 					wbob.Column("view_count").Over().PartitionBy("status")
 				})
 			}, "bit_or_result").
@@ -1072,7 +1081,7 @@ func (suite *WindowFunctionsTestSuite) TestWinBitOr() {
 // WinBitAnd performs bitwise AND within a window frame.
 // Note: PostgreSQL and MySQL support native BIT_AND.
 // SQLite simulates it using MIN with CASE for boolean-like operations.
-func (suite *WindowFunctionsTestSuite) TestWinBitAnd() {
+func (suite *EBWindowFunctionsTestSuite) TestWinBitAnd() {
 	suite.T().Logf("Testing WinBitAnd function for %s", suite.dbType)
 
 	suite.Run("BitAndInStatusPartition", func() {
@@ -1088,8 +1097,8 @@ func (suite *WindowFunctionsTestSuite) TestWinBitAnd() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count", "status").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.WinBitAnd(func(wbab WindowBitAndBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinBitAnd(func(wbab orm.WindowBitAndBuilder) {
 					wbab.Column("view_count").Over().PartitionBy("status")
 				})
 			}, "bit_and_result").
@@ -1111,7 +1120,7 @@ func (suite *WindowFunctionsTestSuite) TestWinBitAnd() {
 // TestWinBoolOr tests the BOOL_OR window function.
 // WinBoolOr performs boolean OR within a window frame.
 // Framework uses BOOL_OR (PostgreSQL), MAX+CASE simulation (MySQL/SQLite).
-func (suite *WindowFunctionsTestSuite) TestWinBoolOr() {
+func (suite *EBWindowFunctionsTestSuite) TestWinBoolOr() {
 	suite.T().Logf("Testing WinBoolOr function for %s", suite.dbType)
 
 	suite.Run("BoolOrInStatusPartition", func() {
@@ -1126,8 +1135,8 @@ func (suite *WindowFunctionsTestSuite) TestWinBoolOr() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "status").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.WinBoolOr(func(wbob WindowBoolOrBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinBoolOr(func(wbob orm.WindowBoolOrBuilder) {
 					wbob.Expr(eb.Expr("? > 100", eb.Column("view_count"))).Over().PartitionBy("status")
 				})
 			}, "bool_or_result").
@@ -1148,7 +1157,7 @@ func (suite *WindowFunctionsTestSuite) TestWinBoolOr() {
 // TestWinBoolAnd tests the BOOL_AND window function.
 // WinBoolAnd performs boolean AND within a window frame.
 // Framework uses BOOL_AND (PostgreSQL), MIN+CASE simulation (MySQL/SQLite).
-func (suite *WindowFunctionsTestSuite) TestWinBoolAnd() {
+func (suite *EBWindowFunctionsTestSuite) TestWinBoolAnd() {
 	suite.T().Logf("Testing WinBoolAnd function for %s", suite.dbType)
 
 	suite.Run("BoolAndInStatusPartition", func() {
@@ -1163,8 +1172,8 @@ func (suite *WindowFunctionsTestSuite) TestWinBoolAnd() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "status").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.WinBoolAnd(func(wbab WindowBoolAndBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinBoolAnd(func(wbab orm.WindowBoolAndBuilder) {
 					wbab.Expr(eb.Expr("? > 100", eb.Column("view_count"))).Over().PartitionBy("status")
 				})
 			}, "bool_and_result").

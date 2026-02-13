@@ -6,238 +6,37 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dbfixture"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/database"
-	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/internal/testx"
 )
 
-// runAllAPITests executes all API test suites on the given database configuration.
-func runAllAPITests(t *testing.T, ctx context.Context, dsConfig *config.DatasourceConfig) {
-	// Create database connection
-	db, err := database.New(dsConfig)
-	require.NoError(t, err)
+// registry holds all CRUD test suite factories, populated by init() functions in each suite file.
+var registry = testx.NewRegistry[BaseSuite]()
 
-	defer func() {
-		// Close the database connection after all tests are completed
-		if err := db.Close(); err != nil {
-			t.Logf("Error closing database connection for %s: %v", dsConfig.Type, err)
-		}
-	}()
+// baseFactory creates a BaseSuite from a DBEnv — called once per database.
+func baseFactory(env *testx.DBEnv) *BaseSuite {
+	setupTestFixtures(env.T, env.Ctx, env.BunDB, env.DBType)
 
-	// Setup test data using fixtures
-	setupTestFixtures(t, ctx, db, dsConfig.Type)
-
-	ormDB := orm.New(db)
-
-	// Create FindAll Suite
-	findAllSuite := &FindAllTestSuite{
-		BaseSuite{
-			ctx:      ctx,
-			db:       ormDB,
-			dbType:   dsConfig.Type,
-			dsConfig: dsConfig,
-		},
+	return &BaseSuite{
+		ctx:      env.Ctx,
+		db:       env.DB,
+		dbType:   env.DBType,
+		dsConfig: env.DsConfig,
 	}
+}
 
-	// Create FindPage Suite
-	findPageSuite := &FindPageTestSuite{
-		BaseSuite{
-			ctx:      ctx,
-			db:       ormDB,
-			dbType:   dsConfig.Type,
-			dsConfig: dsConfig,
-		},
-	}
-
-	// Create FindOne Suite
-	findOneSuite := &FindOneTestSuite{
-		BaseSuite{
-			ctx:      ctx,
-			db:       ormDB,
-			dbType:   dsConfig.Type,
-			dsConfig: dsConfig,
-		},
-	}
-
-	// Create FindOptions Suite
-	findOptionsSuite := &FindOptionsTestSuite{
-		BaseSuite{
-			ctx:      ctx,
-			db:       ormDB,
-			dbType:   dsConfig.Type,
-			dsConfig: dsConfig,
-		},
-	}
-
-	// Create FindTree Suite
-	findTreeSuite := &FindTreeTestSuite{
-		BaseSuite{
-			ctx:      ctx,
-			db:       ormDB,
-			dbType:   dsConfig.Type,
-			dsConfig: dsConfig,
-		},
-	}
-
-	// Create FindTreeOptions Suite
-	findTreeOptionsSuite := &FindTreeOptionsTestSuite{
-		BaseSuite{
-			ctx:      ctx,
-			db:       ormDB,
-			dbType:   dsConfig.Type,
-			dsConfig: dsConfig,
-		},
-	}
-
-	// Create Suite
-	createSuite := &CreateTestSuite{
-		BaseSuite{
-			ctx:      ctx,
-			db:       ormDB,
-			dbType:   dsConfig.Type,
-			dsConfig: dsConfig,
-		},
-	}
-	createManySuite := &CreateManyTestSuite{
-		BaseSuite{
-			ctx:      ctx,
-			db:       ormDB,
-			dbType:   dsConfig.Type,
-			dsConfig: dsConfig,
-		},
-	}
-
-	// Create Update Suite
-	updateSuite := &UpdateTestSuite{
-		BaseSuite{
-			ctx:      ctx,
-			db:       ormDB,
-			dbType:   dsConfig.Type,
-			dsConfig: dsConfig,
-		},
-	}
-	updateManySuite := &UpdateManyTestSuite{
-		BaseSuite{
-			ctx:      ctx,
-			db:       ormDB,
-			dbType:   dsConfig.Type,
-			dsConfig: dsConfig,
-		},
-	}
-
-	// Create Delete Suite
-	deleteSuite := &DeleteTestSuite{
-		BaseSuite{
-			ctx:      ctx,
-			db:       ormDB,
-			dbType:   dsConfig.Type,
-			dsConfig: dsConfig,
-		},
-	}
-	deleteManySuite := &DeleteManyTestSuite{
-		BaseSuite{
-			ctx:      ctx,
-			db:       ormDB,
-			dbType:   dsConfig.Type,
-			dsConfig: dsConfig,
-		},
-	}
-
-	// Create Export Suite
-	exportSuite := &ExportTestSuite{
-		BaseSuite{
-			ctx:      ctx,
-			db:       ormDB,
-			dbType:   dsConfig.Type,
-			dsConfig: dsConfig,
-		},
-	}
-
-	// Create Import Suite
-	importSuite := &ImportTestSuite{
-		BaseSuite{
-			ctx:      ctx,
-			db:       ormDB,
-			dbType:   dsConfig.Type,
-			dsConfig: dsConfig,
-		},
-	}
-
-	t.Run("TestFindAll", func(t *testing.T) {
-		suite.Run(t, findAllSuite)
-	})
-
-	t.Run("TestFindPage", func(t *testing.T) {
-		suite.Run(t, findPageSuite)
-	})
-
-	t.Run("TestFindOne", func(t *testing.T) {
-		suite.Run(t, findOneSuite)
-	})
-
-	t.Run("TestFindOptions", func(t *testing.T) {
-		suite.Run(t, findOptionsSuite)
-	})
-
-	// SQLite currently rejects the recursive CTE SQL emitted by Bun for tree queries because the
-	// generated WITH clause wraps SELECT statements in parentheses. Skip these tests on SQLite
-	// until the upstream Bun query builder relaxes that requirement.
-	t.Run("TestFindTree", func(t *testing.T) {
-		if dsConfig.Type == config.SQLite {
-			t.Skip("Skipping FindTree test for SQLite due to Bun recursive CTE syntax issue")
-		}
-
-		suite.Run(t, findTreeSuite)
-	})
-
-	t.Run("TestFindTreeOptions", func(t *testing.T) {
-		if dsConfig.Type == config.SQLite {
-			t.Skip("Skipping FindTreeOptions test for SQLite due to Bun recursive CTE syntax issue")
-		}
-
-		suite.Run(t, findTreeOptionsSuite)
-	})
-
-	t.Run("TestCreate", func(t *testing.T) {
-		suite.Run(t, createSuite)
-	})
-
-	t.Run("TestCreateMany", func(t *testing.T) {
-		suite.Run(t, createManySuite)
-	})
-
-	t.Run("TestUpdate", func(t *testing.T) {
-		suite.Run(t, updateSuite)
-	})
-
-	t.Run("TestUpdateMany", func(t *testing.T) {
-		suite.Run(t, updateManySuite)
-	})
-
-	t.Run("TestDelete", func(t *testing.T) {
-		suite.Run(t, deleteSuite)
-	})
-
-	t.Run("TestDeleteMany", func(t *testing.T) {
-		suite.Run(t, deleteManySuite)
-	})
-
-	t.Run("TestExport", func(t *testing.T) {
-		suite.Run(t, exportSuite)
-	})
-
-	t.Run("TestImport", func(t *testing.T) {
-		suite.Run(t, importSuite)
-	})
+// TestAll runs every registered CRUD suite against all configured databases.
+// Test hierarchy: TestAll/<DBDisplayName>/<SuiteName>/...
+func TestAll(t *testing.T) {
+	registry.RunAll(t, baseFactory)
 }
 
 // setupTestFixtures loads test data from fixture files using dbfixture.
 func setupTestFixtures(t *testing.T, ctx context.Context, db bun.IDB, dbType config.DBType) {
+	t.Helper()
 	t.Logf("Setting up test fixtures for %s", dbType)
 
 	bunDB, ok := db.(*bun.DB)
@@ -266,49 +65,4 @@ func setupTestFixtures(t *testing.T, ctx context.Context, db bun.IDB, dbType con
 	require.NoError(t, err, "Failed to load fixtures for %s", dbType)
 
 	t.Logf("Test fixtures loaded for %s database", dbType)
-}
-
-// TestPostgres runs all API tests against PostgreSQL.
-func TestPostgres(t *testing.T) {
-	ctx := context.Background()
-
-	// Create a dummy suite for container management
-	dummySuite := &suite.Suite{}
-	dummySuite.SetT(t)
-
-	// Start PostgreSQL container
-	postgresContainer := testx.NewPostgresContainer(ctx, dummySuite)
-	defer postgresContainer.Terminate(ctx, dummySuite)
-
-	// Run all API tests
-	runAllAPITests(t, ctx, postgresContainer.DsConfig)
-}
-
-// TestMySQL runs all API tests against MySQL.
-func TestMySQL(t *testing.T) {
-	ctx := context.Background()
-
-	// Create a dummy suite for container management
-	dummySuite := &suite.Suite{}
-	dummySuite.SetT(t)
-
-	// Start MySQL container
-	mysqlContainer := testx.NewMySQLContainer(ctx, dummySuite)
-	defer mysqlContainer.Terminate(ctx, dummySuite)
-
-	// Run all API tests
-	runAllAPITests(t, ctx, mysqlContainer.DsConfig)
-}
-
-// TestSQLite runs all API tests against SQLite (in-memory).
-func TestSQLite(t *testing.T) {
-	ctx := context.Background()
-
-	// Create SQLite in-memory database config
-	dsConfig := &config.DatasourceConfig{
-		Type: config.SQLite,
-	}
-
-	// Run all API tests
-	runAllAPITests(t, ctx, dsConfig)
 }

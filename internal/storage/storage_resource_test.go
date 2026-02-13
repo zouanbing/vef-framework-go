@@ -54,7 +54,7 @@ func (suite *StorageResourceTestSuite) SetupSuite() {
 	suite.testObjectData = []byte("Hello, Storage API Test!")
 	suite.testContentType = "text/plain"
 
-	suite.minioContainer = testx.NewMinIOContainer(suite.ctx, &suite.Suite)
+	suite.minioContainer = testx.NewMinIOContainer(suite.ctx, suite.T())
 
 	suite.setupTestApp()
 
@@ -79,10 +79,6 @@ func (suite *StorageResourceTestSuite) TearDownSuite() {
 
 	if suite.stop != nil {
 		suite.stop()
-	}
-
-	if suite.minioContainer != nil {
-		suite.minioContainer.Terminate(suite.ctx, &suite.Suite)
 	}
 
 	suite.T().Log("StorageResourceTestSuite teardown complete")

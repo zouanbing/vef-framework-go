@@ -1,20 +1,34 @@
-package orm
+package orm_test
 
-// NullBooleanChecksTestSuite tests NULL and boolean check condition methods.
+import (
+	"github.com/stretchr/testify/suite"
+
+	"github.com/ilxqx/vef-framework-go/internal/orm"
+)
+
+func init() {
+	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+		return &CBNullBooleanChecksTestSuite{
+			ConditionBuilderTestSuite: &ConditionBuilderTestSuite{OrmTestSuite: base},
+		}
+	})
+}
+
+// CBNullBooleanChecksTestSuite tests NULL and boolean check condition methods.
 // Covers: IsNull, IsNotNull, IsTrue, IsFalse, IsTrueOrNull, IsFalseOrNull and their Or variants.
-type NullBooleanChecksTestSuite struct {
+type CBNullBooleanChecksTestSuite struct {
 	*ConditionBuilderTestSuite
 }
 
 // TestIsNull tests the IsNull and OrIsNull conditions.
-func (suite *NullBooleanChecksTestSuite) TestIsNull() {
+func (suite *CBNullBooleanChecksTestSuite) TestIsNull() {
 	suite.T().Logf("Testing IsNull condition for %s", suite.dbType)
 
 	suite.Run("BasicIsNull", func() {
 		posts := suite.assertQueryReturnsPosts(
 			suite.db.NewSelect().
 				Model((*Post)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.IsNull("description")
 				}),
 		)
@@ -32,7 +46,7 @@ func (suite *NullBooleanChecksTestSuite) TestIsNull() {
 		posts := suite.assertQueryReturnsPosts(
 			suite.db.NewSelect().
 				Model((*Post)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.IsNull("description").
 						OrIsNull("content")
 				}),
@@ -45,14 +59,14 @@ func (suite *NullBooleanChecksTestSuite) TestIsNull() {
 }
 
 // TestIsNotNull tests the IsNotNull and OrIsNotNull conditions.
-func (suite *NullBooleanChecksTestSuite) TestIsNotNull() {
+func (suite *CBNullBooleanChecksTestSuite) TestIsNotNull() {
 	suite.T().Logf("Testing IsNotNull condition for %s", suite.dbType)
 
 	suite.Run("BasicIsNotNull", func() {
 		posts := suite.assertQueryReturnsPosts(
 			suite.db.NewSelect().
 				Model((*Post)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.IsNotNull("title")
 				}),
 		)
@@ -70,7 +84,7 @@ func (suite *NullBooleanChecksTestSuite) TestIsNotNull() {
 		posts := suite.assertQueryReturnsPosts(
 			suite.db.NewSelect().
 				Model((*Post)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.IsNotNull("title").
 						OrIsNotNull("content")
 				}),
@@ -83,14 +97,14 @@ func (suite *NullBooleanChecksTestSuite) TestIsNotNull() {
 }
 
 // TestIsTrue tests the IsTrue and OrIsTrue conditions.
-func (suite *NullBooleanChecksTestSuite) TestIsTrue() {
+func (suite *CBNullBooleanChecksTestSuite) TestIsTrue() {
 	suite.T().Logf("Testing IsTrue condition for %s", suite.dbType)
 
 	suite.Run("BasicIsTrue", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.IsTrue("is_active")
 				}),
 		)
@@ -108,7 +122,7 @@ func (suite *NullBooleanChecksTestSuite) TestIsTrue() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.IsTrue("is_active").
 						OrIsTrue("is_active")
 				}),
@@ -125,14 +139,14 @@ func (suite *NullBooleanChecksTestSuite) TestIsTrue() {
 }
 
 // TestIsFalse tests the IsFalse and OrIsFalse conditions.
-func (suite *NullBooleanChecksTestSuite) TestIsFalse() {
+func (suite *CBNullBooleanChecksTestSuite) TestIsFalse() {
 	suite.T().Logf("Testing IsFalse condition for %s", suite.dbType)
 
 	suite.Run("BasicIsFalse", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.IsFalse("is_active")
 				}),
 		)
@@ -150,7 +164,7 @@ func (suite *NullBooleanChecksTestSuite) TestIsFalse() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.IsFalse("is_active").
 						OrIsFalse("is_active")
 				}),

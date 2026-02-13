@@ -423,7 +423,7 @@ func (l *stubUserLoader) LoadByID(_ context.Context, _ string) (*security.Princi
 func (s *ApprovalSuite) SetupSuite() {
 	s.ctx = context.Background()
 
-	s.pgc = testx.NewPostgresContainer(s.ctx, &s.Suite)
+	s.pgc = testx.NewPostgresContainer(s.ctx, s.T())
 	dsConfig := s.pgc.DsConfig
 
 	bunDB, err := database.New(dsConfig)
@@ -496,10 +496,6 @@ func (s *ApprovalSuite) SetupSuite() {
 func (s *ApprovalSuite) TearDownSuite() {
 	if s.stop != nil {
 		s.stop()
-	}
-
-	if s.pgc != nil {
-		s.pgc.Terminate(s.ctx, &s.Suite)
 	}
 }
 

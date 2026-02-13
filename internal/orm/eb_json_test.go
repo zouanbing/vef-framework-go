@@ -1,12 +1,24 @@
-package orm
+package orm_test
 
-// JSONFunctionsTestSuite tests JSON function methods of ExprBuilder.
-type JSONFunctionsTestSuite struct {
+import (
+	"github.com/stretchr/testify/suite"
+
+	"github.com/ilxqx/vef-framework-go/internal/orm"
+)
+
+func init() {
+	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+		return &EBJSONFunctionsTestSuite{OrmTestSuite: base}
+	})
+}
+
+// EBJSONFunctionsTestSuite tests JSON function methods of orm.ExprBuilder.
+type EBJSONFunctionsTestSuite struct {
 	*OrmTestSuite
 }
 
 // TestJsonObject tests the JsonObject function.
-func (suite *JSONFunctionsTestSuite) TestJsonObject() {
+func (suite *EBJSONFunctionsTestSuite) TestJsonObject() {
 	suite.T().Logf("Testing JsonObject function for %s", suite.dbType)
 
 	suite.Run("CreateJsonObjectFromColumns", func() {
@@ -21,7 +33,7 @@ func (suite *JSONFunctionsTestSuite) TestJsonObject() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONObject("user_id", eb.Column("id"), "user_name", eb.Column("name"), "user_age", eb.Column("age"), "is_active", eb.Column("is_active"))
 			}, "user_object").
 			OrderBy("name").
@@ -40,7 +52,7 @@ func (suite *JSONFunctionsTestSuite) TestJsonObject() {
 }
 
 // TestJSONArray tests the JSONArray function.
-func (suite *JSONFunctionsTestSuite) TestJSONArray() {
+func (suite *EBJSONFunctionsTestSuite) TestJSONArray() {
 	suite.T().Logf("Testing JSONArray function for %s", suite.dbType)
 
 	suite.Run("CreateJSONArrayFromColumns", func() {
@@ -54,7 +66,7 @@ func (suite *JSONFunctionsTestSuite) TestJSONArray() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONArray(eb.Column("title"), eb.Column("status"), eb.Column("view_count"))
 			}, "json_array").
 			OrderBy("title").
@@ -72,7 +84,7 @@ func (suite *JSONFunctionsTestSuite) TestJSONArray() {
 }
 
 // TestJsonExtract tests the JsonExtract function.
-func (suite *JSONFunctionsTestSuite) TestJsonExtract() {
+func (suite *EBJSONFunctionsTestSuite) TestJsonExtract() {
 	suite.T().Logf("Testing JsonExtract function for %s", suite.dbType)
 
 	suite.Run("ExtractJsonPathValue", func() {
@@ -87,10 +99,10 @@ func (suite *JSONFunctionsTestSuite) TestJsonExtract() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONObject("post_id", eb.Column("id"), "title", eb.Column("title"), "views", eb.Column("view_count"), "status", eb.Column("status"))
 			}, "meta_json").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONExtract(eb.JSONObject("id", eb.Column("id")), "id")
 			}, "extracted_id").
 			OrderBy("title").
@@ -109,7 +121,7 @@ func (suite *JSONFunctionsTestSuite) TestJsonExtract() {
 }
 
 // TestJsonValid tests the JsonValid function.
-func (suite *JSONFunctionsTestSuite) TestJsonValid() {
+func (suite *EBJSONFunctionsTestSuite) TestJsonValid() {
 	suite.T().Logf("Testing JsonValid function for %s", suite.dbType)
 
 	suite.Run("ValidateJsonObject", func() {
@@ -124,10 +136,10 @@ func (suite *JSONFunctionsTestSuite) TestJsonValid() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONObject("title", eb.Column("title"), "views", eb.Column("view_count"), "status", eb.Column("status"))
 			}, "json_data").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONValid(eb.JSONObject("test", eb.Column("title")))
 			}, "is_valid").
 			OrderBy("title").
@@ -146,7 +158,7 @@ func (suite *JSONFunctionsTestSuite) TestJsonValid() {
 }
 
 // TestJsonInsert tests the JsonInsert function.
-func (suite *JSONFunctionsTestSuite) TestJsonInsert() {
+func (suite *EBJSONFunctionsTestSuite) TestJsonInsert() {
 	suite.T().Logf("Testing JsonInsert function for %s", suite.dbType)
 
 	suite.Run("InsertIntoJsonObject", func() {
@@ -161,10 +173,10 @@ func (suite *JSONFunctionsTestSuite) TestJsonInsert() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONObject("title", eb.Column("title"), "views", eb.Column("view_count"))
 			}, "original").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONInsert(eb.JSONObject("title", eb.Column("title"), "views", eb.Column("view_count")), "status", eb.Column("status"))
 			}, "with_insert").
 			OrderBy("title").
@@ -185,7 +197,7 @@ func (suite *JSONFunctionsTestSuite) TestJsonInsert() {
 }
 
 // TestJsonReplace tests the JsonReplace function.
-func (suite *JSONFunctionsTestSuite) TestJsonReplace() {
+func (suite *EBJSONFunctionsTestSuite) TestJsonReplace() {
 	suite.T().Logf("Testing JsonReplace function for %s", suite.dbType)
 
 	suite.Run("ReplaceJsonValue", func() {
@@ -200,10 +212,10 @@ func (suite *JSONFunctionsTestSuite) TestJsonReplace() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONObject("title", eb.Column("title"), "views", eb.Column("view_count"))
 			}, "original").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONReplace(eb.JSONObject("title", eb.Column("title"), "views", eb.Column("view_count")), "views", 9999)
 			}, "with_replace").
 			OrderBy("title").
@@ -223,7 +235,7 @@ func (suite *JSONFunctionsTestSuite) TestJsonReplace() {
 }
 
 // TestJsonLength tests the JsonLength function.
-func (suite *JSONFunctionsTestSuite) TestJsonLength() {
+func (suite *EBJSONFunctionsTestSuite) TestJsonLength() {
 	suite.T().Logf("Testing JsonLength function for %s", suite.dbType)
 
 	suite.Run("GetJsonObjectLength", func() {
@@ -238,7 +250,7 @@ func (suite *JSONFunctionsTestSuite) TestJsonLength() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "meta").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONLength(eb.Column("meta"))
 			}, "meta_length").
 			Limit(5).
@@ -265,10 +277,10 @@ func (suite *JSONFunctionsTestSuite) TestJsonLength() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONArray(eb.Column("title"), eb.Column("status"), eb.Column("view_count"))
 			}, "tags_array").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONLength(
 					eb.JSONArray(eb.Column("title"), eb.Column("status"), eb.Column("view_count")),
 				)
@@ -287,7 +299,7 @@ func (suite *JSONFunctionsTestSuite) TestJsonLength() {
 }
 
 // TestJsonType tests the JsonType function.
-func (suite *JSONFunctionsTestSuite) TestJsonType() {
+func (suite *EBJSONFunctionsTestSuite) TestJsonType() {
 	suite.T().Logf("Testing JsonType function for %s", suite.dbType)
 
 	suite.Run("GetJsonValueType", func() {
@@ -302,7 +314,7 @@ func (suite *JSONFunctionsTestSuite) TestJsonType() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "meta").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONType(eb.Column("meta"))
 			}, "meta_type").
 			Limit(5).
@@ -329,10 +341,10 @@ func (suite *JSONFunctionsTestSuite) TestJsonType() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONType(eb.JSONArray(eb.Column("name"), eb.Column("email")))
 			}, "array_type").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONType(eb.JSONObject("name", eb.Column("name"), "age", eb.Column("age")))
 			}, "object_type").
 			Limit(3).
@@ -351,7 +363,7 @@ func (suite *JSONFunctionsTestSuite) TestJsonType() {
 }
 
 // TestJsonKeys tests the JsonKeys function.
-func (suite *JSONFunctionsTestSuite) TestJsonKeys() {
+func (suite *EBJSONFunctionsTestSuite) TestJsonKeys() {
 	suite.T().Logf("Testing JsonKeys function for %s", suite.dbType)
 
 	suite.Run("GetJsonObjectKeys", func() {
@@ -366,7 +378,7 @@ func (suite *JSONFunctionsTestSuite) TestJsonKeys() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "meta").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONKeys(eb.Column("meta"))
 			}, "meta_keys").
 			Limit(5).
@@ -392,10 +404,10 @@ func (suite *JSONFunctionsTestSuite) TestJsonKeys() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONObject("name", eb.Column("name"), "age", eb.Column("age"))
 			}, "attributes").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONKeys(
 					eb.JSONObject("name", eb.Column("name"), "age", eb.Column("age")),
 				)
@@ -414,7 +426,7 @@ func (suite *JSONFunctionsTestSuite) TestJsonKeys() {
 }
 
 // TestJsonContains tests the JsonContains function.
-func (suite *JSONFunctionsTestSuite) TestJsonContains() {
+func (suite *EBJSONFunctionsTestSuite) TestJsonContains() {
 	suite.T().Logf("Testing JsonContains function for %s", suite.dbType)
 
 	suite.Run("CheckJsonContainsValue", func() {
@@ -429,7 +441,7 @@ func (suite *JSONFunctionsTestSuite) TestJsonContains() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "meta").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONContains(eb.Column("meta"), `{"active": true}`)
 			}, "contains_test").
 			Limit(5).
@@ -445,7 +457,7 @@ func (suite *JSONFunctionsTestSuite) TestJsonContains() {
 }
 
 // TestJsonContainsPath tests the JsonContainsPath function.
-func (suite *JSONFunctionsTestSuite) TestJsonContainsPath() {
+func (suite *EBJSONFunctionsTestSuite) TestJsonContainsPath() {
 	suite.T().Logf("Testing JsonContainsPath function for %s", suite.dbType)
 
 	suite.Run("CheckJsonPathExists", func() {
@@ -460,7 +472,7 @@ func (suite *JSONFunctionsTestSuite) TestJsonContainsPath() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "meta").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONContainsPath(eb.Column("meta"), "role")
 			}, "path_exists").
 			Limit(5).
@@ -476,7 +488,7 @@ func (suite *JSONFunctionsTestSuite) TestJsonContainsPath() {
 }
 
 // TestJsonUnquote tests the JsonUnquote function.
-func (suite *JSONFunctionsTestSuite) TestJsonUnquote() {
+func (suite *EBJSONFunctionsTestSuite) TestJsonUnquote() {
 	suite.T().Logf("Testing JsonUnquote function for %s", suite.dbType)
 
 	suite.Run("RemoveJsonQuotes", func() {
@@ -491,7 +503,7 @@ func (suite *JSONFunctionsTestSuite) TestJsonUnquote() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "meta").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONUnquote(eb.JSONExtract(eb.Column("meta"), "role"))
 			}, "unquoted").
 			Limit(5).
@@ -506,7 +518,7 @@ func (suite *JSONFunctionsTestSuite) TestJsonUnquote() {
 }
 
 // TestJsonSet tests the JsonSet function.
-func (suite *JSONFunctionsTestSuite) TestJsonSet() {
+func (suite *EBJSONFunctionsTestSuite) TestJsonSet() {
 	suite.T().Logf("Testing JsonSet function for %s", suite.dbType)
 
 	suite.Run("SetJsonPathValue", func() {
@@ -521,7 +533,7 @@ func (suite *JSONFunctionsTestSuite) TestJsonSet() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "meta").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONSet(eb.Column("meta"), "updated", "true")
 			}, "updated_meta").
 			Limit(3).
@@ -537,7 +549,7 @@ func (suite *JSONFunctionsTestSuite) TestJsonSet() {
 }
 
 // TestJSONArrayAppend tests the JSONArrayAppend function.
-func (suite *JSONFunctionsTestSuite) TestJSONArrayAppend() {
+func (suite *EBJSONFunctionsTestSuite) TestJSONArrayAppend() {
 	suite.T().Logf("Testing JSONArrayAppend function for %s", suite.dbType)
 
 	suite.Run("AppendToJSONArray", func() {
@@ -552,7 +564,7 @@ func (suite *JSONFunctionsTestSuite) TestJSONArrayAppend() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "meta").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONArrayAppend(eb.Column("meta"), "interests", `"testing"`)
 			}, "updated_meta").
 			Limit(3).
@@ -570,7 +582,7 @@ func (suite *JSONFunctionsTestSuite) TestJSONArrayAppend() {
 }
 
 // TestJsonEdgeCases tests JSON function edge cases and boundary conditions.
-func (suite *JSONFunctionsTestSuite) TestJsonEdgeCases() {
+func (suite *EBJSONFunctionsTestSuite) TestJsonEdgeCases() {
 	suite.T().Logf("Testing JSON edge cases for %s", suite.dbType)
 
 	suite.Run("EmptyJsonObject", func() {
@@ -586,13 +598,13 @@ func (suite *JSONFunctionsTestSuite) TestJsonEdgeCases() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONObject()
 			}, "empty_object").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONType(eb.JSONObject())
 			}, "object_type").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONLength(eb.JSONObject())
 			}, "object_len").
 			Limit(1).
@@ -622,13 +634,13 @@ func (suite *JSONFunctionsTestSuite) TestJsonEdgeCases() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONArray()
 			}, "empty_array").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONType(eb.JSONArray())
 			}, "array_type").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONLength(eb.JSONArray())
 			}, "array_len").
 			Limit(1).
@@ -658,13 +670,13 @@ func (suite *JSONFunctionsTestSuite) TestJsonEdgeCases() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONValid(eb.JSONObject("test", "value"))
 			}, "valid_object").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONValid(eb.JSONArray("a", "b", "c"))
 			}, "valid_array").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.JSONValid("not valid json")
 			}, "invalid_json").
 			Limit(1).

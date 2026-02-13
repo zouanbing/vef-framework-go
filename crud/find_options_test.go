@@ -1,12 +1,25 @@
 package crud_test
 
 import (
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/crud"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
 )
+
+func init() {
+	registry.Add(func(base *BaseSuite) suite.TestingSuite {
+		return &FindOptionsTestSuite{BaseSuite: BaseSuite{
+			ctx:      base.ctx,
+			db:       base.db,
+			dbType:   base.dbType,
+			dsConfig: base.dsConfig,
+		}}
+	})
+}
 
 // Test Resources.
 type TestUserFindOptionsResource struct {

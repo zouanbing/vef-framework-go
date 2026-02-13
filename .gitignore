@@ -32,6 +32,7 @@ CLAUDE.md
 AGENTS.md
 TESTING.md
 cmd/CMD_DEV.md
+docs/plans/
 
 # shell scripts
 *.sh

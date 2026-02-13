@@ -3,8 +3,9 @@ package testx
 import (
 	"context"
 	"fmt"
+	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/minio"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -13,17 +14,12 @@ import (
 )
 
 type MinIOContainer struct {
-	container   *minio.MinioContainer
 	MinIOConfig *config.MinIOConfig
 }
 
-func (c *MinIOContainer) Terminate(ctx context.Context, s *suite.Suite) {
-	if err := c.container.Terminate(ctx); err != nil {
-		s.T().Logf("Failed to terminate MinIO container: %v", err)
-	}
-}
+func NewMinIOContainer(ctx context.Context, t testing.TB) *MinIOContainer {
+	t.Helper()
 
-func NewMinIOContainer(ctx context.Context, s *suite.Suite) *MinIOContainer {
 	container, err := minio.Run(
 		ctx,
 		MinIOImage,
@@ -37,17 +33,22 @@ func NewMinIOContainer(ctx context.Context, s *suite.Suite) *MinIOContainer {
 			).WithDeadline(DefaultContainerTimeout),
 		),
 	)
-	s.Require().NoError(err)
-	s.T().Log("MinIO container started successfully")
+	require.NoError(t, err)
+	t.Log("MinIO container started successfully")
+
+	t.Cleanup(func() {
+		if err := container.Terminate(ctx); err != nil {
+			t.Logf("Failed to terminate MinIO container: %v", err)
+		}
+	})
 
 	host, err := container.Host(ctx)
-	s.Require().NoError(err)
+	require.NoError(t, err)
 
 	port, err := container.MappedPort(ctx, "9000")
-	s.Require().NoError(err)
+	require.NoError(t, err)
 
 	return &MinIOContainer{
-		container: container,
 		MinIOConfig: &config.MinIOConfig{
 			Endpoint:  fmt.Sprintf("%s:%s", host, port.Port()),
 			AccessKey: TestMinIOAccessKey,

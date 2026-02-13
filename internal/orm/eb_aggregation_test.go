@@ -1,21 +1,30 @@
-package orm
+package orm_test
 
 import (
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/ilxqx/vef-framework-go/internal/orm"
 )
 
-// AggregationFunctionsTestSuite tests aggregate expression methods of ExprBuilder
+func init() {
+	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+		return &EBAggregationFunctionsTestSuite{OrmTestSuite: base}
+	})
+}
+
+// EBAggregationFunctionsTestSuite tests aggregate expression methods of orm.ExprBuilder
 // including Count, Sum, Avg, Min, Max, StringAgg, ArrayAgg, JsonObjectAgg, JsonArrayAgg,
 // BitOr, BitAnd, BoolOr, BoolAnd, StdDev, and Variance functions.
 //
 // This suite verifies cross-database compatibility for aggregation functions across
 // PostgreSQL, MySQL, and SQLite, handling database-specific features appropriately.
-type AggregationFunctionsTestSuite struct {
+type EBAggregationFunctionsTestSuite struct {
 	*OrmTestSuite
 }
 
 // TestCount tests the Count aggregate function with various scenarios.
-func (suite *AggregationFunctionsTestSuite) TestCount() {
+func (suite *EBAggregationFunctionsTestSuite) TestCount() {
 	suite.T().Logf("Testing Count function for %s", suite.dbType)
 
 	suite.Run("ConditionalCountWithFilter", func() {
@@ -32,33 +41,33 @@ func (suite *AggregationFunctionsTestSuite) TestCount() {
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CountAll()
 			}, "total_posts").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Count(func(cb CountBuilder) {
-					cb.All().Filter(func(cb ConditionBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Count(func(cb orm.CountBuilder) {
+					cb.All().Filter(func(cb orm.ConditionBuilder) {
 						cb.Equals("status", "published")
 					})
 				})
 			}, "published_posts").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Count(func(cb CountBuilder) {
-					cb.All().Filter(func(cb ConditionBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Count(func(cb orm.CountBuilder) {
+					cb.All().Filter(func(cb orm.ConditionBuilder) {
 						cb.Equals("status", "draft")
 					})
 				})
 			}, "draft_posts").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Count(func(cb CountBuilder) {
-					cb.All().Filter(func(cb ConditionBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Count(func(cb orm.CountBuilder) {
+					cb.All().Filter(func(cb orm.ConditionBuilder) {
 						cb.Equals("status", "review")
 					})
 				})
 			}, "review_posts").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Count(func(cb CountBuilder) {
-					cb.All().Filter(func(cb ConditionBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Count(func(cb orm.CountBuilder) {
+					cb.All().Filter(func(cb orm.ConditionBuilder) {
 						cb.GreaterThan("view_count", 80)
 					})
 				})
@@ -79,7 +88,7 @@ func (suite *AggregationFunctionsTestSuite) TestCount() {
 }
 
 // TestCountColumn tests the CountColumn aggregate function.
-func (suite *AggregationFunctionsTestSuite) TestCountColumn() {
+func (suite *EBAggregationFunctionsTestSuite) TestCountColumn() {
 	suite.T().Logf("Testing CountColumn function for %s", suite.dbType)
 
 	suite.Run("BasicCountColumn", func() {
@@ -91,7 +100,7 @@ func (suite *AggregationFunctionsTestSuite) TestCountColumn() {
 
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CountColumn("age")
 			}, "count_age").
 			Scan(suite.ctx, &ageStats)
@@ -113,13 +122,13 @@ func (suite *AggregationFunctionsTestSuite) TestCountColumn() {
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CountColumn("status", true) // distinct = true
 			}, "unique_statuses").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CountColumn("category_id", true)
 			}, "unique_categories").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CountColumn("user_id", true)
 			}, "distinct_user_ids").
 			Scan(suite.ctx, &stats)
@@ -135,7 +144,7 @@ func (suite *AggregationFunctionsTestSuite) TestCountColumn() {
 }
 
 // TestCountAll tests the CountAll aggregate function.
-func (suite *AggregationFunctionsTestSuite) TestCountAll() {
+func (suite *EBAggregationFunctionsTestSuite) TestCountAll() {
 	suite.T().Logf("Testing CountAll function for %s", suite.dbType)
 
 	suite.Run("CountAllWithGrouping", func() {
@@ -149,7 +158,7 @@ func (suite *AggregationFunctionsTestSuite) TestCountAll() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CountAll()
 			}, "post_count").
 			GroupBy("status").
@@ -173,7 +182,7 @@ func (suite *AggregationFunctionsTestSuite) TestCountAll() {
 }
 
 // TestSum tests the Sum aggregate function with builder callback.
-func (suite *AggregationFunctionsTestSuite) TestSum() {
+func (suite *EBAggregationFunctionsTestSuite) TestSum() {
 	suite.T().Logf("Testing Sum function for %s", suite.dbType)
 
 	suite.Run("SumWithFilter", func() {
@@ -186,12 +195,12 @@ func (suite *AggregationFunctionsTestSuite) TestSum() {
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.SumColumn("view_count")
 			}, "total_views").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Sum(func(sb SumBuilder) {
-					sb.Column("view_count").Filter(func(cb ConditionBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Sum(func(sb orm.SumBuilder) {
+					sb.Column("view_count").Filter(func(cb orm.ConditionBuilder) {
 						cb.Equals("status", "published")
 					})
 				})
@@ -223,42 +232,42 @@ func (suite *AggregationFunctionsTestSuite) TestSum() {
 
 		query := suite.db.NewSelect().
 			Model((*Post)(nil)).
-			Join((*Category)(nil), func(cb ConditionBuilder) {
+			Join((*Category)(nil), func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("c.id", "category_id")
 			}).
 			SelectAs("c.name", "category_name").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CountAll()
 			}, "total_posts").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.SumColumn("view_count")
 			}, "total_views").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.AvgColumn("view_count")
 			}, "avg_views").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.MaxColumn("view_count")
 			}, "max_views").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.MinColumn("view_count")
 			}, "min_views").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Count(func(cb CountBuilder) {
-					cb.All().Filter(func(cb ConditionBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Count(func(cb orm.CountBuilder) {
+					cb.All().Filter(func(cb orm.ConditionBuilder) {
 						cb.Equals("status", "published")
 					})
 				})
 			}, "published_posts").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Count(func(cb CountBuilder) {
-					cb.All().Filter(func(cb ConditionBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Count(func(cb orm.CountBuilder) {
+					cb.All().Filter(func(cb orm.ConditionBuilder) {
 						cb.Equals("status", "draft")
 					})
 				})
 			}, "draft_posts").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Sum(func(sb SumBuilder) {
-					sb.Column("p.view_count").Filter(func(cb ConditionBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Sum(func(sb orm.SumBuilder) {
+					sb.Column("p.view_count").Filter(func(cb orm.ConditionBuilder) {
 						cb.Equals("status", "published")
 					})
 				})
@@ -288,7 +297,7 @@ func (suite *AggregationFunctionsTestSuite) TestSum() {
 }
 
 // TestSumColumn tests the SumColumn aggregate function.
-func (suite *AggregationFunctionsTestSuite) TestSumColumn() {
+func (suite *EBAggregationFunctionsTestSuite) TestSumColumn() {
 	suite.T().Logf("Testing SumColumn function for %s", suite.dbType)
 
 	suite.Run("BasicSumColumn", func() {
@@ -301,10 +310,10 @@ func (suite *AggregationFunctionsTestSuite) TestSumColumn() {
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.SumColumn("view_count")
 			}, "total_views").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.AvgColumn("view_count")
 			}, "avg_views").
 			Scan(suite.ctx, &stats)
@@ -318,7 +327,7 @@ func (suite *AggregationFunctionsTestSuite) TestSumColumn() {
 }
 
 // TestAvg tests the Avg aggregate function with builder callback.
-func (suite *AggregationFunctionsTestSuite) TestAvg() {
+func (suite *EBAggregationFunctionsTestSuite) TestAvg() {
 	suite.T().Logf("Testing Avg function for %s", suite.dbType)
 
 	suite.Run("AvgWithFilter", func() {
@@ -330,10 +339,10 @@ func (suite *AggregationFunctionsTestSuite) TestAvg() {
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToInteger(
-					eb.Avg(func(ab AvgBuilder) {
-						ab.Column("view_count").Filter(func(cb ConditionBuilder) {
+					eb.Avg(func(ab orm.AvgBuilder) {
+						ab.Column("view_count").Filter(func(cb orm.ConditionBuilder) {
 							cb.Equals("status", "published")
 						})
 					}),
@@ -349,7 +358,7 @@ func (suite *AggregationFunctionsTestSuite) TestAvg() {
 }
 
 // TestAvgColumn tests the AvgColumn aggregate function.
-func (suite *AggregationFunctionsTestSuite) TestAvgColumn() {
+func (suite *EBAggregationFunctionsTestSuite) TestAvgColumn() {
 	suite.T().Logf("Testing AvgColumn function for %s", suite.dbType)
 
 	suite.Run("BasicAvgColumn", func() {
@@ -361,7 +370,7 @@ func (suite *AggregationFunctionsTestSuite) TestAvgColumn() {
 
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.AvgColumn("age")
 			}, "avg_age").
 			Scan(suite.ctx, &stats)
@@ -381,7 +390,7 @@ func (suite *AggregationFunctionsTestSuite) TestAvgColumn() {
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.AvgColumn("view_count", true) // distinct average
 			}, "avg_distinct_views").
 			Scan(suite.ctx, &avg)
@@ -394,7 +403,7 @@ func (suite *AggregationFunctionsTestSuite) TestAvgColumn() {
 }
 
 // TestMin tests the Min aggregate function with builder callback.
-func (suite *AggregationFunctionsTestSuite) TestMin() {
+func (suite *EBAggregationFunctionsTestSuite) TestMin() {
 	suite.T().Logf("Testing Min function for %s", suite.dbType)
 
 	suite.Run("MinInCombinedStats", func() {
@@ -410,13 +419,13 @@ func (suite *AggregationFunctionsTestSuite) TestMin() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.MinColumn("view_count")
 			}, "min_views").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.MaxColumn("view_count")
 			}, "max_views").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.AvgColumn("view_count")
 			}, "avg_views").
 			GroupBy("status").
@@ -436,7 +445,7 @@ func (suite *AggregationFunctionsTestSuite) TestMin() {
 }
 
 // TestMinColumn tests the MinColumn aggregate function.
-func (suite *AggregationFunctionsTestSuite) TestMinColumn() {
+func (suite *EBAggregationFunctionsTestSuite) TestMinColumn() {
 	suite.T().Logf("Testing MinColumn function for %s", suite.dbType)
 
 	suite.Run("BasicMinColumn", func() {
@@ -448,7 +457,7 @@ func (suite *AggregationFunctionsTestSuite) TestMinColumn() {
 
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.MinColumn("age")
 			}, "min_age").
 			Scan(suite.ctx, &stats)
@@ -461,7 +470,7 @@ func (suite *AggregationFunctionsTestSuite) TestMinColumn() {
 }
 
 // TestMax tests the Max aggregate function with builder callback.
-func (suite *AggregationFunctionsTestSuite) TestMax() {
+func (suite *EBAggregationFunctionsTestSuite) TestMax() {
 	suite.T().Logf("Testing Max function for %s", suite.dbType)
 
 	suite.Run("MaxWithFilter", func() {
@@ -473,9 +482,9 @@ func (suite *AggregationFunctionsTestSuite) TestMax() {
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Max(func(mb MaxBuilder) {
-					mb.Column("view_count").Filter(func(cb ConditionBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Max(func(mb orm.MaxBuilder) {
+					mb.Column("view_count").Filter(func(cb orm.ConditionBuilder) {
 						cb.Equals("status", "published")
 					})
 				})
@@ -499,7 +508,7 @@ func (suite *AggregationFunctionsTestSuite) TestMax() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.MaxColumn("view_count")
 			}, "max_views").
 			GroupBy("status").
@@ -517,7 +526,7 @@ func (suite *AggregationFunctionsTestSuite) TestMax() {
 }
 
 // TestMaxColumn tests the MaxColumn aggregate function.
-func (suite *AggregationFunctionsTestSuite) TestMaxColumn() {
+func (suite *EBAggregationFunctionsTestSuite) TestMaxColumn() {
 	suite.T().Logf("Testing MaxColumn function for %s", suite.dbType)
 
 	suite.Run("BasicMaxColumn", func() {
@@ -529,7 +538,7 @@ func (suite *AggregationFunctionsTestSuite) TestMaxColumn() {
 
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.MaxColumn("age")
 			}, "max_age").
 			Scan(suite.ctx, &stats)
@@ -542,7 +551,7 @@ func (suite *AggregationFunctionsTestSuite) TestMaxColumn() {
 }
 
 // TestStringAgg tests the StringAgg aggregate function.
-func (suite *AggregationFunctionsTestSuite) TestStringAgg() {
+func (suite *EBAggregationFunctionsTestSuite) TestStringAgg() {
 	suite.T().Logf("Testing StringAgg function for %s", suite.dbType)
 
 	suite.Run("StringAggWithDistinctAndSeparator", func() {
@@ -555,13 +564,13 @@ func (suite *AggregationFunctionsTestSuite) TestStringAgg() {
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.StringAgg(func(sab StringAggBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.StringAgg(func(sab orm.StringAggBuilder) {
 					sab.Column("status").Separator(", ").Distinct()
 				})
 			}, "status_list").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.StringAgg(func(sab StringAggBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.StringAgg(func(sab orm.StringAggBuilder) {
 					sab.Column("title").Separator(" | ").OrderBy("view_count")
 				})
 			}, "ordered_title_list").
@@ -586,8 +595,8 @@ func (suite *AggregationFunctionsTestSuite) TestStringAgg() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.StringAgg(func(sab StringAggBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.StringAgg(func(sab orm.StringAggBuilder) {
 					sab.Column("title").Separator(", ")
 				})
 			}, "titles").
@@ -606,7 +615,7 @@ func (suite *AggregationFunctionsTestSuite) TestStringAgg() {
 }
 
 // TestArrayAgg tests the ArrayAgg aggregate function.
-func (suite *AggregationFunctionsTestSuite) TestArrayAgg() {
+func (suite *EBAggregationFunctionsTestSuite) TestArrayAgg() {
 	suite.T().Logf("Testing ArrayAgg function for %s", suite.dbType)
 
 	suite.Run("ArrayAggWithOrdering", func() {
@@ -620,18 +629,18 @@ func (suite *AggregationFunctionsTestSuite) TestArrayAgg() {
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.ArrayAgg(func(aab ArrayAggBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.ArrayAgg(func(aab orm.ArrayAggBuilder) {
 					aab.Column("view_count").OrderByDesc("view_count")
 				})
 			}, "view_count_array").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.ArrayAgg(func(aab ArrayAggBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.ArrayAgg(func(aab orm.ArrayAggBuilder) {
 					aab.Column("title").OrderBy("title")
 				})
 			}, "ordered_titles").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.ArrayAgg(func(aab ArrayAggBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.ArrayAgg(func(aab orm.ArrayAggBuilder) {
 					aab.Column("status").Distinct().OrderBy("status")
 				})
 			}, "unique_statuses").
@@ -666,7 +675,7 @@ func (suite *AggregationFunctionsTestSuite) TestArrayAgg() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CountAll()
 			}, "count").
 			GroupBy("status").
@@ -684,7 +693,7 @@ func (suite *AggregationFunctionsTestSuite) TestArrayAgg() {
 }
 
 // TestJsonObjectAgg tests the JsonObjectAgg aggregate function.
-func (suite *AggregationFunctionsTestSuite) TestJsonObjectAgg() {
+func (suite *EBAggregationFunctionsTestSuite) TestJsonObjectAgg() {
 	suite.T().Logf("Testing JsonObjectAgg function for %s", suite.dbType)
 
 	suite.Run("JsonObjectAggGroupedByStatus", func() {
@@ -698,8 +707,8 @@ func (suite *AggregationFunctionsTestSuite) TestJsonObjectAgg() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.JSONObjectAgg(func(joab JSONObjectAggBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.JSONObjectAgg(func(joab orm.JSONObjectAggBuilder) {
 					joab.KeyColumn("id")
 					joab.Column("title")
 				})
@@ -720,7 +729,7 @@ func (suite *AggregationFunctionsTestSuite) TestJsonObjectAgg() {
 
 // TestJsonArrayAgg tests the JsonArrayAgg aggregate function.
 // Note: MySQL does not support ORDER BY or DISTINCT in JSON_ARRAYAGG.
-func (suite *AggregationFunctionsTestSuite) TestJsonArrayAgg() {
+func (suite *EBAggregationFunctionsTestSuite) TestJsonArrayAgg() {
 	suite.T().Logf("Testing JsonArrayAgg function for %s", suite.dbType)
 
 	suite.Run("JsonArrayAggBasic", func() {
@@ -734,8 +743,8 @@ func (suite *AggregationFunctionsTestSuite) TestJsonArrayAgg() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.JSONArrayAgg(func(jaab JSONArrayAggBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.JSONArrayAgg(func(jaab orm.JSONArrayAggBuilder) {
 					jaab.Column("title")
 				})
 			}, "titles_json").
@@ -769,8 +778,8 @@ func (suite *AggregationFunctionsTestSuite) TestJsonArrayAgg() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.JSONArrayAgg(func(jaab JSONArrayAggBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.JSONArrayAgg(func(jaab orm.JSONArrayAggBuilder) {
 					jaab.Column("title").OrderBy("view_count")
 				})
 			}, "titles_json").
@@ -802,8 +811,8 @@ func (suite *AggregationFunctionsTestSuite) TestJsonArrayAgg() {
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.JSONArrayAgg(func(jaab JSONArrayAggBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.JSONArrayAgg(func(jaab orm.JSONArrayAggBuilder) {
 					jaab.Column("status").Distinct()
 				})
 			}, "all_statuses").
@@ -819,7 +828,7 @@ func (suite *AggregationFunctionsTestSuite) TestJsonArrayAgg() {
 // TestBitOr tests the BitOr aggregate function.
 // Note: PostgreSQL and MySQL both support native BIT_OR (bitwise aggregation).
 // SQLite simulates it using MAX with CASE for boolean-like operations.
-func (suite *AggregationFunctionsTestSuite) TestBitOr() {
+func (suite *EBAggregationFunctionsTestSuite) TestBitOr() {
 	suite.T().Logf("Testing BitOr function for %s", suite.dbType)
 
 	suite.Run("BitOrBasic", func() {
@@ -833,8 +842,8 @@ func (suite *AggregationFunctionsTestSuite) TestBitOr() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.BitOr(func(bob BitOrBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.BitOr(func(bob orm.BitOrBuilder) {
 					bob.Column("view_count")
 				})
 			}, "bit_or_value").
@@ -863,11 +872,11 @@ func (suite *AggregationFunctionsTestSuite) TestBitOr() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CountAll()
 			}, "count").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.BitOr(func(bob BitOrBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.BitOr(func(bob orm.BitOrBuilder) {
 					bob.Column("view_count")
 				})
 			}, "bit_or_value").
@@ -890,7 +899,7 @@ func (suite *AggregationFunctionsTestSuite) TestBitOr() {
 // TestBitAnd tests the BitAnd aggregate function.
 // Note: PostgreSQL and MySQL both support native BIT_AND (bitwise aggregation).
 // SQLite simulates it using MIN with CASE for boolean-like operations.
-func (suite *AggregationFunctionsTestSuite) TestBitAnd() {
+func (suite *EBAggregationFunctionsTestSuite) TestBitAnd() {
 	suite.T().Logf("Testing BitAnd function for %s", suite.dbType)
 
 	suite.Run("BitAndBasic", func() {
@@ -904,8 +913,8 @@ func (suite *AggregationFunctionsTestSuite) TestBitAnd() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.BitAnd(func(bab BitAndBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.BitAnd(func(bab orm.BitAndBuilder) {
 					bab.Column("view_count")
 				})
 			}, "bit_and_value").
@@ -935,16 +944,16 @@ func (suite *AggregationFunctionsTestSuite) TestBitAnd() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CountAll()
 			}, "count").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.BitAnd(func(bab BitAndBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.BitAnd(func(bab orm.BitAndBuilder) {
 					bab.Column("view_count")
 				})
 			}, "bit_and_value").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.BitOr(func(bob BitOrBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.BitOr(func(bob orm.BitOrBuilder) {
 					bob.Column("view_count")
 				})
 			}, "bit_or_value").
@@ -966,7 +975,7 @@ func (suite *AggregationFunctionsTestSuite) TestBitAnd() {
 }
 
 // TestBoolOr tests the BoolOr aggregate function.
-func (suite *AggregationFunctionsTestSuite) TestBoolOr() {
+func (suite *EBAggregationFunctionsTestSuite) TestBoolOr() {
 	suite.T().Logf("Testing BoolOr function for %s", suite.dbType)
 
 	suite.Run("BoolOrWithBoolAnd", func() {
@@ -981,13 +990,13 @@ func (suite *AggregationFunctionsTestSuite) TestBoolOr() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.BoolAnd(func(bab BoolAndBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.BoolAnd(func(bab orm.BoolAndBuilder) {
 					bab.Expr(eb.Expr("? > 100", eb.Column("view_count")))
 				})
 			}, "all_high_views").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.BoolOr(func(bob BoolOrBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.BoolOr(func(bob orm.BoolOrBuilder) {
 					bob.Expr(eb.Expr("? > 100", eb.Column("view_count")))
 				})
 			}, "any_high_views").
@@ -1006,7 +1015,7 @@ func (suite *AggregationFunctionsTestSuite) TestBoolOr() {
 }
 
 // TestBoolAnd tests the BoolAnd aggregate function.
-func (suite *AggregationFunctionsTestSuite) TestBoolAnd() {
+func (suite *EBAggregationFunctionsTestSuite) TestBoolAnd() {
 	suite.T().Logf("Testing BoolAnd function for %s", suite.dbType)
 
 	suite.Run("BoolAndBasic", func() {
@@ -1018,8 +1027,8 @@ func (suite *AggregationFunctionsTestSuite) TestBoolAnd() {
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.BoolAnd(func(bab BoolAndBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.BoolAnd(func(bab orm.BoolAndBuilder) {
 					bab.Expr(eb.Expr("? > 10", eb.Column("view_count")))
 				})
 			}, "all_meet_criteria").
@@ -1040,8 +1049,8 @@ func (suite *AggregationFunctionsTestSuite) TestBoolAnd() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.BoolAnd(func(bab BoolAndBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.BoolAnd(func(bab orm.BoolAndBuilder) {
 					bab.Expr(eb.Expr("? >= 30", eb.Column("view_count")))
 				})
 			}, "all_above_threshold").
@@ -1060,7 +1069,7 @@ func (suite *AggregationFunctionsTestSuite) TestBoolAnd() {
 }
 
 // TestStdDev tests the StdDev (standard deviation) aggregate function.
-func (suite *AggregationFunctionsTestSuite) TestStdDev() {
+func (suite *EBAggregationFunctionsTestSuite) TestStdDev() {
 	suite.T().Logf("Testing StdDev function for %s", suite.dbType)
 
 	suite.Run("BasicStdDev", func() {
@@ -1079,11 +1088,11 @@ func (suite *AggregationFunctionsTestSuite) TestStdDev() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.AvgColumn("view_count")
 			}, "avg_views").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.StdDev(func(sb StdDevBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.StdDev(func(sb orm.StdDevBuilder) {
 					sb.Column("view_count")
 				})
 			}, "std_dev").
@@ -1121,20 +1130,20 @@ func (suite *AggregationFunctionsTestSuite) TestStdDev() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CountAll()
 			}, "count").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.AvgColumn("view_count")
 			}, "avg_views").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.MinColumn("view_count")
 			}, "min_views").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.MaxColumn("view_count")
 			}, "max_views").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.StdDev(func(sb StdDevBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.StdDev(func(sb orm.StdDevBuilder) {
 					sb.Column("view_count")
 				})
 			}, "std_dev").
@@ -1160,7 +1169,7 @@ func (suite *AggregationFunctionsTestSuite) TestStdDev() {
 }
 
 // TestVariance tests the Variance aggregate function.
-func (suite *AggregationFunctionsTestSuite) TestVariance() {
+func (suite *EBAggregationFunctionsTestSuite) TestVariance() {
 	suite.T().Logf("Testing Variance function for %s", suite.dbType)
 
 	suite.Run("BasicVariance", func() {
@@ -1179,11 +1188,11 @@ func (suite *AggregationFunctionsTestSuite) TestVariance() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.AvgColumn("view_count")
 			}, "avg_views").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Variance(func(vb VarianceBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Variance(func(vb orm.VarianceBuilder) {
 					vb.Column("view_count")
 				})
 			}, "variance").
@@ -1220,23 +1229,23 @@ func (suite *AggregationFunctionsTestSuite) TestVariance() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Variance(func(vb VarianceBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Variance(func(vb orm.VarianceBuilder) {
 					vb.Column("view_count").Population()
 				})
 			}, "var_pop").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Variance(func(vb VarianceBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Variance(func(vb orm.VarianceBuilder) {
 					vb.Column("view_count").Sample()
 				})
 			}, "var_samp").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.StdDev(func(sb StdDevBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.StdDev(func(sb orm.StdDevBuilder) {
 					sb.Column("view_count").Population()
 				})
 			}, "stddev_pop").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.StdDev(func(sb StdDevBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.StdDev(func(sb orm.StdDevBuilder) {
 					sb.Column("view_count").Sample()
 				})
 			}, "stddev_samp").

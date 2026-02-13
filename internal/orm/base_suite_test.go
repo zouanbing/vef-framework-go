@@ -1,4 +1,4 @@
-package orm
+package orm_test
 
 import (
 	"context"
@@ -10,14 +10,15 @@ import (
 	"github.com/uptrace/bun/dbfixture"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/id"
+	"github.com/ilxqx/vef-framework-go/internal/orm"
+	"github.com/ilxqx/vef-framework-go/timex"
 )
 
 // User represents a user in the system.
 type User struct {
 	bun.BaseModel `bun:"table:test_user,alias:u"`
-	Model
+	orm.Model
 
 	Name  string `json:"name"     bun:"name,notnull"`
 	Email string `json:"email"    bun:"email,notnull,unique"`
@@ -35,7 +36,7 @@ type User struct {
 // Post represents a blog post or article.
 type Post struct {
 	bun.BaseModel `bun:"table:test_post,alias:p"`
-	Model
+	orm.Model
 
 	Title       string  `json:"title"       bun:"title,notnull"`
 	Content     string  `json:"content"     bun:"content,notnull"`
@@ -53,7 +54,7 @@ type Post struct {
 // Tag represents a content tag.
 type Tag struct {
 	bun.BaseModel `bun:"table:test_tag,alias:t"`
-	Model
+	orm.Model
 
 	Name        string  `json:"name"        bun:"name,notnull,unique"`
 	Description *string `json:"description" bun:"description"`
@@ -62,7 +63,7 @@ type Tag struct {
 // PostTag represents the many-to-many relationship between posts and tags.
 type PostTag struct {
 	bun.BaseModel `bun:"table:test_post_tag,alias:pt"`
-	Model
+	orm.Model
 
 	PostID string `json:"postId" bun:"post_id,notnull"`
 	TagID  string `json:"tagId"  bun:"tag_id,notnull"`
@@ -75,7 +76,7 @@ type PostTag struct {
 // Category represents a content category.
 type Category struct {
 	bun.BaseModel `bun:"table:test_category,alias:c"`
-	Model
+	orm.Model
 
 	Name        string  `json:"name"        bun:"name,notnull,unique"`
 	Description *string `json:"description" bun:"description"`
@@ -90,7 +91,7 @@ type Category struct {
 // SimpleModel represents a simple test model for subquery tests.
 type SimpleModel struct {
 	bun.BaseModel `bun:"table:test_simple,alias:s"`
-	Model
+	orm.Model
 
 	Name  string `json:"name"  bun:"name,notnull"`
 	Value int    `json:"value" bun:"value,notnull"`
@@ -102,7 +103,7 @@ type OrmTestSuite struct {
 	suite.Suite
 
 	ctx    context.Context
-	db     DB
+	db     orm.DB
 	dbType config.DBType
 }
 
@@ -158,10 +159,9 @@ func (suite *OrmTestSuite) SetupSuite() {
 
 // getBunDB extracts the underlying bun.DB from orm.DB interface.
 func (suite *OrmTestSuite) getBunDB() *bun.DB {
-	if db, ok := suite.db.(*BunDB); ok {
-		if bunDB, ok := db.db.(*bun.DB); ok {
-			return bunDB
-		}
+	idb := suite.db.(orm.Unwrapper[bun.IDB]).Unwrap()
+	if bunDB, ok := idb.(*bun.DB); ok {
+		return bunDB
 	}
 
 	suite.Require().Fail("Could not extract bun.DB from orm.DB interface")
@@ -172,21 +172,21 @@ func (suite *OrmTestSuite) getBunDB() *bun.DB {
 // Helper methods for common test patterns
 
 // AssertCount verifies the count result of a select query.
-func (suite *OrmTestSuite) AssertCount(query SelectQuery, expectedCount int64) {
+func (suite *OrmTestSuite) AssertCount(query orm.SelectQuery, expectedCount int64) {
 	count, err := query.Count(suite.ctx)
 	suite.NoError(err)
 	suite.Equal(expectedCount, count, "Count mismatch for %s", suite.dbType)
 }
 
 // AssertExists verifies that a query returns at least one result.
-func (suite *OrmTestSuite) AssertExists(query SelectQuery) {
+func (suite *OrmTestSuite) AssertExists(query orm.SelectQuery) {
 	exists, err := query.Exists(suite.ctx)
 	suite.NoError(err)
 	suite.True(exists, "Query should return results for %s", suite.dbType)
 }
 
 // AssertNotExists verifies that a query returns no results.
-func (suite *OrmTestSuite) AssertNotExists(query SelectQuery) {
+func (suite *OrmTestSuite) AssertNotExists(query orm.SelectQuery) {
 	exists, err := query.Exists(suite.ctx)
 	suite.NoError(err)
 	suite.False(exists, "Query should not return results for %s", suite.dbType)

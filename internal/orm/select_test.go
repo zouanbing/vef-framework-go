@@ -1,11 +1,19 @@
-package orm
+package orm_test
 
 import (
+	"github.com/stretchr/testify/suite"
 	"github.com/uptrace/bun"
 
 	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/page"
 )
+
+func init() {
+	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+		return &SelectTestSuite{OrmTestSuite: base}
+	})
+}
 
 // SelectTestSuite tests SELECT operations including basic queries, column selection,
 // joins, subqueries, ordering, pagination, locking, set operations, and execution methods
@@ -28,20 +36,20 @@ func (suite *SelectTestSuite) TestCTE() {
 		var postsWithUsers []PostWithUser
 
 		err := suite.db.NewSelect().
-			With("active_users", func(query SelectQuery) {
+			With("active_users", func(query orm.SelectQuery) {
 				query.Model((*User)(nil)).
 					Select("id", "name").
-					Where(func(cb ConditionBuilder) {
+					Where(func(cb orm.ConditionBuilder) {
 						cb.IsTrue("is_active")
 					})
 			}).
 			Model((*Post)(nil)).
 			Select("p.id", "p.title").
 			SelectAs("u.name", "user_name").
-			Join((*User)(nil), func(cb ConditionBuilder) {
+			Join((*User)(nil), func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "p.user_id")
 			}, "u").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "published")
 			}).
 			OrderBy("p.title").
@@ -79,11 +87,11 @@ func (suite *SelectTestSuite) TestCTE() {
 		err := suite.db.NewSelect().
 			WithValues("status_values", &statusValues).
 			Select("sv.status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CountColumn("p.id")
 			}, "count").
 			Table("status_values", "sv").
-			LeftJoin((*Post)(nil), func(cb ConditionBuilder) {
+			LeftJoin((*Post)(nil), func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("sv.status", "p.status")
 			}).
 			GroupBy("sv.status").
@@ -115,22 +123,22 @@ func (suite *SelectTestSuite) TestCTE() {
 		var commentTree []CommentHierarchy
 
 		err := suite.db.NewSelect().
-			WithRecursive("comment_tree", func(query SelectQuery) {
+			WithRecursive("comment_tree", func(query orm.SelectQuery) {
 				query.Model((*Post)(nil)).
 					Select("id", "category_id", "title", "status").
-					SelectExpr(func(ExprBuilder) any {
+					SelectExpr(func(orm.ExprBuilder) any {
 						return 0
 					}, "level").
-					Where(func(cb ConditionBuilder) {
+					Where(func(cb orm.ConditionBuilder) {
 						cb.IsNull("category_id")
 					}).
-					UnionAll(func(unionQuery SelectQuery) {
+					UnionAll(func(unionQuery orm.SelectQuery) {
 						unionQuery.Model((*Post)(nil)).
 							Select("ct.id", "ct.category_id", "ct.title", "ct.status").
-							SelectExpr(func(eb ExprBuilder) any {
+							SelectExpr(func(eb orm.ExprBuilder) any {
 								return eb.Add(eb.Column("ct.level"), 1)
 							}, "level").
-							JoinTable("comment_tree", func(cb ConditionBuilder) {
+							JoinTable("comment_tree", func(cb orm.ConditionBuilder) {
 								cb.EqualsColumn("category_id", "ct.id")
 							}, "ct")
 					})
@@ -221,7 +229,7 @@ func (suite *SelectTestSuite) TestSelectAndSelectAs() {
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectAs("status", "post_status").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Concat("Views: ", eb.Column("view_count"))
 			}, "view_display").
 			OrderBy("title").
@@ -258,20 +266,20 @@ func (suite *SelectTestSuite) TestSelectExpr() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Case(func(cb CaseBuilder) {
-					cb.When(func(cond ConditionBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Case(func(cb orm.CaseBuilder) {
+					cb.When(func(cond orm.ConditionBuilder) {
 						cond.Equals("status", "published")
 					}).Then("'Published'")
-					cb.When(func(cond ConditionBuilder) {
+					cb.When(func(cond orm.ConditionBuilder) {
 						cond.Equals("status", "draft")
 					}).Then("'Draft'")
 					cb.Else("'Other'")
 				})
 			}, "status_desc").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Case(func(cb CaseBuilder) {
-					cb.When(func(cond ConditionBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Case(func(cb orm.CaseBuilder) {
+					cb.When(func(cond orm.ConditionBuilder) {
 						cond.GreaterThan("view_count", 100)
 					}).Then(eb.Concat("'High ('", eb.Column("view_count"), "')'"))
 					cb.Else(eb.Concat("'Low ('", eb.Column("view_count"), "')'"))
@@ -307,15 +315,15 @@ func (suite *SelectTestSuite) TestSelectExpr() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Upper(eb.Column("name"))
 			}, "upper_name").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Length(eb.Column("name"))
 			}, "name_len").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Case(func(cb CaseBuilder) {
-					cb.When(func(cond ConditionBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Case(func(cb orm.CaseBuilder) {
+					cb.When(func(cond orm.ConditionBuilder) {
 						cond.GreaterThan("age", 30)
 					}).Then("'Senior'")
 					cb.Else("'Junior'")
@@ -383,7 +391,7 @@ func (suite *SelectTestSuite) TestSelectModelColumns() {
 			Model((*User)(nil)).
 			SelectModelColumns().
 			Select("name").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Length(eb.Column("name"))
 			}, "name_len").
 			OrderBy("name").
@@ -442,7 +450,7 @@ func (suite *SelectTestSuite) TestSelectModelPKs() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			SelectModelPKs().
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Concat("User: ", eb.Column("name"))
 			}, "name_desc").
 			OrderBy("name").
@@ -507,12 +515,12 @@ func (suite *SelectTestSuite) TestExclude() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			ExcludeAll().
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Upper(eb.Column("status"))
 			}, "status_display").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Case(func(cb CaseBuilder) {
-					cb.When(func(cond ConditionBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Case(func(cb orm.CaseBuilder) {
+					cb.When(func(cond orm.ConditionBuilder) {
 						cond.GreaterThan("view_count", 50)
 					}).Then("Popular")
 					cb.Else("Normal")
@@ -659,9 +667,9 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			SelectAll().
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Case(func(cb CaseBuilder) {
-					cb.When(func(cond ConditionBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Case(func(cb orm.CaseBuilder) {
+					cb.When(func(cond orm.ConditionBuilder) {
 						cond.GreaterThan("age", 30)
 					}).Then("'senior'")
 					cb.Else("'junior'")
@@ -692,8 +700,8 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("name", "email").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.RowNumber(func(rb RowNumberBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.RowNumber(func(rb orm.RowNumberBuilder) {
 					rb.Over().OrderBy("name")
 				})
 			}, "row_num").
@@ -722,10 +730,10 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("name").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Upper(eb.Column("name"))
 			}, "upper_name").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Length(eb.Column("name"))
 			}, "name_len").
 			OrderBy("name").
@@ -757,8 +765,8 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("name").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.RowNumber(func(rb RowNumberBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.RowNumber(func(rb orm.RowNumberBuilder) {
 					rb.Over().OrderBy("name")
 				})
 			}, "row_num").
@@ -797,8 +805,8 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			SelectModelColumns().
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.WinCount(func(wcb WindowCountBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinCount(func(wcb orm.WindowCountBuilder) {
 					wcb.All().Over()
 				})
 			}, "total_count").
@@ -953,14 +961,14 @@ func (suite *SelectTestSuite) TestDistinct() {
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
-			DistinctOnExpr(func(eb ExprBuilder) any {
+			DistinctOnExpr(func(eb orm.ExprBuilder) any {
 				return eb.Upper(eb.Column("title"))
 			}).
 			Select("id", "title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Upper(eb.Column("status"))
 			}, "status_desc").
-			OrderByExpr(func(eb ExprBuilder) any {
+			OrderByExpr(func(eb orm.ExprBuilder) any {
 				return eb.Upper(eb.Column("title"))
 			}).
 			Limit(3).
@@ -991,7 +999,7 @@ func (suite *SelectTestSuite) TestModelAndTable() {
 		err := suite.db.NewSelect().
 			ModelTable("test_user", "u").
 			Select("u.id", "u.name").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.IsTrue("u.is_active")
 			}).
 			OrderBy("u.name").
@@ -1019,7 +1027,7 @@ func (suite *SelectTestSuite) TestModelAndTable() {
 		err := suite.db.NewSelect().
 			Table("test_user", "u").
 			Select("u.id", "u.name", "u.email").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.IsTrue("u.is_active")
 			}).
 			OrderBy("u.name").
@@ -1046,7 +1054,7 @@ func (suite *SelectTestSuite) TestModelAndTable() {
 		err := suite.db.NewSelect().
 			TableFrom((*User)(nil), "u").
 			Select("u.id", "u.name").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.IsTrue("u.is_active")
 			}).
 			OrderBy("u.name").
@@ -1071,7 +1079,7 @@ func (suite *SelectTestSuite) TestModelAndTable() {
 		var users []ExprTable
 
 		err := suite.db.NewSelect().
-			TableExpr(func(eb ExprBuilder) any {
+			TableExpr(func(eb orm.ExprBuilder) any {
 				return eb.Expr("(SELECT id, name FROM ? WHERE is_active = ?)",
 					bun.Name("test_user"),
 					true)
@@ -1099,10 +1107,10 @@ func (suite *SelectTestSuite) TestModelAndTable() {
 		var users []SubQueryTable
 
 		err := suite.db.NewSelect().
-			TableSubQuery(func(query SelectQuery) {
+			TableSubQuery(func(query orm.SelectQuery) {
 				query.Model((*User)(nil)).
 					Select("id", "name").
-					Where(func(cb ConditionBuilder) {
+					Where(func(cb orm.ConditionBuilder) {
 						cb.IsTrue("is_active")
 					})
 			}, "active_users").
@@ -1138,10 +1146,10 @@ func (suite *SelectTestSuite) TestJoins() {
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectAs("u.name", "user_name").
-			Join((*User)(nil), func(cb ConditionBuilder) {
+			Join((*User)(nil), func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "user_id")
 			}).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "published")
 			}).
 			OrderBy("title").
@@ -1169,10 +1177,10 @@ func (suite *SelectTestSuite) TestJoins() {
 		err := suite.db.NewSelect().
 			Model((*Category)(nil)).
 			Select("id", "name").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CountColumn("p.id")
 			}, "post_count").
-			LeftJoin((*Post)(nil), func(cb ConditionBuilder) {
+			LeftJoin((*Post)(nil), func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("p.category_id", "id")
 			}).
 			GroupBy("id", "name").
@@ -1204,10 +1212,10 @@ func (suite *SelectTestSuite) TestJoins() {
 			Select("id", "name").
 			SelectAs("p.id", "post_id").
 			SelectAs("p.title", "post_title").
-			RightJoin((*Post)(nil), func(cb ConditionBuilder) {
+			RightJoin((*Post)(nil), func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("p.user_id", "id")
 			}).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("is_active", true)
 			}).
 			OrderBy("name").
@@ -1243,7 +1251,7 @@ func (suite *SelectTestSuite) TestJoins() {
 			Select("id", "name").
 			SelectAs("p.id", "post_id").
 			SelectAs("p.title", "post_title").
-			FullJoin((*Post)(nil), func(cb ConditionBuilder) {
+			FullJoin((*Post)(nil), func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("p.user_id", "id")
 			}).
 			OrderBy("name").
@@ -1275,7 +1283,7 @@ func (suite *SelectTestSuite) TestJoins() {
 			SelectAs("c.id", "category_id").
 			SelectAs("c.name", "category_name").
 			CrossJoinTable("test_category", "c").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.IsTrue("u.is_active")
 			}).
 			OrderBy("u.name", "c.name").
@@ -1303,10 +1311,10 @@ func (suite *SelectTestSuite) TestJoins() {
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectAs("c.name", "category_name").
-			JoinTable("test_category", func(cb ConditionBuilder) {
+			JoinTable("test_category", func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("c.id", "category_id")
 			}, "c").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "published")
 			}).
 			OrderBy("title").
@@ -1336,18 +1344,18 @@ func (suite *SelectTestSuite) TestJoins() {
 			Select("id", "title").
 			SelectAs("active_users.name", "user_name").
 			JoinSubQuery(
-				func(subquery SelectQuery) {
+				func(subquery orm.SelectQuery) {
 					subquery.Model((*User)(nil)).
 						Select("id", "name").
-						Where(func(cb ConditionBuilder) {
+						Where(func(cb orm.ConditionBuilder) {
 							cb.IsTrue("is_active")
 						})
 				},
-				func(cb ConditionBuilder) {
+				func(cb orm.ConditionBuilder) {
 					cb.EqualsColumn("active_users.id", "user_id")
 				},
 				"active_users").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "published")
 			}).
 			OrderBy("title").
@@ -1364,7 +1372,7 @@ func (suite *SelectTestSuite) TestJoins() {
 	})
 }
 
-// TestJoinRelations tests JoinRelations method with RelationSpec.
+// TestJoinRelations tests JoinRelations method with orm.RelationSpec.
 func (suite *SelectTestSuite) TestJoinRelations() {
 	suite.T().Logf("Testing JoinRelations for %s", suite.dbType)
 
@@ -1381,15 +1389,15 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("p.id", "p.title").
-			JoinRelations(&RelationSpec{
+			JoinRelations(&orm.RelationSpec{
 				Model:         (*User)(nil),
 				Alias:         "u",
 				ForeignColumn: "user_id",
-				SelectedColumns: []ColumnInfo{
+				SelectedColumns: []orm.ColumnInfo{
 					{Name: "name", Alias: "user_name"},
 				},
 			}).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "published")
 			}).
 			OrderBy("title").
@@ -1420,24 +1428,24 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 			Model((*Post)(nil)).
 			Select("p.id", "p.title").
 			JoinRelations(
-				&RelationSpec{
+				&orm.RelationSpec{
 					Model:         (*User)(nil),
 					Alias:         "u",
 					ForeignColumn: "user_id",
-					SelectedColumns: []ColumnInfo{
+					SelectedColumns: []orm.ColumnInfo{
 						{Name: "name", Alias: "user_name"},
 					},
 				},
-				&RelationSpec{
+				&orm.RelationSpec{
 					Model:         (*Category)(nil),
 					Alias:         "c",
 					ForeignColumn: "category_id",
-					SelectedColumns: []ColumnInfo{
+					SelectedColumns: []orm.ColumnInfo{
 						{Name: "name", Alias: "category_name"},
 					},
 				},
 			).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "published")
 			}).
 			OrderBy("title").
@@ -1467,16 +1475,16 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("p.id", "p.title").
-			JoinRelations(&RelationSpec{
+			JoinRelations(&orm.RelationSpec{
 				Model:         (*Category)(nil),
 				Alias:         "c",
-				JoinType:      JoinInner,
+				JoinType:      orm.JoinInner,
 				ForeignColumn: "category_id",
-				SelectedColumns: []ColumnInfo{
+				SelectedColumns: []orm.ColumnInfo{
 					{Name: "name", Alias: "category_name"},
 				},
 			}).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "published")
 			}).
 			OrderBy("title").
@@ -1503,18 +1511,18 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("p.id", "p.title").
-			JoinRelations(&RelationSpec{
+			JoinRelations(&orm.RelationSpec{
 				Model:         (*User)(nil),
 				Alias:         "u",
 				ForeignColumn: "user_id",
-				SelectedColumns: []ColumnInfo{
+				SelectedColumns: []orm.ColumnInfo{
 					{Name: "name", Alias: "user_name"},
 				},
-				On: func(cb ConditionBuilder) {
+				On: func(cb orm.ConditionBuilder) {
 					cb.Equals("u.is_active", true)
 				},
 			}).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "published")
 			}).
 			OrderBy("title").
@@ -1532,7 +1540,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 			Model(&posts).
 			Relation("User").
 			Relation("Category").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "published")
 			}).
 			OrderBy("title").
@@ -1561,11 +1569,11 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 
 		err := suite.db.NewSelect().
 			Model(&posts).
-			Relation("User", func(query SelectQuery) {
+			Relation("User", func(query orm.SelectQuery) {
 				// Customize User relation to only select specific columns
 				query.Select("id", "name", "email")
 			}).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "published")
 			}).
 			OrderBy("title").
@@ -1596,7 +1604,7 @@ func (suite *SelectTestSuite) TestWhere() {
 
 		err := suite.db.NewSelect().
 			Model(&users).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.IsTrue("is_active").
 					GreaterThan("age", 25)
 			}).
@@ -1655,7 +1663,7 @@ func (suite *SelectTestSuite) TestGroupByAndHaving() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("age").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CountColumn("id")
 			}, "count").
 			GroupBy("age").
@@ -1681,30 +1689,30 @@ func (suite *SelectTestSuite) TestGroupByAndHaving() {
 
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Case(func(cb CaseBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Case(func(cb orm.CaseBuilder) {
 					cb.When(
-						func(cond ConditionBuilder) {
+						func(cond orm.ConditionBuilder) {
 							cond.GreaterThan("age", 30)
 						}).
 						Then("Senior").
 						Else("Junior")
 				})
 			}, "age_group").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CountColumn("id")
 			}, "count").
-			GroupByExpr(func(eb ExprBuilder) any {
-				return eb.Case(func(cb CaseBuilder) {
+			GroupByExpr(func(eb orm.ExprBuilder) any {
+				return eb.Case(func(cb orm.CaseBuilder) {
 					cb.When(
-						func(cond ConditionBuilder) {
+						func(cond orm.ConditionBuilder) {
 							cond.GreaterThan("age", 30)
 						}).
 						Then("Senior").
 						Else("Junior")
 				})
 			}).
-			OrderByExpr(func(ExprBuilder) any {
+			OrderByExpr(func(orm.ExprBuilder) any {
 				// Use positional reference to the first select column (age_group)
 				return 1
 			}).
@@ -1730,12 +1738,12 @@ func (suite *SelectTestSuite) TestGroupByAndHaving() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("age").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CountColumn("id")
 			}, "count").
 			GroupBy("age").
-			Having(func(cb ConditionBuilder) {
-				cb.Expr(func(eb ExprBuilder) any {
+			Having(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.GreaterThanOrEqual(eb.CountColumn("id"), 1)
 				})
 			}).
@@ -1794,20 +1802,20 @@ func (suite *SelectTestSuite) TestOrderBy() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name", "age").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Case(func(cb CaseBuilder) {
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Case(func(cb orm.CaseBuilder) {
 					cb.When(
-						func(cond ConditionBuilder) {
+						func(cond orm.ConditionBuilder) {
 							cond.IsTrue("is_active")
 						}).
 						Then(eb.Add(eb.Column("age"), 100)).
 						Else(eb.Column("age"))
 				})
 			}, "order_key").
-			OrderByExpr(func(eb ExprBuilder) any {
-				return eb.Case(func(cb CaseBuilder) {
+			OrderByExpr(func(eb orm.ExprBuilder) any {
+				return eb.Case(func(cb orm.CaseBuilder) {
 					cb.When(
-						func(cond ConditionBuilder) {
+						func(cond orm.ConditionBuilder) {
 							cond.IsTrue("is_active")
 						}).
 						Then(eb.Add(eb.Column("age"), 100)).
@@ -1912,7 +1920,7 @@ func (suite *SelectTestSuite) TestLocking() {
 		err := suite.db.NewSelect().
 			Model(&users).
 			ForShare().
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.IsTrue("is_active")
 			}).
 			Limit(2).
@@ -1932,7 +1940,7 @@ func (suite *SelectTestSuite) TestLocking() {
 		err := suite.db.NewSelect().
 			Model(&posts).
 			ForUpdate().
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "draft")
 			}).
 			OrderBy("id").
@@ -1953,7 +1961,7 @@ func (suite *SelectTestSuite) TestLocking() {
 		err := suite.db.NewSelect().
 			Model(&posts).
 			ForUpdateNoWait().
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "draft")
 			}).
 			OrderBy("id").
@@ -1974,7 +1982,7 @@ func (suite *SelectTestSuite) TestLocking() {
 		err := suite.db.NewSelect().
 			Model(&posts).
 			ForUpdateSkipLocked().
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "published")
 			}).
 			OrderBy("id").
@@ -2011,16 +2019,16 @@ func (suite *SelectTestSuite) TestSetOperations() {
 		err := suite.db.NewSelect().
 			Table("test_user").
 			Select("name").
-			SelectExpr(func(ExprBuilder) any {
+			SelectExpr(func(orm.ExprBuilder) any {
 				return "user"
 			}, "type").
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.IsTrue("is_active")
 			}).
-			Union(func(query SelectQuery) {
+			Union(func(query orm.SelectQuery) {
 				query.Table("test_category").
 					Select("name").
-					SelectExpr(func(ExprBuilder) any {
+					SelectExpr(func(orm.ExprBuilder) any {
 						return "category"
 					}, "type")
 			}).
@@ -2049,14 +2057,14 @@ func (suite *SelectTestSuite) TestSetOperations() {
 		err := suite.db.NewSelect().
 			Table("test_user").
 			Select("name").
-			SelectExpr(func(ExprBuilder) any {
+			SelectExpr(func(orm.ExprBuilder) any {
 				return "user"
 			}, "type").
 			Limit(1).
-			UnionAll(func(query SelectQuery) {
+			UnionAll(func(query orm.SelectQuery) {
 				query.Table("test_category").
 					Select("name").
-					SelectExpr(func(ExprBuilder) any {
+					SelectExpr(func(orm.ExprBuilder) any {
 						return "category"
 					}, "type").
 					Limit(1)
@@ -2074,16 +2082,16 @@ func (suite *SelectTestSuite) TestSetOperations() {
 
 	suite.Run("Intersect", func() {
 		count, err := suite.db.NewSelect().
-			TableSubQuery(func(query SelectQuery) {
+			TableSubQuery(func(query orm.SelectQuery) {
 				query.Table("test_user").
 					Select("name").
-					Where(func(cb ConditionBuilder) {
+					Where(func(cb orm.ConditionBuilder) {
 						cb.IsTrue("is_active")
 					}).
-					Intersect(func(query SelectQuery) {
+					Intersect(func(query orm.SelectQuery) {
 						query.Table("test_user").
 							Select("name").
-							Where(func(cb ConditionBuilder) {
+							Where(func(cb orm.ConditionBuilder) {
 								cb.GreaterThan("age", 25)
 							})
 					})
@@ -2097,13 +2105,13 @@ func (suite *SelectTestSuite) TestSetOperations() {
 
 	suite.Run("Except", func() {
 		count, err := suite.db.NewSelect().
-			TableSubQuery(func(query SelectQuery) {
+			TableSubQuery(func(query orm.SelectQuery) {
 				query.Table("test_user").
 					Select("name").
-					Except(func(query SelectQuery) {
+					Except(func(query orm.SelectQuery) {
 						query.Table("test_user").
 							Select("name").
-							Where(func(cb ConditionBuilder) {
+							Where(func(cb orm.ConditionBuilder) {
 								cb.IsTrue("is_active")
 							})
 					})
@@ -2126,12 +2134,12 @@ func (suite *SelectTestSuite) TestApply() {
 		err := suite.db.NewSelect().
 			Model(&users).
 			Apply(
-				func(query SelectQuery) {
-					query.Where(func(cb ConditionBuilder) {
+				func(query orm.SelectQuery) {
+					query.Where(func(cb orm.ConditionBuilder) {
 						cb.IsTrue("is_active")
 					})
 				},
-				func(query SelectQuery) {
+				func(query orm.SelectQuery) {
 					query.OrderBy("name")
 				},
 			).
@@ -2154,12 +2162,12 @@ func (suite *SelectTestSuite) TestApply() {
 			Model(&users).
 			ApplyIf(
 				true,
-				func(query SelectQuery) {
-					query.Where(func(cb ConditionBuilder) {
+				func(query orm.SelectQuery) {
+					query.Where(func(cb orm.ConditionBuilder) {
 						cb.IsTrue("is_active")
 					})
 				},
-				func(query SelectQuery) {
+				func(query orm.SelectQuery) {
 					query.OrderBy("name")
 				},
 			).
@@ -2181,8 +2189,8 @@ func (suite *SelectTestSuite) TestApply() {
 			Model(&users).
 			ApplyIf(
 				false,
-				func(query SelectQuery) {
-					query.Where(func(cb ConditionBuilder) {
+				func(query orm.SelectQuery) {
+					query.Where(func(cb orm.ConditionBuilder) {
 						cb.IsTrue("is_active")
 					})
 				},
@@ -2208,7 +2216,7 @@ func (suite *SelectTestSuite) TestExecution() {
 
 		err := suite.db.NewSelect().
 			Model(&users).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.IsTrue("is_active")
 			}).
 			OrderBy("name").
@@ -2226,7 +2234,7 @@ func (suite *SelectTestSuite) TestExecution() {
 	suite.Run("Count", func() {
 		count, err := suite.db.NewSelect().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.IsTrue("is_active")
 			}).
 			Count(suite.ctx)
@@ -2240,7 +2248,7 @@ func (suite *SelectTestSuite) TestExecution() {
 	suite.Run("Exists", func() {
 		exists, err := suite.db.NewSelect().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "alice@example.com")
 			}).
 			Exists(suite.ctx)
@@ -2256,7 +2264,7 @@ func (suite *SelectTestSuite) TestExecution() {
 
 		total, err := suite.db.NewSelect().
 			Model(&users).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.IsTrue("is_active")
 			}).
 			OrderBy("name").
@@ -2273,7 +2281,7 @@ func (suite *SelectTestSuite) TestExecution() {
 	suite.Run("Rows", func() {
 		rows, err := suite.db.NewSelect().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.IsTrue("is_active")
 			}).
 			OrderBy("name").
@@ -2303,7 +2311,7 @@ func (suite *SelectTestSuite) TestExecution() {
 
 		_, err := suite.db.NewSelect().
 			Model((*User)(nil)).
-			Where(func(cb ConditionBuilder) {
+			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "alice@example.com")
 			}).
 			Exec(suite.ctx, &result)

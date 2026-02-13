@@ -2,8 +2,9 @@ package testx
 
 import (
 	"context"
+	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/mysql"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -12,17 +13,12 @@ import (
 )
 
 type MySQLContainer struct {
-	container *mysql.MySQLContainer
-	DsConfig  *config.DatasourceConfig
+	DsConfig *config.DatasourceConfig
 }
 
-func (c *MySQLContainer) Terminate(ctx context.Context, s *suite.Suite) {
-	if err := c.container.Terminate(ctx); err != nil {
-		s.T().Logf("Failed to terminate mysql container: %v", err)
-	}
-}
+func NewMySQLContainer(ctx context.Context, t testing.TB) *MySQLContainer {
+	t.Helper()
 
-func NewMySQLContainer(ctx context.Context, s *suite.Suite) *MySQLContainer {
 	container, err := mysql.Run(
 		ctx,
 		MySQLImage,
@@ -34,17 +30,22 @@ func NewMySQLContainer(ctx context.Context, s *suite.Suite) *MySQLContainer {
 				WithStartupTimeout(DefaultContainerTimeout),
 		),
 	)
-	s.Require().NoError(err)
-	s.T().Log("MySQL container started successfully")
+	require.NoError(t, err)
+	t.Log("MySQL container started successfully")
+
+	t.Cleanup(func() {
+		if err := container.Terminate(ctx); err != nil {
+			t.Logf("Failed to terminate mysql container: %v", err)
+		}
+	})
 
 	host, err := container.Host(ctx)
-	s.Require().NoError(err)
+	require.NoError(t, err)
 
 	port, err := container.MappedPort(ctx, "3306")
-	s.Require().NoError(err)
+	require.NoError(t, err)
 
 	return &MySQLContainer{
-		container: container,
 		DsConfig: &config.DatasourceConfig{
 			Type:     "mysql",
 			Host:     host,

@@ -2,6 +2,7 @@ package crud_test
 
 import (
 	"github.com/gofiber/fiber/v3"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/crud"
@@ -10,6 +11,17 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/sortx"
 )
+
+func init() {
+	registry.Add(func(base *BaseSuite) suite.TestingSuite {
+		return &FindAllTestSuite{BaseSuite: BaseSuite{
+			ctx:      base.ctx,
+			db:       base.db,
+			dbType:   base.dbType,
+			dsConfig: base.dsConfig,
+		}}
+	})
+}
 
 // Test Resources.
 type TestUserFindAllResource struct {

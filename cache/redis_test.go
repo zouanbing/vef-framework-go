@@ -35,7 +35,7 @@ type RedisCacheTestSuite struct {
 func (suite *RedisCacheTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 
-	container := testx.NewRedisContainer(suite.ctx, &suite.Suite)
+	container := testx.NewRedisContainer(suite.ctx, suite.T())
 	suite.redisContainer = container
 
 	suite.client = redis.NewClient(container.RdsConfig, &config.AppConfig{Name: "test-app"})
@@ -48,10 +48,6 @@ func (suite *RedisCacheTestSuite) TearDownSuite() {
 		if err := suite.client.Close(); err != nil {
 			suite.T().Logf("failed to close redis client: %v", err)
 		}
-	}
-
-	if suite.redisContainer != nil {
-		suite.redisContainer.Terminate(suite.ctx, &suite.Suite)
 	}
 }
 

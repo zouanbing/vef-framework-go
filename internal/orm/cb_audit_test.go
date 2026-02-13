@@ -1,22 +1,36 @@
-package orm
+package orm_test
 
-import "time"
+import (
+	"time"
 
-// AuditConditionsTestSuite tests audit field condition methods.
+	"github.com/stretchr/testify/suite"
+
+	"github.com/ilxqx/vef-framework-go/internal/orm"
+)
+
+func init() {
+	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+		return &CBAuditConditionsTestSuite{
+			ConditionBuilderTestSuite: &ConditionBuilderTestSuite{OrmTestSuite: base},
+		}
+	})
+}
+
+// CBAuditConditionsTestSuite tests audit field condition methods.
 // Covers: CreatedBy, UpdatedBy, CreatedAt, UpdatedAt series (~158 methods total).
-type AuditConditionsTestSuite struct {
+type CBAuditConditionsTestSuite struct {
 	*ConditionBuilderTestSuite
 }
 
 // TestCreatedByEquals tests the CreatedByEquals and OrCreatedByEquals conditions.
-func (suite *AuditConditionsTestSuite) TestCreatedByEquals() {
+func (suite *CBAuditConditionsTestSuite) TestCreatedByEquals() {
 	suite.T().Logf("Testing CreatedByEquals condition for %s", suite.dbType)
 
 	suite.Run("BasicCreatedByEquals", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.CreatedByEquals("system")
 				}),
 		)
@@ -34,7 +48,7 @@ func (suite *AuditConditionsTestSuite) TestCreatedByEquals() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.CreatedByEquals("system").
 						OrCreatedByEquals("admin")
 				}),
@@ -47,14 +61,14 @@ func (suite *AuditConditionsTestSuite) TestCreatedByEquals() {
 }
 
 // TestCreatedByNotEquals tests the CreatedByNotEquals and OrCreatedByNotEquals conditions.
-func (suite *AuditConditionsTestSuite) TestCreatedByNotEquals() {
+func (suite *CBAuditConditionsTestSuite) TestCreatedByNotEquals() {
 	suite.T().Logf("Testing CreatedByNotEquals condition for %s", suite.dbType)
 
 	suite.Run("BasicCreatedByNotEquals", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.CreatedByNotEquals("nonexistent")
 				}),
 		)
@@ -68,7 +82,7 @@ func (suite *AuditConditionsTestSuite) TestCreatedByNotEquals() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.CreatedByNotEquals("user1").
 						OrCreatedByNotEquals("user2")
 				}),
@@ -81,14 +95,14 @@ func (suite *AuditConditionsTestSuite) TestCreatedByNotEquals() {
 }
 
 // TestCreatedByIn tests the CreatedByIn and OrCreatedByIn conditions.
-func (suite *AuditConditionsTestSuite) TestCreatedByIn() {
+func (suite *CBAuditConditionsTestSuite) TestCreatedByIn() {
 	suite.T().Logf("Testing CreatedByIn condition for %s", suite.dbType)
 
 	suite.Run("BasicCreatedByIn", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.CreatedByIn([]string{"system", "admin"})
 				}),
 		)
@@ -102,7 +116,7 @@ func (suite *AuditConditionsTestSuite) TestCreatedByIn() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.CreatedByIn([]string{"system"}).
 						OrCreatedByIn([]string{"admin"})
 				}),
@@ -115,14 +129,14 @@ func (suite *AuditConditionsTestSuite) TestCreatedByIn() {
 }
 
 // TestUpdatedByEquals tests the UpdatedByEquals and OrUpdatedByEquals conditions.
-func (suite *AuditConditionsTestSuite) TestUpdatedByEquals() {
+func (suite *CBAuditConditionsTestSuite) TestUpdatedByEquals() {
 	suite.T().Logf("Testing UpdatedByEquals condition for %s", suite.dbType)
 
 	suite.Run("BasicUpdatedByEquals", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.UpdatedByEquals("system")
 				}),
 		)
@@ -140,7 +154,7 @@ func (suite *AuditConditionsTestSuite) TestUpdatedByEquals() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.UpdatedByEquals("system").
 						OrUpdatedByEquals("admin")
 				}),
@@ -153,7 +167,7 @@ func (suite *AuditConditionsTestSuite) TestUpdatedByEquals() {
 }
 
 // TestCreatedAtBetween tests the CreatedAtBetween and OrCreatedAtBetween conditions.
-func (suite *AuditConditionsTestSuite) TestCreatedAtBetween() {
+func (suite *CBAuditConditionsTestSuite) TestCreatedAtBetween() {
 	suite.T().Logf("Testing CreatedAtBetween condition for %s", suite.dbType)
 
 	suite.Run("BasicCreatedAtBetween", func() {
@@ -164,7 +178,7 @@ func (suite *AuditConditionsTestSuite) TestCreatedAtBetween() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.CreatedAtBetween(yesterday, tomorrow)
 				}),
 		)
@@ -179,7 +193,7 @@ func (suite *AuditConditionsTestSuite) TestCreatedAtBetween() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.CreatedAtBetween(now.Add(-48*time.Hour), now.Add(-24*time.Hour)).
 						OrCreatedAtBetween(now.Add(-24*time.Hour), now.Add(24*time.Hour))
 				}),
@@ -192,7 +206,7 @@ func (suite *AuditConditionsTestSuite) TestCreatedAtBetween() {
 }
 
 // TestUpdatedAtGreaterThan tests the UpdatedAtGreaterThan and OrUpdatedAtGreaterThan conditions.
-func (suite *AuditConditionsTestSuite) TestUpdatedAtGreaterThan() {
+func (suite *CBAuditConditionsTestSuite) TestUpdatedAtGreaterThan() {
 	suite.T().Logf("Testing UpdatedAtGreaterThan condition for %s", suite.dbType)
 
 	suite.Run("BasicUpdatedAtGreaterThan", func() {
@@ -201,7 +215,7 @@ func (suite *AuditConditionsTestSuite) TestUpdatedAtGreaterThan() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.UpdatedAtGreaterThan(yesterday)
 				}),
 		)
@@ -215,7 +229,7 @@ func (suite *AuditConditionsTestSuite) TestUpdatedAtGreaterThan() {
 		users := suite.assertQueryReturnsUsers(
 			suite.db.NewSelect().
 				Model((*User)(nil)).
-				Where(func(cb ConditionBuilder) {
+				Where(func(cb orm.ConditionBuilder) {
 					cb.UpdatedAtGreaterThan(time.Now().Add(-48 * time.Hour)).
 						OrUpdatedAtGreaterThan(time.Now().Add(-24 * time.Hour))
 				}),

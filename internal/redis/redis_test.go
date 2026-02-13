@@ -21,13 +21,7 @@ type RedisTestSuite struct {
 
 func (suite *RedisTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
-	suite.redisContainer = testx.NewRedisContainer(suite.ctx, &suite.Suite)
-}
-
-func (suite *RedisTestSuite) TearDownSuite() {
-	if suite.redisContainer != nil {
-		suite.redisContainer.Terminate(suite.ctx, &suite.Suite)
-	}
+	suite.redisContainer = testx.NewRedisContainer(suite.ctx, suite.T())
 }
 
 func (suite *RedisTestSuite) TestNewClient() {

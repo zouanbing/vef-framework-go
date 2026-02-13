@@ -2,8 +2,10 @@ package crud_test
 
 import (
 	"github.com/samber/lo"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/ilxqx/vef-framework-go/api"
+	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/crud"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
@@ -11,6 +13,17 @@ import (
 	"github.com/ilxqx/vef-framework-go/sortx"
 	"github.com/ilxqx/vef-framework-go/tree"
 )
+
+func init() {
+	registry.Add(func(base *BaseSuite) suite.TestingSuite {
+		return &FindTreeTestSuite{BaseSuite: BaseSuite{
+			ctx:      base.ctx,
+			db:       base.db,
+			dbType:   base.dbType,
+			dsConfig: base.dsConfig,
+		}}
+	})
+}
 
 // Tree builder for TestCategory.
 func buildCategoryTree(flatCategories []TestCategory) []TestCategory {
@@ -112,6 +125,10 @@ type FindTreeTestSuite struct {
 
 // SetupSuite runs once before all tests in the suite.
 func (suite *FindTreeTestSuite) SetupSuite() {
+	if suite.dbType == config.SQLite {
+		suite.T().Skip("Skipping FindTree tests for SQLite due to Bun recursive CTE syntax issue")
+	}
+
 	suite.setupBaseSuite(
 		NewTestCategoryFindTreeResource,
 		NewFilteredCategoryFindTreeResource,
