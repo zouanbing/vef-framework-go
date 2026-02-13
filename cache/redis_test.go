@@ -15,7 +15,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/internal/redis"
-	"github.com/ilxqx/vef-framework-go/internal/testhelpers"
+	"github.com/ilxqx/vef-framework-go/internal/testx"
 )
 
 type TestUser struct {
@@ -28,14 +28,14 @@ type RedisCacheTestSuite struct {
 	suite.Suite
 
 	ctx            context.Context
-	redisContainer *testhelpers.RedisContainer
+	redisContainer *testx.RedisContainer
 	client         *goredis.Client
 }
 
 func (suite *RedisCacheTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 
-	container := testhelpers.NewRedisContainer(suite.ctx, &suite.Suite)
+	container := testx.NewRedisContainer(suite.ctx, &suite.Suite)
 	suite.redisContainer = container
 
 	suite.client = redis.NewClient(container.RdsConfig, &config.AppConfig{Name: "test-app"})

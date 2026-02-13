@@ -1,4 +1,4 @@
-package strhelpers
+package strx
 
 import (
 	"strings"

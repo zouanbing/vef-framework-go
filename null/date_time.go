@@ -6,19 +6,19 @@ import (
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/datetime"
+	"github.com/ilxqx/vef-framework-go/timex"
 )
 
-// DateTime is a nullable datetime.DateTime. It supports SQL and JSON serialization.
+// DateTime is a nullable timex.DateTime. It supports SQL and JSON serialization.
 // It will marshal to null if null.
 type DateTime struct {
-	sql.Null[datetime.DateTime]
+	sql.Null[timex.DateTime]
 }
 
 // NewDateTime creates a new DateTime.
-func NewDateTime(dt datetime.DateTime, valid bool) DateTime {
+func NewDateTime(dt timex.DateTime, valid bool) DateTime {
 	return DateTime{
-		Null: sql.Null[datetime.DateTime]{
+		Null: sql.Null[timex.DateTime]{
 			V:     dt,
 			Valid: valid,
 		},
@@ -26,30 +26,30 @@ func NewDateTime(dt datetime.DateTime, valid bool) DateTime {
 }
 
 // DateTimeFrom creates a new DateTime that will always be valid.
-func DateTimeFrom(dt datetime.DateTime) DateTime {
+func DateTimeFrom(dt timex.DateTime) DateTime {
 	return NewDateTime(dt, true)
 }
 
 // DateTimeFromPtr creates a new DateTime that will be null if dt is nil.
-func DateTimeFromPtr(dt *datetime.DateTime) DateTime {
+func DateTimeFromPtr(dt *timex.DateTime) DateTime {
 	if dt == nil {
-		return NewDateTime(datetime.DateTime{}, false)
+		return NewDateTime(timex.DateTime{}, false)
 	}
 
 	return NewDateTime(*dt, true)
 }
 
 // ValueOrZero returns the inner value if valid, otherwise zero.
-func (dt DateTime) ValueOrZero() datetime.DateTime {
+func (dt DateTime) ValueOrZero() timex.DateTime {
 	if !dt.Valid {
-		return datetime.DateTime{}
+		return timex.DateTime{}
 	}
 
 	return dt.V
 }
 
 // ValueOr returns the inner value if valid, otherwise v.
-func (dt DateTime) ValueOr(v datetime.DateTime) datetime.DateTime {
+func (dt DateTime) ValueOr(v timex.DateTime) timex.DateTime {
 	if !dt.Valid {
 		return v
 	}
@@ -86,7 +86,7 @@ func (dt *DateTime) UnmarshalJSON(data []byte) error {
 }
 
 // MarshalText implements encoding.TextMarshaler.
-// It returns an empty string if invalid, otherwise datetime.DateTime's MarshalText.
+// It returns an empty string if invalid, otherwise timex.DateTime's MarshalText.
 func (dt DateTime) MarshalText() ([]byte, error) {
 	if !dt.Valid {
 		return []byte{}, nil
@@ -117,13 +117,13 @@ func (dt *DateTime) UnmarshalText(text []byte) error {
 }
 
 // SetValid changes this DateTime's value and sets it to be non-null.
-func (dt *DateTime) SetValid(v datetime.DateTime) {
+func (dt *DateTime) SetValid(v timex.DateTime) {
 	dt.V = v
 	dt.Valid = true
 }
 
 // Ptr returns a pointer to this DateTime's value, or a nil pointer if this DateTime is null.
-func (dt DateTime) Ptr() *datetime.DateTime {
+func (dt DateTime) Ptr() *timex.DateTime {
 	if !dt.Valid {
 		return nil
 	}

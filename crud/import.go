@@ -1,4 +1,4 @@
-package apis
+package crud
 
 import (
 	"context"
@@ -15,7 +15,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/tabular"
-	"github.com/ilxqx/vef-framework-go/webhelpers"
+	"github.com/ilxqx/vef-framework-go/httpx"
 )
 
 type importApi[TModel any] struct {
@@ -80,7 +80,7 @@ func (i *importApi[TModel]) importData() func(ctx fiber.Ctx, db orm.DB, logger l
 
 	return func(ctx fiber.Ctx, db orm.DB, logger log.Logger, config importConfig, params importParams) error {
 		// Import requests must use multipart/form-data format
-		if webhelpers.IsJSON(ctx) {
+		if httpx.IsJSON(ctx) {
 			return result.Err(i18n.T("import_requires_multipart"))
 		}
 

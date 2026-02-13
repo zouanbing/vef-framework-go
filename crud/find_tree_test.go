@@ -1,21 +1,21 @@
-package apis_test
+package crud_test
 
 import (
 	"github.com/samber/lo"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/apis"
+	"github.com/ilxqx/vef-framework-go/crud"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/sortx"
-	"github.com/ilxqx/vef-framework-go/treebuilder"
+	"github.com/ilxqx/vef-framework-go/tree"
 )
 
 // Tree builder for TestCategory.
 func buildCategoryTree(flatCategories []TestCategory) []TestCategory {
-	adapter := treebuilder.Adapter[TestCategory]{
+	adapter := tree.Adapter[TestCategory]{
 		GetID: func(c TestCategory) string {
 			return c.ID
 		},
@@ -27,19 +27,19 @@ func buildCategoryTree(flatCategories []TestCategory) []TestCategory {
 		},
 	}
 
-	return treebuilder.Build(flatCategories, adapter)
+	return tree.Build(flatCategories, adapter)
 }
 
 // Test Resources.
 type TestCategoryFindTreeResource struct {
 	api.Resource
-	apis.FindTree[TestCategory, TestCategorySearch]
+	crud.FindTree[TestCategory, TestCategorySearch]
 }
 
 func NewTestCategoryFindTreeResource() api.Resource {
 	return &TestCategoryFindTreeResource{
 		Resource: api.NewRPCResource("test/category_tree"),
-		FindTree: apis.NewFindTree[TestCategory, TestCategorySearch](buildCategoryTree).
+		FindTree: crud.NewFindTree[TestCategory, TestCategorySearch](buildCategoryTree).
 			Public().
 			WithIDColumn("id").
 			WithParentIDColumn("parent_id"),
@@ -49,13 +49,13 @@ func NewTestCategoryFindTreeResource() api.Resource {
 // Filtered Tree Resource.
 type FilteredCategoryFindTreeResource struct {
 	api.Resource
-	apis.FindTree[TestCategory, TestCategorySearch]
+	crud.FindTree[TestCategory, TestCategorySearch]
 }
 
 func NewFilteredCategoryFindTreeResource() api.Resource {
 	return &FilteredCategoryFindTreeResource{
 		Resource: api.NewRPCResource("test/category_tree_filtered"),
-		FindTree: apis.NewFindTree[TestCategory, TestCategorySearch](buildCategoryTree).
+		FindTree: crud.NewFindTree[TestCategory, TestCategorySearch](buildCategoryTree).
 			WithCondition(func(cb orm.ConditionBuilder) {
 				// Only show Electronics and its children
 				cb.Group(func(cb orm.ConditionBuilder) {
@@ -72,13 +72,13 @@ func NewFilteredCategoryFindTreeResource() api.Resource {
 // Ordered Tree Resource.
 type OrderedCategoryFindTreeResource struct {
 	api.Resource
-	apis.FindTree[TestCategory, TestCategorySearch]
+	crud.FindTree[TestCategory, TestCategorySearch]
 }
 
 func NewOrderedCategoryFindTreeResource() api.Resource {
 	return &OrderedCategoryFindTreeResource{
 		Resource: api.NewRPCResource("test/category_tree_ordered"),
-		FindTree: apis.NewFindTree[TestCategory, TestCategorySearch](buildCategoryTree).
+		FindTree: crud.NewFindTree[TestCategory, TestCategorySearch](buildCategoryTree).
 			WithDefaultSort(&sortx.OrderSpec{
 				Column: "sort",
 			}).
@@ -91,13 +91,13 @@ func NewOrderedCategoryFindTreeResource() api.Resource {
 // AuditUser Tree Resource - with audit user names.
 type AuditUserCategoryFindTreeResource struct {
 	api.Resource
-	apis.FindTree[TestCategory, TestCategorySearch]
+	crud.FindTree[TestCategory, TestCategorySearch]
 }
 
 func NewAuditUserCategoryFindTreeResource() api.Resource {
 	return &AuditUserCategoryFindTreeResource{
 		Resource: api.NewRPCResource("test/category_tree_audit"),
-		FindTree: apis.NewFindTree[TestCategory, TestCategorySearch](buildCategoryTree).
+		FindTree: crud.NewFindTree[TestCategory, TestCategorySearch](buildCategoryTree).
 			Public().
 			WithIDColumn("id").
 			WithParentIDColumn("parent_id").

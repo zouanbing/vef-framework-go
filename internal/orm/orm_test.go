@@ -10,7 +10,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/database"
-	"github.com/ilxqx/vef-framework-go/internal/testhelpers"
+	"github.com/ilxqx/vef-framework-go/internal/testx"
 )
 
 // runAllOrmTests executes all Orm test suites on the given database configuration.
@@ -343,7 +343,7 @@ func TestPostgres(t *testing.T) {
 	dummySuite.SetT(t)
 
 	// Start PostgreSQL container
-	postgresContainer := testhelpers.NewPostgresContainer(ctx, dummySuite)
+	postgresContainer := testx.NewPostgresContainer(ctx, dummySuite)
 	defer postgresContainer.Terminate(ctx, dummySuite)
 
 	// Run all Orm tests
@@ -359,7 +359,7 @@ func TestMySQL(t *testing.T) {
 	dummySuite.SetT(t)
 
 	// Start MySQL container
-	mysqlContainer := testhelpers.NewMySQLContainer(ctx, dummySuite)
+	mysqlContainer := testx.NewMySQLContainer(ctx, dummySuite)
 	defer mysqlContainer.Terminate(ctx, dummySuite)
 
 	// Run all Orm tests

@@ -8,7 +8,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/datetime"
+	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/id"
 	"github.com/ilxqx/vef-framework-go/internal/approval/engine"
 	"github.com/ilxqx/vef-framework-go/internal/approval/publisher"
@@ -458,7 +458,7 @@ func finishTask(ctx context.Context, tx orm.DB, task *approval.Task, status appr
 	}
 
 	task.Status = string(status)
-	task.FinishedAt = null.DateTimeFrom(datetime.Now())
+	task.FinishedAt = null.DateTimeFrom(timex.Now())
 
 	if _, err := tx.NewUpdate().Model(task).WherePK().Exec(ctx); err != nil {
 		return fmt.Errorf("update task: %w", err)
@@ -598,7 +598,7 @@ func (s *InstanceService) handleNodeCompletion(
 
 	case approval.PassRuleRejected:
 		instance.Status = string(approval.InstanceRejected)
-		instance.FinishedAt = null.DateTimeFrom(datetime.Now())
+		instance.FinishedAt = null.DateTimeFrom(timex.Now())
 
 		if err := s.cancelRemainingTasks(ctx, tx, instance.ID, node.ID); err != nil {
 			return nil, err
@@ -636,7 +636,7 @@ func (s *InstanceService) Withdraw(ctx context.Context, instanceID, operatorID, 
 			return ErrWithdrawNotAllowed
 		}
 
-		now := datetime.Now()
+		now := timex.Now()
 		instance.Status = string(approval.InstanceWithdrawn)
 		instance.FinishedAt = null.DateTimeFrom(now)
 

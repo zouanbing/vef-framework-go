@@ -1,4 +1,4 @@
-package apis
+package crud
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/dbhelpers"
+	"github.com/ilxqx/vef-framework-go/dbx"
 	"github.com/ilxqx/vef-framework-go/mold"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
@@ -132,7 +132,7 @@ func (a *findTreeApi[TModel, TSearch]) findTree(db orm.DB) (func(ctx fiber.Ctx, 
 					recursiveQuery.JoinTable(
 						"_tree",
 						func(cb orm.ConditionBuilder) {
-							cb.EqualsColumn(a.idColumn, dbhelpers.ColumnWithAlias(a.parentIDColumn, "_tree"))
+							cb.EqualsColumn(a.idColumn, dbx.ColumnWithAlias(a.parentIDColumn, "_tree"))
 						},
 					)
 				})

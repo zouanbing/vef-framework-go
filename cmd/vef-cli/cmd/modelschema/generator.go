@@ -583,7 +583,7 @@ func buildImportDecl() *ast.GenDecl {
 			&ast.ImportSpec{
 				Path: &ast.BasicLit{
 					Kind:  token.STRING,
-					Value: `"github.com/ilxqx/vef-framework-go/dbhelpers"`,
+					Value: `"github.com/ilxqx/vef-framework-go/dbx"`,
 				},
 			},
 		},
@@ -1008,7 +1008,7 @@ func buildColumnMethod(schema *ModelSchemaInfo) *ast.FuncDecl {
 					Results: []ast.Expr{
 						&ast.CallExpr{
 							Fun: &ast.SelectorExpr{
-								X:   ast.NewIdent("dbhelpers"),
+								X:   ast.NewIdent("dbx"),
 								Sel: ast.NewIdent("ColumnWithAlias"),
 							},
 							Args: []ast.Expr{

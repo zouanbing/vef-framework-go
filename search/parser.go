@@ -9,7 +9,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/reflectx"
-	"github.com/ilxqx/vef-framework-go/strhelpers"
+	"github.com/ilxqx/vef-framework-go/strx"
 )
 
 var apiInType = reflect.TypeFor[api.P]()
@@ -49,7 +49,7 @@ func parseStruct(t reflect.Type) []Condition {
 					return reflectx.Continue
 				}
 
-				attrs := strhelpers.ParseTag(tag)
+				attrs := strx.ParseTag(tag)
 				conditions = append(conditions, buildCondition(field, attrs))
 			} else {
 				if field.Anonymous {
@@ -81,13 +81,13 @@ func buildCondition(field reflect.StructField, attrs map[string]string) Conditio
 		strings.Split(column, constants.Pipe),
 	)
 
-	operator := lo.CoalesceOrEmpty(attrs[AttrOperator], attrs[strhelpers.DefaultKey], string(Equals))
+	operator := lo.CoalesceOrEmpty(attrs[AttrOperator], attrs[strx.DefaultKey], string(Equals))
 
 	params := make(map[string]string)
 	if attrs[AttrParams] != constants.Empty {
-		params = strhelpers.ParseTag(attrs[AttrParams],
-			strhelpers.WithSpacePairDelimiter(),
-			strhelpers.WithValueDelimiter(constants.ByteColon),
+		params = strx.ParseTag(attrs[AttrParams],
+			strx.WithSpacePairDelimiter(),
+			strx.WithValueDelimiter(constants.ByteColon),
 		)
 	}
 

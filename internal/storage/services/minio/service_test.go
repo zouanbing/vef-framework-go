@@ -13,7 +13,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/internal/contract"
-	"github.com/ilxqx/vef-framework-go/internal/testhelpers"
+	"github.com/ilxqx/vef-framework-go/internal/testx"
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 
@@ -22,7 +22,7 @@ type MinIOServiceTestSuite struct {
 	suite.Suite
 
 	ctx            context.Context
-	minioContainer *testhelpers.MinIOContainer
+	minioContainer *testx.MinIOContainer
 	service        storage.Service
 	minioClient    *minio.Client
 
@@ -34,12 +34,12 @@ type MinIOServiceTestSuite struct {
 
 func (suite *MinIOServiceTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
-	suite.testBucketName = testhelpers.TestMinioBucket
+	suite.testBucketName = testx.TestMinioBucket
 	suite.testObjectKey = "test-file.txt"
 	suite.testObjectData = []byte("Hello, MinIO Test!")
 	suite.testContentType = "text/plain"
 
-	suite.minioContainer = testhelpers.NewMinIOContainer(suite.ctx, &suite.Suite)
+	suite.minioContainer = testx.NewMinIOContainer(suite.ctx, &suite.Suite)
 
 	provider, err := New(*suite.minioContainer.MinIOConfig, &config.AppConfig{})
 	suite.Require().NoError(err, "NewMinIOService should succeed")

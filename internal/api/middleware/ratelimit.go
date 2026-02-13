@@ -13,7 +13,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
-	"github.com/ilxqx/vef-framework-go/webhelpers"
+	"github.com/ilxqx/vef-framework-go/httpx"
 )
 
 const (
@@ -51,7 +51,7 @@ func NewRateLimit() api.Middleware {
 					sb.WriteByte(constants.ByteColon)
 					sb.WriteString(req.Action)
 					sb.WriteByte(constants.ByteColon)
-					sb.WriteString(webhelpers.GetIP(ctx))
+					sb.WriteString(httpx.GetIP(ctx))
 					sb.WriteByte(constants.ByteColon)
 				}
 

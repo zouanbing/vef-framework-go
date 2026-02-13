@@ -6,7 +6,7 @@ import (
 	"github.com/uptrace/bun/schema"
 
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/datetime"
+	"github.com/ilxqx/vef-framework-go/timex"
 )
 
 // CreatedAtHandler implements InsertHandler for automatically setting created_at timestamps.
@@ -14,7 +14,7 @@ type CreatedAtHandler struct{}
 
 func (*CreatedAtHandler) OnInsert(_ *BunInsertQuery, _ *schema.Table, _ *schema.Field, _ any, value reflect.Value) {
 	if value.IsZero() {
-		value.Set(reflect.ValueOf(datetime.Now()))
+		value.Set(reflect.ValueOf(timex.Now()))
 	}
 }
 
@@ -27,15 +27,15 @@ type UpdatedAtHandler struct{}
 
 func (ua *UpdatedAtHandler) OnUpdate(query *BunUpdateQuery, _ *schema.Table, _ *schema.Field, _ any, value reflect.Value) {
 	if query.hasSet {
-		query.Set(ua.Name(), datetime.Now())
+		query.Set(ua.Name(), timex.Now())
 	} else {
-		value.Set(reflect.ValueOf(datetime.Now()))
+		value.Set(reflect.ValueOf(timex.Now()))
 	}
 }
 
 func (*UpdatedAtHandler) OnInsert(_ *BunInsertQuery, _ *schema.Table, _ *schema.Field, _ any, value reflect.Value) {
 	if value.IsZero() {
-		value.Set(reflect.ValueOf(datetime.Now()))
+		value.Set(reflect.ValueOf(timex.Now()))
 	}
 }
 

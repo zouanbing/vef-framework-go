@@ -1,10 +1,10 @@
-package apis_test
+package crud_test
 
 import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/apis"
+	"github.com/ilxqx/vef-framework-go/crud"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
@@ -14,20 +14,20 @@ import (
 // Test Resources.
 type TestUserFindOneResource struct {
 	api.Resource
-	apis.FindOne[TestUser, TestUserSearch]
+	crud.FindOne[TestUser, TestUserSearch]
 }
 
 func NewTestUserFindOneResource() api.Resource {
 	return &TestUserFindOneResource{
 		Resource: api.NewRPCResource("test/user"),
-		FindOne:  apis.NewFindOne[TestUser, TestUserSearch]().Public(),
+		FindOne:  crud.NewFindOne[TestUser, TestUserSearch]().Public(),
 	}
 }
 
 // Processed User Resource - with processor.
 type ProcessedUserFindOneResource struct {
 	api.Resource
-	apis.FindOne[TestUser, TestUserSearch]
+	crud.FindOne[TestUser, TestUserSearch]
 }
 
 type ProcessedUser struct {
@@ -39,7 +39,7 @@ type ProcessedUser struct {
 func NewProcessedUserFindOneResource() api.Resource {
 	return &ProcessedUserFindOneResource{
 		Resource: api.NewRPCResource("test/user_processed"),
-		FindOne: apis.NewFindOne[TestUser, TestUserSearch]().
+		FindOne: crud.NewFindOne[TestUser, TestUserSearch]().
 			Public().
 			WithProcessor(func(user TestUser, _ TestUserSearch, _ fiber.Ctx) any {
 				return ProcessedUser{
@@ -53,13 +53,13 @@ func NewProcessedUserFindOneResource() api.Resource {
 // Filtered User Resource - with filter applier.
 type FilteredUserFineOneResource struct {
 	api.Resource
-	apis.FindOne[TestUser, TestUserSearch]
+	crud.FindOne[TestUser, TestUserSearch]
 }
 
 func NewFilteredUserFineOneResource() api.Resource {
 	return &FilteredUserFineOneResource{
 		Resource: api.NewRPCResource("test/user_filtered"),
-		FindOne: apis.NewFindOne[TestUser, TestUserSearch]().
+		FindOne: crud.NewFindOne[TestUser, TestUserSearch]().
 			WithCondition(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "active").GreaterThan("age", 32)
 			}).
@@ -70,13 +70,13 @@ func NewFilteredUserFineOneResource() api.Resource {
 // Ordered User Resource - with order applier.
 type OrderedUserFindOneResource struct {
 	api.Resource
-	apis.FindOne[TestUser, TestUserSearch]
+	crud.FindOne[TestUser, TestUserSearch]
 }
 
 func NewOrderedUserFindOneResource() api.Resource {
 	return &OrderedUserFindOneResource{
 		Resource: api.NewRPCResource("test/user_ordered"),
-		FindOne: apis.NewFindOne[TestUser, TestUserSearch]().
+		FindOne: crud.NewFindOne[TestUser, TestUserSearch]().
 			WithDefaultSort(&sortx.OrderSpec{
 				Column:    "age",
 				Direction: sortx.OrderDesc,
@@ -88,13 +88,13 @@ func NewOrderedUserFindOneResource() api.Resource {
 // AuditUser User Resource - with audit user names.
 type AuditUserTestUserFindOneResource struct {
 	api.Resource
-	apis.FindOne[TestUser, TestUserSearch]
+	crud.FindOne[TestUser, TestUserSearch]
 }
 
 func NewAuditUserTestUserFindOneResource() api.Resource {
 	return &AuditUserTestUserFindOneResource{
 		Resource: api.NewRPCResource("test/user_audit"),
-		FindOne: apis.NewFindOne[TestUser, TestUserSearch]().
+		FindOne: crud.NewFindOne[TestUser, TestUserSearch]().
 			WithAuditUserNames((*TestAuditUser)(nil)).
 			Public(),
 	}

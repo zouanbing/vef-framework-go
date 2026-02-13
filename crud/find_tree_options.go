@@ -1,4 +1,4 @@
-package apis
+package crud
 
 import (
 	"fmt"
@@ -8,10 +8,10 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/dbhelpers"
+	"github.com/ilxqx/vef-framework-go/dbx"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/treebuilder"
+	"github.com/ilxqx/vef-framework-go/tree"
 )
 
 type findTreeOptionsApi[TModel, TSearch any] struct {
@@ -75,7 +75,7 @@ func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.DB) (func(c
 	}
 
 	table := db.TableOf((*TModel)(nil))
-	treeAdapter := treebuilder.Adapter[TreeDataOption]{
+	treeAdapter := tree.Adapter[TreeDataOption]{
 		GetID:       func(t TreeDataOption) string { return t.ID },
 		GetParentID: func(t TreeDataOption) string { return t.ParentID.ValueOrZero() },
 		SetChildren: func(t *TreeDataOption, children []TreeDataOption) { t.Children = children },
@@ -145,7 +145,7 @@ func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.DB) (func(c
 					recursiveQuery.JoinTable(
 						"_tree",
 						func(cb orm.ConditionBuilder) {
-							cb.EqualsColumn(a.idColumn, dbhelpers.ColumnWithAlias(a.parentIDColumn, "_tree"))
+							cb.EqualsColumn(a.idColumn, dbx.ColumnWithAlias(a.parentIDColumn, "_tree"))
 						},
 					)
 				})
@@ -206,7 +206,7 @@ func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.DB) (func(c
 			return err
 		}
 
-		treeOptions := treebuilder.Build(flatOptions, treeAdapter)
+		treeOptions := tree.Build(flatOptions, treeAdapter)
 
 		return result.Ok(a.Process(treeOptions, search, ctx)).Response(ctx)
 	}, nil

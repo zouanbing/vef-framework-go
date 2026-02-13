@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/datetime"
+	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/internal/approval/publisher"
 	"github.com/ilxqx/vef-framework-go/internal/approval/strategy"
 	"github.com/ilxqx/vef-framework-go/null"
@@ -114,7 +114,7 @@ func (e *FlowEngine) handleProcessResult(ctx context.Context, db orm.DB, instanc
 	case NodeActionComplete:
 		instance.CurrentNodeID = null.StringFrom(node.ID)
 		instance.Status = string(result.FinalStatus)
-		instance.FinishedAt = null.DateTimeFrom(datetime.Now())
+		instance.FinishedAt = null.DateTimeFrom(timex.Now())
 
 		if _, err := db.NewUpdate().Model(instance).WherePK().Exec(ctx); err != nil {
 			return err
@@ -364,7 +364,7 @@ func (e *FlowEngine) resumeParentFlow(ctx context.Context, db orm.DB, childInsta
 
 	// Sub-flow rejected: complete parent as rejected
 	parentInstance.Status = string(approval.InstanceRejected)
-	parentInstance.FinishedAt = null.DateTimeFrom(datetime.Now())
+	parentInstance.FinishedAt = null.DateTimeFrom(timex.Now())
 
 	if _, err := db.NewUpdate().Model(&parentInstance).WherePK().Exec(ctx); err != nil {
 		return err

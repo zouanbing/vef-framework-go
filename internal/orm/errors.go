@@ -3,7 +3,7 @@ package orm
 import (
 	"errors"
 
-	"github.com/ilxqx/vef-framework-go/dbhelpers"
+	"github.com/ilxqx/vef-framework-go/dbx"
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
@@ -25,13 +25,13 @@ func translateWriteError(err error) error {
 		return nil
 	}
 
-	if dbhelpers.IsDuplicateKeyError(err) {
+	if dbx.IsDuplicateKeyError(err) {
 		logger.Warnf("Record already exists: %v", err)
 
 		return result.ErrRecordAlreadyExists
 	}
 
-	if dbhelpers.IsForeignKeyError(err) {
+	if dbx.IsForeignKeyError(err) {
 		logger.Warnf("Foreign key violation: %v", err)
 
 		return result.ErrForeignKeyViolation
@@ -47,7 +47,7 @@ func translateDeleteError(err error) error {
 		return nil
 	}
 
-	if dbhelpers.IsForeignKeyError(err) {
+	if dbx.IsForeignKeyError(err) {
 		logger.Warnf("Foreign key violation: %v", err)
 
 		return result.ErrForeignKeyViolation

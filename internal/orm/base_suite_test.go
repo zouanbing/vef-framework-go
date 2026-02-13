@@ -10,7 +10,7 @@ import (
 	"github.com/uptrace/bun/dbfixture"
 
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/datetime"
+	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/id"
 )
 
@@ -141,7 +141,7 @@ func (suite *OrmTestSuite) SetupSuite() {
 				// fixture.yaml has ~80 calls, so range is approximately -720min to -640min (all in past ~10-12h)
 				offsetMinutes := counter - 720
 
-				return datetime.Now().AddMinutes(offsetMinutes).String()
+				return timex.Now().AddMinutes(offsetMinutes).String()
 			},
 		}),
 	)

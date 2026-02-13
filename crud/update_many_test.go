@@ -1,4 +1,4 @@
-package apis_test
+package crud_test
 
 import (
 	"strconv"
@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/apis"
+	"github.com/ilxqx/vef-framework-go/crud"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
@@ -15,26 +15,26 @@ import (
 // Test Resources.
 type TestUserUpdateManyResource struct {
 	api.Resource
-	apis.UpdateMany[TestUser, TestUserUpdateParams]
+	crud.UpdateMany[TestUser, TestUserUpdateParams]
 }
 
 func NewTestUserUpdateManyResource() api.Resource {
 	return &TestUserUpdateManyResource{
 		Resource:   api.NewRPCResource("test/user_update_many"),
-		UpdateMany: apis.NewUpdateMany[TestUser, TestUserUpdateParams]().Public(),
+		UpdateMany: crud.NewUpdateMany[TestUser, TestUserUpdateParams]().Public(),
 	}
 }
 
 // Resource with PreUpdateMany hook.
 type TestUserUpdateManyWithPreHookResource struct {
 	api.Resource
-	apis.UpdateMany[TestUser, TestUserUpdateParams]
+	crud.UpdateMany[TestUser, TestUserUpdateParams]
 }
 
 func NewTestUserUpdateManyWithPreHookResource() api.Resource {
 	return &TestUserUpdateManyWithPreHookResource{
 		Resource: api.NewRPCResource("test/user_update_many_prehook"),
-		UpdateMany: apis.NewUpdateMany[TestUser, TestUserUpdateParams]().
+		UpdateMany: crud.NewUpdateMany[TestUser, TestUserUpdateParams]().
 			Public().
 			WithPreUpdateMany(func(_, models []TestUser, paramsList []TestUserUpdateParams, _ orm.UpdateQuery, _ fiber.Ctx, _ orm.DB) error {
 				// Add suffix to all descriptions
@@ -52,13 +52,13 @@ func NewTestUserUpdateManyWithPreHookResource() api.Resource {
 // Resource with PostUpdateMany hook.
 type TestUserUpdateManyWithPostHookResource struct {
 	api.Resource
-	apis.UpdateMany[TestUser, TestUserUpdateParams]
+	crud.UpdateMany[TestUser, TestUserUpdateParams]
 }
 
 func NewTestUserUpdateManyWithPostHookResource() api.Resource {
 	return &TestUserUpdateManyWithPostHookResource{
 		Resource: api.NewRPCResource("test/user_update_many_posthook"),
-		UpdateMany: apis.NewUpdateMany[TestUser, TestUserUpdateParams]().
+		UpdateMany: crud.NewUpdateMany[TestUser, TestUserUpdateParams]().
 			Public().
 			WithPostUpdateMany(func(_, models []TestUser, _ []TestUserUpdateParams, ctx fiber.Ctx, _ orm.DB) error {
 				// Set custom header with count

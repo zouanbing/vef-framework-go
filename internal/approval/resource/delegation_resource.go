@@ -2,7 +2,7 @@ package resource
 
 import (
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/apis"
+	"github.com/ilxqx/vef-framework-go/crud"
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/null"
 )
@@ -24,7 +24,7 @@ type DelegationParams struct {
 
 // DelegationSearch contains the search parameters for delegation.
 type DelegationSearch struct {
-	apis.Sortable
+	crud.Sortable
 
 	DelegatorID string `json:"delegatorId" search:"eq,column=delegator_id"`
 	DelegateeID string `json:"delegateeId" search:"eq,column=delegatee_id"`
@@ -35,21 +35,21 @@ type DelegationSearch struct {
 type DelegationResource struct {
 	api.Resource
 
-	apis.FindAll[approval.Delegation, DelegationSearch]
-	apis.FindPage[approval.Delegation, DelegationSearch]
-	apis.Create[approval.Delegation, DelegationParams]
-	apis.Update[approval.Delegation, DelegationParams]
-	apis.Delete[approval.Delegation]
+	crud.FindAll[approval.Delegation, DelegationSearch]
+	crud.FindPage[approval.Delegation, DelegationSearch]
+	crud.Create[approval.Delegation, DelegationParams]
+	crud.Update[approval.Delegation, DelegationParams]
+	crud.Delete[approval.Delegation]
 }
 
 // NewDelegationResource creates a new delegation resource with standard CRUD operations.
 func NewDelegationResource() *DelegationResource {
 	return &DelegationResource{
 		Resource: api.NewRPCResource("approval/delegation"),
-		FindAll:  apis.NewFindAll[approval.Delegation, DelegationSearch](),
-		FindPage: apis.NewFindPage[approval.Delegation, DelegationSearch](),
-		Create:   apis.NewCreate[approval.Delegation, DelegationParams](),
-		Update:   apis.NewUpdate[approval.Delegation, DelegationParams](),
-		Delete:   apis.NewDelete[approval.Delegation](),
+		FindAll:  crud.NewFindAll[approval.Delegation, DelegationSearch](),
+		FindPage: crud.NewFindPage[approval.Delegation, DelegationSearch](),
+		Create:   crud.NewCreate[approval.Delegation, DelegationParams](),
+		Update:   crud.NewUpdate[approval.Delegation, DelegationParams](),
+		Delete:   crud.NewDelete[approval.Delegation](),
 	}
 }

@@ -1,4 +1,4 @@
-package apis_test
+package crud_test
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	"github.com/uptrace/bun"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/apis"
+	"github.com/ilxqx/vef-framework-go/crud"
 	"github.com/ilxqx/vef-framework-go/csv"
 	"github.com/ilxqx/vef-framework-go/excel"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
@@ -37,25 +37,25 @@ type ExportUserSearch struct {
 
 type TestUserExportResource struct {
 	api.Resource
-	apis.Export[ExportUser, ExportUserSearch]
+	crud.Export[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportResource() api.Resource {
 	return &TestUserExportResource{
 		Resource: api.NewRPCResource("test/user_export"),
-		Export:   apis.NewExport[ExportUser, ExportUserSearch]().Public(),
+		Export:   crud.NewExport[ExportUser, ExportUserSearch]().Public(),
 	}
 }
 
 type TestUserExportWithOptionsResource struct {
 	api.Resource
-	apis.Export[ExportUser, ExportUserSearch]
+	crud.Export[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportWithOptionsResource() api.Resource {
 	return &TestUserExportWithOptionsResource{
 		Resource: api.NewRPCResource("test/user_export_opts"),
-		Export: apis.NewExport[ExportUser, ExportUserSearch]().
+		Export: crud.NewExport[ExportUser, ExportUserSearch]().
 			Public().
 			WithExcelOptions(excel.WithSheetName("用户列表")),
 	}
@@ -63,13 +63,13 @@ func NewTestUserExportWithOptionsResource() api.Resource {
 
 type TestUserExportWithFilenameResource struct {
 	api.Resource
-	apis.Export[ExportUser, ExportUserSearch]
+	crud.Export[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportWithFilenameResource() api.Resource {
 	return &TestUserExportWithFilenameResource{
 		Resource: api.NewRPCResource("test/user_export_filename"),
-		Export: apis.NewExport[ExportUser, ExportUserSearch]().
+		Export: crud.NewExport[ExportUser, ExportUserSearch]().
 			Public().
 			WithFilenameBuilder(func(_ ExportUserSearch, _ fiber.Ctx) string {
 				return "custom_users.xlsx"
@@ -79,13 +79,13 @@ func NewTestUserExportWithFilenameResource() api.Resource {
 
 type TestUserExportWithPreProcessorResource struct {
 	api.Resource
-	apis.Export[ExportUser, ExportUserSearch]
+	crud.Export[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportWithPreProcessorResource() api.Resource {
 	return &TestUserExportWithPreProcessorResource{
 		Resource: api.NewRPCResource("test/user_export_preproc"),
-		Export: apis.NewExport[ExportUser, ExportUserSearch]().
+		Export: crud.NewExport[ExportUser, ExportUserSearch]().
 			Public().
 			WithPreExport(func(models []ExportUser, _ ExportUserSearch, ctx fiber.Ctx, _ orm.DB) error {
 				// Add custom header with count
@@ -98,13 +98,13 @@ func NewTestUserExportWithPreProcessorResource() api.Resource {
 
 type TestUserExportWithFilterResource struct {
 	api.Resource
-	apis.Export[ExportUser, ExportUserSearch]
+	crud.Export[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportWithFilterResource() api.Resource {
 	return &TestUserExportWithFilterResource{
 		Resource: api.NewRPCResource("test/user_export_filter"),
-		Export: apis.NewExport[ExportUser, ExportUserSearch]().
+		Export: crud.NewExport[ExportUser, ExportUserSearch]().
 			WithCondition(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "active")
 			}).
@@ -114,44 +114,44 @@ func NewTestUserExportWithFilterResource() api.Resource {
 
 type TestUserExportCSVResource struct {
 	api.Resource
-	apis.Export[ExportUser, ExportUserSearch]
+	crud.Export[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportCSVResource() api.Resource {
 	return &TestUserExportCSVResource{
 		Resource: api.NewRPCResource("test/user_export_csv"),
-		Export: apis.NewExport[ExportUser, ExportUserSearch]().
+		Export: crud.NewExport[ExportUser, ExportUserSearch]().
 			Public().
-			WithDefaultFormat(apis.FormatCsv),
+			WithDefaultFormat(crud.FormatCsv),
 	}
 }
 
 type TestUserExportCSVWithOptionsResource struct {
 	api.Resource
-	apis.Export[ExportUser, ExportUserSearch]
+	crud.Export[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportCSVWithOptionsResource() api.Resource {
 	return &TestUserExportCSVWithOptionsResource{
 		Resource: api.NewRPCResource("test/user_export_csv_opts"),
-		Export: apis.NewExport[ExportUser, ExportUserSearch]().
+		Export: crud.NewExport[ExportUser, ExportUserSearch]().
 			Public().
-			WithDefaultFormat(apis.FormatCsv).
+			WithDefaultFormat(crud.FormatCsv).
 			WithCsvOptions(csv.WithExportDelimiter(';')),
 	}
 }
 
 type TestUserExportCSVWithFilenameResource struct {
 	api.Resource
-	apis.Export[ExportUser, ExportUserSearch]
+	crud.Export[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportCSVWithFilenameResource() api.Resource {
 	return &TestUserExportCSVWithFilenameResource{
 		Resource: api.NewRPCResource("test/user_export_csv_filename"),
-		Export: apis.NewExport[ExportUser, ExportUserSearch]().
+		Export: crud.NewExport[ExportUser, ExportUserSearch]().
 			Public().
-			WithDefaultFormat(apis.FormatCsv).
+			WithDefaultFormat(crud.FormatCsv).
 			WithFilenameBuilder(func(_ ExportUserSearch, _ fiber.Ctx) string {
 				return "custom_users.csv"
 			}),

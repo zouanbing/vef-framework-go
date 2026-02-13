@@ -1,4 +1,4 @@
-package apis_test
+package crud_test
 
 import (
 	"strconv"
@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/apis"
+	"github.com/ilxqx/vef-framework-go/crud"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
@@ -15,39 +15,39 @@ import (
 // Test Resources.
 type TestUserDeleteManyResource struct {
 	api.Resource
-	apis.DeleteMany[TestUser]
+	crud.DeleteMany[TestUser]
 }
 
 func NewTestUserDeleteManyResource() api.Resource {
 	return &TestUserDeleteManyResource{
 		Resource:   api.NewRPCResource("test/user_delete_many"),
-		DeleteMany: apis.NewDeleteMany[TestUser]().Public(),
+		DeleteMany: crud.NewDeleteMany[TestUser]().Public(),
 	}
 }
 
 // Resource for composite PK testing.
 type TestCompositePKDeleteManyResource struct {
 	api.Resource
-	apis.DeleteMany[TestCompositePKItem]
+	crud.DeleteMany[TestCompositePKItem]
 }
 
 func NewTestCompositePKDeleteManyResource() api.Resource {
 	return &TestCompositePKDeleteManyResource{
 		Resource:   api.NewRPCResource("test/composite_pk_delete_many"),
-		DeleteMany: apis.NewDeleteMany[TestCompositePKItem]().Public(),
+		DeleteMany: crud.NewDeleteMany[TestCompositePKItem]().Public(),
 	}
 }
 
 // Resource with PreDeleteMany hook.
 type TestUserDeleteManyWithPreHookResource struct {
 	api.Resource
-	apis.DeleteMany[TestUser]
+	crud.DeleteMany[TestUser]
 }
 
 func NewTestUserDeleteManyWithPreHookResource() api.Resource {
 	return &TestUserDeleteManyWithPreHookResource{
 		Resource: api.NewRPCResource("test/user_delete_many_prehook"),
-		DeleteMany: apis.NewDeleteMany[TestUser]().
+		DeleteMany: crud.NewDeleteMany[TestUser]().
 			Public().
 			WithPreDeleteMany(func(models []TestUser, _ orm.DeleteQuery, ctx fiber.Ctx, _ orm.DB) error {
 				// Check if any active users in batch
@@ -71,13 +71,13 @@ func NewTestUserDeleteManyWithPreHookResource() api.Resource {
 // Resource with PostDeleteMany hook.
 type TestUserDeleteManyWithPostHookResource struct {
 	api.Resource
-	apis.DeleteMany[TestUser]
+	crud.DeleteMany[TestUser]
 }
 
 func NewTestUserDeleteManyWithPostHookResource() api.Resource {
 	return &TestUserDeleteManyWithPostHookResource{
 		Resource: api.NewRPCResource("test/user_delete_many_posthook"),
-		DeleteMany: apis.NewDeleteMany[TestUser]().
+		DeleteMany: crud.NewDeleteMany[TestUser]().
 			Public().
 			WithPostDeleteMany(func(models []TestUser, ctx fiber.Ctx, _ orm.DB) error {
 				// Set custom header with count

@@ -20,7 +20,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/internal/apptest"
-	"github.com/ilxqx/vef-framework-go/internal/testhelpers"
+	"github.com/ilxqx/vef-framework-go/internal/testx"
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
@@ -29,15 +29,15 @@ type SchemaResourceTestSuite struct {
 	suite.Suite
 
 	ctx               context.Context
-	postgresContainer *testhelpers.PostgresContainer
-	mysqlContainer    *testhelpers.MySQLContainer
+	postgresContainer *testx.PostgresContainer
+	mysqlContainer    *testx.MySQLContainer
 }
 
 func (suite *SchemaResourceTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 
-	suite.postgresContainer = testhelpers.NewPostgresContainer(suite.ctx, &suite.Suite)
-	suite.mysqlContainer = testhelpers.NewMySQLContainer(suite.ctx, &suite.Suite)
+	suite.postgresContainer = testx.NewPostgresContainer(suite.ctx, &suite.Suite)
+	suite.mysqlContainer = testx.NewMySQLContainer(suite.ctx, &suite.Suite)
 }
 
 func (suite *SchemaResourceTestSuite) TearDownSuite() {

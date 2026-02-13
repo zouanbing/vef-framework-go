@@ -1,11 +1,11 @@
-package apis_test
+package crud_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ilxqx/vef-framework-go/apis"
+	"github.com/ilxqx/vef-framework-go/crud"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
 
@@ -26,7 +26,7 @@ func TestAction(t *testing.T) {
 		for _, tc := range validActions {
 			t.Run(tc.name, func(t *testing.T) {
 				assert.NotPanics(t, func() {
-					_ = apis.NewCreate[orm.Model, orm.Model]().Action(tc.action)
+					_ = crud.NewCreate[orm.Model, orm.Model]().Action(tc.action)
 				}, "Should accept valid snake_case action name")
 			})
 		}
@@ -54,7 +54,7 @@ func TestAction(t *testing.T) {
 		for _, tc := range invalidActions {
 			t.Run(tc.name, func(t *testing.T) {
 				assert.Panics(t, func() {
-					_ = apis.NewCreate[orm.Model, orm.Model]().Action(tc.action)
+					_ = crud.NewCreate[orm.Model, orm.Model]().Action(tc.action)
 				}, "Should panic for invalid action name format")
 			})
 		}

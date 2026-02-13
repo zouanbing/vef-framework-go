@@ -1,4 +1,4 @@
-package apis_test
+package crud_test
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 	"github.com/uptrace/bun"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/apis"
+	"github.com/ilxqx/vef-framework-go/crud"
 	"github.com/ilxqx/vef-framework-go/csv"
 	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/excel"
@@ -39,25 +39,25 @@ type ImportUserSearch struct {
 
 type TestUserImportResource struct {
 	api.Resource
-	apis.Import[ImportUser]
+	crud.Import[ImportUser]
 }
 
 func NewTestUserImportResource() api.Resource {
 	return &TestUserImportResource{
 		Resource: api.NewRPCResource("test/user_import"),
-		Import:   apis.NewImport[ImportUser]().Public(),
+		Import:   crud.NewImport[ImportUser]().Public(),
 	}
 }
 
 type TestUserImportWithOptionsResource struct {
 	api.Resource
-	apis.Import[ImportUser]
+	crud.Import[ImportUser]
 }
 
 func NewTestUserImportWithOptionsResource() api.Resource {
 	return &TestUserImportWithOptionsResource{
 		Resource: api.NewRPCResource("test/user_import_opts"),
-		Import: apis.NewImport[ImportUser]().
+		Import: crud.NewImport[ImportUser]().
 			Public().
 			WithExcelOptions(excel.WithImportSheetName("用户列表")),
 	}
@@ -65,13 +65,13 @@ func NewTestUserImportWithOptionsResource() api.Resource {
 
 type TestUserImportWithPreProcessorResource struct {
 	api.Resource
-	apis.Import[ImportUser]
+	crud.Import[ImportUser]
 }
 
 func NewTestUserImportWithPreProcessorResource() api.Resource {
 	return &TestUserImportWithPreProcessorResource{
 		Resource: api.NewRPCResource("test/user_import_preproc"),
-		Import: apis.NewImport[ImportUser]().
+		Import: crud.NewImport[ImportUser]().
 			Public().
 			WithPreImport(func(models []ImportUser, _ orm.InsertQuery, _ fiber.Ctx, _ orm.DB) error {
 				// Pre-process all models - change inactive to pending
@@ -88,13 +88,13 @@ func NewTestUserImportWithPreProcessorResource() api.Resource {
 
 type TestUserImportWithPostProcessorResource struct {
 	api.Resource
-	apis.Import[ImportUser]
+	crud.Import[ImportUser]
 }
 
 func NewTestUserImportWithPostProcessorResource() api.Resource {
 	return &TestUserImportWithPostProcessorResource{
 		Resource: api.NewRPCResource("test/user_import_postproc"),
-		Import: apis.NewImport[ImportUser]().
+		Import: crud.NewImport[ImportUser]().
 			Public().
 			WithPostImport(func(models []ImportUser, ctx fiber.Ctx, _ orm.DB) error {
 				// Set custom header with count
@@ -107,29 +107,29 @@ func NewTestUserImportWithPostProcessorResource() api.Resource {
 
 type TestUserImportCSVResource struct {
 	api.Resource
-	apis.Import[ImportUser]
+	crud.Import[ImportUser]
 }
 
 func NewTestUserImportCSVResource() api.Resource {
 	return &TestUserImportCSVResource{
 		Resource: api.NewRPCResource("test/user_import_csv"),
-		Import: apis.NewImport[ImportUser]().
+		Import: crud.NewImport[ImportUser]().
 			Public().
-			WithDefaultFormat(apis.FormatCsv),
+			WithDefaultFormat(crud.FormatCsv),
 	}
 }
 
 type TestUserImportCSVWithOptionsResource struct {
 	api.Resource
-	apis.Import[ImportUser]
+	crud.Import[ImportUser]
 }
 
 func NewTestUserImportCSVWithOptionsResource() api.Resource {
 	return &TestUserImportCSVWithOptionsResource{
 		Resource: api.NewRPCResource("test/user_import_csv_opts"),
-		Import: apis.NewImport[ImportUser]().
+		Import: crud.NewImport[ImportUser]().
 			Public().
-			WithDefaultFormat(apis.FormatCsv).
+			WithDefaultFormat(crud.FormatCsv).
 			WithCsvOptions(csv.WithImportDelimiter(';')),
 	}
 }

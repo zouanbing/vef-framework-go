@@ -1,4 +1,4 @@
-package treebuilder
+package tree
 
 import (
 	"fmt"

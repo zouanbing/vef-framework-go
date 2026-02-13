@@ -7,7 +7,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/datetime"
+	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/decimal"
 	"github.com/ilxqx/vef-framework-go/id"
 	"github.com/ilxqx/vef-framework-go/internal/approval/publisher"
@@ -227,7 +227,7 @@ func (s *FlowService) PublishVersion(ctx context.Context, versionID, operatorID 
 		}
 
 		// Publish this version
-		now := datetime.Now()
+		now := timex.Now()
 		version.Status = approval.VersionPublished
 		version.PublishedAt = null.DateTimeFrom(now)
 		version.PublishedBy = null.StringFrom(operatorID)

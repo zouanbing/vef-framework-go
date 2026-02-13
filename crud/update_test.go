@@ -1,10 +1,10 @@
-package apis_test
+package crud_test
 
 import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/apis"
+	"github.com/ilxqx/vef-framework-go/crud"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
@@ -12,25 +12,25 @@ import (
 
 type TestUserUpdateResource struct {
 	api.Resource
-	apis.Update[TestUser, TestUserUpdateParams]
+	crud.Update[TestUser, TestUserUpdateParams]
 }
 
 func NewTestUserUpdateResource() api.Resource {
 	return &TestUserUpdateResource{
 		Resource: api.NewRPCResource("test/user_update"),
-		Update:   apis.NewUpdate[TestUser, TestUserUpdateParams]().Public(),
+		Update:   crud.NewUpdate[TestUser, TestUserUpdateParams]().Public(),
 	}
 }
 
 type TestUserUpdateWithPreHookResource struct {
 	api.Resource
-	apis.Update[TestUser, TestUserUpdateParams]
+	crud.Update[TestUser, TestUserUpdateParams]
 }
 
 func NewTestUserUpdateWithPreHookResource() api.Resource {
 	return &TestUserUpdateWithPreHookResource{
 		Resource: api.NewRPCResource("test/user_update_prehook"),
-		Update: apis.NewUpdate[TestUser, TestUserUpdateParams]().
+		Update: crud.NewUpdate[TestUser, TestUserUpdateParams]().
 			Public().
 			WithPreUpdate(func(_, model *TestUser, params *TestUserUpdateParams, _ orm.UpdateQuery, _ fiber.Ctx, _ orm.DB) error {
 				if params.Description != "" {
@@ -44,13 +44,13 @@ func NewTestUserUpdateWithPreHookResource() api.Resource {
 
 type TestUserUpdateWithPostHookResource struct {
 	api.Resource
-	apis.Update[TestUser, TestUserUpdateParams]
+	crud.Update[TestUser, TestUserUpdateParams]
 }
 
 func NewTestUserUpdateWithPostHookResource() api.Resource {
 	return &TestUserUpdateWithPostHookResource{
 		Resource: api.NewRPCResource("test/user_update_posthook"),
-		Update: apis.NewUpdate[TestUser, TestUserUpdateParams]().
+		Update: crud.NewUpdate[TestUser, TestUserUpdateParams]().
 			Public().
 			WithPostUpdate(func(_, model *TestUser, _ *TestUserUpdateParams, ctx fiber.Ctx, _ orm.DB) error {
 				ctx.Set("X-Updated-User-Name", model.Name)

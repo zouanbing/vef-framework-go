@@ -1,10 +1,10 @@
-package apis_test
+package crud_test
 
 import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/apis"
+	"github.com/ilxqx/vef-framework-go/crud"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
@@ -13,26 +13,26 @@ import (
 // Test Resources.
 type TestUserDeleteResource struct {
 	api.Resource
-	apis.Delete[TestUser]
+	crud.Delete[TestUser]
 }
 
 func NewTestUserDeleteResource() api.Resource {
 	return &TestUserDeleteResource{
 		Resource: api.NewRPCResource("test/user_delete"),
-		Delete:   apis.NewDelete[TestUser]().Public(),
+		Delete:   crud.NewDelete[TestUser]().Public(),
 	}
 }
 
 // Resource with PreDelete hook.
 type TestUserDeleteWithPreHookResource struct {
 	api.Resource
-	apis.Delete[TestUser]
+	crud.Delete[TestUser]
 }
 
 func NewTestUserDeleteWithPreHookResource() api.Resource {
 	return &TestUserDeleteWithPreHookResource{
 		Resource: api.NewRPCResource("test/user_delete_prehook"),
-		Delete: apis.NewDelete[TestUser]().
+		Delete: crud.NewDelete[TestUser]().
 			Public().
 			WithPreDelete(func(model *TestUser, _ orm.DeleteQuery, ctx fiber.Ctx, _ orm.DB) error {
 				// Log or check conditions before delete
@@ -48,13 +48,13 @@ func NewTestUserDeleteWithPreHookResource() api.Resource {
 // Resource with PostDelete hook.
 type TestUserDeleteWithPostHookResource struct {
 	api.Resource
-	apis.Delete[TestUser]
+	crud.Delete[TestUser]
 }
 
 func NewTestUserDeleteWithPostHookResource() api.Resource {
 	return &TestUserDeleteWithPostHookResource{
 		Resource: api.NewRPCResource("test/user_delete_posthook"),
-		Delete: apis.NewDelete[TestUser]().
+		Delete: crud.NewDelete[TestUser]().
 			Public().
 			WithPostDelete(func(model *TestUser, ctx fiber.Ctx, _ orm.DB) error {
 				// Set custom header after deletion

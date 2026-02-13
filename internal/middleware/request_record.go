@@ -14,7 +14,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/middleware"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/webhelpers"
+	"github.com/ilxqx/vef-framework-go/httpx"
 )
 
 var (
@@ -137,7 +137,7 @@ func formatStatus(status int) string {
 
 func formatRequestDetails(ctx fiber.Ctx, data *logger.Data) string {
 	method, reqPath := ctx.Method(), ctx.Path()
-	ip, latency, status := webhelpers.GetIP(ctx), data.Stop.Sub(data.Start), ctx.Response().StatusCode()
+	ip, latency, status := httpx.GetIP(ctx), data.Stop.Sub(data.Start), ctx.Response().StatusCode()
 	ua := simplifyUserAgent(ctx.Get(fiber.HeaderUserAgent))
 	ms := latency.Milliseconds()
 

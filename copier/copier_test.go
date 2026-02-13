@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/datetime"
+	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/decimal"
 	"github.com/ilxqx/vef-framework-go/null"
 )
@@ -322,15 +322,15 @@ func TestCopyConverters(t *testing.T) {
 				}
 
 				type Dest struct {
-					Value datetime.DateTime
+					Value timex.DateTime
 				}
 
-				testValue := datetime.Of(time.Date(2023, 12, 25, 15, 30, 0, 0, time.UTC))
+				testValue := timex.Of(time.Date(2023, 12, 25, 15, 30, 0, 0, time.UTC))
 				src := Source{Value: null.DateTimeFrom(testValue)}
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst), "Should convert null.DateTime to datetime.DateTime")
+				require.NoError(t, Copy(src, &dst), "Should convert null.DateTime to timex.DateTime")
 				assert.Equal(t, testValue, dst.Value, "Converted value should match")
 			},
 		},
@@ -338,19 +338,19 @@ func TestCopyConverters(t *testing.T) {
 			name: "DateTimeToNullDateTime",
 			run: func(t *testing.T) {
 				type Source struct {
-					Value datetime.DateTime
+					Value timex.DateTime
 				}
 
 				type Dest struct {
 					Value null.DateTime
 				}
 
-				testValue := datetime.Of(time.Date(2023, 12, 25, 15, 30, 0, 0, time.UTC))
+				testValue := timex.Of(time.Date(2023, 12, 25, 15, 30, 0, 0, time.UTC))
 				src := Source{Value: testValue}
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst), "Should convert datetime.DateTime to null.DateTime")
+				require.NoError(t, Copy(src, &dst), "Should convert timex.DateTime to null.DateTime")
 				assert.True(t, dst.Value.Valid, "null.DateTime should be valid")
 				assert.Equal(t, testValue, dst.Value.V, "Converted value should match")
 			},
@@ -363,15 +363,15 @@ func TestCopyConverters(t *testing.T) {
 				}
 
 				type Dest struct {
-					Value datetime.Date
+					Value timex.Date
 				}
 
-				testValue := datetime.DateOf(time.Date(2023, 12, 25, 0, 0, 0, 0, time.UTC))
+				testValue := timex.DateOf(time.Date(2023, 12, 25, 0, 0, 0, 0, time.UTC))
 				src := Source{Value: null.DateFrom(testValue)}
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst), "Should convert null.Date to datetime.Date")
+				require.NoError(t, Copy(src, &dst), "Should convert null.Date to timex.Date")
 				assert.Equal(t, testValue, dst.Value, "Converted value should match")
 			},
 		},
@@ -379,19 +379,19 @@ func TestCopyConverters(t *testing.T) {
 			name: "DateToNullDate",
 			run: func(t *testing.T) {
 				type Source struct {
-					Value datetime.Date
+					Value timex.Date
 				}
 
 				type Dest struct {
 					Value null.Date
 				}
 
-				testValue := datetime.DateOf(time.Date(2023, 12, 25, 0, 0, 0, 0, time.UTC))
+				testValue := timex.DateOf(time.Date(2023, 12, 25, 0, 0, 0, 0, time.UTC))
 				src := Source{Value: testValue}
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst), "Should convert datetime.Date to null.Date")
+				require.NoError(t, Copy(src, &dst), "Should convert timex.Date to null.Date")
 				assert.True(t, dst.Value.Valid, "null.Date should be valid")
 				assert.Equal(t, testValue, dst.Value.V, "Converted value should match")
 			},
@@ -404,15 +404,15 @@ func TestCopyConverters(t *testing.T) {
 				}
 
 				type Dest struct {
-					Value datetime.Time
+					Value timex.Time
 				}
 
-				testValue := datetime.TimeOf(time.Date(0, 1, 1, 15, 30, 45, 0, time.UTC))
+				testValue := timex.TimeOf(time.Date(0, 1, 1, 15, 30, 45, 0, time.UTC))
 				src := Source{Value: null.TimeFrom(testValue)}
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst), "Should convert null.Time to datetime.Time")
+				require.NoError(t, Copy(src, &dst), "Should convert null.Time to timex.Time")
 				assert.Equal(t, testValue, dst.Value, "Converted value should match")
 			},
 		},
@@ -420,19 +420,19 @@ func TestCopyConverters(t *testing.T) {
 			name: "TimeToNullTime",
 			run: func(t *testing.T) {
 				type Source struct {
-					Value datetime.Time
+					Value timex.Time
 				}
 
 				type Dest struct {
 					Value null.Time
 				}
 
-				testValue := datetime.TimeOf(time.Date(0, 1, 1, 15, 30, 45, 0, time.UTC))
+				testValue := timex.TimeOf(time.Date(0, 1, 1, 15, 30, 45, 0, time.UTC))
 				src := Source{Value: testValue}
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst), "Should convert datetime.Time to null.Time")
+				require.NoError(t, Copy(src, &dst), "Should convert timex.Time to null.Time")
 				assert.True(t, dst.Value.Valid, "null.Time should be valid")
 				assert.Equal(t, testValue, dst.Value.V, "Converted value should match")
 			},
@@ -825,15 +825,15 @@ func TestCopyPointerConverters(t *testing.T) {
 				}
 
 				type Dest struct {
-					Value *datetime.DateTime
+					Value *timex.DateTime
 				}
 
-				testValue := datetime.Of(time.Date(2024, 1, 1, 8, 0, 0, 0, time.UTC))
+				testValue := timex.Of(time.Date(2024, 1, 1, 8, 0, 0, 0, time.UTC))
 				src := Source{Value: null.DateTimeFrom(testValue)}
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst), "Should convert null.DateTime to datetime.DateTime pointer")
+				require.NoError(t, Copy(src, &dst), "Should convert null.DateTime to timex.DateTime pointer")
 				require.NotNil(t, dst.Value, "Pointer should not be nil")
 				assert.Equal(t, testValue, *dst.Value, "Converted value should match")
 			},
@@ -842,19 +842,19 @@ func TestCopyPointerConverters(t *testing.T) {
 			name: "DateTimePtrToNullDateTime",
 			run: func(t *testing.T) {
 				type Source struct {
-					Value *datetime.DateTime
+					Value *timex.DateTime
 				}
 
 				type Dest struct {
 					Value null.DateTime
 				}
 
-				testValue := datetime.Of(time.Date(2024, 1, 1, 9, 0, 0, 0, time.UTC))
+				testValue := timex.Of(time.Date(2024, 1, 1, 9, 0, 0, 0, time.UTC))
 				src := Source{Value: &testValue}
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst), "Should convert datetime.DateTime pointer to null.DateTime")
+				require.NoError(t, Copy(src, &dst), "Should convert timex.DateTime pointer to null.DateTime")
 				assert.True(t, dst.Value.Valid, "null.DateTime should be valid")
 				assert.Equal(t, testValue, dst.Value.V, "Converted value should match")
 			},
@@ -867,15 +867,15 @@ func TestCopyPointerConverters(t *testing.T) {
 				}
 
 				type Dest struct {
-					Value *datetime.Date
+					Value *timex.Date
 				}
 
-				testValue := datetime.DateOf(time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC))
+				testValue := timex.DateOf(time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC))
 				src := Source{Value: null.DateFrom(testValue)}
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst), "Should convert null.Date to datetime.Date pointer")
+				require.NoError(t, Copy(src, &dst), "Should convert null.Date to timex.Date pointer")
 				require.NotNil(t, dst.Value, "Pointer should not be nil")
 				assert.Equal(t, testValue, *dst.Value, "Converted value should match")
 			},
@@ -884,19 +884,19 @@ func TestCopyPointerConverters(t *testing.T) {
 			name: "DatePtrToNullDate",
 			run: func(t *testing.T) {
 				type Source struct {
-					Value *datetime.Date
+					Value *timex.Date
 				}
 
 				type Dest struct {
 					Value null.Date
 				}
 
-				testValue := datetime.DateOf(time.Date(2024, 1, 3, 0, 0, 0, 0, time.UTC))
+				testValue := timex.DateOf(time.Date(2024, 1, 3, 0, 0, 0, 0, time.UTC))
 				src := Source{Value: &testValue}
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst), "Should convert datetime.Date pointer to null.Date")
+				require.NoError(t, Copy(src, &dst), "Should convert timex.Date pointer to null.Date")
 				assert.True(t, dst.Value.Valid, "null.Date should be valid")
 				assert.Equal(t, testValue, dst.Value.V, "Converted value should match")
 			},
@@ -909,15 +909,15 @@ func TestCopyPointerConverters(t *testing.T) {
 				}
 
 				type Dest struct {
-					Value *datetime.Time
+					Value *timex.Time
 				}
 
-				testValue := datetime.TimeOf(time.Date(0, 1, 1, 10, 20, 30, 0, time.UTC))
+				testValue := timex.TimeOf(time.Date(0, 1, 1, 10, 20, 30, 0, time.UTC))
 				src := Source{Value: null.TimeFrom(testValue)}
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst), "Should convert null.Time to datetime.Time pointer")
+				require.NoError(t, Copy(src, &dst), "Should convert null.Time to timex.Time pointer")
 				require.NotNil(t, dst.Value, "Pointer should not be nil")
 				assert.Equal(t, testValue, *dst.Value, "Converted value should match")
 			},
@@ -926,19 +926,19 @@ func TestCopyPointerConverters(t *testing.T) {
 			name: "TimePtrToNullTime",
 			run: func(t *testing.T) {
 				type Source struct {
-					Value *datetime.Time
+					Value *timex.Time
 				}
 
 				type Dest struct {
 					Value null.Time
 				}
 
-				testValue := datetime.TimeOf(time.Date(0, 1, 1, 5, 10, 15, 0, time.UTC))
+				testValue := timex.TimeOf(time.Date(0, 1, 1, 5, 10, 15, 0, time.UTC))
 				src := Source{Value: &testValue}
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst), "Should convert datetime.Time pointer to null.Time")
+				require.NoError(t, Copy(src, &dst), "Should convert timex.Time pointer to null.Time")
 				assert.True(t, dst.Value.Valid, "null.Time should be valid")
 				assert.Equal(t, testValue, dst.Value.V, "Converted value should match")
 			},

@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cast"
 
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/datetime"
+	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/decimal"
 	"github.com/ilxqx/vef-framework-go/null"
 )
@@ -131,7 +131,7 @@ func (p *defaultParser) parseNullType(cellValue string, targetType reflect.Type)
 			return null.DateTime{}, true, fmt.Errorf("parse datetime: %w", err)
 		}
 
-		return null.DateTimeFrom(datetime.DateTime(v)), true, nil
+		return null.DateTimeFrom(timex.DateTime(v)), true, nil
 
 	case typeNullDate:
 		v, err := p.parseTemporalValue(cellValue, time.DateOnly)
@@ -139,7 +139,7 @@ func (p *defaultParser) parseNullType(cellValue string, targetType reflect.Type)
 			return null.Date{}, true, fmt.Errorf("parse date: %w", err)
 		}
 
-		return null.DateFrom(datetime.Date(v)), true, nil
+		return null.DateFrom(timex.Date(v)), true, nil
 
 	case typeNullTime:
 		v, err := p.parseTemporalValue(cellValue, time.TimeOnly)
@@ -147,7 +147,7 @@ func (p *defaultParser) parseNullType(cellValue string, targetType reflect.Type)
 			return null.Time{}, true, fmt.Errorf("parse time: %w", err)
 		}
 
-		return null.TimeFrom(datetime.Time(v)), true, nil
+		return null.TimeFrom(timex.Time(v)), true, nil
 
 	case typeNullDecimal:
 		v, err := decimal.NewFromString(cellValue)

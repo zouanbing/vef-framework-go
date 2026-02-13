@@ -9,7 +9,7 @@ import (
 	collections "github.com/ilxqx/go-collections"
 
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/dbhelpers"
+	"github.com/ilxqx/vef-framework-go/dbx"
 	"github.com/ilxqx/vef-framework-go/sortx"
 )
 
@@ -84,7 +84,7 @@ func applyRelationSpec(spec *RelationSpec, query SelectQuery) {
 
 	if len(spec.SelectedColumns) > 0 {
 		for _, ci := range spec.SelectedColumns {
-			column := dbhelpers.ColumnWithAlias(ci.Name, alias)
+			column := dbx.ColumnWithAlias(ci.Name, alias)
 
 			columnAlias := ci.Alias
 			if ci.AutoAlias {
@@ -100,7 +100,7 @@ func applyRelationSpec(spec *RelationSpec, query SelectQuery) {
 	}
 
 	joinCondition := func(cb ConditionBuilder) {
-		cb.EqualsColumn(dbhelpers.ColumnWithAlias(referencedColumn, alias), foreignColumn)
+		cb.EqualsColumn(dbx.ColumnWithAlias(referencedColumn, alias), foreignColumn)
 
 		if spec.On != nil {
 			spec.On(cb)

@@ -11,7 +11,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/database"
 	"github.com/ilxqx/vef-framework-go/internal/schema"
-	"github.com/ilxqx/vef-framework-go/internal/testhelpers"
+	"github.com/ilxqx/vef-framework-go/internal/testx"
 )
 
 // InspectorTestSuite tests the AtlasInspector implementation.
@@ -19,15 +19,15 @@ type InspectorTestSuite struct {
 	suite.Suite
 
 	ctx               context.Context
-	postgresContainer *testhelpers.PostgresContainer
-	mysqlContainer    *testhelpers.MySQLContainer
+	postgresContainer *testx.PostgresContainer
+	mysqlContainer    *testx.MySQLContainer
 }
 
 func (suite *InspectorTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 
-	suite.postgresContainer = testhelpers.NewPostgresContainer(suite.ctx, &suite.Suite)
-	suite.mysqlContainer = testhelpers.NewMySQLContainer(suite.ctx, &suite.Suite)
+	suite.postgresContainer = testx.NewPostgresContainer(suite.ctx, &suite.Suite)
+	suite.mysqlContainer = testx.NewMySQLContainer(suite.ctx, &suite.Suite)
 }
 
 func (suite *InspectorTestSuite) TearDownSuite() {

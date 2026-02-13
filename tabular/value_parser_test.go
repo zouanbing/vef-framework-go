@@ -8,7 +8,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ilxqx/vef-framework-go/datetime"
+	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/null"
 )
 
@@ -234,7 +234,7 @@ func TestDefaultParser_Parse_TimeTypes(t *testing.T) {
 				nullDT := result.(null.DateTime)
 				assert.True(t, nullDT.Valid)
 
-				expected := datetime.DateTime(time.Date(2024, 1, 15, 14, 30, 45, 0, time.Local))
+				expected := timex.DateTime(time.Date(2024, 1, 15, 14, 30, 45, 0, time.Local))
 				assert.Equal(t, expected, nullDT.ValueOrZero())
 			},
 		},
@@ -246,7 +246,7 @@ func TestDefaultParser_Parse_TimeTypes(t *testing.T) {
 				nullDate := result.(null.Date)
 				assert.True(t, nullDate.Valid)
 
-				expected := datetime.Date(time.Date(2024, 1, 15, 0, 0, 0, 0, time.Local))
+				expected := timex.Date(time.Date(2024, 1, 15, 0, 0, 0, 0, time.Local))
 				assert.Equal(t, expected, nullDate.ValueOrZero())
 			},
 		},

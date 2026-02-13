@@ -1,4 +1,4 @@
-package apis_test
+package crud_test
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/database"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
-	"github.com/ilxqx/vef-framework-go/internal/testhelpers"
+	"github.com/ilxqx/vef-framework-go/internal/testx"
 )
 
 // runAllApiTests executes all Api test suites on the given database configuration.
@@ -278,7 +278,7 @@ func TestPostgres(t *testing.T) {
 	dummySuite.SetT(t)
 
 	// Start PostgreSQL container
-	postgresContainer := testhelpers.NewPostgresContainer(ctx, dummySuite)
+	postgresContainer := testx.NewPostgresContainer(ctx, dummySuite)
 	defer postgresContainer.Terminate(ctx, dummySuite)
 
 	// Run all Api tests
@@ -294,7 +294,7 @@ func TestMySQL(t *testing.T) {
 	dummySuite.SetT(t)
 
 	// Start MySQL container
-	mysqlContainer := testhelpers.NewMySQLContainer(ctx, dummySuite)
+	mysqlContainer := testx.NewMySQLContainer(ctx, dummySuite)
 	defer mysqlContainer.Terminate(ctx, dummySuite)
 
 	// Run all Api tests

@@ -9,19 +9,19 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/testhelpers"
+	"github.com/ilxqx/vef-framework-go/internal/testx"
 )
 
 type RedisTestSuite struct {
 	suite.Suite
 
 	ctx            context.Context
-	redisContainer *testhelpers.RedisContainer
+	redisContainer *testx.RedisContainer
 }
 
 func (suite *RedisTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
-	suite.redisContainer = testhelpers.NewRedisContainer(suite.ctx, &suite.Suite)
+	suite.redisContainer = testx.NewRedisContainer(suite.ctx, &suite.Suite)
 }
 
 func (suite *RedisTestSuite) TearDownSuite() {

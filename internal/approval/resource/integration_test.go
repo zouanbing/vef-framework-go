@@ -24,7 +24,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/apptest"
 	"github.com/ilxqx/vef-framework-go/internal/database"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
-	"github.com/ilxqx/vef-framework-go/internal/testhelpers"
+	"github.com/ilxqx/vef-framework-go/internal/testx"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
 )
@@ -66,7 +66,7 @@ type ApprovalSuite struct {
 	suite.Suite
 
 	ctx       context.Context
-	pgc       *testhelpers.PostgresContainer
+	pgc       *testx.PostgresContainer
 	app       *app.App
 	stop      func()
 	authToken string
@@ -424,7 +424,7 @@ func (l *stubUserLoader) LoadByID(_ context.Context, _ string) (*security.Princi
 func (s *ApprovalSuite) SetupSuite() {
 	s.ctx = context.Background()
 
-	s.pgc = testhelpers.NewPostgresContainer(s.ctx, &s.Suite)
+	s.pgc = testx.NewPostgresContainer(s.ctx, &s.Suite)
 	dsConfig := s.pgc.DsConfig
 
 	bunDB, err := database.New(dsConfig)

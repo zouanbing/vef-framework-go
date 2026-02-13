@@ -1,10 +1,10 @@
-package apis_test
+package crud_test
 
 import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/apis"
+	"github.com/ilxqx/vef-framework-go/crud"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
@@ -13,26 +13,26 @@ import (
 // Test Resources.
 type TestUserCreateResource struct {
 	api.Resource
-	apis.Create[TestUser, TestUserCreateParams]
+	crud.Create[TestUser, TestUserCreateParams]
 }
 
 func NewTestUserCreateResource() api.Resource {
 	return &TestUserCreateResource{
 		Resource: api.NewRPCResource("test/user_create"),
-		Create:   apis.NewCreate[TestUser, TestUserCreateParams]().Public(),
+		Create:   crud.NewCreate[TestUser, TestUserCreateParams]().Public(),
 	}
 }
 
 // Resource with PreCreate hook.
 type TestUserCreateWithPreHookResource struct {
 	api.Resource
-	apis.Create[TestUser, TestUserCreateParams]
+	crud.Create[TestUser, TestUserCreateParams]
 }
 
 func NewTestUserCreateWithPreHookResource() api.Resource {
 	return &TestUserCreateWithPreHookResource{
 		Resource: api.NewRPCResource("test/user_create_prehook"),
-		Create: apis.NewCreate[TestUser, TestUserCreateParams]().
+		Create: crud.NewCreate[TestUser, TestUserCreateParams]().
 			Public().
 			WithPreCreate(func(model *TestUser, _ *TestUserCreateParams, _ orm.InsertQuery, _ fiber.Ctx, _ orm.DB) error {
 				// Add prefix to name
@@ -46,13 +46,13 @@ func NewTestUserCreateWithPreHookResource() api.Resource {
 // Resource with PostCreate hook.
 type TestUserCreateWithPostHookResource struct {
 	api.Resource
-	apis.Create[TestUser, TestUserCreateParams]
+	crud.Create[TestUser, TestUserCreateParams]
 }
 
 func NewTestUserCreateWithPostHookResource() api.Resource {
 	return &TestUserCreateWithPostHookResource{
 		Resource: api.NewRPCResource("test/user_create_posthook"),
-		Create: apis.NewCreate[TestUser, TestUserCreateParams]().
+		Create: crud.NewCreate[TestUser, TestUserCreateParams]().
 			Public().
 			WithPostCreate(func(model *TestUser, _ *TestUserCreateParams, ctx fiber.Ctx, _ orm.DB) error {
 				// Log or perform additional operations

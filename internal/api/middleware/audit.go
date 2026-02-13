@@ -17,7 +17,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
-	"github.com/ilxqx/vef-framework-go/webhelpers"
+	"github.com/ilxqx/vef-framework-go/httpx"
 )
 
 // Audit handles audit logging.
@@ -91,7 +91,7 @@ func buildAuditEvent(ctx fiber.Ctx, elapsed int64, err error) (*api.AuditEvent, 
 	var (
 		userID     = principal.ID
 		requestID  = contextx.RequestID(ctx)
-		requestIP  = webhelpers.GetIP(ctx)
+		requestIP  = httpx.GetIP(ctx)
 		userAgent  = utils.CopyString(ctx.Get(fiber.HeaderUserAgent))
 		resultCode int
 		resultMsg  string

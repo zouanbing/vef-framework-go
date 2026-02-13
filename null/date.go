@@ -6,19 +6,19 @@ import (
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/datetime"
+	"github.com/ilxqx/vef-framework-go/timex"
 )
 
-// Date is a nullable datetime.Date. It supports SQL and JSON serialization.
+// Date is a nullable timex.Date. It supports SQL and JSON serialization.
 // It will marshal to null if null.
 type Date struct {
-	sql.Null[datetime.Date]
+	sql.Null[timex.Date]
 }
 
 // NewDate creates a new Date.
-func NewDate(d datetime.Date, valid bool) Date {
+func NewDate(d timex.Date, valid bool) Date {
 	return Date{
-		Null: sql.Null[datetime.Date]{
+		Null: sql.Null[timex.Date]{
 			V:     d,
 			Valid: valid,
 		},
@@ -26,30 +26,30 @@ func NewDate(d datetime.Date, valid bool) Date {
 }
 
 // DateFrom creates a new Date that will always be valid.
-func DateFrom(d datetime.Date) Date {
+func DateFrom(d timex.Date) Date {
 	return NewDate(d, true)
 }
 
 // DateFromPtr creates a new Date that will be null if d is nil.
-func DateFromPtr(d *datetime.Date) Date {
+func DateFromPtr(d *timex.Date) Date {
 	if d == nil {
-		return NewDate(datetime.Date{}, false)
+		return NewDate(timex.Date{}, false)
 	}
 
 	return NewDate(*d, true)
 }
 
 // ValueOrZero returns the inner value if valid, otherwise zero.
-func (d Date) ValueOrZero() datetime.Date {
+func (d Date) ValueOrZero() timex.Date {
 	if !d.Valid {
-		return datetime.Date{}
+		return timex.Date{}
 	}
 
 	return d.V
 }
 
 // ValueOr returns the inner value if valid, otherwise v.
-func (d Date) ValueOr(v datetime.Date) datetime.Date {
+func (d Date) ValueOr(v timex.Date) timex.Date {
 	if !d.Valid {
 		return v
 	}
@@ -86,7 +86,7 @@ func (d *Date) UnmarshalJSON(data []byte) error {
 }
 
 // MarshalText implements encoding.TextMarshaler.
-// It returns an empty string if invalid, otherwise datetime.Date's MarshalText.
+// It returns an empty string if invalid, otherwise timex.Date's MarshalText.
 func (d Date) MarshalText() ([]byte, error) {
 	if !d.Valid {
 		return []byte{}, nil
@@ -117,13 +117,13 @@ func (d *Date) UnmarshalText(text []byte) error {
 }
 
 // SetValid changes this Date's value and sets it to be non-null.
-func (d *Date) SetValid(v datetime.Date) {
+func (d *Date) SetValid(v timex.Date) {
 	d.V = v
 	d.Valid = true
 }
 
 // Ptr returns a pointer to this Date's value, or a nil pointer if this Date is null.
-func (d Date) Ptr() *datetime.Date {
+func (d Date) Ptr() *timex.Date {
 	if !d.Valid {
 		return nil
 	}

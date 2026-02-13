@@ -1,4 +1,4 @@
-package apis
+package crud
 
 import (
 	"github.com/samber/lo"

@@ -2,7 +2,7 @@ package resource
 
 import (
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/apis"
+	"github.com/ilxqx/vef-framework-go/crud"
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/null"
 )
@@ -23,7 +23,7 @@ type CategoryParams struct {
 
 // CategorySearch contains the search parameters for flow category.
 type CategorySearch struct {
-	apis.Sortable
+	crud.Sortable
 
 	Name     string `json:"name" search:"contains"`
 	IsActive *bool  `json:"isActive" search:"eq,column=is_active"`
@@ -33,21 +33,21 @@ type CategorySearch struct {
 type CategoryResource struct {
 	api.Resource
 
-	apis.FindAll[approval.FlowCategory, CategorySearch]
-	apis.FindPage[approval.FlowCategory, CategorySearch]
-	apis.Create[approval.FlowCategory, CategoryParams]
-	apis.Update[approval.FlowCategory, CategoryParams]
-	apis.Delete[approval.FlowCategory]
+	crud.FindAll[approval.FlowCategory, CategorySearch]
+	crud.FindPage[approval.FlowCategory, CategorySearch]
+	crud.Create[approval.FlowCategory, CategoryParams]
+	crud.Update[approval.FlowCategory, CategoryParams]
+	crud.Delete[approval.FlowCategory]
 }
 
 // NewCategoryResource creates a new category resource with standard CRUD operations.
 func NewCategoryResource() *CategoryResource {
 	return &CategoryResource{
 		Resource: api.NewRPCResource("approval/category"),
-		FindAll:  apis.NewFindAll[approval.FlowCategory, CategorySearch](),
-		FindPage: apis.NewFindPage[approval.FlowCategory, CategorySearch](),
-		Create:   apis.NewCreate[approval.FlowCategory, CategoryParams](),
-		Update:   apis.NewUpdate[approval.FlowCategory, CategoryParams](),
-		Delete:   apis.NewDelete[approval.FlowCategory](),
+		FindAll:  crud.NewFindAll[approval.FlowCategory, CategorySearch](),
+		FindPage: crud.NewFindPage[approval.FlowCategory, CategorySearch](),
+		Create:   crud.NewCreate[approval.FlowCategory, CategoryParams](),
+		Update:   crud.NewUpdate[approval.FlowCategory, CategoryParams](),
+		Delete:   crud.NewDelete[approval.FlowCategory](),
 	}
 }

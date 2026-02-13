@@ -4,7 +4,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/internal/app"
-	"github.com/ilxqx/vef-framework-go/webhelpers"
+	"github.com/ilxqx/vef-framework-go/httpx"
 )
 
 // NewContentTypeMiddleware enforces JSON/multipart for POST/PUT requests.
@@ -14,7 +14,7 @@ func NewContentTypeMiddleware() app.Middleware {
 			method := ctx.Method()
 
 			isStateChanging := method == fiber.MethodPost || method == fiber.MethodPut
-			if !isStateChanging || webhelpers.IsJSON(ctx) || webhelpers.IsMultipart(ctx) {
+			if !isStateChanging || httpx.IsJSON(ctx) || httpx.IsMultipart(ctx) {
 				return ctx.Next()
 			}
 

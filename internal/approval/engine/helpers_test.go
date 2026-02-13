@@ -8,12 +8,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/datetime"
+	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/null"
 )
 
 func newNullTime(t time.Time) null.Time {
-	return null.NewTime(datetime.Time(t), true)
+	return null.NewTime(timex.Time(t), true)
 }
 
 func TestDeduplicateAssignees(t *testing.T) {

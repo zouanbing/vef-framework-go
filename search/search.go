@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cast"
 
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/dbhelpers"
+	"github.com/ilxqx/vef-framework-go/dbx"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/monad"
 	"github.com/ilxqx/vef-framework-go/null"
@@ -55,7 +55,7 @@ func (f Search) Apply(cb orm.ConditionBuilder, target any, defaultAlias ...strin
 		alias := getColumnAlias(c.Alias, defaultAlias...)
 		columns := streams.MapTo(
 			streams.FromSlice(c.Columns),
-			func(column string) string { return dbhelpers.ColumnWithAlias(column, alias) },
+			func(column string) string { return dbx.ColumnWithAlias(column, alias) },
 		).Collect()
 
 		applyCondition(cb, c, columns, fieldValue)

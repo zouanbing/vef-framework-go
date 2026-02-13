@@ -14,7 +14,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/reflectx"
-	"github.com/ilxqx/vef-framework-go/strhelpers"
+	"github.com/ilxqx/vef-framework-go/strx"
 )
 
 // MetaType defines the type of meta information field.
@@ -171,7 +171,7 @@ func parseMetaFields(typ reflect.Type) []metaField {
 			}
 
 			var (
-				parsed = strhelpers.ParseTag(tag, strhelpers.WithBareValueMode(strhelpers.BareAsKey))
+				parsed = strx.ParseTag(tag, strx.WithBareValueMode(strx.BareAsKey))
 
 				metaType      MetaType
 				metaTypeValue string
@@ -196,10 +196,10 @@ func parseMetaFields(typ reflect.Type) []metaField {
 			}
 
 			// Format: "category:gallery public:true" -> {"category": "gallery", "public": "true"}
-			attrs := strhelpers.ParseTag(
+			attrs := strx.ParseTag(
 				metaTypeValue,
-				strhelpers.WithSpacePairDelimiter(),
-				strhelpers.WithValueDelimiter(constants.ByteColon),
+				strx.WithSpacePairDelimiter(),
+				strx.WithValueDelimiter(constants.ByteColon),
 			)
 
 			var (

@@ -6,19 +6,19 @@ import (
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/datetime"
+	"github.com/ilxqx/vef-framework-go/timex"
 )
 
-// Time is a nullable datetime.Time. It supports SQL and JSON serialization.
+// Time is a nullable timex.Time. It supports SQL and JSON serialization.
 // It will marshal to null if null.
 type Time struct {
-	sql.Null[datetime.Time]
+	sql.Null[timex.Time]
 }
 
 // NewTime creates a new Time.
-func NewTime(t datetime.Time, valid bool) Time {
+func NewTime(t timex.Time, valid bool) Time {
 	return Time{
-		Null: sql.Null[datetime.Time]{
+		Null: sql.Null[timex.Time]{
 			V:     t,
 			Valid: valid,
 		},
@@ -26,30 +26,30 @@ func NewTime(t datetime.Time, valid bool) Time {
 }
 
 // TimeFrom creates a new Time that will always be valid.
-func TimeFrom(t datetime.Time) Time {
+func TimeFrom(t timex.Time) Time {
 	return NewTime(t, true)
 }
 
 // TimeFromPtr creates a new Time that will be null if t is nil.
-func TimeFromPtr(t *datetime.Time) Time {
+func TimeFromPtr(t *timex.Time) Time {
 	if t == nil {
-		return NewTime(datetime.Time{}, false)
+		return NewTime(timex.Time{}, false)
 	}
 
 	return NewTime(*t, true)
 }
 
 // ValueOrZero returns the inner value if valid, otherwise zero.
-func (t Time) ValueOrZero() datetime.Time {
+func (t Time) ValueOrZero() timex.Time {
 	if !t.Valid {
-		return datetime.Time{}
+		return timex.Time{}
 	}
 
 	return t.V
 }
 
 // ValueOr returns the inner value if valid, otherwise v.
-func (t Time) ValueOr(v datetime.Time) datetime.Time {
+func (t Time) ValueOr(v timex.Time) timex.Time {
 	if !t.Valid {
 		return v
 	}
@@ -86,7 +86,7 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 }
 
 // MarshalText implements encoding.TextMarshaler.
-// It returns an empty string if invalid, otherwise datetime.Time's MarshalText.
+// It returns an empty string if invalid, otherwise timex.Time's MarshalText.
 func (t Time) MarshalText() ([]byte, error) {
 	if !t.Valid {
 		return []byte{}, nil
@@ -117,13 +117,13 @@ func (t *Time) UnmarshalText(text []byte) error {
 }
 
 // SetValid changes this Time's value and sets it to be non-null.
-func (t *Time) SetValid(v datetime.Time) {
+func (t *Time) SetValid(v timex.Time) {
 	t.V = v
 	t.Valid = true
 }
 
 // Ptr returns a pointer to this Time's value, or a nil pointer if this Time is null.
-func (t Time) Ptr() *datetime.Time {
+func (t Time) Ptr() *timex.Time {
 	if !t.Valid {
 		return nil
 	}

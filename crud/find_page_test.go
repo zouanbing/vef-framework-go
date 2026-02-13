@@ -1,10 +1,10 @@
-package apis_test
+package crud_test
 
 import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/apis"
+	"github.com/ilxqx/vef-framework-go/crud"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
@@ -13,26 +13,26 @@ import (
 // Test Resources.
 type TestUserFindPageResource struct {
 	api.Resource
-	apis.FindPage[TestUser, TestUserSearch]
+	crud.FindPage[TestUser, TestUserSearch]
 }
 
 func NewTestUserFindPageResource() api.Resource {
 	return &TestUserFindPageResource{
 		Resource: api.NewRPCResource("test/user_page"),
-		FindPage: apis.NewFindPage[TestUser, TestUserSearch]().Public(),
+		FindPage: crud.NewFindPage[TestUser, TestUserSearch]().Public(),
 	}
 }
 
 // Processed User Resource - with processor.
 type ProcessedUserFindPageResource struct {
 	api.Resource
-	apis.FindPage[TestUser, TestUserSearch]
+	crud.FindPage[TestUser, TestUserSearch]
 }
 
 func NewProcessedUserFindPageResource() api.Resource {
 	return &ProcessedUserFindPageResource{
 		Resource: api.NewRPCResource("test/user_page_processed"),
-		FindPage: apis.NewFindPage[TestUser, TestUserSearch]().
+		FindPage: crud.NewFindPage[TestUser, TestUserSearch]().
 			Public().
 			WithProcessor(func(users []TestUser, _ TestUserSearch, _ fiber.Ctx) any {
 				// Processor must return a slice - convert each user to a processed version
@@ -52,13 +52,13 @@ func NewProcessedUserFindPageResource() api.Resource {
 // Filtered User Resource - with filter applier.
 type FilteredUserFindPageResource struct {
 	api.Resource
-	apis.FindPage[TestUser, TestUserSearch]
+	crud.FindPage[TestUser, TestUserSearch]
 }
 
 func NewFilteredUserFindPageResource() api.Resource {
 	return &FilteredUserFindPageResource{
 		Resource: api.NewRPCResource("test/user_page_filtered"),
-		FindPage: apis.NewFindPage[TestUser, TestUserSearch]().
+		FindPage: crud.NewFindPage[TestUser, TestUserSearch]().
 			WithCondition(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "active")
 			}).
@@ -69,13 +69,13 @@ func NewFilteredUserFindPageResource() api.Resource {
 // AuditUser User Resource - with audit user names.
 type AuditUserTestUserFindPageResource struct {
 	api.Resource
-	apis.FindPage[TestUser, TestUserSearch]
+	crud.FindPage[TestUser, TestUserSearch]
 }
 
 func NewAuditUserTestUserFindPageResource() api.Resource {
 	return &AuditUserTestUserFindPageResource{
 		Resource: api.NewRPCResource("test/user_page_audit"),
-		FindPage: apis.NewFindPage[TestUser, TestUserSearch]().
+		FindPage: crud.NewFindPage[TestUser, TestUserSearch]().
 			WithAuditUserNames((*TestAuditUser)(nil)).
 			Public(),
 	}

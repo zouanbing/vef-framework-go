@@ -16,7 +16,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/api/middleware"
 	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/webhelpers"
+	"github.com/ilxqx/vef-framework-go/httpx"
 )
 
 const (
@@ -127,7 +127,7 @@ func (*RPC) parseRequest(ctx fiber.Ctx) (*api.Request, error) {
 		Meta:   api.Meta{},
 	}
 
-	if webhelpers.IsJSON(ctx) {
+	if httpx.IsJSON(ctx) {
 		if err := ctx.Bind().Body(req); err != nil {
 			return nil, err
 		}
@@ -195,7 +195,7 @@ func parseFormRequest(ctx fiber.Ctx, request *api.Request) error {
 		}
 	}
 
-	if webhelpers.IsMultipart(ctx) {
+	if httpx.IsMultipart(ctx) {
 		if form, err := ctx.MultipartForm(); err == nil && form != nil {
 			for key, files := range form.File {
 				if len(files) > 0 {

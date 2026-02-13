@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/datetime"
+	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/monitor"
 )
 
@@ -44,7 +44,7 @@ func Generate(outputPath, packageName string) error {
 	info := buildInfoData{
 		BuildInfo: monitor.BuildInfo{
 			AppVersion: getVersion(ctx),
-			BuildTime:  datetime.Now().String(),
+			BuildTime:  timex.Now().String(),
 			GitCommit:  getCommit(ctx),
 		},
 		Package: packageName,

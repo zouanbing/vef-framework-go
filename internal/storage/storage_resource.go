@@ -16,7 +16,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/id"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/storage"
-	"github.com/ilxqx/vef-framework-go/webhelpers"
+	"github.com/ilxqx/vef-framework-go/httpx"
 )
 
 const (
@@ -57,7 +57,7 @@ type UploadParams struct {
 
 // Upload generates date-partitioned keys (temp/YYYY/MM/DD/{uuid}{ext}) to organize uploads and avoid conflicts.
 func (r *Resource) Upload(ctx fiber.Ctx, params UploadParams) error {
-	if webhelpers.IsJSON(ctx) {
+	if httpx.IsJSON(ctx) {
 		return result.Err(i18n.T("upload_requires_multipart"))
 	}
 

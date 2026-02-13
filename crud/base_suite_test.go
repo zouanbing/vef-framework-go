@@ -1,4 +1,4 @@
-package apis_test
+package crud_test
 
 import (
 	"context"

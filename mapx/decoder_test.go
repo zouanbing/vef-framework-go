@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/datetime"
+	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/decimal"
 	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/sortx"
@@ -972,7 +972,7 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 	})
 
 	t.Run("NullDateTimeDecodeHook", func(t *testing.T) {
-		testDateTime := datetime.Of(time.Date(2023, 12, 25, 15, 30, 0, 0, time.UTC))
+		testDateTime := timex.Of(time.Date(2023, 12, 25, 15, 30, 0, 0, time.UTC))
 
 		type StructWithNullDateTime struct {
 			Created null.DateTime `json:"created"`
@@ -983,12 +983,12 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithNullDateTime](input)
-		require.NoError(t, err, "datetime.DateTime to null.DateTime conversion should succeed")
+		require.NoError(t, err, "timex.DateTime to null.DateTime conversion should succeed")
 		assert.True(t, result.Created.Valid, "Should be valid")
 		assert.Equal(t, testDateTime, result.Created.V, "Value should match")
 
 		type StructWithDateTime struct {
-			Created datetime.DateTime `json:"created"`
+			Created timex.DateTime `json:"created"`
 		}
 
 		input2 := map[string]any{
@@ -996,12 +996,12 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result2, err := FromMap[StructWithDateTime](input2)
-		require.NoError(t, err, "null.DateTime to datetime.DateTime conversion should succeed")
+		require.NoError(t, err, "null.DateTime to timex.DateTime conversion should succeed")
 		assert.Equal(t, testDateTime, result2.Created, "Value should match")
 	})
 
 	t.Run("NullDateDecodeHook", func(t *testing.T) {
-		testDate := datetime.DateOf(time.Date(2023, 12, 25, 0, 0, 0, 0, time.UTC))
+		testDate := timex.DateOf(time.Date(2023, 12, 25, 0, 0, 0, 0, time.UTC))
 
 		type StructWithNullDate struct {
 			Birthday null.Date `json:"birthday"`
@@ -1012,12 +1012,12 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithNullDate](input)
-		require.NoError(t, err, "datetime.Date to null.Date conversion should succeed")
+		require.NoError(t, err, "timex.Date to null.Date conversion should succeed")
 		assert.True(t, result.Birthday.Valid, "Should be valid")
 		assert.Equal(t, testDate, result.Birthday.V, "Value should match")
 
 		type StructWithDate struct {
-			Birthday datetime.Date `json:"birthday"`
+			Birthday timex.Date `json:"birthday"`
 		}
 
 		input2 := map[string]any{
@@ -1025,12 +1025,12 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result2, err := FromMap[StructWithDate](input2)
-		require.NoError(t, err, "null.Date to datetime.Date conversion should succeed")
+		require.NoError(t, err, "null.Date to timex.Date conversion should succeed")
 		assert.Equal(t, testDate, result2.Birthday, "Value should match")
 	})
 
 	t.Run("NullTimeDecodeHook", func(t *testing.T) {
-		testTime := datetime.TimeOf(time.Date(0, 1, 1, 15, 30, 45, 0, time.UTC))
+		testTime := timex.TimeOf(time.Date(0, 1, 1, 15, 30, 45, 0, time.UTC))
 
 		type StructWithNullTime struct {
 			MeetingTime null.Time `json:"meetingTime"`
@@ -1041,12 +1041,12 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithNullTime](input)
-		require.NoError(t, err, "datetime.Time to null.Time conversion should succeed")
+		require.NoError(t, err, "timex.Time to null.Time conversion should succeed")
 		assert.True(t, result.MeetingTime.Valid, "Should be valid")
 		assert.Equal(t, testTime, result.MeetingTime.V, "Value should match")
 
 		type StructWithTime struct {
-			MeetingTime datetime.Time `json:"meetingTime"`
+			MeetingTime timex.Time `json:"meetingTime"`
 		}
 
 		input2 := map[string]any{
@@ -1054,7 +1054,7 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result2, err := FromMap[StructWithTime](input2)
-		require.NoError(t, err, "null.Time to datetime.Time conversion should succeed")
+		require.NoError(t, err, "null.Time to timex.Time conversion should succeed")
 		assert.Equal(t, testTime, result2.MeetingTime, "Value should match")
 	})
 
@@ -1278,9 +1278,9 @@ func TestNullTypesIntegrationAdvanced(t *testing.T) {
 			Active      null.Bool     `json:"active"`
 		}
 
-		testDateTime := datetime.Of(time.Date(2023, 12, 25, 15, 30, 0, 0, time.UTC))
-		testDate := datetime.DateOf(time.Date(1990, 5, 15, 0, 0, 0, 0, time.UTC))
-		testTime := datetime.TimeOf(time.Date(0, 1, 1, 14, 30, 0, 0, time.UTC))
+		testDateTime := timex.Of(time.Date(2023, 12, 25, 15, 30, 0, 0, time.UTC))
+		testDate := timex.DateOf(time.Date(1990, 5, 15, 0, 0, 0, 0, time.UTC))
+		testTime := timex.TimeOf(time.Date(0, 1, 1, 14, 30, 0, 0, time.UTC))
 		testDecimal := decimal.NewFromFloat(99.99)
 
 		input := map[string]any{

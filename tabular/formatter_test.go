@@ -7,7 +7,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ilxqx/vef-framework-go/datetime"
+	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/null"
 )
 
@@ -127,11 +127,11 @@ func TestDefaultFormatter_Format_TimeTypes(t *testing.T) {
 		expected string
 	}{
 		{"TimeTime", testTime, "2024-01-15 14:30:45"},
-		{"NullDateTimeValid", null.DateTimeFrom(datetime.DateTime(testTime)), "2024-01-15 14:30:45"},
+		{"NullDateTimeValid", null.DateTimeFrom(timex.DateTime(testTime)), "2024-01-15 14:30:45"},
 		{"NullDateTimeInvalid", null.DateTime{}, ""},
-		{"NullDateValid", null.DateFrom(datetime.Date(testTime)), "2024-01-15"},
+		{"NullDateValid", null.DateFrom(timex.Date(testTime)), "2024-01-15"},
 		{"NullDateInvalid", null.Date{}, ""},
-		{"NullTimeValid", null.TimeFrom(datetime.Time(testTime)), "14:30:45"},
+		{"NullTimeValid", null.TimeFrom(timex.Time(testTime)), "14:30:45"},
 		{"NullTimeInvalid", null.Time{}, ""},
 	}
 
@@ -155,9 +155,9 @@ func TestDefaultFormatter_Format_TimeTypesWithFormat(t *testing.T) {
 	}{
 		{"TimeTimeCustomFormat", "2006-01-02", testTime, "2024-01-15"},
 		{"TimeTimeRFC3339", time.RFC3339, testTime, "2024-01-15T14:30:45+08:00"},
-		{"DateTimeCustomFormat", "2006/01/02 15:04", datetime.DateTime(testTime), "2024/01/15 14:30"},
-		{"DateCustomFormat", "2006年01月02日", datetime.Date(testTime), "2024年01月15日"},
-		{"TimeCustomFormat", "15:04", datetime.Time(testTime), "14:30"},
+		{"DateTimeCustomFormat", "2006/01/02 15:04", timex.DateTime(testTime), "2024/01/15 14:30"},
+		{"DateCustomFormat", "2006年01月02日", timex.Date(testTime), "2024年01月15日"},
+		{"TimeCustomFormat", "15:04", timex.Time(testTime), "14:30"},
 	}
 
 	for _, tt := range tests {

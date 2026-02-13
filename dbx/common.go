@@ -1,4 +1,4 @@
-package dbhelpers
+package dbx
 
 import "github.com/ilxqx/vef-framework-go/constants"
 

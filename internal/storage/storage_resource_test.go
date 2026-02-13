@@ -22,7 +22,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/internal/apptest"
-	"github.com/ilxqx/vef-framework-go/internal/testhelpers"
+	"github.com/ilxqx/vef-framework-go/internal/testx"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/storage"
 )
@@ -35,7 +35,7 @@ type StorageResourceTestSuite struct {
 	ctx            context.Context
 	app            *app.App
 	stop           func()
-	minioContainer *testhelpers.MinIOContainer
+	minioContainer *testx.MinIOContainer
 	service        storage.Service
 
 	testBucketName  string
@@ -49,12 +49,12 @@ func (suite *StorageResourceTestSuite) SetupSuite() {
 	suite.T().Log("Setting up StorageResourceTestSuite - starting MinIO container and test app")
 
 	suite.ctx = context.Background()
-	suite.testBucketName = testhelpers.TestMinioBucket
+	suite.testBucketName = testx.TestMinioBucket
 	suite.testObjectKey = "test-upload.txt"
 	suite.testObjectData = []byte("Hello, Storage Api Test!")
 	suite.testContentType = "text/plain"
 
-	suite.minioContainer = testhelpers.NewMinIOContainer(suite.ctx, &suite.Suite)
+	suite.minioContainer = testx.NewMinIOContainer(suite.ctx, &suite.Suite)
 
 	suite.setupTestApp()
 

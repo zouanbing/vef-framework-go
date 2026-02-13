@@ -15,7 +15,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/api/middleware"
 	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/webhelpers"
+	"github.com/ilxqx/vef-framework-go/httpx"
 )
 
 const (
@@ -161,11 +161,11 @@ func (r *REST) parseBodyIfNeeded(ctx fiber.Ctx, req *api.Request) error {
 
 // parseBody parses request body based on content type.
 func (r *REST) parseBody(ctx fiber.Ctx, req *api.Request) error {
-	if webhelpers.IsJSON(ctx) {
+	if httpx.IsJSON(ctx) {
 		return r.parseJSONBody(ctx, req)
 	}
 
-	if webhelpers.IsMultipart(ctx) {
+	if httpx.IsMultipart(ctx) {
 		return r.parseMultipartForm(ctx, req)
 	}
 

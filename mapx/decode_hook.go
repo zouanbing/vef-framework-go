@@ -4,7 +4,7 @@ import (
 	"mime/multipart"
 	"reflect"
 
-	"github.com/ilxqx/vef-framework-go/datetime"
+	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/decimal"
 	"github.com/ilxqx/vef-framework-go/null"
 )
@@ -26,9 +26,9 @@ var (
 		{reflect.TypeFor[null.Int32](), reflect.TypeFor[int32](), reflect.TypeFor[*int32]()},
 		{reflect.TypeFor[null.Float](), reflect.TypeFor[float64](), reflect.TypeFor[*float64]()},
 		{reflect.TypeFor[null.Byte](), reflect.TypeFor[byte](), reflect.TypeFor[*byte]()},
-		{reflect.TypeFor[null.DateTime](), reflect.TypeFor[datetime.DateTime](), reflect.TypeFor[*datetime.DateTime]()},
-		{reflect.TypeFor[null.Date](), reflect.TypeFor[datetime.Date](), reflect.TypeFor[*datetime.Date]()},
-		{reflect.TypeFor[null.Time](), reflect.TypeFor[datetime.Time](), reflect.TypeFor[*datetime.Time]()},
+		{reflect.TypeFor[null.DateTime](), reflect.TypeFor[timex.DateTime](), reflect.TypeFor[*timex.DateTime]()},
+		{reflect.TypeFor[null.Date](), reflect.TypeFor[timex.Date](), reflect.TypeFor[*timex.Date]()},
+		{reflect.TypeFor[null.Time](), reflect.TypeFor[timex.Time](), reflect.TypeFor[*timex.Time]()},
 		{reflect.TypeFor[null.Decimal](), reflect.TypeFor[decimal.Decimal](), reflect.TypeFor[*decimal.Decimal]()},
 	}
 
@@ -115,31 +115,31 @@ func convertNullByte(from, to reflect.Type, value any) (any, error) {
 	)
 }
 
-// convertNullDateTime handles bidirectional conversion between datetime.DateTime types and null.DateTime.
+// convertNullDateTime handles bidirectional conversion between timex.DateTime types and null.DateTime.
 func convertNullDateTime(from, to reflect.Type, value any) (any, error) {
 	return convertNullType(nullTypeMappings[7], from, to, value,
-		func(v datetime.DateTime) any { return null.DateTimeFrom(v) },
-		func(v *datetime.DateTime) any { return null.DateTimeFromPtr(v) },
+		func(v timex.DateTime) any { return null.DateTimeFrom(v) },
+		func(v *timex.DateTime) any { return null.DateTimeFromPtr(v) },
 		func(v null.DateTime) any { return v.ValueOrZero() },
 		func(v null.DateTime) any { return v.Ptr() },
 	)
 }
 
-// convertNullDate handles bidirectional conversion between datetime.Date types and null.Date.
+// convertNullDate handles bidirectional conversion between timex.Date types and null.Date.
 func convertNullDate(from, to reflect.Type, value any) (any, error) {
 	return convertNullType(nullTypeMappings[8], from, to, value,
-		func(v datetime.Date) any { return null.DateFrom(v) },
-		func(v *datetime.Date) any { return null.DateFromPtr(v) },
+		func(v timex.Date) any { return null.DateFrom(v) },
+		func(v *timex.Date) any { return null.DateFromPtr(v) },
 		func(v null.Date) any { return v.ValueOrZero() },
 		func(v null.Date) any { return v.Ptr() },
 	)
 }
 
-// convertNullTime handles bidirectional conversion between datetime.Time types and null.Time.
+// convertNullTime handles bidirectional conversion between timex.Time types and null.Time.
 func convertNullTime(from, to reflect.Type, value any) (any, error) {
 	return convertNullType(nullTypeMappings[9], from, to, value,
-		func(v datetime.Time) any { return null.TimeFrom(v) },
-		func(v *datetime.Time) any { return null.TimeFromPtr(v) },
+		func(v timex.Time) any { return null.TimeFrom(v) },
+		func(v *timex.Time) any { return null.TimeFromPtr(v) },
 		func(v null.Time) any { return v.ValueOrZero() },
 		func(v null.Time) any { return v.Ptr() },
 	)

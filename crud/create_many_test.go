@@ -1,4 +1,4 @@
-package apis_test
+package crud_test
 
 import (
 	"strconv"
@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/apis"
+	"github.com/ilxqx/vef-framework-go/crud"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
@@ -15,26 +15,26 @@ import (
 // Test Resources.
 type TestUserCreateManyResource struct {
 	api.Resource
-	apis.CreateMany[TestUser, TestUserCreateParams]
+	crud.CreateMany[TestUser, TestUserCreateParams]
 }
 
 func NewTestUserCreateManyResource() api.Resource {
 	return &TestUserCreateManyResource{
 		Resource:   api.NewRPCResource("test/user_create_many"),
-		CreateMany: apis.NewCreateMany[TestUser, TestUserCreateParams]().Public(),
+		CreateMany: crud.NewCreateMany[TestUser, TestUserCreateParams]().Public(),
 	}
 }
 
 // Resource with PreCreateMany hook.
 type TestUserCreateManyWithPreHookResource struct {
 	api.Resource
-	apis.CreateMany[TestUser, TestUserCreateParams]
+	crud.CreateMany[TestUser, TestUserCreateParams]
 }
 
 func NewTestUserCreateManyWithPreHookResource() api.Resource {
 	return &TestUserCreateManyWithPreHookResource{
 		Resource: api.NewRPCResource("test/user_create_many_prehook"),
-		CreateMany: apis.NewCreateMany[TestUser, TestUserCreateParams]().
+		CreateMany: crud.NewCreateMany[TestUser, TestUserCreateParams]().
 			Public().
 			WithPreCreateMany(func(models []TestUser, _ []TestUserCreateParams, _ orm.InsertQuery, _ fiber.Ctx, _ orm.DB) error {
 				// Add prefix to all names
@@ -50,13 +50,13 @@ func NewTestUserCreateManyWithPreHookResource() api.Resource {
 // Resource with PostCreateMany hook.
 type TestUserCreateManyWithPostHookResource struct {
 	api.Resource
-	apis.CreateMany[TestUser, TestUserCreateParams]
+	crud.CreateMany[TestUser, TestUserCreateParams]
 }
 
 func NewTestUserCreateManyWithPostHookResource() api.Resource {
 	return &TestUserCreateManyWithPostHookResource{
 		Resource: api.NewRPCResource("test/user_create_many_posthook"),
-		CreateMany: apis.NewCreateMany[TestUser, TestUserCreateParams]().
+		CreateMany: crud.NewCreateMany[TestUser, TestUserCreateParams]().
 			Public().
 			WithPostCreateMany(func(models []TestUser, _ []TestUserCreateParams, ctx fiber.Ctx, _ orm.DB) error {
 				// Set custom header with count

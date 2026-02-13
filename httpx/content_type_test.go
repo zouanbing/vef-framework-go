@@ -1,4 +1,4 @@
-package webhelpers
+package httpx
 
 import (
 	"net/http/httptest"

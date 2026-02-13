@@ -8,7 +8,7 @@ import (
 	"github.com/uptrace/bun/schema"
 
 	"github.com/ilxqx/vef-framework-go/reflectx"
-	"github.com/ilxqx/vef-framework-go/strhelpers"
+	"github.com/ilxqx/vef-framework-go/strx"
 )
 
 var baseModelType = reflect.TypeFor[schema.BaseModel]()
@@ -51,7 +51,7 @@ func parseStruct(t reflect.Type) []*Column {
 				return reflectx.Continue
 			}
 
-			attrs := strhelpers.ParseTag(tag)
+			attrs := strx.ParseTag(tag)
 			column := buildColumn(field, attrs, columnOrder)
 			columns = append(columns, column)
 			columnOrder++
@@ -73,7 +73,7 @@ func parseStruct(t reflect.Type) []*Column {
 func buildColumn(field reflect.StructField, attrs map[string]string, autoOrder int) *Column {
 	name := attrs[AttrName]
 	if name == "" {
-		name = lo.CoalesceOrEmpty(attrs[strhelpers.DefaultKey], field.Name)
+		name = lo.CoalesceOrEmpty(attrs[strx.DefaultKey], field.Name)
 	}
 
 	var width float64

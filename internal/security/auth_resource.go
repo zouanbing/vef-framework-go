@@ -10,7 +10,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
-	"github.com/ilxqx/vef-framework-go/webhelpers"
+	"github.com/ilxqx/vef-framework-go/httpx"
 )
 
 // NewAuthResource creates a new authentication resource with the provided auth manager and token generator.
@@ -64,7 +64,7 @@ type LoginParams struct {
 
 // Login authenticates a user and returns token credentials.
 func (a *AuthResource) Login(ctx fiber.Ctx, params LoginParams) error {
-	loginIP := webhelpers.GetIP(ctx)
+	loginIP := httpx.GetIP(ctx)
 	userAgent := ctx.Get(fiber.HeaderUserAgent)
 	traceID := contextx.RequestID(ctx)
 	username := params.Principal

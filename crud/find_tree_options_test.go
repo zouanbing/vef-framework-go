@@ -1,8 +1,8 @@
-package apis_test
+package crud_test
 
 import (
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/apis"
+	"github.com/ilxqx/vef-framework-go/crud"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
@@ -11,15 +11,15 @@ import (
 // Test Resources.
 type TestCategoryFindTreeOptionsResource struct {
 	api.Resource
-	apis.FindTreeOptions[TestCategory, TestCategorySearch]
+	crud.FindTreeOptions[TestCategory, TestCategorySearch]
 }
 
 func NewTestCategoryFindTreeOptionsResource() api.Resource {
 	return &TestCategoryFindTreeOptionsResource{
 		Resource: api.NewRPCResource("test/category_tree_options"),
-		FindTreeOptions: apis.NewFindTreeOptions[TestCategory, TestCategorySearch]().
+		FindTreeOptions: crud.NewFindTreeOptions[TestCategory, TestCategorySearch]().
 			Public().
-			WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
+			WithDefaultColumnMapping(&crud.DataOptionColumnMapping{
 				LabelColumn: "name",
 				ValueColumn: "id",
 			}).
@@ -31,15 +31,15 @@ func NewTestCategoryFindTreeOptionsResource() api.Resource {
 // Resource with custom field mapping.
 type CustomFieldCategoryFindTreeOptionsResource struct {
 	api.Resource
-	apis.FindTreeOptions[TestCategory, TestCategorySearch]
+	crud.FindTreeOptions[TestCategory, TestCategorySearch]
 }
 
 func NewCustomFieldCategoryFindTreeOptionsResource() api.Resource {
 	return &CustomFieldCategoryFindTreeOptionsResource{
 		Resource: api.NewRPCResource("test/category_tree_options_custom"),
-		FindTreeOptions: apis.NewFindTreeOptions[TestCategory, TestCategorySearch]().
+		FindTreeOptions: crud.NewFindTreeOptions[TestCategory, TestCategorySearch]().
 			Public().
-			WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
+			WithDefaultColumnMapping(&crud.DataOptionColumnMapping{
 				LabelColumn:       "code",
 				ValueColumn:       "id",
 				DescriptionColumn: "description",
@@ -52,13 +52,13 @@ func NewCustomFieldCategoryFindTreeOptionsResource() api.Resource {
 // Filtered Tree Options Resource.
 type FilteredCategoryFindTreeOptionsResource struct {
 	api.Resource
-	apis.FindTreeOptions[TestCategory, TestCategorySearch]
+	crud.FindTreeOptions[TestCategory, TestCategorySearch]
 }
 
 func NewFilteredCategoryFindTreeOptionsResource() api.Resource {
 	return &FilteredCategoryFindTreeOptionsResource{
 		Resource: api.NewRPCResource("test/category_tree_options_filtered"),
-		FindTreeOptions: apis.NewFindTreeOptions[TestCategory, TestCategorySearch]().
+		FindTreeOptions: crud.NewFindTreeOptions[TestCategory, TestCategorySearch]().
 			WithCondition(func(cb orm.ConditionBuilder) {
 				// Only show Books and its children
 				cb.Group(func(cb orm.ConditionBuilder) {
@@ -73,15 +73,15 @@ func NewFilteredCategoryFindTreeOptionsResource() api.Resource {
 // Meta Tree Options Resource.
 type MetaCategoryFindTreeOptionsResource struct {
 	api.Resource
-	apis.FindTreeOptions[TestCategory, TestCategorySearch]
+	crud.FindTreeOptions[TestCategory, TestCategorySearch]
 }
 
 func NewMetaCategoryFindTreeOptionsResource() api.Resource {
 	return &MetaCategoryFindTreeOptionsResource{
 		Resource: api.NewRPCResource("test/category_tree_options_meta"),
-		FindTreeOptions: apis.NewFindTreeOptions[TestCategory, TestCategorySearch]().
+		FindTreeOptions: crud.NewFindTreeOptions[TestCategory, TestCategorySearch]().
 			Public().
-			WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
+			WithDefaultColumnMapping(&crud.DataOptionColumnMapping{
 				LabelColumn: "name",
 				ValueColumn: "id",
 				MetaColumns: []string{"code", "description"},

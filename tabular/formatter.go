@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cast"
 
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/datetime"
+	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/null"
 )
 
@@ -115,11 +115,11 @@ func (f *defaultFormatter) Format(value any) (string, error) {
 			return fmt.Sprintf(f.format, v), nil
 		case time.Time:
 			return v.Format(f.format), nil
-		case datetime.DateTime:
+		case timex.DateTime:
 			return v.Format(f.format), nil
-		case datetime.Date:
+		case timex.Date:
 			return v.Format(f.format), nil
-		case datetime.Time:
+		case timex.Time:
 			return v.Format(f.format), nil
 		}
 	}
