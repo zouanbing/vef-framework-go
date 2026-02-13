@@ -102,27 +102,18 @@ type BaseSuite struct {
 }
 
 func (suite *BaseSuite) setupBaseSuite(resourceCtors ...any) {
-	suite.T().Logf("Setting up test app with %s database", suite.dbType)
-
 	bunDB := suite.db.(orm.Unwrapper[bun.IDB]).Unwrap()
 
-	opts := make([]fx.Option, len(resourceCtors)+2)
-	for i, ctor := range resourceCtors {
-		opts[i] = vef.ProvideAPIResource(ctor)
+	opts := make([]fx.Option, 0, len(resourceCtors)+2)
+	for _, ctor := range resourceCtors {
+		opts = append(opts, vef.ProvideAPIResource(ctor))
 	}
-
-	// Replace the database config to match the external DB
-	opts[len(opts)-2] = fx.Replace(suite.dsConfig)
-
-	// Use fx.Decorate to replace the database connection
-	opts[len(opts)-1] = fx.Decorate(func() bun.IDB {
-		return bunDB
-	})
-
-	suite.app, suite.stop = apptest.NewTestApp(
-		suite.T(),
-		opts...,
+	opts = append(opts,
+		fx.Replace(suite.dsConfig),
+		fx.Decorate(func() bun.IDB { return bunDB }),
 	)
+
+	suite.app, suite.stop = apptest.NewTestApp(suite.T(), opts...)
 }
 
 func (suite *BaseSuite) tearDownBaseSuite() {
@@ -130,8 +121,6 @@ func (suite *BaseSuite) tearDownBaseSuite() {
 		suite.stop()
 	}
 }
-
-// Helper methods for the suite
 
 func (suite *BaseSuite) makeAPIRequest(body api.Request) *http.Response {
 	jsonBody, err := encoding.ToJSON(body)
@@ -147,14 +136,11 @@ func (suite *BaseSuite) makeAPIRequest(body api.Request) *http.Response {
 }
 
 func (suite *BaseSuite) readBody(resp *http.Response) result.Result {
-	body, err := io.ReadAll(resp.Body)
-	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			suite.T().Errorf("failed to close response body: %v", closeErr)
-		}
-	}()
+	defer resp.Body.Close()
 
+	body, err := io.ReadAll(resp.Body)
 	suite.Require().NoError(err)
+
 	res, err := encoding.FromJSON[result.Result](string(body))
 	suite.Require().NoError(err)
 

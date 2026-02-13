@@ -109,8 +109,6 @@ type OrmTestSuite struct {
 
 // SetupSuite initializes the test suite (called once per database).
 func (suite *OrmTestSuite) SetupSuite() {
-	suite.T().Logf("Setting up Orm test suite for %s", suite.dbType)
-
 	db := suite.getBunDB()
 	db.RegisterModel(
 		(*User)(nil),
@@ -121,28 +119,19 @@ func (suite *OrmTestSuite) SetupSuite() {
 		(*SimpleModel)(nil),
 	)
 
-	// Counter for monotonically increasing time offsets
-	// This ensures updated_at is always >= created_at since they are called sequentially in fixtures
+	// Monotonically increasing offsets starting from -12h ensure:
+	//   - All timestamps are in the past
+	//   - updated_at >= created_at (sequential calls in fixtures)
+	//   - Timestamps fall within the last 24 hours (for audit condition tests)
 	counter := 0
 	fixture := dbfixture.New(
 		db,
 		dbfixture.WithRecreateTables(),
 		dbfixture.WithTemplateFuncs(template.FuncMap{
-			"id": func() string {
-				return id.Generate()
-			},
+			"id": func() string { return id.Generate() },
 			"now": func() string {
 				counter++
-				// Use monotonically increasing minute offsets starting from 12 hours ago to ensure:
-				// 1. All timestamps are in the past (for tests checking "months from now" >= 0)
-				// 2. Later calls always produce later timestamps (updated_at >= created_at)
-				// 3. Timestamps fall within "last 24 hours" (for audit condition tests)
-				// 4. Meaningful intervals exist for Age function testing
-				// Start from -720 minutes (-12 hours) and increment by 1 minute for each call
-				// fixture.yaml has ~80 calls, so range is approximately -720min to -640min (all in past ~10-12h)
-				offsetMinutes := counter - 720
-
-				return timex.Now().AddMinutes(offsetMinutes).String()
+				return timex.Now().AddMinutes(counter - 720).String()
 			},
 		}),
 	)
@@ -152,24 +141,15 @@ func (suite *OrmTestSuite) SetupSuite() {
 
 	_, err = db.NewCreateTable().IfNotExists().Model((*SimpleModel)(nil)).Exec(suite.ctx)
 	suite.Require().NoError(err, "Failed to create simple model table")
-	suite.Require().NoError(err, "Failed to create complex model table")
-
-	suite.T().Logf("Test fixtures loaded for %s database", suite.dbType)
 }
 
-// getBunDB extracts the underlying bun.DB from orm.DB interface.
+// getBunDB extracts the underlying *bun.DB from the orm.DB interface.
 func (suite *OrmTestSuite) getBunDB() *bun.DB {
 	idb := suite.db.(orm.Unwrapper[bun.IDB]).Unwrap()
-	if bunDB, ok := idb.(*bun.DB); ok {
-		return bunDB
-	}
-
-	suite.Require().Fail("Could not extract bun.DB from orm.DB interface")
-
-	return nil
+	bunDB, ok := idb.(*bun.DB)
+	suite.Require().True(ok, "Expected *bun.DB, got %T", idb)
+	return bunDB
 }
-
-// Helper methods for common test patterns
 
 // AssertCount verifies the count result of a select query.
 func (suite *OrmTestSuite) AssertCount(query orm.SelectQuery, expectedCount int64) {

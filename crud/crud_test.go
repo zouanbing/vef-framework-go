@@ -37,14 +37,10 @@ func TestAll(t *testing.T) {
 // setupTestFixtures loads test data from fixture files using dbfixture.
 func setupTestFixtures(t *testing.T, ctx context.Context, db bun.IDB, dbType config.DBType) {
 	t.Helper()
-	t.Logf("Setting up test fixtures for %s", dbType)
 
 	bunDB, ok := db.(*bun.DB)
-	if !ok {
-		require.Fail(t, "Could not convert to *bun.DB")
-	}
+	require.True(t, ok, "Expected *bun.DB, got %T", db)
 
-	// Register models
 	bunDB.RegisterModel(
 		(*TestAuditUser)(nil),
 		(*TestUser)(nil),
@@ -54,15 +50,7 @@ func setupTestFixtures(t *testing.T, ctx context.Context, db bun.IDB, dbType con
 		(*ImportUser)(nil),
 	)
 
-	// Create fixture loader with template functions
-	fixture := dbfixture.New(
-		bunDB,
-		dbfixture.WithRecreateTables(),
-	)
-
-	// Load fixtures from testdata directory
+	fixture := dbfixture.New(bunDB, dbfixture.WithRecreateTables())
 	err := fixture.Load(ctx, os.DirFS("testdata"), "fixture.yaml")
 	require.NoError(t, err, "Failed to load fixtures for %s", dbType)
-
-	t.Logf("Test fixtures loaded for %s database", dbType)
 }
