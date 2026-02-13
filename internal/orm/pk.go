@@ -18,7 +18,7 @@ type PKField struct {
 	Field string
 	// Column is the database column name as defined in schema, e.g. "user_id".
 	Column string
-	// Name is the lower camel-case alias, usually used in params or Api payloads, e.g. "userID".
+	// Name is the lower camel-case alias, usually used in params or API payloads, e.g. "userID".
 	Name string
 
 	f *schema.Field

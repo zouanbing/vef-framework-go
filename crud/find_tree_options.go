@@ -13,7 +13,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/tree"
 )
 
-type findTreeOptionsApi[TModel, TSearch any] struct {
+type findTreeOptionsOperation[TModel, TSearch any] struct {
 	Find[TModel, TSearch, []TreeDataOption, FindTreeOptions[TModel, TSearch]]
 
 	defaultColumnMapping *DataOptionColumnMapping
@@ -21,26 +21,26 @@ type findTreeOptionsApi[TModel, TSearch any] struct {
 	parentIDColumn       string
 }
 
-func (a *findTreeOptionsApi[TModel, TSearch]) Provide() []api.OperationSpec {
+func (a *findTreeOptionsOperation[TModel, TSearch]) Provide() []api.OperationSpec {
 	return []api.OperationSpec{a.Build(a.findTreeOptions)}
 }
 
 // This mapping provides fallback values for label, value, description, and sort columns.
-func (a *findTreeOptionsApi[TModel, TSearch]) WithDefaultColumnMapping(mapping *DataOptionColumnMapping) FindTreeOptions[TModel, TSearch] {
+func (a *findTreeOptionsOperation[TModel, TSearch]) WithDefaultColumnMapping(mapping *DataOptionColumnMapping) FindTreeOptions[TModel, TSearch] {
 	a.defaultColumnMapping = mapping
 
 	return a
 }
 
 // This column is used to identify individual nodes and establish parent-child relationships.
-func (a *findTreeOptionsApi[TModel, TSearch]) WithIDColumn(name string) FindTreeOptions[TModel, TSearch] {
+func (a *findTreeOptionsOperation[TModel, TSearch]) WithIDColumn(name string) FindTreeOptions[TModel, TSearch] {
 	a.idColumn = name
 
 	return a
 }
 
 // This column establishes the hierarchical relationship between parent and child nodes.
-func (a *findTreeOptionsApi[TModel, TSearch]) WithParentIDColumn(name string) FindTreeOptions[TModel, TSearch] {
+func (a *findTreeOptionsOperation[TModel, TSearch]) WithParentIDColumn(name string) FindTreeOptions[TModel, TSearch] {
 	a.parentIDColumn = name
 
 	return a
@@ -48,7 +48,7 @@ func (a *findTreeOptionsApi[TModel, TSearch]) WithParentIDColumn(name string) Fi
 
 // WithCondition adds a WHERE condition using ConditionBuilder.
 // Defaults to QueryBase for tree options unless specific parts are provided.
-func (a *findTreeOptionsApi[TModel, TSearch]) WithCondition(fn func(cb orm.ConditionBuilder), parts ...QueryPart) FindTreeOptions[TModel, TSearch] {
+func (a *findTreeOptionsOperation[TModel, TSearch]) WithCondition(fn func(cb orm.ConditionBuilder), parts ...QueryPart) FindTreeOptions[TModel, TSearch] {
 	a.Find.WithCondition(fn, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase})...)
 
 	return a
@@ -56,14 +56,14 @@ func (a *findTreeOptionsApi[TModel, TSearch]) WithCondition(fn func(cb orm.Condi
 
 // WithQueryApplier adds a custom query applier function.
 // Defaults to QueryBase for tree options unless specific parts are provided.
-func (a *findTreeOptionsApi[TModel, TSearch]) WithQueryApplier(applier func(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) error, parts ...QueryPart) FindTreeOptions[TModel, TSearch] {
+func (a *findTreeOptionsOperation[TModel, TSearch]) WithQueryApplier(applier func(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) error, parts ...QueryPart) FindTreeOptions[TModel, TSearch] {
 	a.Find.WithQueryApplier(applier, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase})...)
 
 	return a
 }
 
-func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, config DataOptionConfig, _ Sortable, search TSearch, meta api.Meta) error, error) {
-	if err := a.Setup(db, &FindApiConfig{
+func (a *findTreeOptionsOperation[TModel, TSearch]) findTreeOptions(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, config DataOptionConfig, _ Sortable, search TSearch, meta api.Meta) error, error) {
+	if err := a.Setup(db, &FindOperationConfig{
 		QueryParts: &QueryPartsConfig{
 			Condition:         []QueryPart{QueryBase},
 			Sort:              []QueryPart{QueryRoot},

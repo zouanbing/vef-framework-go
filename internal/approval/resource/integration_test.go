@@ -15,11 +15,11 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/encoding"
 	approvalPkg "github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/encoding"
+	"github.com/ilxqx/vef-framework-go/internal/app"
 	approval "github.com/ilxqx/vef-framework-go/internal/approval"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
-	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/internal/apptest"
 	"github.com/ilxqx/vef-framework-go/internal/database"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
@@ -72,7 +72,7 @@ type ApprovalSuite struct {
 	bunDB     *bun.DB
 }
 
-func (s *ApprovalSuite) makeApiRequest(body api.Request) *http.Response {
+func (s *ApprovalSuite) makeAPIRequest(body api.Request) *http.Response {
 	jsonBody, err := encoding.ToJSON(body)
 	s.Require().NoError(err)
 
@@ -508,7 +508,7 @@ func (s *ApprovalSuite) TearDownSuite() {
 // ---------------------------------------------------------------------------
 
 func (s *ApprovalSuite) TestCategoryCreate() {
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "create",
@@ -531,7 +531,7 @@ func (s *ApprovalSuite) TestCategoryCreate() {
 }
 
 func (s *ApprovalSuite) TestCategoryCreateValidation() {
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "create",
@@ -549,7 +549,7 @@ func (s *ApprovalSuite) TestCategoryCreateValidation() {
 }
 
 func (s *ApprovalSuite) TestCategoryFindAll() {
-	s.makeApiRequest(api.Request{
+	s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "create",
@@ -562,7 +562,7 @@ func (s *ApprovalSuite) TestCategoryFindAll() {
 		},
 	})
 
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "find_all",
@@ -580,7 +580,7 @@ func (s *ApprovalSuite) TestCategoryFindAll() {
 }
 
 func (s *ApprovalSuite) TestCategoryFindPage() {
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "find_page",
@@ -604,7 +604,7 @@ func (s *ApprovalSuite) TestCategoryFindPage() {
 }
 
 func (s *ApprovalSuite) TestCategoryUpdate() {
-	createResp := s.makeApiRequest(api.Request{
+	createResp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "create",
@@ -620,7 +620,7 @@ func (s *ApprovalSuite) TestCategoryUpdate() {
 	s.Require().True(createBody.IsOk())
 	id := s.readDataAsMap(createBody.Data)["id"]
 
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "update",
@@ -640,7 +640,7 @@ func (s *ApprovalSuite) TestCategoryUpdate() {
 }
 
 func (s *ApprovalSuite) TestCategoryDelete() {
-	createResp := s.makeApiRequest(api.Request{
+	createResp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "create",
@@ -656,7 +656,7 @@ func (s *ApprovalSuite) TestCategoryDelete() {
 	s.Require().True(createBody.IsOk())
 	id := s.readDataAsMap(createBody.Data)["id"]
 
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "delete",
@@ -677,7 +677,7 @@ func (s *ApprovalSuite) TestCategoryDelete() {
 // ---------------------------------------------------------------------------
 
 func (s *ApprovalSuite) TestDelegationCreate() {
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/delegation",
 			Action:   "create",
@@ -699,7 +699,7 @@ func (s *ApprovalSuite) TestDelegationCreate() {
 }
 
 func (s *ApprovalSuite) TestDelegationCreateValidation() {
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/delegation",
 			Action:   "create",
@@ -717,7 +717,7 @@ func (s *ApprovalSuite) TestDelegationCreateValidation() {
 }
 
 func (s *ApprovalSuite) TestDelegationFindAll() {
-	createResp := s.makeApiRequest(api.Request{
+	createResp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/delegation",
 			Action:   "create",
@@ -735,7 +735,7 @@ func (s *ApprovalSuite) TestDelegationFindAll() {
 	// DelegationSearch embeds api.M (via apis.Sortable), so search params
 	// are decoded from Meta, not Params. String fields with search:"eq" apply
 	// even when empty, so we must pass specific values.
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/delegation",
 			Action:   "find_all",
@@ -756,7 +756,7 @@ func (s *ApprovalSuite) TestDelegationFindAll() {
 }
 
 func (s *ApprovalSuite) TestDelegationFindPage() {
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/delegation",
 			Action:   "find_page",
@@ -779,7 +779,7 @@ func (s *ApprovalSuite) TestDelegationFindPage() {
 }
 
 func (s *ApprovalSuite) TestDelegationUpdate() {
-	createResp := s.makeApiRequest(api.Request{
+	createResp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/delegation",
 			Action:   "create",
@@ -795,7 +795,7 @@ func (s *ApprovalSuite) TestDelegationUpdate() {
 	s.Require().True(createBody.IsOk())
 	id := s.readDataAsMap(createBody.Data)["id"]
 
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/delegation",
 			Action:   "update",
@@ -816,7 +816,7 @@ func (s *ApprovalSuite) TestDelegationUpdate() {
 }
 
 func (s *ApprovalSuite) TestDelegationDelete() {
-	createResp := s.makeApiRequest(api.Request{
+	createResp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/delegation",
 			Action:   "create",
@@ -832,7 +832,7 @@ func (s *ApprovalSuite) TestDelegationDelete() {
 	s.Require().True(createBody.IsOk())
 	id := s.readDataAsMap(createBody.Data)["id"]
 
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/delegation",
 			Action:   "delete",
@@ -853,7 +853,7 @@ func (s *ApprovalSuite) TestDelegationDelete() {
 // ---------------------------------------------------------------------------
 
 func (s *ApprovalSuite) TestFlowDeploy() {
-	catResp := s.makeApiRequest(api.Request{
+	catResp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "create",
@@ -879,7 +879,7 @@ func (s *ApprovalSuite) TestFlowDeploy() {
 		]
 	}`
 
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/flow",
 			Action:   "deploy",
@@ -901,7 +901,7 @@ func (s *ApprovalSuite) TestFlowDeploy() {
 }
 
 func (s *ApprovalSuite) TestFlowPublishVersionAndGetGraph() {
-	catResp := s.makeApiRequest(api.Request{
+	catResp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "create",
@@ -926,7 +926,7 @@ func (s *ApprovalSuite) TestFlowPublishVersionAndGetGraph() {
 			{"source": "start", "target": "end"}
 		]
 	}`
-	deployResp := s.makeApiRequest(api.Request{
+	deployResp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/flow",
 			Action:   "deploy",
@@ -946,7 +946,7 @@ func (s *ApprovalSuite) TestFlowPublishVersionAndGetGraph() {
 	flowID := flowData["id"].(string)
 
 	// Test publish_version with invalid version ID (error path)
-	pubResp := s.makeApiRequest(api.Request{
+	pubResp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/flow",
 			Action:   "publish_version",
@@ -960,7 +960,7 @@ func (s *ApprovalSuite) TestFlowPublishVersionAndGetGraph() {
 	pubBody := s.readBody(pubResp)
 	s.False(pubBody.IsOk(), "publish with nonexistent version should fail")
 
-	graphResp := s.makeApiRequest(api.Request{
+	graphResp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/flow",
 			Action:   "get_graph",
@@ -973,7 +973,7 @@ func (s *ApprovalSuite) TestFlowPublishVersionAndGetGraph() {
 	graphBody := s.readBody(graphResp)
 	s.False(graphBody.IsOk(), "get_graph should fail when no published version")
 
-	graph2Resp := s.makeApiRequest(api.Request{
+	graph2Resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/flow",
 			Action:   "get_graph",
@@ -988,7 +988,7 @@ func (s *ApprovalSuite) TestFlowPublishVersionAndGetGraph() {
 }
 
 func (s *ApprovalSuite) TestFlowDeployValidation() {
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/flow",
 			Action:   "deploy",
@@ -1005,7 +1005,7 @@ func (s *ApprovalSuite) TestFlowDeployValidation() {
 }
 
 func (s *ApprovalSuite) TestFlowDeployInvalidDefinition() {
-	catResp := s.makeApiRequest(api.Request{
+	catResp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "create",
@@ -1021,7 +1021,7 @@ func (s *ApprovalSuite) TestFlowDeployInvalidDefinition() {
 	s.Require().True(catBody.IsOk())
 	categoryID := s.readDataAsMap(catBody.Data)["id"].(string)
 
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/flow",
 			Action:   "deploy",
@@ -1045,7 +1045,7 @@ func (s *ApprovalSuite) TestFlowDeployInvalidDefinition() {
 // ---------------------------------------------------------------------------
 
 func (s *ApprovalSuite) TestInstanceStart() {
-	catResp := s.makeApiRequest(api.Request{
+	catResp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "create",
@@ -1072,7 +1072,7 @@ func (s *ApprovalSuite) TestInstanceStart() {
 			{"source": "approval1", "target": "end"}
 		]
 	}`
-	deployResp := s.makeApiRequest(api.Request{
+	deployResp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/flow",
 			Action:   "deploy",
@@ -1089,7 +1089,7 @@ func (s *ApprovalSuite) TestInstanceStart() {
 	deployBody := s.readBody(deployResp)
 	s.Require().True(deployBody.IsOk(), "deploy should succeed, got: %v", deployBody)
 
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "start",
@@ -1107,7 +1107,7 @@ func (s *ApprovalSuite) TestInstanceStart() {
 }
 
 func (s *ApprovalSuite) TestInstanceStartValidation() {
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "start",
@@ -1124,7 +1124,7 @@ func (s *ApprovalSuite) TestInstanceStartValidation() {
 }
 
 func (s *ApprovalSuite) TestInstanceWithdrawValidation() {
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "withdraw",
@@ -1140,7 +1140,7 @@ func (s *ApprovalSuite) TestInstanceWithdrawValidation() {
 }
 
 func (s *ApprovalSuite) TestInstanceProcessTaskValidation() {
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "process_task",
@@ -1157,7 +1157,7 @@ func (s *ApprovalSuite) TestInstanceProcessTaskValidation() {
 }
 
 func (s *ApprovalSuite) TestInstanceAddCcValidation() {
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "add_cc",
@@ -1173,7 +1173,7 @@ func (s *ApprovalSuite) TestInstanceAddCcValidation() {
 }
 
 func (s *ApprovalSuite) TestInstanceAddAssigneeValidation() {
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "add_assignee",
@@ -1189,7 +1189,7 @@ func (s *ApprovalSuite) TestInstanceAddAssigneeValidation() {
 }
 
 func (s *ApprovalSuite) TestInstanceRemoveAssigneeValidation() {
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "remove_assignee",
@@ -1205,7 +1205,7 @@ func (s *ApprovalSuite) TestInstanceRemoveAssigneeValidation() {
 }
 
 func (s *ApprovalSuite) TestInstanceGetDetailValidation() {
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "get_detail",
@@ -1221,7 +1221,7 @@ func (s *ApprovalSuite) TestInstanceGetDetailValidation() {
 }
 
 func (s *ApprovalSuite) TestInstanceGetActionLogsValidation() {
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "get_action_logs",
@@ -1241,7 +1241,7 @@ func (s *ApprovalSuite) TestInstanceGetActionLogsValidation() {
 // ---------------------------------------------------------------------------
 
 func (s *ApprovalSuite) TestInstanceFindInstances() {
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "find_instances",
@@ -1263,7 +1263,7 @@ func (s *ApprovalSuite) TestInstanceFindInstances() {
 }
 
 func (s *ApprovalSuite) TestInstanceFindTasks() {
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "find_tasks",
@@ -1294,7 +1294,7 @@ func (s *ApprovalSuite) TestInstanceFindTasks() {
 func (s *ApprovalSuite) deployAndPublishFlow(flowCode, categoryCode string) (string, string) {
 	s.T().Helper()
 
-	catResp := s.makeApiRequest(api.Request{
+	catResp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "create",
@@ -1332,7 +1332,7 @@ func (s *ApprovalSuite) deployAndPublishFlow(flowCode, categoryCode string) (str
 		]
 	}`
 
-	deployResp := s.makeApiRequest(api.Request{
+	deployResp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/flow",
 			Action:   "deploy",
@@ -1363,7 +1363,7 @@ func (s *ApprovalSuite) deployAndPublishFlow(flowCode, categoryCode string) (str
 	s.Require().NoError(err, "should find draft version in DB")
 	s.Require().NotEmpty(versionID, "version ID should not be empty")
 
-	pubResp := s.makeApiRequest(api.Request{
+	pubResp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/flow",
 			Action:   "publish_version",
@@ -1384,7 +1384,7 @@ func (s *ApprovalSuite) deployAndPublishFlow(flowCode, categoryCode string) (str
 func (s *ApprovalSuite) startInstance(flowCode, applicantID string) string {
 	s.T().Helper()
 
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "start",
@@ -1446,7 +1446,7 @@ func (s *ApprovalSuite) TestInstanceGetDetailSuccess() {
 	s.deployAndPublishFlow("e2e-detail-flow", "cat-e2e-detail")
 	instanceID := s.startInstance("e2e-detail-flow", "user-e2e-002")
 
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "get_detail",
@@ -1478,7 +1478,7 @@ func (s *ApprovalSuite) TestInstanceGetDetailSuccess() {
 }
 
 func (s *ApprovalSuite) TestInstanceGetDetailNotFound() {
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "get_detail",
@@ -1497,7 +1497,7 @@ func (s *ApprovalSuite) TestInstanceGetActionLogsSuccess() {
 	s.deployAndPublishFlow("e2e-logs-flow", "cat-e2e-logs")
 	instanceID := s.startInstance("e2e-logs-flow", "user-e2e-003")
 
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "get_action_logs",
@@ -1520,7 +1520,7 @@ func (s *ApprovalSuite) TestInstanceGetActionLogsSuccess() {
 }
 
 func (s *ApprovalSuite) TestInstanceGetActionLogsEmpty() {
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "get_action_logs",
@@ -1541,7 +1541,7 @@ func (s *ApprovalSuite) TestInstanceProcessTaskApprove() {
 
 	taskID, _ := s.findPendingTask(instanceID, "approver-001")
 
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "process_task",
@@ -1570,7 +1570,7 @@ func (s *ApprovalSuite) TestInstanceProcessTaskApprove() {
 }
 
 func (s *ApprovalSuite) TestInstanceProcessTaskNotFound() {
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "process_task",
@@ -1594,7 +1594,7 @@ func (s *ApprovalSuite) TestInstanceProcessTaskReject() {
 
 	taskID, _ := s.findPendingTask(instanceID, "approver-001")
 
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "process_task",
@@ -1626,7 +1626,7 @@ func (s *ApprovalSuite) TestInstanceWithdrawSuccess() {
 	s.deployAndPublishFlow("e2e-withdraw-flow", "cat-e2e-withdraw")
 	instanceID := s.startInstance("e2e-withdraw-flow", "user-e2e-006")
 
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "withdraw",
@@ -1656,7 +1656,7 @@ func (s *ApprovalSuite) TestInstanceWithdrawNotApplicant() {
 	s.deployAndPublishFlow("e2e-withdraw-na-flow", "cat-e2e-withdraw-na")
 	instanceID := s.startInstance("e2e-withdraw-na-flow", "user-e2e-007")
 
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "withdraw",
@@ -1676,7 +1676,7 @@ func (s *ApprovalSuite) TestInstanceAddCcSuccess() {
 	s.deployAndPublishFlow("e2e-cc-flow", "cat-e2e-cc")
 	instanceID := s.startInstance("e2e-cc-flow", "user-e2e-008")
 
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "add_cc",
@@ -1701,7 +1701,7 @@ func (s *ApprovalSuite) TestInstanceAddCcSuccess() {
 }
 
 func (s *ApprovalSuite) TestInstanceAddCcNotFound() {
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "add_cc",
@@ -1724,7 +1724,7 @@ func (s *ApprovalSuite) TestInstanceAddAssigneeSuccess() {
 
 	taskID, _ := s.findPendingTask(instanceID, "approver-001")
 
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "add_assignee",
@@ -1752,7 +1752,7 @@ func (s *ApprovalSuite) TestInstanceAddAssigneeSuccess() {
 }
 
 func (s *ApprovalSuite) TestInstanceAddAssigneeNotFound() {
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "add_assignee",
@@ -1777,7 +1777,7 @@ func (s *ApprovalSuite) TestInstanceRemoveAssigneeSuccess() {
 
 	taskID, _ := s.findPendingTask(instanceID, "approver-001")
 
-	addResp := s.makeApiRequest(api.Request{
+	addResp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "add_assignee",
@@ -1796,7 +1796,7 @@ func (s *ApprovalSuite) TestInstanceRemoveAssigneeSuccess() {
 
 	extraTaskID, _ := s.findPendingTask(instanceID, "extra-approver-001")
 
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "remove_assignee",
@@ -1822,7 +1822,7 @@ func (s *ApprovalSuite) TestInstanceRemoveAssigneeSuccess() {
 }
 
 func (s *ApprovalSuite) TestInstanceRemoveAssigneeNotFound() {
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "remove_assignee",
@@ -1841,7 +1841,7 @@ func (s *ApprovalSuite) TestInstanceRemoveAssigneeNotFound() {
 func (s *ApprovalSuite) TestFlowPublishVersionAndGetGraphSuccess() {
 	flowID, _ := s.deployAndPublishFlow("e2e-graph-flow", "cat-e2e-graph")
 
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/flow",
 			Action:   "get_graph",
@@ -1872,7 +1872,7 @@ func (s *ApprovalSuite) TestInstanceFindInstancesWithFilter() {
 	s.deployAndPublishFlow("e2e-find-inst-flow", "cat-e2e-find-inst")
 	s.startInstance("e2e-find-inst-flow", "user-e2e-find")
 
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "find_instances",
@@ -1898,7 +1898,7 @@ func (s *ApprovalSuite) TestInstanceFindTasksWithFilter() {
 	s.deployAndPublishFlow("e2e-find-task-flow", "cat-e2e-find-task")
 	instanceID := s.startInstance("e2e-find-task-flow", "user-e2e-find-task")
 
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "find_tasks",
@@ -1927,7 +1927,7 @@ func (s *ApprovalSuite) TestInstanceProcessTaskTransfer() {
 
 	taskID, _ := s.findPendingTask(instanceID, "approver-001")
 
-	resp := s.makeApiRequest(api.Request{
+	resp := s.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "process_task",

@@ -2,5 +2,5 @@
 
 package monitor
 
-// isMonitorApiPublic controls whether monitor APIs are public in test environment.
-const isMonitorApiPublic = true
+// isMonitorAPIPublic controls whether monitor APIs are public in test environment.
+const isMonitorAPIPublic = true

@@ -40,13 +40,13 @@ const (
 	QueryAll
 )
 
-// FindApiOption defines a configuration option for Find APIs.
+// FindOperationOption defines a configuration option for find operations.
 // It can target specific query parts for fine-grained control,
 // which is essential for recursive CTE queries used in tree operations.
 //
 // The Applier function receives the query, search parameters, meta, and fiber context,
 // allowing for dynamic configuration based on runtime data.
-type FindApiOption struct {
+type FindOperationOption struct {
 	Parts   []QueryPart
 	Applier func(query orm.SelectQuery, search any, meta api.Meta, ctx fiber.Ctx) error
 }
@@ -63,8 +63,8 @@ func resolveQueryParts(parts ...QueryPart) []QueryPart {
 
 // withSelect adds a single column to the SELECT clause.
 // Applies to root query by default (QueryRoot).
-func withSelect(column string, parts ...QueryPart) *FindApiOption {
-	return &FindApiOption{
+func withSelect(column string, parts ...QueryPart) *FindOperationOption {
+	return &FindOperationOption{
 		Parts: resolveQueryParts(parts...),
 		Applier: func(query orm.SelectQuery, _ any, _ api.Meta, _ fiber.Ctx) error {
 			query.Select(column)
@@ -76,8 +76,8 @@ func withSelect(column string, parts ...QueryPart) *FindApiOption {
 
 // withSelectAs adds a column with an alias to the SELECT clause.
 // Applies to root query by default (QueryRoot).
-func withSelectAs(column, alias string, parts ...QueryPart) *FindApiOption {
-	return &FindApiOption{
+func withSelectAs(column, alias string, parts ...QueryPart) *FindOperationOption {
+	return &FindOperationOption{
 		Parts: resolveQueryParts(parts...),
 		Applier: func(query orm.SelectQuery, _ any, _ api.Meta, _ fiber.Ctx) error {
 			query.SelectAs(column, alias)
@@ -90,8 +90,8 @@ func withSelectAs(column, alias string, parts ...QueryPart) *FindApiOption {
 // withSort adds ordering based on sort.OrderSpec specifications.
 // Applies to root query only by default (QueryRoot).
 // Supports ascending/descending order and NULLS FIRST/LAST positioning.
-func withSort(specs []*sortx.OrderSpec, parts ...QueryPart) *FindApiOption {
-	return &FindApiOption{
+func withSort(specs []*sortx.OrderSpec, parts ...QueryPart) *FindOperationOption {
+	return &FindOperationOption{
 		Parts: resolveQueryParts(parts...),
 		Applier: func(query orm.SelectQuery, _ any, meta api.Meta, _ fiber.Ctx) error {
 			var sortable Sortable
@@ -145,8 +145,8 @@ func withSort(specs []*sortx.OrderSpec, parts ...QueryPart) *FindApiOption {
 // withCondition adds a WHERE condition using ConditionBuilder.
 // Applies to root query only by default (QueryRoot).
 // This is useful for adding simple filtering conditions.
-func withCondition(fn func(cb orm.ConditionBuilder), parts ...QueryPart) *FindApiOption {
-	return &FindApiOption{
+func withCondition(fn func(cb orm.ConditionBuilder), parts ...QueryPart) *FindOperationOption {
+	return &FindOperationOption{
 		Parts: resolveQueryParts(parts...),
 		Applier: func(query orm.SelectQuery, _ any, _ api.Meta, _ fiber.Ctx) error {
 			query.Where(fn)
@@ -156,12 +156,12 @@ func withCondition(fn func(cb orm.ConditionBuilder), parts ...QueryPart) *FindAp
 	}
 }
 
-// withSearchApplier creates a FindApiOption that automatically applies search conditions
+// withSearchApplier creates a FindOperationOption that automatically applies search conditions
 // based on struct field tags (search:"eq", search:"contains", search:"gte", etc.).
-func withSearchApplier[TSearch any](parts ...QueryPart) *FindApiOption {
+func withSearchApplier[TSearch any](parts ...QueryPart) *FindOperationOption {
 	applier := search.Applier[TSearch]()
 
-	return &FindApiOption{
+	return &FindOperationOption{
 		Parts: resolveQueryParts(parts...),
 		Applier: func(query orm.SelectQuery, search any, _ api.Meta, _ fiber.Ctx) error {
 			s, ok := search.(TSearch)
@@ -170,7 +170,7 @@ func withSearchApplier[TSearch any](parts ...QueryPart) *FindApiOption {
 
 				return fmt.Errorf(
 					"%w: expected search type %T, but got %T. "+
-						"Make sure the TSearch type parameter in WithSearch matches the search type used in NewFindXxxApi/NewExportApi",
+						"Make sure the TSearch type parameter in WithSearch matches the search type used in NewFindXxx/NewExport",
 					ErrSearchTypeMismatch, expectedType, search,
 				)
 			}
@@ -187,8 +187,8 @@ func withSearchApplier[TSearch any](parts ...QueryPart) *FindApiOption {
 // withQueryApplier adds custom query modifications with type-safe access to search parameters.
 // This is more powerful than WithCondition as it allows full query manipulation.
 // Applies to root query only by default (QueryRoot).
-func withQueryApplier[TSearch any](applier func(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) error, parts ...QueryPart) *FindApiOption {
-	return &FindApiOption{
+func withQueryApplier[TSearch any](applier func(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) error, parts ...QueryPart) *FindOperationOption {
+	return &FindOperationOption{
 		Parts: resolveQueryParts(parts...),
 		Applier: func(query orm.SelectQuery, search any, _ api.Meta, ctx fiber.Ctx) error {
 			s, ok := search.(TSearch)
@@ -197,7 +197,7 @@ func withQueryApplier[TSearch any](applier func(query orm.SelectQuery, search TS
 
 				return fmt.Errorf(
 					"%w: expected search type %T, but got %T. "+
-						"Make sure the TSearch type parameter in WithQueryApplier matches the search type used in NewFindXxxApi/NewExportApi",
+						"Make sure the TSearch type parameter in WithQueryApplier matches the search type used in NewFindXxx/NewExport",
 					ErrSearchTypeMismatch, expectedType, search,
 				)
 			}
@@ -207,10 +207,10 @@ func withQueryApplier[TSearch any](applier func(query orm.SelectQuery, search TS
 	}
 }
 
-// withDataPerm creates a FindApiOption that applies data permission filtering from the request context.
+// withDataPerm creates a FindOperationOption that applies data permission filtering from the request context.
 // The data permission applier is retrieved using contextx.DataPermApplier(ctx).
-func withDataPerm(parts ...QueryPart) *FindApiOption {
-	return &FindApiOption{
+func withDataPerm(parts ...QueryPart) *FindOperationOption {
+	return &FindOperationOption{
 		Parts: resolveQueryParts(parts...),
 		Applier: func(query orm.SelectQuery, _ any, _ api.Meta, ctx fiber.Ctx) error {
 			return ApplyDataPermission(query, ctx)
@@ -220,8 +220,8 @@ func withDataPerm(parts ...QueryPart) *FindApiOption {
 
 // withRelation adds a single relation join to the query.
 // Applies to root query by default (QueryRoot).
-func withRelation(relation *orm.RelationSpec, parts ...QueryPart) *FindApiOption {
-	return &FindApiOption{
+func withRelation(relation *orm.RelationSpec, parts ...QueryPart) *FindOperationOption {
+	return &FindOperationOption{
 		Parts: resolveQueryParts(parts...),
 		Applier: func(query orm.SelectQuery, _ any, _ api.Meta, _ fiber.Ctx) error {
 			query.JoinRelations(relation)
@@ -233,10 +233,10 @@ func withRelation(relation *orm.RelationSpec, parts ...QueryPart) *FindApiOption
 
 // withAuditUserNames adds joins to fetch audit user names (created_by_name, updated_by_name).
 // Allows specifying a custom column name for the user's display name.
-func withAuditUserNames(userModel any, nameColumn string, parts ...QueryPart) *FindApiOption {
+func withAuditUserNames(userModel any, nameColumn string, parts ...QueryPart) *FindOperationOption {
 	relations := GetAuditUserNameRelations(userModel, nameColumn)
 
-	return &FindApiOption{
+	return &FindOperationOption{
 		Parts: resolveQueryParts(parts...),
 		Applier: func(query orm.SelectQuery, _ any, _ api.Meta, _ fiber.Ctx) error {
 			query.JoinRelations(relations...)

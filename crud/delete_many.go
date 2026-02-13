@@ -15,7 +15,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 
-type deleteManyApi[TModel any] struct {
+type deleteManyOperation[TModel any] struct {
 	Builder[DeleteMany[TModel]]
 
 	preDeleteMany    PreDeleteManyProcessor[TModel]
@@ -23,29 +23,29 @@ type deleteManyApi[TModel any] struct {
 	dataPermDisabled bool
 }
 
-func (d *deleteManyApi[TModel]) Provide() []api.OperationSpec {
+func (d *deleteManyOperation[TModel]) Provide() []api.OperationSpec {
 	return []api.OperationSpec{d.Build(d.deleteMany)}
 }
 
-func (d *deleteManyApi[TModel]) WithPreDeleteMany(processor PreDeleteManyProcessor[TModel]) DeleteMany[TModel] {
+func (d *deleteManyOperation[TModel]) WithPreDeleteMany(processor PreDeleteManyProcessor[TModel]) DeleteMany[TModel] {
 	d.preDeleteMany = processor
 
 	return d
 }
 
-func (d *deleteManyApi[TModel]) WithPostDeleteMany(processor PostDeleteManyProcessor[TModel]) DeleteMany[TModel] {
+func (d *deleteManyOperation[TModel]) WithPostDeleteMany(processor PostDeleteManyProcessor[TModel]) DeleteMany[TModel] {
 	d.postDeleteMany = processor
 
 	return d
 }
 
-func (d *deleteManyApi[TModel]) DisableDataPerm() DeleteMany[TModel] {
+func (d *deleteManyOperation[TModel]) DisableDataPerm() DeleteMany[TModel] {
 	d.dataPermDisabled = true
 
 	return d
 }
 
-func (d *deleteManyApi[TModel]) deleteMany(db orm.DB, sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.DB, params DeleteManyParams) error, error) {
+func (d *deleteManyOperation[TModel]) deleteMany(db orm.DB, sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.DB, params DeleteManyParams) error, error) {
 	promoter := storage.NewPromoter[TModel](sc, publisher)
 	schema := db.TableOf((*TModel)(nil))
 	pks := db.ModelPKFields((*TModel)(nil))

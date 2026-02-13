@@ -50,7 +50,7 @@ func createFiberApp(cfg *config.AppConfig) (*fiber.App, error) {
 
 // configureFiberApp configures the Fiber application with middlewares and routes.
 // Middlewares are separated into before (order < 0) and after (order > 0) groups,
-// sorted by order, and applied around the Api engine registration.
+// sorted by order, and applied around the API engine registration.
 // This ensures proper middleware execution order relative to route handlers.
 func configureFiberApp(
 	app *fiber.App,

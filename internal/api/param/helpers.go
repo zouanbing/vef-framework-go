@@ -112,11 +112,11 @@ func searchEmbeddedFields(target reflect.Value, paramType reflect.Type) reflect.
 	return foundField
 }
 
-func embedsApiParams(targetType reflect.Type) bool {
+func embedsAPIParams(targetType reflect.Type) bool {
 	return embedsSentinelType(targetType, apiParamsType)
 }
 
-func embedsApiMeta(targetType reflect.Type) bool {
+func embedsAPIMeta(targetType reflect.Type) bool {
 	return embedsSentinelType(targetType, apiMetaType)
 }
 

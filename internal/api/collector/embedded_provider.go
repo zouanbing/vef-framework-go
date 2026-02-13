@@ -41,7 +41,7 @@ func (*EmbeddedProviderCollector) Collect(resource api.Resource) []api.Operation
 
 				specs = append(specs, ops...)
 				if len(ops) > 0 {
-					logger.Infof("Collected %d Api operations from embedded provider: %s",
+					logger.Infof("Collected %d API operations from embedded provider: %s",
 						len(ops), field.Type.String())
 				}
 			}

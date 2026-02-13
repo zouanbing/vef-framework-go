@@ -9,7 +9,7 @@ type contextKey int
 
 const (
 	// KeyQueryError is the context key for storing query errors during recursive CTE building.
-	// Used internally by FindTreeApi and FindTreeOptionsApi to propagate errors from closures.
+	// Used internally by FindTree and FindTreeOptions operations to propagate errors from closures.
 	keyQueryError contextKey = iota
 )
 

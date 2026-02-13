@@ -298,7 +298,7 @@ type QueryBuilder interface {
 }
 
 // ExprBuilder provides methods for building various SQL expressions and operations.
-// It offers a fluent Api for constructing complex SQL expressions including aggregates, functions, and conditional logic.
+// It offers a fluent API for constructing complex SQL expressions including aggregates, functions, and conditional logic.
 type ExprBuilder interface {
 	// Column builds a column expression with proper alias handling.
 	// If withTableAlias is false, skips automatic table alias addition even when table exists.
@@ -701,7 +701,7 @@ type SelectQueryExecutor interface {
 }
 
 // SelectQuery is an interface that defines the methods for building and executing SELECT queries.
-// It provides a fluent Api for constructing complex database queries with support for joins, conditions, ordering, and more.
+// It provides a fluent API for constructing complex database queries with support for joins, conditions, ordering, and more.
 type SelectQuery interface {
 	QueryBuilder
 	SelectQueryExecutor

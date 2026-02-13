@@ -11,27 +11,27 @@ import (
 	"github.com/ilxqx/vef-framework-go/sortx"
 )
 
-// baseFindApi is the base implementation for all Find APIs.
-// It provides a unified query configuration system using FindApiOptions.
-type baseFindApi[TModel, TSearch, TProcessorIn, TApi any] struct {
-	Builder[TApi]
+// baseFindOperation is the base implementation for all find operations.
+// It provides a unified query configuration system using FindOperationOption.
+type baseFindOperation[TModel, TSearch, TProcessorIn, TOperation any] struct {
+	Builder[TOperation]
 
 	setupDone           bool
 	dataPermDisabled    bool
-	options             []*FindApiOption
-	optionsByPart       map[QueryPart][]*FindApiOption
+	options             []*FindOperationOption
+	optionsByPart       map[QueryPart][]*FindOperationOption
 	auditUserModel      any
 	auditUserNameColumn string
 	defaultSort         []*sortx.OrderSpec
 	processor           Processor[TProcessorIn, TSearch]
 
-	self TApi
+	self TOperation
 }
 
-// Setup initializes the FindApi with database and configuration.
+// Setup initializes the find operation with database and configuration.
 // This method is called once in factory functions and is safe to call multiple times.
 // Subsequent calls are no-ops.
-func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) Setup(db orm.DB, config *FindApiConfig, opts ...*FindApiOption) error {
+func (a *baseFindOperation[TModel, TSearch, TProcessorIn, TOperation]) Setup(db orm.DB, config *FindOperationConfig, opts ...*FindOperationOption) error {
 	if a.setupDone {
 		return nil
 	}
@@ -109,7 +109,7 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) Setup(db orm.DB, conf
 	a.options = append(a.options, opts...)
 
 	// Pre-group options by QueryPart for efficient lookup in ConfigureQuery
-	a.optionsByPart = make(map[QueryPart][]*FindApiOption)
+	a.optionsByPart = make(map[QueryPart][]*FindOperationOption)
 	for _, opt := range a.options {
 		for _, part := range opt.Parts {
 			a.optionsByPart[part] = append(a.optionsByPart[part], opt)
@@ -120,10 +120,10 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) Setup(db orm.DB, conf
 }
 
 // ConfigureQuery applies all query configuration options for the specified query part.
-func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) ConfigureQuery(query orm.SelectQuery, search TSearch, meta api.Meta, ctx fiber.Ctx, part QueryPart) error {
-	applied := make(map[*FindApiOption]bool)
+func (a *baseFindOperation[TModel, TSearch, TProcessorIn, TOperation]) ConfigureQuery(query orm.SelectQuery, search TSearch, meta api.Meta, ctx fiber.Ctx, part QueryPart) error {
+	applied := make(map[*FindOperationOption]bool)
 
-	applyOpts := func(opts []*FindApiOption) error {
+	applyOpts := func(opts []*FindOperationOption) error {
 		for _, opt := range opts {
 			if applied[opt] {
 				continue
@@ -149,7 +149,7 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) ConfigureQuery(query 
 // Process applies post-query processing to transform or enrich the query results.
 // This method is called after data is fetched from the database but before returning to the client.
 // If no Processor is configured via WithProcessor(), it returns the input unchanged.
-func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) Process(input TProcessorIn, search TSearch, ctx fiber.Ctx) any {
+func (a *baseFindOperation[TModel, TSearch, TProcessorIn, TOperation]) Process(input TProcessorIn, search TSearch, ctx fiber.Ctx) any {
 	if a.processor == nil {
 		return input
 	}
@@ -159,15 +159,15 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) Process(input TProces
 
 // This function is called after data is fetched from the database but before returning to the client.
 // Common use cases: data masking, computed fields, nested structure transformation, aggregation.
-func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithProcessor(processor Processor[TProcessorIn, TSearch]) TApi {
+func (a *baseFindOperation[TModel, TSearch, TProcessorIn, TOperation]) WithProcessor(processor Processor[TProcessorIn, TSearch]) TOperation {
 	a.processor = processor
 
 	return a.self
 }
 
-// WithOptions adds multiple FindApiOptions to the query configuration.
+// WithOptions adds multiple FindOperationOption to the query configuration.
 // This is useful for composing reusable option sets.
-func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithOptions(opts ...*FindApiOption) TApi {
+func (a *baseFindOperation[TModel, TSearch, TProcessorIn, TOperation]) WithOptions(opts ...*FindOperationOption) TOperation {
 	a.options = append(a.options, opts...)
 
 	return a.self
@@ -175,7 +175,7 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithOptions(opts ...*
 
 // WithSelect adds a column to the SELECT clause.
 // Applies to the root/main query by default (QueryRoot) unless specific parts are provided.
-func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithSelect(column string, parts ...QueryPart) TApi {
+func (a *baseFindOperation[TModel, TSearch, TProcessorIn, TOperation]) WithSelect(column string, parts ...QueryPart) TOperation {
 	a.options = append(a.options, withSelect(column, parts...))
 
 	return a.self
@@ -183,7 +183,7 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithSelect(column str
 
 // WithSelectAs adds a column with an alias to the SELECT clause.
 // Applies to the root/main query by default (QueryRoot) unless specific parts are provided.
-func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithSelectAs(column, alias string, parts ...QueryPart) TApi {
+func (a *baseFindOperation[TModel, TSearch, TProcessorIn, TOperation]) WithSelectAs(column, alias string, parts ...QueryPart) TOperation {
 	a.options = append(a.options, withSelectAs(column, alias, parts...))
 
 	return a.self
@@ -191,7 +191,7 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithSelectAs(column, 
 
 // This is applied when no dynamic sorting is provided in the request.
 // The orderSpecs are stored and applied during Setup() to allow framework-level defaults.
-func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithDefaultSort(orderSpecs ...*sortx.OrderSpec) TApi {
+func (a *baseFindOperation[TModel, TSearch, TProcessorIn, TOperation]) WithDefaultSort(orderSpecs ...*sortx.OrderSpec) TOperation {
 	if len(orderSpecs) > 0 {
 		a.defaultSort = slices.Clone(orderSpecs)
 	} else {
@@ -201,9 +201,9 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithDefaultSort(order
 	return a.self
 }
 
-// DisableDataPerm disables data permission filtering for this API.
+// DisableDataPerm disables data permission filtering for this operation.
 // By default, data permission filtering is enabled (WithDataPerm is auto-applied in Setup).
-func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) DisableDataPerm() TApi {
+func (a *baseFindOperation[TModel, TSearch, TProcessorIn, TOperation]) DisableDataPerm() TOperation {
 	a.dataPermDisabled = true
 
 	return a.self
@@ -211,7 +211,7 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) DisableDataPerm() TAp
 
 // WithAuditUserNames configures audit user names to be fetched (created_by_name, updated_by_name).
 // If nameColumn is provided, uses the first value; otherwise defaults to "name".
-func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithAuditUserNames(userModel any, nameColumn ...string) TApi {
+func (a *baseFindOperation[TModel, TSearch, TProcessorIn, TOperation]) WithAuditUserNames(userModel any, nameColumn ...string) TOperation {
 	a.auditUserModel = userModel
 	if len(nameColumn) > 0 {
 		a.auditUserNameColumn = nameColumn[0]
@@ -224,7 +224,7 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithAuditUserNames(us
 
 // WithCondition adds a WHERE condition using ConditionBuilder.
 // Applies to root query only by default (QueryRoot) unless specific parts are provided.
-func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithCondition(fn func(cb orm.ConditionBuilder), parts ...QueryPart) TApi {
+func (a *baseFindOperation[TModel, TSearch, TProcessorIn, TOperation]) WithCondition(fn func(cb orm.ConditionBuilder), parts ...QueryPart) TOperation {
 	a.options = append(a.options, withCondition(fn, parts...))
 
 	return a.self
@@ -232,7 +232,7 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithCondition(fn func
 
 // WithRelation adds a relation join to the query.
 // Applies to the root/main query by default (QueryRoot) unless specific parts are provided.
-func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithRelation(relation *orm.RelationSpec, parts ...QueryPart) TApi {
+func (a *baseFindOperation[TModel, TSearch, TProcessorIn, TOperation]) WithRelation(relation *orm.RelationSpec, parts ...QueryPart) TOperation {
 	a.options = append(a.options, withRelation(relation, parts...))
 
 	return a.self
@@ -240,7 +240,7 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithRelation(relation
 
 // WithQueryApplier adds a custom query applier function.
 // Applies to root query only by default (QueryRoot) unless specific parts are provided.
-func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithQueryApplier(applier func(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) error, parts ...QueryPart) TApi {
+func (a *baseFindOperation[TModel, TSearch, TProcessorIn, TOperation]) WithQueryApplier(applier func(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) error, parts ...QueryPart) TOperation {
 	a.options = append(a.options, withQueryApplier(applier, parts...))
 
 	return a.self

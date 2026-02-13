@@ -106,7 +106,7 @@ func (suite *FindOptionsTestSuite) TearDownSuite() {
 func (suite *FindOptionsTestSuite) TestFindOptionsBasic() {
 	suite.T().Logf("Testing FindOptions API basic functionality for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_options",
 			Action:   "find_options",
@@ -136,7 +136,7 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithConfig() {
 	suite.T().Logf("Testing FindOptions API with custom config for %s", suite.dbType)
 
 	suite.Run("DefaultConfig", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_options",
 				Action:   "find_options",
@@ -155,7 +155,7 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithConfig() {
 	})
 
 	suite.Run("CustomConfig", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_options",
 				Action:   "find_options",
@@ -184,7 +184,7 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithConfig() {
 	})
 
 	suite.Run("WithDescription", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_options_custom",
 				Action:   "find_options",
@@ -212,7 +212,7 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithSearch() {
 	suite.T().Logf("Testing FindOptions API with search conditions for %s", suite.dbType)
 
 	suite.Run("SearchByStatus", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_options",
 				Action:   "find_options",
@@ -234,7 +234,7 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithSearch() {
 	})
 
 	suite.Run("SearchByKeyword", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_options",
 				Action:   "find_options",
@@ -261,7 +261,7 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithSearch() {
 func (suite *FindOptionsTestSuite) TestFindOptionsWithFilterApplier() {
 	suite.T().Logf("Testing FindOptions API with filter applier for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_options_filtered",
 			Action:   "find_options",
@@ -284,7 +284,7 @@ func (suite *FindOptionsTestSuite) TestFindOptionsNegativeCases() {
 	suite.T().Logf("Testing FindOptions API negative cases for %s", suite.dbType)
 
 	suite.Run("NoMatchingRecords", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_options",
 				Action:   "find_options",
@@ -306,7 +306,7 @@ func (suite *FindOptionsTestSuite) TestFindOptionsNegativeCases() {
 	})
 
 	suite.Run("InvalidFieldName", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_options",
 				Action:   "find_options",
@@ -331,7 +331,7 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithMeta() {
 	suite.T().Logf("Testing FindOptions API with meta columns for %s", suite.dbType)
 
 	suite.Run("DefaultMetaColumns", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_options_meta",
 				Action:   "find_options",
@@ -358,7 +358,7 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithMeta() {
 	})
 
 	suite.Run("CustomMetaColumns", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_options",
 				Action:   "find_options",
@@ -388,7 +388,7 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithMeta() {
 	})
 
 	suite.Run("MetaColumnsWithAlias", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_options",
 				Action:   "find_options",
@@ -419,7 +419,7 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithMeta() {
 	})
 
 	suite.Run("InvalidMetaColumn", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_options",
 				Action:   "find_options",

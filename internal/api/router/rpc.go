@@ -86,7 +86,7 @@ func (r *RPC) resolve(ctx fiber.Ctx) error {
 				Identifier: &req.Identifier,
 				Err:        fiber.ErrNotFound,
 			},
-			Suggestion: r.findClosestApi(req.Identifier),
+			Suggestion: r.findClosestAPI(req.Identifier),
 		}
 	}
 
@@ -113,7 +113,7 @@ func (r *RPC) dispatch(ctx fiber.Ctx) error {
 				Identifier: &req.Identifier,
 				Err:        fiber.ErrNotFound,
 			},
-			Suggestion: r.findClosestApi(req.Identifier),
+			Suggestion: r.findClosestAPI(req.Identifier),
 		}
 	}
 
@@ -139,7 +139,7 @@ func (*RPC) parseRequest(ctx fiber.Ctx) (*api.Request, error) {
 	return req, nil
 }
 
-func (r *RPC) findClosestApi(requested api.Identifier) *api.Identifier {
+func (r *RPC) findClosestAPI(requested api.Identifier) *api.Identifier {
 	if r.operations.IsEmpty() {
 		return nil
 	}

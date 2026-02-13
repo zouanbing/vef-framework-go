@@ -18,16 +18,16 @@ func NewResource(service schema.Service) api.Resource {
 		Resource: api.NewRPCResource(
 			"sys/schema",
 			api.WithOperations(
-				api.OperationSpec{Action: "list_tables", Public: isSchemaApiPublic, RateLimit: &api.RateLimitConfig{Max: 60}},
-				api.OperationSpec{Action: "get_table_schema", Public: isSchemaApiPublic, RateLimit: &api.RateLimitConfig{Max: 60}},
-				api.OperationSpec{Action: "list_views", Public: isSchemaApiPublic, RateLimit: &api.RateLimitConfig{Max: 60}},
-				api.OperationSpec{Action: "list_triggers", Public: isSchemaApiPublic, RateLimit: &api.RateLimitConfig{Max: 60}},
+				api.OperationSpec{Action: "list_tables", Public: isSchemaAPIPublic, RateLimit: &api.RateLimitConfig{Max: 60}},
+				api.OperationSpec{Action: "get_table_schema", Public: isSchemaAPIPublic, RateLimit: &api.RateLimitConfig{Max: 60}},
+				api.OperationSpec{Action: "list_views", Public: isSchemaAPIPublic, RateLimit: &api.RateLimitConfig{Max: 60}},
+				api.OperationSpec{Action: "list_triggers", Public: isSchemaAPIPublic, RateLimit: &api.RateLimitConfig{Max: 60}},
 			),
 		),
 	}
 }
 
-// Resource handles schema inspection Api endpoints.
+// Resource handles schema inspection API endpoints.
 type Resource struct {
 	api.Resource
 

@@ -87,7 +87,7 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.Datasour
 	defer suite.cleanupTestTables(bunDB.DB, dsConfig.Type)
 
 	suite.Run("ListTables", func() {
-		resp := suite.makeApiRequest(testApp, api.Request{
+		resp := suite.makeAPIRequest(testApp, api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/schema",
 				Action:   "list_tables",
@@ -119,7 +119,7 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.Datasour
 	})
 
 	suite.Run("GetTableSchemaSuccess", func() {
-		resp := suite.makeApiRequest(testApp, api.Request{
+		resp := suite.makeAPIRequest(testApp, api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/schema",
 				Action:   "get_table_schema",
@@ -161,7 +161,7 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.Datasour
 	})
 
 	suite.Run("GetTableSchemaWithPrimaryKey", func() {
-		resp := suite.makeApiRequest(testApp, api.Request{
+		resp := suite.makeAPIRequest(testApp, api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/schema",
 				Action:   "get_table_schema",
@@ -190,7 +190,7 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.Datasour
 	})
 
 	suite.Run("GetTableSchemaNotFound", func() {
-		resp := suite.makeApiRequest(testApp, api.Request{
+		resp := suite.makeAPIRequest(testApp, api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/schema",
 				Action:   "get_table_schema",
@@ -211,7 +211,7 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.Datasour
 	})
 
 	suite.Run("GetTableSchemaValidationError", func() {
-		resp := suite.makeApiRequest(testApp, api.Request{
+		resp := suite.makeAPIRequest(testApp, api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/schema",
 				Action:   "get_table_schema",
@@ -229,7 +229,7 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.Datasour
 	})
 }
 
-func (suite *SchemaResourceTestSuite) makeApiRequest(testApp *app.App, body api.Request) *http.Response {
+func (suite *SchemaResourceTestSuite) makeAPIRequest(testApp *app.App, body api.Request) *http.Response {
 	jsonBody, err := encoding.ToJSON(body)
 	suite.Require().NoError(err, "Should encode request to JSON")
 

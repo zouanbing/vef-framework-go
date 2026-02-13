@@ -155,8 +155,8 @@ import (
 
 var Module = vef.Module(
     "app:sys",
-    vef.ProvideApiResource(resources.NewUserResource),
-    vef.ProvideApiResource(resources.NewRoleResource),
+    vef.ProvideAPIResource(resources.NewUserResource),
+    vef.ProvideAPIResource(resources.NewRoleResource),
 )
 ```
 
@@ -214,7 +214,7 @@ VEF 使用 Uber FX 进行依赖注入。通过辅助函数注册组件：
 
 ```go
 vef.Run(
-    vef.ProvideApiResource(NewUserResource),
+    vef.ProvideAPIResource(NewUserResource),
     vef.Provide(NewUserService),
 )
 ```
@@ -367,7 +367,7 @@ func NewUserResource() api.Resource {
 ```go
 func main() {
     vef.Run(
-        vef.ProvideApiResource(resources.NewUserResource),
+        vef.ProvideAPIResource(resources.NewUserResource),
     )
 }
 ```
@@ -407,9 +407,9 @@ Create: crud.NewCreate[User, UserParams]().
     RateLimit(10, 1*time.Minute).      // 每分钟 10 次请求
 ```
 
-### FindApi 配置方法
+### Find Operation 配置方法
 
-所有 FindApi 类型（FindOne、FindAll、FindPage、FindTree、FindOptions、FindTreeOptions、Export）都支持统一的查询配置系统。
+所有 Find Operation 类型（FindOne、FindAll、FindPage、FindTree、FindOptions、FindTreeOptions、Export）都支持统一的查询配置系统。
 
 | 方法 | 说明 |
 |------|------|

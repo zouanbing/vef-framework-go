@@ -165,7 +165,7 @@ func (suite *FindAllTestSuite) TearDownSuite() {
 func (suite *FindAllTestSuite) TestFindAllBasic() {
 	suite.T().Logf("Testing FindAll API basic functionality for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_all",
 			Action:   "find_all",
@@ -190,7 +190,7 @@ func (suite *FindAllTestSuite) TestFindAllWithSearchApplier() {
 	suite.T().Logf("Testing FindAll API with search filters for %s", suite.dbType)
 
 	suite.Run("SearchByStatus", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all",
 				Action:   "find_all",
@@ -213,7 +213,7 @@ func (suite *FindAllTestSuite) TestFindAllWithSearchApplier() {
 	})
 
 	suite.Run("SearchByKeyword", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all",
 				Action:   "find_all",
@@ -236,7 +236,7 @@ func (suite *FindAllTestSuite) TestFindAllWithSearchApplier() {
 	})
 
 	suite.Run("SearchByAgeRange", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all",
 				Action:   "find_all",
@@ -263,7 +263,7 @@ func (suite *FindAllTestSuite) TestFindAllWithSearchApplier() {
 func (suite *FindAllTestSuite) TestFindAllWithWithProcessor() {
 	suite.T().Logf("Testing FindAll API with processor for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_all_processed",
 			Action:   "find_all",
@@ -290,7 +290,7 @@ func (suite *FindAllTestSuite) TestFindAllWithWithProcessor() {
 func (suite *FindAllTestSuite) TestFindAllWithFilterApplier() {
 	suite.T().Logf("Testing FindAll API with filter applier for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_all_filtered",
 			Action:   "find_all",
@@ -313,7 +313,7 @@ func (suite *FindAllTestSuite) TestFindAllWithFilterApplier() {
 func (suite *FindAllTestSuite) TestFindAllWithSortApplier() {
 	suite.T().Logf("Testing FindAll API with sort applier for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_all_ordered",
 			Action:   "find_all",
@@ -340,7 +340,7 @@ func (suite *FindAllTestSuite) TestFindAllNegativeCases() {
 	suite.T().Logf("Testing FindAll API negative cases for %s", suite.dbType)
 
 	suite.Run("EmptySearchCriteria", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all",
 				Action:   "find_all",
@@ -361,7 +361,7 @@ func (suite *FindAllTestSuite) TestFindAllNegativeCases() {
 	})
 
 	suite.Run("NoMatchingRecords", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all",
 				Action:   "find_all",
@@ -388,7 +388,7 @@ func (suite *FindAllTestSuite) TestFindAllNegativeCases() {
 func (suite *FindAllTestSuite) TestFindAllWithAuditUserNames() {
 	suite.T().Logf("Testing FindAll API with audit user names for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_all_audit",
 			Action:   "find_all",
@@ -427,7 +427,7 @@ func (suite *FindAllTestSuite) TestFindAllDefaultSorting() {
 	suite.T().Logf("Testing FindAll API default sorting for %s", suite.dbType)
 
 	suite.Run("DefaultSortByPrimaryKey", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all",
 				Action:   "find_all",
@@ -452,7 +452,7 @@ func (suite *FindAllTestSuite) TestFindAllDefaultSorting() {
 	})
 
 	suite.Run("CustomDefaultSort", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all_ordered",
 				Action:   "find_all",
@@ -479,7 +479,7 @@ func (suite *FindAllTestSuite) TestFindAllDefaultSorting() {
 	})
 
 	suite.Run("DisableDefaultSort", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all_no_default_sort",
 				Action:   "find_all",
@@ -498,7 +498,7 @@ func (suite *FindAllTestSuite) TestFindAllDefaultSorting() {
 	})
 
 	suite.Run("MultipleDefaultSortColumns", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all_multi_sort",
 				Action:   "find_all",
@@ -543,7 +543,7 @@ func (suite *FindAllTestSuite) TestFindAllRequestSortOverride() {
 	suite.T().Logf("Testing FindAll API request sort override for %s", suite.dbType)
 
 	suite.Run("OverrideDefaultSortWithRequestSort", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all_ordered",
 				Action:   "find_all",
@@ -580,7 +580,7 @@ func (suite *FindAllTestSuite) TestFindAllRequestSortOverride() {
 	})
 
 	suite.Run("OverrideWithMultipleSortColumns", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all_ordered",
 				Action:   "find_all",
@@ -629,7 +629,7 @@ func (suite *FindAllTestSuite) TestFindAllRequestSortOverride() {
 	})
 
 	suite.Run("OverrideDisabledDefaultSort", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all_no_default_sort",
 				Action:   "find_all",

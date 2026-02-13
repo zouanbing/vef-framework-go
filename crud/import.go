@@ -10,15 +10,15 @@ import (
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/csv"
 	"github.com/ilxqx/vef-framework-go/excel"
+	"github.com/ilxqx/vef-framework-go/httpx"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/log"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/tabular"
-	"github.com/ilxqx/vef-framework-go/httpx"
 )
 
-type importApi[TModel any] struct {
+type importOperation[TModel any] struct {
 	Builder[Import[TModel]]
 
 	defaultFormat TabularFormat
@@ -28,35 +28,35 @@ type importApi[TModel any] struct {
 	postImport    PostImportProcessor[TModel]
 }
 
-func (i *importApi[TModel]) Provide() []api.OperationSpec {
+func (i *importOperation[TModel]) Provide() []api.OperationSpec {
 	return []api.OperationSpec{i.Build(i.importData)}
 }
 
-func (i *importApi[TModel]) WithDefaultFormat(format TabularFormat) Import[TModel] {
+func (i *importOperation[TModel]) WithDefaultFormat(format TabularFormat) Import[TModel] {
 	i.defaultFormat = format
 
 	return i
 }
 
-func (i *importApi[TModel]) WithExcelOptions(opts ...excel.ImportOption) Import[TModel] {
+func (i *importOperation[TModel]) WithExcelOptions(opts ...excel.ImportOption) Import[TModel] {
 	i.excelOpts = opts
 
 	return i
 }
 
-func (i *importApi[TModel]) WithCsvOptions(opts ...csv.ImportOption) Import[TModel] {
+func (i *importOperation[TModel]) WithCsvOptions(opts ...csv.ImportOption) Import[TModel] {
 	i.csvOpts = opts
 
 	return i
 }
 
-func (i *importApi[TModel]) WithPreImport(processor PreImportProcessor[TModel]) Import[TModel] {
+func (i *importOperation[TModel]) WithPreImport(processor PreImportProcessor[TModel]) Import[TModel] {
 	i.preImport = processor
 
 	return i
 }
 
-func (i *importApi[TModel]) WithPostImport(processor PostImportProcessor[TModel]) Import[TModel] {
+func (i *importOperation[TModel]) WithPostImport(processor PostImportProcessor[TModel]) Import[TModel] {
 	i.postImport = processor
 
 	return i
@@ -74,7 +74,7 @@ type importConfig struct {
 	Format TabularFormat `json:"format"`
 }
 
-func (i *importApi[TModel]) importData() func(ctx fiber.Ctx, db orm.DB, logger log.Logger, config importConfig, params importParams) error {
+func (i *importOperation[TModel]) importData() func(ctx fiber.Ctx, db orm.DB, logger log.Logger, config importConfig, params importParams) error {
 	excelImporter := excel.NewImporterFor[TModel](i.excelOpts...)
 	csvImporter := csv.NewImporterFor[TModel](i.csvOpts...)
 

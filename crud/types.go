@@ -8,8 +8,8 @@ import (
 	"github.com/ilxqx/vef-framework-go/sortx"
 )
 
-// FindApiConfig contains all configuration for FindApi setup phase.
-type FindApiConfig struct {
+// FindOperationConfig contains all configuration for find operation setup phase.
+type FindOperationConfig struct {
 	// QueryParts defines which query operations (condition, sort, audit relations) apply to different query contexts
 	QueryParts *QueryPartsConfig
 }

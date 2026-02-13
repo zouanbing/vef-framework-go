@@ -16,8 +16,8 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/testx"
 )
 
-// runAllApiTests executes all Api test suites on the given database configuration.
-func runAllApiTests(t *testing.T, ctx context.Context, dsConfig *config.DatasourceConfig) {
+// runAllAPITests executes all API test suites on the given database configuration.
+func runAllAPITests(t *testing.T, ctx context.Context, dsConfig *config.DatasourceConfig) {
 	// Create database connection
 	db, err := database.New(dsConfig)
 	require.NoError(t, err)
@@ -268,7 +268,7 @@ func setupTestFixtures(t *testing.T, ctx context.Context, db bun.IDB, dbType con
 	t.Logf("Test fixtures loaded for %s database", dbType)
 }
 
-// TestPostgres runs all Api tests against PostgreSQL.
+// TestPostgres runs all API tests against PostgreSQL.
 func TestPostgres(t *testing.T) {
 	ctx := context.Background()
 
@@ -280,11 +280,11 @@ func TestPostgres(t *testing.T) {
 	postgresContainer := testx.NewPostgresContainer(ctx, dummySuite)
 	defer postgresContainer.Terminate(ctx, dummySuite)
 
-	// Run all Api tests
-	runAllApiTests(t, ctx, postgresContainer.DsConfig)
+	// Run all API tests
+	runAllAPITests(t, ctx, postgresContainer.DsConfig)
 }
 
-// TestMySQL runs all Api tests against MySQL.
+// TestMySQL runs all API tests against MySQL.
 func TestMySQL(t *testing.T) {
 	ctx := context.Background()
 
@@ -296,11 +296,11 @@ func TestMySQL(t *testing.T) {
 	mysqlContainer := testx.NewMySQLContainer(ctx, dummySuite)
 	defer mysqlContainer.Terminate(ctx, dummySuite)
 
-	// Run all Api tests
-	runAllApiTests(t, ctx, mysqlContainer.DsConfig)
+	// Run all API tests
+	runAllAPITests(t, ctx, mysqlContainer.DsConfig)
 }
 
-// TestSQLite runs all Api tests against SQLite (in-memory).
+// TestSQLite runs all API tests against SQLite (in-memory).
 func TestSQLite(t *testing.T) {
 	ctx := context.Background()
 
@@ -309,6 +309,6 @@ func TestSQLite(t *testing.T) {
 		Type: config.SQLite,
 	}
 
-	// Run all Api tests
-	runAllApiTests(t, ctx, dsConfig)
+	// Run all API tests
+	runAllAPITests(t, ctx, dsConfig)
 }

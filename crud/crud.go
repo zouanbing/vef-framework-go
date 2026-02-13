@@ -6,7 +6,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/api"
 )
 
-// NewBuilder creates a new base Api builder instance.
+// NewBuilder creates a new base API builder instance.
 func NewBuilder[T any](self T, kind ...api.Kind) Builder[T] {
 	return &baseBuilder[T]{
 		self: self,
@@ -28,7 +28,7 @@ func getAction(rpcAction, restAction string, kind ...api.Kind) string {
 
 // NewCreate creates a new Create instance for single record creation.
 func NewCreate[TModel, TParams any](kind ...api.Kind) Create[TModel, TParams] {
-	api := new(createApi[TModel, TParams])
+	api := new(createOperation[TModel, TParams])
 	api.Builder = NewBuilder[Create[TModel, TParams]](api, kind...)
 
 	return api.Action(getAction(RPCActionCreate, RESTActionCreate, kind...))
@@ -36,15 +36,15 @@ func NewCreate[TModel, TParams any](kind ...api.Kind) Create[TModel, TParams] {
 
 // NewUpdate creates a new Update instance for single record update.
 func NewUpdate[TModel, TParams any](kind ...api.Kind) Update[TModel, TParams] {
-	api := new(updateApi[TModel, TParams])
+	api := new(updateOperation[TModel, TParams])
 	api.Builder = NewBuilder[Update[TModel, TParams]](api, kind...)
 
 	return api.Action(getAction(RPCActionUpdate, RESTActionUpdate, kind...))
 }
 
-// NewDelete creates a new DeleteApi instance for single record deletion.
+// NewDelete creates a new Delete operation instance for single record deletion.
 func NewDelete[TModel any](kind ...api.Kind) Delete[TModel] {
-	api := new(deleteApi[TModel])
+	api := new(deleteOperation[TModel])
 	api.Builder = NewBuilder[Delete[TModel]](api, kind...)
 
 	return api.Action(getAction(RPCActionDelete, RESTActionDelete, kind...))
@@ -52,7 +52,7 @@ func NewDelete[TModel any](kind ...api.Kind) Delete[TModel] {
 
 // NewCreateMany creates a new CreateMany instance for batch creation.
 func NewCreateMany[TModel, TParams any](kind ...api.Kind) CreateMany[TModel, TParams] {
-	api := new(createManyApi[TModel, TParams])
+	api := new(createManyOperation[TModel, TParams])
 	api.Builder = NewBuilder[CreateMany[TModel, TParams]](api, kind...)
 
 	return api.Action(getAction(RPCActionCreateMany, RESTActionCreateMany, kind...))
@@ -60,7 +60,7 @@ func NewCreateMany[TModel, TParams any](kind ...api.Kind) CreateMany[TModel, TPa
 
 // NewUpdateMany creates a new UpdateMany instance for batch update.
 func NewUpdateMany[TModel, TParams any](kind ...api.Kind) UpdateMany[TModel, TParams] {
-	api := new(updateManyApi[TModel, TParams])
+	api := new(updateManyOperation[TModel, TParams])
 	api.Builder = NewBuilder[UpdateMany[TModel, TParams]](api, kind...)
 
 	return api.Action(getAction(RPCActionUpdateMany, RESTActionUpdateMany, kind...))
@@ -68,15 +68,15 @@ func NewUpdateMany[TModel, TParams any](kind ...api.Kind) UpdateMany[TModel, TPa
 
 // NewDeleteMany creates a new DeleteMany instance for batch deletion.
 func NewDeleteMany[TModel any](kind ...api.Kind) DeleteMany[TModel] {
-	api := new(deleteManyApi[TModel])
+	api := new(deleteManyOperation[TModel])
 	api.Builder = NewBuilder[DeleteMany[TModel]](api, kind...)
 
 	return api.Action(getAction(RPCActionDeleteMany, RESTActionDeleteMany, kind...))
 }
 
 // NewFind creates the base Find instance used by all find-type endpoints.
-func NewFind[TModel, TSearch, TProcessor, TApi any](self TApi, kind ...api.Kind) Find[TModel, TSearch, TProcessor, TApi] {
-	return &baseFindApi[TModel, TSearch, TProcessor, TApi]{
+func NewFind[TModel, TSearch, TProcessor, TOperation any](self TOperation, kind ...api.Kind) Find[TModel, TSearch, TProcessor, TOperation] {
+	return &baseFindOperation[TModel, TSearch, TProcessor, TOperation]{
 		Builder: NewBuilder(self, kind...),
 
 		self: self,
@@ -85,7 +85,7 @@ func NewFind[TModel, TSearch, TProcessor, TApi any](self TApi, kind ...api.Kind)
 
 // NewFindOne creates a new FindOne instance.
 func NewFindOne[TModel, TSearch any](kind ...api.Kind) FindOne[TModel, TSearch] {
-	api := new(findOneApi[TModel, TSearch])
+	api := new(findOneOperation[TModel, TSearch])
 	api.Find = NewFind[TModel, TSearch, TModel, FindOne[TModel, TSearch]](
 		api,
 		kind...,
@@ -96,7 +96,7 @@ func NewFindOne[TModel, TSearch any](kind ...api.Kind) FindOne[TModel, TSearch] 
 
 // NewFindAll creates a new FindAll instance.
 func NewFindAll[TModel, TSearch any](kind ...api.Kind) FindAll[TModel, TSearch] {
-	api := new(findAllApi[TModel, TSearch])
+	api := new(findAllOperation[TModel, TSearch])
 	api.Find = NewFind[TModel, TSearch, []TModel, FindAll[TModel, TSearch]](
 		api,
 		kind...,
@@ -107,7 +107,7 @@ func NewFindAll[TModel, TSearch any](kind ...api.Kind) FindAll[TModel, TSearch] 
 
 // NewFindPage creates a new FindPage instance.
 func NewFindPage[TModel, TSearch any](kind ...api.Kind) FindPage[TModel, TSearch] {
-	api := new(findPageApi[TModel, TSearch])
+	api := new(findPageOperation[TModel, TSearch])
 	api.Find = NewFind[TModel, TSearch, []TModel, FindPage[TModel, TSearch]](
 		api,
 		kind...,
@@ -118,7 +118,7 @@ func NewFindPage[TModel, TSearch any](kind ...api.Kind) FindPage[TModel, TSearch
 
 // NewFindOptions creates a new FindOptions instance.
 func NewFindOptions[TModel, TSearch any](kind ...api.Kind) FindOptions[TModel, TSearch] {
-	api := new(findOptionsApi[TModel, TSearch])
+	api := new(findOptionsOperation[TModel, TSearch])
 	api.Find = NewFind[TModel, TSearch, []DataOption, FindOptions[TModel, TSearch]](
 		api,
 		kind...,
@@ -134,7 +134,7 @@ func NewFindTree[TModel, TSearch any](
 	treeBuilder func(flatModels []TModel) []TModel,
 	kind ...api.Kind,
 ) FindTree[TModel, TSearch] {
-	api := &findTreeApi[TModel, TSearch]{
+	api := &findTreeOperation[TModel, TSearch]{
 		idColumn:       IDColumn,
 		parentIDColumn: ParentIDColumn,
 		treeBuilder:    treeBuilder,
@@ -149,7 +149,7 @@ func NewFindTree[TModel, TSearch any](
 
 // NewFindTreeOptions creates a new FindTreeOptions instance.
 func NewFindTreeOptions[TModel, TSearch any](kind ...api.Kind) FindTreeOptions[TModel, TSearch] {
-	api := &findTreeOptionsApi[TModel, TSearch]{
+	api := &findTreeOptionsOperation[TModel, TSearch]{
 		idColumn:       IDColumn,
 		parentIDColumn: ParentIDColumn,
 	}
@@ -163,7 +163,7 @@ func NewFindTreeOptions[TModel, TSearch any](kind ...api.Kind) FindTreeOptions[T
 
 // NewExport creates a new Export instance.
 func NewExport[TModel, TSearch any](kind ...api.Kind) Export[TModel, TSearch] {
-	api := new(exportApi[TModel, TSearch])
+	api := new(exportOperation[TModel, TSearch])
 	api.Find = NewFind[TModel, TSearch, []TModel, Export[TModel, TSearch]](
 		api,
 		kind...,
@@ -174,7 +174,7 @@ func NewExport[TModel, TSearch any](kind ...api.Kind) Export[TModel, TSearch] {
 
 // NewImport creates a new Import instance.
 func NewImport[TModel any](kind ...api.Kind) Import[TModel] {
-	api := new(importApi[TModel])
+	api := new(importOperation[TModel])
 	api.Builder = NewBuilder[Import[TModel]](api, kind...)
 
 	return api.Action(getAction(RPCActionImport, RESTActionImport, kind...))

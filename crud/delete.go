@@ -15,7 +15,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 
-type deleteApi[TModel any] struct {
+type deleteOperation[TModel any] struct {
 	Builder[Delete[TModel]]
 
 	preDelete        PreDeleteProcessor[TModel]
@@ -23,29 +23,29 @@ type deleteApi[TModel any] struct {
 	dataPermDisabled bool
 }
 
-func (d *deleteApi[TModel]) Provide() []api.OperationSpec {
+func (d *deleteOperation[TModel]) Provide() []api.OperationSpec {
 	return []api.OperationSpec{d.Build(d.delete)}
 }
 
-func (d *deleteApi[TModel]) WithPreDelete(processor PreDeleteProcessor[TModel]) Delete[TModel] {
+func (d *deleteOperation[TModel]) WithPreDelete(processor PreDeleteProcessor[TModel]) Delete[TModel] {
 	d.preDelete = processor
 
 	return d
 }
 
-func (d *deleteApi[TModel]) WithPostDelete(processor PostDeleteProcessor[TModel]) Delete[TModel] {
+func (d *deleteOperation[TModel]) WithPostDelete(processor PostDeleteProcessor[TModel]) Delete[TModel] {
 	d.postDelete = processor
 
 	return d
 }
 
-func (d *deleteApi[TModel]) DisableDataPerm() Delete[TModel] {
+func (d *deleteOperation[TModel]) DisableDataPerm() Delete[TModel] {
 	d.dataPermDisabled = true
 
 	return d
 }
 
-func (d *deleteApi[TModel]) delete(db orm.DB, sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.DB, params api.Params) error, error) {
+func (d *deleteOperation[TModel]) delete(db orm.DB, sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.DB, params api.Params) error, error) {
 	promoter := storage.NewPromoter[TModel](sc, publisher)
 	schema := db.TableOf((*TModel)(nil))
 	pks := db.ModelPKFields((*TModel)(nil))

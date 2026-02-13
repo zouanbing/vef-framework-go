@@ -38,7 +38,7 @@ type DataOptionColumnMapping struct {
 	MetaColumns []string `json:"metaColumns"`
 }
 
-// DataOptionConfig is the Api request meta for querying options.
+// DataOptionConfig is the API request meta for querying options.
 type DataOptionConfig struct {
 	api.M
 

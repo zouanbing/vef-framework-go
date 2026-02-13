@@ -32,8 +32,8 @@ type ModelConfig struct {
 	Provider string
 	// Model is the name of the model to use.
 	Model string
-	// ApiKey is the API key for authentication.
-	ApiKey string
+	// APIKey is the API key for authentication.
+	APIKey string
 	// BaseURL is the base URL for the API endpoint.
 	BaseURL string
 	// Temperature controls randomness (0.0 to 1.0).

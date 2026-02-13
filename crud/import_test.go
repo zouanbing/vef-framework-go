@@ -175,7 +175,7 @@ func (suite *ImportTestSuite) TestImportBasic() {
 	suite.NoError(err, "Should export test users to Excel successfully")
 
 	// Create multipart request
-	resp := suite.makeMultipartApiRequest(api.Request{
+	resp := suite.makeMultipartAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_import",
 			Action:   "import",
@@ -210,7 +210,7 @@ func (suite *ImportTestSuite) TestImportWithValidationErrors() {
 	suite.NoError(err, "Should export test users with invalid data to Excel successfully")
 
 	// Import should detect validation errors
-	resp := suite.makeMultipartApiRequest(api.Request{
+	resp := suite.makeMultipartAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_import",
 			Action:   "import",
@@ -243,7 +243,7 @@ func (suite *ImportTestSuite) TestImportWithMissingRequiredFields() {
 	buf, err := exporter.Export(testUsers)
 	suite.NoError(err, "Should export test users with missing fields to Excel successfully")
 
-	resp := suite.makeMultipartApiRequest(api.Request{
+	resp := suite.makeMultipartAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_import",
 			Action:   "import",
@@ -274,7 +274,7 @@ func (suite *ImportTestSuite) TestImportWithPreProcessor() {
 	buf, err := exporter.Export(testUsers)
 	suite.NoError(err, "Should export test users to Excel successfully")
 
-	resp := suite.makeMultipartApiRequest(api.Request{
+	resp := suite.makeMultipartAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_import_preproc",
 			Action:   "import",
@@ -306,7 +306,7 @@ func (suite *ImportTestSuite) TestImportWithPostProcessor() {
 	buf, err := exporter.Export(testUsers)
 	suite.NoError(err, "Should export test users to Excel successfully")
 
-	resp := suite.makeMultipartApiRequest(api.Request{
+	resp := suite.makeMultipartAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_import_postproc",
 			Action:   "import",
@@ -336,7 +336,7 @@ func (suite *ImportTestSuite) TestImportEmptyFile() {
 	buf, err := exporter.Export(testUsers)
 	suite.NoError(err, "Should export empty user list to Excel successfully")
 
-	resp := suite.makeMultipartApiRequest(api.Request{
+	resp := suite.makeMultipartAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_import",
 			Action:   "import",
@@ -376,7 +376,7 @@ func (suite *ImportTestSuite) TestImportLargeFile() {
 	buf, err := exporter.Export(testUsers)
 	suite.NoError(err, "Should export 100 test users to Excel successfully")
 
-	resp := suite.makeMultipartApiRequest(api.Request{
+	resp := suite.makeMultipartAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_import",
 			Action:   "import",
@@ -398,7 +398,7 @@ func (suite *ImportTestSuite) TestImportNegativeCases() {
 
 	suite.Run("MissingFile", func() {
 		// Try to import without providing a file
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_import",
 				Action:   "import",
@@ -414,7 +414,7 @@ func (suite *ImportTestSuite) TestImportNegativeCases() {
 
 	suite.Run("InvalidFileFormat", func() {
 		// Try to import a non-Excel file
-		resp := suite.makeMultipartApiRequest(api.Request{
+		resp := suite.makeMultipartAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_import",
 				Action:   "import",
@@ -436,7 +436,7 @@ func (suite *ImportTestSuite) TestImportNegativeCases() {
 
 	suite.Run("JSONRequest", func() {
 		// Import requires multipart/form-data, not JSON
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_import",
 				Action:   "import",
@@ -463,7 +463,7 @@ func (suite *ImportTestSuite) TestImportNegativeCases() {
 		// Try to import corrupted Excel file
 		corruptedData := []byte{0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10} // Invalid Excel data
 
-		resp := suite.makeMultipartApiRequest(api.Request{
+		resp := suite.makeMultipartAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_import",
 				Action:   "import",
@@ -501,7 +501,7 @@ func (suite *ImportTestSuite) TestImportCSVBasic() {
 	suite.NoError(err, "Should export test users to CSV successfully")
 
 	// Create multipart request
-	resp := suite.makeMultipartApiRequest(api.Request{
+	resp := suite.makeMultipartAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_import_csv",
 			Action:   "import",
@@ -536,7 +536,7 @@ func (suite *ImportTestSuite) TestImportCSVWithValidationErrors() {
 	suite.NoError(err, "Should export test users with invalid data to CSV successfully")
 
 	// Import should detect validation errors
-	resp := suite.makeMultipartApiRequest(api.Request{
+	resp := suite.makeMultipartAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_import_csv",
 			Action:   "import",
@@ -569,7 +569,7 @@ func (suite *ImportTestSuite) TestImportCSVWithOptions() {
 	buf, err := exporter.Export(testUsers)
 	suite.NoError(err, "Should export test users to CSV with semicolon delimiter successfully")
 
-	resp := suite.makeMultipartApiRequest(api.Request{
+	resp := suite.makeMultipartAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_import_csv_opts",
 			Action:   "import",
@@ -599,7 +599,7 @@ func (suite *ImportTestSuite) TestImportFormatOverride() {
 	suite.NoError(err, "Should export test user to CSV successfully")
 
 	// Use Excel endpoint but override format to CSV via parameter
-	resp := suite.makeMultipartApiRequest(api.Request{
+	resp := suite.makeMultipartAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_import",
 			Action:   "import",
@@ -620,12 +620,12 @@ func (suite *ImportTestSuite) TestImportFormatOverride() {
 }
 
 // Helper method for multipart requests.
-func (suite *ImportTestSuite) makeMultipartApiRequest(req api.Request, filename string, fileContent []byte) *http.Response {
+func (suite *ImportTestSuite) makeMultipartAPIRequest(req api.Request, filename string, fileContent []byte) *http.Response {
 	var buf bytes.Buffer
 
 	writer := multipart.NewWriter(&buf)
 
-	// Add Api request fields
+	// Add API request fields
 	_ = writer.WriteField("resource", req.Resource)
 	_ = writer.WriteField("action", req.Action)
 	_ = writer.WriteField("version", req.Version)

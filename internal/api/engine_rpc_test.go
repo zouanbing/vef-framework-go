@@ -308,7 +308,7 @@ func (suite *RPCEngineTestSuite) setupTestApp() {
 	)
 }
 
-func (suite *RPCEngineTestSuite) makeApiRequest(body api.Request) *http.Response {
+func (suite *RPCEngineTestSuite) makeAPIRequest(body api.Request) *http.Response {
 	jsonBody, err := encoding.ToJSON(body)
 	suite.Require().NoError(err)
 
@@ -321,7 +321,7 @@ func (suite *RPCEngineTestSuite) makeApiRequest(body api.Request) *http.Response
 	return resp
 }
 
-func (suite *RPCEngineTestSuite) makeApiRequestWithToken(body api.Request, token string) *http.Response {
+func (suite *RPCEngineTestSuite) makeAPIRequestWithToken(body api.Request, token string) *http.Response {
 	jsonBody, err := encoding.ToJSON(body)
 	suite.Require().NoError(err)
 
@@ -358,7 +358,7 @@ func (suite *RPCEngineTestSuite) readDataAsMap(data any) map[string]any {
 }
 
 func (suite *RPCEngineTestSuite) login() string {
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "login",
@@ -382,7 +382,7 @@ func (suite *RPCEngineTestSuite) login() string {
 func (suite *RPCEngineTestSuite) TestPublicApiPing() {
 	suite.T().Log("Testing public API ping endpoint")
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "ping",
@@ -400,7 +400,7 @@ func (suite *RPCEngineTestSuite) TestPublicApiPing() {
 func (suite *RPCEngineTestSuite) TestPublicApiEcho() {
 	suite.T().Log("Testing public API echo endpoint with params")
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "echo",
@@ -425,7 +425,7 @@ func (suite *RPCEngineTestSuite) TestPublicApiEcho() {
 func (suite *RPCEngineTestSuite) TestProtectedApiWithoutToken() {
 	suite.T().Log("Testing protected API without token")
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "protected",
@@ -441,7 +441,7 @@ func (suite *RPCEngineTestSuite) TestProtectedApiWithValidToken() {
 
 	token := suite.login()
 
-	resp := suite.makeApiRequestWithToken(api.Request{
+	resp := suite.makeAPIRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "protected",
@@ -462,7 +462,7 @@ func (suite *RPCEngineTestSuite) TestProtectedApiWithValidToken() {
 func (suite *RPCEngineTestSuite) TestProtectedApiWithInvalidToken() {
 	suite.T().Log("Testing protected API with invalid token")
 
-	resp := suite.makeApiRequestWithToken(api.Request{
+	resp := suite.makeAPIRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "protected",
@@ -480,7 +480,7 @@ func (suite *RPCEngineTestSuite) TestProtectedApiWithInvalidToken() {
 func (suite *RPCEngineTestSuite) TestOperationNotFound() {
 	suite.T().Log("Testing operation not found")
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "nonexistent",
@@ -497,7 +497,7 @@ func (suite *RPCEngineTestSuite) TestOperationNotFound() {
 func (suite *RPCEngineTestSuite) TestResourceNotFound() {
 	suite.T().Log("Testing resource not found")
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "nonexistent",
 			Action:   "ping",
@@ -514,7 +514,7 @@ func (suite *RPCEngineTestSuite) TestResourceNotFound() {
 func (suite *RPCEngineTestSuite) TestVersionMismatch() {
 	suite.T().Log("Testing version mismatch")
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "ping",
@@ -562,7 +562,7 @@ func (suite *RPCEngineTestSuite) TestMissingRequiredFields() {
 	suite.T().Log("Testing missing required fields")
 
 	suite.Run("MissingResource", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "",
 				Action:   "ping",
@@ -575,7 +575,7 @@ func (suite *RPCEngineTestSuite) TestMissingRequiredFields() {
 	})
 
 	suite.Run("MissingAction", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test",
 				Action:   "",
@@ -588,7 +588,7 @@ func (suite *RPCEngineTestSuite) TestMissingRequiredFields() {
 	})
 
 	suite.Run("MissingVersion", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test",
 				Action:   "ping",
@@ -604,7 +604,7 @@ func (suite *RPCEngineTestSuite) TestMissingRequiredFields() {
 func (suite *RPCEngineTestSuite) TestAuditedEndpoint() {
 	suite.T().Log("Testing audited endpoint")
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "audited",
@@ -622,7 +622,7 @@ func (suite *RPCEngineTestSuite) TestAuditedEndpoint() {
 func (suite *RPCEngineTestSuite) TestErrorResponse() {
 	suite.T().Log("Testing error response")
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "error",
@@ -641,7 +641,7 @@ func (suite *RPCEngineTestSuite) TestErrorResponse() {
 func (suite *RPCEngineTestSuite) TestRequestWithMeta() {
 	suite.T().Log("Testing request with meta")
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "echo_data",
@@ -665,7 +665,7 @@ func (suite *RPCEngineTestSuite) TestRequestWithMeta() {
 func (suite *RPCEngineTestSuite) TestI18nErrorMessages() {
 	suite.T().Log("Testing i18n error messages")
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "protected",
@@ -704,7 +704,7 @@ func (suite *RPCEngineTestSuite) TestContentTypeValidation() {
 func (suite *RPCEngineTestSuite) TestComplexParams() {
 	suite.T().Log("Testing complex params")
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "echo_complex",
@@ -769,7 +769,7 @@ func (suite *RPCEngineTestSuite) TestPermissionDenied() {
 
 	token := suite.login()
 
-	resp := suite.makeApiRequestWithToken(api.Request{
+	resp := suite.makeAPIRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "restricted",
@@ -787,7 +787,7 @@ func (suite *RPCEngineTestSuite) TestPermissionDenied() {
 func (suite *RPCEngineTestSuite) TestSlowOperationTimeout() {
 	suite.T().Log("Testing slow operation timeout")
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "slow",
@@ -806,7 +806,7 @@ func (suite *RPCEngineTestSuite) TestSlowOperationTimeout() {
 func (suite *RPCEngineTestSuite) TestNonexistentUserLogin() {
 	suite.T().Log("Testing login with nonexistent user")
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "login",
@@ -830,7 +830,7 @@ func (suite *RPCEngineTestSuite) TestAdminWithPermission() {
 
 	token := suite.login()
 
-	resp := suite.makeApiRequestWithToken(api.Request{
+	resp := suite.makeAPIRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "admin",
@@ -851,7 +851,7 @@ func (suite *RPCEngineTestSuite) TestAdminWithPermission() {
 func (suite *RPCEngineTestSuite) TestHandlerPanic() {
 	suite.T().Log("Testing handler panic returns 500")
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "panic",
@@ -877,7 +877,7 @@ func (suite *RPCEngineTestSuite) TestPermissionCheckerCalledOnAdmin() {
 
 	suite.permissionChecker.Calls = nil
 
-	_ = suite.makeApiRequestWithToken(api.Request{
+	_ = suite.makeAPIRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "admin",
@@ -895,7 +895,7 @@ func (suite *RPCEngineTestSuite) TestPermissionCheckerCalledOnRestricted() {
 
 	suite.permissionChecker.Calls = nil
 
-	_ = suite.makeApiRequestWithToken(api.Request{
+	_ = suite.makeAPIRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "restricted",

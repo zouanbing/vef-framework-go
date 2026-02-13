@@ -108,7 +108,7 @@ func (suite *BaseSuite) setupBaseSuite(resourceCtors ...any) {
 
 	opts := make([]fx.Option, len(resourceCtors)+2)
 	for i, ctor := range resourceCtors {
-		opts[i] = vef.ProvideApiResource(ctor)
+		opts[i] = vef.ProvideAPIResource(ctor)
 	}
 
 	// Replace the database config to match the external DB
@@ -133,7 +133,7 @@ func (suite *BaseSuite) tearDownBaseSuite() {
 
 // Helper methods for the suite
 
-func (suite *BaseSuite) makeApiRequest(body api.Request) *http.Response {
+func (suite *BaseSuite) makeAPIRequest(body api.Request) *http.Response {
 	jsonBody, err := encoding.ToJSON(body)
 	suite.Require().NoError(err)
 

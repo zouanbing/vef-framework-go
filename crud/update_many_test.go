@@ -93,7 +93,7 @@ func (suite *UpdateManyTestSuite) TearDownSuite() {
 func (suite *UpdateManyTestSuite) TestUpdateManyBasic() {
 	suite.T().Logf("Testing UpdateMany API basic functionality for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_update_many",
 			Action:   "update_many",
@@ -124,7 +124,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyBasic() {
 	body := suite.readBody(resp)
 	suite.True(body.IsOk(), "Should return successful response")
 	suite.Equal(body.Message, i18n.T(result.OkMessage), "Should return OK message")
-	// UpdateManyApi returns no data, just success status
+	// UpdateManyAPI returns no data, just success status
 
 	suite.T().Logf("Successfully updated 2 users in batch")
 }
@@ -133,7 +133,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyBasic() {
 func (suite *UpdateManyTestSuite) TestUpdateManyWithPreHook() {
 	suite.T().Logf("Testing UpdateMany API with PreUpdateMany hook for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_update_many_prehook",
 			Action:   "update_many",
@@ -173,7 +173,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyWithPreHook() {
 func (suite *UpdateManyTestSuite) TestUpdateManyWithPostHook() {
 	suite.T().Logf("Testing UpdateMany API with PostUpdateMany hook for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_update_many_posthook",
 			Action:   "update_many",
@@ -215,7 +215,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 	suite.T().Logf("Testing UpdateMany API negative cases for %s", suite.dbType)
 
 	suite.Run("EmptyArray", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update_many",
 				Action:   "update_many",
@@ -232,7 +232,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 	})
 
 	suite.Run("NonExistentUser", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update_many",
 				Action:   "update_many",
@@ -267,7 +267,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 	})
 
 	suite.Run("MissingID", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update_many",
 				Action:   "update_many",
@@ -302,7 +302,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 	})
 
 	suite.Run("InvalidEmail", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update_many",
 				Action:   "update_many",
@@ -336,7 +336,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 	})
 
 	suite.Run("InvalidAge", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update_many",
 				Action:   "update_many",
@@ -370,7 +370,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 	})
 
 	suite.Run("DuplicateEmailInBatch", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update_many",
 				Action:   "update_many",
@@ -405,7 +405,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 	})
 
 	suite.Run("DuplicateEmailWithExisting", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update_many",
 				Action:   "update_many",
@@ -439,7 +439,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyTransactionRollback() {
 
 	suite.Run("AllOrNothingSemantics", func() {
 		// Try to update a batch where the second item will fail
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update_many",
 				Action:   "update_many",
@@ -486,7 +486,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyTransactionRollback() {
 func (suite *UpdateManyTestSuite) TestUpdateManyPartialUpdate() {
 	suite.T().Logf("Testing UpdateMany API partial update for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_update_many",
 			Action:   "update_many",

@@ -155,8 +155,8 @@ import (
 
 var Module = vef.Module(
     "app:sys",
-    vef.ProvideApiResource(resources.NewUserResource),
-    vef.ProvideApiResource(resources.NewRoleResource),
+    vef.ProvideAPIResource(resources.NewUserResource),
+    vef.ProvideAPIResource(resources.NewRoleResource),
 )
 ```
 
@@ -214,7 +214,7 @@ VEF leverages Uber FX for dependency injection. Register components using helper
 
 ```go
 vef.Run(
-    vef.ProvideApiResource(NewUserResource),
+    vef.ProvideAPIResource(NewUserResource),
     vef.Provide(NewUserService),
 )
 ```
@@ -367,7 +367,7 @@ func NewUserResource() api.Resource {
 ```go
 func main() {
     vef.Run(
-        vef.ProvideApiResource(resources.NewUserResource),
+        vef.ProvideAPIResource(resources.NewUserResource),
     )
 }
 ```
@@ -407,9 +407,9 @@ Create: crud.NewCreate[User, UserParams]().
     RateLimit(10, 1*time.Minute).      // 10 requests per minute
 ```
 
-### FindApi Configuration Methods
+### Find Operation Configuration Methods
 
-All FindApi types (FindOne, FindAll, FindPage, FindTree, FindOptions, FindTreeOptions, Export) support a unified query configuration system.
+All find operation types (FindOne, FindAll, FindPage, FindTree, FindOptions, FindTreeOptions, Export) support a unified query configuration system.
 
 | Method | Description |
 |--------|-------------|

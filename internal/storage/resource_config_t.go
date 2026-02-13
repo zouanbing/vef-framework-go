@@ -2,5 +2,5 @@
 
 package storage
 
-// isStorageApiPublic controls whether storage APIs are public in test environment.
-const isStorageApiPublic = true
+// isStorageAPIPublic controls whether storage APIs are public in test environment.
+const isStorageAPIPublic = true

@@ -21,7 +21,7 @@ const (
 	defaultFilenameCsv   = "data.csv"
 )
 
-type exportApi[TModel, TSearch any] struct {
+type exportOperation[TModel, TSearch any] struct {
 	Find[TModel, TSearch, []TModel, Export[TModel, TSearch]]
 
 	defaultFormat   TabularFormat
@@ -31,35 +31,35 @@ type exportApi[TModel, TSearch any] struct {
 	filenameBuilder FilenameBuilder[TSearch]
 }
 
-func (a *exportApi[TModel, TSearch]) Provide() []api.OperationSpec {
+func (a *exportOperation[TModel, TSearch]) Provide() []api.OperationSpec {
 	return []api.OperationSpec{a.Build(a.exportData)}
 }
 
-func (a *exportApi[TModel, TSearch]) WithDefaultFormat(format TabularFormat) Export[TModel, TSearch] {
+func (a *exportOperation[TModel, TSearch]) WithDefaultFormat(format TabularFormat) Export[TModel, TSearch] {
 	a.defaultFormat = format
 
 	return a
 }
 
-func (a *exportApi[TModel, TSearch]) WithExcelOptions(opts ...excel.ExportOption) Export[TModel, TSearch] {
+func (a *exportOperation[TModel, TSearch]) WithExcelOptions(opts ...excel.ExportOption) Export[TModel, TSearch] {
 	a.excelOpts = opts
 
 	return a
 }
 
-func (a *exportApi[TModel, TSearch]) WithCsvOptions(opts ...csv.ExportOption) Export[TModel, TSearch] {
+func (a *exportOperation[TModel, TSearch]) WithCsvOptions(opts ...csv.ExportOption) Export[TModel, TSearch] {
 	a.csvOpts = opts
 
 	return a
 }
 
-func (a *exportApi[TModel, TSearch]) WithPreExport(processor PreExportProcessor[TModel, TSearch]) Export[TModel, TSearch] {
+func (a *exportOperation[TModel, TSearch]) WithPreExport(processor PreExportProcessor[TModel, TSearch]) Export[TModel, TSearch] {
 	a.preExport = processor
 
 	return a
 }
 
-func (a *exportApi[TModel, TSearch]) WithFilenameBuilder(builder FilenameBuilder[TSearch]) Export[TModel, TSearch] {
+func (a *exportOperation[TModel, TSearch]) WithFilenameBuilder(builder FilenameBuilder[TSearch]) Export[TModel, TSearch] {
 	a.filenameBuilder = builder
 
 	return a
@@ -71,8 +71,8 @@ type exportConfig struct {
 	Format TabularFormat `json:"format"`
 }
 
-func (a *exportApi[TModel, TSearch]) exportData(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, transformer mold.Transformer, config exportConfig, search TSearch, meta api.Meta) error, error) {
-	if err := a.Setup(db, &FindApiConfig{
+func (a *exportOperation[TModel, TSearch]) exportData(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, transformer mold.Transformer, config exportConfig, search TSearch, meta api.Meta) error, error) {
+	if err := a.Setup(db, &FindOperationConfig{
 		QueryParts: &QueryPartsConfig{
 			Condition:         []QueryPart{QueryRoot},
 			Sort:              []QueryPart{QueryRoot},

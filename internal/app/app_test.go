@@ -53,7 +53,7 @@ func (suite *AppTestSuite) SetupSuite() {
 			// Re-initialize i18n with default language after clearing env var
 			_ = i18n.SetLanguage("")
 		}),
-		vef.ProvideApiResource(NewTestResource),
+		vef.ProvideAPIResource(NewTestResource),
 	)
 
 	suite.Require().NotNil(suite.app, "App should be initialized")
@@ -124,7 +124,7 @@ func (suite *AppTestSuite) TestCustomResource() {
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 		resp, err := suite.app.Test(req, 2*time.Second)
-		suite.NoError(err, "Api request should not fail")
+		suite.NoError(err, "API request should not fail")
 		suite.NotNil(resp, "Response should not be nil")
 		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 

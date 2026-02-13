@@ -20,7 +20,7 @@ func (*ResourceProviderCollector) Collect(resource api.Resource) []api.Operation
 	specs := resource.Operations()
 	if len(specs) > 0 {
 		logger.Infof(
-			"Collected %d Api operations from resource provider: %s",
+			"Collected %d API operations from resource provider: %s",
 			len(specs), reflect.TypeOf(resource).String(),
 		)
 	}

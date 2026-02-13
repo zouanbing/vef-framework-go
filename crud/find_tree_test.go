@@ -129,7 +129,7 @@ func (suite *FindTreeTestSuite) TearDownSuite() {
 func (suite *FindTreeTestSuite) TestFindTreeBasic() {
 	suite.T().Logf("Testing FindTree API basic functionality for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/category_tree",
 			Action:   "find_tree",
@@ -169,7 +169,7 @@ func (suite *FindTreeTestSuite) TestFindTreeWithSearch() {
 	suite.T().Logf("Testing FindTree API with search filters for %s", suite.dbType)
 
 	suite.Run("SearchByCode", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/category_tree",
 				Action:   "find_tree",
@@ -194,7 +194,7 @@ func (suite *FindTreeTestSuite) TestFindTreeWithSearch() {
 	})
 
 	suite.Run("SearchByParentID", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/category_tree",
 				Action:   "find_tree",
@@ -223,7 +223,7 @@ func (suite *FindTreeTestSuite) TestFindTreeWithSearch() {
 	})
 
 	suite.Run("SearchByKeyword", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/category_tree",
 				Action:   "find_tree",
@@ -249,7 +249,7 @@ func (suite *FindTreeTestSuite) TestFindTreeWithSearch() {
 func (suite *FindTreeTestSuite) TestFindTreeWithFilterApplier() {
 	suite.T().Logf("Testing FindTree API with filter applier for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/category_tree_filtered",
 			Action:   "find_tree",
@@ -277,7 +277,7 @@ func (suite *FindTreeTestSuite) TestFindTreeWithFilterApplier() {
 func (suite *FindTreeTestSuite) TestFindTreeWithSortApplier() {
 	suite.T().Logf("Testing FindTree API with sort applier for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/category_tree_ordered",
 			Action:   "find_tree",
@@ -310,7 +310,7 @@ func (suite *FindTreeTestSuite) TestFindTreeNegativeCases() {
 	suite.T().Logf("Testing FindTree API negative cases for %s", suite.dbType)
 
 	suite.Run("NoMatchingRecords", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/category_tree",
 				Action:   "find_tree",
@@ -332,7 +332,7 @@ func (suite *FindTreeTestSuite) TestFindTreeNegativeCases() {
 	})
 
 	suite.Run("EmptySearchCriteria", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/category_tree",
 				Action:   "find_tree",
@@ -356,7 +356,7 @@ func (suite *FindTreeTestSuite) TestFindTreeNegativeCases() {
 func (suite *FindTreeTestSuite) TestFindTreeWithAuditUserNames() {
 	suite.T().Logf("Testing FindTree API with audit user names for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/category_tree_audit",
 			Action:   "find_tree",

@@ -92,7 +92,7 @@ func (suite *UpdateTestSuite) TearDownSuite() {
 func (suite *UpdateTestSuite) TestUpdateBasic() {
 	suite.T().Logf("Testing Update API basic functionality for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_update",
 			Action:   "update",
@@ -120,7 +120,7 @@ func (suite *UpdateTestSuite) TestUpdateBasic() {
 func (suite *UpdateTestSuite) TestUpdateWithPreHook() {
 	suite.T().Logf("Testing Update API with PreUpdate hook for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_update_prehook",
 			Action:   "update",
@@ -148,7 +148,7 @@ func (suite *UpdateTestSuite) TestUpdateWithPreHook() {
 func (suite *UpdateTestSuite) TestUpdateWithPostHook() {
 	suite.T().Logf("Testing Update API with PostUpdate hook for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_update_posthook",
 			Action:   "update",
@@ -178,7 +178,7 @@ func (suite *UpdateTestSuite) TestUpdateNegativeCases() {
 	suite.T().Logf("Testing Update API negative cases for %s", suite.dbType)
 
 	suite.Run("NonExistentUser", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update",
 				Action:   "update",
@@ -202,7 +202,7 @@ func (suite *UpdateTestSuite) TestUpdateNegativeCases() {
 	})
 
 	suite.Run("MissingID", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update",
 				Action:   "update",
@@ -225,7 +225,7 @@ func (suite *UpdateTestSuite) TestUpdateNegativeCases() {
 	})
 
 	suite.Run("InvalidEmail", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update",
 				Action:   "update",
@@ -248,7 +248,7 @@ func (suite *UpdateTestSuite) TestUpdateNegativeCases() {
 	})
 
 	suite.Run("InvalidAge", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update",
 				Action:   "update",
@@ -271,7 +271,7 @@ func (suite *UpdateTestSuite) TestUpdateNegativeCases() {
 	})
 
 	suite.Run("DuplicateEmail", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update",
 				Action:   "update",
@@ -300,7 +300,7 @@ func (suite *UpdateTestSuite) TestUpdateNegativeCases() {
 func (suite *UpdateTestSuite) TestPartialUpdate() {
 	suite.T().Logf("Testing Update API partial update for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_update",
 			Action:   "update",

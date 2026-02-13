@@ -8,25 +8,25 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-type findOptionsApi[TModel, TSearch any] struct {
+type findOptionsOperation[TModel, TSearch any] struct {
 	Find[TModel, TSearch, []DataOption, FindOptions[TModel, TSearch]]
 
 	defaultColumnMapping *DataOptionColumnMapping
 }
 
-func (a *findOptionsApi[TModel, TSearch]) Provide() []api.OperationSpec {
+func (a *findOptionsOperation[TModel, TSearch]) Provide() []api.OperationSpec {
 	return []api.OperationSpec{a.Build(a.findOptions)}
 }
 
 // This mapping provides fallback values for column mapping when not explicitly specified in queries.
-func (a *findOptionsApi[TModel, TSearch]) WithDefaultColumnMapping(mapping *DataOptionColumnMapping) FindOptions[TModel, TSearch] {
+func (a *findOptionsOperation[TModel, TSearch]) WithDefaultColumnMapping(mapping *DataOptionColumnMapping) FindOptions[TModel, TSearch] {
 	a.defaultColumnMapping = mapping
 
 	return a
 }
 
-func (a *findOptionsApi[TModel, TSearch]) findOptions(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, config DataOptionConfig, search TSearch, meta api.Meta) error, error) {
-	if err := a.Setup(db, &FindApiConfig{
+func (a *findOptionsOperation[TModel, TSearch]) findOptions(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, config DataOptionConfig, search TSearch, meta api.Meta) error, error) {
+	if err := a.Setup(db, &FindOperationConfig{
 		QueryParts: &QueryPartsConfig{
 			Condition:         []QueryPart{QueryRoot},
 			Sort:              []QueryPart{QueryRoot},

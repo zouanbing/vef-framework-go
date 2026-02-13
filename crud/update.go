@@ -16,7 +16,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 
-type updateApi[TModel, TParams any] struct {
+type updateOperation[TModel, TParams any] struct {
 	Builder[Update[TModel, TParams]]
 
 	preUpdate        PreUpdateProcessor[TModel, TParams]
@@ -24,29 +24,29 @@ type updateApi[TModel, TParams any] struct {
 	dataPermDisabled bool
 }
 
-func (u *updateApi[TModel, TParams]) Provide() []api.OperationSpec {
+func (u *updateOperation[TModel, TParams]) Provide() []api.OperationSpec {
 	return []api.OperationSpec{u.Build(u.update)}
 }
 
-func (u *updateApi[TModel, TParams]) WithPreUpdate(processor PreUpdateProcessor[TModel, TParams]) Update[TModel, TParams] {
+func (u *updateOperation[TModel, TParams]) WithPreUpdate(processor PreUpdateProcessor[TModel, TParams]) Update[TModel, TParams] {
 	u.preUpdate = processor
 
 	return u
 }
 
-func (u *updateApi[TModel, TParams]) WithPostUpdate(processor PostUpdateProcessor[TModel, TParams]) Update[TModel, TParams] {
+func (u *updateOperation[TModel, TParams]) WithPostUpdate(processor PostUpdateProcessor[TModel, TParams]) Update[TModel, TParams] {
 	u.postUpdate = processor
 
 	return u
 }
 
-func (u *updateApi[TModel, TParams]) DisableDataPerm() Update[TModel, TParams] {
+func (u *updateOperation[TModel, TParams]) DisableDataPerm() Update[TModel, TParams] {
 	u.dataPermDisabled = true
 
 	return u
 }
 
-func (u *updateApi[TModel, TParams]) update(db orm.DB, sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.DB, params TParams) error, error) {
+func (u *updateOperation[TModel, TParams]) update(db orm.DB, sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.DB, params TParams) error, error) {
 	promoter := storage.NewPromoter[TModel](sc, publisher)
 	schema := db.TableOf((*TModel)(nil))
 	pks := db.ModelPKFields((*TModel)(nil))

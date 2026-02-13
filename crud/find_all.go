@@ -10,16 +10,16 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-type findAllApi[TModel, TSearch any] struct {
+type findAllOperation[TModel, TSearch any] struct {
 	Find[TModel, TSearch, []TModel, FindAll[TModel, TSearch]]
 }
 
-func (a *findAllApi[TModel, TSearch]) Provide() []api.OperationSpec {
+func (a *findAllOperation[TModel, TSearch]) Provide() []api.OperationSpec {
 	return []api.OperationSpec{a.Build(a.findAll)}
 }
 
-func (a *findAllApi[TModel, TSearch]) findAll(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, transformer mold.Transformer, search TSearch, meta api.Meta) error, error) {
-	if err := a.Setup(db, &FindApiConfig{
+func (a *findAllOperation[TModel, TSearch]) findAll(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, transformer mold.Transformer, search TSearch, meta api.Meta) error, error) {
+	if err := a.Setup(db, &FindOperationConfig{
 		QueryParts: &QueryPartsConfig{
 			Condition:         []QueryPart{QueryRoot},
 			Sort:              []QueryPart{QueryRoot},

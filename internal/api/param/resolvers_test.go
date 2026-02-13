@@ -38,7 +38,7 @@ func (suite *ParamResolversTestSuite) SetupSuite() {
 	suite.T().Log("Setting up ParamResolversTestSuite")
 
 	opts := []fx.Option{
-		vef.ProvideApiResource(NewTestParamResolversResource),
+		vef.ProvideAPIResource(NewTestParamResolversResource),
 		fx.Replace(&config.DatasourceConfig{
 			Type: config.SQLite,
 		}),
@@ -60,7 +60,7 @@ func (suite *ParamResolversTestSuite) TearDownSuite() {
 
 func (suite *ParamResolversTestSuite) TestCtxResolver() {
 	suite.Run("InjectFiberCtx", func() {
-		resp := suite.makeApiRequest("verify_ctx", "{}")
+		resp := suite.makeAPIRequest("verify_ctx", "{}")
 		suite.Equal(200, resp.StatusCode)
 		suite.Contains(suite.readBody(resp), `"injected":true`)
 	})
@@ -68,7 +68,7 @@ func (suite *ParamResolversTestSuite) TestCtxResolver() {
 
 func (suite *ParamResolversTestSuite) TestDBResolver() {
 	suite.Run("InjectOrmDB", func() {
-		resp := suite.makeApiRequest("verify_db", "{}")
+		resp := suite.makeAPIRequest("verify_db", "{}")
 		suite.Equal(200, resp.StatusCode)
 		suite.Contains(suite.readBody(resp), `"injected":true`)
 	})
@@ -76,7 +76,7 @@ func (suite *ParamResolversTestSuite) TestDBResolver() {
 
 func (suite *ParamResolversTestSuite) TestLoggerResolver() {
 	suite.Run("InjectLogger", func() {
-		resp := suite.makeApiRequest("verify_logger", "{}")
+		resp := suite.makeAPIRequest("verify_logger", "{}")
 		suite.Equal(200, resp.StatusCode)
 		suite.Contains(suite.readBody(resp), `"injected":true`)
 	})
@@ -84,7 +84,7 @@ func (suite *ParamResolversTestSuite) TestLoggerResolver() {
 
 func (suite *ParamResolversTestSuite) TestPrincipalResolver() {
 	suite.Run("InjectPrincipal", func() {
-		resp := suite.makeApiRequest("verify_principal", "{}")
+		resp := suite.makeAPIRequest("verify_principal", "{}")
 		suite.Equal(200, resp.StatusCode)
 		suite.Contains(suite.readBody(resp), `"injected":true`)
 	})
@@ -92,7 +92,7 @@ func (suite *ParamResolversTestSuite) TestPrincipalResolver() {
 
 func (suite *ParamResolversTestSuite) TestDBFactoryResolver() {
 	suite.Run("InjectDBToFactory", func() {
-		resp := suite.makeApiRequest("verify_db_factory", "{}")
+		resp := suite.makeAPIRequest("verify_db_factory", "{}")
 		suite.Equal(200, resp.StatusCode)
 		suite.Contains(suite.readBody(resp), `"factory_injected":true`)
 	})
@@ -100,7 +100,7 @@ func (suite *ParamResolversTestSuite) TestDBFactoryResolver() {
 
 func (suite *ParamResolversTestSuite) TestStorageResolver() {
 	suite.Run("InjectStorageService", func() {
-		resp := suite.makeApiRequest("verify_storage", "{}")
+		resp := suite.makeAPIRequest("verify_storage", "{}")
 		suite.Equal(200, resp.StatusCode)
 		suite.Contains(suite.readBody(resp), `"injected":true`)
 	})
@@ -108,7 +108,7 @@ func (suite *ParamResolversTestSuite) TestStorageResolver() {
 
 func (suite *ParamResolversTestSuite) TestStorageFactoryResolver() {
 	suite.Run("InjectStorageToFactory", func() {
-		resp := suite.makeApiRequest("verify_storage_factory", "{}")
+		resp := suite.makeAPIRequest("verify_storage_factory", "{}")
 		suite.Equal(200, resp.StatusCode)
 		suite.Contains(suite.readBody(resp), `"factory_injected":true`)
 	})
@@ -116,7 +116,7 @@ func (suite *ParamResolversTestSuite) TestStorageFactoryResolver() {
 
 func (suite *ParamResolversTestSuite) TestMoldResolver() {
 	suite.Run("InjectMoldTransformer", func() {
-		resp := suite.makeApiRequest("verify_mold", "{}")
+		resp := suite.makeAPIRequest("verify_mold", "{}")
 		suite.Equal(200, resp.StatusCode)
 		suite.Contains(suite.readBody(resp), `"injected":true`)
 	})
@@ -124,7 +124,7 @@ func (suite *ParamResolversTestSuite) TestMoldResolver() {
 
 func (suite *ParamResolversTestSuite) TestMoldFactoryResolver() {
 	suite.Run("InjectMoldToFactory", func() {
-		resp := suite.makeApiRequest("verify_mold_factory", "{}")
+		resp := suite.makeAPIRequest("verify_mold_factory", "{}")
 		suite.Equal(200, resp.StatusCode)
 		suite.Contains(suite.readBody(resp), `"factory_injected":true`)
 	})
@@ -132,7 +132,7 @@ func (suite *ParamResolversTestSuite) TestMoldFactoryResolver() {
 
 func (suite *ParamResolversTestSuite) TestEventResolver() {
 	suite.Run("InjectEventPublisher", func() {
-		resp := suite.makeApiRequest("verify_event", "{}")
+		resp := suite.makeAPIRequest("verify_event", "{}")
 		suite.Equal(200, resp.StatusCode)
 		suite.Contains(suite.readBody(resp), `"injected":true`)
 	})
@@ -140,7 +140,7 @@ func (suite *ParamResolversTestSuite) TestEventResolver() {
 
 func (suite *ParamResolversTestSuite) TestEventFactoryResolver() {
 	suite.Run("InjectEventToFactory", func() {
-		resp := suite.makeApiRequest("verify_event_factory", "{}")
+		resp := suite.makeAPIRequest("verify_event_factory", "{}")
 		suite.Equal(200, resp.StatusCode)
 		suite.Contains(suite.readBody(resp), `"factory_injected":true`)
 	})
@@ -148,7 +148,7 @@ func (suite *ParamResolversTestSuite) TestEventFactoryResolver() {
 
 func (suite *ParamResolversTestSuite) TestCronResolver() {
 	suite.Run("InjectCronScheduler", func() {
-		resp := suite.makeApiRequest("verify_cron", "{}")
+		resp := suite.makeAPIRequest("verify_cron", "{}")
 		suite.Equal(200, resp.StatusCode)
 		suite.Contains(suite.readBody(resp), `"injected":true`)
 	})
@@ -156,13 +156,13 @@ func (suite *ParamResolversTestSuite) TestCronResolver() {
 
 func (suite *ParamResolversTestSuite) TestCronFactoryResolver() {
 	suite.Run("InjectCronToFactory", func() {
-		resp := suite.makeApiRequest("verify_cron_factory", "{}")
+		resp := suite.makeAPIRequest("verify_cron_factory", "{}")
 		suite.Equal(200, resp.StatusCode)
 		suite.Contains(suite.readBody(resp), `"factory_injected":true`)
 	})
 }
 
-func (suite *ParamResolversTestSuite) makeApiRequest(action, body string) *http.Response {
+func (suite *ParamResolversTestSuite) makeAPIRequest(action, body string) *http.Response {
 	fullBody := `{"resource": "test/param_resolvers", "action": "` + action + `", "version": "v1", "params": ` + body + `}`
 
 	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(fullBody))

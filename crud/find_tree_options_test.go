@@ -116,7 +116,7 @@ func (suite *FindTreeOptionsTestSuite) TearDownSuite() {
 func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsBasic() {
 	suite.T().Logf("Testing FindTreeOptions API basic functionality for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/category_tree_options",
 			Action:   "find_tree_options",
@@ -161,7 +161,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithConfig() {
 	suite.T().Logf("Testing FindTreeOptions API with custom config for %s", suite.dbType)
 
 	suite.Run("DefaultConfig", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/category_tree_options",
 				Action:   "find_tree_options",
@@ -180,7 +180,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithConfig() {
 	})
 
 	suite.Run("CustomConfig", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/category_tree_options",
 				Action:   "find_tree_options",
@@ -213,7 +213,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithConfig() {
 	})
 
 	suite.Run("WithDescription", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/category_tree_options_custom",
 				Action:   "find_tree_options",
@@ -241,7 +241,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithSearch() {
 	suite.T().Logf("Testing FindTreeOptions API with search conditions for %s", suite.dbType)
 
 	suite.Run("SearchByCode", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/category_tree_options",
 				Action:   "find_tree_options",
@@ -266,7 +266,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithSearch() {
 	})
 
 	suite.Run("SearchByKeyword", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/category_tree_options",
 				Action:   "find_tree_options",
@@ -292,7 +292,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithSearch() {
 func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithFilterApplier() {
 	suite.T().Logf("Testing FindTreeOptions API with filter applier for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/category_tree_options_filtered",
 			Action:   "find_tree_options",
@@ -321,7 +321,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsNegativeCases() {
 	suite.T().Logf("Testing FindTreeOptions API negative cases for %s", suite.dbType)
 
 	suite.Run("NoMatchingRecords", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/category_tree_options",
 				Action:   "find_tree_options",
@@ -343,7 +343,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsNegativeCases() {
 	})
 
 	suite.Run("InvalidFieldName", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/category_tree_options",
 				Action:   "find_tree_options",
@@ -368,7 +368,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithMeta() {
 	suite.T().Logf("Testing FindTreeOptions API with meta columns for %s", suite.dbType)
 
 	suite.Run("DefaultMetaColumns", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/category_tree_options_meta",
 				Action:   "find_tree_options",
@@ -395,7 +395,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithMeta() {
 	})
 
 	suite.Run("CustomMetaColumns", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/category_tree_options",
 				Action:   "find_tree_options",
@@ -424,7 +424,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithMeta() {
 	})
 
 	suite.Run("MetaColumnsWithAlias", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/category_tree_options",
 				Action:   "find_tree_options",
@@ -456,7 +456,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithMeta() {
 	})
 
 	suite.Run("VerifyMetaInChildren", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/category_tree_options_meta",
 				Action:   "find_tree_options",
@@ -488,7 +488,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithMeta() {
 	})
 
 	suite.Run("InvalidMetaColumn", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/category_tree_options",
 				Action:   "find_tree_options",

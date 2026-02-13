@@ -106,7 +106,7 @@ func (suite *FindPageTestSuite) TearDownSuite() {
 func (suite *FindPageTestSuite) TestFindPageBasic() {
 	suite.T().Logf("Testing FindPage API basic functionality for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_page",
 			Action:   "find_page",
@@ -140,7 +140,7 @@ func (suite *FindPageTestSuite) TestFindPagePagination() {
 	suite.T().Logf("Testing FindPage API pagination for %s", suite.dbType)
 
 	suite.Run("FirstPage", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_page",
 				Action:   "find_page",
@@ -168,7 +168,7 @@ func (suite *FindPageTestSuite) TestFindPagePagination() {
 	})
 
 	suite.Run("SecondPage", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_page",
 				Action:   "find_page",
@@ -196,7 +196,7 @@ func (suite *FindPageTestSuite) TestFindPagePagination() {
 	})
 
 	suite.Run("LastPage", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_page",
 				Action:   "find_page",
@@ -223,7 +223,7 @@ func (suite *FindPageTestSuite) TestFindPagePagination() {
 	})
 
 	suite.Run("EmptyPage", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_page",
 				Action:   "find_page",
@@ -253,7 +253,7 @@ func (suite *FindPageTestSuite) TestFindPagePagination() {
 func (suite *FindPageTestSuite) TestFindPageWithSearch() {
 	suite.T().Logf("Testing FindPage API with search filters for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_page",
 			Action:   "find_page",
@@ -285,7 +285,7 @@ func (suite *FindPageTestSuite) TestFindPageWithSearch() {
 func (suite *FindPageTestSuite) TestFindPageWithWithProcessor() {
 	suite.T().Logf("Testing FindPage API with processor for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_page_processed",
 			Action:   "find_page",
@@ -317,7 +317,7 @@ func (suite *FindPageTestSuite) TestFindPageWithWithProcessor() {
 func (suite *FindPageTestSuite) TestFindPageWithFilterApplier() {
 	suite.T().Logf("Testing FindPage API with filter applier for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_page_filtered",
 			Action:   "find_page",
@@ -347,7 +347,7 @@ func (suite *FindPageTestSuite) TestFindPageNegativeCases() {
 	suite.T().Logf("Testing FindPage API negative cases for %s", suite.dbType)
 
 	suite.Run("InvalidPageNumber", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_page",
 				Action:   "find_page",
@@ -370,7 +370,7 @@ func (suite *FindPageTestSuite) TestFindPageNegativeCases() {
 	})
 
 	suite.Run("InvalidPageSize", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_page",
 				Action:   "find_page",
@@ -395,7 +395,7 @@ func (suite *FindPageTestSuite) TestFindPageNegativeCases() {
 	})
 
 	suite.Run("NoMatchingRecords", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_page",
 				Action:   "find_page",
@@ -428,7 +428,7 @@ func (suite *FindPageTestSuite) TestFindPageNegativeCases() {
 func (suite *FindPageTestSuite) TestFindPageWithAuditUserNames() {
 	suite.T().Logf("Testing FindPage API with audit user names for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_page_audit",
 			Action:   "find_page",

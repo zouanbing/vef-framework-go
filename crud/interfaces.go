@@ -12,7 +12,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/sortx"
 )
 
-// Builder defines the interface for building Api endpoints.
+// Builder defines the interface for building API endpoints.
 type Builder[T any] interface {
 	ResourceKind(kind api.Kind) T
 	Action(action string) T
@@ -101,39 +101,39 @@ type DeleteMany[TModel any] interface {
 }
 
 // Find provides a fluent interface for building find endpoints.
-// All configuration is done through FindApiOptions passed to NewFindXxxApi constructors.
-type Find[TModel, TSearch, TProcessorIn, TApi any] interface {
-	Builder[TApi]
+// All configuration is done through FindOperationOption passed to NewFindXxx constructors.
+type Find[TModel, TSearch, TProcessorIn, TOperation any] interface {
+	Builder[TOperation]
 
-	// Setup initializes the FindApi with framework-level options and validates configuration.
+	// Setup initializes the find operation with framework-level options and validates configuration.
 	// Must be called before query execution. Config specifies which QueryParts framework options apply to.
-	Setup(db orm.DB, config *FindApiConfig, opts ...*FindApiOption) error
-	// ConfigureQuery applies FindApiOptions for the specified QueryPart to the query.
+	Setup(db orm.DB, config *FindOperationConfig, opts ...*FindOperationOption) error
+	// ConfigureQuery applies FindOperationOption for the specified QueryPart to the query.
 	// Returns error if any option applier fails.
 	ConfigureQuery(query orm.SelectQuery, search TSearch, meta api.Meta, ctx fiber.Ctx, part QueryPart) error
 	// Process applies post-query processing to transform results.
 	// Returns input unchanged if no Processor is configured.
 	Process(input TProcessorIn, search TSearch, ctx fiber.Ctx) any
 
-	WithProcessor(processor Processor[TProcessorIn, TSearch]) TApi
-	// WithOptions appends custom FindApiOptions to the query configuration.
-	WithOptions(opts ...*FindApiOption) TApi
+	WithProcessor(processor Processor[TProcessorIn, TSearch]) TOperation
+	// WithOptions appends custom FindOperationOption to the query configuration.
+	WithOptions(opts ...*FindOperationOption) TOperation
 	// WithSelect adds a column to the SELECT clause for specified query parts.
-	WithSelect(column string, parts ...QueryPart) TApi
+	WithSelect(column string, parts ...QueryPart) TOperation
 	// WithSelectAs adds a column with an alias to the SELECT clause for specified query parts.
-	WithSelectAs(column, alias string, parts ...QueryPart) TApi
-	WithDefaultSort(sort ...*sortx.OrderSpec) TApi
+	WithSelectAs(column, alias string, parts ...QueryPart) TOperation
+	WithDefaultSort(sort ...*sortx.OrderSpec) TOperation
 	// WithCondition adds a WHERE condition using ConditionBuilder for specified query parts.
-	WithCondition(fn func(cb orm.ConditionBuilder), parts ...QueryPart) TApi
+	WithCondition(fn func(cb orm.ConditionBuilder), parts ...QueryPart) TOperation
 	// DisableDataPerm disables automatic data permission filtering for this endpoint.
 	// IMPORTANT: Must be called before the API is registered (before Setup() is invoked).
-	DisableDataPerm() TApi
+	DisableDataPerm() TOperation
 	// WithRelation adds a relation join to the query for specified query parts.
-	WithRelation(relation *orm.RelationSpec, parts ...QueryPart) TApi
+	WithRelation(relation *orm.RelationSpec, parts ...QueryPart) TOperation
 	// WithAuditUserNames joins audit user model to populate creator/updater name fields.
-	WithAuditUserNames(userModel any, nameColumn ...string) TApi
+	WithAuditUserNames(userModel any, nameColumn ...string) TOperation
 	// WithQueryApplier adds a custom query modification function for specified query parts.
-	WithQueryApplier(applier func(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) error, parts ...QueryPart) TApi
+	WithQueryApplier(applier func(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) error, parts ...QueryPart) TOperation
 }
 
 // FindOne provides a fluent interface for building find one endpoints.

@@ -2,5 +2,5 @@
 
 package schema
 
-// isSchemaApiPublic controls whether schema APIs are public in production.
-const isSchemaApiPublic = false
+// isSchemaAPIPublic controls whether schema APIs are public in production.
+const isSchemaAPIPublic = false

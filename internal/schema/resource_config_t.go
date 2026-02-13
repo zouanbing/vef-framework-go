@@ -2,5 +2,5 @@
 
 package schema
 
-// isSchemaApiPublic controls whether schema APIs are public in test environment.
-const isSchemaApiPublic = true
+// isSchemaAPIPublic controls whether schema APIs are public in test environment.
+const isSchemaAPIPublic = true

@@ -98,7 +98,7 @@ func (suite *CreateTestSuite) TearDownSuite() {
 func (suite *CreateTestSuite) TestCreateBasic() {
 	suite.T().Logf("Testing Create API basic functionality for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_create",
 			Action:   "create",
@@ -129,7 +129,7 @@ func (suite *CreateTestSuite) TestCreateBasic() {
 func (suite *CreateTestSuite) TestCreateWithPreHook() {
 	suite.T().Logf("Testing Create API with PreCreate hook for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_create_prehook",
 			Action:   "create",
@@ -157,7 +157,7 @@ func (suite *CreateTestSuite) TestCreateWithPreHook() {
 func (suite *CreateTestSuite) TestCreateWithPostHook() {
 	suite.T().Logf("Testing Create API with PostCreate hook for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_create_posthook",
 			Action:   "create",
@@ -188,7 +188,7 @@ func (suite *CreateTestSuite) TestCreateNegativeCases() {
 	suite.T().Logf("Testing Create API negative cases for %s", suite.dbType)
 
 	suite.Run("MissingRequiredField", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_create",
 				Action:   "create",
@@ -209,7 +209,7 @@ func (suite *CreateTestSuite) TestCreateNegativeCases() {
 	})
 
 	suite.Run("InvalidEmail", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_create",
 				Action:   "create",
@@ -231,7 +231,7 @@ func (suite *CreateTestSuite) TestCreateNegativeCases() {
 	})
 
 	suite.Run("InvalidAge", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_create",
 				Action:   "create",
@@ -253,7 +253,7 @@ func (suite *CreateTestSuite) TestCreateNegativeCases() {
 	})
 
 	suite.Run("InvalidStatus", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_create",
 				Action:   "create",
@@ -275,7 +275,7 @@ func (suite *CreateTestSuite) TestCreateNegativeCases() {
 	})
 
 	suite.Run("DuplicateEmail", func() {
-		suite.makeApiRequest(api.Request{
+		suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_create",
 				Action:   "create",
@@ -289,7 +289,7 @@ func (suite *CreateTestSuite) TestCreateNegativeCases() {
 			},
 		})
 
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_create",
 				Action:   "create",

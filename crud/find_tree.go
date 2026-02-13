@@ -14,7 +14,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-type findTreeApi[TModel, TSearch any] struct {
+type findTreeOperation[TModel, TSearch any] struct {
 	Find[TModel, TSearch, []TModel, FindTree[TModel, TSearch]]
 
 	idColumn       string
@@ -22,19 +22,19 @@ type findTreeApi[TModel, TSearch any] struct {
 	treeBuilder    func(flatModels []TModel) []TModel
 }
 
-func (a *findTreeApi[TModel, TSearch]) Provide() []api.OperationSpec {
+func (a *findTreeOperation[TModel, TSearch]) Provide() []api.OperationSpec {
 	return []api.OperationSpec{a.Build(a.findTree)}
 }
 
 // This column is used to identify individual nodes and establish parent-child relationships.
-func (a *findTreeApi[TModel, TSearch]) WithIDColumn(name string) FindTree[TModel, TSearch] {
+func (a *findTreeOperation[TModel, TSearch]) WithIDColumn(name string) FindTree[TModel, TSearch] {
 	a.idColumn = name
 
 	return a
 }
 
 // This column establishes the hierarchical relationship between parent and child nodes.
-func (a *findTreeApi[TModel, TSearch]) WithParentIDColumn(name string) FindTree[TModel, TSearch] {
+func (a *findTreeOperation[TModel, TSearch]) WithParentIDColumn(name string) FindTree[TModel, TSearch] {
 	a.parentIDColumn = name
 
 	return a
@@ -42,7 +42,7 @@ func (a *findTreeApi[TModel, TSearch]) WithParentIDColumn(name string) FindTree[
 
 // WithSelect adds a column to the SELECT clause.
 // Defaults to QueryBase and QueryRecursive for tree queries unless specific parts are provided.
-func (a *findTreeApi[TModel, TSearch]) WithSelect(column string, parts ...QueryPart) FindTree[TModel, TSearch] {
+func (a *findTreeOperation[TModel, TSearch]) WithSelect(column string, parts ...QueryPart) FindTree[TModel, TSearch] {
 	a.Find.WithSelect(column, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase, QueryRecursive})...)
 
 	return a
@@ -50,7 +50,7 @@ func (a *findTreeApi[TModel, TSearch]) WithSelect(column string, parts ...QueryP
 
 // WithSelectAs adds a column with an alias to the SELECT clause.
 // Defaults to QueryBase and QueryRecursive for tree queries unless specific parts are provided.
-func (a *findTreeApi[TModel, TSearch]) WithSelectAs(column, alias string, parts ...QueryPart) FindTree[TModel, TSearch] {
+func (a *findTreeOperation[TModel, TSearch]) WithSelectAs(column, alias string, parts ...QueryPart) FindTree[TModel, TSearch] {
 	a.Find.WithSelectAs(column, alias, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase, QueryRecursive})...)
 
 	return a
@@ -58,7 +58,7 @@ func (a *findTreeApi[TModel, TSearch]) WithSelectAs(column, alias string, parts 
 
 // WithCondition adds a WHERE condition using ConditionBuilder.
 // Defaults to QueryBase (filter starting nodes) unless specific parts are provided.
-func (a *findTreeApi[TModel, TSearch]) WithCondition(fn func(cb orm.ConditionBuilder), parts ...QueryPart) FindTree[TModel, TSearch] {
+func (a *findTreeOperation[TModel, TSearch]) WithCondition(fn func(cb orm.ConditionBuilder), parts ...QueryPart) FindTree[TModel, TSearch] {
 	a.Find.WithCondition(fn, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase})...)
 
 	return a
@@ -66,7 +66,7 @@ func (a *findTreeApi[TModel, TSearch]) WithCondition(fn func(cb orm.ConditionBui
 
 // WithRelation adds a relation join to the query.
 // Defaults to QueryBase and QueryRecursive for tree queries unless specific parts are provided.
-func (a *findTreeApi[TModel, TSearch]) WithRelation(relation *orm.RelationSpec, parts ...QueryPart) FindTree[TModel, TSearch] {
+func (a *findTreeOperation[TModel, TSearch]) WithRelation(relation *orm.RelationSpec, parts ...QueryPart) FindTree[TModel, TSearch] {
 	a.Find.WithRelation(relation, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase, QueryRecursive})...)
 
 	return a
@@ -74,14 +74,14 @@ func (a *findTreeApi[TModel, TSearch]) WithRelation(relation *orm.RelationSpec, 
 
 // WithQueryApplier adds a custom query applier function.
 // Defaults to QueryBase (apply during base CTE selection) unless specific parts are provided.
-func (a *findTreeApi[TModel, TSearch]) WithQueryApplier(applier func(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) error, parts ...QueryPart) FindTree[TModel, TSearch] {
+func (a *findTreeOperation[TModel, TSearch]) WithQueryApplier(applier func(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) error, parts ...QueryPart) FindTree[TModel, TSearch] {
 	a.Find.WithQueryApplier(applier, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase})...)
 
 	return a
 }
 
-func (a *findTreeApi[TModel, TSearch]) findTree(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, transformer mold.Transformer, search TSearch, meta api.Meta) error, error) {
-	if err := a.Setup(db, &FindApiConfig{
+func (a *findTreeOperation[TModel, TSearch]) findTree(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, transformer mold.Transformer, search TSearch, meta api.Meta) error, error) {
+	if err := a.Setup(db, &FindOperationConfig{
 		QueryParts: &QueryPartsConfig{
 			Condition:         []QueryPart{QueryBase},
 			Sort:              []QueryPart{QueryRoot},

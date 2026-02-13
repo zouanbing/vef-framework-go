@@ -16,7 +16,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 
-type updateManyApi[TModel, TParams any] struct {
+type updateManyOperation[TModel, TParams any] struct {
 	Builder[UpdateMany[TModel, TParams]]
 
 	preUpdateMany    PreUpdateManyProcessor[TModel, TParams]
@@ -24,29 +24,29 @@ type updateManyApi[TModel, TParams any] struct {
 	dataPermDisabled bool
 }
 
-func (u *updateManyApi[TModel, TParams]) Provide() []api.OperationSpec {
+func (u *updateManyOperation[TModel, TParams]) Provide() []api.OperationSpec {
 	return []api.OperationSpec{u.Build(u.updateMany)}
 }
 
-func (u *updateManyApi[TModel, TParams]) WithPreUpdateMany(processor PreUpdateManyProcessor[TModel, TParams]) UpdateMany[TModel, TParams] {
+func (u *updateManyOperation[TModel, TParams]) WithPreUpdateMany(processor PreUpdateManyProcessor[TModel, TParams]) UpdateMany[TModel, TParams] {
 	u.preUpdateMany = processor
 
 	return u
 }
 
-func (u *updateManyApi[TModel, TParams]) WithPostUpdateMany(processor PostUpdateManyProcessor[TModel, TParams]) UpdateMany[TModel, TParams] {
+func (u *updateManyOperation[TModel, TParams]) WithPostUpdateMany(processor PostUpdateManyProcessor[TModel, TParams]) UpdateMany[TModel, TParams] {
 	u.postUpdateMany = processor
 
 	return u
 }
 
-func (u *updateManyApi[TModel, TParams]) DisableDataPerm() UpdateMany[TModel, TParams] {
+func (u *updateManyOperation[TModel, TParams]) DisableDataPerm() UpdateMany[TModel, TParams] {
 	u.dataPermDisabled = true
 
 	return u
 }
 
-func (u *updateManyApi[TModel, TParams]) updateMany(db orm.DB, sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.DB, params UpdateManyParams[TParams]) error, error) {
+func (u *updateManyOperation[TModel, TParams]) updateMany(db orm.DB, sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.DB, params UpdateManyParams[TParams]) error, error) {
 	promoter := storage.NewPromoter[TModel](sc, publisher)
 	schema := db.TableOf((*TModel)(nil))
 	pks := db.ModelPKFields((*TModel)(nil))

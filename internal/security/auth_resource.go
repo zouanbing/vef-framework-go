@@ -43,7 +43,7 @@ func NewAuthResource(authManager security.AuthManager, tokenGenerator security.T
 	}
 }
 
-// AuthResource handles authentication-related Api endpoints.
+// AuthResource handles authentication-related API endpoints.
 type AuthResource struct {
 	api.Resource
 

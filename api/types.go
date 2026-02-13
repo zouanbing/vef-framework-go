@@ -82,9 +82,9 @@ func (r *Request) GetMeta(key string) (any, bool) {
 	return value, exists
 }
 
-// OperationSpec defines the specification for an Api endpoint.
+// OperationSpec defines the specification for an API endpoint.
 type OperationSpec struct {
-	// Action is the action name for the Api endpoint
+	// Action is the action name for the API endpoint
 	Action string
 	// EnableAudit indicates whether to enable audit logging for this endpoint
 	EnableAudit bool
@@ -94,7 +94,7 @@ type OperationSpec struct {
 	Public bool
 	// PermToken is the permission token required for access
 	PermToken string
-	// RateLimit represents the rate limit for an Api endpoint
+	// RateLimit represents the rate limit for an API endpoint
 	RateLimit *RateLimitConfig
 	// Handler is the business logic handler.
 	Handler any

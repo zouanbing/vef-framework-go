@@ -14,25 +14,25 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-type findPageApi[TModel, TSearch any] struct {
+type findPageOperation[TModel, TSearch any] struct {
 	Find[TModel, TSearch, []TModel, FindPage[TModel, TSearch]]
 
 	defaultPageSize int
 }
 
-func (a *findPageApi[TModel, TSearch]) Provide() []api.OperationSpec {
+func (a *findPageOperation[TModel, TSearch]) Provide() []api.OperationSpec {
 	return []api.OperationSpec{a.Build(a.findPage)}
 }
 
 // This value is used when the request's page size is zero or invalid.
-func (a *findPageApi[TModel, TSearch]) WithDefaultPageSize(size int) FindPage[TModel, TSearch] {
+func (a *findPageOperation[TModel, TSearch]) WithDefaultPageSize(size int) FindPage[TModel, TSearch] {
 	a.defaultPageSize = size
 
 	return a
 }
 
-func (a *findPageApi[TModel, TSearch]) findPage(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, transformer mold.Transformer, pageable page.Pageable, search TSearch, meta api.Meta) error, error) {
-	if err := a.Setup(db, &FindApiConfig{
+func (a *findPageOperation[TModel, TSearch]) findPage(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, transformer mold.Transformer, pageable page.Pageable, search TSearch, meta api.Meta) error, error) {
+	if err := a.Setup(db, &FindOperationConfig{
 		QueryParts: &QueryPartsConfig{
 			Condition:         []QueryPart{QueryRoot},
 			Sort:              []QueryPart{QueryRoot},

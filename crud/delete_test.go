@@ -89,7 +89,7 @@ func (suite *DeleteTestSuite) TearDownSuite() {
 func (suite *DeleteTestSuite) TestDeleteBasic() {
 	suite.T().Logf("Testing Delete API basic functionality for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_delete",
 			Action:   "delete",
@@ -112,7 +112,7 @@ func (suite *DeleteTestSuite) TestDeleteBasic() {
 func (suite *DeleteTestSuite) TestDeleteWithPreHook() {
 	suite.T().Logf("Testing Delete API with PreDelete hook for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_delete_prehook",
 			Action:   "delete",
@@ -137,7 +137,7 @@ func (suite *DeleteTestSuite) TestDeleteWithPreHook() {
 func (suite *DeleteTestSuite) TestDeleteWithPostHook() {
 	suite.T().Logf("Testing Delete API with PostDelete hook for %s", suite.dbType)
 
-	resp := suite.makeApiRequest(api.Request{
+	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_delete_posthook",
 			Action:   "delete",
@@ -163,7 +163,7 @@ func (suite *DeleteTestSuite) TestDeleteNegativeCases() {
 	suite.T().Logf("Testing Delete API negative cases for %s", suite.dbType)
 
 	suite.Run("NonExistentUser", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_delete",
 				Action:   "delete",
@@ -183,7 +183,7 @@ func (suite *DeleteTestSuite) TestDeleteNegativeCases() {
 	})
 
 	suite.Run("MissingID", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_delete",
 				Action:   "delete",
@@ -204,7 +204,7 @@ func (suite *DeleteTestSuite) TestDeleteNegativeCases() {
 
 	suite.Run("DeleteTwice", func() {
 		// First delete
-		resp1 := suite.makeApiRequest(api.Request{
+		resp1 := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_delete",
 				Action:   "delete",
@@ -222,7 +222,7 @@ func (suite *DeleteTestSuite) TestDeleteNegativeCases() {
 		suite.T().Logf("First delete of user004 succeeded")
 
 		// Try to delete again
-		resp2 := suite.makeApiRequest(api.Request{
+		resp2 := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_delete",
 				Action:   "delete",
@@ -247,8 +247,8 @@ func (suite *DeleteTestSuite) TestDeleteRequiresPrimaryKey() {
 	suite.T().Logf("Testing Delete API primary key requirement for %s", suite.dbType)
 
 	suite.Run("DeleteByEmailShouldFail", func() {
-		// DeleteApi only supports deletion by primary key, not by other fields
-		resp := suite.makeApiRequest(api.Request{
+		// Delete operation only supports deletion by primary key, not by other fields
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_delete",
 				Action:   "delete",
@@ -268,8 +268,8 @@ func (suite *DeleteTestSuite) TestDeleteRequiresPrimaryKey() {
 	})
 
 	suite.Run("DeleteByStatusShouldFail", func() {
-		// DeleteApi only supports deletion by primary key, not by other fields
-		resp := suite.makeApiRequest(api.Request{
+		// Delete operation only supports deletion by primary key, not by other fields
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_delete",
 				Action:   "delete",

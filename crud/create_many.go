@@ -14,30 +14,30 @@ import (
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 
-type createManyApi[TModel, TParams any] struct {
+type createManyOperation[TModel, TParams any] struct {
 	Builder[CreateMany[TModel, TParams]]
 
 	preCreateMany  PreCreateManyProcessor[TModel, TParams]
 	postCreateMany PostCreateManyProcessor[TModel, TParams]
 }
 
-func (c *createManyApi[TModel, TParams]) Provide() []api.OperationSpec {
+func (c *createManyOperation[TModel, TParams]) Provide() []api.OperationSpec {
 	return []api.OperationSpec{c.Build(c.createMany)}
 }
 
-func (c *createManyApi[TModel, TParams]) WithPreCreateMany(processor PreCreateManyProcessor[TModel, TParams]) CreateMany[TModel, TParams] {
+func (c *createManyOperation[TModel, TParams]) WithPreCreateMany(processor PreCreateManyProcessor[TModel, TParams]) CreateMany[TModel, TParams] {
 	c.preCreateMany = processor
 
 	return c
 }
 
-func (c *createManyApi[TModel, TParams]) WithPostCreateMany(processor PostCreateManyProcessor[TModel, TParams]) CreateMany[TModel, TParams] {
+func (c *createManyOperation[TModel, TParams]) WithPostCreateMany(processor PostCreateManyProcessor[TModel, TParams]) CreateMany[TModel, TParams] {
 	c.postCreateMany = processor
 
 	return c
 }
 
-func (c *createManyApi[TModel, TParams]) createMany(sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.DB, params CreateManyParams[TParams]) error, error) {
+func (c *createManyOperation[TModel, TParams]) createMany(sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.DB, params CreateManyParams[TParams]) error, error) {
 	promoter := storage.NewPromoter[TModel](sc, publisher)
 
 	return func(ctx fiber.Ctx, db orm.DB, params CreateManyParams[TParams]) error {

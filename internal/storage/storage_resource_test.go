@@ -51,7 +51,7 @@ func (suite *StorageResourceTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 	suite.testBucketName = testx.TestMinioBucket
 	suite.testObjectKey = "test-upload.txt"
-	suite.testObjectData = []byte("Hello, Storage Api Test!")
+	suite.testObjectData = []byte("Hello, Storage API Test!")
 	suite.testContentType = "text/plain"
 
 	suite.minioContainer = testx.NewMinIOContainer(suite.ctx, &suite.Suite)
@@ -110,7 +110,7 @@ func (suite *StorageResourceTestSuite) setupTestApp() {
 
 // Helper methods for making API requests and reading responses
 
-func (suite *StorageResourceTestSuite) makeApiRequest(body api.Request) *http.Response {
+func (suite *StorageResourceTestSuite) makeAPIRequest(body api.Request) *http.Response {
 	jsonBody, err := encoding.ToJSON(body)
 	suite.Require().NoError(err, "Should encode request to JSON")
 
@@ -118,7 +118,7 @@ func (suite *StorageResourceTestSuite) makeApiRequest(body api.Request) *http.Re
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 	resp, err := suite.app.Test(req)
-	suite.Require().NoError(err, "Api request should not fail")
+	suite.Require().NoError(err, "API request should not fail")
 
 	return resp
 }
@@ -145,7 +145,7 @@ func (suite *StorageResourceTestSuite) makeMultipartRequest(params map[string]st
 	req.Header.Set(fiber.HeaderContentType, writer.FormDataContentType())
 
 	resp, err := suite.app.Test(req)
-	suite.Require().NoError(err, "Api request should not fail")
+	suite.Require().NoError(err, "API request should not fail")
 
 	return resp
 }
@@ -175,7 +175,7 @@ func (suite *StorageResourceTestSuite) TestUpload() {
 	suite.T().Log("Testing file upload functionality")
 
 	suite.Run("Success", func() {
-		uploadData := []byte("Uploaded via Api")
+		uploadData := []byte("Uploaded via API")
 
 		params := map[string]string{
 			"resource": "sys/storage",
@@ -238,7 +238,7 @@ func (suite *StorageResourceTestSuite) TestUpload() {
 	})
 
 	suite.Run("WithJSON", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "upload",
@@ -261,7 +261,7 @@ func (suite *StorageResourceTestSuite) TestGetPresignedURL() {
 	suite.T().Log("Testing presigned URL generation")
 
 	suite.Run("ForDownload", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "get_presigned_url",
@@ -301,7 +301,7 @@ func (suite *StorageResourceTestSuite) TestGetPresignedURL() {
 	})
 
 	suite.Run("ForUpload", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "get_presigned_url",
@@ -338,7 +338,7 @@ func (suite *StorageResourceTestSuite) TestGetPresignedURL() {
 	})
 
 	suite.Run("DefaultExpires", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "get_presigned_url",
@@ -362,7 +362,7 @@ func (suite *StorageResourceTestSuite) TestGetPresignedURL() {
 	suite.Run("CustomExpiration", func() {
 		customExpires := 7200
 
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "get_presigned_url",
@@ -391,7 +391,7 @@ func (suite *StorageResourceTestSuite) TestStatObject() {
 	suite.T().Log("Testing stat object functionality")
 
 	suite.Run("Success", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "stat",
@@ -418,7 +418,7 @@ func (suite *StorageResourceTestSuite) TestStatObject() {
 	})
 
 	suite.Run("NotFound", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "stat",
@@ -458,7 +458,7 @@ func (suite *StorageResourceTestSuite) TestListObjects() {
 			suite.Require().NoError(err, "Should upload test object")
 		}
 
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "list",
@@ -497,7 +497,7 @@ func (suite *StorageResourceTestSuite) TestListObjects() {
 			suite.Require().NoError(err, "Should upload test object")
 		}
 
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "list",
@@ -526,7 +526,7 @@ func (suite *StorageResourceTestSuite) TestListObjects() {
 	})
 
 	suite.Run("WithMaxKeys", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "list",
@@ -642,7 +642,7 @@ func (suite *StorageResourceTestSuite) TestDeleteTemp() {
 		})
 		suite.Require().NoError(err, "Uploaded file should exist")
 
-		deleteResp := suite.makeApiRequest(api.Request{
+		deleteResp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "delete_temp",
@@ -668,7 +668,7 @@ func (suite *StorageResourceTestSuite) TestDeleteTemp() {
 
 	suite.Run("NonTempKeyRejected", func() {
 		nonTempKey := "permanent/file.txt"
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "delete_temp",
@@ -689,7 +689,7 @@ func (suite *StorageResourceTestSuite) TestDeleteTemp() {
 
 	suite.Run("NonExistentFile", func() {
 		nonExistentKey := "temp/non-existent-file.txt"
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "delete_temp",
@@ -708,7 +708,7 @@ func (suite *StorageResourceTestSuite) TestDeleteTemp() {
 	})
 
 	suite.Run("MissingKey", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "delete_temp",

@@ -43,11 +43,11 @@ func (m *HandlerParamResolverManager) Resolve(target reflect.Value, paramType re
 		return resolver, nil
 	}
 
-	if embedsApiParams(paramType) || isBuiltinParamsType(paramType) {
+	if embedsAPIParams(paramType) || isBuiltinParamsType(paramType) {
 		return buildParamsResolver(paramType), nil
 	}
 
-	if embedsApiMeta(paramType) || isBuiltinMetaType(paramType) {
+	if embedsAPIMeta(paramType) || isBuiltinMetaType(paramType) {
 		return buildMetaResolver(paramType), nil
 	}
 

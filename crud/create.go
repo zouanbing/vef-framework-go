@@ -14,30 +14,30 @@ import (
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 
-type createApi[TModel, TParams any] struct {
+type createOperation[TModel, TParams any] struct {
 	Builder[Create[TModel, TParams]]
 
 	preCreate  PreCreateProcessor[TModel, TParams]
 	postCreate PostCreateProcessor[TModel, TParams]
 }
 
-func (c *createApi[TModel, TParams]) Provide() []api.OperationSpec {
+func (c *createOperation[TModel, TParams]) Provide() []api.OperationSpec {
 	return []api.OperationSpec{c.Build(c.create)}
 }
 
-func (c *createApi[TModel, TParams]) WithPreCreate(processor PreCreateProcessor[TModel, TParams]) Create[TModel, TParams] {
+func (c *createOperation[TModel, TParams]) WithPreCreate(processor PreCreateProcessor[TModel, TParams]) Create[TModel, TParams] {
 	c.preCreate = processor
 
 	return c
 }
 
-func (c *createApi[TModel, TParams]) WithPostCreate(processor PostCreateProcessor[TModel, TParams]) Create[TModel, TParams] {
+func (c *createOperation[TModel, TParams]) WithPostCreate(processor PostCreateProcessor[TModel, TParams]) Create[TModel, TParams] {
 	c.postCreate = processor
 
 	return c
 }
 
-func (c *createApi[TModel, TParams]) create(sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.DB, params TParams) error, error) {
+func (c *createOperation[TModel, TParams]) create(sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.DB, params TParams) error, error) {
 	promoter := storage.NewPromoter[TModel](sc, publisher)
 
 	return func(ctx fiber.Ctx, db orm.DB, params TParams) error {

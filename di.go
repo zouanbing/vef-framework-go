@@ -1,9 +1,9 @@
 package vef
 
 import (
-	"github.com/samber/lo"
 	"go.uber.org/fx"
 
+	"github.com/ilxqx/go-streams"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/mcp"
@@ -55,28 +55,15 @@ func StartStopHook[T1, T2 HookFunc](start T1, stop T2) Hook {
 	return fx.StartStopHook(start, stop)
 }
 
-// ProvideApiResource provides an Api resource to the dependency injection container.
+// ProvideAPIResource provides an API resource to the dependency injection container.
 // The resource will be registered in the "vef:api:resources" group.
-func ProvideApiResource(constructor any, paramTags ...string) fx.Option {
+func ProvideAPIResource(constructor any, paramTags ...string) fx.Option {
 	return fx.Provide(
 		fx.Annotate(
 			constructor,
 			fx.As(new(api.Resource)),
 			fx.ParamTags(paramTags...),
 			fx.ResultTags(`group:"vef:api:resources"`),
-		),
-	)
-}
-
-// ProvideOpenApiResource provides an OpenApi resource to the dependency injection container.
-// The resource will be registered in the "vef:openapi:resources" group.
-func ProvideOpenApiResource(constructor any, paramTags ...string) fx.Option {
-	return fx.Provide(
-		fx.Annotate(
-			constructor,
-			fx.As(new(api.Resource)),
-			fx.ParamTags(paramTags...),
-			fx.ResultTags(`group:"vef:openapi:resources"`),
 		),
 	)
 }
@@ -94,9 +81,9 @@ func ProvideMiddleware(constructor any, paramTags ...string) fx.Option {
 	)
 }
 
-// ProvideSpaConfig provides a Single Page Application configuration to the dependency injection container.
+// ProvideSPAConfig provides a Single Page Application configuration to the dependency injection container.
 // The config will be registered in the "vef:spa" group.
-func ProvideSpaConfig(constructor any, paramTags ...string) fx.Option {
+func ProvideSPAConfig(constructor any, paramTags ...string) fx.Option {
 	return fx.Provide(
 		fx.Annotate(
 			constructor,
@@ -121,20 +108,23 @@ func SupplySPAConfigs(config *middleware.SPAConfig, configs ...*middleware.SPACo
 	if len(configs) > 0 {
 		spaConfigs = append(
 			spaConfigs,
-			lo.Map(configs, func(item *middleware.SPAConfig, _ int) any {
-				return fx.Annotate(
-					item,
-					fx.ResultTags(`group:"vef:spa"`),
-				)
-			}),
+			streams.MapTo(
+				streams.FromSlice(configs),
+				func(cfg *middleware.SPAConfig) any {
+					return fx.Annotate(
+						cfg,
+						fx.ResultTags(`group:"vef:spa"`),
+					)
+				},
+			).Collect()...,
 		)
 	}
 
 	return fx.Supply(spaConfigs...)
 }
 
-// ProvideMcpTools provides an MCP tool provider.
-func ProvideMcpTools(constructor any, paramTags ...string) fx.Option {
+// ProvideMCPTools provides an MCP tool provider.
+func ProvideMCPTools(constructor any, paramTags ...string) fx.Option {
 	return fx.Provide(
 		fx.Annotate(
 			constructor,
@@ -145,8 +135,8 @@ func ProvideMcpTools(constructor any, paramTags ...string) fx.Option {
 	)
 }
 
-// ProvideMcpResources provides an MCP resource provider.
-func ProvideMcpResources(constructor any, paramTags ...string) fx.Option {
+// ProvideMCPResources provides an MCP resource provider.
+func ProvideMCPResources(constructor any, paramTags ...string) fx.Option {
 	return fx.Provide(
 		fx.Annotate(
 			constructor,
@@ -157,8 +147,8 @@ func ProvideMcpResources(constructor any, paramTags ...string) fx.Option {
 	)
 }
 
-// ProvideMcpResourceTemplates provides an MCP resource template provider.
-func ProvideMcpResourceTemplates(constructor any, paramTags ...string) fx.Option {
+// ProvideMCPResourceTemplates provides an MCP resource template provider.
+func ProvideMCPResourceTemplates(constructor any, paramTags ...string) fx.Option {
 	return fx.Provide(
 		fx.Annotate(
 			constructor,
@@ -169,8 +159,8 @@ func ProvideMcpResourceTemplates(constructor any, paramTags ...string) fx.Option
 	)
 }
 
-// ProvideMcpPrompts provides an MCP prompt provider.
-func ProvideMcpPrompts(constructor any, paramTags ...string) fx.Option {
+// ProvideMCPPrompts provides an MCP prompt provider.
+func ProvideMCPPrompts(constructor any, paramTags ...string) fx.Option {
 	return fx.Provide(
 		fx.Annotate(
 			constructor,
@@ -181,7 +171,7 @@ func ProvideMcpPrompts(constructor any, paramTags ...string) fx.Option {
 	)
 }
 
-// SupplyMcpServerInfo supplies MCP server info.
-func SupplyMcpServerInfo(info *mcp.ServerInfo) fx.Option {
+// SupplyMCPServerInfo supplies MCP server info.
+func SupplyMCPServerInfo(info *mcp.ServerInfo) fx.Option {
 	return fx.Supply(info)
 }
