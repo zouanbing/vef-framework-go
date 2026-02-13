@@ -5,7 +5,6 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
@@ -59,7 +58,7 @@ func (am *AuthenticatorAuthManager) findAuthenticator(authType string) security.
 
 // maskPrincipal prevents credential leakage in logs by showing only the first 3 chars.
 func maskPrincipal(principal string) string {
-	if principal == constants.Empty {
+	if principal == "" {
 		return "<empty>"
 	}
 

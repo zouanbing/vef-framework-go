@@ -1,10 +1,18 @@
 package config
 
-import "github.com/ilxqx/vef-framework-go/constants"
+// StorageProvider represents supported storage backend types.
+type StorageProvider string
+
+// Supported storage providers.
+const (
+	StorageMinIO      StorageProvider = "minio"
+	StorageMemory     StorageProvider = "memory"
+	StorageFilesystem StorageProvider = "filesystem"
+)
 
 // StorageConfig defines storage provider settings.
 type StorageConfig struct {
-	Provider   constants.StorageProvider `config:"provider"`
+	Provider   StorageProvider `config:"provider"`
 	MinIO      MinIOConfig               `config:"minio"`
 	Filesystem FilesystemConfig          `config:"filesystem"`
 }

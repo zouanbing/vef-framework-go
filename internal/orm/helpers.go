@@ -8,7 +8,6 @@ import (
 
 	collections "github.com/ilxqx/go-collections"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/dbx"
 	"github.com/ilxqx/vef-framework-go/sortx"
 )
@@ -65,7 +64,7 @@ func applyRelationSpec(spec *RelationSpec, query SelectQuery) {
 
 	pk = table.PKs[0].Name
 
-	if alias == constants.Empty {
+	if alias == "" {
 		alias = table.Alias
 	}
 
@@ -74,11 +73,11 @@ func applyRelationSpec(spec *RelationSpec, query SelectQuery) {
 		joinType = JoinLeft
 	}
 
-	if foreignColumn == constants.Empty {
-		foreignColumn = table.ModelName + constants.Underscore + pk
+	if foreignColumn == "" {
+		foreignColumn = table.ModelName + "_" + pk
 	}
 
-	if referencedColumn == constants.Empty {
+	if referencedColumn == "" {
 		referencedColumn = pk
 	}
 
@@ -88,10 +87,10 @@ func applyRelationSpec(spec *RelationSpec, query SelectQuery) {
 
 			columnAlias := ci.Alias
 			if ci.AutoAlias {
-				columnAlias = table.ModelName + constants.Underscore + ci.Name
+				columnAlias = table.ModelName + "_" + ci.Name
 			}
 
-			if columnAlias != constants.Empty {
+			if columnAlias != "" {
 				query.SelectAs(column, columnAlias)
 			} else {
 				query.Select(column)

@@ -3,7 +3,7 @@ package orm
 import (
 	"github.com/uptrace/bun"
 
-	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/page"
 )
 
@@ -101,7 +101,7 @@ func (suite *SelectTestSuite) TestCTE() {
 	})
 
 	suite.Run("WithRecursiveCTE", func() {
-		if suite.dbType == constants.SQLite {
+		if suite.dbType == config.SQLite {
 			suite.T().Skip("Skipping for SQLite: bun framework bug causes extra parentheses in generated UNION SQL")
 		}
 
@@ -1223,7 +1223,7 @@ func (suite *SelectTestSuite) TestJoins() {
 	})
 
 	suite.Run("FullJoin", func() {
-		if suite.dbType == constants.MySQL {
+		if suite.dbType == config.MySQL {
 			suite.T().Skip("Skipping for MySQL: FULL JOIN not supported (use LEFT JOIN UNION RIGHT JOIN instead)")
 
 			return
@@ -1900,7 +1900,7 @@ func (suite *SelectTestSuite) TestLocking() {
 	suite.T().Logf("Testing Locking methods for %s", suite.dbType)
 
 	// SQLite doesn't support row-level locking (FOR SHARE/FOR UPDATE)
-	if suite.dbType == constants.SQLite {
+	if suite.dbType == config.SQLite {
 		suite.T().Skip("Skipping for SQLite: row-level locking (FOR SHARE/FOR UPDATE) not supported, uses database-level locking instead")
 
 		return
@@ -1994,7 +1994,7 @@ func (suite *SelectTestSuite) TestLocking() {
 func (suite *SelectTestSuite) TestSetOperations() {
 	suite.T().Logf("Testing Set Operations for %s", suite.dbType)
 
-	if suite.dbType == constants.SQLite {
+	if suite.dbType == config.SQLite {
 		suite.T().Skip("Skipping for SQLite: bun framework bug causes extra parentheses in generated set operation SQL, resulting in syntax errors")
 
 		return

@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/cache"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/event"
 	ilog "github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/log"
@@ -78,18 +77,18 @@ func NewCachedDataDictResolver(
 // Returns the translated name and an error if resolution fails.
 // Returns empty string without error if the key or code is empty, or if the entry is not found.
 func (r *CachedDataDictResolver) Resolve(ctx context.Context, key, code string) (string, error) {
-	if key == constants.Empty || code == constants.Empty {
-		return constants.Empty, nil
+	if key == "" || code == "" {
+		return "", nil
 	}
 
 	entries, err := r.getEntries(ctx, key)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to load dictionary %q: %w", key, err)
+		return "", fmt.Errorf("failed to load dictionary %q: %w", key, err)
 	}
 
 	name, ok := entries[code]
 	if !ok {
-		return constants.Empty, nil
+		return "", nil
 	}
 
 	return name, nil

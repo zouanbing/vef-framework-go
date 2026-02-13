@@ -7,10 +7,9 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/decimal"
 	"github.com/ilxqx/vef-framework-go/null"
+	"github.com/ilxqx/vef-framework-go/timex"
 )
 
 var (
@@ -37,7 +36,7 @@ type defaultParser struct {
 
 // Parse implements the ValueParser interface for common Go types.
 func (p *defaultParser) Parse(cellValue string, targetType reflect.Type) (any, error) {
-	if cellValue == constants.Empty {
+	if cellValue == "" {
 		return reflect.Zero(targetType).Interface(), nil
 	}
 
@@ -165,7 +164,7 @@ func (p *defaultParser) parseNullType(cellValue string, targetType reflect.Type)
 // parseTemporalValue parses temporal values with format handling.
 func (p *defaultParser) parseTemporalValue(cellValue, defaultFormat string) (time.Time, error) {
 	format := p.format
-	if format == constants.Empty {
+	if format == "" {
 		format = defaultFormat
 	}
 
@@ -181,7 +180,7 @@ func (p *defaultParser) parseStructType(cellValue string, targetType reflect.Typ
 	switch targetType {
 	case typeTime:
 		format := p.format
-		if format == constants.Empty {
+		if format == "" {
 			format = time.DateTime
 		}
 

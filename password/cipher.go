@@ -1,7 +1,6 @@
 package password
 
 import (
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/cryptox"
 )
 
@@ -22,16 +21,16 @@ func NewCipherEncoder(cipher cryptox.Cipher, encoder Encoder) Encoder {
 
 func (e *cipherEncoder) Encode(password string) (string, error) {
 	if e.cipher == nil {
-		return constants.Empty, ErrCipherRequired
+		return "", ErrCipherRequired
 	}
 
 	if e.encoder == nil {
-		return constants.Empty, ErrEncoderRequired
+		return "", ErrEncoderRequired
 	}
 
 	plainPassword, err := e.cipher.Decrypt(password)
 	if err != nil {
-		return constants.Empty, err
+		return "", err
 	}
 
 	return e.encoder.Encode(plainPassword)

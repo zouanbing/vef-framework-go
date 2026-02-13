@@ -11,7 +11,6 @@ import (
 	"github.com/uptrace/bun/dbfixture"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/database"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/internal/testx"
@@ -189,7 +188,7 @@ func runAllApiTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 	// generated WITH clause wraps SELECT statements in parentheses. Skip these tests on SQLite
 	// until the upstream Bun query builder relaxes that requirement.
 	t.Run("TestFindTree", func(t *testing.T) {
-		if dsConfig.Type == constants.SQLite {
+		if dsConfig.Type == config.SQLite {
 			t.Skip("Skipping FindTree test for SQLite due to Bun recursive CTE syntax issue")
 		}
 
@@ -197,7 +196,7 @@ func runAllApiTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 	})
 
 	t.Run("TestFindTreeOptions", func(t *testing.T) {
-		if dsConfig.Type == constants.SQLite {
+		if dsConfig.Type == config.SQLite {
 			t.Skip("Skipping FindTreeOptions test for SQLite due to Bun recursive CTE syntax issue")
 		}
 
@@ -238,7 +237,7 @@ func runAllApiTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 }
 
 // setupTestFixtures loads test data from fixture files using dbfixture.
-func setupTestFixtures(t *testing.T, ctx context.Context, db bun.IDB, dbType constants.DBType) {
+func setupTestFixtures(t *testing.T, ctx context.Context, db bun.IDB, dbType config.DBType) {
 	t.Logf("Setting up test fixtures for %s", dbType)
 
 	bunDB, ok := db.(*bun.DB)
@@ -307,7 +306,7 @@ func TestSQLite(t *testing.T) {
 
 	// Create SQLite in-memory database config
 	dsConfig := &config.DatasourceConfig{
-		Type: constants.SQLite,
+		Type: config.SQLite,
 	}
 
 	// Run all Api tests

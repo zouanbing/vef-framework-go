@@ -7,8 +7,6 @@ import (
 	"github.com/muesli/termenv"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 func newZapLogger(level zapcore.Level) *zap.SugaredLogger {
@@ -41,7 +39,7 @@ func newZapLogger(level zapcore.Level) *zap.SugaredLogger {
 			EncodeDuration: zapcore.StringDurationEncoder,
 			EncodeName: func(name string, enc zapcore.PrimitiveArrayEncoder) {
 				enc.AppendString(
-					output.String(constants.LeftBracket + name + constants.RightBracket).
+					output.String("[" + name + "]").
 						Foreground(termenv.ANSIBrightMagenta).
 						String(),
 				)

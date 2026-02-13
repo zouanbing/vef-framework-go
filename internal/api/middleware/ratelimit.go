@@ -8,12 +8,11 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/limiter"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
+	"github.com/ilxqx/vef-framework-go/httpx"
 	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
-	"github.com/ilxqx/vef-framework-go/httpx"
 )
 
 const (
@@ -46,13 +45,13 @@ func NewRateLimit() api.Middleware {
 				var sb strings.Builder
 				if req := shared.Request(ctx); req != nil {
 					sb.WriteString(req.Resource)
-					sb.WriteByte(constants.ByteColon)
+					sb.WriteByte(':')
 					sb.WriteString(req.Version)
-					sb.WriteByte(constants.ByteColon)
+					sb.WriteByte(':')
 					sb.WriteString(req.Action)
-					sb.WriteByte(constants.ByteColon)
+					sb.WriteByte(':')
 					sb.WriteString(httpx.GetIP(ctx))
-					sb.WriteByte(constants.ByteColon)
+					sb.WriteByte(':')
 				}
 
 				principal := contextx.Principal(ctx)

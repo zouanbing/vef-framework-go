@@ -5,8 +5,6 @@ import (
 
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // ConflictBuilder is used to configure INSERT conflict handling (UPSERT) target in a dialect-aware way.
@@ -176,7 +174,7 @@ func (b *InsertQueryConflictBuilder) build(query *bun.InsertQuery) {
 				args    []any
 			)
 
-			if b.constraint != constants.Empty {
+			if b.constraint != "" {
 				target = b.eb.Expr("CONSTRAINT ?", bun.Name(b.constraint))
 			} else if len(b.columns) > 0 {
 				target = b.eb.Expr("(?)", Names(b.columns...))

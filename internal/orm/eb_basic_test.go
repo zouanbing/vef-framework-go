@@ -6,7 +6,7 @@ import (
 
 	"github.com/uptrace/bun/schema"
 
-	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/config"
 )
 
 // BasicExpressionsTestSuite tests basic expression methods of ExprBuilder
@@ -1371,13 +1371,13 @@ func (suite *BasicExpressionsTestSuite) TestNot() {
 // Note: SQLite does not support ANY/ALL operators natively and simulation is not trivial.
 // MySQL supports ANY/ALL but does not allow LIMIT in ANY/ALL subqueries (Error 1235).
 func (suite *BasicExpressionsTestSuite) TestAny() {
-	if suite.dbType == constants.SQLite {
+	if suite.dbType == config.SQLite {
 		suite.T().Skipf("Test skipped for %s (ANY operator not supported and cannot be easily simulated)", suite.dbType)
 
 		return
 	}
 
-	if suite.dbType == constants.MySQL {
+	if suite.dbType == config.MySQL {
 		suite.T().Skipf("Test skipped for %s (LIMIT in ANY/ALL subqueries not supported - Error 1235)", suite.dbType)
 
 		return
@@ -1472,13 +1472,13 @@ func (suite *BasicExpressionsTestSuite) TestAny() {
 // Note: SQLite does not support ANY/ALL operators natively and simulation is not trivial.
 // MySQL supports ANY/ALL but does not allow LIMIT in ANY/ALL subqueries (Error 1235).
 func (suite *BasicExpressionsTestSuite) TestAll() {
-	if suite.dbType == constants.SQLite {
+	if suite.dbType == config.SQLite {
 		suite.T().Skipf("Test skipped for %s (ALL operator not supported and cannot be easily simulated)", suite.dbType)
 
 		return
 	}
 
-	if suite.dbType == constants.MySQL {
+	if suite.dbType == config.MySQL {
 		suite.T().Skipf("Test skipped for %s (LIMIT in ANY/ALL subqueries not supported - Error 1235)", suite.dbType)
 
 		return
@@ -2012,11 +2012,11 @@ func (suite *BasicExpressionsTestSuite) TestExecByDialect() {
 
 		// Verify the correct callback was executed based on current database
 		switch suite.dbType {
-		case constants.Postgres:
+		case config.Postgres:
 			suite.Equal("postgres", executed, "Postgres callback should be executed")
-		case constants.MySQL:
+		case config.MySQL:
 			suite.Equal("mysql", executed, "MySQL callback should be executed")
-		case constants.SQLite:
+		case config.SQLite:
 			suite.Equal("sqlite", executed, "SQLite callback should be executed")
 		}
 
@@ -2078,11 +2078,11 @@ func (suite *BasicExpressionsTestSuite) TestExecByDialectWithErr() {
 
 		// Verify the correct callback was executed
 		switch suite.dbType {
-		case constants.Postgres:
+		case config.Postgres:
 			suite.Equal("postgres", executed, "Postgres callback should be executed")
-		case constants.MySQL:
+		case config.MySQL:
 			suite.Equal("mysql", executed, "MySQL callback should be executed")
-		case constants.SQLite:
+		case config.SQLite:
 			suite.Equal("sqlite", executed, "SQLite callback should be executed")
 		}
 
@@ -2168,11 +2168,11 @@ func (suite *BasicExpressionsTestSuite) TestFragmentByDialect() {
 		// Verify the correct fragment was generated
 		fragmentStr := string(fragment)
 		switch suite.dbType {
-		case constants.Postgres:
+		case config.Postgres:
 			suite.Contains(fragmentStr, "PostgreSQL", "Should contain PostgreSQL fragment")
-		case constants.MySQL:
+		case config.MySQL:
 			suite.Contains(fragmentStr, "MySQL", "Should contain MySQL fragment")
-		case constants.SQLite:
+		case config.SQLite:
 			suite.Contains(fragmentStr, "SQLite", "Should contain SQLite fragment")
 		}
 

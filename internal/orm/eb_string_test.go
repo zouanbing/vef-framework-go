@@ -3,7 +3,7 @@ package orm
 import (
 	"strings"
 
-	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/config"
 )
 
 // StringFunctionsTestSuite tests string manipulation methods of ExprBuilder
@@ -554,7 +554,7 @@ func (suite *StringFunctionsTestSuite) TestReverse() {
 	suite.T().Logf("Testing Reverse function for %s", suite.dbType)
 
 	suite.Run("ReverseString", func() {
-		if suite.dbType == constants.SQLite {
+		if suite.dbType == config.SQLite {
 			suite.T().Skipf("Reverse not supported on %s (framework limitation: no simulation provided)", suite.dbType)
 		}
 

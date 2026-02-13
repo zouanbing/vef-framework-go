@@ -5,7 +5,6 @@ import (
 
 	"github.com/uptrace/bun/schema"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/sortx"
 )
 
@@ -280,7 +279,7 @@ type partitionExpr struct {
 }
 
 func (p *partitionExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
-	if p.column != constants.Empty {
+	if p.column != "" {
 		return p.builders.Column(p.column).AppendQuery(gen, b)
 	} else if p.expr != nil {
 		return p.builders.Expr("?", p.expr).AppendQuery(gen, b)
@@ -360,7 +359,7 @@ func (w *baseWindowExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, e
 	if w.funcExpr == nil {
 		// Function name and arguments
 		b = append(b, w.funcName...)
-		b = append(b, constants.ByteLeftParenthesis)
+		b = append(b, '(')
 
 		// Function arguments
 		if len(w.args) > 0 {
@@ -369,7 +368,7 @@ func (w *baseWindowExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, e
 			}
 		}
 
-		b = append(b, constants.ByteRightParenthesis)
+		b = append(b, ')')
 
 		// FROM DIRECTION/NULLS MODE: Oracle supports both, SQL Server only NULLS, others neither
 		if w.fromDir != FromDefault || w.nullsMode != NullsDefault {
@@ -377,12 +376,12 @@ func (w *baseWindowExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, e
 				Oracle: func() ([]byte, error) {
 					var dialectB []byte
 					if w.fromDir != FromDefault {
-						dialectB = append(dialectB, constants.ByteSpace)
+						dialectB = append(dialectB, ' ')
 						dialectB = append(dialectB, w.fromDir.String()...)
 					}
 
 					if w.nullsMode != NullsDefault {
-						dialectB = append(dialectB, constants.ByteSpace)
+						dialectB = append(dialectB, ' ')
 						dialectB = append(dialectB, w.nullsMode.String()...)
 					}
 
@@ -391,7 +390,7 @@ func (w *baseWindowExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, e
 				SQLServer: func() ([]byte, error) {
 					var dialectB []byte
 					if w.nullsMode != NullsDefault {
-						dialectB = append(dialectB, constants.ByteSpace)
+						dialectB = append(dialectB, ' ')
 						dialectB = append(dialectB, w.nullsMode.String()...)
 					}
 
@@ -415,7 +414,7 @@ func (w *baseWindowExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, e
 
 	// OVER clause
 	b = append(b, " OVER "...)
-	b = append(b, constants.ByteLeftParenthesis)
+	b = append(b, '(')
 
 	// PARTITION BY clause
 	if len(w.partitionExprs) > 0 {
@@ -423,7 +422,7 @@ func (w *baseWindowExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, e
 
 		for i, expr := range w.partitionExprs {
 			if i > 0 {
-				b = append(b, constants.CommaSpace...)
+				b = append(b, ", "...)
 			}
 
 			if b, err = expr.AppendQuery(gen, b); err != nil {
@@ -434,7 +433,7 @@ func (w *baseWindowExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, e
 
 	// ORDER BY clause
 	if len(w.orderExprs) > 0 {
-		b = append(b, constants.ByteSpace)
+		b = append(b, ' ')
 		if b, err = newOrderByClause(w.orderExprs...).AppendQuery(gen, b); err != nil {
 			return
 		}
@@ -443,12 +442,12 @@ func (w *baseWindowExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, e
 	// Frame clause
 	if w.frameType != FrameDefault {
 		if len(w.partitionExprs) > 0 || len(w.orderExprs) > 0 {
-			b = append(b, constants.ByteSpace)
+			b = append(b, ' ')
 		}
 
 		b = append(b, w.frameType.String()...)
 
-		b = append(b, constants.ByteSpace)
+		b = append(b, ' ')
 		if w.frameEndKind != FrameBoundNone {
 			// Use BETWEEN syntax when both start and end bounds are present
 			b = append(b, "BETWEEN "...)
@@ -460,7 +459,7 @@ func (w *baseWindowExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, e
 		}
 	}
 
-	b = append(b, constants.ByteRightParenthesis)
+	b = append(b, ')')
 
 	return b, nil
 }
@@ -471,7 +470,7 @@ func (*baseWindowExpr) appendFrameBound(b []byte, kind FrameBoundKind, n int) []
 		return append(b, kind.String()...)
 	case FrameBoundPreceding, FrameBoundFollowing:
 		b = strconv.AppendInt(b, int64(n), 10)
-		b = append(b, constants.ByteSpace)
+		b = append(b, ' ')
 
 		return append(b, kind.String()...)
 
@@ -729,7 +728,7 @@ func (o *offsetWindowExpr[T]) Column(column string) T {
 
 func (o *offsetWindowExpr[T]) Expr(expr any) T {
 	o.expr = expr
-	o.column = constants.Empty
+	o.column = ""
 
 	return o.self
 }
@@ -749,7 +748,7 @@ func (o *offsetWindowExpr[T]) DefaultValue(value any) T {
 func (o *offsetWindowExpr[T]) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	var args []any
 
-	if o.column != constants.Empty {
+	if o.column != "" {
 		args = append(args, o.eb.Column(o.column))
 	} else if o.expr != nil {
 		args = append(args, o.expr)
@@ -840,7 +839,7 @@ func (nv *nthValueExpr) Column(column string) NthValueBuilder {
 
 func (nv *nthValueExpr) Expr(expr any) NthValueBuilder {
 	nv.expr = expr
-	nv.column = constants.Empty
+	nv.column = ""
 
 	return nv
 }
@@ -865,7 +864,7 @@ func (nv *nthValueExpr) FromLast() NthValueBuilder {
 
 func (nv *nthValueExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	var args []any
-	if nv.column != constants.Empty {
+	if nv.column != "" {
 		args = append(args, nv.eb.Column(nv.column))
 	} else if nv.expr != nil {
 		args = append(args, nv.expr)

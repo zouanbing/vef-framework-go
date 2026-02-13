@@ -1,6 +1,6 @@
 package crud
 
-import "github.com/ilxqx/vef-framework-go/constants"
+import "github.com/ilxqx/vef-framework-go/orm"
 
 // TabularFormat represents the format type for import/export operations.
 type TabularFormat string
@@ -55,9 +55,9 @@ const (
 	maxOptionsLimit            = 10000
 	defaultAuditUserNameColumn = "name"
 	defaultLabelColumn         = "name"
-	defaultValueColumn         = constants.ColumnID
+	defaultValueColumn         = orm.ColumnID
 
-	IDColumn          = constants.ColumnID
+	IDColumn          = orm.ColumnID
 	ParentIDColumn    = "parent_id"
 	LabelColumn       = "label"
 	ValueColumn       = "value"

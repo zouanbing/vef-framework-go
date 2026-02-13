@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/database"
 	"github.com/ilxqx/vef-framework-go/internal/testx"
 )
@@ -103,7 +102,7 @@ func runAllOrmTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 }
 
 // runAllConditionBuilderTests executes all ConditionBuilder test suites on the given database.
-func runAllConditionBuilderTests(t *testing.T, ctx context.Context, dbType constants.DBType, db DB) {
+func runAllConditionBuilderTests(t *testing.T, ctx context.Context, dbType config.DBType, db DB) {
 	// Create base suite configuration
 	baseSuite := &ConditionBuilderTestSuite{
 		OrmTestSuite: &OrmTestSuite{
@@ -198,7 +197,7 @@ func runAllConditionBuilderTests(t *testing.T, ctx context.Context, dbType const
 
 // runAllExprBuilderTests executes all ExprBuilder test suites on the given database.
 // This function is exported so it can be called from the parent orm package test runner.
-func runAllExprBuilderTests(t *testing.T, ctx context.Context, dbType constants.DBType, db DB) {
+func runAllExprBuilderTests(t *testing.T, ctx context.Context, dbType config.DBType, db DB) {
 	// Create test suites
 	basicExpressionsSuite := &BasicExpressionsTestSuite{
 		OrmTestSuite: &OrmTestSuite{
@@ -372,7 +371,7 @@ func TestSQLite(t *testing.T) {
 
 	// Create SQLite in-memory database config
 	dsConfig := &config.DatasourceConfig{
-		Type: constants.SQLite,
+		Type: config.SQLite,
 	}
 
 	// Run all Orm tests

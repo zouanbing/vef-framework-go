@@ -16,10 +16,10 @@ A modern Go web development framework built on Uber FX dependency injection and 
 
 ## Features
 
-- **RPC + REST Api Routing** - RPC requests via `POST /api`, REST requests via standard HTTP methods under `/api/<resource>`
-- **Generic CRUD Apis** - Pre-built type-safe CRUD operations with minimal boilerplate
+- **RPC + REST API Routing** - RPC requests via `POST /api`, REST requests via standard HTTP methods under `/api/<resource>`
+- **Generic CRUD APIs** - Pre-built type-safe CRUD operations with minimal boilerplate
 - **Type-Safe ORM** - Bun-based ORM with fluent query builder and automatic audit tracking
-- **Multi-Strategy Authentication** - Jwt, OpenApi signature, and password authentication out of the box
+- **Multi-Strategy Authentication** - JWT, OpenAPI signature, and password authentication out of the box
 - **Modular Design** - Uber FX dependency injection with pluggable modules
 - **Built-in Features** - Cache, event bus, cron scheduler, object storage, data validation, i18n
 - **RBAC & Data Permissions** - Row-level security with customizable data scopes
@@ -78,7 +78,7 @@ Run the application:
 go run main.go
 ```
 
-Your Api server is now running at `http://localhost:8080`.
+Your API server is now running at `http://localhost:8080`.
 
 ## Project Structure
 
@@ -167,7 +167,7 @@ var Module = vef.Module(
 VEF supports two routing strategies that can be used side by side:
 
 - **RPC**: Single endpoint `POST /api` with a unified request/response format
-- **REST**: Standard HTTP verbs under `/api/<resource>`. External apps can authenticate with OpenApi signatures on these endpoints.
+- **REST**: Standard HTTP verbs under `/api/<resource>`. External apps can authenticate with OpenAPI signatures on these endpoints.
 
 **RPC Request Format:**
 
@@ -275,7 +275,7 @@ type User struct {
 
 `null.Bool` tri-state: `{Valid: false}` → NULL, `{Valid: true, Bool: false}` → 0, `{Valid: true, Bool: true}` → 1.
 
-## Building CRUD Apis
+## Building CRUD APIs
 
 ### Step 1: Define Parameter Structures
 
@@ -329,7 +329,7 @@ type UserUpdateParams struct {
 }
 ```
 
-### Step 2: Create Api Resource
+### Step 2: Create API Resource
 
 ```go
 package resources
@@ -372,9 +372,9 @@ func main() {
 }
 ```
 
-### Pre-built Apis
+### Pre-built APIs
 
-| Api | Description | Action |
+| API | Description | Action |
 |-----|-------------|--------|
 | FindOne | Find single record | find_one |
 | FindAll | Find all records | find_all |
@@ -393,9 +393,9 @@ func main() {
 
 **Note:** The actions above are **RPC** action names. For **REST** resources, actions are expressed as HTTP methods and sub-paths (e.g., `GET /`, `GET /page`, `POST /`, `PUT /:id`).
 
-### Api Builder Methods
+### API Builder Methods
 
-Configure Api behavior with fluent builder methods:
+Configure API behavior with fluent builder methods:
 
 ```go
 Create: crud.NewCreate[User, UserParams]().
@@ -438,9 +438,9 @@ FindAll: crud.NewFindAll[User, UserSearch]().
 
 ```go
 FindPage: crud.NewFindPage[User, UserSearch]().
-    WithDefaultSort(&sort.OrderSpec{
+    WithDefaultSort(&sortx.OrderSpec{
         Column:    "created_at",
-        Direction: sort.OrderDesc,
+        Direction: sortx.OrderDesc,
     }),
 ```
 
@@ -497,9 +497,9 @@ FindTree: crud.NewFindTree[Category, CategorySearch](buildTree).
     WithCondition(func(cb orm.ConditionBuilder) {
         cb.Equals("is_active", true)
     }, crud.QueryRecursive).
-    WithDefaultSort(&sort.OrderSpec{
+    WithDefaultSort(&sortx.OrderSpec{
         Column:    "sort",
-        Direction: sort.OrderAsc,
+        Direction: sortx.OrderAsc,
     }),
 ```
 
@@ -533,9 +533,9 @@ FindTree: crud.NewFindTree[models.Organization, payloads.OrganizationSearch](
 ).
     WithIDColumn("id").
     WithParentIDColumn("parent_id").
-    WithDefaultSort(&sort.OrderSpec{
+    WithDefaultSort(&sortx.OrderSpec{
         Column:    "sort_order",
-        Direction: sort.OrderAsc,
+        Direction: sortx.OrderAsc,
     })
 
 func buildOrganizationTree(flatModels []models.Organization) []models.Organization {
@@ -751,8 +751,8 @@ err := db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.DB) error {
 
 VEF supports multiple authentication strategies:
 
-1. **Jwt Authentication** (default) - Bearer token or query parameter `?__accessToken=xxx`
-2. **OpenApi Signature** - For external applications using HMAC signature
+1. **JWT Authentication** (default) - Bearer token or query parameter `?__accessToken=xxx`
+2. **OpenAPI Signature** - For external applications using HMAC signature
 3. **Password Authentication** - Username/password login
 
 ### Implementing User Loader
@@ -777,7 +777,7 @@ func (l *MyUserLoader) LoadByUsername(ctx context.Context, username string) (*se
 
     principal := &security.Principal{
         Type:  security.PrincipalTypeUser,
-        Id:    user.Id,
+        ID:    user.ID,
         Name:  user.Name,
         Roles: []string{"user"},
     }
@@ -797,7 +797,7 @@ func main() {
 
 ### Permission Control
 
-Set permission tokens on Apis:
+Set permission tokens on APIs:
 
 ```go
 Create: crud.NewCreate[User, UserParams]().
@@ -885,7 +885,7 @@ port = 8080              # HTTP port
 body_limit = "10MB"      # Request body size limit
 
 [vef.datasource]
-type = "postgres"        # Database type: postgres, mysql, sqlite
+type = "postgres"        # Database type: postgres, mysql, sqlite, oracle, sqlserver
 host = "localhost"
 port = 5432
 user = "postgres"
@@ -895,7 +895,7 @@ schema = "public"        # PostgreSQL schema
 # path = "./data.db"    # SQLite database file path
 
 [vef.security]
-token_expires = "2h"     # Jwt token expiration time
+token_expires = "2h"     # JWT token expiration time
 
 [vef.storage]
 provider = "minio"       # Storage provider: memory, filesystem, minio (default: memory)
@@ -941,13 +941,13 @@ import "github.com/ilxqx/vef-framework-go/cache"
 // In-memory cache
 memCache := cache.NewMemory[models.User](
     cache.WithMemMaxSize(1000),
-    cache.WithMemDefaultTtl(5 * time.Minute),
+    cache.WithMemDefaultTTL(5 * time.Minute),
 )
 
 // Redis cache
 redisCache := cache.NewRedis[models.User](
     redisClient, "users",
-    cache.WithRdsDefaultTtl(10 * time.Minute),
+    cache.WithRdsDefaultTTL(10 * time.Minute),
 )
 
 // Usage
@@ -964,7 +964,7 @@ import "github.com/ilxqx/vef-framework-go/event"
 // Publishing
 bus.Publish(event.NewBaseEvent("user.created",
     event.WithSource("user-service"),
-    event.WithMeta("userID", user.Id),
+    event.WithMeta("userID", user.ID),
 ))
 
 // Subscribing

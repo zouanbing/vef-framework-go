@@ -8,14 +8,13 @@ import (
 	"github.com/gofiber/fiber/v3/extractors"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
 var defaultTokenExtractor = extractors.Chain(
-	extractors.FromAuthHeader(constants.AuthSchemeBearer),
-	extractors.FromQuery(constants.QueryKeyAccessToken),
+	extractors.FromAuthHeader(security.AuthSchemeBearer),
+	extractors.FromQuery(security.QueryKeyAccessToken),
 )
 
 // TokenAuthenticator validates a token and returns the principal.

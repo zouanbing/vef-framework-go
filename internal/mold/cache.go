@@ -7,7 +7,6 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/mold"
 )
 
@@ -122,7 +121,7 @@ func (t *MoldTransformer) extractStructCache(current reflect.Value) (*cStruct, e
 		// NOTE: cannot use shared tag cache, because tags may be equal, but things like alias may be different
 		// and so only struct level caching can be used instead of combined with Field tag caching
 		if len(tag) > 0 {
-			if ctag, _, err = t.parseFieldTagsRecursive(tag, field.Name, constants.Empty, false); err != nil {
+			if ctag, _, err = t.parseFieldTagsRecursive(tag, field.Name, "", false); err != nil {
 				return nil, err
 			}
 		} else {
@@ -209,14 +208,14 @@ func (t *MoldTransformer) parseFieldTagsRecursive(tagString, fieldName, alias st
 
 			for ; i < len(tags); i++ {
 				b = append(b, tags[i]...)
-				b = append(b, constants.ByteComma)
+				b = append(b, ',')
 
 				if tags[i] == endKeysTag {
 					break
 				}
 			}
 
-			if currentCTag.keys, _, err = t.parseFieldTagsRecursive(string(b[:len(b)-1]), fieldName, constants.Empty, false); err != nil {
+			if currentCTag.keys, _, err = t.parseFieldTagsRecursive(string(b[:len(b)-1]), fieldName, "", false); err != nil {
 				return firstCTag, currentCTag, err
 			}
 
@@ -257,7 +256,7 @@ func (t *MoldTransformer) parseFieldTagsRecursive(tagString, fieldName, alias st
 			}
 
 			if len(vals) > 1 {
-				currentCTag.param = strings.ReplaceAll(vals[1], utf8HexComma, constants.Comma)
+				currentCTag.param = strings.ReplaceAll(vals[1], utf8HexComma, ",")
 			}
 		}
 	}

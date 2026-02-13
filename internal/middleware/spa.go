@@ -9,7 +9,6 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/helmet"
 	"github.com/gofiber/fiber/v3/middleware/static"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/middleware"
 )
@@ -75,11 +74,11 @@ func applySpa(router fiber.Router, config *middleware.SPAConfig) {
 	}))
 
 	fallbackPath := config.Path
-	if fallbackPath == constants.Empty {
-		fallbackPath = constants.Slash
+	if fallbackPath == "" {
+		fallbackPath = "/"
 	}
 
-	group.Get("/static/*", static.New(constants.Empty, static.Config{
+	group.Get("/static/*", static.New("", static.Config{
 		FS:            config.Fs,
 		CacheDuration: 10 * time.Minute,
 		MaxAge:        int((8 * time.Hour).Seconds()),
@@ -98,8 +97,8 @@ func NewSpaMiddleware(configs []*middleware.SPAConfig) app.Middleware {
 	}
 
 	for _, config := range configs {
-		if config.Path == constants.Empty {
-			config.Path = constants.Slash
+		if config.Path == "" {
+			config.Path = "/"
 		}
 	}
 

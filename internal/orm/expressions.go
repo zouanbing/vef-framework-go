@@ -5,8 +5,6 @@ import (
 
 	"github.com/uptrace/bun/dialect"
 	"github.com/uptrace/bun/schema"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 var (
@@ -52,12 +50,12 @@ func (e *Expressions) AppendQuery(gen schema.QueryGen, b []byte) ([]byte, error)
 			}
 
 			if expr.Kind() == reflect.Slice && expr.Type() != bytesType {
-				b = append(b, constants.ByteLeftParenthesis)
+				b = append(b, '(')
 				if b, err = appendExprs(b, expr); err != nil {
 					return
 				}
 
-				b = append(b, constants.ByteRightParenthesis)
+				b = append(b, ')')
 			} else {
 				b = gen.AppendValue(b, expr)
 			}

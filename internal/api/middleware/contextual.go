@@ -6,7 +6,6 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 	"github.com/ilxqx/vef-framework-go/orm"
@@ -45,7 +44,7 @@ func (m *Contextual) Process(ctx fiber.Ctx) error {
 		principal = security.PrincipalAnonymous
 	}
 
-	db := m.db.WithNamedArg(constants.PlaceholderKeyOperator, principal.ID)
+	db := m.db.WithNamedArg(orm.PlaceholderKeyOperator, principal.ID)
 	contextx.SetDB(ctx, db)
 	ctx.SetContext(contextx.SetDB(ctx.Context(), db))
 
@@ -69,9 +68,9 @@ func buildRequestLoggerName(resource, action, version string) string {
 	var sb strings.Builder
 
 	sb.WriteString(resource)
-	sb.WriteByte(constants.ByteColon)
+	sb.WriteByte(':')
 	sb.WriteString(action)
-	sb.WriteByte(constants.ByteAt)
+	sb.WriteByte('@')
 	sb.WriteString(version)
 
 	return sb.String()
@@ -83,9 +82,9 @@ func buildPrincipalLoggerName(principal *security.Principal) string {
 	var sb strings.Builder
 
 	sb.WriteString(string(principal.Type))
-	sb.WriteByte(constants.ByteColon)
+	sb.WriteByte(':')
 	sb.WriteString(principal.ID)
-	sb.WriteByte(constants.ByteAt)
+	sb.WriteByte('@')
 	sb.WriteString(principal.Name)
 
 	return sb.String()

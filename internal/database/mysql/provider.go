@@ -11,20 +11,19 @@ import (
 	"github.com/uptrace/bun/schema"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 type Provider struct {
-	dbType constants.DBType
+	dbType config.DBType
 }
 
 func NewProvider() *Provider {
 	return &Provider{
-		dbType: constants.MySQL,
+		dbType: config.MySQL,
 	}
 }
 
-func (p *Provider) Type() constants.DBType {
+func (p *Provider) Type() config.DBType {
 	return p.dbType
 }
 
@@ -42,7 +41,7 @@ func (p *Provider) Connect(cfg *config.DatasourceConfig) (*sql.DB, schema.Dialec
 }
 
 func (*Provider) ValidateConfig(cfg *config.DatasourceConfig) error {
-	if cfg.Database == constants.Empty {
+	if cfg.Database == "" {
 		return ErrMySQLDatabaseRequired
 	}
 
@@ -55,12 +54,12 @@ func (*Provider) QueryVersion(db *bun.DB) (string, error) {
 
 func (*Provider) buildConfig(cfg *config.DatasourceConfig) *mysql.Config {
 	mysqlCfg := mysql.NewConfig()
-	mysqlCfg.User = lo.Ternary(cfg.User != constants.Empty, cfg.User, "root")
+	mysqlCfg.User = lo.Ternary(cfg.User != "", cfg.User, "root")
 	mysqlCfg.Passwd = cfg.Password
 	mysqlCfg.Net = "tcp"
 	mysqlCfg.Addr = fmt.Sprintf(
 		"%s:%d",
-		lo.Ternary(cfg.Host != constants.Empty, cfg.Host, "127.0.0.1"),
+		lo.Ternary(cfg.Host != "", cfg.Host, "127.0.0.1"),
 		lo.Ternary(cfg.Port != 0, cfg.Port, uint16(3306)),
 	)
 	mysqlCfg.DBName = cfg.Database

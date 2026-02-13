@@ -2,11 +2,9 @@ package cache
 
 import (
 	"strings"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
-var defaultKeyBuilder = NewPrefixKeyBuilder(constants.Empty)
+var defaultKeyBuilder = NewPrefixKeyBuilder("")
 
 // Key builds a key with the default key builder.
 func Key(keyParts ...string) string {
@@ -29,7 +27,7 @@ type PrefixKeyBuilder struct {
 func NewPrefixKeyBuilder(prefix string) *PrefixKeyBuilder {
 	return &PrefixKeyBuilder{
 		prefix:    prefix,
-		separator: constants.Colon,
+		separator: ":",
 	}
 }
 
@@ -43,7 +41,7 @@ func NewPrefixKeyBuilderWithSeparator(prefix, separator string) *PrefixKeyBuilde
 
 // Build constructs a cache key with prefix.
 func (k *PrefixKeyBuilder) Build(keyParts ...string) string {
-	if k.prefix == constants.Empty {
+	if k.prefix == "" {
 		return strings.Join(keyParts, k.separator)
 	}
 

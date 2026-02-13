@@ -6,7 +6,6 @@ import (
 
 	_ "embed"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/mcp"
 )
 
@@ -70,7 +69,7 @@ func getArgument(args map[string]string, key, defaultValue string) string {
 		return defaultValue
 	}
 
-	if v, ok := args[key]; ok && v != constants.Empty {
+	if v, ok := args[key]; ok && v != "" {
 		return v
 	}
 

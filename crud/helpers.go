@@ -11,7 +11,6 @@ import (
 	"github.com/samber/lo"
 	"github.com/uptrace/bun/schema"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/orm"
@@ -26,7 +25,7 @@ func validateColumnsExist(schema *schema.Table, columns ...struct {
 },
 ) error {
 	for _, c := range columns {
-		if c.column != constants.Empty {
+		if c.column != "" {
 			if !schema.HasField(c.column) {
 				return result.Err(i18n.T("field_not_exist_in_model", map[string]any{
 					"field": c.column,
@@ -50,7 +49,7 @@ func validateOptionColumns(schema *schema.Table, mapping *DataOptionColumnMappin
 		{"valueColumn", mapping.ValueColumn},
 	}
 
-	if mapping.DescriptionColumn != constants.Empty {
+	if mapping.DescriptionColumn != "" {
 		columns = append(columns, struct {
 			name   string
 			column string
@@ -67,15 +66,15 @@ func mergeOptionColumnMapping(mapping, defaultMapping *DataOptionColumnMapping) 
 		defaultMapping = defaultDataOptionColumnMapping
 	}
 
-	if mapping.LabelColumn == constants.Empty {
+	if mapping.LabelColumn == "" {
 		mapping.LabelColumn = lo.CoalesceOrEmpty(defaultMapping.LabelColumn, defaultLabelColumn)
 	}
 
-	if mapping.ValueColumn == constants.Empty {
+	if mapping.ValueColumn == "" {
 		mapping.ValueColumn = lo.CoalesceOrEmpty(defaultMapping.ValueColumn, defaultValueColumn)
 	}
 
-	if mapping.DescriptionColumn == constants.Empty {
+	if mapping.DescriptionColumn == "" {
 		mapping.DescriptionColumn = defaultMapping.DescriptionColumn
 	}
 
@@ -111,7 +110,7 @@ func GetAuditUserNameRelations(userModel any, nameColumn ...string) []*orm.Relat
 			SelectedColumns: []orm.ColumnInfo{
 				{
 					Name:  nc,
-					Alias: constants.ColumnCreatedByName,
+					Alias: orm.ColumnCreatedByName,
 				},
 			},
 		},
@@ -123,7 +122,7 @@ func GetAuditUserNameRelations(userModel any, nameColumn ...string) []*orm.Relat
 			SelectedColumns: []orm.ColumnInfo{
 				{
 					Name:  nc,
-					Alias: constants.ColumnUpdatedByName,
+					Alias: orm.ColumnUpdatedByName,
 				},
 			},
 		},

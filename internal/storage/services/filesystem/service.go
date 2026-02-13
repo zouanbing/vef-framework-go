@@ -16,7 +16,6 @@ import (
 	"github.com/ilxqx/go-streams"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 
@@ -26,7 +25,7 @@ type Service struct {
 
 func New(cfg config.FilesystemConfig) (storage.Service, error) {
 	root := cfg.Root
-	if root == constants.Empty {
+	if root == "" {
 		root = "./storage"
 	}
 
@@ -140,13 +139,13 @@ func (s *Service) ListObjects(_ context.Context, opts storage.ListObjectsOptions
 
 		key := filepath.ToSlash(relPath)
 
-		if prefix != constants.Empty && !strings.HasPrefix(key, prefix) {
+		if prefix != "" && !strings.HasPrefix(key, prefix) {
 			return nil
 		}
 
 		if !opts.Recursive {
 			relativeKey := strings.TrimPrefix(key, prefix)
-			if strings.Contains(relativeKey, constants.Slash) {
+			if strings.Contains(relativeKey, "/") {
 				return nil
 			}
 		}
@@ -161,7 +160,7 @@ func (s *Service) ListObjects(_ context.Context, opts storage.ListObjectsOptions
 		objects = append(objects, storage.ObjectInfo{
 			Bucket:       "filesystem",
 			Key:          key,
-			ETag:         constants.Empty,
+			ETag:         "",
 			Size:         info.Size(),
 			ContentType:  contentType,
 			LastModified: info.ModTime(),
@@ -186,7 +185,7 @@ func (s *Service) GetPresignedURL(_ context.Context, opts storage.PresignedURLOp
 
 	absPath, err := filepath.Abs(path)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to get absolute path: %w", err)
+		return "", fmt.Errorf("failed to get absolute path: %w", err)
 	}
 
 	return fmt.Sprintf("file://%s", absPath), nil
@@ -315,14 +314,14 @@ func (s *Service) cleanupEmptyDirs(dir string) {
 func (*Service) calculateMd5(path string) (string, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return constants.Empty, err
+		return "", err
 	}
 
 	defer func() { _ = file.Close() }()
 
 	hasher := md5.New()
 	if _, err := io.Copy(hasher, file); err != nil {
-		return constants.Empty, err
+		return "", err
 	}
 
 	return hex.EncodeToString(hasher.Sum(nil)), nil

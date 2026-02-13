@@ -16,7 +16,6 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/app"
@@ -292,7 +291,7 @@ func (suite *RPCEngineTestSuite) setupTestApp() {
 		}),
 		fx.Replace(
 			&config.DatasourceConfig{
-				Type: constants.SQLite,
+				Type: config.SQLite,
 			},
 			&security.JWTConfig{
 				Secret:   suite.jwtSecret,
@@ -328,7 +327,7 @@ func (suite *RPCEngineTestSuite) makeApiRequestWithToken(body api.Request, token
 
 	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-	req.Header.Set(fiber.HeaderAuthorization, constants.AuthSchemeBearer+" "+token)
+	req.Header.Set(fiber.HeaderAuthorization, security.AuthSchemeBearer+" "+token)
 
 	resp, err := suite.app.Test(req, 30*time.Second)
 	suite.Require().NoError(err)
@@ -753,7 +752,7 @@ func (suite *RPCEngineTestSuite) TestTokenInQueryParam() {
 	})
 	suite.Require().NoError(err)
 
-	req := httptest.NewRequest(fiber.MethodPost, "/api?"+constants.QueryKeyAccessToken+"="+token, strings.NewReader(jsonBody))
+	req := httptest.NewRequest(fiber.MethodPost, "/api?"+security.QueryKeyAccessToken+"="+token, strings.NewReader(jsonBody))
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 	resp, err := suite.app.Test(req, 30*time.Second)

@@ -5,7 +5,6 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/sortx"
 )
 
@@ -330,7 +329,7 @@ var stdDevStrategy = &dialectStrategy{
 	postgres: &dialectAggConfig{
 		argsTransformer: func(_ ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
 			mode := lo.CoalesceOrEmpty(state.statisticalMode.String(), StatisticalPopulation.String())
-			state.funcName = "STDDEV" + constants.Underscore + mode
+			state.funcName = "STDDEV" + "_" + mode
 
 			return state.argsExpr
 		},
@@ -338,7 +337,7 @@ var stdDevStrategy = &dialectStrategy{
 	mysql: &dialectAggConfig{
 		argsTransformer: func(_ ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
 			if state.statisticalMode == StatisticalPopulation || state.statisticalMode == StatisticalSample {
-				state.funcName = "STDDEV" + constants.Underscore + state.statisticalMode.String()
+				state.funcName = "STDDEV" + "_" + state.statisticalMode.String()
 			} else {
 				state.funcName = "STDDEV"
 			}
@@ -352,7 +351,7 @@ var varianceStrategy = &dialectStrategy{
 	postgres: &dialectAggConfig{
 		argsTransformer: func(_ ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
 			mode := lo.CoalesceOrEmpty(state.statisticalMode.String(), StatisticalPopulation.String())
-			state.funcName = "VAR" + constants.Underscore + mode
+			state.funcName = "VAR" + "_" + mode
 
 			return state.argsExpr
 		},
@@ -360,7 +359,7 @@ var varianceStrategy = &dialectStrategy{
 	mysql: &dialectAggConfig{
 		argsTransformer: func(_ ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
 			if state.statisticalMode == StatisticalPopulation || state.statisticalMode == StatisticalSample {
-				state.funcName = "VAR" + constants.Underscore + state.statisticalMode.String()
+				state.funcName = "VAR" + "_" + state.statisticalMode.String()
 			} else {
 				state.funcName = "VARIANCE"
 			}
@@ -426,7 +425,7 @@ func (a *baseAggregateExpr) applyDialectConfig(state *aggregateQueryState, cfg *
 		return
 	}
 
-	if cfg.funcName != constants.Empty {
+	if cfg.funcName != "" {
 		state.funcName = cfg.funcName
 	}
 
@@ -528,7 +527,7 @@ func (a *baseAggregateExpr) appendQueryWithState(gen schema.QueryGen, b []byte, 
 	}
 
 	b = append(b, state.funcName...)
-	b = append(b, constants.ByteLeftParenthesis)
+	b = append(b, '(')
 
 	if state.distinct {
 		b = append(b, "DISTINCT "...)
@@ -539,16 +538,16 @@ func (a *baseAggregateExpr) appendQueryWithState(gen schema.QueryGen, b []byte, 
 	}
 
 	if len(state.orderExprs) > 0 {
-		b = append(b, constants.ByteSpace)
+		b = append(b, ' ')
 		if b, err = newOrderByClause(state.orderExprs...).AppendQuery(gen, b); err != nil {
 			return
 		}
 	}
 
-	b = append(b, constants.ByteRightParenthesis)
+	b = append(b, ')')
 
 	if state.nullsMode != NullsDefault {
-		b = append(b, constants.ByteSpace)
+		b = append(b, ' ')
 		b = append(b, state.nullsMode.String()...)
 	}
 
@@ -571,7 +570,7 @@ func (a *baseAggregateExpr) appendCompatibleFilterQueryWithState(gen schema.Quer
 		b = append(b, funcName...)
 	}
 
-	b = append(b, constants.ByteLeftParenthesis)
+	b = append(b, '(')
 
 	if state.distinct {
 		b = append(b, "DISTINCT "...)
@@ -596,7 +595,7 @@ func (a *baseAggregateExpr) appendCompatibleFilterQueryWithState(gen schema.Quer
 		return
 	}
 
-	b = append(b, constants.ByteRightParenthesis)
+	b = append(b, ')')
 
 	return b, nil
 }
@@ -1103,7 +1102,7 @@ func newGenericStringAggExpr[T any](self T, qb QueryBuilder) *stringAggExpr[T] {
 		baseNullHandlingBuilder: &baseNullHandlingBuilder[T]{
 			baseAggregateBuilder: baseBuilder,
 		},
-		separator: constants.Comma,
+		separator: ",",
 	}
 
 	baseBuilder.self = self
@@ -1132,7 +1131,7 @@ func newStringAggExpr(qb QueryBuilder) *stringAggExpr[StringAggBuilder] {
 		baseNullHandlingBuilder: &baseNullHandlingBuilder[StringAggBuilder]{
 			baseAggregateBuilder: baseBuilder,
 		},
-		separator: constants.Comma,
+		separator: ",",
 	}
 
 	baseBuilder.self = expr

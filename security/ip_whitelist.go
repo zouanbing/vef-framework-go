@@ -5,8 +5,6 @@ import (
 	"strings"
 
 	"github.com/ilxqx/go-collections"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // IPWhitelistValidator validates IP addresses against a whitelist.
@@ -30,20 +28,20 @@ func NewIPWhitelistValidator(whitelist string) *IPWhitelistValidator {
 	}
 
 	whitelist = strings.TrimSpace(whitelist)
-	if whitelist == constants.Empty {
+	if whitelist == "" {
 		validator.isEmpty = true
 
 		return validator
 	}
 
-	for entry := range strings.SplitSeq(whitelist, constants.Comma) {
+	for entry := range strings.SplitSeq(whitelist, ",") {
 		entry = strings.TrimSpace(entry)
-		if entry == constants.Empty {
+		if entry == "" {
 			continue
 		}
 
 		// Handle CIDR notation
-		if strings.Contains(entry, constants.Slash) {
+		if strings.Contains(entry, "/") {
 			if _, network, err := net.ParseCIDR(entry); err != nil {
 				logger.Warnf("Failed to parse CIDR %s: %v", entry, err)
 			} else {

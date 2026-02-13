@@ -7,13 +7,12 @@ import (
 	"slices"
 
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/id"
 	"github.com/ilxqx/vef-framework-go/internal/approval/engine"
 	"github.com/ilxqx/vef-framework-go/internal/approval/publisher"
 	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/ilxqx/vef-framework-go/timex"
 )
 
 // StartInstanceCmd contains the parameters for starting a new instance.
@@ -115,7 +114,7 @@ func (s *InstanceService) StartInstance(ctx context.Context, cmd StartInstanceCm
 			Title:           cmd.Title,
 			SerialNo:        serialNo,
 			ApplicantID:     cmd.ApplicantID,
-			ApplicantDeptID: null.NewString(cmd.ApplicantDeptID, cmd.ApplicantDeptID != constants.Empty),
+			ApplicantDeptID: null.NewString(cmd.ApplicantDeptID, cmd.ApplicantDeptID != ""),
 			Status:          string(approval.InstanceRunning),
 			FormData:        cmd.FormData,
 		}
@@ -123,7 +122,7 @@ func (s *InstanceService) StartInstance(ctx context.Context, cmd StartInstanceCm
 		instance.CreatedBy = cmd.ApplicantID
 		instance.UpdatedBy = cmd.ApplicantID
 
-		if cmd.BusinessRecordID != constants.Empty {
+		if cmd.BusinessRecordID != "" {
 			instance.BusinessRecordID = null.StringFrom(cmd.BusinessRecordID)
 		}
 
@@ -247,7 +246,7 @@ func (s *InstanceService) ProcessTask(ctx context.Context, cmd ProcessTaskCmd) e
 			TaskID:     null.StringFrom(task.ID),
 			Action:     cmd.Action,
 			OperatorID: cmd.OperatorID,
-			Opinion:    null.NewString(cmd.Opinion, cmd.Opinion != constants.Empty),
+			Opinion:    null.NewString(cmd.Opinion, cmd.Opinion != ""),
 		}
 		actionLog.ID = id.Generate()
 		actionLog.CreatedBy = cmd.OperatorID
@@ -351,7 +350,7 @@ func (s *InstanceService) handleTransfer(
 		return nil, ErrTransferNotAllowed
 	}
 
-	if cmd.TransferToID == constants.Empty {
+	if cmd.TransferToID == "" {
 		return nil, fmt.Errorf("transfer target user ID required")
 	}
 
@@ -393,7 +392,7 @@ func (s *InstanceService) handleRollback(
 		return nil, ErrRollbackNotAllowed
 	}
 
-	if cmd.TargetNodeID == constants.Empty {
+	if cmd.TargetNodeID == "" {
 		return nil, fmt.Errorf("target node ID required for rollback")
 	}
 
@@ -444,7 +443,7 @@ func (s *InstanceService) handleRollback(
 
 // validateOpinion checks if an opinion is required but missing.
 func validateOpinion(node *approval.FlowNode, opinion string) error {
-	if node.IsOpinionRequired && opinion == constants.Empty {
+	if node.IsOpinionRequired && opinion == "" {
 		return ErrOpinionRequired
 	}
 
@@ -652,7 +651,7 @@ func (s *InstanceService) Withdraw(ctx context.Context, instanceID, operatorID, 
 			InstanceID: instanceID,
 			Action:     string(approval.ActionWithdraw),
 			OperatorID: operatorID,
-			Opinion:    null.NewString(reason, reason != constants.Empty),
+			Opinion:    null.NewString(reason, reason != ""),
 		}
 		actionLog.ID = id.Generate()
 		actionLog.CreatedBy = operatorID
@@ -707,7 +706,7 @@ func (s *InstanceService) AddCC(ctx context.Context, instanceID string, ccUserID
 		}
 
 		return s.publisher.PublishAll(ctx, tx, []approval.DomainEvent{
-			approval.NewCcNotifiedEvent(instanceID, constants.Empty, ccUserIDs, true),
+			approval.NewCcNotifiedEvent(instanceID, "", ccUserIDs, true),
 		})
 	})
 }

@@ -10,20 +10,19 @@ import (
 	"github.com/uptrace/bun/schema"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 type Provider struct {
-	dbType constants.DBType
+	dbType config.DBType
 }
 
 func NewProvider() *Provider {
 	return &Provider{
-		dbType: constants.SQLite,
+		dbType: config.SQLite,
 	}
 }
 
-func (p *Provider) Type() constants.DBType {
+func (p *Provider) Type() config.DBType {
 	return p.dbType
 }
 
@@ -52,7 +51,7 @@ func (*Provider) QueryVersion(db *bun.DB) (string, error) {
 // file::memory: with shared cache to ensure multiple connections share
 // the same in-memory database.
 func (*Provider) buildDsn(cfg *config.DatasourceConfig) string {
-	if cfg.Path == constants.Empty {
+	if cfg.Path == "" {
 		return "file::memory:?mode=memory&cache=shared"
 	}
 

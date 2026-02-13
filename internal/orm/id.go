@@ -5,7 +5,6 @@ import (
 
 	"github.com/uptrace/bun/schema"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/id"
 )
 
@@ -23,5 +22,5 @@ func (*IDHandler) OnInsert(_ *BunInsertQuery, _ *schema.Table, field *schema.Fie
 
 // Name returns the column name for the ID field.
 func (*IDHandler) Name() string {
-	return constants.ColumnID
+	return ColumnID
 }

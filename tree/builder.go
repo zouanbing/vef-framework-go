@@ -2,8 +2,6 @@ package tree
 
 import (
 	"github.com/samber/lo"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // Adapter provides functions to access tree node properties.
@@ -25,14 +23,14 @@ func Build[T any](nodes []T, adapter Adapter[T]) []T {
 
 	for i := range nodes {
 		node := &nodes[i]
-		if id := adapter.GetID(*node); id != constants.Empty {
+		if id := adapter.GetID(*node); id != "" {
 			nodeMap[id] = node
 		}
 	}
 
 	for i := range nodes {
 		node := &nodes[i]
-		if parentID := adapter.GetParentID(*node); parentID != constants.Empty {
+		if parentID := adapter.GetParentID(*node); parentID != "" {
 			childrenMap[parentID] = append(childrenMap[parentID], node)
 		}
 	}
@@ -43,7 +41,7 @@ func Build[T any](nodes []T, adapter Adapter[T]) []T {
 
 	setChildrenRecursively = func(nodePtr *T) {
 		id := adapter.GetID(*nodePtr)
-		if id == constants.Empty || visited[id] {
+		if id == "" || visited[id] {
 			return
 		}
 
@@ -73,7 +71,7 @@ func Build[T any](nodes []T, adapter Adapter[T]) []T {
 	roots := make([]T, 0)
 	for _, node := range nodes {
 		parentID := adapter.GetParentID(node)
-		if parentID == constants.Empty || nodeMap[parentID] == nil {
+		if parentID == "" || nodeMap[parentID] == nil {
 			roots = append(roots, node)
 		}
 	}
@@ -83,7 +81,7 @@ func Build[T any](nodes []T, adapter Adapter[T]) []T {
 
 // FindNode searches for a node with the given ID in the tree and returns it if found.
 func FindNode[T any](roots []T, targetID string, adapter Adapter[T]) (T, bool) {
-	if targetID == constants.Empty {
+	if targetID == "" {
 		return lo.Empty[T](), false
 	}
 
@@ -92,7 +90,7 @@ func FindNode[T any](roots []T, targetID string, adapter Adapter[T]) (T, bool) {
 
 // FindNodePath returns the path from root to the target node if found.
 func FindNodePath[T any](roots []T, targetID string, adapter Adapter[T]) ([]T, bool) {
-	if targetID == constants.Empty {
+	if targetID == "" {
 		return nil, false
 	}
 

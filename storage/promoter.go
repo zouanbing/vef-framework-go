@@ -10,7 +10,6 @@ import (
 	"github.com/ilxqx/go-collections"
 	"github.com/ilxqx/go-streams"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/reflectx"
@@ -44,7 +43,7 @@ func getStringValue(fieldValue reflect.Value) (string, bool) {
 
 	if fieldType.Kind() == reflect.Pointer && fieldType.Elem().Kind() == reflect.String {
 		if fieldValue.IsNil() {
-			return constants.Empty, false
+			return "", false
 		}
 
 		return fieldValue.Elem().String(), true
@@ -55,10 +54,10 @@ func getStringValue(fieldValue reflect.Value) (string, bool) {
 			return ns.String, true
 		}
 
-		return constants.Empty, false
+		return "", false
 	}
 
-	return constants.Empty, false
+	return "", false
 }
 
 func setStringValue(fieldValue reflect.Value, value string) {
@@ -199,7 +198,7 @@ func parseMetaFields(typ reflect.Type) []metaField {
 			attrs := strx.ParseTag(
 				metaTypeValue,
 				strx.WithSpacePairDelimiter(),
-				strx.WithValueDelimiter(constants.ByteColon),
+				strx.WithValueDelimiter(':'),
 			)
 
 			var (
@@ -313,17 +312,17 @@ func (p *defaultPromoter[T]) promoteUploadedFileField(ctx context.Context, field
 		promotedKeys := streams.MapTo(
 			streams.FromSlice(keys).
 				Map(func(key string) string { return strings.TrimSpace(key) }).
-				Filter(func(key string) bool { return key != constants.Empty }),
+				Filter(func(key string) bool { return key != "" }),
 			func(key string) string {
 				if promoteErr != nil {
-					return constants.Empty
+					return ""
 				}
 
 				promotedKey, err := p.promoteSingleFile(ctx, key, metaType, attrs)
 				if err != nil {
 					promoteErr = err
 
-					return constants.Empty
+					return ""
 				}
 
 				return promotedKey
@@ -337,7 +336,7 @@ func (p *defaultPromoter[T]) promoteUploadedFileField(ctx context.Context, field
 		setStringSliceValue(fieldValue, promotedKeys)
 	} else {
 		key, valid := getStringValue(fieldValue)
-		if !valid || key == constants.Empty {
+		if !valid || key == "" {
 			return nil
 		}
 
@@ -361,7 +360,7 @@ func (p *defaultPromoter[T]) promoteContentField(
 	attrs map[string]string,
 ) error {
 	content, valid := getStringValue(fieldValue)
-	if !valid || content == constants.Empty {
+	if !valid || content == "" {
 		return nil
 	}
 
@@ -415,7 +414,7 @@ func (p *defaultPromoter[T]) promoteSingleFile(ctx context.Context, key string, 
 			}
 		}
 
-		return constants.Empty, fmt.Errorf("failed to promote file %q: %w", key, err)
+		return "", fmt.Errorf("failed to promote file %q: %w", key, err)
 	}
 
 	if info == nil {
@@ -453,7 +452,7 @@ func (p *defaultPromoter[T]) deleteAllFiles(ctx context.Context, model *T) error
 
 	return streams.FromSlice(files).ForEachErr(func(fileInfo fileInfo) error {
 		fileInfo.key = strings.TrimSpace(fileInfo.key)
-		if fileInfo.key == constants.Empty {
+		if fileInfo.key == "" {
 			return nil
 		}
 
@@ -504,7 +503,7 @@ func (p *defaultPromoter[T]) extractAllFileKeysWithInfo(model *T) []fileInfo {
 					}
 				}
 			} else {
-				if key, valid := getStringValue(fieldValue); valid && key != constants.Empty {
+				if key, valid := getStringValue(fieldValue); valid && key != "" {
 					allFiles = append(allFiles, fileInfo{
 						key:      key,
 						metaType: field.typ,
@@ -514,7 +513,7 @@ func (p *defaultPromoter[T]) extractAllFileKeysWithInfo(model *T) []fileInfo {
 			}
 
 		case MetaTypeRichText:
-			if content, valid := getStringValue(fieldValue); valid && content != constants.Empty {
+			if content, valid := getStringValue(fieldValue); valid && content != "" {
 				urls := extractHtmlURLs(content)
 				for _, url := range urls {
 					allFiles = append(allFiles, fileInfo{
@@ -526,7 +525,7 @@ func (p *defaultPromoter[T]) extractAllFileKeysWithInfo(model *T) []fileInfo {
 			}
 
 		case MetaTypeMarkdown:
-			if content, valid := getStringValue(fieldValue); valid && content != constants.Empty {
+			if content, valid := getStringValue(fieldValue); valid && content != "" {
 				urls := extractMarkdownURLs(content)
 				for _, url := range urls {
 					allFiles = append(allFiles, fileInfo{
@@ -567,19 +566,19 @@ func (p *defaultPromoter[T]) extractAllFileKeys(model *T) []string {
 					allKeys = append(allKeys, keys...)
 				}
 			} else {
-				if key, valid := getStringValue(fieldValue); valid && key != constants.Empty {
+				if key, valid := getStringValue(fieldValue); valid && key != "" {
 					allKeys = append(allKeys, key)
 				}
 			}
 
 		case MetaTypeRichText:
-			if content, valid := getStringValue(fieldValue); valid && content != constants.Empty {
+			if content, valid := getStringValue(fieldValue); valid && content != "" {
 				urls := extractHtmlURLs(content)
 				allKeys = append(allKeys, urls...)
 			}
 
 		case MetaTypeMarkdown:
-			if content, valid := getStringValue(fieldValue); valid && content != constants.Empty {
+			if content, valid := getStringValue(fieldValue); valid && content != "" {
 				urls := extractMarkdownURLs(content)
 				allKeys = append(allKeys, urls...)
 			}

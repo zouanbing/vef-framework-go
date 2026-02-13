@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/storage/services/filesystem"
 	"github.com/ilxqx/vef-framework-go/internal/storage/services/memory"
 	"github.com/ilxqx/vef-framework-go/internal/storage/services/minio"
@@ -13,16 +12,16 @@ import (
 
 func NewService(cfg *config.StorageConfig, appCfg *config.AppConfig) (storage.Service, error) {
 	provider := cfg.Provider
-	if provider == constants.Empty {
-		provider = constants.StorageMemory
+	if provider == "" {
+		provider = config.StorageMemory
 	}
 
 	switch provider {
-	case constants.StorageMinIO:
+	case config.StorageMinIO:
 		return minio.New(cfg.MinIO, appCfg)
-	case constants.StorageMemory:
+	case config.StorageMemory:
 		return memory.New(), nil
-	case constants.StorageFilesystem:
+	case config.StorageFilesystem:
 		return filesystem.New(cfg.Filesystem)
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrUnsupportedStorageProvider, cfg.Provider)

@@ -1,7 +1,7 @@
 package orm
 
 import (
-	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/config"
 )
 
 // AggregationFunctionsTestSuite tests aggregate expression methods of ExprBuilder
@@ -643,7 +643,7 @@ func (suite *AggregationFunctionsTestSuite) TestArrayAgg() {
 		suite.True(len(result.UniqueStatuses) > 0, "Should have unique statuses")
 
 		// Verify ordering (only PostgreSQL supports ORDER BY in ARRAY_AGG)
-		if suite.dbType == constants.Postgres {
+		if suite.dbType == config.Postgres {
 			for i := 1; i < len(result.ViewCountArray); i++ {
 				suite.True(result.ViewCountArray[i-1] >= result.ViewCountArray[i],
 					"View counts should be in descending order")
@@ -753,7 +753,7 @@ func (suite *AggregationFunctionsTestSuite) TestJsonArrayAgg() {
 	})
 
 	suite.Run("JsonArrayAggWithOrdering", func() {
-		if suite.dbType == constants.MySQL {
+		if suite.dbType == config.MySQL {
 			suite.T().Skipf("JsonArrayAgg with ORDER BY skipped for %s (MySQL does not support ORDER BY in JSON_ARRAYAGG)", suite.dbType)
 
 			return
@@ -788,7 +788,7 @@ func (suite *AggregationFunctionsTestSuite) TestJsonArrayAgg() {
 	})
 
 	suite.Run("JsonArrayAggWithDistinct", func() {
-		if suite.dbType == constants.MySQL {
+		if suite.dbType == config.MySQL {
 			suite.T().Skipf("JsonArrayAgg with DISTINCT skipped for %s (MySQL does not support DISTINCT in JSON_ARRAYAGG)", suite.dbType)
 
 			return
@@ -1064,7 +1064,7 @@ func (suite *AggregationFunctionsTestSuite) TestStdDev() {
 	suite.T().Logf("Testing StdDev function for %s", suite.dbType)
 
 	suite.Run("BasicStdDev", func() {
-		if suite.dbType == constants.SQLite {
+		if suite.dbType == config.SQLite {
 			suite.T().Skipf("StdDev skipped for %s (SQLite does not support statistical functions)", suite.dbType)
 		}
 
@@ -1103,7 +1103,7 @@ func (suite *AggregationFunctionsTestSuite) TestStdDev() {
 	})
 
 	suite.Run("CombinedStatisticalFunctions", func() {
-		if suite.dbType == constants.SQLite {
+		if suite.dbType == config.SQLite {
 			suite.T().Skipf("StdDev skipped for %s (SQLite does not support statistical functions)", suite.dbType)
 		}
 
@@ -1164,7 +1164,7 @@ func (suite *AggregationFunctionsTestSuite) TestVariance() {
 	suite.T().Logf("Testing Variance function for %s", suite.dbType)
 
 	suite.Run("BasicVariance", func() {
-		if suite.dbType == constants.SQLite {
+		if suite.dbType == config.SQLite {
 			suite.T().Skipf("Variance skipped for %s (SQLite not supported)", suite.dbType)
 		}
 
@@ -1203,7 +1203,7 @@ func (suite *AggregationFunctionsTestSuite) TestVariance() {
 	})
 
 	suite.Run("VarianceWithPopulationAndSample", func() {
-		if suite.dbType == constants.SQLite {
+		if suite.dbType == config.SQLite {
 			suite.T().Skipf("Variance with modes skipped for %s (SQLite not supported)", suite.dbType)
 		}
 

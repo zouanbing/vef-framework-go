@@ -4,8 +4,8 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
 
+	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 )
 
@@ -27,10 +27,10 @@ func NewCorsMiddleware(config *config.CorsConfig) app.Middleware {
 			fiber.HeaderAuthorization,
 			fiber.HeaderXRequestedWith,
 			fiber.HeaderXRequestID,
-			constants.HeaderXAppID,
-			constants.HeaderXTimestamp,
-			constants.HeaderXNonce,
-			constants.HeaderXSignature,
+			api.HeaderXAppID,
+			api.HeaderXTimestamp,
+			api.HeaderXNonce,
+			api.HeaderXSignature,
 		},
 		AllowCredentials: false,
 		ExposeHeaders:    []string{},

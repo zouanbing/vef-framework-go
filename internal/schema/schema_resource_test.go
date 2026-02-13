@@ -16,7 +16,6 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/internal/apptest"
@@ -64,7 +63,7 @@ func (suite *SchemaResourceTestSuite) TestSQLiteResource() {
 	suite.T().Log("Testing Schema Resource for SQLite")
 
 	dsConfig := &config.DatasourceConfig{
-		Type: constants.SQLite,
+		Type: config.SQLite,
 	}
 
 	suite.runResourceTests(dsConfig, "SQLite")
@@ -255,11 +254,11 @@ func (suite *SchemaResourceTestSuite) readBody(resp *http.Response) result.Resul
 	return *res
 }
 
-func (suite *SchemaResourceTestSuite) setupTestTables(db *sql.DB, dbType constants.DBType) {
+func (suite *SchemaResourceTestSuite) setupTestTables(db *sql.DB, dbType config.DBType) {
 	var ordersSQL, itemsSQL string
 
 	switch dbType {
-	case constants.Postgres:
+	case config.Postgres:
 		ordersSQL = `
 			CREATE TABLE IF NOT EXISTS resource_test_orders (
 				id SERIAL PRIMARY KEY,
@@ -278,7 +277,7 @@ func (suite *SchemaResourceTestSuite) setupTestTables(db *sql.DB, dbType constan
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 			)`
 
-	case constants.MySQL:
+	case config.MySQL:
 		ordersSQL = `
 			CREATE TABLE IF NOT EXISTS resource_test_orders (
 				id INT AUTO_INCREMENT PRIMARY KEY,
@@ -299,7 +298,7 @@ func (suite *SchemaResourceTestSuite) setupTestTables(db *sql.DB, dbType constan
 				INDEX idx_items_order (order_id)
 			)`
 
-	case constants.SQLite:
+	case config.SQLite:
 		ordersSQL = `
 			CREATE TABLE IF NOT EXISTS resource_test_orders (
 				id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -326,7 +325,7 @@ func (suite *SchemaResourceTestSuite) setupTestTables(db *sql.DB, dbType constan
 	suite.Require().NoError(err, "Creating resource_test_items table should succeed")
 }
 
-func (suite *SchemaResourceTestSuite) cleanupTestTables(db *sql.DB, _ constants.DBType) {
+func (suite *SchemaResourceTestSuite) cleanupTestTables(db *sql.DB, _ config.DBType) {
 	_, _ = db.ExecContext(suite.ctx, "DROP TABLE IF EXISTS resource_test_items")
 	_, _ = db.ExecContext(suite.ctx, "DROP TABLE IF EXISTS resource_test_orders")
 }

@@ -6,7 +6,6 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 type CriteriaBuilder struct {
@@ -1287,481 +1286,481 @@ func (cb *CriteriaBuilder) OrGroup(builder func(ConditionBuilder)) ConditionBuil
 }
 
 func (cb *CriteriaBuilder) CreatedByEquals(createdBy string, alias ...string) ConditionBuilder {
-	cb.and("? = ?", buildColumnExpr(constants.ColumnCreatedBy, alias...), createdBy)
+	cb.and("? = ?", buildColumnExpr(ColumnCreatedBy, alias...), createdBy)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrCreatedByEquals(createdBy string, alias ...string) ConditionBuilder {
-	cb.or("? = ?", buildColumnExpr(constants.ColumnCreatedBy, alias...), createdBy)
+	cb.or("? = ?", buildColumnExpr(ColumnCreatedBy, alias...), createdBy)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) CreatedByEqualsSubQuery(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.and("? = (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.and("? = (?)", buildColumnExpr(ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrCreatedByEqualsSubQuery(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.or("? = (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.or("? = (?)", buildColumnExpr(ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) CreatedByEqualsAny(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.and("? = ANY (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.and("? = ANY (?)", buildColumnExpr(ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrCreatedByEqualsAny(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.or("? = ANY (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.or("? = ANY (?)", buildColumnExpr(ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) CreatedByEqualsAll(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.and("? = ALL (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.and("? = ALL (?)", buildColumnExpr(ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrCreatedByEqualsAll(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.or("? = ALL (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.or("? = ALL (?)", buildColumnExpr(ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) CreatedByEqualsCurrent(alias ...string) ConditionBuilder {
-	cb.and("? = ?Operator", buildColumnExpr(constants.ColumnCreatedBy, alias...))
+	cb.and("? = ?Operator", buildColumnExpr(ColumnCreatedBy, alias...))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrCreatedByEqualsCurrent(alias ...string) ConditionBuilder {
-	cb.or("? = ?Operator", buildColumnExpr(constants.ColumnCreatedBy, alias...))
+	cb.or("? = ?Operator", buildColumnExpr(ColumnCreatedBy, alias...))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) CreatedByNotEquals(createdBy string, alias ...string) ConditionBuilder {
-	cb.and("? <> ?", buildColumnExpr(constants.ColumnCreatedBy, alias...), createdBy)
+	cb.and("? <> ?", buildColumnExpr(ColumnCreatedBy, alias...), createdBy)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrCreatedByNotEquals(createdBy string, alias ...string) ConditionBuilder {
-	cb.or("? <> ?", buildColumnExpr(constants.ColumnCreatedBy, alias...), createdBy)
+	cb.or("? <> ?", buildColumnExpr(ColumnCreatedBy, alias...), createdBy)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) CreatedByNotEqualsSubQuery(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.and("? <> (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.and("? <> (?)", buildColumnExpr(ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrCreatedByNotEqualsSubQuery(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.or("? <> (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.or("? <> (?)", buildColumnExpr(ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) CreatedByNotEqualsAny(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.and("? <> ANY (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.and("? <> ANY (?)", buildColumnExpr(ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrCreatedByNotEqualsAny(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.or("? <> ANY (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.or("? <> ANY (?)", buildColumnExpr(ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) CreatedByNotEqualsAll(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.and("? <> ALL (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.and("? <> ALL (?)", buildColumnExpr(ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrCreatedByNotEqualsAll(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.or("? <> ALL (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.or("? <> ALL (?)", buildColumnExpr(ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) CreatedByNotEqualsCurrent(alias ...string) ConditionBuilder {
-	cb.and("? <> ?Operator", buildColumnExpr(constants.ColumnCreatedBy, alias...))
+	cb.and("? <> ?Operator", buildColumnExpr(ColumnCreatedBy, alias...))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrCreatedByNotEqualsCurrent(alias ...string) ConditionBuilder {
-	cb.or("? <> ?Operator", buildColumnExpr(constants.ColumnCreatedBy, alias...))
+	cb.or("? <> ?Operator", buildColumnExpr(ColumnCreatedBy, alias...))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) CreatedByIn(createdBys []string, alias ...string) ConditionBuilder {
-	cb.and("? IN (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), bun.In(createdBys))
+	cb.and("? IN (?)", buildColumnExpr(ColumnCreatedBy, alias...), bun.In(createdBys))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrCreatedByIn(createdBys []string, alias ...string) ConditionBuilder {
-	cb.or("? IN (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), bun.In(createdBys))
+	cb.or("? IN (?)", buildColumnExpr(ColumnCreatedBy, alias...), bun.In(createdBys))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) CreatedByInSubQuery(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.and("? IN (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.and("? IN (?)", buildColumnExpr(ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrCreatedByInSubQuery(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.or("? IN (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.or("? IN (?)", buildColumnExpr(ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) CreatedByNotIn(createdBys []string, alias ...string) ConditionBuilder {
-	cb.and("? NOT IN (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), bun.In(createdBys))
+	cb.and("? NOT IN (?)", buildColumnExpr(ColumnCreatedBy, alias...), bun.In(createdBys))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrCreatedByNotIn(createdBys []string, alias ...string) ConditionBuilder {
-	cb.or("? NOT IN (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), bun.In(createdBys))
+	cb.or("? NOT IN (?)", buildColumnExpr(ColumnCreatedBy, alias...), bun.In(createdBys))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) CreatedByNotInSubQuery(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.and("? NOT IN (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.and("? NOT IN (?)", buildColumnExpr(ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrCreatedByNotInSubQuery(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.or("? NOT IN (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.or("? NOT IN (?)", buildColumnExpr(ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) UpdatedByEquals(updatedBy string, alias ...string) ConditionBuilder {
-	cb.and("? = ?", buildColumnExpr(constants.ColumnUpdatedBy, alias...), updatedBy)
+	cb.and("? = ?", buildColumnExpr(ColumnUpdatedBy, alias...), updatedBy)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrUpdatedByEquals(updatedBy string, alias ...string) ConditionBuilder {
-	cb.or("? = ?", buildColumnExpr(constants.ColumnUpdatedBy, alias...), updatedBy)
+	cb.or("? = ?", buildColumnExpr(ColumnUpdatedBy, alias...), updatedBy)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) UpdatedByEqualsSubQuery(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.and("? = (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.and("? = (?)", buildColumnExpr(ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrUpdatedByEqualsSubQuery(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.or("? = (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.or("? = (?)", buildColumnExpr(ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) UpdatedByEqualsAny(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.and("? = ANY (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.and("? = ANY (?)", buildColumnExpr(ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrUpdatedByEqualsAny(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.or("? = ANY (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.or("? = ANY (?)", buildColumnExpr(ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) UpdatedByEqualsAll(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.and("? = ALL (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.and("? = ALL (?)", buildColumnExpr(ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrUpdatedByEqualsAll(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.or("? = ALL (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.or("? = ALL (?)", buildColumnExpr(ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) UpdatedByEqualsCurrent(alias ...string) ConditionBuilder {
-	cb.and("? = ?Operator", buildColumnExpr(constants.ColumnUpdatedBy, alias...))
+	cb.and("? = ?Operator", buildColumnExpr(ColumnUpdatedBy, alias...))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrUpdatedByEqualsCurrent(alias ...string) ConditionBuilder {
-	cb.or("? = ?Operator", buildColumnExpr(constants.ColumnUpdatedBy, alias...))
+	cb.or("? = ?Operator", buildColumnExpr(ColumnUpdatedBy, alias...))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) UpdatedByNotEquals(updatedBy string, alias ...string) ConditionBuilder {
-	cb.and("? <> ?", buildColumnExpr(constants.ColumnUpdatedBy, alias...), updatedBy)
+	cb.and("? <> ?", buildColumnExpr(ColumnUpdatedBy, alias...), updatedBy)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrUpdatedByNotEquals(updatedBy string, alias ...string) ConditionBuilder {
-	cb.or("? <> ?", buildColumnExpr(constants.ColumnUpdatedBy, alias...), updatedBy)
+	cb.or("? <> ?", buildColumnExpr(ColumnUpdatedBy, alias...), updatedBy)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) UpdatedByNotEqualsSubQuery(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.and("? <> (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.and("? <> (?)", buildColumnExpr(ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrUpdatedByNotEqualsSubQuery(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.or("? <> (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.or("? <> (?)", buildColumnExpr(ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) UpdatedByNotEqualsAny(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.and("? <> ANY (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.and("? <> ANY (?)", buildColumnExpr(ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrUpdatedByNotEqualsAny(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.or("? <> ANY (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.or("? <> ANY (?)", buildColumnExpr(ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) UpdatedByNotEqualsAll(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.and("? <> ALL (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.and("? <> ALL (?)", buildColumnExpr(ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrUpdatedByNotEqualsAll(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.or("? <> ALL (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.or("? <> ALL (?)", buildColumnExpr(ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) UpdatedByNotEqualsCurrent(alias ...string) ConditionBuilder {
-	cb.and("? <> ?Operator", buildColumnExpr(constants.ColumnUpdatedBy, alias...))
+	cb.and("? <> ?Operator", buildColumnExpr(ColumnUpdatedBy, alias...))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrUpdatedByNotEqualsCurrent(alias ...string) ConditionBuilder {
-	cb.or("? <> ?Operator", buildColumnExpr(constants.ColumnUpdatedBy, alias...))
+	cb.or("? <> ?Operator", buildColumnExpr(ColumnUpdatedBy, alias...))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) UpdatedByIn(updatedBys []string, alias ...string) ConditionBuilder {
-	cb.and("? IN (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), bun.In(updatedBys))
+	cb.and("? IN (?)", buildColumnExpr(ColumnUpdatedBy, alias...), bun.In(updatedBys))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrUpdatedByIn(updatedBys []string, alias ...string) ConditionBuilder {
-	cb.or("? IN (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), bun.In(updatedBys))
+	cb.or("? IN (?)", buildColumnExpr(ColumnUpdatedBy, alias...), bun.In(updatedBys))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) UpdatedByInSubQuery(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.and("? IN (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.and("? IN (?)", buildColumnExpr(ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrUpdatedByInSubQuery(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.or("? IN (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.or("? IN (?)", buildColumnExpr(ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) UpdatedByNotIn(updatedBys []string, alias ...string) ConditionBuilder {
-	cb.and("? NOT IN (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), bun.In(updatedBys))
+	cb.and("? NOT IN (?)", buildColumnExpr(ColumnUpdatedBy, alias...), bun.In(updatedBys))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrUpdatedByNotIn(updatedBys []string, alias ...string) ConditionBuilder {
-	cb.or("? NOT IN (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), bun.In(updatedBys))
+	cb.or("? NOT IN (?)", buildColumnExpr(ColumnUpdatedBy, alias...), bun.In(updatedBys))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) UpdatedByNotInSubQuery(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.and("? NOT IN (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.and("? NOT IN (?)", buildColumnExpr(ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrUpdatedByNotInSubQuery(builder func(SelectQuery), alias ...string) ConditionBuilder {
-	cb.or("? NOT IN (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+	cb.or("? NOT IN (?)", buildColumnExpr(ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) CreatedAtGreaterThan(createdAt time.Time, alias ...string) ConditionBuilder {
-	cb.and("? > ?", buildColumnExpr(constants.ColumnCreatedAt, alias...), createdAt)
+	cb.and("? > ?", buildColumnExpr(ColumnCreatedAt, alias...), createdAt)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrCreatedAtGreaterThan(createdAt time.Time, alias ...string) ConditionBuilder {
-	cb.or("? > ?", buildColumnExpr(constants.ColumnCreatedAt, alias...), createdAt)
+	cb.or("? > ?", buildColumnExpr(ColumnCreatedAt, alias...), createdAt)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) CreatedAtGreaterThanOrEqual(createdAt time.Time, alias ...string) ConditionBuilder {
-	cb.and("? >= ?", buildColumnExpr(constants.ColumnCreatedAt, alias...), createdAt)
+	cb.and("? >= ?", buildColumnExpr(ColumnCreatedAt, alias...), createdAt)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrCreatedAtGreaterThanOrEqual(createdAt time.Time, alias ...string) ConditionBuilder {
-	cb.or("? >= ?", buildColumnExpr(constants.ColumnCreatedAt, alias...), createdAt)
+	cb.or("? >= ?", buildColumnExpr(ColumnCreatedAt, alias...), createdAt)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) CreatedAtLessThan(createdAt time.Time, alias ...string) ConditionBuilder {
-	cb.and("? < ?", buildColumnExpr(constants.ColumnCreatedAt, alias...), createdAt)
+	cb.and("? < ?", buildColumnExpr(ColumnCreatedAt, alias...), createdAt)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrCreatedAtLessThan(createdAt time.Time, alias ...string) ConditionBuilder {
-	cb.or("? < ?", buildColumnExpr(constants.ColumnCreatedAt, alias...), createdAt)
+	cb.or("? < ?", buildColumnExpr(ColumnCreatedAt, alias...), createdAt)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) CreatedAtLessThanOrEqual(createdAt time.Time, alias ...string) ConditionBuilder {
-	cb.and("? <= ?", buildColumnExpr(constants.ColumnCreatedAt, alias...), createdAt)
+	cb.and("? <= ?", buildColumnExpr(ColumnCreatedAt, alias...), createdAt)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrCreatedAtLessThanOrEqual(createdAt time.Time, alias ...string) ConditionBuilder {
-	cb.or("? <= ?", buildColumnExpr(constants.ColumnCreatedAt, alias...), createdAt)
+	cb.or("? <= ?", buildColumnExpr(ColumnCreatedAt, alias...), createdAt)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) CreatedAtBetween(start, end time.Time, alias ...string) ConditionBuilder {
-	cb.and("? BETWEEN ? AND ?", buildColumnExpr(constants.ColumnCreatedAt, alias...), start, end)
+	cb.and("? BETWEEN ? AND ?", buildColumnExpr(ColumnCreatedAt, alias...), start, end)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrCreatedAtBetween(start, end time.Time, alias ...string) ConditionBuilder {
-	cb.or("? BETWEEN ? AND ?", buildColumnExpr(constants.ColumnCreatedAt, alias...), start, end)
+	cb.or("? BETWEEN ? AND ?", buildColumnExpr(ColumnCreatedAt, alias...), start, end)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) CreatedAtNotBetween(start, end time.Time, alias ...string) ConditionBuilder {
-	cb.and("? NOT BETWEEN ? AND ?", buildColumnExpr(constants.ColumnCreatedAt, alias...), start, end)
+	cb.and("? NOT BETWEEN ? AND ?", buildColumnExpr(ColumnCreatedAt, alias...), start, end)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrCreatedAtNotBetween(start, end time.Time, alias ...string) ConditionBuilder {
-	cb.or("? NOT BETWEEN ? AND ?", buildColumnExpr(constants.ColumnCreatedAt, alias...), start, end)
+	cb.or("? NOT BETWEEN ? AND ?", buildColumnExpr(ColumnCreatedAt, alias...), start, end)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) UpdatedAtGreaterThan(updatedAt time.Time, alias ...string) ConditionBuilder {
-	cb.and("? > ?", buildColumnExpr(constants.ColumnUpdatedAt, alias...), updatedAt)
+	cb.and("? > ?", buildColumnExpr(ColumnUpdatedAt, alias...), updatedAt)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrUpdatedAtGreaterThan(updatedAt time.Time, alias ...string) ConditionBuilder {
-	cb.or("? > ?", buildColumnExpr(constants.ColumnUpdatedAt, alias...), updatedAt)
+	cb.or("? > ?", buildColumnExpr(ColumnUpdatedAt, alias...), updatedAt)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) UpdatedAtGreaterThanOrEqual(updatedAt time.Time, alias ...string) ConditionBuilder {
-	cb.and("? >= ?", buildColumnExpr(constants.ColumnUpdatedAt, alias...), updatedAt)
+	cb.and("? >= ?", buildColumnExpr(ColumnUpdatedAt, alias...), updatedAt)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrUpdatedAtGreaterThanOrEqual(updatedAt time.Time, alias ...string) ConditionBuilder {
-	cb.or("? >= ?", buildColumnExpr(constants.ColumnUpdatedAt, alias...), updatedAt)
+	cb.or("? >= ?", buildColumnExpr(ColumnUpdatedAt, alias...), updatedAt)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) UpdatedAtLessThan(updatedAt time.Time, alias ...string) ConditionBuilder {
-	cb.and("? < ?", buildColumnExpr(constants.ColumnUpdatedAt, alias...), updatedAt)
+	cb.and("? < ?", buildColumnExpr(ColumnUpdatedAt, alias...), updatedAt)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrUpdatedAtLessThan(updatedAt time.Time, alias ...string) ConditionBuilder {
-	cb.or("? < ?", buildColumnExpr(constants.ColumnUpdatedAt, alias...), updatedAt)
+	cb.or("? < ?", buildColumnExpr(ColumnUpdatedAt, alias...), updatedAt)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) UpdatedAtLessThanOrEqual(updatedAt time.Time, alias ...string) ConditionBuilder {
-	cb.and("? <= ?", buildColumnExpr(constants.ColumnUpdatedAt, alias...), updatedAt)
+	cb.and("? <= ?", buildColumnExpr(ColumnUpdatedAt, alias...), updatedAt)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrUpdatedAtLessThanOrEqual(updatedAt time.Time, alias ...string) ConditionBuilder {
-	cb.or("? <= ?", buildColumnExpr(constants.ColumnUpdatedAt, alias...), updatedAt)
+	cb.or("? <= ?", buildColumnExpr(ColumnUpdatedAt, alias...), updatedAt)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) UpdatedAtBetween(start, end time.Time, alias ...string) ConditionBuilder {
-	cb.and("? BETWEEN ? AND ?", buildColumnExpr(constants.ColumnUpdatedAt, alias...), start, end)
+	cb.and("? BETWEEN ? AND ?", buildColumnExpr(ColumnUpdatedAt, alias...), start, end)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrUpdatedAtBetween(start, end time.Time, alias ...string) ConditionBuilder {
-	cb.or("? BETWEEN ? AND ?", buildColumnExpr(constants.ColumnUpdatedAt, alias...), start, end)
+	cb.or("? BETWEEN ? AND ?", buildColumnExpr(ColumnUpdatedAt, alias...), start, end)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) UpdatedAtNotBetween(start, end time.Time, alias ...string) ConditionBuilder {
-	cb.and("? NOT BETWEEN ? AND ?", buildColumnExpr(constants.ColumnUpdatedAt, alias...), start, end)
+	cb.and("? NOT BETWEEN ? AND ?", buildColumnExpr(ColumnUpdatedAt, alias...), start, end)
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrUpdatedAtNotBetween(start, end time.Time, alias ...string) ConditionBuilder {
-	cb.or("? NOT BETWEEN ? AND ?", buildColumnExpr(constants.ColumnUpdatedAt, alias...), start, end)
+	cb.or("? NOT BETWEEN ? AND ?", buildColumnExpr(ColumnUpdatedAt, alias...), start, end)
 
 	return cb
 }

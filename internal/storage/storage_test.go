@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	istorage "github.com/ilxqx/vef-framework-go/internal/storage"
 	"github.com/ilxqx/vef-framework-go/internal/storage/services/memory"
 	"github.com/ilxqx/vef-framework-go/storage"
@@ -24,7 +23,7 @@ func TestNew(t *testing.T) {
 		{
 			name: "MemoryService",
 			storageConfig: &config.StorageConfig{
-				Provider: constants.StorageMemory,
+				Provider: config.StorageMemory,
 			},
 			expectError: false,
 			validateType: func(t *testing.T, service storage.Service) {

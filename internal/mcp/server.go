@@ -10,7 +10,6 @@ import (
 	smcp "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/encoding"
 	ilog "github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/mcp"
@@ -141,11 +140,11 @@ func formatParams(params smcp.Params) string {
 }
 
 func getServerName(params ServerParams) string {
-	if params.ServerInfo != nil && params.ServerInfo.Name != constants.Empty {
+	if params.ServerInfo != nil && params.ServerInfo.Name != "" {
 		return params.ServerInfo.Name
 	}
 
-	if params.AppConfig != nil && params.AppConfig.Name != constants.Empty {
+	if params.AppConfig != nil && params.AppConfig.Name != "" {
 		return params.AppConfig.Name
 	}
 
@@ -153,7 +152,7 @@ func getServerName(params ServerParams) string {
 }
 
 func getServerVersion(params ServerParams) string {
-	if params.ServerInfo != nil && params.ServerInfo.Version != constants.Empty {
+	if params.ServerInfo != nil && params.ServerInfo.Version != "" {
 		return params.ServerInfo.Version
 	}
 
@@ -165,5 +164,5 @@ func getInstructions(params ServerParams) string {
 		return params.ServerInfo.Instructions
 	}
 
-	return constants.Empty
+	return ""
 }

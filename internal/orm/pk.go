@@ -9,8 +9,6 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect"
 	"github.com/uptrace/bun/schema"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // PKField describes a model's primary key field with common aliases.
@@ -181,19 +179,19 @@ func (p *pkColumns) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err er
 	}
 
 	if cLen > 1 {
-		b = append(b, constants.ByteLeftParenthesis)
+		b = append(b, '(')
 	}
 
 	for i, column := range p.columns {
 		if i > 0 {
-			b = append(b, constants.CommaSpace...)
+			b = append(b, ", "...)
 		}
 
 		if b, err = p.alias.AppendQuery(gen, b); err != nil {
 			return
 		}
 
-		b = append(b, constants.ByteDot)
+		b = append(b, '.')
 
 		if b, err = column.AppendQuery(gen, b); err != nil {
 			return
@@ -201,7 +199,7 @@ func (p *pkColumns) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err er
 	}
 
 	if cLen > 1 {
-		b = append(b, constants.ByteRightParenthesis)
+		b = append(b, ')')
 	}
 
 	return b, nil

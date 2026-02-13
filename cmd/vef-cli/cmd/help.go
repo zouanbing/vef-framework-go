@@ -6,8 +6,6 @@ import (
 
 	"github.com/muesli/termenv"
 	"github.com/spf13/cobra"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 func setupHelpColors(cmd *cobra.Command) {
@@ -34,11 +32,11 @@ func setupHelpColors(cmd *cobra.Command) {
 
 func printDescription(cmd *cobra.Command) {
 	desc := cmd.Long
-	if desc == constants.Empty {
+	if desc == "" {
 		desc = cmd.Short
 	}
 
-	if desc != constants.Empty {
+	if desc != "" {
 		_, _ = fmt.Fprintln(cmd.OutOrStdout(), desc)
 		_, _ = fmt.Fprintln(cmd.OutOrStdout())
 	}
@@ -83,7 +81,7 @@ func printAvailableCommands(cmd *cobra.Command, output *termenv.Output) {
 
 		_, _ = fmt.Fprint(cmd.OutOrStdout(), output.String(fmt.Sprintf("  %s", c.Name())).Foreground(termenv.ANSIGreen))
 		spacing := maxLen - len(c.Name()) + 2
-		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%*s", spacing, constants.Space)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%*s", spacing, " ")
 		_, _ = fmt.Fprintln(cmd.OutOrStdout(), c.Short)
 	}
 
@@ -126,15 +124,15 @@ func printFlagUsages(cmd *cobra.Command, flags any, output *termenv.Output) {
 	}
 
 	usages := fs.FlagUsages()
-	lines := strings.SplitSeq(usages, constants.Newline)
+	lines := strings.SplitSeq(usages, "\n")
 
 	for line := range lines {
-		if line == constants.Empty {
+		if line == "" {
 			continue
 		}
 
-		trimmed := strings.TrimLeft(line, constants.Space)
-		if trimmed == constants.Empty {
+		trimmed := strings.TrimLeft(line, " ")
+		if trimmed == "" {
 			continue
 		}
 
@@ -146,7 +144,7 @@ func printFlagUsages(cmd *cobra.Command, flags any, output *termenv.Output) {
 		}
 
 		flagPart := parts[0]
-		descPart := strings.TrimLeft(parts[1], constants.Space)
+		descPart := strings.TrimLeft(parts[1], " ")
 
 		_, _ = fmt.Fprint(cmd.OutOrStdout(), output.String(flagPart).Foreground(termenv.ANSIGreen))
 		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  %s\n", descPart)

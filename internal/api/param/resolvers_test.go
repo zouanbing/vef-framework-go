@@ -15,7 +15,6 @@ import (
 	"github.com/ilxqx/vef-framework-go"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/cron"
 	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/internal/app"
@@ -41,10 +40,10 @@ func (suite *ParamResolversTestSuite) SetupSuite() {
 	opts := []fx.Option{
 		vef.ProvideApiResource(NewTestParamResolversResource),
 		fx.Replace(&config.DatasourceConfig{
-			Type: constants.SQLite,
+			Type: config.SQLite,
 		}),
 		fx.Replace(&config.StorageConfig{
-			Provider: constants.StorageMemory,
+			Provider: config.StorageMemory,
 		}),
 	}
 

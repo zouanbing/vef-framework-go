@@ -2,8 +2,6 @@ package orm
 
 import (
 	"github.com/uptrace/bun/schema"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // CaseBuilder is an interface for building CASE expressions.
@@ -136,7 +134,7 @@ func (c *caseExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err err
 
 	// Add the CASE expression if it exists (for simple CASE)
 	if c.caseExpr != nil {
-		b = append(b, constants.ByteSpace)
+		b = append(b, ' ')
 		if b, err = c.caseExpr.AppendQuery(gen, b); err != nil {
 			return
 		}

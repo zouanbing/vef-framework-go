@@ -13,7 +13,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/result"
@@ -171,7 +170,7 @@ func (e *engine) registerResource(res api.Resource) error {
 	}
 
 	resourceName := res.Name()
-	if resourceName == constants.Empty {
+	if resourceName == "" {
 		return shared.ErrResourceNameEmpty
 	}
 
@@ -189,7 +188,7 @@ func (e *engine) registerResource(res api.Resource) error {
 }
 
 func (e *engine) registerOperation(res api.Resource, spec api.OperationSpec) error {
-	if spec.Action == constants.Empty {
+	if spec.Action == "" {
 		return fmt.Errorf("%w for resource %s", shared.ErrOperationActionEmpty, res.Name())
 	}
 
@@ -197,7 +196,7 @@ func (e *engine) registerOperation(res api.Resource, spec api.OperationSpec) err
 	resVersion := lo.CoalesceOrEmpty(res.Version(), e.defaultVersion, api.VersionV1)
 
 	ac := e.resolveAuthConfig(res, spec)
-	if spec.PermToken != constants.Empty {
+	if spec.PermToken != "" {
 		if ac.Options == nil {
 			ac.Options = make(map[string]any)
 		}

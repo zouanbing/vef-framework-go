@@ -16,7 +16,6 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/app"
@@ -366,7 +365,7 @@ func (suite *RESTEngineTestSuite) setupTestApp() {
 		}),
 		fx.Replace(
 			&config.DatasourceConfig{
-				Type: constants.SQLite,
+				Type: config.SQLite,
 			},
 			&security.JWTConfig{
 				Secret:   suite.jwtSecret,
@@ -407,7 +406,7 @@ func (suite *RESTEngineTestSuite) makeRESTRequestWithToken(method, path, body, t
 		req = httptest.NewRequest(method, path, nil)
 	}
 
-	req.Header.Set(fiber.HeaderAuthorization, constants.AuthSchemeBearer+" "+token)
+	req.Header.Set(fiber.HeaderAuthorization, security.AuthSchemeBearer+" "+token)
 
 	resp, err := suite.app.Test(req, 30*time.Second)
 	suite.Require().NoError(err)
@@ -714,7 +713,7 @@ func (suite *RESTEngineTestSuite) TestTokenInQueryParam() {
 
 	token := suite.login()
 
-	req := httptest.NewRequest(fiber.MethodPut, "/api/items?"+constants.QueryKeyAccessToken+"="+token, strings.NewReader(`{"id":"123","name":"Test"}`))
+	req := httptest.NewRequest(fiber.MethodPut, "/api/items?"+security.QueryKeyAccessToken+"="+token, strings.NewReader(`{"id":"123","name":"Test"}`))
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 	resp, err := suite.app.Test(req, 30*time.Second)

@@ -8,7 +8,6 @@ import (
 	"github.com/hbollon/go-edlib"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/api/handler"
 	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 	"github.com/ilxqx/vef-framework-go/reflectx"
@@ -61,7 +60,7 @@ func findHandlerMethod(target reflect.Value, name string) (reflect.Value, error)
 		return allMethods[matches[0]], nil
 	default:
 		best := selectClosestMatch(name, matches)
-		if best != constants.Empty {
+		if best != "" {
 			return allMethods[best], nil
 		}
 
@@ -73,7 +72,7 @@ func findHandlerMethod(target reflect.Value, name string) (reflect.Value, error)
 // selectClosestMatch finds the closest match from candidates using Levenshtein distance.
 func selectClosestMatch(target string, candidates []string) string {
 	if len(candidates) == 0 {
-		return constants.Empty
+		return ""
 	}
 
 	var (
@@ -94,7 +93,7 @@ func selectClosestMatch(target string, candidates []string) string {
 	}
 
 	if ambiguous {
-		return constants.Empty
+		return ""
 	}
 
 	return bestMatch

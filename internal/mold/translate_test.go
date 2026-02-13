@@ -9,7 +9,6 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/internal/apptest"
 	"github.com/ilxqx/vef-framework-go/mold"
@@ -66,7 +65,7 @@ func (suite *TranslateTransformerTestSuite) SetupSuite() {
 	suite.app, suite.stop = apptest.NewTestApp(
 		suite.T(),
 		fx.Replace(&config.DatasourceConfig{
-			Type: constants.SQLite,
+			Type: config.SQLite,
 		}),
 		fx.Provide(func() mold.DataDictLoader {
 			return &MockDataDictLoader{shouldError: false}
@@ -396,7 +395,7 @@ func (suite *TranslateTransformerTestSuite) TestTranslateWithResolverError() {
 		_, stop := apptest.NewTestApp(
 			suite.T(),
 			fx.Replace(&config.DatasourceConfig{
-				Type: constants.SQLite,
+				Type: config.SQLite,
 			}),
 			fx.Provide(func() mold.DataDictLoader {
 				return &MockDataDictLoader{shouldError: true}
@@ -436,7 +435,7 @@ func (suite *TranslateTransformerTestSuite) TestTranslateWithMissingResolver() {
 		_, stop := apptest.NewTestApp(
 			suite.T(),
 			fx.Replace(&config.DatasourceConfig{
-				Type: constants.SQLite,
+				Type: config.SQLite,
 			}),
 			fx.Populate(&transformer),
 		)

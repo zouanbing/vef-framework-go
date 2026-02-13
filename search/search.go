@@ -8,7 +8,6 @@ import (
 	"github.com/samber/lo"
 	"github.com/spf13/cast"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/dbx"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/monad"
@@ -92,7 +91,7 @@ func extractFieldValue(fieldValue any) (any, bool) {
 }
 
 func getColumnAlias(alias string, defaultAlias ...string) string {
-	if alias != constants.Empty {
+	if alias != "" {
 		return alias
 	}
 
@@ -100,7 +99,7 @@ func getColumnAlias(alias string, defaultAlias ...string) string {
 		return defaultAlias[0]
 	}
 
-	return constants.Empty
+	return ""
 }
 
 func applyCondition(cb orm.ConditionBuilder, c Condition, columns []string, value any) {
@@ -185,14 +184,14 @@ func applyInCondition(cb orm.ConditionBuilder, column string, fieldValue any, op
 
 func parseStringInCondition(slice string, conditionParams map[string]string) []any {
 	var values []any
-	if slice == constants.Empty {
+	if slice == "" {
 		return values
 	}
 
-	delimiter := lo.CoalesceOrEmpty(conditionParams[ParamDelimiter], constants.Comma)
+	delimiter := lo.CoalesceOrEmpty(conditionParams[ParamDelimiter], ",")
 	for value := range strings.SplitSeq(slice, delimiter) {
 		switch conditionParams[ParamType] {
-		case constants.TypeInt:
+		case TypeInt:
 			values = append(values, cast.ToInt(value))
 		default:
 			values = append(values, value)
@@ -233,7 +232,7 @@ func applyLikeCondition(cb orm.ConditionBuilder, columns []string, fieldValue an
 		content = *value
 	}
 
-	if content == constants.Empty {
+	if content == "" {
 		return
 	}
 

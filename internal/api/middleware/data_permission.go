@@ -6,7 +6,6 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 	"github.com/ilxqx/vef-framework-go/security"
@@ -61,7 +60,7 @@ func (m *DataPermissionMiddleware) checkPermission(ctx fiber.Ctx, op *api.Operat
 		return ctx.Next()
 	}
 
-	if permToken, ok := op.Auth.Options[shared.AuthOptionPermToken].(string); ok && permToken != constants.Empty {
+	if permToken, ok := op.Auth.Options[shared.AuthOptionPermToken].(string); ok && permToken != "" {
 		if err := m.doCheck(ctx, principal, permToken); err != nil {
 			return err
 		}

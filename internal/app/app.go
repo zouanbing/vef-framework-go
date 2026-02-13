@@ -11,8 +11,8 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/log"
+	"github.com/ilxqx/vef-framework-go/version"
 )
 
 var logger = log.Named("app")
@@ -50,7 +50,7 @@ func (a *App) Start() <-chan error {
 | |/ / /___/ __/    
 |___/_____/_/                   %s
 --------------------------------------------------
-`, output.String(constants.VEFVersion).Foreground(termenv.ANSIBrightGreen).String())
+`, output.String(version.VEFVersion).Foreground(termenv.ANSIBrightGreen).String())
 
 					logger.Infof("VEF application started successfully on port %d", a.port)
 

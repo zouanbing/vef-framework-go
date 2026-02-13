@@ -1,7 +1,6 @@
 package security
 
 import (
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
 
@@ -66,8 +65,8 @@ type SelfDataScope struct {
 // The createdByColumn parameter specifies the database column name for the creator.
 // If empty, it defaults to "created_by".
 func NewSelfDataScope(createdByColumn string) DataScope {
-	if createdByColumn == constants.Empty {
-		createdByColumn = constants.ColumnCreatedBy
+	if createdByColumn == "" {
+		createdByColumn = orm.ColumnCreatedBy
 	}
 
 	return &SelfDataScope{

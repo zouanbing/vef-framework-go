@@ -6,8 +6,6 @@ import (
 	"strings"
 
 	"github.com/samber/lo"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // Indirect returns the underlying type of pointer type.
@@ -35,8 +33,8 @@ func IsSimilarType(t1, t2 reflect.Type) bool {
 	}
 
 	name1, name2 := t1.Name(), t2.Name()
-	index1 := strings.IndexByte(name1, constants.ByteLeftBracket)
-	index2 := strings.IndexByte(name2, constants.ByteLeftBracket)
+	index1 := strings.IndexByte(name1, '[')
+	index2 := strings.IndexByte(name2, '[')
 
 	return index1 > -1 && index2 > -1 && index1 == index2 && name1[:index1] == name2[:index2]
 }

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/ilxqx/vef-framework-go/cache"
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // MemoryNonceStore implements NonceStore using an in-memory cache.
@@ -24,7 +23,7 @@ func NewMemoryNonceStore() NonceStore {
 
 // buildKey creates a unique cache key for the app-nonce combination.
 func (*MemoryNonceStore) buildKey(appID, nonce string) string {
-	return appID + constants.Colon + nonce
+	return appID + ":" + nonce
 }
 
 // Exists checks if a nonce has already been used for the given app.

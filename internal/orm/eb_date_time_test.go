@@ -3,7 +3,7 @@ package orm
 import (
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/config"
 )
 
 // DateTimeFunctionsTestSuite tests date and time manipulation methods of ExprBuilder
@@ -852,7 +852,7 @@ func (suite *DateTimeFunctionsTestSuite) TestAge() {
 		suite.T().Logf("Age from 1957-06-13 to 2001-04-10: %s", result.Age)
 
 		// For PostgreSQL, we can verify the exact result
-		if suite.dbType == constants.Postgres {
+		if suite.dbType == config.Postgres {
 			suite.Contains(result.Age, "43 years", "Should contain approximately 43 years")
 			suite.Contains(result.Age, "9 mons", "Should contain approximately 9 months")
 		}

@@ -7,7 +7,7 @@ import (
 	"github.com/bwmarrin/snowflake"
 	"github.com/spf13/cast"
 
-	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/config"
 )
 
 // DefaultSnowflakeIDGenerator is the default Snowflake ID generator instance.
@@ -24,7 +24,7 @@ func init() {
 	snowflake.StepBits = 12
 
 	var nodeID int64
-	if nodeIDStr := os.Getenv(constants.EnvNodeID); nodeIDStr != constants.Empty {
+	if nodeIDStr := os.Getenv(config.EnvNodeID); nodeIDStr != "" {
 		var err error
 		if nodeID, err = cast.ToInt64E(nodeIDStr); err != nil {
 			panic(fmt.Errorf("failed to convert node ID to int: %w", err))

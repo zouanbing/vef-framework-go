@@ -6,14 +6,13 @@ import (
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/decimal"
 	"github.com/ilxqx/vef-framework-go/id"
 	"github.com/ilxqx/vef-framework-go/internal/approval/publisher"
 	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/ilxqx/vef-framework-go/timex"
 )
 
 // DeployFlowCmd contains the parameters for deploying a flow definition.
@@ -152,7 +151,7 @@ func (s *FlowService) DeployFlow(ctx context.Context, cmd DeployFlowCmd) (*appro
 				}
 				assignee.ID = id.Generate()
 
-				if assigneeDef.FormField != constants.Empty {
+				if assigneeDef.FormField != "" {
 					assignee.FormField = null.StringFrom(assigneeDef.FormField)
 				}
 
@@ -419,7 +418,7 @@ func validateFlowDefinition(def *approval.FlowDefinition) error {
 	nodeIDs := make(map[string]struct{}, len(def.Nodes))
 
 	for _, nd := range def.Nodes {
-		if nd.ID == constants.Empty {
+		if nd.ID == "" {
 			return fmt.Errorf("node ID must not be empty")
 		}
 
@@ -450,7 +449,7 @@ func validateFlowDefinition(def *approval.FlowDefinition) error {
 			}
 
 			flowID, _ := config["flowId"].(string)
-			if flowID == constants.Empty {
+			if flowID == "" {
 				return fmt.Errorf("sub_flow node %q missing flowId in subFlowConfig", nd.ID)
 			}
 		}

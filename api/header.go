@@ -1,4 +1,4 @@
-package constants
+package api
 
 // HTTP header keys used by the framework.
 const (

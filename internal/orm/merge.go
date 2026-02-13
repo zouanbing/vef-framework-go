@@ -7,8 +7,6 @@ import (
 	"github.com/samber/lo"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 var defaultSourceAlias = "src"
@@ -78,7 +76,7 @@ func (q *BunMergeQuery) Model(model any) MergeQuery {
 }
 
 func (q *BunMergeQuery) ModelTable(name string, alias ...string) MergeQuery {
-	if len(alias) > 0 && alias[0] != constants.Empty {
+	if len(alias) > 0 && alias[0] != "" {
 		q.query.ModelTableExpr("? AS ?", bun.Name(name), bun.Name(alias[0]))
 	} else {
 		q.query.ModelTableExpr("? AS ?TableAlias", bun.Name(name))
@@ -88,7 +86,7 @@ func (q *BunMergeQuery) ModelTable(name string, alias ...string) MergeQuery {
 }
 
 func (q *BunMergeQuery) Table(name string, alias ...string) MergeQuery {
-	if len(alias) > 0 && alias[0] != constants.Empty {
+	if len(alias) > 0 && alias[0] != "" {
 		q.query.TableExpr("? AS ?", bun.Name(name), bun.Name(alias[0]))
 	} else {
 		q.query.Table(name)
@@ -101,7 +99,7 @@ func (q *BunMergeQuery) TableFrom(model any, alias ...string) MergeQuery {
 	table := q.db.TableOf(model)
 
 	aliasToUse := table.Alias
-	if len(alias) > 0 && alias[0] != constants.Empty {
+	if len(alias) > 0 && alias[0] != "" {
 		aliasToUse = alias[0]
 	}
 
@@ -112,7 +110,7 @@ func (q *BunMergeQuery) TableFrom(model any, alias ...string) MergeQuery {
 
 func (q *BunMergeQuery) TableExpr(builder func(ExprBuilder) any, alias ...string) MergeQuery {
 	expr := builder(q.eb)
-	if len(alias) > 0 && alias[0] != constants.Empty {
+	if len(alias) > 0 && alias[0] != "" {
 		q.query.TableExpr("(?) AS ?", expr, bun.Name(alias[0]))
 	} else {
 		q.query.TableExpr("(?)", expr)
@@ -123,7 +121,7 @@ func (q *BunMergeQuery) TableExpr(builder func(ExprBuilder) any, alias ...string
 
 func (q *BunMergeQuery) TableSubQuery(builder func(SelectQuery), alias ...string) MergeQuery {
 	subQuery := q.BuildSubQuery(builder)
-	if len(alias) > 0 && alias[0] != constants.Empty {
+	if len(alias) > 0 && alias[0] != "" {
 		q.query.TableExpr("(?) AS ?", subQuery, bun.Name(alias[0]))
 	} else {
 		q.query.TableExpr("(?)", subQuery)
@@ -136,11 +134,11 @@ func (q *BunMergeQuery) Using(model any, alias ...string) MergeQuery {
 	table := q.db.TableOf(model)
 
 	q.srcAlias = table.Alias
-	if len(alias) > 0 && alias[0] != constants.Empty {
+	if len(alias) > 0 && alias[0] != "" {
 		q.srcAlias = alias[0]
 	}
 
-	if q.srcAlias == constants.Empty {
+	if q.srcAlias == "" {
 		q.srcAlias = table.Name
 	}
 
@@ -150,7 +148,7 @@ func (q *BunMergeQuery) Using(model any, alias ...string) MergeQuery {
 }
 
 func (q *BunMergeQuery) UsingTable(table string, alias ...string) MergeQuery {
-	if len(alias) > 0 && alias[0] != constants.Empty {
+	if len(alias) > 0 && alias[0] != "" {
 		q.srcAlias = alias[0]
 		q.query.Using("? AS ?", bun.Name(table), bun.Name(alias[0]))
 	} else {
@@ -163,7 +161,7 @@ func (q *BunMergeQuery) UsingTable(table string, alias ...string) MergeQuery {
 
 func (q *BunMergeQuery) UsingExpr(builder func(ExprBuilder) any, alias ...string) MergeQuery {
 	q.srcAlias = defaultSourceAlias
-	if len(alias) > 0 && alias[0] != constants.Empty {
+	if len(alias) > 0 && alias[0] != "" {
 		q.srcAlias = alias[0]
 	}
 
@@ -174,7 +172,7 @@ func (q *BunMergeQuery) UsingExpr(builder func(ExprBuilder) any, alias ...string
 
 func (q *BunMergeQuery) UsingSubQuery(builder func(SelectQuery), alias ...string) MergeQuery {
 	q.srcAlias = defaultSourceAlias
-	if len(alias) > 0 && alias[0] != constants.Empty {
+	if len(alias) > 0 && alias[0] != "" {
 		q.srcAlias = alias[0]
 	}
 

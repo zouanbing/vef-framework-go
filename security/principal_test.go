@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/orm"
 )
 
 type TestUserDetails struct {
@@ -77,7 +77,7 @@ func TestPrincipalWithRoles(t *testing.T) {
 func TestPrincipalSystem(t *testing.T) {
 	t.Run("System principal has correct values", func(t *testing.T) {
 		assert.Equal(t, PrincipalTypeSystem, PrincipalSystem.Type)
-		assert.Equal(t, constants.OperatorSystem, PrincipalSystem.ID)
+		assert.Equal(t, orm.OperatorSystem, PrincipalSystem.ID)
 		assert.Equal(t, "系统", PrincipalSystem.Name)
 	})
 }
@@ -85,7 +85,7 @@ func TestPrincipalSystem(t *testing.T) {
 func TestPrincipalAnonymous(t *testing.T) {
 	t.Run("Anonymous principal has correct values", func(t *testing.T) {
 		assert.Equal(t, PrincipalTypeUser, PrincipalAnonymous.Type)
-		assert.Equal(t, constants.OperatorAnonymous, PrincipalAnonymous.ID)
+		assert.Equal(t, orm.OperatorAnonymous, PrincipalAnonymous.ID)
 		assert.Equal(t, "匿名", PrincipalAnonymous.Name)
 	})
 }
@@ -233,7 +233,7 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, PrincipalTypeSystem, principal.Type)
-		assert.Equal(t, constants.OperatorSystem, principal.ID)
+		assert.Equal(t, orm.OperatorSystem, principal.ID)
 		assert.Nil(t, principal.Details)
 	})
 

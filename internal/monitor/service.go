@@ -17,8 +17,8 @@ import (
 	"github.com/shirou/gopsutil/v4/process"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/monitor"
+	"github.com/ilxqx/vef-framework-go/version"
 )
 
 // DefaultService implements monitor.Service with background CPU and process sampling.
@@ -110,7 +110,7 @@ func (*DefaultService) buildDiskSummary(diskInfo *monitor.DiskInfo) *monitor.Dis
 			continue
 		}
 
-		if part.Device != constants.Empty {
+		if part.Device != "" {
 			container := getDeviceContainer(part.Device)
 			if seenDevices[container] {
 				continue
@@ -178,7 +178,7 @@ var (
 
 // shouldSkipMountPoint checks if a mount point should be excluded from disk stats.
 func shouldSkipMountPoint(mountPoint string) bool {
-	if mountPoint == constants.Empty {
+	if mountPoint == "" {
 		return true
 	}
 
@@ -199,8 +199,8 @@ func shouldSkipMountPoint(mountPoint string) bool {
 
 // getDeviceContainer extracts the base container device name from an APFS volume device.
 func getDeviceContainer(device string) string {
-	if device == constants.Empty {
-		return constants.Empty
+	if device == "" {
+		return ""
 	}
 
 	for i, ch := range device {
@@ -465,7 +465,7 @@ func (*DefaultService) Load(ctx context.Context) (*monitor.LoadInfo, error) {
 func (s *DefaultService) BuildInfo() *monitor.BuildInfo {
 	if s.buildInfo == nil {
 		return &monitor.BuildInfo{
-			VEFVersion: constants.VEFVersion,
+			VEFVersion: version.VEFVersion,
 			AppVersion: "unknown",
 			BuildTime:  "unknown",
 			GitCommit:  "unknown",

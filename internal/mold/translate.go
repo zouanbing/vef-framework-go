@@ -9,7 +9,6 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/log"
 	"github.com/ilxqx/vef-framework-go/mold"
 	"github.com/ilxqx/vef-framework-go/null"
@@ -53,7 +52,7 @@ type TranslateTransformer struct {
 // Returns empty string and an error for unsupported types.
 func extractStringValue(fieldName string, field reflect.Value) (string, error) {
 	if !field.IsValid() {
-		return constants.Empty, fmt.Errorf("%w: field %q is invalid", ErrUnsupportedFieldType, fieldName)
+		return "", fmt.Errorf("%w: field %q is invalid", ErrUnsupportedFieldType, fieldName)
 	}
 
 	fieldType := field.Type()
@@ -78,7 +77,7 @@ func extractStringValue(fieldName string, field reflect.Value) (string, error) {
 	case fieldType == nullIntType:
 		nullInt := field.Interface().(null.Int)
 		if !nullInt.Valid {
-			return constants.Empty, nil
+			return "", nil
 		}
 
 		return cast.ToStringE(nullInt.Int64)
@@ -86,7 +85,7 @@ func extractStringValue(fieldName string, field reflect.Value) (string, error) {
 	case fieldType == nullInt16Type:
 		nullInt16 := field.Interface().(null.Int16)
 		if !nullInt16.Valid {
-			return constants.Empty, nil
+			return "", nil
 		}
 
 		return cast.ToStringE(nullInt16.Int16)
@@ -94,13 +93,13 @@ func extractStringValue(fieldName string, field reflect.Value) (string, error) {
 	case fieldType == nullInt32Type:
 		nullInt32 := field.Interface().(null.Int32)
 		if !nullInt32.Valid {
-			return constants.Empty, nil
+			return "", nil
 		}
 
 		return cast.ToStringE(nullInt32.Int32)
 
 	default:
-		return constants.Empty, fmt.Errorf(
+		return "", fmt.Errorf(
 			"%w: field %q has unsupported type %v (supported: string, *string, null.String, null.Int, null.Int16, null.Int32, integers and their pointer forms)",
 			ErrUnsupportedFieldType,
 			fieldName,
@@ -112,7 +111,7 @@ func extractStringValue(fieldName string, field reflect.Value) (string, error) {
 // extractPointerStringValue extracts string value from pointer types.
 func extractPointerStringValue(fieldName string, field reflect.Value) (string, error) {
 	if field.IsNil() {
-		return constants.Empty, nil
+		return "", nil
 	}
 
 	elemType := reflectx.Indirect(field.Type())
@@ -127,7 +126,7 @@ func extractPointerStringValue(fieldName string, field reflect.Value) (string, e
 	case isUnsignedInt(elemKind):
 		return cast.ToStringE(elemValue.Uint())
 	default:
-		return constants.Empty, fmt.Errorf("%w: field %q has unsupported pointer element type %v", ErrUnsupportedFieldType, fieldName, elemType)
+		return "", fmt.Errorf("%w: field %q has unsupported pointer element type %v", ErrUnsupportedFieldType, fieldName, elemType)
 	}
 }
 
@@ -195,7 +194,7 @@ func (t *TranslateTransformer) Transform(ctx context.Context, fl mold.FieldLevel
 	}
 
 	// Skip empty value or name processing
-	if name == constants.Empty || value == constants.Empty {
+	if name == "" || value == "" {
 		return nil
 	}
 
@@ -207,7 +206,7 @@ func (t *TranslateTransformer) Transform(ctx context.Context, fl mold.FieldLevel
 	}
 
 	kind := fl.Param()
-	if kind == constants.Empty {
+	if kind == "" {
 		return fmt.Errorf("%w: field %q with value %q", ErrTranslationKindEmpty, name, value)
 	}
 
@@ -227,7 +226,7 @@ func (t *TranslateTransformer) Transform(ctx context.Context, fl mold.FieldLevel
 		}
 	}
 
-	if strings.HasSuffix(kind, constants.QuestionMark) {
+	if strings.HasSuffix(kind, "?") {
 		return nil
 	}
 

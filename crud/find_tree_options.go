@@ -7,7 +7,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/dbx"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
@@ -174,7 +173,7 @@ func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.DB) (func(c
 			query.SelectAs(config.ValueColumn, ValueColumn)
 		}
 
-		if config.DescriptionColumn != constants.Empty {
+		if config.DescriptionColumn != "" {
 			if config.DescriptionColumn == DescriptionColumn {
 				query.Select(config.DescriptionColumn)
 			} else {

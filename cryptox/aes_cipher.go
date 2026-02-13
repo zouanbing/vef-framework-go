@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
@@ -98,7 +97,7 @@ func (a *aesCipher) Decrypt(ciphertext string) (string, error) {
 func (a *aesCipher) encryptCBC(plaintext string) (string, error) {
 	block, err := aes.NewCipher(a.key)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to create AES cipher: %w", err)
+		return "", fmt.Errorf("failed to create AES cipher: %w", err)
 	}
 
 	paddedData := pkcs7Padding([]byte(plaintext), aes.BlockSize)
@@ -113,16 +112,16 @@ func (a *aesCipher) encryptCBC(plaintext string) (string, error) {
 func (a *aesCipher) decryptCBC(ciphertext string) (string, error) {
 	block, err := aes.NewCipher(a.key)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to create AES cipher: %w", err)
+		return "", fmt.Errorf("failed to create AES cipher: %w", err)
 	}
 
 	encryptedData, err := encoding.FromBase64(ciphertext)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to decode base64: %w", err)
+		return "", fmt.Errorf("failed to decode base64: %w", err)
 	}
 
 	if len(encryptedData)%aes.BlockSize != 0 {
-		return constants.Empty, ErrCiphertextNotMultipleOfBlock
+		return "", ErrCiphertextNotMultipleOfBlock
 	}
 
 	plaintext := make([]byte, len(encryptedData))
@@ -131,7 +130,7 @@ func (a *aesCipher) decryptCBC(ciphertext string) (string, error) {
 
 	unpaddedData, err := pkcs7Unpadding(plaintext)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to remove padding: %w", err)
+		return "", fmt.Errorf("failed to remove padding: %w", err)
 	}
 
 	return string(unpaddedData), nil
@@ -140,17 +139,17 @@ func (a *aesCipher) decryptCBC(ciphertext string) (string, error) {
 func (a *aesCipher) encryptGCM(plaintext string) (string, error) {
 	block, err := aes.NewCipher(a.key)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to create AES cipher: %w", err)
+		return "", fmt.Errorf("failed to create AES cipher: %w", err)
 	}
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to create GCM: %w", err)
+		return "", fmt.Errorf("failed to create GCM: %w", err)
 	}
 
 	nonce := make([]byte, gcm.NonceSize())
 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-		return constants.Empty, fmt.Errorf("failed to generate nonce: %w", err)
+		return "", fmt.Errorf("failed to generate nonce: %w", err)
 	}
 
 	ciphertext := gcm.Seal(nonce, nonce, []byte(plaintext), nil)
@@ -161,29 +160,29 @@ func (a *aesCipher) encryptGCM(plaintext string) (string, error) {
 func (a *aesCipher) decryptGCM(ciphertext string) (string, error) {
 	block, err := aes.NewCipher(a.key)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to create AES cipher: %w", err)
+		return "", fmt.Errorf("failed to create AES cipher: %w", err)
 	}
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to create GCM: %w", err)
+		return "", fmt.Errorf("failed to create GCM: %w", err)
 	}
 
 	encryptedData, err := encoding.FromBase64(ciphertext)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to decode base64: %w", err)
+		return "", fmt.Errorf("failed to decode base64: %w", err)
 	}
 
 	nonceSize := gcm.NonceSize()
 	if len(encryptedData) < nonceSize {
-		return constants.Empty, ErrCiphertextTooShort
+		return "", ErrCiphertextTooShort
 	}
 
 	nonce, ciphertextBytes := encryptedData[:nonceSize], encryptedData[nonceSize:]
 
 	plaintext, err := gcm.Open(nil, nonce, ciphertextBytes, nil)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to decrypt and verify: %w", err)
+		return "", fmt.Errorf("failed to decrypt and verify: %w", err)
 	}
 
 	return string(plaintext), nil

@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
@@ -36,7 +35,7 @@ func (j *JWTRefreshAuthenticator) Authenticate(ctx context.Context, authenticati
 	}
 
 	token := authentication.Principal
-	if token == constants.Empty {
+	if token == "" {
 		return nil, result.ErrTokenInvalid
 	}
 
@@ -51,7 +50,7 @@ func (j *JWTRefreshAuthenticator) Authenticate(ctx context.Context, authenticati
 		return nil, result.ErrTokenInvalid
 	}
 
-	subjectParts := strings.SplitN(claimsAccessor.Subject(), constants.At, 2)
+	subjectParts := strings.SplitN(claimsAccessor.Subject(), "@", 2)
 	userID := subjectParts[0]
 
 	// Reload user to get latest permissions/status instead of relying on stale token data.

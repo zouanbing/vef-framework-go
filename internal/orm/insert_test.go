@@ -6,7 +6,7 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/config"
 )
 
 // InsertTestSuite tests INSERT operations following InsertQuery interface method order.
@@ -98,7 +98,7 @@ func (suite *InsertTestSuite) TestBasicInsert() {
 func (suite *InsertTestSuite) TestCTE() {
 	suite.T().Logf("Testing CTE methods for %s", suite.dbType)
 
-	if suite.dbType == constants.MySQL {
+	if suite.dbType == config.MySQL {
 		suite.T().Skipf("CTE in INSERT not supported on %s", suite.dbType)
 
 		return
@@ -574,7 +574,7 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 func (suite *InsertTestSuite) TestReturning() {
 	suite.T().Logf("Testing RETURNING clause for %s", suite.dbType)
 
-	if suite.dbType == constants.MySQL {
+	if suite.dbType == config.MySQL {
 		suite.T().Skipf("RETURNING clause not supported on %s", suite.dbType)
 
 		return

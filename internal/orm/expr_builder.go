@@ -6,8 +6,6 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect"
 	"github.com/uptrace/bun/schema"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // QueryExprBuilder implements the ExprBuilder interface, providing methods to build various SQL expressions.
@@ -18,10 +16,10 @@ type QueryExprBuilder struct {
 func (b *QueryExprBuilder) Column(column string, withTableAlias ...bool) schema.QueryAppender {
 	needTableAlias := len(withTableAlias) == 0 || withTableAlias[0]
 
-	before, after, ok := strings.Cut(column, constants.Dot)
+	before, after, ok := strings.Cut(column, ".")
 	if ok {
 		alias, name := before, after
-		if strings.IndexByte(alias, constants.ByteQuestionMark) == 0 {
+		if strings.IndexByte(alias, '?') == 0 {
 			var sb strings.Builder
 			sb.Grow(len(alias) + 2)
 			_, _ = sb.WriteString(alias)
@@ -44,14 +42,14 @@ func (b *QueryExprBuilder) TableColumns(withTableAlias ...bool) schema.QueryAppe
 	needTableAlias := len(withTableAlias) == 0 || withTableAlias[0]
 
 	if needTableAlias {
-		return b.Expr(constants.ExprTableColumns)
+		return b.Expr(ExprTableColumns)
 	}
 
-	return b.Expr(constants.ExprColumns)
+	return b.Expr(ExprColumns)
 }
 
 func (b *QueryExprBuilder) AllColumns(tableAlias ...string) schema.QueryAppender {
-	if len(tableAlias) > 0 && tableAlias[0] != constants.Empty {
+	if len(tableAlias) > 0 && tableAlias[0] != "" {
 		return b.Expr("?.*", bun.Name(tableAlias[0]))
 	}
 
@@ -222,7 +220,7 @@ func (*QueryExprBuilder) Expr(expr string, args ...any) schema.QueryAppender {
 }
 
 func (*QueryExprBuilder) Exprs(exprs ...any) schema.QueryAppender {
-	return newExpressions(constants.CommaSpace, exprs...)
+	return newExpressions(", ", exprs...)
 }
 
 func (*QueryExprBuilder) ExprsWithSep(sep any, exprs ...any) schema.QueryAppender {
@@ -721,7 +719,7 @@ func (b *QueryExprBuilder) Concat(args ...any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		SQLite: func() schema.QueryAppender {
 			if len(args) == 0 {
-				return b.Expr("?", constants.Empty)
+				return b.Expr("?", "")
 			}
 
 			if len(args) == 1 {
@@ -740,7 +738,7 @@ func (b *QueryExprBuilder) ConcatWithSep(separator any, args ...any) schema.Quer
 	return b.ExprByDialect(DialectExprs{
 		SQLite: func() schema.QueryAppender {
 			if len(args) == 0 {
-				return b.Expr("?", constants.Empty)
+				return b.Expr("?", "")
 			}
 
 			if len(args) == 1 {
@@ -1501,10 +1499,10 @@ func (b *QueryExprBuilder) Mod(dividend, divisor any) schema.QueryAppender {
 func (b *QueryExprBuilder) Greatest(args ...any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		SQLite: func() schema.QueryAppender {
-			return b.Expr("MAX(?)", newExpressions(constants.CommaSpace, args...))
+			return b.Expr("MAX(?)", newExpressions(", ", args...))
 		},
 		Default: func() schema.QueryAppender {
-			return b.Expr("GREATEST(?)", newExpressions(constants.CommaSpace, args...))
+			return b.Expr("GREATEST(?)", newExpressions(", ", args...))
 		},
 	})
 }
@@ -1512,10 +1510,10 @@ func (b *QueryExprBuilder) Greatest(args ...any) schema.QueryAppender {
 func (b *QueryExprBuilder) Least(args ...any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		SQLite: func() schema.QueryAppender {
-			return b.Expr("MIN(?)", newExpressions(constants.CommaSpace, args...))
+			return b.Expr("MIN(?)", newExpressions(", ", args...))
 		},
 		Default: func() schema.QueryAppender {
-			return b.Expr("LEAST(?)", newExpressions(constants.CommaSpace, args...))
+			return b.Expr("LEAST(?)", newExpressions(", ", args...))
 		},
 	})
 }
@@ -1523,7 +1521,7 @@ func (b *QueryExprBuilder) Least(args ...any) schema.QueryAppender {
 // ========== Conditional Functions ==========
 
 func (b *QueryExprBuilder) Coalesce(args ...any) schema.QueryAppender {
-	return b.Expr("COALESCE(?)", newExpressions(constants.CommaSpace, args...))
+	return b.Expr("COALESCE(?)", newExpressions(", ", args...))
 }
 
 func (b *QueryExprBuilder) NullIf(expr1, expr2 any) schema.QueryAppender {
@@ -1771,24 +1769,24 @@ func (b *QueryExprBuilder) processJSONPath(path any, dialectName dialect.Name) a
 	case dialect.PG:
 		if pathStr, ok := path.(string); ok {
 			// Split by dot and join with comma
-			parts := strings.Split(pathStr, constants.Dot)
+			parts := strings.Split(pathStr, ".")
 
-			return constants.LeftBrace + strings.Join(parts, constants.Comma) + constants.RightBrace
+			return "{" + strings.Join(parts, ",") + "}"
 		}
 		// For expressions, we replace . with , and wrap in {}
 		// Note: This assumes the expression evaluates to a dot-separated string
-		return b.Concat(constants.LeftBrace, b.Replace(path, constants.Dot, constants.Comma), constants.RightBrace)
+		return b.Concat("{", b.Replace(path, ".", ","), "}")
 
 	default: // MySQL, SQLite
 		if pathStr, ok := path.(string); ok {
 			if len(pathStr) == 0 {
-				return constants.Dollar
+				return "$"
 			}
 
-			return constants.Dollar + constants.Dot + pathStr
+			return "$" + "." + pathStr
 		}
 
-		return b.Concat(constants.Dollar+constants.Dot, path)
+		return b.Concat("$.", path)
 	}
 }
 
@@ -2162,7 +2160,7 @@ func (b *QueryExprBuilder) JSONReplace(json, path, value any) schema.QueryAppend
 func (b *QueryExprBuilder) JSONArrayAppend(json, path, value any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
-			if pathStr, ok := path.(string); ok && (pathStr == "$" || pathStr == constants.Dollar) {
+			if pathStr, ok := path.(string); ok && (pathStr == "$") {
 				// Root level array
 				return b.Expr("(? || ?)", b.ToJSON(json), b.JSONArray(value))
 			}
@@ -2223,7 +2221,7 @@ func (b *QueryExprBuilder) Decode(args ...any) schema.QueryAppender {
 			return b.convertDecodeToCase(args...)
 		},
 		Default: func() schema.QueryAppender {
-			return b.Expr("DECODE(?)", newExpressions(constants.CommaSpace, args...))
+			return b.Expr("DECODE(?)", newExpressions(", ", args...))
 		},
 	})
 }

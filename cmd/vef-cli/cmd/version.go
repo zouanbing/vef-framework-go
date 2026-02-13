@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"runtime/debug"
 	"time"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // VersionInfo holds version and build information.
@@ -27,7 +25,7 @@ func GetVersionInfo(ldflagsVersion, ldflagsDate string) VersionInfo {
 		return info
 	}
 
-	if buildInfo.Main.Version != constants.Empty && buildInfo.Main.Version != "(devel)" {
+	if buildInfo.Main.Version != "" && buildInfo.Main.Version != "(devel)" {
 		info.Version = buildInfo.Main.Version
 	}
 

@@ -3,8 +3,6 @@ package password
 import (
 	"fmt"
 	"strings"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 const saltPositionPrefix = "prefix"
@@ -21,7 +19,7 @@ type hashEncoder struct {
 }
 
 func (e *hashEncoder) prepareInput(password, salt string) string {
-	if salt == constants.Empty {
+	if salt == "" {
 		return password
 	}
 
@@ -36,7 +34,7 @@ func (e *hashEncoder) Encode(password string) (string, error) {
 	input := e.prepareInput(password, e.salt)
 	hexHash := e.hashFn([]byte(input))
 
-	if e.salt != constants.Empty {
+	if e.salt != "" {
 		return fmt.Sprintf("{%s}$%s$%s", e.algorithm, e.salt, hexHash), nil
 	}
 

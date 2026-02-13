@@ -11,12 +11,11 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/httpx"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/id"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/storage"
-	"github.com/ilxqx/vef-framework-go/httpx"
 )
 
 const (
@@ -79,7 +78,7 @@ func (r *Resource) Upload(ctx fiber.Ctx, params UploadParams) error {
 	}()
 
 	contentType := params.ContentType
-	if contentType == constants.Empty {
+	if contentType == "" {
 		contentType = params.File.Header.Get(fiber.HeaderContentType)
 	}
 
@@ -109,11 +108,11 @@ func (*Resource) generateObjectKey(filename string) string {
 	uuid := id.GenerateUUID()
 
 	ext := filepath.Ext(filename)
-	if ext == constants.Empty {
+	if ext == "" {
 		ext = defaultExtension
 	}
 
-	return storage.TempPrefix + datePath + constants.Slash + uuid + ext
+	return storage.TempPrefix + datePath + "/" + uuid + ext
 }
 
 type GetPresignedURLParams struct {
@@ -131,7 +130,7 @@ func (r *Resource) GetPresignedURL(ctx fiber.Ctx, params GetPresignedURLParams) 
 	}
 
 	method := params.Method
-	if method == constants.Empty {
+	if method == "" {
 		method = http.MethodGet
 	}
 

@@ -2,8 +2,6 @@ package password
 
 import (
 	"golang.org/x/crypto/bcrypt"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 const (
@@ -42,12 +40,12 @@ func NewBcryptEncoder(opts ...BcryptOption) Encoder {
 
 func (e *bcryptEncoder) Encode(password string) (string, error) {
 	if e.cost < bcryptMinCost || e.cost > bcryptMaxCost {
-		return constants.Empty, ErrInvalidCost
+		return "", ErrInvalidCost
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), e.cost)
 	if err != nil {
-		return constants.Empty, err
+		return "", err
 	}
 
 	return string(hashedPassword), nil

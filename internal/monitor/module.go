@@ -8,10 +8,10 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/contract"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/monitor"
+	"github.com/ilxqx/vef-framework-go/version"
 )
 
 var logger = log.Named("monitor")
@@ -44,7 +44,7 @@ var Module = fx.Module(
 						GitCommit:  "-",
 					}
 				}
-				buildInfo.VEFVersion = constants.VEFVersion
+				buildInfo.VEFVersion = version.VEFVersion
 
 				return buildInfo
 			},

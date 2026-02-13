@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	ilog "github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/log"
 	"github.com/ilxqx/vef-framework-go/mapx"
@@ -34,20 +33,20 @@ func (v *ViperConfig) Unmarshal(key string, target any) error {
 
 func newConfig() (config.Config, error) {
 	v := viper.NewWithOptions(
-		viper.EnvKeyReplacer(strings.NewReplacer(constants.Dot, constants.Underscore)),
-		viper.KeyDelimiter(constants.Dot),
+		viper.EnvKeyReplacer(strings.NewReplacer(".", "_")),
+		viper.KeyDelimiter("."),
 		viper.WithLogger(ilog.NewSLogger("config", 3, log.LevelWarn)),
 	)
-	v.SetEnvPrefix(constants.EnvKeyPrefix)
+	v.SetEnvPrefix(config.EnvKeyPrefix)
 	v.AllowEmptyEnv(true)
 	v.AutomaticEnv()
 
-	v.SetConfigName(configName)
+	v.SetConfigName("application")
 	v.SetConfigType("toml")
-	v.AddConfigPath("./" + configDir)
-	v.AddConfigPath(constants.Dollar + constants.EnvConfigPath)
+	v.AddConfigPath("./configs")
+	v.AddConfigPath("$VEF_CONFIG_PATH")
 	v.AddConfigPath(".")
-	v.AddConfigPath("../" + configDir)
+	v.AddConfigPath("../configs")
 
 	if err := v.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)

@@ -3,8 +3,6 @@ package reflectx
 import (
 	"container/list"
 	"reflect"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // TraversalMode defines the traversal strategy for visiting struct fields and methods.
@@ -449,7 +447,7 @@ func shouldRecurse(field reflect.StructField, diveTag TagConfig) bool {
 		return Indirect(field.Type).Kind() == reflect.Struct
 	}
 
-	if diveTag.Name != constants.Empty && diveTag.Value != constants.Empty && field.Tag.Get(diveTag.Name) == diveTag.Value {
+	if diveTag.Name != "" && diveTag.Value != "" && field.Tag.Get(diveTag.Name) == diveTag.Value {
 		return Indirect(field.Type).Kind() == reflect.Struct
 	}
 

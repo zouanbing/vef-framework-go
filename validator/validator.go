@@ -16,7 +16,7 @@ import (
 	entranslation "github.com/go-playground/validator/v10/translations/en"
 	zhtranslation "github.com/go-playground/validator/v10/translations/zh"
 
-	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/null"
@@ -35,9 +35,9 @@ var (
 )
 
 func init() {
-	preferredLanguage := lo.CoalesceOrEmpty(os.Getenv(constants.EnvI18NLanguage), constants.DefaultI18NLanguage)
+	preferredLanguage := lo.CoalesceOrEmpty(os.Getenv(config.EnvI18NLanguage), i18n.DefaultLanguage)
 	localeTranslator := lo.TernaryF(
-		preferredLanguage == constants.DefaultI18NLanguage,
+		preferredLanguage == i18n.DefaultLanguage,
 		zhlocale.New,
 		enlocale.New,
 	)
@@ -45,7 +45,7 @@ func init() {
 
 	translator, _ = universalTranslator.GetTranslator(
 		lo.Ternary(
-			preferredLanguage == constants.DefaultI18NLanguage,
+			preferredLanguage == i18n.DefaultLanguage,
 			"zh",
 			"en",
 		),
@@ -53,7 +53,7 @@ func init() {
 	validator = v.New(v.WithRequiredStructEnabled())
 
 	if err := lo.TernaryF(
-		preferredLanguage == constants.DefaultI18NLanguage,
+		preferredLanguage == i18n.DefaultLanguage,
 		func() error {
 			return zhtranslation.RegisterDefaultTranslations(validator, translator)
 		},
@@ -68,12 +68,12 @@ func init() {
 
 	validator.RegisterTagNameFunc(func(field reflect.StructField) string {
 		label := field.Tag.Get(tagLabel)
-		if label != constants.Empty {
+		if label != "" {
 			return label
 		}
 
 		label = field.Tag.Get(tagLabelI18n)
-		if label != constants.Empty {
+		if label != "" {
 			return lo.CoalesceOrEmpty(i18n.T(label), field.Name)
 		}
 

@@ -6,7 +6,6 @@ import (
 
 	"github.com/tjfoc/gmsm/sm4"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
@@ -99,7 +98,7 @@ func (s *sm4Cipher) encryptECB(plaintext string) (string, error) {
 
 	ciphertext, err := sm4.Sm4Ecb(s.key, paddedData, true)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to encrypt: %w", err)
+		return "", fmt.Errorf("failed to encrypt: %w", err)
 	}
 
 	return encoding.ToBase64(ciphertext), nil
@@ -108,17 +107,17 @@ func (s *sm4Cipher) encryptECB(plaintext string) (string, error) {
 func (s *sm4Cipher) decryptECB(ciphertext string) (string, error) {
 	encryptedData, err := encoding.FromBase64(ciphertext)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to decode base64: %w", err)
+		return "", fmt.Errorf("failed to decode base64: %w", err)
 	}
 
 	plaintext, err := sm4.Sm4Ecb(s.key, encryptedData, false)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to decrypt: %w", err)
+		return "", fmt.Errorf("failed to decrypt: %w", err)
 	}
 
 	unpaddedData, err := pkcs7Unpadding(plaintext)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to remove padding: %w", err)
+		return "", fmt.Errorf("failed to remove padding: %w", err)
 	}
 
 	return string(unpaddedData), nil
@@ -127,7 +126,7 @@ func (s *sm4Cipher) decryptECB(ciphertext string) (string, error) {
 func (s *sm4Cipher) encryptCBC(plaintext string) (string, error) {
 	block, err := sm4.NewCipher(s.key)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to create SM4 cipher: %w", err)
+		return "", fmt.Errorf("failed to create SM4 cipher: %w", err)
 	}
 
 	paddedData := pkcs7Padding([]byte(plaintext), sm4.BlockSize)
@@ -142,16 +141,16 @@ func (s *sm4Cipher) encryptCBC(plaintext string) (string, error) {
 func (s *sm4Cipher) decryptCBC(ciphertext string) (string, error) {
 	block, err := sm4.NewCipher(s.key)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to create SM4 cipher: %w", err)
+		return "", fmt.Errorf("failed to create SM4 cipher: %w", err)
 	}
 
 	encryptedData, err := encoding.FromBase64(ciphertext)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to decode base64: %w", err)
+		return "", fmt.Errorf("failed to decode base64: %w", err)
 	}
 
 	if len(encryptedData)%sm4.BlockSize != 0 {
-		return constants.Empty, ErrCiphertextNotMultipleOfBlock
+		return "", ErrCiphertextNotMultipleOfBlock
 	}
 
 	plaintext := make([]byte, len(encryptedData))
@@ -160,7 +159,7 @@ func (s *sm4Cipher) decryptCBC(ciphertext string) (string, error) {
 
 	unpaddedData, err := pkcs7Unpadding(plaintext)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to remove padding: %w", err)
+		return "", fmt.Errorf("failed to remove padding: %w", err)
 	}
 
 	return string(unpaddedData), nil

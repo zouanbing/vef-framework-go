@@ -3,7 +3,6 @@ package orm
 import (
 	"github.com/uptrace/bun"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 )
 
@@ -15,5 +14,5 @@ var logger = log.Named("orm")
 func New(db bun.IDB) DB {
 	inst := &BunDB{db: db}
 
-	return inst.WithNamedArg(constants.ExprOperator, constants.OperatorSystem)
+	return inst.WithNamedArg(ExprOperator, OperatorSystem)
 }

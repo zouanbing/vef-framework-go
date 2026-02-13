@@ -2,8 +2,6 @@ package orm
 
 import (
 	"github.com/uptrace/bun/schema"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 type filterClause struct {
@@ -16,7 +14,7 @@ func (f *filterClause) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err
 		return
 	}
 
-	b = append(b, constants.ByteRightParenthesis)
+	b = append(b, ')')
 
 	return b, nil
 }

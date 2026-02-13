@@ -12,7 +12,6 @@ import (
 	"github.com/muesli/termenv"
 	"github.com/uptrace/bun"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/database/sqlguard"
 	"github.com/ilxqx/vef-framework-go/log"
 )
@@ -65,12 +64,12 @@ func (qh *queryHook) AfterQuery(_ context.Context, event *bun.QueryEvent) {
 
 	if displayErr != nil && !errors.Is(displayErr, sql.ErrNoRows) {
 		errorStyle := qh.output.String(displayErr.Error()).Foreground(termenv.ANSIRed)
-		qh.logger.Error(operationStyle.String() + elapsedStyle.String() + constants.Space + queryStyle.String() + constants.Space + errorStyle.String())
+		qh.logger.Error(operationStyle.String() + elapsedStyle.String() + " " + queryStyle.String() + " " + errorStyle.String())
 
 		return
 	}
 
-	message := operationStyle.String() + elapsedStyle.String() + constants.Space + queryStyle.String()
+	message := operationStyle.String() + elapsedStyle.String() + " " + queryStyle.String()
 	if elapsed >= 500 {
 		qh.logger.Warn(message)
 	} else {
@@ -121,7 +120,7 @@ func (qh *queryHook) formatOperation(operation string) termenv.Style {
 }
 
 func (qh *queryHook) formatQuery(query string) termenv.Style {
-	normalized := strings.TrimSpace(whitespaceRegex.ReplaceAllString(query, constants.Space))
+	normalized := strings.TrimSpace(whitespaceRegex.ReplaceAllString(query, " "))
 
 	return qh.output.String(normalized).Foreground(termenv.ANSIBrightBlack)
 }

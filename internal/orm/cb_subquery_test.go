@@ -1,7 +1,7 @@
 package orm
 
 import (
-	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/config"
 )
 
 // SubqueryOperationsTestSuite tests subquery operation condition methods.
@@ -337,7 +337,7 @@ func (suite *SubqueryOperationsTestSuite) TestEqualsAll() {
 	suite.T().Logf("Testing EqualsAll condition for %s", suite.dbType)
 
 	// Skip on SQLite - ALL operator not supported
-	if suite.dbType == constants.SQLite {
+	if suite.dbType == config.SQLite {
 		suite.T().Skipf("ALL operator not supported on %s (SQL standard feature)", suite.dbType)
 
 		return
@@ -396,7 +396,7 @@ func (suite *SubqueryOperationsTestSuite) TestNotEqualsAll() {
 	suite.T().Logf("Testing NotEqualsAll condition for %s", suite.dbType)
 
 	// Skip on SQLite - ALL operator not supported
-	if suite.dbType == constants.SQLite {
+	if suite.dbType == config.SQLite {
 		suite.T().Skipf("ALL operator not supported on %s (SQL standard feature)", suite.dbType)
 
 		return

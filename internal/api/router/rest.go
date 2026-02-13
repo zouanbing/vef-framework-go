@@ -9,13 +9,12 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
+	"github.com/ilxqx/vef-framework-go/httpx"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/api/middleware"
 	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/httpx"
 )
 
 const (
@@ -31,7 +30,7 @@ type REST struct {
 
 // NewREST creates a new RESTful router.
 func NewREST(basePath string, chain *middleware.Chain) api.RouterStrategy {
-	if basePath == constants.Empty {
+	if basePath == "" {
 		basePath = DefaultRESTBasePath
 	}
 
@@ -87,7 +86,7 @@ func (r *REST) createResolver(op *api.Operation) fiber.Handler {
 // parseAction extracts HTTP method and sub-path from action string.
 // Format: "METHOD [/path]" (e.g., "GET", "POST /items", "DELETE /:id").
 func (*REST) parseAction(action string) (method, subPath string) {
-	parts := strings.SplitN(action, constants.Space, 2)
+	parts := strings.SplitN(action, " ", 2)
 	method = strings.ToUpper(parts[0])
 
 	if len(parts) < 2 {
@@ -95,8 +94,8 @@ func (*REST) parseAction(action string) (method, subPath string) {
 	}
 
 	subPath = strings.TrimSpace(parts[1])
-	if !strings.HasPrefix(subPath, constants.Slash) {
-		subPath = constants.Slash + subPath
+	if !strings.HasPrefix(subPath, "/") {
+		subPath = "/" + subPath
 	}
 
 	return method, subPath
@@ -104,7 +103,7 @@ func (*REST) parseAction(action string) (method, subPath string) {
 
 // buildPath constructs the full URL path for the operation.
 func (*REST) buildPath(resource, subPath string) string {
-	return constants.Slash + resource + subPath
+	return "/" + resource + subPath
 }
 
 // parseRequest extracts Request from HTTP request context.
@@ -129,7 +128,7 @@ func (r *REST) parseRequest(ctx fiber.Ctx, op *api.Operation) (*api.Request, err
 // extractMeta extracts meta values from HTTP headers with prefix X-Meta-.
 func (*REST) extractMeta(ctx fiber.Ctx, req *api.Request) {
 	for key, values := range ctx.GetReqHeaders() {
-		if metaKey, found := strings.CutPrefix(key, constants.HeaderXMetaPrefix); found && len(values) > 0 {
+		if metaKey, found := strings.CutPrefix(key, api.HeaderXMetaPrefix); found && len(values) > 0 {
 			req.Meta[metaKey] = values[0]
 		}
 	}

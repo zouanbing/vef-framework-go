@@ -1,7 +1,7 @@
 package orm
 
 import (
-	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/config"
 )
 
 // MergeTestSuite tests MERGE operations (PostgreSQL 15+).
@@ -13,7 +13,7 @@ type MergeTestSuite struct {
 
 // TestBasicMerge tests MERGE with updates and inserts.
 func (suite *MergeTestSuite) TestBasicMerge() {
-	if suite.dbType != constants.Postgres {
+	if suite.dbType != config.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
@@ -90,7 +90,7 @@ func (suite *MergeTestSuite) TestBasicMerge() {
 
 // TestCteMethods tests CTE methods: With for named CTEs, WithValues for inline data CTEs.
 func (suite *MergeTestSuite) TestCteMethods() {
-	if suite.dbType != constants.Postgres {
+	if suite.dbType != config.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
@@ -173,7 +173,7 @@ func (suite *MergeTestSuite) TestCteMethods() {
 
 // TestTableSourceMethods tests target table specification: ModelTable, Table, TableExpr, TableSubQuery with/without aliases.
 func (suite *MergeTestSuite) TestTableSourceMethods() {
-	if suite.dbType != constants.Postgres {
+	if suite.dbType != config.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
@@ -436,7 +436,7 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 
 // TestUsingMethods tests source data specification: UsingTable, UsingExpr, UsingSubQuery with/without aliases.
 func (suite *MergeTestSuite) TestUsingMethods() {
-	if suite.dbType != constants.Postgres {
+	if suite.dbType != config.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
@@ -662,7 +662,7 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 
 // TestReturningMethods tests RETURNING clause: specific columns, all columns (*), or none.
 func (suite *MergeTestSuite) TestReturningMethods() {
-	if suite.dbType != constants.Postgres {
+	if suite.dbType != config.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
@@ -806,7 +806,7 @@ func (suite *MergeTestSuite) TestReturningMethods() {
 
 // TestWhenNotMatchedByTarget tests insertion when row exists in source but not in target (with optional conditions).
 func (suite *MergeTestSuite) TestWhenNotMatchedByTarget() {
-	if suite.dbType != constants.Postgres {
+	if suite.dbType != config.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
@@ -900,7 +900,7 @@ func (suite *MergeTestSuite) TestWhenNotMatchedByTarget() {
 
 // TestWhenNotMatchedBySource tests updates/deletes when row exists in target but not in source (with optional conditions).
 func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
-	if suite.dbType != constants.Postgres {
+	if suite.dbType != config.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
@@ -1089,7 +1089,7 @@ func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
 
 // TestThenDoNothing tests no-op actions for matched/not-matched conditions.
 func (suite *MergeTestSuite) TestThenDoNothing() {
-	if suite.dbType != constants.Postgres {
+	if suite.dbType != config.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
@@ -1177,7 +1177,7 @@ func (suite *MergeTestSuite) TestThenDoNothing() {
 
 // TestThenUpdate tests update actions: Set, SetExpr, SetColumns, SetAll.
 func (suite *MergeTestSuite) TestThenUpdate() {
-	if suite.dbType != constants.Postgres {
+	if suite.dbType != config.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
@@ -1341,7 +1341,7 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 
 // TestThenInsert tests insert actions: Value, ValueExpr, Values, ValuesAll.
 func (suite *MergeTestSuite) TestThenInsert() {
-	if suite.dbType != constants.Postgres {
+	if suite.dbType != config.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
@@ -1558,7 +1558,7 @@ func (suite *MergeTestSuite) TestThenInsert() {
 
 // TestThenDelete tests deletion when rows exist in target but not in source.
 func (suite *MergeTestSuite) TestThenDelete() {
-	if suite.dbType != constants.Postgres {
+	if suite.dbType != config.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
@@ -1654,7 +1654,7 @@ func (suite *MergeTestSuite) TestThenDelete() {
 
 // TestMergeWithConditions tests MERGE with conditional WHEN clauses (e.g., only update when source > target).
 func (suite *MergeTestSuite) TestMergeWithConditions() {
-	if suite.dbType != constants.Postgres {
+	if suite.dbType != config.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 

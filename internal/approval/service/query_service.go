@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/page"
 )
@@ -51,25 +50,25 @@ func (s *QueryService) FindInstances(ctx context.Context, q InstanceQuery) ([]ap
 
 	sq := s.db.NewSelect().Model(&instances)
 
-	if q.ApplicantID != constants.Empty {
+	if q.ApplicantID != "" {
 		sq = sq.Where(func(c orm.ConditionBuilder) {
 			c.Equals("applicant_id", q.ApplicantID)
 		})
 	}
 
-	if q.Status != constants.Empty {
+	if q.Status != "" {
 		sq = sq.Where(func(c orm.ConditionBuilder) {
 			c.Equals("status", q.Status)
 		})
 	}
 
-	if q.FlowID != constants.Empty {
+	if q.FlowID != "" {
 		sq = sq.Where(func(c orm.ConditionBuilder) {
 			c.Equals("flow_id", q.FlowID)
 		})
 	}
 
-	if q.Keyword != constants.Empty {
+	if q.Keyword != "" {
 		sq = sq.Where(func(c orm.ConditionBuilder) {
 			c.Contains("title", q.Keyword)
 		})
@@ -94,19 +93,19 @@ func (s *QueryService) FindTasks(ctx context.Context, q TaskQuery) ([]approval.T
 
 	sq := s.db.NewSelect().Model(&tasks)
 
-	if q.AssigneeID != constants.Empty {
+	if q.AssigneeID != "" {
 		sq = sq.Where(func(c orm.ConditionBuilder) {
 			c.Equals("assignee_id", q.AssigneeID)
 		})
 	}
 
-	if q.InstanceID != constants.Empty {
+	if q.InstanceID != "" {
 		sq = sq.Where(func(c orm.ConditionBuilder) {
 			c.Equals("instance_id", q.InstanceID)
 		})
 	}
 
-	if q.Status != constants.Empty {
+	if q.Status != "" {
 		sq = sq.Where(func(c orm.ConditionBuilder) {
 			c.Equals("status", q.Status)
 		})

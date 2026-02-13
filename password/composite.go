@@ -3,8 +3,6 @@ package password
 import (
 	"fmt"
 	"strings"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 type compositeEncoder struct {
@@ -25,12 +23,12 @@ func NewCompositeEncoder(defaultEncoderID EncoderID, encoders map[EncoderID]Enco
 func (c *compositeEncoder) Encode(password string) (string, error) {
 	encoder, ok := c.encoders[c.defaultEncoderID]
 	if !ok {
-		return constants.Empty, fmt.Errorf("%w: %s", ErrDefaultEncoderNotFound, c.defaultEncoderID)
+		return "", fmt.Errorf("%w: %s", ErrDefaultEncoderNotFound, c.defaultEncoderID)
 	}
 
 	encoded, err := encoder.Encode(password)
 	if err != nil {
-		return constants.Empty, err
+		return "", err
 	}
 
 	return fmt.Sprintf("{%s}%s", c.defaultEncoderID, encoded), nil
@@ -38,7 +36,7 @@ func (c *compositeEncoder) Encode(password string) (string, error) {
 
 func (c *compositeEncoder) Matches(password, encodedPassword string) bool {
 	encoderID := c.extractEncoderID(encodedPassword)
-	if encoderID == EncoderID(constants.Empty) {
+	if encoderID == EncoderID("") {
 		encoderID = c.defaultEncoderID
 	}
 
@@ -55,7 +53,7 @@ func (c *compositeEncoder) Matches(password, encodedPassword string) bool {
 func (c *compositeEncoder) UpgradeEncoding(encodedPassword string) bool {
 	encoderID := c.extractEncoderID(encodedPassword)
 
-	if encoderID != EncoderID(constants.Empty) && encoderID != c.defaultEncoderID {
+	if encoderID != EncoderID("") && encoderID != c.defaultEncoderID {
 		return true
 	}
 
@@ -85,12 +83,12 @@ func (c *compositeEncoder) stripPrefix(encodedPassword string) string {
 // Returns empty EncoderID and original password if no valid prefix found.
 func (*compositeEncoder) parseEncoderPrefix(encodedPassword string) (EncoderID, string) {
 	if !strings.HasPrefix(encodedPassword, "{") {
-		return EncoderID(constants.Empty), encodedPassword
+		return EncoderID(""), encodedPassword
 	}
 
 	end := strings.Index(encodedPassword, "}")
 	if end == -1 {
-		return EncoderID(constants.Empty), encodedPassword
+		return EncoderID(""), encodedPassword
 	}
 
 	return EncoderID(encodedPassword[1:end]), encodedPassword[end+1:]

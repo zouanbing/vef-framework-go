@@ -121,7 +121,7 @@ const (
 	FrameBoundFollowing          = orm.FrameBoundFollowing
 
 	// StatisticalMode constants.
-	StatisticalDefault    = orm.StatisticalDefault
+	StatisticalDefault    = ""
 	StatisticalPopulation = orm.StatisticalPopulation
 	StatisticalSample     = orm.StatisticalSample
 
@@ -136,6 +136,41 @@ const (
 	UnitHour   = orm.UnitHour
 	UnitMinute = orm.UnitMinute
 	UnitSecond = orm.UnitSecond
+
+	// Placeholder key for named arguments in database queries.
+	PlaceholderKeyOperator = orm.PlaceholderKeyOperator
+
+	// System operators for audit tracking.
+	OperatorSystem    = orm.OperatorSystem
+	OperatorCronJob   = orm.OperatorCronJob
+	OperatorAnonymous = orm.OperatorAnonymous
+
+	// SQL expression placeholders for query building.
+	ExprOperator     = orm.ExprOperator
+	ExprTableColumns = orm.ExprTableColumns
+	ExprColumns      = orm.ExprColumns
+	ExprTablePKs     = orm.ExprTablePKs
+	ExprPKs          = orm.ExprPKs
+	ExprTableName    = orm.ExprTableName
+	ExprTableAlias   = orm.ExprTableAlias
+
+	// Database column names for audit fields.
+	ColumnID            = orm.ColumnID
+	ColumnCreatedAt     = orm.ColumnCreatedAt
+	ColumnUpdatedAt     = orm.ColumnUpdatedAt
+	ColumnCreatedBy     = orm.ColumnCreatedBy
+	ColumnUpdatedBy     = orm.ColumnUpdatedBy
+	ColumnCreatedByName = orm.ColumnCreatedByName
+	ColumnUpdatedByName = orm.ColumnUpdatedByName
+
+	// Go struct field names corresponding to audit columns.
+	FieldID            = orm.FieldID
+	FieldCreatedAt     = orm.FieldCreatedAt
+	FieldUpdatedAt     = orm.FieldUpdatedAt
+	FieldCreatedBy     = orm.FieldCreatedBy
+	FieldUpdatedBy     = orm.FieldUpdatedBy
+	FieldCreatedByName = orm.FieldCreatedByName
+	FieldUpdatedByName = orm.FieldUpdatedByName
 )
 
 var ApplySort = orm.ApplySort

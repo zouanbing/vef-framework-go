@@ -15,7 +15,6 @@ import (
 	"github.com/ilxqx/vef-framework-go"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/internal/apptest"
@@ -48,7 +47,7 @@ func (suite *AppTestSuite) SetupSuite() {
 	suite.app, suite.stop = apptest.NewTestApp(
 		suite.T(),
 		fx.Replace(&config.DatasourceConfig{
-			Type: constants.SQLite,
+			Type: config.SQLite,
 		}),
 		fx.Invoke(func() {
 			// Re-initialize i18n with default language after clearing env var

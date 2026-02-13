@@ -12,9 +12,8 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/monitor"
+	"github.com/ilxqx/vef-framework-go/timex"
 )
 
 type buildInfoData struct {
@@ -66,7 +65,7 @@ func Generate(outputPath, packageName string) error {
 	}
 
 	dir := filepath.Dir(outputPath)
-	if dir != constants.Dot && dir != constants.Empty {
+	if dir != "." && dir != "" {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return fmt.Errorf("failed to create output directory: %w", err)
 		}

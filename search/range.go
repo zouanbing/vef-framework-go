@@ -9,7 +9,6 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/spf13/cast"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/monad"
 	"github.com/ilxqx/vef-framework-go/reflectx"
 )
@@ -52,11 +51,11 @@ func getRangeValue(fieldValue any, conditionParams map[string]string) (start, en
 }
 
 func parseStringRange(value string, conditionParams map[string]string) (start, end any, _ bool) {
-	if value == constants.Empty {
+	if value == "" {
 		return nil, nil, false
 	}
 
-	delimiter := lo.CoalesceOrEmpty(conditionParams[ParamDelimiter], constants.Comma)
+	delimiter := lo.CoalesceOrEmpty(conditionParams[ParamDelimiter], ",")
 
 	values := strings.SplitN(value, delimiter, 2)
 	if len(values) != 2 {
@@ -66,11 +65,11 @@ func parseStringRange(value string, conditionParams map[string]string) (start, e
 	}
 
 	parserMap := map[string]func([]string) (any, any, bool){
-		constants.TypeInt:      parseIntRange,
-		constants.TypeDecimal:  parseDecimalRange,
-		constants.TypeDate:     parseDateRange,
-		constants.TypeTime:     parseTimeRange,
-		constants.TypeDateTime: parseDateTimeRange,
+		TypeInt:      parseIntRange,
+		TypeDecimal:  parseDecimalRange,
+		TypeDate:     parseDateRange,
+		TypeTime:     parseTimeRange,
+		TypeDateTime: parseDateTimeRange,
 	}
 
 	if parser, exists := parserMap[conditionParams[ParamType]]; exists {

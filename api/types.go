@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/mapx"
 	"github.com/ilxqx/vef-framework-go/reflectx"
 )
@@ -20,7 +19,7 @@ type Identifier struct {
 
 // String returns a string representation of the identifier.
 func (id Identifier) String() string {
-	return id.Resource + constants.Colon + id.Action + constants.Colon + id.Version
+	return id.Resource + ":" + id.Action + ":" + id.Version
 }
 
 // Params holds API request parameters.

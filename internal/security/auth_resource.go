@@ -4,13 +4,12 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/event"
+	"github.com/ilxqx/vef-framework-go/httpx"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
-	"github.com/ilxqx/vef-framework-go/httpx"
 )
 
 // NewAuthResource creates a new authentication resource with the provided auth manager and token generator.
@@ -86,7 +85,7 @@ func (a *AuthResource) Login(ctx fiber.Ctx, params LoginParams) error {
 
 		loginEvent := security.NewLoginEvent(security.LoginEventParams{
 			AuthType:   params.Kind,
-			UserID:     constants.Empty,
+			UserID:     "",
 			Username:   username,
 			LoginIP:    loginIP,
 			UserAgent:  userAgent,
@@ -113,7 +112,7 @@ func (a *AuthResource) Login(ctx fiber.Ctx, params LoginParams) error {
 		UserAgent:  userAgent,
 		TraceID:    traceID,
 		IsOk:       true,
-		FailReason: constants.Empty,
+		FailReason: "",
 		ErrorCode:  0,
 	})
 	a.publisher.Publish(loginEvent)

@@ -7,7 +7,6 @@ import (
 	"slices"
 
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/null"
 )
 
@@ -106,7 +105,7 @@ func (p *ApprovalProcessor) createApprovalTasks(ctx context.Context, pc *Process
 			Status:     status,
 		}
 
-		if assignee.DelegateFromID != constants.Empty {
+		if assignee.DelegateFromID != "" {
 			task.DelegateFromID = null.StringFrom(assignee.DelegateFromID)
 		}
 
@@ -139,7 +138,7 @@ func (p *ApprovalProcessor) handleSameApplicant(ctx context.Context, pc *Process
 			return nil, err
 		}
 
-		if superiorID == constants.Empty {
+		if superiorID == "" {
 			return nil, ErrNoAssignee
 		}
 
@@ -174,7 +173,7 @@ func (p *ApprovalProcessor) predictSameApplicant(ctx context.Context, pc *Proces
 			return nil, err
 		}
 
-		if superiorID == constants.Empty {
+		if superiorID == "" {
 			return nil, ErrNoAssignee
 		}
 
@@ -183,4 +182,3 @@ func (p *ApprovalProcessor) predictSameApplicant(ctx context.Context, pc *Proces
 		return []string{pc.ApplicantID}, nil
 	}
 }
-

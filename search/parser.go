@@ -7,7 +7,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/reflectx"
 	"github.com/ilxqx/vef-framework-go/strx"
 )
@@ -76,18 +75,18 @@ func parseStruct(t reflect.Type) []Condition {
 func buildCondition(field reflect.StructField, attrs map[string]string) Condition {
 	column := attrs[AttrColumn]
 	columns := lo.Ternary(
-		column == constants.Empty,
+		column == "",
 		[]string{lo.SnakeCase(field.Name)},
-		strings.Split(column, constants.Pipe),
+		strings.Split(column, "|"),
 	)
 
 	operator := lo.CoalesceOrEmpty(attrs[AttrOperator], attrs[strx.DefaultKey], string(Equals))
 
 	params := make(map[string]string)
-	if attrs[AttrParams] != constants.Empty {
+	if attrs[AttrParams] != "" {
 		params = strx.ParseTag(attrs[AttrParams],
 			strx.WithSpacePairDelimiter(),
-			strx.WithValueDelimiter(constants.ByteColon),
+			strx.WithValueDelimiter(':'),
 		)
 	}
 

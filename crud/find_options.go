@@ -4,7 +4,6 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
 )
@@ -68,7 +67,7 @@ func (a *findOptionsApi[TModel, TSearch]) findOptions(db orm.DB) (func(ctx fiber
 			query.SelectAs(config.LabelColumn, LabelColumn)
 		}
 
-		if config.DescriptionColumn != constants.Empty {
+		if config.DescriptionColumn != "" {
 			if config.DescriptionColumn == DescriptionColumn {
 				query.Select(config.DescriptionColumn)
 			} else {

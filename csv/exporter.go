@@ -7,7 +7,6 @@ import (
 	"os"
 	"reflect"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/tabular"
 )
 
@@ -20,7 +19,7 @@ type exporter struct {
 
 func NewExporter(typ reflect.Type, opts ...ExportOption) tabular.Exporter {
 	options := exportConfig{
-		delimiter:   constants.ByteComma,
+		delimiter:   ',',
 		writeHeader: true,
 		useCrlf:     false,
 	}
@@ -149,7 +148,7 @@ func (e *exporter) writeData(csvWriter *csv.Writer, data any) error {
 // formatValue falls back to default formatter when custom formatter is missing,
 // preventing export failures due to configuration errors.
 func (e *exporter) formatValue(value any, col *tabular.Column) (string, error) {
-	if col.Formatter != constants.Empty {
+	if col.Formatter != "" {
 		if formatter, ok := e.formatters[col.Formatter]; ok {
 			return formatter.Format(value)
 		}

@@ -8,8 +8,6 @@ import (
 	"github.com/uptrace/bun/schema"
 
 	collections "github.com/ilxqx/go-collections"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // NewDeleteQuery creates a new DeleteQuery instance with the provided database instance.
@@ -80,7 +78,7 @@ func (q *BunDeleteQuery) Model(model any) DeleteQuery {
 }
 
 func (q *BunDeleteQuery) ModelTable(name string, alias ...string) DeleteQuery {
-	if len(alias) > 0 && alias[0] != constants.Empty {
+	if len(alias) > 0 && alias[0] != "" {
 		q.query.ModelTableExpr("? AS ?", bun.Name(name), bun.Name(alias[0]))
 	} else {
 		q.query.ModelTableExpr("? AS ?TableAlias", bun.Name(name))
@@ -90,7 +88,7 @@ func (q *BunDeleteQuery) ModelTable(name string, alias ...string) DeleteQuery {
 }
 
 func (q *BunDeleteQuery) Table(name string, alias ...string) DeleteQuery {
-	if len(alias) > 0 && alias[0] != constants.Empty {
+	if len(alias) > 0 && alias[0] != "" {
 		q.query.TableExpr("? AS ?", bun.Name(name), bun.Name(alias[0]))
 	} else {
 		q.query.Table(name)
@@ -103,7 +101,7 @@ func (q *BunDeleteQuery) TableFrom(model any, alias ...string) DeleteQuery {
 	table := q.db.TableOf(model)
 
 	aliasToUse := table.Alias
-	if len(alias) > 0 && alias[0] != constants.Empty {
+	if len(alias) > 0 && alias[0] != "" {
 		aliasToUse = alias[0]
 	}
 
@@ -113,7 +111,7 @@ func (q *BunDeleteQuery) TableFrom(model any, alias ...string) DeleteQuery {
 }
 
 func (q *BunDeleteQuery) TableExpr(builder func(ExprBuilder) any, alias ...string) DeleteQuery {
-	if len(alias) > 0 && alias[0] != constants.Empty {
+	if len(alias) > 0 && alias[0] != "" {
 		q.query.TableExpr("(?) AS ?", builder(q.eb), bun.Name(alias[0]))
 	} else {
 		q.query.TableExpr("(?)", builder(q.eb))
@@ -123,7 +121,7 @@ func (q *BunDeleteQuery) TableExpr(builder func(ExprBuilder) any, alias ...strin
 }
 
 func (q *BunDeleteQuery) TableSubQuery(builder func(SelectQuery), alias ...string) DeleteQuery {
-	if len(alias) > 0 && alias[0] != constants.Empty {
+	if len(alias) > 0 && alias[0] != "" {
 		q.query.TableExpr("(?) AS ?", q.BuildSubQuery(builder), bun.Name(alias[0]))
 	} else {
 		q.query.TableExpr("(?)", q.BuildSubQuery(builder))

@@ -7,7 +7,6 @@ import (
 
 	"github.com/xuri/excelize/v2"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/tabular"
 )
 
@@ -165,7 +164,7 @@ func (e *exporter) writeData(f *excelize.File, sheetName string, data any) error
 }
 
 func (e *exporter) formatValue(value any, col *tabular.Column) (string, error) {
-	if col.Formatter != constants.Empty {
+	if col.Formatter != "" {
 		if formatter, ok := e.formatters[col.Formatter]; ok {
 			return formatter.Format(value)
 		}

@@ -13,7 +13,7 @@ import (
 
 	as "ariga.io/atlas/sql/schema"
 
-	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/config"
 )
 
 var ErrUnsupportedDBType = errors.New("unsupported database type")
@@ -24,7 +24,7 @@ type AtlasInspector struct {
 }
 
 // NewInspector creates a new Atlas Inspector for the given database connection.
-func NewInspector(db *sql.DB, dbType constants.DBType, schemaName string) (Inspector, error) {
+func NewInspector(db *sql.DB, dbType config.DBType, schemaName string) (Inspector, error) {
 	var (
 		inspector as.Inspector
 		schema    string
@@ -32,16 +32,16 @@ func NewInspector(db *sql.DB, dbType constants.DBType, schemaName string) (Inspe
 	)
 
 	switch dbType {
-	case constants.Postgres:
+	case config.Postgres:
 		inspector, err = postgres.Open(db)
 		schema = lo.CoalesceOrEmpty(schemaName, "public")
 
-	case constants.MySQL:
+	case config.MySQL:
 		inspector, err = mysql.Open(db)
 		// For MySQL, schema is the database name, which is already set in the connection
-		schema = constants.Empty
+		schema = ""
 
-	case constants.SQLite:
+	case config.SQLite:
 		inspector, err = sqlite.Open(db)
 		schema = "main"
 

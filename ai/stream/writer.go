@@ -7,12 +7,11 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/id"
 )
 
 func defaultIDGenerator(prefix string) string {
-	return prefix + constants.Underscore + id.GenerateUUID()
+	return prefix + "_" + id.GenerateUUID()
 }
 
 type sseWriter struct {

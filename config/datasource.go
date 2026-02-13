@@ -1,10 +1,20 @@
 package config
 
-import "github.com/ilxqx/vef-framework-go/constants"
+// DBType represents supported database types.
+type DBType string
+
+// Supported database types.
+const (
+	Oracle    DBType = "oracle"
+	SQLServer DBType = "sqlserver"
+	Postgres  DBType = "postgres"
+	MySQL     DBType = "mysql"
+	SQLite    DBType = "sqlite"
+)
 
 // DatasourceConfig defines database connection settings.
 type DatasourceConfig struct {
-	Type           constants.DBType `config:"type"`
+	Type           DBType `config:"type"`
 	Host           string           `config:"host"`
 	Port           uint16           `config:"port"`
 	User           string           `config:"user"`

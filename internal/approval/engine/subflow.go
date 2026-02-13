@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/id"
 	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/orm"
@@ -47,7 +46,7 @@ func (p *SubFlowProcessor) Process(ctx context.Context, pc *ProcessContext) (*Pr
 	}
 
 	flowID, _ := config["flowId"].(string)
-	if flowID == constants.Empty {
+	if flowID == "" {
 		return nil, errors.New("sub flow config missing flowId")
 	}
 
@@ -167,7 +166,7 @@ func (p *SubFlowProcessor) prepareSubFormData(parentData approval.FormData, conf
 		sourceField, _ := m["sourceField"].(string)
 		targetField, _ := m["targetField"].(string)
 
-		if sourceField == constants.Empty || targetField == constants.Empty {
+		if sourceField == "" || targetField == "" {
 			continue
 		}
 

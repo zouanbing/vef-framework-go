@@ -6,7 +6,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/log"
 )
 
@@ -17,7 +17,7 @@ func Named(name string) log.Logger {
 }
 
 func newLogger() *zapLogger {
-	level, levelString := zap.InfoLevel, strings.ToLower(os.Getenv(constants.EnvLogLevel))
+	level, levelString := zap.InfoLevel, strings.ToLower(os.Getenv(config.EnvLogLevel))
 
 	switch levelString {
 	case "debug":

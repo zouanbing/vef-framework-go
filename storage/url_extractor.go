@@ -7,8 +7,6 @@ import (
 	"github.com/dlclark/regexp2"
 
 	collections "github.com/ilxqx/go-collections"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // Uses regexp2 instead of standard library because backreferences (\1, \2) are needed
@@ -50,14 +48,14 @@ var (
 func isRelativeURL(url string) bool {
 	url = strings.TrimSpace(url)
 
-	return url != constants.Empty &&
+	return url != "" &&
 		!strings.HasPrefix(url, "http://") &&
 		!strings.HasPrefix(url, "https://")
 }
 
 // extractHtmlURLs extracts all relative URLs from HTML content.
 func extractHtmlURLs(content string) []string {
-	if content == constants.Empty {
+	if content == "" {
 		return nil
 	}
 
@@ -85,7 +83,7 @@ func extractHtmlURLs(content string) []string {
 
 // replaceHTMLURLs replaces URLs in HTML content based on the replacement map.
 func replaceHTMLURLs(content string, replacements map[string]string) string {
-	if content == constants.Empty || len(replacements) == 0 {
+	if content == "" || len(replacements) == 0 {
 		return content
 	}
 
@@ -107,7 +105,7 @@ func replaceHTMLURLs(content string, replacements map[string]string) string {
 			if newURL, ok := replacements[oldURL]; ok {
 				// Preserve original quote type to maintain HTML consistency
 				_, _ = result.WriteString(attrName)
-				_ = result.WriteByte(constants.ByteEquals)
+				_ = result.WriteByte('=')
 				_, _ = result.WriteString(quote)
 				_, _ = result.WriteString(newURL)
 				_, _ = result.WriteString(quote)
@@ -128,7 +126,7 @@ func replaceHTMLURLs(content string, replacements map[string]string) string {
 
 // extractMarkdownURLs extracts all relative URLs from Markdown content.
 func extractMarkdownURLs(content string) []string {
-	if content == constants.Empty {
+	if content == "" {
 		return nil
 	}
 
@@ -160,25 +158,25 @@ func buildMarkdownReplacement(prefix, text, newURL, title string) string {
 	var sb strings.Builder
 
 	_, _ = sb.WriteString(prefix)
-	_ = sb.WriteByte(constants.ByteLeftBracket)
+	_ = sb.WriteByte('[')
 	_, _ = sb.WriteString(text)
-	_ = sb.WriteByte(constants.ByteRightBracket)
-	_ = sb.WriteByte(constants.ByteLeftParenthesis)
+	_ = sb.WriteByte(']')
+	_ = sb.WriteByte('(')
 	_, _ = sb.WriteString(newURL)
 
-	if title != constants.Empty {
-		_ = sb.WriteByte(constants.ByteSpace)
+	if title != "" {
+		_ = sb.WriteByte(' ')
 		_, _ = sb.WriteString(title)
 	}
 
-	_ = sb.WriteByte(constants.ByteRightParenthesis)
+	_ = sb.WriteByte(')')
 
 	return sb.String()
 }
 
 // replaceMarkdownURLs replaces URLs in Markdown content based on the replacement map.
 func replaceMarkdownURLs(content string, replacements map[string]string) string {
-	if content == constants.Empty || len(replacements) == 0 {
+	if content == "" || len(replacements) == 0 {
 		return content
 	}
 
@@ -193,7 +191,7 @@ func replaceMarkdownURLs(content string, replacements map[string]string) string 
 			url := strings.TrimSpace(subMatches[2])
 
 			// Preserve optional title if present
-			title := constants.Empty
+			title := ""
 			if idx := strings.IndexAny(url, `"'`); idx > 0 {
 				title = url[idx:]
 				url = strings.TrimSpace(url[:idx])

@@ -9,7 +9,7 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dbfixture"
 
-	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/id"
 )
@@ -103,7 +103,7 @@ type OrmTestSuite struct {
 
 	ctx    context.Context
 	db     DB
-	dbType constants.DBType
+	dbType config.DBType
 }
 
 // SetupSuite initializes the test suite (called once per database).

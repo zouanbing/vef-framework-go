@@ -11,10 +11,13 @@ import (
 	"github.com/samber/lo"
 	"golang.org/x/text/language"
 
-	"github.com/ilxqx/vef-framework-go/constants"
+	vefconfig "github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/i18n/locales"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 )
+
+// DefaultLanguage is the default language for the i18n system.
+const DefaultLanguage = "zh-CN"
 
 var (
 	logger             = log.Named("i18n")
@@ -63,7 +66,7 @@ func newLocalizer(config Config) (*i18n.Localizer, error) {
 		return nil, err
 	}
 
-	preferredLanguage := lo.CoalesceOrEmpty(os.Getenv(constants.EnvI18NLanguage), constants.DefaultI18NLanguage)
+	preferredLanguage := lo.CoalesceOrEmpty(os.Getenv(vefconfig.EnvI18NLanguage), DefaultLanguage)
 	logger.Infof("Using language: %s", preferredLanguage)
 
 	return i18n.NewLocalizer(bundle, preferredLanguage), nil
@@ -99,8 +102,8 @@ func IsLanguageSupported(languageCode string) bool {
 // in different languages without restarting the process.
 // If languageCode is empty, uses the environment variable or default language.
 func SetLanguage(languageCode string) error {
-	if languageCode == constants.Empty {
-		languageCode = lo.CoalesceOrEmpty(os.Getenv(constants.EnvI18NLanguage), constants.DefaultI18NLanguage)
+	if languageCode == "" {
+		languageCode = lo.CoalesceOrEmpty(os.Getenv(vefconfig.EnvI18NLanguage), DefaultLanguage)
 	}
 
 	if !IsLanguageSupported(languageCode) {

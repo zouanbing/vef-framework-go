@@ -5,7 +5,6 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/crud"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
@@ -20,7 +19,7 @@ func buildCategoryTree(flatCategories []TestCategory) []TestCategory {
 			return c.ID
 		},
 		GetParentID: func(c TestCategory) string {
-			return lo.FromPtrOr(c.ParentID, constants.Empty)
+			return lo.FromPtrOr(c.ParentID, "")
 		},
 		SetChildren: func(c *TestCategory, children []TestCategory) {
 			c.Children = children

@@ -5,7 +5,6 @@ import (
 
 	"github.com/uptrace/bun/schema"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/timex"
 )
 
@@ -19,7 +18,7 @@ func (*CreatedAtHandler) OnInsert(_ *BunInsertQuery, _ *schema.Table, _ *schema.
 }
 
 func (*CreatedAtHandler) Name() string {
-	return constants.ColumnCreatedAt
+	return ColumnCreatedAt
 }
 
 // UpdatedAtHandler implements UpdateHandler for automatically managing updated_at timestamps.
@@ -41,5 +40,5 @@ func (*UpdatedAtHandler) OnInsert(_ *BunInsertQuery, _ *schema.Table, _ *schema.
 
 // Name returns the column name for the updated_at field.
 func (*UpdatedAtHandler) Name() string {
-	return constants.ColumnUpdatedAt
+	return ColumnUpdatedAt
 }

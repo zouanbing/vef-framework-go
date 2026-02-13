@@ -7,7 +7,6 @@ import (
 	"github.com/uptrace/bun/schema"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/log"
 )
 
@@ -29,7 +28,7 @@ func setupBunDB(sqlDB *sql.DB, dialect schema.Dialect, opts *databaseOptions) *b
 		addQueryHook(db, opts.Logger, opts.SQLGuardConfig)
 	}
 
-	db = db.WithNamedArg(constants.PlaceholderKeyOperator, constants.OperatorSystem)
+	db = db.WithNamedArg("Operator", "system")
 
 	return db
 }

@@ -4,8 +4,6 @@ import (
 	"container/list"
 	"sync"
 	"sync/atomic"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // EvictionPolicy defines the eviction strategy for cache when it reaches max size.
@@ -46,7 +44,7 @@ func NewNoOpEvictionHandler() *NoOpEvictionHandler {
 func (*NoOpEvictionHandler) OnAccess(_ string)               {}
 func (*NoOpEvictionHandler) OnInsert(_ string)               {}
 func (*NoOpEvictionHandler) OnEvict(_ string)                {}
-func (*NoOpEvictionHandler) SelectEvictionCandidate() string { return constants.Empty }
+func (*NoOpEvictionHandler) SelectEvictionCandidate() string { return "" }
 func (*NoOpEvictionHandler) Reset()                          {}
 
 // LruHandler implements Least Recently Used eviction policy.
@@ -100,14 +98,14 @@ func (h *LruHandler) SelectEvictionCandidate() string {
 	// Return least recently used (back of list)
 	elem := h.accessList.Back()
 	if elem == nil {
-		return constants.Empty
+		return ""
 	}
 
 	if key, ok := elem.Value.(string); ok {
 		return key
 	}
 
-	return constants.Empty
+	return ""
 }
 
 func (h *LruHandler) Reset() {
@@ -165,14 +163,14 @@ func (h *FifoHandler) SelectEvictionCandidate() string {
 	// Return oldest (front of list)
 	elem := h.insertList.Front()
 	if elem == nil {
-		return constants.Empty
+		return ""
 	}
 
 	if key, ok := elem.Value.(string); ok {
 		return key
 	}
 
-	return constants.Empty
+	return ""
 }
 
 func (h *FifoHandler) Reset() {
@@ -299,31 +297,31 @@ func (h *LfuHandler) SelectEvictionCandidate() string {
 	defer h.mu.RUnlock()
 
 	if len(h.keyToNode) == 0 {
-		return constants.Empty
+		return ""
 	}
 
 	// Get the minimum frequency bucket
 	bucketElem, exists := h.bucketMap[h.minFreq]
 	if !exists || bucketElem == nil {
-		return constants.Empty
+		return ""
 	}
 
 	bucket, ok := bucketElem.Value.(*lfuFreqBucket)
 	if !ok || bucket.entries.Len() == 0 {
-		return constants.Empty
+		return ""
 	}
 
 	// Return the first entry (oldest by insertion order due to FIFO within bucket)
 	elem := bucket.entries.Front()
 	if elem == nil {
-		return constants.Empty
+		return ""
 	}
 
 	if node, ok := elem.Value.(*lfuNode); ok {
 		return node.key
 	}
 
-	return constants.Empty
+	return ""
 }
 
 func (h *LfuHandler) Reset() {

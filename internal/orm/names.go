@@ -3,8 +3,6 @@ package orm
 import (
 	"github.com/uptrace/bun/dialect"
 	"github.com/uptrace/bun/schema"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // Names returns a query appender that appends a list of names to the query.
@@ -27,7 +25,7 @@ func (n *names) AppendQuery(gen schema.QueryGen, b []byte) ([]byte, error) {
 
 	for i := range nsLen {
 		if i > 0 {
-			b = append(b, constants.CommaSpace...)
+			b = append(b, ", "...)
 		}
 
 		b = gen.AppendName(b, n.ns[i])

@@ -6,8 +6,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 type TestNode struct {
@@ -45,12 +43,12 @@ func createTestCategoryAdapter() Adapter[TestCategory] {
 
 func createTestNodes() []TestNode {
 	return []TestNode{
-		{ID: "1", ParentID: constants.Empty, Name: "Root 1"},
+		{ID: "1", ParentID: "", Name: "Root 1"},
 		{ID: "2", ParentID: "1", Name: "Child 1-1"},
 		{ID: "3", ParentID: "1", Name: "Child 1-2"},
 		{ID: "4", ParentID: "2", Name: "Child 1-1-1"},
 		{ID: "5", ParentID: "2", Name: "Child 1-1-2"},
-		{ID: "6", ParentID: constants.Empty, Name: "Root 2"},
+		{ID: "6", ParentID: "", Name: "Root 2"},
 		{ID: "7", ParentID: "6", Name: "Child 2-1"},
 		{ID: "8", ParentID: "nonexistent", Name: "Orphan"},
 	}
@@ -58,8 +56,8 @@ func createTestNodes() []TestNode {
 
 func createComplexTestNodes() []TestNode {
 	return []TestNode{
-		{ID: "root1", ParentID: constants.Empty, Name: "Root 1"},
-		{ID: "root2", ParentID: constants.Empty, Name: "Root 2"},
+		{ID: "root1", ParentID: "", Name: "Root 1"},
+		{ID: "root2", ParentID: "", Name: "Root 2"},
 		{ID: "a", ParentID: "root1", Name: "A"},
 		{ID: "b", ParentID: "root1", Name: "B"},
 		{ID: "c", ParentID: "a", Name: "C"},
@@ -97,7 +95,7 @@ func TestBuild(t *testing.T) {
 
 	t.Run("Builds simple tree structure", func(t *testing.T) {
 		nodes := []TestNode{
-			{ID: "1", ParentID: constants.Empty, Name: "Root"},
+			{ID: "1", ParentID: "", Name: "Root"},
 			{ID: "2", ParentID: "1", Name: "Child 1"},
 			{ID: "3", ParentID: "1", Name: "Child 2"},
 		}
@@ -172,7 +170,7 @@ func TestBuild(t *testing.T) {
 
 	t.Run("Handles single node", func(t *testing.T) {
 		nodes := []TestNode{
-			{ID: "1", ParentID: constants.Empty, Name: "Single"},
+			{ID: "1", ParentID: "", Name: "Single"},
 		}
 
 		result := Build(nodes, adapter)
@@ -185,8 +183,8 @@ func TestBuild(t *testing.T) {
 
 	t.Run("Handles nodes with empty IDs", func(t *testing.T) {
 		nodes := []TestNode{
-			{ID: constants.Empty, ParentID: constants.Empty, Name: "Empty ID"},
-			{ID: "1", ParentID: constants.Empty, Name: "Valid"},
+			{ID: "", ParentID: "", Name: "Empty ID"},
+			{ID: "1", ParentID: "", Name: "Valid"},
 		}
 
 		result := Build(nodes, adapter)
@@ -211,7 +209,7 @@ func TestBuild(t *testing.T) {
 
 	t.Run("Handles partial circular references", func(t *testing.T) {
 		nodes := []TestNode{
-			{ID: "root", ParentID: constants.Empty, Name: "Root"},
+			{ID: "root", ParentID: "", Name: "Root"},
 			{ID: "1", ParentID: "2", Name: "Node 1"},
 			{ID: "2", ParentID: "1", Name: "Node 2"},
 			{ID: "3", ParentID: "root", Name: "Node 3"},
@@ -228,7 +226,7 @@ func TestBuild(t *testing.T) {
 
 	t.Run("Works with different data types", func(t *testing.T) {
 		categories := []TestCategory{
-			{CategoryID: "tech", ParentCatID: constants.Empty, CategoryName: "Technology", Level: 1},
+			{CategoryID: "tech", ParentCatID: "", CategoryName: "Technology", Level: 1},
 			{CategoryID: "software", ParentCatID: "tech", CategoryName: "Software", Level: 2},
 			{CategoryID: "hardware", ParentCatID: "tech", CategoryName: "Hardware", Level: 2},
 			{CategoryID: "ai", ParentCatID: "software", CategoryName: "AI", Level: 3},
@@ -305,14 +303,14 @@ func TestFindNode(t *testing.T) {
 		result, found := FindNode(tree, "nonexistent", adapter)
 
 		assert.False(t, found)
-		assert.Equal(t, constants.Empty, result.ID)
+		assert.Equal(t, "", result.ID)
 	})
 
 	t.Run("Returns false for empty target ID", func(t *testing.T) {
 		nodes := createTestNodes()
 		tree := Build(nodes, adapter)
 
-		_, found := FindNode(tree, constants.Empty, adapter)
+		_, found := FindNode(tree, "", adapter)
 
 		assert.False(t, found)
 	})
@@ -344,7 +342,7 @@ func TestFindNode(t *testing.T) {
 
 	t.Run("Works with different data types", func(t *testing.T) {
 		categories := []TestCategory{
-			{CategoryID: "tech", ParentCatID: constants.Empty, CategoryName: "Technology"},
+			{CategoryID: "tech", ParentCatID: "", CategoryName: "Technology"},
 			{CategoryID: "software", ParentCatID: "tech", CategoryName: "Software"},
 			{CategoryID: "ai", ParentCatID: "software", CategoryName: "AI"},
 		}
@@ -361,7 +359,7 @@ func TestFindNode(t *testing.T) {
 
 	t.Run("Finds first occurrence with duplicate IDs", func(t *testing.T) {
 		nodes := []TestNode{
-			{ID: "1", ParentID: constants.Empty, Name: "Root"},
+			{ID: "1", ParentID: "", Name: "Root"},
 			{ID: "2", ParentID: "1", Name: "Child 1"},
 			{ID: "2", ParentID: "1", Name: "Child 2"},
 		}
@@ -455,7 +453,7 @@ func TestFindNodePath(t *testing.T) {
 		nodes := createTestNodes()
 		tree := Build(nodes, adapter)
 
-		path, found := FindNodePath(tree, constants.Empty, adapter)
+		path, found := FindNodePath(tree, "", adapter)
 
 		assert.False(t, found)
 		assert.Nil(t, path)
@@ -501,14 +499,14 @@ func TestFindNodePath(t *testing.T) {
 		assert.Equal(t, "Child 1-1", path[1].Name)
 		assert.Equal(t, "Child 1-1-1", path[2].Name)
 
-		assert.Equal(t, constants.Empty, path[0].ParentID)
+		assert.Equal(t, "", path[0].ParentID)
 		assert.Equal(t, "1", path[1].ParentID)
 		assert.Equal(t, "2", path[2].ParentID)
 	})
 
 	t.Run("Works with different data types", func(t *testing.T) {
 		categories := []TestCategory{
-			{CategoryID: "tech", ParentCatID: constants.Empty, CategoryName: "Technology", Level: 1},
+			{CategoryID: "tech", ParentCatID: "", CategoryName: "Technology", Level: 1},
 			{CategoryID: "software", ParentCatID: "tech", CategoryName: "Software", Level: 2},
 			{CategoryID: "ai", ParentCatID: "software", CategoryName: "AI", Level: 3},
 		}
@@ -547,7 +545,7 @@ func TestFindNodePath(t *testing.T) {
 func TestAdapter_EdgeCases(t *testing.T) {
 	t.Run("Adapter with nil functions panics", func(t *testing.T) {
 		nodes := []TestNode{
-			{ID: "1", ParentID: constants.Empty, Name: "Test"},
+			{ID: "1", ParentID: "", Name: "Test"},
 		}
 
 		badAdapter := Adapter[TestNode]{}
@@ -562,7 +560,7 @@ func TestAdapter_EdgeCases(t *testing.T) {
 
 		nodes := make([]TestNode, nodeCount)
 
-		nodes[0] = TestNode{ID: "root", ParentID: constants.Empty, Name: "Root"}
+		nodes[0] = TestNode{ID: "root", ParentID: "", Name: "Root"}
 		for i := 1; i < nodeCount; i++ {
 			nodes[i] = TestNode{
 				ID:       fmt.Sprintf("child_%d", i),
@@ -584,7 +582,7 @@ func TestAdapter_EdgeCases(t *testing.T) {
 
 		nodes := make([]TestNode, depth)
 
-		nodes[0] = TestNode{ID: "0", ParentID: constants.Empty, Name: "Root"}
+		nodes[0] = TestNode{ID: "0", ParentID: "", Name: "Root"}
 		for i := 1; i < depth; i++ {
 			nodes[i] = TestNode{
 				ID:       fmt.Sprintf("%d", i),
@@ -611,7 +609,7 @@ func TestAdapter_EdgeCases(t *testing.T) {
 
 	t.Run("Nodes with special characters in IDs", func(t *testing.T) {
 		nodes := []TestNode{
-			{ID: "root/path", ParentID: constants.Empty, Name: "Root with slash"},
+			{ID: "root/path", ParentID: "", Name: "Root with slash"},
 			{ID: "child@domain.com", ParentID: "root/path", Name: "Child with email"},
 			{ID: "special#$%^&*()", ParentID: "root/path", Name: "Special chars"},
 			{ID: "unicode_测试_🌟", ParentID: "child@domain.com", Name: "Unicode"},
@@ -662,14 +660,14 @@ func TestAdapter_EdgeCases(t *testing.T) {
 
 	t.Run("Adapter function consistency", func(t *testing.T) {
 		nodes := []TestNode{
-			{ID: "1", ParentID: constants.Empty, Name: "Root", Children: []TestNode{}},
+			{ID: "1", ParentID: "", Name: "Root", Children: []TestNode{}},
 		}
 
 		adapter := createTestNodeAdapter()
 
 		node := nodes[0]
 		assert.Equal(t, "1", adapter.GetID(node))
-		assert.Equal(t, constants.Empty, adapter.GetParentID(node))
+		assert.Equal(t, "", adapter.GetParentID(node))
 		assert.Empty(t, adapter.GetChildren(node))
 
 		newChildren := []TestNode{{ID: "child", Name: "Test Child"}}
@@ -683,7 +681,7 @@ func TestAdapter_BenchmarkScenarios(t *testing.T) {
 		const nodeCount = 100
 
 		nodes := make([]TestNode, nodeCount)
-		nodes[0] = TestNode{ID: "root", ParentID: constants.Empty, Name: "Root"}
+		nodes[0] = TestNode{ID: "root", ParentID: "", Name: "Root"}
 
 		for i := 1; i < nodeCount; i++ {
 			parentIndex := (i - 1) / 3

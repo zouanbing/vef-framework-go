@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
 )
@@ -29,7 +28,7 @@ func (*JWTTokenAuthenticator) Supports(kind string) bool {
 
 func (ja *JWTTokenAuthenticator) Authenticate(_ context.Context, authentication security.Authentication) (*security.Principal, error) {
 	token := authentication.Principal
-	if token == constants.Empty {
+	if token == "" {
 		return nil, result.ErrTokenInvalid
 	}
 
@@ -42,7 +41,7 @@ func (ja *JWTTokenAuthenticator) Authenticate(_ context.Context, authentication 
 		return nil, result.ErrTokenInvalid
 	}
 
-	subjectParts := strings.SplitN(claimsAccessor.Subject(), constants.At, 2)
+	subjectParts := strings.SplitN(claimsAccessor.Subject(), "@", 2)
 	principal := security.NewUser(subjectParts[0], subjectParts[1], claimsAccessor.Roles()...)
 	principal.AttemptUnmarshalDetails(claimsAccessor.Details())
 

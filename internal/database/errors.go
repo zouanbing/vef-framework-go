@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/config"
 )
 
 var (
@@ -14,7 +14,7 @@ var (
 )
 
 type DatabaseError struct {
-	Type    constants.DBType
+	Type    config.DBType
 	Op      string
 	Err     error
 	Context map[string]any
@@ -32,7 +32,7 @@ func (e *DatabaseError) Unwrap() error {
 	return e.Err
 }
 
-func newDatabaseError(dbType constants.DBType, operation string, err error, context map[string]any) *DatabaseError {
+func newDatabaseError(dbType config.DBType, operation string, err error, context map[string]any) *DatabaseError {
 	return &DatabaseError{
 		Type:    dbType,
 		Op:      operation,
@@ -41,16 +41,16 @@ func newDatabaseError(dbType constants.DBType, operation string, err error, cont
 	}
 }
 
-func wrapPingError(dbType constants.DBType, err error) error {
+func wrapPingError(dbType config.DBType, err error) error {
 	return newDatabaseError(dbType, "ping", fmt.Errorf("%w: %w", errPingFailed, err), nil)
 }
 
-func wrapVersionQueryError(dbType constants.DBType, err error) error {
+func wrapVersionQueryError(dbType config.DBType, err error) error {
 	return newDatabaseError(dbType, "version_query", fmt.Errorf("%w: %w", errVersionQueryFailed, err), nil)
 }
 
-func newUnsupportedDBTypeError(dbType constants.DBType) error {
+func newUnsupportedDBTypeError(dbType config.DBType) error {
 	return newDatabaseError(dbType, "validation", ErrUnsupportedDBType, map[string]any{
-		"supported_types": []constants.DBType{constants.SQLite, constants.Postgres, constants.MySQL},
+		"supported_types": []config.DBType{config.SQLite, config.Postgres, config.MySQL},
 	})
 }

@@ -2,8 +2,6 @@ package middleware
 
 import (
 	"github.com/gofiber/fiber/v3"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 type SimpleMiddleware struct {
@@ -22,7 +20,7 @@ func (m *SimpleMiddleware) Order() int {
 }
 
 func (m *SimpleMiddleware) Apply(router fiber.Router) {
-	if m.path == constants.Empty {
+	if m.path == "" {
 		router.Use(m.handler)
 
 		return

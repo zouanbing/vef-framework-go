@@ -7,7 +7,6 @@ import (
 	"github.com/uptrace/bun/schema"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/database/mysql"
 	"github.com/ilxqx/vef-framework-go/internal/database/postgres"
 	"github.com/ilxqx/vef-framework-go/internal/database/sqlite"
@@ -15,18 +14,18 @@ import (
 
 type DatabaseProvider interface {
 	Connect(config *config.DatasourceConfig) (*sql.DB, schema.Dialect, error)
-	Type() constants.DBType
+	Type() config.DBType
 	ValidateConfig(config *config.DatasourceConfig) error
 	QueryVersion(db *bun.DB) (string, error)
 }
 
 type providerRegistry struct {
-	providers map[constants.DBType]DatabaseProvider
+	providers map[config.DBType]DatabaseProvider
 }
 
 func newProviderRegistry() *providerRegistry {
 	registry := &providerRegistry{
-		providers: make(map[constants.DBType]DatabaseProvider),
+		providers: make(map[config.DBType]DatabaseProvider),
 	}
 
 	registry.register(sqlite.NewProvider())
@@ -40,7 +39,7 @@ func (r *providerRegistry) register(provider DatabaseProvider) {
 	r.providers[provider.Type()] = provider
 }
 
-func (r *providerRegistry) provider(dbType constants.DBType) (DatabaseProvider, bool) {
+func (r *providerRegistry) provider(dbType config.DBType) (DatabaseProvider, bool) {
 	provider, exists := r.providers[dbType]
 
 	return provider, exists

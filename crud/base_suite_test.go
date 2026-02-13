@@ -16,7 +16,6 @@ import (
 	"github.com/ilxqx/vef-framework-go"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/internal/apptest"
@@ -98,7 +97,7 @@ type BaseSuite struct {
 	app      *app.App
 	stop     func()
 	db       orm.DB
-	dbType   constants.DBType
+	dbType   config.DBType
 	dsConfig *config.DatasourceConfig
 }
 

@@ -10,8 +10,6 @@ import (
 	"github.com/uptrace/bun/schema"
 
 	collections "github.com/ilxqx/go-collections"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // NewUpdateQuery creates a new UpdateQuery instance with the provided database instance.
@@ -85,7 +83,7 @@ func (q *BunUpdateQuery) Model(model any) UpdateQuery {
 }
 
 func (q *BunUpdateQuery) ModelTable(name string, alias ...string) UpdateQuery {
-	if len(alias) > 0 && alias[0] != constants.Empty {
+	if len(alias) > 0 && alias[0] != "" {
 		q.query.ModelTableExpr("? AS ?", bun.Name(name), bun.Name(alias[0]))
 	} else {
 		q.query.ModelTableExpr("? AS ?TableAlias", bun.Name(name))
@@ -95,7 +93,7 @@ func (q *BunUpdateQuery) ModelTable(name string, alias ...string) UpdateQuery {
 }
 
 func (q *BunUpdateQuery) Table(name string, alias ...string) UpdateQuery {
-	if len(alias) > 0 && alias[0] != constants.Empty {
+	if len(alias) > 0 && alias[0] != "" {
 		q.query.TableExpr("? AS ?", bun.Name(name), bun.Name(alias[0]))
 	} else {
 		q.query.Table(name)
@@ -108,7 +106,7 @@ func (q *BunUpdateQuery) TableFrom(model any, alias ...string) UpdateQuery {
 	table := q.db.TableOf(model)
 
 	aliasToUse := table.Alias
-	if len(alias) > 0 && alias[0] != constants.Empty {
+	if len(alias) > 0 && alias[0] != "" {
 		aliasToUse = alias[0]
 	}
 
@@ -118,7 +116,7 @@ func (q *BunUpdateQuery) TableFrom(model any, alias ...string) UpdateQuery {
 }
 
 func (q *BunUpdateQuery) TableExpr(builder func(ExprBuilder) any, alias ...string) UpdateQuery {
-	if len(alias) > 0 && alias[0] != constants.Empty {
+	if len(alias) > 0 && alias[0] != "" {
 		q.query.TableExpr("(?) AS ?", builder(q.eb), bun.Name(alias[0]))
 	} else {
 		q.query.TableExpr("(?)", builder(q.eb))
@@ -128,7 +126,7 @@ func (q *BunUpdateQuery) TableExpr(builder func(ExprBuilder) any, alias ...strin
 }
 
 func (q *BunUpdateQuery) TableSubQuery(builder func(SelectQuery), alias ...string) UpdateQuery {
-	if len(alias) > 0 && alias[0] != constants.Empty {
+	if len(alias) > 0 && alias[0] != "" {
 		q.query.TableExpr("(?) AS ?", q.BuildSubQuery(builder), bun.Name(alias[0]))
 	} else {
 		q.query.TableExpr("(?)", q.BuildSubQuery(builder))
@@ -320,12 +318,12 @@ func (q *BunUpdateQuery) skipCreateAuditColumns(table *schema.Table) {
 		return
 	}
 
-	if table.HasField(constants.ColumnCreatedAt) {
-		q.Exclude(constants.ColumnCreatedAt)
+	if table.HasField(ColumnCreatedAt) {
+		q.Exclude(ColumnCreatedAt)
 	}
 
-	if table.HasField(constants.ColumnCreatedBy) {
-		q.Exclude(constants.ColumnCreatedBy)
+	if table.HasField(ColumnCreatedBy) {
+		q.Exclude(ColumnCreatedBy)
 	}
 }
 

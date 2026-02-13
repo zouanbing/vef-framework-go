@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"unicode/utf8"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/mcp"
 	"github.com/ilxqx/vef-framework-go/orm"
@@ -49,7 +48,7 @@ func (t *QueryTool) handleQuery(ctx context.Context, req *mcp.CallToolRequest) (
 		return mcp.NewToolResultError("Failed to parse arguments: " + err.Error()), nil
 	}
 
-	if args.SQL == constants.Empty {
+	if args.SQL == "" {
 		return mcp.NewToolResultError("Sql parameter is required and must not be empty"), nil
 	}
 

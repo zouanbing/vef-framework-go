@@ -9,7 +9,6 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/id"
 	"github.com/ilxqx/vef-framework-go/internal/approval/publisher"
 	"github.com/ilxqx/vef-framework-go/internal/approval/strategy"
@@ -44,7 +43,7 @@ var allModels = []any{
 func setupTestDB(t *testing.T) (orm.DB, func()) {
 	t.Helper()
 
-	dsConfig := &config.DatasourceConfig{Type: constants.SQLite}
+	dsConfig := &config.DatasourceConfig{Type: config.SQLite}
 
 	bunDB, err := database.New(dsConfig)
 	require.NoError(t, err)

@@ -10,7 +10,6 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/database"
 	internalORM "github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/orm"
@@ -290,7 +289,7 @@ func TestNewEventPublisher(t *testing.T) {
 func setupTestDB(t *testing.T) (orm.DB, func()) {
 	t.Helper()
 
-	dsConfig := &config.DatasourceConfig{Type: constants.SQLite}
+	dsConfig := &config.DatasourceConfig{Type: config.SQLite}
 	bunDB, err := database.New(dsConfig)
 	require.NoError(t, err, "Should create test database")
 

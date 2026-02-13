@@ -4,7 +4,6 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 )
 
@@ -39,8 +38,8 @@ type parseConfig struct {
 // defaultParseConfig returns comma-separated key=value pairs as the default format.
 func defaultParseConfig() *parseConfig {
 	return &parseConfig{
-		pairSeparator:  func(r rune) bool { return r == constants.ByteComma },
-		valueSeparator: constants.ByteEquals,
+		pairSeparator:  func(r rune) bool { return r == ',' },
+		valueSeparator: '=',
 		bareValueMode:  BareAsValue,
 	}
 }
@@ -58,7 +57,7 @@ func ParseTag(input string, opts ...ParseOption) map[string]string {
 
 	for pair := range strings.FieldsFuncSeq(input, cfg.pairSeparator) {
 		pair = strings.TrimSpace(pair)
-		if pair == constants.Empty {
+		if pair == "" {
 			continue
 		}
 
@@ -70,7 +69,7 @@ func ParseTag(input string, opts ...ParseOption) map[string]string {
 		}
 
 		if cfg.bareValueMode == BareAsKey {
-			result[pair] = constants.Empty
+			result[pair] = ""
 
 			continue
 		}

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/log"
 	"github.com/ilxqx/vef-framework-go/mold"
 )
@@ -29,7 +28,7 @@ func (*DataDictTranslator) Supports(kind string) bool {
 
 func (t *DataDictTranslator) Translate(ctx context.Context, kind, value string) (string, error) {
 	if t.resolver == nil {
-		return constants.Empty, ErrDataDictResolverNotConfigured
+		return "", ErrDataDictResolverNotConfigured
 	}
 
 	dictKey := kind[len(dictKeyPrefix):]
@@ -38,7 +37,7 @@ func (t *DataDictTranslator) Translate(ctx context.Context, kind, value string) 
 	if err != nil {
 		t.logger.Errorf("Failed to resolve dictionary %q for code %q: %v", dictKey, value, err)
 
-		return constants.Empty, err
+		return "", err
 	}
 
 	return result, nil

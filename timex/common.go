@@ -5,8 +5,11 @@ import (
 	"time"
 
 	"github.com/spf13/cast"
+)
 
-	"github.com/ilxqx/vef-framework-go/constants"
+const (
+	jsonNull  = "null"
+	jsonQuote = '"'
 )
 
 var (
@@ -125,7 +128,7 @@ func parseTimeWithFallback(value, layout string) (time.Time, error) {
 
 // validateJSONFormat checks if the JSON bytes have the expected format for time types.
 func validateJSONFormat(bs []byte, expectedLength int) error {
-	if len(bs) != expectedLength+2 || bs[0] != constants.JSONQuote || bs[len(bs)-1] != constants.JSONQuote {
+	if len(bs) != expectedLength+2 || bs[0] != jsonQuote || bs[len(bs)-1] != jsonQuote {
 		return fmt.Errorf("%w: expected length %d with quotes", ErrInvalidJSONFormat, expectedLength)
 	}
 

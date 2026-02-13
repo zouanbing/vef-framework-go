@@ -3,7 +3,6 @@ package orm
 import (
 	"github.com/uptrace/bun/schema"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/sortx"
 )
 
@@ -37,7 +36,7 @@ func (o *orderExpr) Column(column string) OrderBuilder {
 
 func (o *orderExpr) Expr(expr any) OrderBuilder {
 	o.expr = expr
-	o.column = constants.Empty
+	o.column = ""
 
 	return o
 }
@@ -67,11 +66,11 @@ func (o *orderExpr) NullsLast() OrderBuilder {
 }
 
 func (o *orderExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
-	if o.column == constants.Empty && o.expr == nil {
+	if o.column == "" && o.expr == nil {
 		return nil, ErrMissingColumnOrExpression
 	}
 
-	if o.column != constants.Empty {
+	if o.column != "" {
 		b, err = o.builders.Column(o.column).AppendQuery(gen, b)
 	} else {
 		b, err = o.builders.Expr("?", o.expr).AppendQuery(gen, b)
@@ -81,11 +80,11 @@ func (o *orderExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err er
 		return
 	}
 
-	b = append(b, constants.ByteSpace)
+	b = append(b, ' ')
 	b = append(b, o.direction.String()...)
 
 	if o.nullsOrder != sortx.NullsDefault {
-		b = append(b, constants.ByteSpace)
+		b = append(b, ' ')
 		b = append(b, o.nullsOrder.String()...)
 	}
 
@@ -102,7 +101,7 @@ func (o *orderByClause) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, er
 
 	for i, expr := range o.exprs {
 		if i > 0 {
-			b = append(b, constants.CommaSpace...)
+			b = append(b, ", "...)
 		}
 
 		if b, err = expr.AppendQuery(gen, b); err != nil {

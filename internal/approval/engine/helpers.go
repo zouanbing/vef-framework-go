@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/approval/strategy"
 	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/orm"
@@ -123,7 +122,7 @@ func handleEmptyAssignee(ctx context.Context, pc *ProcessContext, orgService app
 			return nil, err
 		}
 
-		if superiorID == constants.Empty {
+		if superiorID == "" {
 			return nil, ErrNoAssignee
 		}
 
@@ -161,7 +160,7 @@ func createTasksWithDelegation(ctx context.Context, pc *ProcessContext, assignee
 			Status:     string(approval.TaskPending),
 		}
 
-		if assignee.DelegateFromID != constants.Empty {
+		if assignee.DelegateFromID != "" {
 			task.DelegateFromID = null.StringFrom(assignee.DelegateFromID)
 		}
 
@@ -176,7 +175,7 @@ func createTasksWithDelegation(ctx context.Context, pc *ProcessContext, assignee
 // getSuperior retrieves the superior user ID, returning empty string if orgService is nil.
 func getSuperior(ctx context.Context, orgService approval.OrganizationService, userID string) (string, error) {
 	if orgService == nil {
-		return constants.Empty, nil
+		return "", nil
 	}
 
 	uid, _, err := orgService.GetSuperior(ctx, userID)
@@ -201,7 +200,7 @@ func loadFlowCategoryID(ctx context.Context, db orm.DB, flowID string) string {
 	if err := db.NewSelect().Model(&flow).Where(func(c orm.ConditionBuilder) {
 		c.Equals("id", flowID)
 	}).Scan(ctx); err != nil {
-		return constants.Empty
+		return ""
 	}
 
 	return flow.CategoryID
@@ -243,7 +242,7 @@ func resolveDelegationChain(ctx context.Context, db orm.DB, userID, flowID, flow
 	}
 
 	if currentID == originalID {
-		return currentID, constants.Empty
+		return currentID, ""
 	}
 
 	return currentID, originalID

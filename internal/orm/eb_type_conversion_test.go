@@ -3,7 +3,7 @@ package orm
 import (
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/config"
 )
 
 // TypeConversionFunctionsTestSuite tests type conversion function methods of ExprBuilder
@@ -741,9 +741,9 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDateWithFormat() {
 
 		var formatStr string
 		switch suite.dbType {
-		case constants.MySQL:
+		case config.MySQL:
 			formatStr = "%Y-%m-%d"
-		case constants.Postgres:
+		case config.Postgres:
 			fallthrough
 		default:
 			formatStr = "YYYY-MM-DD"
@@ -811,9 +811,9 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimeWithFormat() {
 
 		var formatStr string
 		switch suite.dbType {
-		case constants.MySQL:
+		case config.MySQL:
 			formatStr = "%H:%i:%s"
-		case constants.Postgres:
+		case config.Postgres:
 			fallthrough
 		default:
 			formatStr = "HH24:MI:SS"
@@ -881,9 +881,9 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimestampWithFormat() {
 
 		var formatStr string
 		switch suite.dbType {
-		case constants.MySQL:
+		case config.MySQL:
 			formatStr = "%Y-%m-%d %H:%i:%s"
-		case constants.Postgres:
+		case config.Postgres:
 			fallthrough
 		default:
 			formatStr = "YYYY-MM-DD HH24:MI:SS"

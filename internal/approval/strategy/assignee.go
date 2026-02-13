@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
 
@@ -115,7 +114,7 @@ type SelfResolver struct{}
 func (r *SelfResolver) Kind() approval.AssigneeKind { return approval.AssigneeSelf }
 
 func (r *SelfResolver) Resolve(_ context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error) {
-	if rc.ApplicantID == constants.Empty {
+	if rc.ApplicantID == "" {
 		return nil, nil
 	}
 
@@ -142,7 +141,7 @@ func (r *SuperiorResolver) Resolve(ctx context.Context, rc *ResolveContext) ([]a
 		return nil, err
 	}
 
-	if uid == constants.Empty {
+	if uid == "" {
 		return nil, nil
 	}
 
@@ -189,7 +188,7 @@ func (r *FormFieldResolver) Kind() approval.AssigneeKind { return approval.Assig
 
 func (r *FormFieldResolver) Resolve(_ context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error) {
 	fieldName := rc.Config.FormField.String
-	if fieldName == constants.Empty {
+	if fieldName == "" {
 		return nil, nil
 	}
 
@@ -197,7 +196,7 @@ func (r *FormFieldResolver) Resolve(_ context.Context, rc *ResolveContext) ([]ap
 
 	switch v := value.(type) {
 	case string:
-		if v == constants.Empty {
+		if v == "" {
 			return nil, nil
 		}
 
@@ -212,7 +211,7 @@ func (r *FormFieldResolver) Resolve(_ context.Context, rc *ResolveContext) ([]ap
 	case []any:
 		result := make([]approval.ResolvedAssignee, 0, len(v))
 		for _, item := range v {
-			if uid, ok := item.(string); ok && uid != constants.Empty {
+			if uid, ok := item.(string); ok && uid != "" {
 				result = append(result, approval.ResolvedAssignee{UserID: uid})
 			}
 		}

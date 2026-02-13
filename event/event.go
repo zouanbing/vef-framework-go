@@ -5,7 +5,6 @@ import (
 	"maps"
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/id"
 )
 
@@ -109,7 +108,7 @@ func NewBaseEvent(eventType string, opts ...BaseEventOption) BaseEvent {
 	event := BaseEvent{
 		typ:    eventType,
 		id:     id.GenerateUUID(),
-		source: constants.Empty,
+		source: "",
 		time:   time.Now(),
 		meta:   make(map[string]string),
 	}

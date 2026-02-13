@@ -5,7 +5,6 @@ import (
 	"github.com/spf13/cast"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/constants"
 	isecurity "github.com/ilxqx/vef-framework-go/internal/security"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
@@ -41,24 +40,24 @@ func (*SignatureStrategy) Name() string {
 // authentication to the AuthManager.
 // Headers are extracted and formatted as: Principal=AppID, Credentials="timestamp:nonce:signature".
 func (s *SignatureStrategy) Authenticate(ctx fiber.Ctx, _ map[string]any) (*security.Principal, error) {
-	appID := ctx.Get(constants.HeaderXAppID)
-	timestampStr := ctx.Get(constants.HeaderXTimestamp)
-	nonce := ctx.Get(constants.HeaderXNonce)
-	signature := ctx.Get(constants.HeaderXSignature)
+	appID := ctx.Get(api.HeaderXAppID)
+	timestampStr := ctx.Get(api.HeaderXTimestamp)
+	nonce := ctx.Get(api.HeaderXNonce)
+	signature := ctx.Get(api.HeaderXSignature)
 
-	if appID == constants.Empty {
+	if appID == "" {
 		return nil, result.ErrAppIDRequired
 	}
 
-	if timestampStr == constants.Empty {
+	if timestampStr == "" {
 		return nil, result.ErrTimestampRequired
 	}
 
-	if nonce == constants.Empty {
+	if nonce == "" {
 		return nil, result.ErrNonceRequired
 	}
 
-	if signature == constants.Empty {
+	if signature == "" {
 		return nil, result.ErrSignatureRequired
 	}
 

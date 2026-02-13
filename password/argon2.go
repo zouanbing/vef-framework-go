@@ -8,8 +8,6 @@ import (
 	"strings"
 
 	"golang.org/x/crypto/argon2"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 const (
@@ -65,20 +63,20 @@ func NewArgon2Encoder(opts ...Argon2Option) Encoder {
 
 func (e *argon2Encoder) Encode(password string) (string, error) {
 	if e.memory < 8 {
-		return constants.Empty, ErrInvalidMemory
+		return "", ErrInvalidMemory
 	}
 
 	if e.iterations < 1 {
-		return constants.Empty, ErrInvalidIterations
+		return "", ErrInvalidIterations
 	}
 
 	if e.parallelism < 1 {
-		return constants.Empty, ErrInvalidParallelism
+		return "", ErrInvalidParallelism
 	}
 
 	salt := make([]byte, argon2SaltLength)
 	if _, err := rand.Read(salt); err != nil {
-		return constants.Empty, err
+		return "", err
 	}
 
 	hash := argon2.IDKey([]byte(password), salt, e.iterations, e.memory, e.parallelism, argon2KeyLength)

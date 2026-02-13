@@ -8,7 +8,6 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/result"
@@ -68,7 +67,7 @@ func (p *ProxyMiddleware) handleFileProxy(ctx fiber.Ctx) error {
 
 	ctx.Set(fiber.HeaderCacheControl, "public, max-age=86400, must-revalidate")
 
-	if stat != nil && stat.ETag != constants.Empty {
+	if stat != nil && stat.ETag != "" {
 		ctx.Set(fiber.HeaderETag, stat.ETag)
 	}
 
@@ -82,11 +81,11 @@ func NewProxyMiddleware(service storage.Service) app.Middleware {
 }
 
 func detectContentType(stat *storage.ObjectInfo, key string) string {
-	if stat != nil && stat.ContentType != constants.Empty {
+	if stat != nil && stat.ContentType != "" {
 		return stat.ContentType
 	}
 
-	if contentType := mime.TypeByExtension(filepath.Ext(key)); contentType != constants.Empty {
+	if contentType := mime.TypeByExtension(filepath.Ext(key)); contentType != "" {
 		return contentType
 	}
 

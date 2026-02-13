@@ -11,7 +11,6 @@ import (
 
 	"golang.org/x/crypto/hkdf"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
@@ -83,13 +82,13 @@ func NewECIESFromHex(privateKeyHex, publicKeyHex string, curve ECIESCurve, opts 
 		err          error
 	)
 
-	if privateKeyHex != constants.Empty {
+	if privateKeyHex != "" {
 		if privateBytes, err = encoding.FromHex(privateKeyHex); err != nil {
 			return nil, fmt.Errorf("failed to decode private key from hex: %w", err)
 		}
 	}
 
-	if publicKeyHex != constants.Empty {
+	if publicKeyHex != "" {
 		if publicBytes, err = encoding.FromHex(publicKeyHex); err != nil {
 			return nil, fmt.Errorf("failed to decode public key from hex: %w", err)
 		}
@@ -105,13 +104,13 @@ func NewECIESFromBase64(privateKeyBase64, publicKeyBase64 string, curve ECIESCur
 		err          error
 	)
 
-	if privateKeyBase64 != constants.Empty {
+	if privateKeyBase64 != "" {
 		if privateBytes, err = encoding.FromBase64(privateKeyBase64); err != nil {
 			return nil, fmt.Errorf("failed to decode private key from base64: %w", err)
 		}
 	}
 
-	if publicKeyBase64 != constants.Empty {
+	if publicKeyBase64 != "" {
 		if publicBytes, err = encoding.FromBase64(publicKeyBase64); err != nil {
 			return nil, fmt.Errorf("failed to decode public key from base64: %w", err)
 		}
@@ -143,39 +142,39 @@ func getCurve(curve ECIESCurve) ecdh.Curve {
 
 func (e *eciesCipher) Encrypt(plaintext string) (string, error) {
 	if e.publicKey == nil {
-		return constants.Empty, ErrPublicKeyRequiredForEncrypt
+		return "", ErrPublicKeyRequiredForEncrypt
 	}
 
 	ephemeralKey, err := e.publicKey.Curve().GenerateKey(rand.Reader)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to generate ephemeral key: %w", err)
+		return "", fmt.Errorf("failed to generate ephemeral key: %w", err)
 	}
 
 	sharedSecret, err := ephemeralKey.ECDH(e.publicKey)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to derive shared secret: %w", err)
+		return "", fmt.Errorf("failed to derive shared secret: %w", err)
 	}
 
 	kdf := hkdf.New(sha256.New, sharedSecret, nil, nil)
 
 	aesKey := make([]byte, 32)
 	if _, err := io.ReadFull(kdf, aesKey); err != nil {
-		return constants.Empty, fmt.Errorf("failed to derive AES key: %w", err)
+		return "", fmt.Errorf("failed to derive AES key: %w", err)
 	}
 
 	block, err := aes.NewCipher(aesKey)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to create cipher: %w", err)
+		return "", fmt.Errorf("failed to create cipher: %w", err)
 	}
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to create GCM: %w", err)
+		return "", fmt.Errorf("failed to create GCM: %w", err)
 	}
 
 	nonce := make([]byte, gcm.NonceSize())
 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-		return constants.Empty, fmt.Errorf("failed to generate nonce: %w", err)
+		return "", fmt.Errorf("failed to generate nonce: %w", err)
 	}
 
 	ciphertext := gcm.Seal(nil, nonce, []byte(plaintext), nil)
@@ -191,53 +190,53 @@ func (e *eciesCipher) Encrypt(plaintext string) (string, error) {
 
 func (e *eciesCipher) Decrypt(ciphertext string) (string, error) {
 	if e.privateKey == nil {
-		return constants.Empty, ErrPrivateKeyRequiredForDecrypt
+		return "", ErrPrivateKeyRequiredForDecrypt
 	}
 
 	encryptedData, err := encoding.FromBase64(ciphertext)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to decode base64: %w", err)
+		return "", fmt.Errorf("failed to decode base64: %w", err)
 	}
 
 	publicKeySize := e.privateKey.PublicKey().Bytes()
 	publicKeyLen := len(publicKeySize)
 
 	if len(encryptedData) < publicKeyLen+12 {
-		return constants.Empty, ErrCiphertextTooShort
+		return "", ErrCiphertextTooShort
 	}
 
 	ephemeralPublicKeyBytes := encryptedData[:publicKeyLen]
 
 	ephemeralPublicKey, err := e.privateKey.Curve().NewPublicKey(ephemeralPublicKeyBytes)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to parse ephemeral public key: %w", err)
+		return "", fmt.Errorf("failed to parse ephemeral public key: %w", err)
 	}
 
 	sharedSecret, err := e.privateKey.ECDH(ephemeralPublicKey)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to derive shared secret: %w", err)
+		return "", fmt.Errorf("failed to derive shared secret: %w", err)
 	}
 
 	kdf := hkdf.New(sha256.New, sharedSecret, nil, nil)
 
 	aesKey := make([]byte, 32)
 	if _, err := io.ReadFull(kdf, aesKey); err != nil {
-		return constants.Empty, fmt.Errorf("failed to derive AES key: %w", err)
+		return "", fmt.Errorf("failed to derive AES key: %w", err)
 	}
 
 	block, err := aes.NewCipher(aesKey)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to create cipher: %w", err)
+		return "", fmt.Errorf("failed to create cipher: %w", err)
 	}
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to create GCM: %w", err)
+		return "", fmt.Errorf("failed to create GCM: %w", err)
 	}
 
 	nonceSize := gcm.NonceSize()
 	if len(encryptedData) < publicKeyLen+nonceSize {
-		return constants.Empty, ErrCiphertextTooShort
+		return "", ErrCiphertextTooShort
 	}
 
 	nonce := encryptedData[publicKeyLen : publicKeyLen+nonceSize]
@@ -245,7 +244,7 @@ func (e *eciesCipher) Decrypt(ciphertext string) (string, error) {
 
 	plaintext, err := gcm.Open(nil, nonce, ciphertextData, nil)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to decrypt: %w", err)
+		return "", fmt.Errorf("failed to decrypt: %w", err)
 	}
 
 	return string(plaintext), nil

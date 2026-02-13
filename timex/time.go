@@ -5,8 +5,6 @@ import (
 	"time"
 
 	"github.com/gofiber/utils/v2"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // Time represents a time value (without date) with database and JSON support.
@@ -45,9 +43,9 @@ func (t Time) String() string {
 // MarshalJSON implements the json.Marshaler interface for JSON serialization.
 func (t Time) MarshalJSON() ([]byte, error) {
 	bs := make([]byte, 0, timePatternLength+2)
-	bs = append(bs, constants.JSONQuote)
+	bs = append(bs, jsonQuote)
 	bs = time.Time(t).AppendFormat(bs, time.TimeOnly)
-	bs = append(bs, constants.JSONQuote)
+	bs = append(bs, jsonQuote)
 
 	return bs, nil
 }
@@ -55,7 +53,7 @@ func (t Time) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON implements the json.Unmarshaler interface for JSON deserialization.
 func (t *Time) UnmarshalJSON(bs []byte) error {
 	value := utils.UnsafeString(bs)
-	if value == constants.JSONNull {
+	if value == jsonNull {
 		return nil
 	}
 

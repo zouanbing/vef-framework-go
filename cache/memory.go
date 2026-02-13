@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/puzpuzpuz/xsync/v4"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 type memoryConfig struct {
@@ -159,7 +157,7 @@ func (m *memoryCache[T]) Set(_ context.Context, key string, value T, ttl ...time
 		for m.size.Load() >= m.maxSize {
 			// Find candidate to evict
 			candidate := m.evictionHandler.SelectEvictionCandidate()
-			if candidate == constants.Empty {
+			if candidate == "" {
 				// This should not happen with proper eviction policies (LRU/LFU/FIFO)
 				// but if it does, return error instead of panic
 				return ErrMemoryLimitExceeded
@@ -250,12 +248,12 @@ func (m *memoryCache[T]) Keys(_ context.Context, prefix ...string) ([]string, er
 
 	var keys []string
 
-	prefixStr := constants.Empty
+	prefixStr := ""
 	if len(prefix) > 0 {
 		prefixStr = prefix[0]
 	}
 
-	if prefixStr == constants.Empty {
+	if prefixStr == "" {
 		// If no prefix, return all keys
 		m.data.Range(func(key string, entry *cacheEntry[T]) bool {
 			if !entry.isExpired() {
@@ -285,14 +283,14 @@ func (m *memoryCache[T]) ForEach(_ context.Context, callback func(key string, va
 		return nil
 	}
 
-	prefixStr := constants.Empty
+	prefixStr := ""
 	if len(prefix) > 0 {
 		prefixStr = prefix[0]
 	}
 
 	m.data.Range(func(key string, entry *cacheEntry[T]) bool {
 		// Check prefix filter
-		if prefixStr != constants.Empty && !strings.HasPrefix(key, prefixStr) {
+		if prefixStr != "" && !strings.HasPrefix(key, prefixStr) {
 			return true
 		}
 

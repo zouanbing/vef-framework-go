@@ -8,8 +8,6 @@ import (
 	"strings"
 
 	"golang.org/x/crypto/scrypt"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 const (
@@ -65,25 +63,25 @@ func NewScryptEncoder(opts ...ScryptOption) Encoder {
 
 func (e *scryptEncoder) Encode(password string) (string, error) {
 	if e.n < 2 {
-		return constants.Empty, ErrInvalidIterations
+		return "", ErrInvalidIterations
 	}
 
 	if e.r < 1 {
-		return constants.Empty, ErrInvalidIterations
+		return "", ErrInvalidIterations
 	}
 
 	if e.p < 1 {
-		return constants.Empty, ErrInvalidParallelism
+		return "", ErrInvalidParallelism
 	}
 
 	salt := make([]byte, scryptSaltLength)
 	if _, err := rand.Read(salt); err != nil {
-		return constants.Empty, err
+		return "", err
 	}
 
 	hash, err := scrypt.Key([]byte(password), salt, e.n, e.r, e.p, scryptKeyLength)
 	if err != nil {
-		return constants.Empty, err
+		return "", err
 	}
 
 	encodedSalt := base64.RawStdEncoding.EncodeToString(salt)

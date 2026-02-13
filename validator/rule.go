@@ -7,7 +7,6 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	v "github.com/go-playground/validator/v10"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/i18n"
 )
 
@@ -41,7 +40,7 @@ func (vr ValidationRule) register(validator *v.Validate) error {
 			return t.Add(vr.RuleTag, vr.ErrMessageTemplate, false)
 		},
 		func(t ut.Translator, fe v.FieldError) string {
-			if vr.ErrMessageI18nKey != constants.Empty {
+			if vr.ErrMessageI18nKey != "" {
 				msg := i18n.T(vr.ErrMessageI18nKey)
 				if msg != vr.ErrMessageI18nKey {
 					return vr.replacePlaceholders(msg, vr.ParseParam(fe))

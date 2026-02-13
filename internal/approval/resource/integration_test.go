@@ -15,7 +15,6 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/encoding"
 	approvalPkg "github.com/ilxqx/vef-framework-go/approval"
 	approval "github.com/ilxqx/vef-framework-go/internal/approval"
@@ -79,7 +78,7 @@ func (s *ApprovalSuite) makeApiRequest(body api.Request) *http.Response {
 
 	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-	req.Header.Set(fiber.HeaderAuthorization, constants.AuthSchemeBearer+" "+s.authToken)
+	req.Header.Set(fiber.HeaderAuthorization, security.AuthSchemeBearer+" "+s.authToken)
 
 	resp, err := s.app.Test(req)
 	s.Require().NoError(err)

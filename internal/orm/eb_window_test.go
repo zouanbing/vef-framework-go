@@ -3,7 +3,7 @@ package orm
 import (
 	"strings"
 
-	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/config"
 )
 
 // WindowFunctionsTestSuite tests window function methods of ExprBuilder including
@@ -789,7 +789,7 @@ func (suite *WindowFunctionsTestSuite) TestWinStringAgg() {
 	suite.T().Logf("Testing WinStringAgg function for %s", suite.dbType)
 
 	suite.Run("StringAggPartitionedByStatus", func() {
-		if suite.dbType == constants.MySQL {
+		if suite.dbType == config.MySQL {
 			suite.T().Skipf("WinStringAgg skipped for %s (MySQL does not support GROUP_CONCAT as window function)", suite.dbType)
 
 			return
@@ -831,7 +831,7 @@ func (suite *WindowFunctionsTestSuite) TestWinArrayAgg() {
 	suite.T().Logf("Testing WinArrayAgg function for %s", suite.dbType)
 
 	suite.Run("ArrayAggPartitionedByStatus", func() {
-		if suite.dbType != constants.Postgres {
+		if suite.dbType != config.Postgres {
 			suite.T().Skipf("WinArrayAgg skipped for %s (PostgreSQL only)", suite.dbType)
 		}
 
@@ -872,7 +872,7 @@ func (suite *WindowFunctionsTestSuite) TestWinStdDev() {
 	suite.T().Logf("Testing WinStdDev function for %s", suite.dbType)
 
 	suite.Run("StdDevInStatusPartition", func() {
-		if suite.dbType == constants.SQLite {
+		if suite.dbType == config.SQLite {
 			suite.T().Skipf("WinStdDev skipped for %s (SQLite does not support statistical functions)", suite.dbType)
 
 			return
@@ -916,7 +916,7 @@ func (suite *WindowFunctionsTestSuite) TestWinVariance() {
 	suite.T().Logf("Testing WinVariance function for %s", suite.dbType)
 
 	suite.Run("VarianceInStatusPartition", func() {
-		if suite.dbType == constants.SQLite {
+		if suite.dbType == config.SQLite {
 			suite.T().Skipf("WinVariance skipped for %s (SQLite does not support statistical functions)", suite.dbType)
 
 			return

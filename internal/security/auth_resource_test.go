@@ -18,7 +18,6 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/i18n"
@@ -225,7 +224,7 @@ func (suite *AuthResourceTestSuite) makeApiRequestWithToken(body api.Request, to
 
 	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-	req.Header.Set(fiber.HeaderAuthorization, constants.AuthSchemeBearer+" "+token)
+	req.Header.Set(fiber.HeaderAuthorization, security.AuthSchemeBearer+" "+token)
 
 	// Use 30 second timeout to handle slower CI environments
 	resp, err := suite.app.Test(req, 30*time.Second)

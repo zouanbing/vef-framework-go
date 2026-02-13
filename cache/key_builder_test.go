@@ -4,13 +4,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 func TestPrefixKeyBuilder(t *testing.T) {
 	t.Run("BuildWithoutPrefix", func(t *testing.T) {
-		builder := NewPrefixKeyBuilder(constants.Empty)
+		builder := NewPrefixKeyBuilder("")
 
 		result := builder.Build("user", "123")
 		assert.Equal(t, "user:123", result)
@@ -31,10 +29,10 @@ func TestPrefixKeyBuilder(t *testing.T) {
 	})
 
 	t.Run("BuildWithEmptyKeyPartsNoPrefix", func(t *testing.T) {
-		builder := NewPrefixKeyBuilder(constants.Empty)
+		builder := NewPrefixKeyBuilder("")
 
 		result := builder.Build()
-		assert.Equal(t, constants.Empty, result)
+		assert.Equal(t, "", result)
 	})
 
 	t.Run("BuildWithSingleKeyPart", func(t *testing.T) {
@@ -72,6 +70,6 @@ func TestPrefixKeyBuilder(t *testing.T) {
 
 	t.Run("KeyHelperFunctionEmptyParts", func(t *testing.T) {
 		result := Key()
-		assert.Equal(t, constants.Empty, result)
+		assert.Equal(t, "", result)
 	})
 }

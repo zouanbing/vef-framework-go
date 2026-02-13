@@ -2,12 +2,10 @@ package cache
 
 import (
 	"github.com/redis/go-redis/v9"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 const (
-	cacheKeyPrefix = "vef" + constants.Colon + "cache"
+	cacheKeyPrefix = "vef" + ":" + "cache"
 )
 
 // NewMemory constructs an in-memory cache using functional options.
@@ -27,7 +25,7 @@ func NewRedis[T any](client *redis.Client, namespace string, opts ...RedisOption
 		panic("redis cache requires a non-nil redis client")
 	}
 
-	if namespace == constants.Empty {
+	if namespace == "" {
 		panic("cache.NewRedis requires a non-empty namespace")
 	}
 

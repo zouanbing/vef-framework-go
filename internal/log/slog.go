@@ -7,7 +7,6 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/log"
 )
 
@@ -40,7 +39,7 @@ func (s sLogHandler) Handle(_ context.Context, record slog.Record) error {
 	fields := make([]string, 0, record.NumAttrs()+len(s.attrs))
 
 	record.Attrs(func(attr slog.Attr) bool {
-		if field := formatAttr(attr); field != constants.Empty {
+		if field := formatAttr(attr); field != "" {
 			fields = append(fields, field)
 		}
 
@@ -104,10 +103,10 @@ func formatAttr(attr slog.Attr) string {
 	case slog.KindAny:
 		value = cast.ToString(attr.Value.Any())
 	default:
-		return constants.Empty
+		return ""
 	}
 
-	return attr.Key + constants.ColonSpace + value
+	return attr.Key + ": " + value
 }
 
 func NewSLogHandler(name string, callerSkip int, levelFilter ...log.Level) slog.Handler {

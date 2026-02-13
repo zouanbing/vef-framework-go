@@ -11,8 +11,6 @@ import (
 	"strings"
 
 	"golang.org/x/crypto/pbkdf2"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 const (
@@ -59,17 +57,17 @@ func NewPbkdf2Encoder(opts ...Pbkdf2Option) Encoder {
 
 func (e *pbkdf2Encoder) Encode(password string) (string, error) {
 	if e.iterations < 1 {
-		return constants.Empty, ErrInvalidIterations
+		return "", ErrInvalidIterations
 	}
 
 	hashFunc := e.getHashFunc()
 	if hashFunc == nil {
-		return constants.Empty, ErrInvalidHashFormat
+		return "", ErrInvalidHashFormat
 	}
 
 	salt := make([]byte, pbkdf2SaltLength)
 	if _, err := rand.Read(salt); err != nil {
-		return constants.Empty, err
+		return "", err
 	}
 
 	hash := pbkdf2.Key([]byte(password), salt, e.iterations, pbkdf2KeyLength, hashFunc)

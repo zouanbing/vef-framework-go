@@ -3,7 +3,7 @@ package orm
 import (
 	"fmt"
 
-	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/config"
 )
 
 // DeleteTestSuite tests DELETE operations including CTE, table sources, filtering,
@@ -109,7 +109,7 @@ func (suite *DeleteTestSuite) TestCTE() {
 	})
 
 	suite.Run("WithRecursiveCTE", func() {
-		if suite.dbType == constants.SQLite {
+		if suite.dbType == config.SQLite {
 			suite.T().Skip("SQLite recursive CTE with DELETE requires special handling")
 
 			return
@@ -458,7 +458,7 @@ func (suite *DeleteTestSuite) TestFiltering() {
 func (suite *DeleteTestSuite) TestOrdering() {
 	suite.T().Logf("Testing ordering methods for %s", suite.dbType)
 
-	if suite.dbType == constants.Postgres || suite.dbType == constants.SQLite {
+	if suite.dbType == config.Postgres || suite.dbType == config.SQLite {
 		suite.T().Skipf("%s doesn't support DELETE with ORDER BY/LIMIT in current configuration", suite.dbType)
 
 		return
@@ -611,7 +611,7 @@ func (suite *DeleteTestSuite) TestOrdering() {
 func (suite *DeleteTestSuite) TestLimit() {
 	suite.T().Logf("Testing Limit method for %s", suite.dbType)
 
-	if suite.dbType == constants.Postgres || suite.dbType == constants.SQLite {
+	if suite.dbType == config.Postgres || suite.dbType == config.SQLite {
 		suite.T().Skipf("%s doesn't support DELETE with LIMIT in current configuration", suite.dbType)
 
 		return
@@ -745,7 +745,7 @@ func (suite *DeleteTestSuite) TestLimit() {
 func (suite *DeleteTestSuite) TestReturning() {
 	suite.T().Logf("Testing Returning methods for %s", suite.dbType)
 
-	if suite.dbType == constants.MySQL {
+	if suite.dbType == config.MySQL {
 		suite.T().Skip("MySQL doesn't support RETURNING clause")
 
 		return
@@ -1112,7 +1112,7 @@ func (suite *DeleteTestSuite) TestExecution() {
 	})
 
 	suite.Run("ScanWithReturning", func() {
-		if suite.dbType == constants.MySQL {
+		if suite.dbType == config.MySQL {
 			suite.T().Skip("MySQL doesn't support RETURNING with Scan")
 
 			return

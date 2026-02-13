@@ -8,8 +8,6 @@ import (
 
 	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // jobInfo contains metadata and configuration options for a cron job.
@@ -26,7 +24,7 @@ type jobInfo struct {
 }
 
 func (i *jobInfo) buildJobOptions() ([]gocron.JobOption, error) {
-	if i.name == constants.Empty {
+	if i.name == "" {
 		return nil, ErrJobNameRequired
 	}
 

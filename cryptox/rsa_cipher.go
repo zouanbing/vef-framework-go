@@ -9,7 +9,6 @@ import (
 	"encoding/pem"
 	"fmt"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
@@ -144,13 +143,13 @@ func NewRSAFromHex(privateKeyHex, publicKeyHex string, opts ...RSAOption) (Ciphe
 		err          error
 	)
 
-	if privateKeyHex != constants.Empty {
+	if privateKeyHex != "" {
 		if privateBytes, err = encoding.FromHex(privateKeyHex); err != nil {
 			return nil, fmt.Errorf("failed to decode private key from hex: %w", err)
 		}
 	}
 
-	if publicKeyHex != constants.Empty {
+	if publicKeyHex != "" {
 		if publicBytes, err = encoding.FromHex(publicKeyHex); err != nil {
 			return nil, fmt.Errorf("failed to decode public key from hex: %w", err)
 		}
@@ -171,13 +170,13 @@ func NewRSAFromBase64(privateKeyBase64, publicKeyBase64 string, opts ...RSAOptio
 		err          error
 	)
 
-	if privateKeyBase64 != constants.Empty {
+	if privateKeyBase64 != "" {
 		if privateBytes, err = encoding.FromBase64(privateKeyBase64); err != nil {
 			return nil, fmt.Errorf("failed to decode private key from base64: %w", err)
 		}
 	}
 
-	if publicKeyBase64 != constants.Empty {
+	if publicKeyBase64 != "" {
 		if publicBytes, err = encoding.FromBase64(publicKeyBase64); err != nil {
 			return nil, fmt.Errorf("failed to decode public key from base64: %w", err)
 		}
@@ -193,7 +192,7 @@ func NewRSAFromBase64(privateKeyBase64, publicKeyBase64 string, opts ...RSAOptio
 
 func (r *rsaCipher) Encrypt(plaintext string) (string, error) {
 	if r.publicKey == nil {
-		return constants.Empty, ErrPublicKeyRequiredForEncrypt
+		return "", ErrPublicKeyRequiredForEncrypt
 	}
 
 	var (
@@ -209,7 +208,7 @@ func (r *rsaCipher) Encrypt(plaintext string) (string, error) {
 	}
 
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to encrypt: %w", err)
+		return "", fmt.Errorf("failed to encrypt: %w", err)
 	}
 
 	return encoding.ToBase64(ciphertext), nil
@@ -217,12 +216,12 @@ func (r *rsaCipher) Encrypt(plaintext string) (string, error) {
 
 func (r *rsaCipher) Decrypt(ciphertext string) (string, error) {
 	if r.privateKey == nil {
-		return constants.Empty, ErrPrivateKeyRequiredForDecrypt
+		return "", ErrPrivateKeyRequiredForDecrypt
 	}
 
 	encryptedData, err := encoding.FromBase64(ciphertext)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to decode base64: %w", err)
+		return "", fmt.Errorf("failed to decode base64: %w", err)
 	}
 
 	var plaintext []byte
@@ -234,7 +233,7 @@ func (r *rsaCipher) Decrypt(ciphertext string) (string, error) {
 	}
 
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to decrypt: %w", err)
+		return "", fmt.Errorf("failed to decrypt: %w", err)
 	}
 
 	return string(plaintext), nil
@@ -296,7 +295,7 @@ func parseRSAPublicKeyFromPem(pemData []byte) (*rsa.PublicKey, error) {
 
 func (r *rsaCipher) Sign(data string) (string, error) {
 	if r.privateKey == nil {
-		return constants.Empty, ErrPrivateKeyRequiredForSign
+		return "", ErrPrivateKeyRequiredForSign
 	}
 
 	hash := sha256.New()
@@ -315,7 +314,7 @@ func (r *rsaCipher) Sign(data string) (string, error) {
 	}
 
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to sign: %w", err)
+		return "", fmt.Errorf("failed to sign: %w", err)
 	}
 
 	return encoding.ToBase64(signature), nil

@@ -11,7 +11,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 )
 
@@ -81,7 +80,7 @@ func logRedisServerInfo(ctx context.Context, client *redis.Client) error {
 
 	version := "unknown"
 
-	for line := range strings.SplitSeq(info, constants.CarriageReturnNewline) {
+	for line := range strings.SplitSeq(info, "\r\n") {
 		if after, ok := strings.CutPrefix(line, "redis_version:"); ok {
 			version = strings.TrimSpace(after)
 

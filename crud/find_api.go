@@ -7,7 +7,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/sortx"
 )
@@ -87,7 +86,7 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) Setup(db orm.DB, conf
 				)
 				a.options = append(a.options, opt)
 			} else {
-				if field, ok := table.FieldMap[constants.ColumnCreatedAt]; ok {
+				if field, ok := table.FieldMap[orm.ColumnCreatedAt]; ok {
 					opt := withSort(
 						[]*sortx.OrderSpec{
 							{

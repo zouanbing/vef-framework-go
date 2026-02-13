@@ -16,10 +16,10 @@
 
 ## 核心特性
 
-- **RPC + REST Api 路由** - RPC 通过 `POST /api`，REST 通过标准 HTTP 方法访问 `/api/<resource>`
-- **泛型 CRUD Api** - 预置类型安全的增删改查操作，极少样板代码
+- **RPC + REST API 路由** - RPC 通过 `POST /api`，REST 通过标准 HTTP 方法访问 `/api/<resource>`
+- **泛型 CRUD API** - 预置类型安全的增删改查操作，极少样板代码
 - **类型安全的 ORM** - 基于 Bun 的流式查询构建器，自动审计字段维护
-- **多策略认证** - 内置 Jwt、OpenApi 签名、密码认证，开箱即用
+- **多策略认证** - 内置 JWT、OpenAPI 签名、密码认证，开箱即用
 - **模块化设计** - Uber FX 依赖注入，可插拔模块化架构
 - **内置功能齐全** - 缓存、事件总线、定时任务、对象存储、数据验证、国际化
 - **RBAC 与数据权限** - 行级安全控制，可自定义数据范围
@@ -78,7 +78,7 @@ schema = "public"
 go run main.go
 ```
 
-您的 Api 服务现已运行在 `http://localhost:8080`。
+您的 API 服务现已运行在 `http://localhost:8080`。
 
 ## 项目结构
 
@@ -167,7 +167,7 @@ var Module = vef.Module(
 VEF 支持两种路由策略，可同时使用：
 
 - **RPC**：单一端点 `POST /api`，统一请求/响应格式
-- **REST**：标准 HTTP 方法访问 `/api/<resource>`。外部应用可通过 OpenApi 签名认证。
+- **REST**：标准 HTTP 方法访问 `/api/<resource>`。外部应用可通过 OpenAPI 签名认证。
 
 **RPC 请求格式：**
 
@@ -275,7 +275,7 @@ type User struct {
 
 `null.Bool` 三态：`{Valid: false}` → NULL，`{Valid: true, Bool: false}` → 0，`{Valid: true, Bool: true}` → 1。
 
-## 构建 CRUD Api
+## 构建 CRUD API
 
 ### 第一步：定义参数结构
 
@@ -329,7 +329,7 @@ type UserUpdateParams struct {
 }
 ```
 
-### 第二步：创建 Api 资源
+### 第二步：创建 API 资源
 
 ```go
 package resources
@@ -372,7 +372,7 @@ func main() {
 }
 ```
 
-### 预置 Api 列表
+### 预置 API 列表
 
 | 接口 | 描述 | Action |
 |-----|------|--------|
@@ -393,9 +393,9 @@ func main() {
 
 **提示：** 上表中的 action 为 **RPC** 动作名。对于 **REST** 资源，action 以 HTTP 方法与子路径表示（如 `GET /`、`GET /page`、`POST /`、`PUT /:id`）。
 
-### Api Builder 方法
+### API Builder 方法
 
-使用流式构建器方法配置 Api 行为：
+使用流式构建器方法配置 API 行为：
 
 ```go
 Create: crud.NewCreate[User, UserParams]().
@@ -438,9 +438,9 @@ FindAll: crud.NewFindAll[User, UserSearch]().
 
 ```go
 FindPage: crud.NewFindPage[User, UserSearch]().
-    WithDefaultSort(&sort.OrderSpec{
+    WithDefaultSort(&sortx.OrderSpec{
         Column:    "created_at",
-        Direction: sort.OrderDesc,
+        Direction: sortx.OrderDesc,
     }),
 ```
 
@@ -497,9 +497,9 @@ FindTree: crud.NewFindTree[Category, CategorySearch](buildTree).
     WithCondition(func(cb orm.ConditionBuilder) {
         cb.Equals("is_active", true)
     }, crud.QueryRecursive).
-    WithDefaultSort(&sort.OrderSpec{
+    WithDefaultSort(&sortx.OrderSpec{
         Column:    "sort",
-        Direction: sort.OrderAsc,
+        Direction: sortx.OrderAsc,
     }),
 ```
 
@@ -533,9 +533,9 @@ FindTree: crud.NewFindTree[models.Organization, payloads.OrganizationSearch](
 ).
     WithIDColumn("id").
     WithParentIDColumn("parent_id").
-    WithDefaultSort(&sort.OrderSpec{
+    WithDefaultSort(&sortx.OrderSpec{
         Column:    "sort_order",
-        Direction: sort.OrderAsc,
+        Direction: sortx.OrderAsc,
     })
 
 func buildOrganizationTree(flatModels []models.Organization) []models.Organization {
@@ -751,8 +751,8 @@ err := db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.DB) error {
 
 VEF 支持多种认证策略：
 
-1. **Jwt 认证**（默认）- Bearer token 或查询参数 `?__accessToken=xxx`
-2. **OpenApi 签名认证** - 用于外部应用，使用 HMAC 签名
+1. **JWT 认证**（默认）- Bearer token 或查询参数 `?__accessToken=xxx`
+2. **OpenAPI 签名认证** - 用于外部应用，使用 HMAC 签名
 3. **密码认证** - 用户名密码登录
 
 ### 实现用户加载器
@@ -777,7 +777,7 @@ func (l *MyUserLoader) LoadByUsername(ctx context.Context, username string) (*se
 
     principal := &security.Principal{
         Type:  security.PrincipalTypeUser,
-        Id:    user.Id,
+        ID:    user.ID,
         Name:  user.Name,
         Roles: []string{"user"},
     }
@@ -797,7 +797,7 @@ func main() {
 
 ### 权限控制
 
-在 Api 上设置权限令牌：
+在 API 上设置权限令牌：
 
 ```go
 Create: crud.NewCreate[User, UserParams]().
@@ -885,7 +885,7 @@ port = 8080              # HTTP 端口
 body_limit = "10MB"      # 请求体大小限制
 
 [vef.datasource]
-type = "postgres"        # 数据库类型：postgres、mysql、sqlite
+type = "postgres"        # 数据库类型：postgres、mysql、sqlite、oracle、sqlserver
 host = "localhost"
 port = 5432
 user = "postgres"
@@ -895,7 +895,7 @@ schema = "public"        # PostgreSQL schema
 # path = "./data.db"    # SQLite 数据库文件路径
 
 [vef.security]
-token_expires = "2h"     # Jwt token 过期时间
+token_expires = "2h"     # JWT token 过期时间
 
 [vef.storage]
 provider = "minio"       # 存储提供者：memory、filesystem、minio（默认：memory）
@@ -941,13 +941,13 @@ import "github.com/ilxqx/vef-framework-go/cache"
 // 内存缓存
 memCache := cache.NewMemory[models.User](
     cache.WithMemMaxSize(1000),
-    cache.WithMemDefaultTtl(5 * time.Minute),
+    cache.WithMemDefaultTTL(5 * time.Minute),
 )
 
 // Redis 缓存
 redisCache := cache.NewRedis[models.User](
     redisClient, "users",
-    cache.WithRdsDefaultTtl(10 * time.Minute),
+    cache.WithRdsDefaultTTL(10 * time.Minute),
 )
 
 // 使用方式
@@ -964,7 +964,7 @@ import "github.com/ilxqx/vef-framework-go/event"
 // 发布事件
 bus.Publish(event.NewBaseEvent("user.created",
     event.WithSource("user-service"),
-    event.WithMeta("userID", user.Id),
+    event.WithMeta("userID", user.ID),
 ))
 
 // 订阅事件

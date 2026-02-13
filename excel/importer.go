@@ -8,7 +8,6 @@ import (
 	"github.com/ilxqx/go-streams"
 	"github.com/xuri/excelize/v2"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/tabular"
 	"github.com/ilxqx/vef-framework-go/validator"
@@ -75,7 +74,7 @@ func (i *importer) Import(reader io.Reader) (any, []tabular.ImportError, error) 
 
 func (i *importer) doImport(f *excelize.File) (any, []tabular.ImportError, error) {
 	sheetName := i.options.sheetName
-	if sheetName == constants.Empty {
+	if sheetName == "" {
 		sheets := f.GetSheetList()
 		if i.options.sheetIndex >= len(sheets) {
 			return nil, nil, fmt.Errorf("%w: %d (total sheets: %d)", ErrSheetIndexOutOfRange, i.options.sheetIndex, len(sheets))
@@ -145,7 +144,7 @@ func (i *importer) buildColumnMapping(headerRow []string) (map[int]int, error) {
 
 	seen := make(map[string]bool)
 	for excelIdx, headerName := range headerRow {
-		if headerName == constants.Empty {
+		if headerName == "" {
 			continue
 		}
 
@@ -178,7 +177,7 @@ func (i *importer) parseRow(row []string, columnMapping map[int]int, excelRow in
 			cellValue = row[excelIdx]
 		}
 
-		if cellValue == constants.Empty && col.Default != constants.Empty {
+		if cellValue == "" && col.Default != "" {
 			cellValue = col.Default
 		}
 
@@ -203,7 +202,7 @@ func (i *importer) parseRow(row []string, columnMapping map[int]int, excelRow in
 }
 
 func (i *importer) parseValue(cellValue string, targetType reflect.Type, col *tabular.Column) (any, error) {
-	if col.Parser != constants.Empty {
+	if col.Parser != "" {
 		if parser, ok := i.parsers[col.Parser]; ok {
 			return parser.Parse(cellValue, targetType)
 		}
@@ -218,6 +217,6 @@ func (i *importer) parseValue(cellValue string, targetType reflect.Type, col *ta
 
 func (*importer) isEmptyRow(row []string) bool {
 	return streams.FromSlice(row).AllMatch(func(cell string) bool {
-		return cell == constants.Empty
+		return cell == ""
 	})
 }

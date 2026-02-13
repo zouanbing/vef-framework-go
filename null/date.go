@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/timex"
 )
 
@@ -61,7 +60,7 @@ func (d Date) ValueOr(v timex.Date) timex.Date {
 // It will encode null if this date is null.
 func (d Date) MarshalJSON() ([]byte, error) {
 	if !d.Valid {
-		return constants.JSONNullBytes, nil
+		return jsonNullBytes, nil
 	}
 
 	return d.V.MarshalJSON()
@@ -101,7 +100,7 @@ func (d Date) MarshalText() ([]byte, error) {
 func (d *Date) UnmarshalText(text []byte) error {
 	str := string(text)
 	// allowing "null" is for backwards compatibility with v3
-	if str == constants.Empty || str == constants.JSONNull {
+	if str == "" || str == jsonNull {
 		d.Valid = false
 
 		return nil

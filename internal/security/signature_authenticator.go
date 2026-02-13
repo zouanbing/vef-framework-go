@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/result"
@@ -46,7 +45,7 @@ func (a *SignatureAuthenticator) Authenticate(ctx context.Context, authenticatio
 	}
 
 	appID := authentication.Principal
-	if appID == constants.Empty {
+	if appID == "" {
 		return nil, result.ErrAppIDRequired
 	}
 
@@ -60,7 +59,7 @@ func (a *SignatureAuthenticator) Authenticate(ctx context.Context, authenticatio
 		return nil, err
 	}
 
-	if principal == nil || secret == constants.Empty {
+	if principal == nil || secret == "" {
 		return nil, result.ErrExternalAppNotFound
 	}
 
@@ -104,12 +103,12 @@ func (*SignatureAuthenticator) validateIPWhitelist(ctx context.Context, principa
 		return result.ErrExternalAppDisabled
 	}
 
-	if details.IPWhitelist == constants.Empty {
+	if details.IPWhitelist == "" {
 		return nil
 	}
 
 	requestIP := contextx.RequestIP(ctx)
-	if requestIP == constants.Empty {
+	if requestIP == "" {
 		return nil
 	}
 

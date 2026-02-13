@@ -16,7 +16,6 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/internal/apptest"
@@ -152,7 +151,7 @@ func (suite *McpTestSuite) makeMcpRequestWithToken(body, token string) *http.Res
 	req := httptest.NewRequest(fiber.MethodPost, "/mcp", strings.NewReader(body))
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 	req.Header.Set("Accept", "application/json, text/event-stream")
-	req.Header.Set(fiber.HeaderAuthorization, constants.AuthSchemeBearer+" "+token)
+	req.Header.Set(fiber.HeaderAuthorization, security.AuthSchemeBearer+" "+token)
 
 	resp, err := suite.app.Test(req, 30*time.Second)
 	suite.Require().NoError(err, "MCP request should not fail")

@@ -10,13 +10,12 @@ import (
 	"github.com/ilxqx/go-streams"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
+	"github.com/ilxqx/vef-framework-go/httpx"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/api/middleware"
 	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/httpx"
 )
 
 const (
@@ -40,7 +39,7 @@ type routeEntry struct {
 // NewRPC creates a new RPC-style router.
 // If path is empty, defaults to "/api".
 func NewRPC(path string, chain *middleware.Chain) api.RouterStrategy {
-	if path == constants.Empty {
+	if path == "" {
 		path = DefaultRPCEndpoint
 	}
 
@@ -68,7 +67,7 @@ func (r *RPC) Setup(router fiber.Router) error {
 	).Collect()
 
 	group := router.Group(r.path)
-	group.Post(constants.Empty, r.resolve, handlers...)
+	group.Post("", r.resolve, handlers...)
 
 	return nil
 }
@@ -173,7 +172,7 @@ func parseFormRequest(ctx fiber.Ctx, request *api.Request) error {
 		return err
 	}
 
-	if params := ctx.FormValue(FormKeyParams); params != constants.Empty {
+	if params := ctx.FormValue(FormKeyParams); params != "" {
 		if err := json.Unmarshal([]byte(params), &request.Params); err != nil {
 			contextx.Logger(ctx).Warnf("Failed to parse params json: %v", err)
 
@@ -184,7 +183,7 @@ func parseFormRequest(ctx fiber.Ctx, request *api.Request) error {
 		}
 	}
 
-	if meta := ctx.FormValue(FormKeyMeta); meta != constants.Empty {
+	if meta := ctx.FormValue(FormKeyMeta); meta != "" {
 		if err := json.Unmarshal([]byte(meta), &request.Meta); err != nil {
 			contextx.Logger(ctx).Warnf("Failed to parse meta json: %v", err)
 

@@ -2,8 +2,6 @@ package orm
 
 import (
 	"github.com/uptrace/bun/schema"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // ClauseConditionBuilder is responsible for collecting and grouping condition clauses, and rendering them.
@@ -62,11 +60,11 @@ func (cb *ClauseConditionBuilder) AppendGroup(sep string, conditions []schema.Qu
 		return
 	}
 
-	cb.AppendConditions(schema.SafeQueryWithSep(constants.Empty, nil, sep))
-	cb.AppendConditions(schema.SafeQueryWithSep(constants.Empty, nil, constants.LeftParenthesis))
-	conditions[0].Sep = constants.Empty
+	cb.AppendConditions(schema.SafeQueryWithSep("", nil, sep))
+	cb.AppendConditions(schema.SafeQueryWithSep("", nil, "("))
+	conditions[0].Sep = ""
 	cb.AppendConditions(conditions...)
-	cb.AppendConditions(schema.SafeQueryWithSep(constants.Empty, nil, constants.RightParenthesis))
+	cb.AppendConditions(schema.SafeQueryWithSep("", nil, ")"))
 }
 
 func (cb *ClauseConditionBuilder) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {

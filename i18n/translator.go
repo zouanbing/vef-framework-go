@@ -4,8 +4,6 @@ import (
 	"fmt"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // Translator defines the interface for message translation services.
@@ -38,8 +36,8 @@ func (t *translatorImpl) T(messageID string, templateData ...map[string]any) str
 
 // Te implements the Translator interface with explicit error reporting.
 func (t *translatorImpl) Te(messageID string, templateData ...map[string]any) (string, error) {
-	if messageID == constants.Empty {
-		return constants.Empty, ErrMessageIDEmpty
+	if messageID == "" {
+		return "", ErrMessageIDEmpty
 	}
 
 	var data map[string]any
@@ -52,7 +50,7 @@ func (t *translatorImpl) Te(messageID string, templateData ...map[string]any) (s
 		TemplateData: data,
 	})
 	if err != nil {
-		return constants.Empty, fmt.Errorf("translation failed for messageID %q: %w", messageID, err)
+		return "", fmt.Errorf("translation failed for messageID %q: %w", messageID, err)
 	}
 
 	return result, nil

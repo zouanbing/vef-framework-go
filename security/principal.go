@@ -7,8 +7,8 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/mapx"
+	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/reflectx"
 )
 
@@ -21,16 +21,16 @@ const (
 	// PrincipalTypeExternalApp is the type of the external app.
 	PrincipalTypeExternalApp PrincipalType = "external_app"
 	// PrincipalTypeSystem is the type of the system.
-	PrincipalTypeSystem PrincipalType = constants.OperatorSystem
+	PrincipalTypeSystem PrincipalType = orm.OperatorSystem
 )
 
 var (
 	PrincipalSystem = &Principal{
 		Type: PrincipalTypeSystem,
-		ID:   constants.OperatorSystem,
+		ID:   orm.OperatorSystem,
 		Name: "系统",
 	}
-	PrincipalAnonymous = NewUser(constants.OperatorAnonymous, "匿名")
+	PrincipalAnonymous = NewUser(orm.OperatorAnonymous, "匿名")
 
 	userDetailsType        = reflect.TypeFor[map[string]any]()
 	externalAppDetailsType = reflect.TypeFor[map[string]any]()

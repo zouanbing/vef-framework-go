@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/hashx"
 	"github.com/ilxqx/vef-framework-go/id"
@@ -114,7 +113,7 @@ func NewSignature(secret string, opts ...SignatureOption) (*Signature, error) {
 // Sign generates a signature for the given appID.
 // Returns a SignatureResult containing all signature components.
 func (s *Signature) Sign(appID string) (*SignatureResult, error) {
-	if appID == constants.Empty {
+	if appID == "" {
 		return nil, ErrSignatureAppIDRequired
 	}
 
@@ -151,15 +150,15 @@ func (s *Signature) VerifyWithSecret(ctx context.Context, secret, appID string, 
 
 // verifyWithSecret is the internal implementation for signature verification.
 func (s *Signature) verifyWithSecret(ctx context.Context, secret []byte, appID string, timestamp int64, nonce, signature string) error {
-	if appID == constants.Empty {
+	if appID == "" {
 		return ErrSignatureAppIDRequired
 	}
 
-	if nonce == constants.Empty {
+	if nonce == "" {
 		return ErrSignatureNonceRequired
 	}
 
-	if signature == constants.Empty {
+	if signature == "" {
 		return ErrSignatureRequired
 	}
 

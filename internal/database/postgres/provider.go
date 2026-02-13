@@ -11,20 +11,19 @@ import (
 	"github.com/uptrace/bun/schema"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 type Provider struct {
-	dbType constants.DBType
+	dbType config.DBType
 }
 
 func NewProvider() *Provider {
 	return &Provider{
-		dbType: constants.Postgres,
+		dbType: config.Postgres,
 	}
 }
 
-func (p *Provider) Type() constants.DBType {
+func (p *Provider) Type() config.DBType {
 	return p.dbType
 }
 
@@ -37,16 +36,16 @@ func (p *Provider) Connect(cfg *config.DatasourceConfig) (*sql.DB, schema.Dialec
 		pgdriver.WithNetwork("tcp"),
 		pgdriver.WithAddr(fmt.Sprintf(
 			"%s:%d",
-			lo.Ternary(cfg.Host != constants.Empty, cfg.Host, "127.0.0.1"),
+			lo.Ternary(cfg.Host != "", cfg.Host, "127.0.0.1"),
 			lo.Ternary(cfg.Port != 0, cfg.Port, uint16(5432)),
 		)),
 		pgdriver.WithInsecure(true),
-		pgdriver.WithUser(lo.Ternary(cfg.User != constants.Empty, cfg.User, "postgres")),
-		pgdriver.WithPassword(lo.Ternary(cfg.Password != constants.Empty, cfg.Password, "postgres")),
-		pgdriver.WithDatabase(lo.Ternary(cfg.Database != constants.Empty, cfg.Database, "postgres")),
+		pgdriver.WithUser(lo.Ternary(cfg.User != "", cfg.User, "postgres")),
+		pgdriver.WithPassword(lo.Ternary(cfg.Password != "", cfg.Password, "postgres")),
+		pgdriver.WithDatabase(lo.Ternary(cfg.Database != "", cfg.Database, "postgres")),
 		pgdriver.WithApplicationName("vef"),
 		pgdriver.WithConnParams(map[string]any{
-			"search_path": lo.Ternary(cfg.Schema != constants.Empty, cfg.Schema, "public"),
+			"search_path": lo.Ternary(cfg.Schema != "", cfg.Schema, "public"),
 		}),
 	)
 

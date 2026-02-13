@@ -2,15 +2,13 @@ package encoding
 
 import (
 	"encoding/xml"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // ToXML converts a struct value to an XML string.
 func ToXML(value any) (string, error) {
 	xmlBytes, err := xml.Marshal(value)
 	if err != nil {
-		return constants.Empty, err
+		return "", err
 	}
 
 	return string(xmlBytes), nil

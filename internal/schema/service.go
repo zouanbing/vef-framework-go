@@ -8,7 +8,6 @@ import (
 	as "ariga.io/atlas/sql/schema"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/schema"
 )
 
@@ -199,7 +198,7 @@ func extractComment(attrs []as.Attr) string {
 		}
 	}
 
-	return constants.Empty
+	return ""
 }
 
 // extractIndexColumns extracts column names from index parts.
@@ -228,7 +227,7 @@ func referentialActionToString(action as.ReferenceOption) string {
 	case as.NoAction:
 		return "NO ACTION"
 	default:
-		return constants.Empty
+		return ""
 	}
 }
 
@@ -241,7 +240,7 @@ func hasAutoIncrement(col *as.Column) bool {
 		}
 	}
 
-	if col.Type == nil || col.Type.Raw == constants.Empty {
+	if col.Type == nil || col.Type.Raw == "" {
 		return false
 	}
 

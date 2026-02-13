@@ -7,8 +7,6 @@ import (
 	"io"
 
 	"github.com/gofiber/fiber/v3"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // Builder provides a fluent interface for building UI message streams.
@@ -122,7 +120,7 @@ func (b *Builder) doStreamWrite(w *bufio.Writer) {
 	}
 
 	messageID := b.messageID
-	if messageID == constants.Empty {
+	if messageID == "" {
 		messageID = generateID("message")
 	}
 
@@ -176,7 +174,7 @@ func (b *Builder) doStreamWrite(w *bufio.Writer) {
 		}
 
 		// Handle reasoning
-		if b.opts.SendReasoning && msg.Reasoning != constants.Empty {
+		if b.opts.SendReasoning && msg.Reasoning != "" {
 			if !reasoningStarted {
 				_ = writer.WriteChunk(NewReasoningStartChunk(reasoningID))
 				reasoningStarted = true
@@ -188,7 +186,7 @@ func (b *Builder) doStreamWrite(w *bufio.Writer) {
 		// Handle tool calls
 		for _, tc := range msg.ToolCalls {
 			toolCallID := tc.ID
-			if toolCallID == constants.Empty {
+			if toolCallID == "" {
 				toolCallID = generateID("call")
 			}
 
@@ -203,7 +201,7 @@ func (b *Builder) doStreamWrite(w *bufio.Writer) {
 		}
 
 		// Handle tool results
-		if msg.Role == RoleTool && msg.ToolCallID != constants.Empty {
+		if msg.Role == RoleTool && msg.ToolCallID != "" {
 			var output any
 			if err := json.Unmarshal([]byte(msg.Content), &output); err != nil {
 				output = msg.Content
@@ -220,7 +218,7 @@ func (b *Builder) doStreamWrite(w *bufio.Writer) {
 		}
 
 		// Handle text content
-		if msg.Content != constants.Empty {
+		if msg.Content != "" {
 			if reasoningStarted {
 				_ = writer.WriteChunk(NewReasoningEndChunk(reasoningID))
 				reasoningStarted = false

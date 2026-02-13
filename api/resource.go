@@ -6,8 +6,6 @@ import (
 	"strings"
 
 	"github.com/ilxqx/go-collections"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 type Kind uint8
@@ -54,7 +52,7 @@ var (
 // For RPC, action must be snake_case (e.g., create, find_page).
 // For REST, action format is "<method>" or "<method> <sub-resource>" (e.g., "get", "post user-friends").
 func ValidateActionName(action string, kind Kind) error {
-	if action == constants.Empty {
+	if action == "" {
 		return ErrEmptyActionName
 	}
 
@@ -77,7 +75,7 @@ func validateRPCAction(action string) error {
 }
 
 func validateRESTAction(action string) error {
-	parts := strings.SplitN(action, constants.Space, 3)
+	parts := strings.SplitN(action, " ", 3)
 	if len(parts) > 2 {
 		return fmt.Errorf("%w (e.g., get, post, get user-friends): %q", ErrInvalidActionName, action)
 	}
@@ -89,7 +87,7 @@ func validateRESTAction(action string) error {
 
 	if len(parts) == 2 {
 		subRes := parts[1]
-		if subRes == constants.Empty || !restResourceNamePattern.MatchString(subRes) {
+		if subRes == "" || !restResourceNamePattern.MatchString(subRes) {
 			return fmt.Errorf("%w (invalid sub-resource %q): %q", ErrInvalidActionName, subRes, action)
 		}
 	}
@@ -119,7 +117,7 @@ func (r *baseResource) validate() error {
 }
 
 func (r *baseResource) validateVersion() error {
-	if r.version != constants.Empty && !versionPattern.MatchString(r.version) {
+	if r.version != "" && !versionPattern.MatchString(r.version) {
 		return fmt.Errorf("%w: %q", ErrInvalidVersionFormat, r.version)
 	}
 
@@ -127,15 +125,15 @@ func (r *baseResource) validateVersion() error {
 }
 
 func (r *baseResource) validateName() error {
-	if r.name == constants.Empty {
+	if r.name == "" {
 		return ErrEmptyResourceName
 	}
 
-	if strings.HasPrefix(r.name, constants.Slash) || strings.HasSuffix(r.name, constants.Slash) {
+	if strings.HasPrefix(r.name, "/") || strings.HasSuffix(r.name, "/") {
 		return fmt.Errorf("%w: %q", ErrResourceNameSlash, r.name)
 	}
 
-	if strings.Contains(r.name, constants.DoubleSlash) {
+	if strings.Contains(r.name, "//") {
 		return fmt.Errorf("%w: %q", ErrResourceNameDoubleSlash, r.name)
 	}
 
@@ -157,7 +155,7 @@ func (r *baseResource) validateName() error {
 
 func (r *baseResource) validateOperations() error {
 	for i, op := range r.operations {
-		if op.Action == constants.Empty {
+		if op.Action == "" {
 			return fmt.Errorf("%w: operation index %d", ErrEmptyActionName, i)
 		}
 

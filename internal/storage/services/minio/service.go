@@ -14,7 +14,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 
@@ -25,7 +24,7 @@ type Service struct {
 
 func New(cfg config.MinIOConfig, appCfg *config.AppConfig) (storage.Service, error) {
 	client, err := minio.New(cfg.Endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(cfg.AccessKey, cfg.SecretKey, constants.Empty),
+		Creds:  credentials.NewStaticV4(cfg.AccessKey, cfg.SecretKey, ""),
 		Secure: cfg.UseSSL,
 		Region: cfg.Region,
 	})
@@ -178,16 +177,16 @@ func (s *Service) GetPresignedURL(ctx context.Context, opts storage.PresignedURL
 	)
 
 	switch opts.Method {
-	case http.MethodGet, constants.Empty:
+	case http.MethodGet, "":
 		u, err = s.client.PresignedGetObject(ctx, s.bucket, opts.Key, opts.Expires, nil)
 	case http.MethodPut:
 		u, err = s.client.PresignedPutObject(ctx, s.bucket, opts.Key, opts.Expires)
 	default:
-		return constants.Empty, fmt.Errorf("%w: %s", ErrUnsupportedHTTPMethod, opts.Method)
+		return "", fmt.Errorf("%w: %s", ErrUnsupportedHTTPMethod, opts.Method)
 	}
 
 	if err != nil {
-		return constants.Empty, s.translateError(err)
+		return "", s.translateError(err)
 	}
 
 	return u.String(), nil

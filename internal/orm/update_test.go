@@ -6,7 +6,7 @@ import (
 
 	"github.com/uptrace/bun"
 
-	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/config"
 )
 
 // UpdateTestSuite tests UPDATE operations including CTE operations, table sources,
@@ -836,7 +836,7 @@ func (suite *UpdateTestSuite) TestOrderingAndLimits() {
 	suite.T().Logf("Testing ordering and limits for %s", suite.dbType)
 
 	// Only MySQL supports ORDER BY and LIMIT in UPDATE statements
-	if suite.dbType != constants.MySQL {
+	if suite.dbType != config.MySQL {
 		suite.T().Skipf("Database %s doesn't support ORDER BY and LIMIT in UPDATE statements", suite.dbType)
 	}
 
@@ -912,7 +912,7 @@ func (suite *UpdateTestSuite) TestOrderingAndLimits() {
 func (suite *UpdateTestSuite) TestReturningClause() {
 	suite.T().Logf("Testing RETURNING clause methods for %s", suite.dbType)
 
-	if suite.dbType == constants.MySQL {
+	if suite.dbType == config.MySQL {
 		suite.T().Skip("MySQL doesn't support RETURNING clause")
 	}
 
@@ -1087,7 +1087,7 @@ func (suite *UpdateTestSuite) TestExecution() {
 	})
 
 	suite.Run("ScanWithReturning", func() {
-		if suite.dbType == constants.MySQL {
+		if suite.dbType == config.MySQL {
 			suite.T().Skip("MySQL doesn't support RETURNING clause")
 		}
 

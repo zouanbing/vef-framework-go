@@ -10,7 +10,6 @@ import (
 	"github.com/expr-lang/expr"
 
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/decimal"
 )
 
@@ -164,7 +163,7 @@ func toString(v any) string {
 		return s
 	}
 
-	return constants.Empty
+	return ""
 }
 
 func containsAny(container, item any) bool {
@@ -201,7 +200,7 @@ func isEmpty(v any) bool {
 
 	switch val := v.(type) {
 	case string:
-		return val == constants.Empty
+		return val == ""
 	case []string:
 		return len(val) == 0
 	case []any:

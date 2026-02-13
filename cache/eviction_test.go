@@ -7,8 +7,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 func TestNoOpEvictionHandler(t *testing.T) {
@@ -24,7 +22,7 @@ func TestNoOpEvictionHandler(t *testing.T) {
 
 	t.Run("AlwaysReturnEmptyCandidate", func(_ *testing.T) {
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, constants.Empty, candidate)
+		assert.Equal(t, "", candidate)
 	})
 
 	t.Run("HandleMultipleOperations", func(_ *testing.T) {
@@ -34,7 +32,7 @@ func TestNoOpEvictionHandler(t *testing.T) {
 		}
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, constants.Empty, candidate)
+		assert.Equal(t, "", candidate)
 	})
 }
 
@@ -102,14 +100,14 @@ func TestLRUHandler(t *testing.T) {
 		handler.Reset()
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, constants.Empty, candidate)
+		assert.Equal(t, "", candidate)
 	})
 
 	t.Run("EmptyHandlerReturnsEmptyCandidate", func(_ *testing.T) {
 		handler := NewLruHandler()
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, constants.Empty, candidate)
+		assert.Equal(t, "", candidate)
 	})
 
 	t.Run("SingleEntry", func(_ *testing.T) {
@@ -159,7 +157,7 @@ func TestLRUHandler(t *testing.T) {
 		wg.Wait()
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.NotEqual(t, constants.Empty, candidate)
+		assert.NotEqual(t, "", candidate)
 	})
 
 	t.Run("StressTestWithManyEntries", func(_ *testing.T) {
@@ -174,7 +172,7 @@ func TestLRUHandler(t *testing.T) {
 		}
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.NotEqual(t, constants.Empty, candidate)
+		assert.NotEqual(t, "", candidate)
 	})
 }
 
@@ -229,14 +227,14 @@ func TestFIFOHandler(t *testing.T) {
 		handler.Reset()
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, constants.Empty, candidate)
+		assert.Equal(t, "", candidate)
 	})
 
 	t.Run("EmptyHandlerReturnsEmptyCandidate", func(_ *testing.T) {
 		handler := NewFifoHandler()
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, constants.Empty, candidate)
+		assert.Equal(t, "", candidate)
 	})
 
 	t.Run("SingleEntry", func(_ *testing.T) {
@@ -288,7 +286,7 @@ func TestFIFOHandler(t *testing.T) {
 		wg.Wait()
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.NotEqual(t, constants.Empty, candidate)
+		assert.NotEqual(t, "", candidate)
 	})
 }
 
@@ -373,14 +371,14 @@ func TestLFUHandler(t *testing.T) {
 		handler.Reset()
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, constants.Empty, candidate)
+		assert.Equal(t, "", candidate)
 	})
 
 	t.Run("EmptyHandlerReturnsEmptyCandidate", func(_ *testing.T) {
 		handler := NewLfuHandler()
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, constants.Empty, candidate)
+		assert.Equal(t, "", candidate)
 	})
 
 	t.Run("SingleEntry", func(_ *testing.T) {
@@ -454,7 +452,7 @@ func TestLFUHandler(t *testing.T) {
 
 		for range 100 {
 			candidate := handler.SelectEvictionCandidate()
-			require.NotEqual(t, constants.Empty, candidate)
+			require.NotEqual(t, "", candidate)
 			handler.OnEvict(candidate)
 		}
 	})
@@ -768,7 +766,7 @@ func TestEvictionHandlerLargeScale(t *testing.T) {
 
 		for range 5000 {
 			candidate := handler.SelectEvictionCandidate()
-			assert.NotEqual(t, constants.Empty, candidate)
+			assert.NotEqual(t, "", candidate)
 			handler.OnEvict(candidate)
 		}
 
@@ -791,7 +789,7 @@ func TestEvictionHandlerLargeScale(t *testing.T) {
 
 		for range 5000 {
 			candidate := handler.SelectEvictionCandidate()
-			assert.NotEqual(t, constants.Empty, candidate)
+			assert.NotEqual(t, "", candidate)
 			handler.OnEvict(candidate)
 		}
 

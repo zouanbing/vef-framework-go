@@ -12,7 +12,6 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 
@@ -102,7 +101,7 @@ func (s *Service) ListObjects(_ context.Context, opts storage.ListObjectsOptions
 	var objects []storage.ObjectInfo
 
 	for key, obj := range s.objects {
-		if opts.Prefix != constants.Empty && !strings.HasPrefix(key, opts.Prefix) {
+		if opts.Prefix != "" && !strings.HasPrefix(key, opts.Prefix) {
 			continue
 		}
 

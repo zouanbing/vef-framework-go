@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/contract"
 	imonitor "github.com/ilxqx/vef-framework-go/internal/monitor"
 	"github.com/ilxqx/vef-framework-go/monitor"
+	"github.com/ilxqx/vef-framework-go/version"
 )
 
 type MonitorServiceTestSuite struct {
@@ -32,7 +32,7 @@ func (suite *MonitorServiceTestSuite) SetupSuite() {
 	}
 
 	buildInfo := &monitor.BuildInfo{
-		VEFVersion: constants.VEFVersion,
+		VEFVersion: version.VEFVersion,
 		AppVersion: "v1.0.0",
 		BuildTime:  "2024-01-01T00:00:00Z",
 		GitCommit:  "abc123def456",

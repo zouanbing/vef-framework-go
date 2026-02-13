@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // OrderDirection represents the direction of ordering in SQL queries.
@@ -99,7 +97,7 @@ func (no NullsOrder) String() string {
 	case NullsLast:
 		return "NULLS LAST"
 	default:
-		return constants.Empty
+		return ""
 	}
 }
 
@@ -117,5 +115,5 @@ type OrderSpec struct {
 
 // IsValid checks if the OrderSpec has a non-empty column name.
 func (os OrderSpec) IsValid() bool {
-	return os.Column != constants.Empty
+	return os.Column != ""
 }

@@ -9,8 +9,6 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 type redisConfig struct {
@@ -69,21 +67,21 @@ func (c *redisCache[T]) getExpiration(ttl []time.Duration) time.Duration {
 }
 
 func (c *redisCache[T]) buildPattern(prefix string) string {
-	if prefix == constants.Empty {
-		return c.basePrefix + constants.Asterisk
+	if prefix == "" {
+		return c.basePrefix + "*"
 	}
 
-	return c.keyBuilder.Build(prefix) + constants.Asterisk
+	return c.keyBuilder.Build(prefix) + "*"
 }
 
 // stripPrefix removes the basePrefix from a Redis key to return the user's original key.
 func (c *redisCache[T]) stripPrefix(cacheKey string) string {
-	if c.basePrefix == constants.Empty {
+	if c.basePrefix == "" {
 		return cacheKey
 	}
 
 	// Remove "basePrefix:" from the key
-	prefix := c.basePrefix + constants.Colon
+	prefix := c.basePrefix + ":"
 	if strings.HasPrefix(cacheKey, prefix) {
 		return cacheKey[len(prefix):]
 	}
@@ -201,11 +199,11 @@ func (c *redisCache[T]) Clear(ctx context.Context) error {
 		return nil
 	}
 
-	if c.basePrefix == constants.Empty {
+	if c.basePrefix == "" {
 		return c.client.FlushDB(ctx).Err()
 	}
 
-	pattern := c.basePrefix + constants.Asterisk
+	pattern := c.basePrefix + "*"
 	iter := c.client.Scan(ctx, 0, pattern, 0).Iterator()
 
 	var keys []string
@@ -234,7 +232,7 @@ func (c *redisCache[T]) Keys(ctx context.Context, prefix ...string) ([]string, e
 		return nil, nil
 	}
 
-	filter := constants.Empty
+	filter := ""
 	if len(prefix) > 0 {
 		filter = prefix[0]
 	}
@@ -263,7 +261,7 @@ func (c *redisCache[T]) ForEach(ctx context.Context, callback func(key string, v
 		return nil
 	}
 
-	filter := constants.Empty
+	filter := ""
 	if len(prefix) > 0 {
 		filter = prefix[0]
 	}
@@ -308,11 +306,11 @@ func (c *redisCache[T]) Size(ctx context.Context) (int64, error) {
 		return 0, nil
 	}
 
-	if c.basePrefix == constants.Empty {
+	if c.basePrefix == "" {
 		return c.client.DBSize(ctx).Result()
 	}
 
-	pattern := c.basePrefix + constants.Asterisk
+	pattern := c.basePrefix + "*"
 	iter := c.client.Scan(ctx, 0, pattern, 0).Iterator()
 
 	var count int64

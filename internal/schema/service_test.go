@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/database"
 	"github.com/ilxqx/vef-framework-go/internal/schema"
 	"github.com/ilxqx/vef-framework-go/internal/testx"
@@ -55,7 +54,7 @@ func (suite *ServiceTestSuite) TestSQLiteService() {
 	suite.T().Log("Testing Service for SQLite")
 
 	dsConfig := &config.DatasourceConfig{
-		Type: constants.SQLite,
+		Type: config.SQLite,
 	}
 
 	suite.runServiceTests(dsConfig, "SQLite")
@@ -179,14 +178,14 @@ func (suite *ServiceTestSuite) runServiceTests(dsConfig *config.DatasourceConfig
 	})
 }
 
-func (suite *ServiceTestSuite) setupTestTables(db *sql.DB, dbType constants.DBType) {
+func (suite *ServiceTestSuite) setupTestTables(db *sql.DB, dbType config.DBType) {
 	var (
 		categoriesSQL, productsSQL string
 		additionalSQL              []string
 	)
 
 	switch dbType {
-	case constants.Postgres:
+	case config.Postgres:
 		categoriesSQL = `
 			CREATE TABLE IF NOT EXISTS service_test_categories (
 				id SERIAL PRIMARY KEY,
@@ -211,7 +210,7 @@ func (suite *ServiceTestSuite) setupTestTables(db *sql.DB, dbType constants.DBTy
 			"CREATE INDEX IF NOT EXISTS idx_products_price ON service_test_products(price)",
 		}
 
-	case constants.MySQL:
+	case config.MySQL:
 		categoriesSQL = `
 			CREATE TABLE IF NOT EXISTS service_test_categories (
 				id INT AUTO_INCREMENT PRIMARY KEY,
@@ -235,7 +234,7 @@ func (suite *ServiceTestSuite) setupTestTables(db *sql.DB, dbType constants.DBTy
 				INDEX idx_products_price (price)
 			)`
 
-	case constants.SQLite:
+	case config.SQLite:
 		categoriesSQL = `
 			CREATE TABLE IF NOT EXISTS service_test_categories (
 				id INTEGER PRIMARY KEY AUTOINCREMENT,

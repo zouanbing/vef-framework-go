@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/mold"
 )
 
@@ -185,7 +184,7 @@ func (t *MoldTransformer) getOrParseTagCache(tags string) (*cTag, error) {
 		return ctag, nil
 	}
 
-	ctag, _, err := t.parseFieldTagsRecursive(tags, constants.Empty, constants.Empty, false)
+	ctag, _, err := t.parseFieldTagsRecursive(tags, "", "", false)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +195,7 @@ func (t *MoldTransformer) getOrParseTagCache(tags string) (*cTag, error) {
 }
 
 func (t *MoldTransformer) setByField(ctx context.Context, original reflect.Value, ct *cTag) error {
-	return t.setByFieldInternal(ctx, constants.Empty, original, ct, reflect.Value{}, nil)
+	return t.setByFieldInternal(ctx, "", original, ct, reflect.Value{}, nil)
 }
 
 func (t *MoldTransformer) setByFieldWithContainer(ctx context.Context, name string, original reflect.Value, ct *cTag, structValue reflect.Value, structCache *cStruct) error {

@@ -2,8 +2,6 @@ package orm
 
 import (
 	"strings"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // JoinType specifies the type of JOIN operation.
@@ -56,14 +54,14 @@ func (k FuzzyKind) BuildPattern(value string) string {
 
 	switch k {
 	case FuzzyEnds, FuzzyContains:
-		_ = sb.WriteByte(constants.BytePercent)
+		_ = sb.WriteByte('%')
 	}
 
 	_, _ = sb.WriteString(value)
 
 	switch k {
 	case FuzzyStarts, FuzzyContains:
-		_ = sb.WriteByte(constants.BytePercent)
+		_ = sb.WriteByte('%')
 	}
 
 	return sb.String()
@@ -85,7 +83,7 @@ func (n NullsMode) String() string {
 	case NullsIgnore:
 		return "IGNORE NULLS"
 	default:
-		return constants.Empty
+		return ""
 	}
 }
 
@@ -105,7 +103,7 @@ func (f FromDirection) String() string {
 	case FromLast:
 		return "FROM LAST"
 	default:
-		return constants.Empty
+		return ""
 	}
 }
 
@@ -128,7 +126,7 @@ func (f FrameType) String() string {
 	case FrameGroups:
 		return "GROUPS"
 	default:
-		return constants.Empty
+		return ""
 	}
 }
 
@@ -157,7 +155,7 @@ func (f FrameBoundKind) String() string {
 	case FrameBoundFollowing:
 		return "FOLLOWING"
 	default:
-		return constants.Empty
+		return ""
 	}
 }
 
@@ -177,7 +175,7 @@ func (s StatisticalMode) String() string {
 	case StatisticalSample:
 		return "SAMP"
 	default:
-		return constants.Empty
+		return ""
 	}
 }
 
@@ -196,7 +194,7 @@ func (c ConflictAction) String() string {
 	case ConflictDoUpdate:
 		return "DO UPDATE"
 	default:
-		return constants.Empty
+		return ""
 	}
 }
 

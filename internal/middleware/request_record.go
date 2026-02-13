@@ -9,12 +9,11 @@ import (
 	"github.com/muesli/termenv"
 	"github.com/spf13/cast"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
+	"github.com/ilxqx/vef-framework-go/httpx"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/middleware"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/httpx"
 )
 
 var (
@@ -28,7 +27,7 @@ var (
 
 // simplifyUserAgent reduces verbose UA strings to concise "Client/OS" format for log readability.
 func simplifyUserAgent(ua string) string {
-	if ua == constants.Empty {
+	if ua == "" {
 		return "Unknown"
 	}
 
@@ -37,11 +36,11 @@ func simplifyUserAgent(ua string) string {
 	os := detectOS(ua)
 	client := detectClient(ua)
 
-	if client != constants.Empty && os != "Unknown" {
-		return client + constants.Slash + os
+	if client != "" && os != "Unknown" {
+		return client + "/" + os
 	}
 
-	if client != constants.Empty {
+	if client != "" {
 		return client
 	}
 
@@ -88,7 +87,7 @@ func detectClient(ua string) string {
 	case strings.Contains(ua, "okhttp"):
 		return "OkHttp"
 	default:
-		return constants.Empty
+		return ""
 	}
 }
 
@@ -100,8 +99,8 @@ func isSpaStaticRequest(ctx fiber.Ctx, spaConfigs []*middleware.SPAConfig) bool 
 	reqPath := ctx.Path()
 	for _, config := range spaConfigs {
 		spaPath := config.Path
-		if spaPath == constants.Empty {
-			spaPath = constants.Slash
+		if spaPath == "" {
+			spaPath = "/"
 		}
 
 		staticPath := path.Join(spaPath, "static/")
@@ -151,7 +150,7 @@ func formatRequestDetails(ctx fiber.Ctx, data *logger.Data) string {
 	var sb strings.Builder
 	sb.WriteString(labelValueSeparator)
 	sb.WriteString(output.String(method).Foreground(termenv.ANSIBrightCyan).String())
-	sb.WriteString(constants.Space)
+	sb.WriteString(" ")
 	sb.WriteString(output.String(reqPath).Foreground(termenv.ANSIBrightCyan).String())
 
 	sb.WriteString(labelValueSeparator)
@@ -189,7 +188,7 @@ func logRequest(ctx fiber.Ctx, data *logger.Data) {
 
 	if err, ok := result.AsErr(data.ChainErr); ok {
 		msg := "Request completed with error: " + data.ChainErr.Error() +
-			string(constants.ByteLeftParenthesis) + cast.ToString(err.Code) + string(constants.ByteRightParenthesis)
+			"(" + cast.ToString(err.Code) + ")"
 		logger.Warnf(
 			"%s%s",
 			output.String(msg).Foreground(termenv.ANSIBrightYellow).String(),

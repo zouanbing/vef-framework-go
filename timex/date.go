@@ -5,8 +5,6 @@ import (
 	"time"
 
 	"github.com/gofiber/utils/v2"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // Date represents a date value (without time) with database and JSON support.
@@ -45,9 +43,9 @@ func (d Date) String() string {
 // MarshalJSON implements the json.Marshaler interface for JSON serialization.
 func (d Date) MarshalJSON() ([]byte, error) {
 	bs := make([]byte, 0, datePatternLength+2)
-	bs = append(bs, constants.JSONQuote)
+	bs = append(bs, jsonQuote)
 	bs = time.Time(d).AppendFormat(bs, time.DateOnly)
-	bs = append(bs, constants.JSONQuote)
+	bs = append(bs, jsonQuote)
 
 	return bs, nil
 }
@@ -55,7 +53,7 @@ func (d Date) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON implements the json.Unmarshaler interface for JSON deserialization.
 func (d *Date) UnmarshalJSON(bs []byte) error {
 	value := utils.UnsafeString(bs)
-	if value == constants.JSONNull {
+	if value == jsonNull {
 		return nil
 	}
 

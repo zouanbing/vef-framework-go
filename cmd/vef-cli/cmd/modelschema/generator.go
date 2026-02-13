@@ -16,8 +16,6 @@ import (
 	"github.com/ilxqx/go-streams"
 	"github.com/samber/lo"
 	"golang.org/x/tools/go/packages"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 var (
@@ -82,7 +80,7 @@ func GenerateFile(inputFile, outputFile, packageName string) error {
 	code := generateSchemaCode(schemas)
 
 	dir := filepath.Dir(outputFile)
-	if dir != constants.Dot && dir != constants.Empty {
+	if dir != "." && dir != "" {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return fmt.Errorf("failed to create output directory: %w", err)
 		}
@@ -208,18 +206,18 @@ func extractTableMetadata(structType *ast.StructType, modelName string, pkg *pac
 			tableName, aliasName = parseBunTag(f.Tag.Value)
 		}
 
-		if tableName == constants.Empty {
+		if tableName == "" {
 			tableName = lo.SnakeCase(modelName)
 		}
 
-		if aliasName == constants.Empty {
+		if aliasName == "" {
 			aliasName = tableName
 		}
 
 		return true, tableName, aliasName
 	}
 
-	return false, constants.Empty, constants.Empty
+	return false, "", ""
 }
 
 func isOrmBaseModel(expr ast.Expr, pkg *packages.Package) bool {
@@ -263,7 +261,7 @@ func parseStructFields(structType *ast.StructType, pkg *packages.Package) []Mode
 				continue
 			}
 
-			inheritedFields := parseInheritedFields(f.Type, constants.Empty, pkg)
+			inheritedFields := parseInheritedFields(f.Type, "", pkg)
 			fields = append(fields, inheritedFields...)
 
 			continue
@@ -276,7 +274,7 @@ func parseStructFields(structType *ast.StructType, pkg *packages.Package) []Mode
 				continue
 			}
 
-			if embedPrefix := extractEmbedPrefix(f); embedPrefix != constants.Empty {
+			if embedPrefix := extractEmbedPrefix(f); embedPrefix != "" {
 				embeddedFields := parseInheritedFields(f.Type, embedPrefix, pkg)
 				fields = append(fields, embeddedFields...)
 
@@ -284,7 +282,7 @@ func parseStructFields(structType *ast.StructType, pkg *packages.Package) []Mode
 			}
 
 			columnName := extractColumnName(f, fieldName)
-			if columnName == constants.Hyphen {
+			if columnName == "-" {
 				continue
 			}
 
@@ -320,7 +318,7 @@ func hasIgnoreTag(f *ast.Field) bool {
 
 	bunTag := extractStructTag(f.Tag.Value, "bun")
 
-	return bunTag == constants.Hyphen
+	return bunTag == "-"
 }
 
 // parseInheritedFields recursively parses inherited fields from embedded structs with optional prefix accumulation.
@@ -361,7 +359,7 @@ func parseInheritedFieldsFromType(typ types.Type, prefix string) []ModelField {
 		tag := structType.Tag(i)
 
 		bunTag := extractStructTag(tag, "bun")
-		if bunTag == constants.Hyphen {
+		if bunTag == "-" {
 			continue
 		}
 
@@ -372,7 +370,7 @@ func parseInheritedFieldsFromType(typ types.Type, prefix string) []ModelField {
 			continue
 		}
 
-		if embedPrefix := extractEmbedPrefixFromTag(tag); embedPrefix != constants.Empty {
+		if embedPrefix := extractEmbedPrefixFromTag(tag); embedPrefix != "" {
 			nestedPrefix := prefix + embedPrefix
 			nestedFields := parseInheritedFieldsFromType(field.Type(), nestedPrefix)
 			fields = append(fields, nestedFields...)
@@ -383,7 +381,7 @@ func parseInheritedFieldsFromType(typ types.Type, prefix string) []ModelField {
 		fieldName := field.Name()
 		columnName := extractColumnNameFromTag(tag, fieldName)
 
-		if columnName == constants.Hyphen {
+		if columnName == "-" {
 			continue
 		}
 
@@ -415,11 +413,11 @@ func parseInheritedFieldsFromType(typ types.Type, prefix string) []ModelField {
 // extractEmbedPrefixFromTag extracts the embed prefix from a bun struct tag.
 func extractEmbedPrefixFromTag(tag string) string {
 	bunTag := extractStructTag(tag, "bun")
-	if bunTag == constants.Empty {
-		return constants.Empty
+	if bunTag == "" {
+		return ""
 	}
 
-	parts := strings.SplitSeq(bunTag, constants.Comma)
+	parts := strings.SplitSeq(bunTag, ",")
 	for part := range parts {
 		part = strings.TrimSpace(part)
 		if prefix, ok := strings.CutPrefix(part, "embed:"); ok {
@@ -427,28 +425,28 @@ func extractEmbedPrefixFromTag(tag string) string {
 		}
 	}
 
-	return constants.Empty
+	return ""
 }
 
 func extractColumnNameFromTag(tag, fieldName string) string {
 	bunTag := extractStructTag(tag, "bun")
-	if bunTag == constants.Empty {
+	if bunTag == "" {
 		return lo.SnakeCase(fieldName)
 	}
 
-	if bunTag == constants.Hyphen {
-		return constants.Hyphen
+	if bunTag == "-" {
+		return "-"
 	}
 
-	parts := strings.Split(bunTag, constants.Comma)
+	parts := strings.Split(bunTag, ",")
 	for _, part := range parts {
 		if strings.TrimSpace(part) == "scanonly" {
-			return constants.Hyphen
+			return "-"
 		}
 	}
 
-	if len(parts) > 0 && parts[0] != constants.Empty {
-		if strings.Contains(parts[0], constants.Colon) {
+	if len(parts) > 0 && parts[0] != "" {
+		if strings.Contains(parts[0], "\n") {
 			return lo.SnakeCase(fieldName)
 		}
 
@@ -463,31 +461,31 @@ func extractLabelFromTag(tag string) string {
 }
 
 func extractStructTag(tag, key string) string {
-	tag = strings.Trim(tag, constants.Backtick)
+	tag = strings.Trim(tag, "`")
 
 	parts := strings.Fields(tag)
 	prefix := key + `:"`
 
 	for _, part := range parts {
 		if after, ok := strings.CutPrefix(part, prefix); ok {
-			return strings.TrimSpace(strings.TrimSuffix(after, constants.DoubleQuote))
+			return strings.TrimSpace(strings.TrimSuffix(after, "\""))
 		}
 	}
 
-	return constants.Empty
+	return ""
 }
 
 func extractEmbedPrefix(f *ast.Field) string {
 	if f.Tag == nil {
-		return constants.Empty
+		return ""
 	}
 
 	bunTag := extractStructTag(f.Tag.Value, "bun")
-	if bunTag == constants.Empty {
-		return constants.Empty
+	if bunTag == "" {
+		return ""
 	}
 
-	parts := strings.SplitSeq(bunTag, constants.Comma)
+	parts := strings.SplitSeq(bunTag, ",")
 	for part := range parts {
 		part = strings.TrimSpace(part)
 		if prefix, ok := strings.CutPrefix(part, "embed:"); ok {
@@ -495,12 +493,12 @@ func extractEmbedPrefix(f *ast.Field) string {
 		}
 	}
 
-	return constants.Empty
+	return ""
 }
 
 func extractLabel(f *ast.Field) string {
 	if f.Tag == nil {
-		return constants.Empty
+		return ""
 	}
 
 	return extractLabelFromTag(f.Tag.Value)
@@ -516,11 +514,11 @@ func extractColumnName(f *ast.Field, fieldName string) string {
 
 func parseBunTag(tagValue string) (table, alias string) {
 	bunTag := extractStructTag(tagValue, "bun")
-	if bunTag == constants.Empty {
+	if bunTag == "" {
 		return table, alias
 	}
 
-	parts := strings.SplitSeq(bunTag, constants.Comma)
+	parts := strings.SplitSeq(bunTag, ",")
 	for part := range parts {
 		part = strings.TrimSpace(part)
 		if after, ok := strings.CutPrefix(part, "table:"); ok {
@@ -535,11 +533,11 @@ func parseBunTag(tagValue string) (table, alias string) {
 
 func generateSchemaCode(schemas []*ModelSchemaInfo) string {
 	if len(schemas) == 0 {
-		return constants.Empty
+		return ""
 	}
 
 	fset := token.NewFileSet()
-	file := fset.AddFile(constants.Empty, -1, 1000)
+	file := fset.AddFile("", -1, 1000)
 	commentPos := file.Pos(1)
 	packagePos := file.Pos(2)
 
@@ -669,7 +667,7 @@ func buildFieldMethods(schema *ModelSchemaInfo) []ast.Decl {
 
 	for _, f := range schema.Fields {
 		var doc *ast.CommentGroup
-		if f.Label != constants.Empty {
+		if f.Label != "" {
 			doc = &ast.CommentGroup{
 				List: []*ast.Comment{
 					{Text: fmt.Sprintf("// %s %s", f.MethodName, f.Label)},

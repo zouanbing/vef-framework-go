@@ -5,7 +5,6 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/auth"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/security"
 )
@@ -25,5 +24,5 @@ func GetPrincipalFromContext(ctx context.Context) *security.Principal {
 func DBWithOperator(ctx context.Context, db orm.DB) orm.DB {
 	principal := GetPrincipalFromContext(ctx)
 
-	return db.WithNamedArg(constants.PlaceholderKeyOperator, principal.ID)
+	return db.WithNamedArg(orm.PlaceholderKeyOperator, principal.ID)
 }

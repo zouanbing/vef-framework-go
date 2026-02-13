@@ -5,12 +5,11 @@ import (
 
 	"github.com/uptrace/bun/schema"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // operatorExprBuilder returns the current operator expression for audit columns.
 func operatorExprBuilder(eb ExprBuilder) any {
-	return eb.Expr(constants.ExprOperator)
+	return eb.Expr(ExprOperator)
 }
 
 // CreatedByHandler implements InsertHandler for automatically setting created_by user information.
@@ -23,7 +22,7 @@ func (cb *CreatedByHandler) OnInsert(query *BunInsertQuery, _ *schema.Table, _ *
 }
 
 func (*CreatedByHandler) Name() string {
-	return constants.ColumnCreatedBy
+	return ColumnCreatedBy
 }
 
 // UpdatedByHandler implements UpdateHandler for automatically managing updated_by user information.
@@ -47,5 +46,5 @@ func (ub *UpdatedByHandler) OnInsert(query *BunInsertQuery, _ *schema.Table, _ *
 
 // Name returns the column name for the updated_by field.
 func (*UpdatedByHandler) Name() string {
-	return constants.ColumnUpdatedBy
+	return ColumnUpdatedBy
 }

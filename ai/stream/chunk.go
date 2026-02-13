@@ -1,7 +1,5 @@
 package stream
 
-import "github.com/ilxqx/vef-framework-go/constants"
-
 // ChunkType represents the type of a UI message stream chunk.
 type ChunkType string
 
@@ -118,7 +116,7 @@ func NewSourceURLChunk(sourceID, url, title string) Chunk {
 		"sourceID": sourceID,
 		"url":      url,
 	}
-	if title != constants.Empty {
+	if title != "" {
 		c["title"] = title
 	}
 
@@ -131,7 +129,7 @@ func NewSourceDocumentChunk(sourceID, mediaType, title string) Chunk {
 		"sourceID":  sourceID,
 		"mediaType": mediaType,
 	}
-	if title != constants.Empty {
+	if title != "" {
 		c["title"] = title
 	}
 

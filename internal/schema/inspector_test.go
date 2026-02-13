@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/database"
 	"github.com/ilxqx/vef-framework-go/internal/schema"
 	"github.com/ilxqx/vef-framework-go/internal/testx"
@@ -54,7 +53,7 @@ func (suite *InspectorTestSuite) TestSQLiteInspector() {
 	suite.T().Log("Testing Inspector for SQLite")
 
 	dsConfig := &config.DatasourceConfig{
-		Type: constants.SQLite,
+		Type: config.SQLite,
 	}
 
 	suite.runInspectorTests(dsConfig, "SQLite")
@@ -114,11 +113,11 @@ func (suite *InspectorTestSuite) runInspectorTests(dsConfig *config.DatasourceCo
 	})
 }
 
-func (suite *InspectorTestSuite) setupTestTables(db *sql.DB, dbType constants.DBType) {
+func (suite *InspectorTestSuite) setupTestTables(db *sql.DB, dbType config.DBType) {
 	var usersSQL, postsSQL string
 
 	switch dbType {
-	case constants.Postgres:
+	case config.Postgres:
 		usersSQL = `
 			CREATE TABLE IF NOT EXISTS inspector_test_users (
 				id SERIAL PRIMARY KEY,
@@ -136,7 +135,7 @@ func (suite *InspectorTestSuite) setupTestTables(db *sql.DB, dbType constants.DB
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 			)`
 
-	case constants.MySQL:
+	case config.MySQL:
 		usersSQL = `
 			CREATE TABLE IF NOT EXISTS inspector_test_users (
 				id INT AUTO_INCREMENT PRIMARY KEY,
@@ -158,7 +157,7 @@ func (suite *InspectorTestSuite) setupTestTables(db *sql.DB, dbType constants.DB
 				INDEX idx_status (status)
 			)`
 
-	case constants.SQLite:
+	case config.SQLite:
 		usersSQL = `
 			CREATE TABLE IF NOT EXISTS inspector_test_users (
 				id INTEGER PRIMARY KEY AUTOINCREMENT,
