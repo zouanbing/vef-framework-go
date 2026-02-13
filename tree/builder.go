@@ -47,18 +47,18 @@ func Build[T any](nodes []T, adapter Adapter[T]) []T {
 
 		visited[id] = true
 
-		childPtrs, exists := childrenMap[id]
+		childPointers, exists := childrenMap[id]
 		if !exists {
 			return
 		}
 
-		for _, childPtr := range childPtrs {
-			setChildrenRecursively(childPtr)
+		for _, childPointer := range childPointers {
+			setChildrenRecursively(childPointer)
 		}
 
-		children := make([]T, len(childPtrs))
-		for i, ptr := range childPtrs {
-			children[i] = *ptr
+		children := make([]T, len(childPointers))
+		for i, childPointer := range childPointers {
+			children[i] = *childPointer
 		}
 
 		adapter.SetChildren(nodePtr, children)
