@@ -1965,6 +1965,6 @@ func (s *ApprovalSuite) TestInstanceProcessTaskTransfer() {
 // Test entry point
 // ---------------------------------------------------------------------------
 
-func TestApprovalIntegration(t *testing.T) {
+func TestApprovalSuite(t *testing.T) {
 	suite.Run(t, new(ApprovalSuite))
 }

@@ -178,6 +178,6 @@ func (suite *InspectorTestSuite) cleanupTestTables(db *sql.DB) {
 	_, _ = db.ExecContext(suite.ctx, "DROP TABLE IF EXISTS inspector_test_users")
 }
 
-func TestInspectorSuite(t *testing.T) {
+func TestInspectorTestSuite(t *testing.T) {
 	suite.Run(t, new(InspectorTestSuite))
 }

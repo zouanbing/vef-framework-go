@@ -761,6 +761,6 @@ func (suite *StorageResourceTestSuite) TestConcurrentUploads() {
 }
 
 // TestStorageResourceSuite runs the test suite.
-func TestStorageResourceSuite(t *testing.T) {
+func TestStorageResourceTestSuite(t *testing.T) {
 	suite.Run(t, new(StorageResourceTestSuite))
 }

@@ -542,6 +542,6 @@ func (suite *TranslateTransformerTestSuite) TestTranslateIntegration() {
 }
 
 // TestTranslateTransformerSuite runs the test suite.
-func TestTranslateTransformerSuite(t *testing.T) {
+func TestTranslateTransformerTestSuite(t *testing.T) {
 	suite.Run(t, new(TranslateTransformerTestSuite))
 }

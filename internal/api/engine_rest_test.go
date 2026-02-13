@@ -909,6 +909,6 @@ func (suite *RESTEngineTestSuite) TestPermissionCheckerCalledOnAdmin() {
 	suite.permissionChecker.AssertCalled(suite.T(), "HasPermission", mock.Anything, mock.Anything, "items:admin")
 }
 
-func TestRESTEngineSuite(t *testing.T) {
+func TestRESTEngineTestSuite(t *testing.T) {
 	suite.Run(t, new(RESTEngineTestSuite))
 }

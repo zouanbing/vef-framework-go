@@ -397,6 +397,6 @@ func (suite *McpTestSuite) TestMcpEndpointAuthorizationHeader() {
 	})
 }
 
-func TestMcpSuite(t *testing.T) {
+func TestMcpTestSuite(t *testing.T) {
 	suite.Run(t, new(McpTestSuite))
 }

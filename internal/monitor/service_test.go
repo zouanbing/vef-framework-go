@@ -263,6 +263,6 @@ func (suite *MonitorServiceTestSuite) TestBuildInfo() {
 	})
 }
 
-func TestMonitorServiceSuite(t *testing.T) {
+func TestMonitorServiceTestSuite(t *testing.T) {
 	suite.Run(t, new(MonitorServiceTestSuite))
 }

@@ -906,6 +906,6 @@ func (suite *RPCEngineTestSuite) TestPermissionCheckerCalledOnRestricted() {
 	suite.permissionChecker.AssertCalled(suite.T(), "HasPermission", mock.Anything, mock.Anything, "test:restricted")
 }
 
-func TestRPCEngineSuite(t *testing.T) {
+func TestRPCEngineTestSuite(t *testing.T) {
 	suite.Run(t, new(RPCEngineTestSuite))
 }

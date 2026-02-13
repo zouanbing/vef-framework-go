@@ -289,6 +289,6 @@ func (m *MockDataDictLoader) Load(ctx context.Context, key string) (map[string]s
 	return args.Get(0).(map[string]string), args.Error(1)
 }
 
-func TestCachedDataDictResolverSuite(t *testing.T) {
+func TestCachedDataDictResolverTestSuite(t *testing.T) {
 	suite.Run(t, new(CachedDataDictResolverTestSuite))
 }

@@ -261,6 +261,6 @@ func TestGetConnectionConfig(t *testing.T) {
 	}
 }
 
-func TestRedisSuite(t *testing.T) {
+func TestRedisTestSuite(t *testing.T) {
 	suite.Run(t, new(RedisTestSuite))
 }

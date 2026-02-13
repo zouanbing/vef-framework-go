@@ -247,7 +247,7 @@ type TestTable struct {
 	Value int    `bun:"value"`
 }
 
-func TestDatabaseSuite(t *testing.T) {
+func TestDatabaseTestSuite(t *testing.T) {
 	suite.Run(t, new(DatabaseTestSuite))
 }
 
@@ -386,6 +386,6 @@ func (suite *SQLGuardTestSuite) TestDisabledGuardAllowsDangerousSql() {
 	suite.NoError(err, "DROP should work when SQL guard is disabled")
 }
 
-func TestSQLGuardSuite(t *testing.T) {
+func TestSQLGuardTestSuite(t *testing.T) {
 	suite.Run(t, new(SQLGuardTestSuite))
 }

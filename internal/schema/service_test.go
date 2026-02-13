@@ -265,6 +265,6 @@ func (suite *ServiceTestSuite) cleanupTestTables(db *sql.DB) {
 	_, _ = db.ExecContext(suite.ctx, "DROP TABLE IF EXISTS service_test_categories")
 }
 
-func TestServiceSuite(t *testing.T) {
+func TestServiceTestSuite(t *testing.T) {
 	suite.Run(t, new(ServiceTestSuite))
 }

@@ -409,6 +409,6 @@ func (suite *MonitorResourceTestSuite) TestGetBuildInfo() {
 	})
 }
 
-func TestMonitorResourceSuite(t *testing.T) {
+func TestMonitorResourceTestSuite(t *testing.T) {
 	suite.Run(t, new(MonitorResourceTestSuite))
 }

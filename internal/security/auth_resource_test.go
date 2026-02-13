@@ -1147,6 +1147,6 @@ func (suite *AuthResourceTestSuite) TestLoginEventPublished() {
 }
 
 // TestAuthResourceSuite runs the test suite.
-func TestAuthResourceSuite(t *testing.T) {
+func TestAuthResourceTestSuite(t *testing.T) {
 	suite.Run(t, new(AuthResourceTestSuite))
 }
