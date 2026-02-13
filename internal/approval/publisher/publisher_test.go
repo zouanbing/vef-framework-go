@@ -1,0 +1,383 @@
+package publisher
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/internal/database"
+	internalORM "github.com/ilxqx/vef-framework-go/internal/orm"
+	"github.com/ilxqx/vef-framework-go/orm"
+)
+
+func TestEventNames(t *testing.T) {
+	tests := []struct {
+		name     string
+		event    approval.DomainEvent
+		expected string
+	}{
+		{"InstanceCreated", approval.NewInstanceCreatedEvent("i1", "f1", "title", "u1"), "approval.instance.created"},
+		{"InstanceCompleted", approval.NewInstanceCompletedEvent("i1", approval.InstanceApproved), "approval.instance.completed"},
+		{"InstanceWithdrawn", approval.NewInstanceWithdrawnEvent("i1", "u1"), "approval.instance.withdrawn"},
+		{"InstanceRolledBack", approval.NewInstanceRolledBackEvent("i1", "n1", "n2", "u1"), "approval.instance.rollback"},
+		{"NodeEntered", approval.NewNodeEnteredEvent("i1", "n1", "Node"), "approval.node.entered"},
+		{"NodeAutoPassed", approval.NewNodeAutoPassedEvent("i1", "n1", "reason"), "approval.node.auto_passed"},
+		{"ParallelJoined", approval.NewParallelJoinedEvent("i1", "n1"), "approval.node.parallel_joined"},
+		{"TaskCreated", approval.NewTaskCreatedEvent("t1", "i1", "n1", "u1", nil), "approval.task.created"},
+		{"TaskApproved", approval.NewTaskApprovedEvent("t1", "i1", "n1", "u1", "ok"), "approval.task.approved"},
+		{"TaskRejected", approval.NewTaskRejectedEvent("t1", "i1", "n1", "u1", "no"), "approval.task.rejected"},
+		{"TaskTransferred", approval.NewTaskTransferredEvent("t1", "i1", "n1", "u1", "u2", "reason"), "approval.task.transferred"},
+		{"TaskTimeout", approval.NewTaskTimeoutEvent("t1", "i1", "n1", "u1", time.Now()), "approval.task.timeout"},
+		{"AssigneesAdded", approval.NewAssigneesAddedEvent("i1", "n1", "t1", approval.AddAssigneeBefore, []string{"u1"}), "approval.task.assignee_added"},
+		{"AssigneesRemoved", approval.NewAssigneesRemovedEvent("i1", "n1", "t1", []string{"u1"}), "approval.task.assignee_removed"},
+		{"CcNotified", approval.NewCcNotifiedEvent("i1", "n1", []string{"u1"}, true), "approval.cc.notified"},
+		{"SubFlowStarted", approval.NewSubFlowStartedEvent("i1", "s1", "n1"), "approval.subflow.started"},
+		{"SubFlowCompleted", approval.NewSubFlowCompletedEvent("i1", "s1", "n1", approval.InstanceApproved), "approval.subflow.completed"},
+		{"FlowPublished", approval.NewFlowPublishedEvent("f1", "v1"), "approval.flow.published"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.event.EventName(), "Should return correct event name")
+		})
+	}
+}
+
+func TestEventConstructors(t *testing.T) {
+	t.Run("InstanceCreatedEvent", func(t *testing.T) {
+		evt := approval.NewInstanceCreatedEvent("inst1", "flow1", "My Title", "user1")
+		require.NotNil(t, evt, "Should create event")
+		assert.Equal(t, "inst1", evt.InstanceID, "Should set InstanceID")
+		assert.Equal(t, "flow1", evt.FlowID, "Should set FlowID")
+		assert.Equal(t, "My Title", evt.Title, "Should set Title")
+		assert.Equal(t, "user1", evt.ApplicantID, "Should set ApplicantID")
+	})
+
+	t.Run("InstanceCompletedEvent", func(t *testing.T) {
+		evt := approval.NewInstanceCompletedEvent("inst1", approval.InstanceRejected)
+		require.NotNil(t, evt, "Should create event")
+		assert.Equal(t, "inst1", evt.InstanceID, "Should set InstanceID")
+		assert.Equal(t, approval.InstanceRejected, evt.FinalStatus, "Should set FinalStatus")
+		assert.False(t, evt.FinishedAt.IsZero(), "Should have FinishedAt set")
+	})
+
+	t.Run("InstanceWithdrawnEvent", func(t *testing.T) {
+		evt := approval.NewInstanceWithdrawnEvent("inst1", "user1")
+		require.NotNil(t, evt, "Should create event")
+		assert.Equal(t, "inst1", evt.InstanceID, "Should set InstanceID")
+		assert.Equal(t, "user1", evt.OperatorID, "Should set OperatorID")
+	})
+
+	t.Run("InstanceRolledBackEvent", func(t *testing.T) {
+		evt := approval.NewInstanceRolledBackEvent("i1", "from_node", "to_node", "op1")
+		require.NotNil(t, evt, "Should create event")
+		assert.Equal(t, "i1", evt.InstanceID, "Should set InstanceID")
+		assert.Equal(t, "from_node", evt.FromNodeID, "Should set FromNodeID")
+		assert.Equal(t, "to_node", evt.ToNodeID, "Should set ToNodeID")
+		assert.Equal(t, "op1", evt.OperatorID, "Should set OperatorID")
+	})
+
+	t.Run("NodeEnteredEvent", func(t *testing.T) {
+		evt := approval.NewNodeEnteredEvent("i1", "n1", "Approval Node")
+		require.NotNil(t, evt, "Should create event")
+		assert.Equal(t, "i1", evt.InstanceID, "Should set InstanceID")
+		assert.Equal(t, "n1", evt.NodeID, "Should set NodeID")
+		assert.Equal(t, "Approval Node", evt.NodeName, "Should set NodeName")
+	})
+
+	t.Run("NodeAutoPassedEvent", func(t *testing.T) {
+		evt := approval.NewNodeAutoPassedEvent("i1", "n1", "no assignees")
+		require.NotNil(t, evt, "Should create event")
+		assert.Equal(t, "i1", evt.InstanceID, "Should set InstanceID")
+		assert.Equal(t, "n1", evt.NodeID, "Should set NodeID")
+		assert.Equal(t, "no assignees", evt.Reason, "Should set Reason")
+	})
+
+	t.Run("ParallelJoinedEvent", func(t *testing.T) {
+		evt := approval.NewParallelJoinedEvent("i1", "n1")
+		require.NotNil(t, evt, "Should create event")
+		assert.Equal(t, "i1", evt.InstanceID, "Should set InstanceID")
+		assert.Equal(t, "n1", evt.NodeID, "Should set NodeID")
+	})
+
+	t.Run("TaskCreatedWithDeadline", func(t *testing.T) {
+		deadline := time.Now().Add(24 * time.Hour)
+		evt := approval.NewTaskCreatedEvent("t1", "i1", "n1", "u1", &deadline)
+		require.NotNil(t, evt, "Should create event")
+		assert.Equal(t, "t1", evt.TaskID, "Should set TaskID")
+		assert.Equal(t, "i1", evt.InstanceID, "Should set InstanceID")
+		assert.Equal(t, "n1", evt.NodeID, "Should set NodeID")
+		assert.Equal(t, "u1", evt.AssigneeID, "Should set AssigneeID")
+		require.NotNil(t, evt.Deadline, "Should have deadline set")
+		assert.Equal(t, deadline, *evt.Deadline, "Should set correct deadline value")
+	})
+
+	t.Run("TaskCreatedWithoutDeadline", func(t *testing.T) {
+		evt := approval.NewTaskCreatedEvent("t1", "i1", "n1", "u1", nil)
+		require.NotNil(t, evt, "Should create event")
+		assert.Nil(t, evt.Deadline, "Should have nil deadline")
+	})
+
+	t.Run("TaskApprovedEvent", func(t *testing.T) {
+		evt := approval.NewTaskApprovedEvent("t1", "i1", "n1", "op1", "looks good")
+		require.NotNil(t, evt, "Should create event")
+		assert.Equal(t, "t1", evt.TaskID, "Should set TaskID")
+		assert.Equal(t, "i1", evt.InstanceID, "Should set InstanceID")
+		assert.Equal(t, "n1", evt.NodeID, "Should set NodeID")
+		assert.Equal(t, "op1", evt.OperatorID, "Should set OperatorID")
+		assert.Equal(t, "looks good", evt.Opinion, "Should set Opinion")
+	})
+
+	t.Run("TaskRejectedEvent", func(t *testing.T) {
+		evt := approval.NewTaskRejectedEvent("t1", "i1", "n1", "op1", "not acceptable")
+		require.NotNil(t, evt, "Should create event")
+		assert.Equal(t, "t1", evt.TaskID, "Should set TaskID")
+		assert.Equal(t, "i1", evt.InstanceID, "Should set InstanceID")
+		assert.Equal(t, "n1", evt.NodeID, "Should set NodeID")
+		assert.Equal(t, "op1", evt.OperatorID, "Should set OperatorID")
+		assert.Equal(t, "not acceptable", evt.Opinion, "Should set Opinion")
+	})
+
+	t.Run("TaskTransferredEvent", func(t *testing.T) {
+		evt := approval.NewTaskTransferredEvent("t1", "i1", "n1", "from", "to", "reason")
+		require.NotNil(t, evt, "Should create event")
+		assert.Equal(t, "t1", evt.TaskID, "Should set TaskID")
+		assert.Equal(t, "i1", evt.InstanceID, "Should set InstanceID")
+		assert.Equal(t, "n1", evt.NodeID, "Should set NodeID")
+		assert.Equal(t, "from", evt.FromUserID, "Should set FromUserID")
+		assert.Equal(t, "to", evt.ToUserID, "Should set ToUserID")
+		assert.Equal(t, "reason", evt.Reason, "Should set Reason")
+	})
+
+	t.Run("TaskTimeoutEvent", func(t *testing.T) {
+		deadline := time.Now().Add(-time.Hour)
+		evt := approval.NewTaskTimeoutEvent("t1", "i1", "n1", "u1", deadline)
+		require.NotNil(t, evt, "Should create event")
+		assert.Equal(t, "t1", evt.TaskID, "Should set TaskID")
+		assert.Equal(t, "i1", evt.InstanceID, "Should set InstanceID")
+		assert.Equal(t, "n1", evt.NodeID, "Should set NodeID")
+		assert.Equal(t, "u1", evt.AssigneeID, "Should set AssigneeID")
+		assert.Equal(t, deadline, evt.Deadline, "Should set Deadline")
+	})
+
+	t.Run("AssigneesAddedEvent", func(t *testing.T) {
+		evt := approval.NewAssigneesAddedEvent("i1", "n1", "t1", approval.AddAssigneeBefore, []string{"u1", "u2"})
+		require.NotNil(t, evt, "Should create event")
+		assert.Equal(t, "i1", evt.InstanceID, "Should set InstanceID")
+		assert.Equal(t, "n1", evt.NodeID, "Should set NodeID")
+		assert.Equal(t, "t1", evt.TaskID, "Should set TaskID")
+		assert.Equal(t, approval.AddAssigneeBefore, evt.AddType, "Should set AddType")
+		assert.Equal(t, []string{"u1", "u2"}, evt.AssigneeIDs, "Should set AssigneeIDs")
+	})
+
+	t.Run("AssigneesRemovedEvent", func(t *testing.T) {
+		evt := approval.NewAssigneesRemovedEvent("i1", "n1", "t1", []string{"u3"})
+		require.NotNil(t, evt, "Should create event")
+		assert.Equal(t, "i1", evt.InstanceID, "Should set InstanceID")
+		assert.Equal(t, "n1", evt.NodeID, "Should set NodeID")
+		assert.Equal(t, "t1", evt.TaskID, "Should set TaskID")
+		assert.Equal(t, []string{"u3"}, evt.AssigneeIDs, "Should set AssigneeIDs")
+	})
+
+	t.Run("CcNotifiedManual", func(t *testing.T) {
+		evt := approval.NewCcNotifiedEvent("i1", "n1", []string{"u1", "u2"}, true)
+		require.NotNil(t, evt, "Should create event")
+		assert.Equal(t, "i1", evt.InstanceID, "Should set InstanceID")
+		assert.Equal(t, "n1", evt.NodeID, "Should set NodeID")
+		assert.Equal(t, []string{"u1", "u2"}, evt.CcUserIDs, "Should set CcUserIDs")
+		assert.True(t, evt.IsManual, "Should be manual CC")
+	})
+
+	t.Run("CcNotifiedAutomatic", func(t *testing.T) {
+		evt := approval.NewCcNotifiedEvent("i1", "n1", []string{"u1"}, false)
+		require.NotNil(t, evt, "Should create event")
+		assert.False(t, evt.IsManual, "Should be automatic CC")
+	})
+
+	t.Run("SubFlowStartedEvent", func(t *testing.T) {
+		evt := approval.NewSubFlowStartedEvent("parent1", "sub1", "node1")
+		require.NotNil(t, evt, "Should create event")
+		assert.Equal(t, "parent1", evt.ParentInstanceID, "Should set ParentInstanceID")
+		assert.Equal(t, "sub1", evt.SubInstanceID, "Should set SubInstanceID")
+		assert.Equal(t, "node1", evt.ParentNodeID, "Should set ParentNodeID")
+	})
+
+	t.Run("SubFlowCompletedEvent", func(t *testing.T) {
+		evt := approval.NewSubFlowCompletedEvent("parent1", "sub1", "node1", approval.InstanceApproved)
+		require.NotNil(t, evt, "Should create event")
+		assert.Equal(t, "parent1", evt.ParentInstanceID, "Should set ParentInstanceID")
+		assert.Equal(t, "sub1", evt.SubInstanceID, "Should set SubInstanceID")
+		assert.Equal(t, "node1", evt.ParentNodeID, "Should set ParentNodeID")
+		assert.Equal(t, approval.InstanceApproved, evt.FinalStatus, "Should set FinalStatus")
+	})
+
+	t.Run("FlowPublishedEvent", func(t *testing.T) {
+		evt := approval.NewFlowPublishedEvent("f1", "v1")
+		require.NotNil(t, evt, "Should create event")
+		assert.Equal(t, "f1", evt.FlowID, "Should set FlowID")
+		assert.Equal(t, "v1", evt.VersionID, "Should set VersionID")
+	})
+}
+
+func TestEventOccurredAtAll(t *testing.T) {
+	before := time.Now().Add(-time.Second)
+	deadline := time.Now()
+
+	events := []approval.DomainEvent{
+		approval.NewInstanceCreatedEvent("i1", "f1", "title", "u1"),
+		approval.NewInstanceCompletedEvent("i1", approval.InstanceApproved),
+		approval.NewInstanceWithdrawnEvent("i1", "u1"),
+		approval.NewInstanceRolledBackEvent("i1", "n1", "n2", "u1"),
+		approval.NewNodeEnteredEvent("i1", "n1", "Node"),
+		approval.NewNodeAutoPassedEvent("i1", "n1", "reason"),
+		approval.NewParallelJoinedEvent("i1", "n1"),
+		approval.NewTaskCreatedEvent("t1", "i1", "n1", "u1", nil),
+		approval.NewTaskApprovedEvent("t1", "i1", "n1", "u1", "ok"),
+		approval.NewTaskRejectedEvent("t1", "i1", "n1", "u1", "no"),
+		approval.NewTaskTransferredEvent("t1", "i1", "n1", "u1", "u2", "r"),
+		approval.NewTaskTimeoutEvent("t1", "i1", "n1", "u1", deadline),
+		approval.NewAssigneesAddedEvent("i1", "n1", "t1", approval.AddAssigneeBefore, []string{"u1"}),
+		approval.NewAssigneesRemovedEvent("i1", "n1", "t1", []string{"u1"}),
+		approval.NewCcNotifiedEvent("i1", "n1", []string{"u1"}, false),
+		approval.NewSubFlowStartedEvent("i1", "s1", "n1"),
+		approval.NewSubFlowCompletedEvent("i1", "s1", "n1", approval.InstanceApproved),
+		approval.NewFlowPublishedEvent("f1", "v1"),
+	}
+
+	for _, evt := range events {
+		assert.True(t, evt.OccurredAt().After(before), "Should have recent OccurredAt for %s", evt.EventName())
+	}
+}
+
+func TestToMap(t *testing.T) {
+	t.Run("ValidStruct", func(t *testing.T) {
+		m, err := toMap(approval.NewFlowPublishedEvent("f1", "v1"))
+		require.NoError(t, err, "Should marshal valid struct")
+		assert.Equal(t, "f1", m["flowId"], "Should contain flowId")
+		assert.Equal(t, "v1", m["versionId"], "Should contain versionId")
+		assert.Contains(t, m, "occurredTime", "Should contain occurredTime")
+	})
+
+	t.Run("StructWithAllFields", func(t *testing.T) {
+		m, err := toMap(approval.NewTaskTransferredEvent("t1", "i1", "n1", "from", "to", "reason"))
+		require.NoError(t, err, "Should marshal struct with all fields")
+		assert.Equal(t, "t1", m["taskId"], "Should contain taskId")
+		assert.Equal(t, "i1", m["instanceId"], "Should contain instanceId")
+		assert.Equal(t, "n1", m["nodeId"], "Should contain nodeId")
+		assert.Equal(t, "from", m["fromUserId"], "Should contain fromUserId")
+		assert.Equal(t, "to", m["toUserId"], "Should contain toUserId")
+		assert.Equal(t, "reason", m["reason"], "Should contain reason")
+	})
+
+	t.Run("UnmarshalableValue", func(t *testing.T) {
+		_, err := toMap(make(chan int))
+		assert.Error(t, err, "Should fail for unmarshalable type")
+	})
+}
+
+func TestNewEventPublisher(t *testing.T) {
+	pub := NewEventPublisher(nil)
+	require.NotNil(t, pub, "Should create publisher")
+	assert.Nil(t, pub.db, "Should store nil db")
+}
+
+func setupTestDB(t *testing.T) (orm.DB, func()) {
+	t.Helper()
+
+	dsConfig := &config.DatasourceConfig{Type: constants.SQLite}
+	bunDB, err := database.New(dsConfig)
+	require.NoError(t, err, "Should create test database")
+
+	bunDB.RegisterModel((*approval.EventOutbox)(nil))
+
+	ctx := context.Background()
+	_, err = bunDB.NewCreateTable().Model((*approval.EventOutbox)(nil)).IfNotExists().Exec(ctx)
+	require.NoError(t, err, "Should create outbox table")
+
+	return internalORM.New(bunDB), func() { _ = bunDB.Close() }
+}
+
+func TestPublishAll(t *testing.T) {
+	t.Run("NilEvents", func(t *testing.T) {
+		pub := NewEventPublisher(nil)
+		err := pub.PublishAll(context.Background(), nil, nil)
+		require.NoError(t, err, "Should return nil for nil events slice")
+	})
+
+	t.Run("EmptySlice", func(t *testing.T) {
+		pub := NewEventPublisher(nil)
+		err := pub.PublishAll(context.Background(), nil, []approval.DomainEvent{})
+		require.NoError(t, err, "Should return nil for zero-length events slice")
+	})
+
+	t.Run("SingleEvent", func(t *testing.T) {
+		db, cleanup := setupTestDB(t)
+		defer cleanup()
+
+		ctx := context.Background()
+		err := NewEventPublisher(db).PublishAll(ctx, db, []approval.DomainEvent{
+			approval.NewFlowPublishedEvent("flow1", "ver1"),
+		})
+		require.NoError(t, err, "Should insert single event successfully")
+
+		var records []approval.EventOutbox
+		err = db.NewSelect().Model(&records).Scan(ctx, &records)
+		require.NoError(t, err, "Should query outbox records")
+		require.Len(t, records, 1, "Should have exactly one outbox record")
+		assert.Equal(t, "approval.flow.published", records[0].EventType, "Should store correct event type")
+		assert.Equal(t, "pending", records[0].Status, "Should store pending status")
+		assert.NotEmpty(t, records[0].EventID, "Should generate event ID")
+		assert.Equal(t, "flow1", records[0].Payload["flowId"], "Should marshal payload correctly")
+	})
+
+	t.Run("MultipleEvents", func(t *testing.T) {
+		db, cleanup := setupTestDB(t)
+		defer cleanup()
+
+		ctx := context.Background()
+		events := []approval.DomainEvent{
+			approval.NewInstanceCreatedEvent("i1", "f1", "title", "u1"),
+			approval.NewTaskCreatedEvent("t1", "i1", "n1", "u1", nil),
+			approval.NewCcNotifiedEvent("i1", "n1", []string{"cc1"}, false),
+		}
+
+		err := NewEventPublisher(db).PublishAll(ctx, db, events)
+		require.NoError(t, err, "Should insert multiple events successfully")
+
+		var records []approval.EventOutbox
+		err = db.NewSelect().Model(&records).Scan(ctx, &records)
+		require.NoError(t, err, "Should query outbox records")
+		require.Len(t, records, 3, "Should have three outbox records")
+
+		eventTypes := make([]string, len(records))
+		for i, r := range records {
+			eventTypes[i] = r.EventType
+		}
+		assert.Contains(t, eventTypes, "approval.instance.created", "Should contain instance created event")
+		assert.Contains(t, eventTypes, "approval.task.created", "Should contain task created event")
+		assert.Contains(t, eventTypes, "approval.cc.notified", "Should contain cc notified event")
+	})
+
+	t.Run("MarshalError", func(t *testing.T) {
+		db, cleanup := setupTestDB(t)
+		defer cleanup()
+
+		err := NewEventPublisher(db).PublishAll(context.Background(), db, []approval.DomainEvent{&unmarshalableEvent{}})
+		require.Error(t, err, "Should fail when event cannot be marshaled")
+		assert.Contains(t, err.Error(), "marshal event", "Should wrap marshal error")
+	})
+}
+
+// unmarshalableEvent is a DomainEvent that cannot be JSON-marshaled.
+type unmarshalableEvent struct {
+	BadField chan int `json:"badField"`
+}
+
+func (e *unmarshalableEvent) EventName() string     { return "test.unmarshalable" }
+func (e *unmarshalableEvent) OccurredAt() time.Time { return time.Now() }
