@@ -43,14 +43,14 @@ func (suite *ServiceTestSuite) TestMySQLService() {
 func (suite *ServiceTestSuite) TestSQLiteService() {
 	suite.T().Log("Testing Service for SQLite")
 
-	dsConfig := &config.DatasourceConfig{
+	dsConfig := &config.DataSourceConfig{
 		Type: config.SQLite,
 	}
 
 	suite.runServiceTests(dsConfig, "SQLite")
 }
 
-func (suite *ServiceTestSuite) runServiceTests(dsConfig *config.DatasourceConfig, dbType string) {
+func (suite *ServiceTestSuite) runServiceTests(dsConfig *config.DataSourceConfig, dbType string) {
 	db, err := database.New(dsConfig)
 	suite.Require().NoError(err, "Database connection should succeed")
 

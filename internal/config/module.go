@@ -9,7 +9,7 @@ var Module = fx.Module(
 	fx.Provide(
 		newConfig,
 		newAppConfig,
-		newDatasourceConfig,
+		newDataSourceConfig,
 		newCorsConfig,
 		newSecurityConfig,
 		newRedisConfig,

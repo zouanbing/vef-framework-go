@@ -42,14 +42,14 @@ func (suite *InspectorTestSuite) TestMySQLInspector() {
 func (suite *InspectorTestSuite) TestSQLiteInspector() {
 	suite.T().Log("Testing Inspector for SQLite")
 
-	dsConfig := &config.DatasourceConfig{
+	dsConfig := &config.DataSourceConfig{
 		Type: config.SQLite,
 	}
 
 	suite.runInspectorTests(dsConfig, "SQLite")
 }
 
-func (suite *InspectorTestSuite) runInspectorTests(dsConfig *config.DatasourceConfig, dbType string) {
+func (suite *InspectorTestSuite) runInspectorTests(dsConfig *config.DataSourceConfig, dbType string) {
 	db, err := database.New(dsConfig)
 	suite.Require().NoError(err, "Database connection should succeed")
 

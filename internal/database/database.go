@@ -33,7 +33,7 @@ func setupBunDB(sqlDB *sql.DB, dialect schema.Dialect, opts *databaseOptions) *b
 	return db
 }
 
-func New(cfg *config.DatasourceConfig, options ...Option) (*bun.DB, error) {
+func New(cfg *config.DataSourceConfig, options ...Option) (*bun.DB, error) {
 	provider, exists := registry.provider(cfg.Type)
 	if !exists {
 		return nil, newUnsupportedDBTypeError(cfg.Type)

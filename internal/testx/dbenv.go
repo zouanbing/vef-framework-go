@@ -18,5 +18,5 @@ type DBEnv struct {
 	BunDB    bun.IDB
 	DB       orm.DB
 	DBType   config.DBType
-	DsConfig *config.DatasourceConfig
+	DsConfig *config.DataSourceConfig
 }

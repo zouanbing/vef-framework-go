@@ -364,7 +364,7 @@ func (suite *RESTEngineTestSuite) setupTestApp() {
 			return suite.permissionChecker
 		}),
 		fx.Replace(
-			&config.DatasourceConfig{
+			&config.DataSourceConfig{
 				Type: config.SQLite,
 			},
 			&security.JWTConfig{

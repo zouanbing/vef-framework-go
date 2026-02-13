@@ -35,7 +35,7 @@ func (suite *DatabaseTestSuite) SetupSuite() {
 
 // TestSQLiteConnection tests SQLite in-memory database connection and basic operations.
 func (suite *DatabaseTestSuite) TestSQLiteConnection() {
-	config := &config.DatasourceConfig{
+	config := &config.DataSourceConfig{
 		Type: config.SQLite,
 	}
 
@@ -50,7 +50,7 @@ func (suite *DatabaseTestSuite) TestSQLiteConnection() {
 
 // TestSQLiteWithOptions tests SQLite with custom configuration options.
 func (suite *DatabaseTestSuite) TestSQLiteWithOptions() {
-	config := &config.DatasourceConfig{
+	config := &config.DataSourceConfig{
 		Type: config.SQLite,
 	}
 
@@ -91,7 +91,7 @@ func (suite *DatabaseTestSuite) TestMySQLConnection() {
 
 // TestUnsupportedDatabaseType tests error handling for unsupported database types.
 func (suite *DatabaseTestSuite) TestUnsupportedDatabaseType() {
-	config := &config.DatasourceConfig{
+	config := &config.DataSourceConfig{
 		Type: "unsupported",
 	}
 
@@ -103,7 +103,7 @@ func (suite *DatabaseTestSuite) TestUnsupportedDatabaseType() {
 
 // TestSQLiteInMemoryMode tests SQLite in-memory mode explicitly.
 func (suite *DatabaseTestSuite) TestSQLiteInMemoryMode() {
-	config := &config.DatasourceConfig{
+	config := &config.DataSourceConfig{
 		Type: config.SQLite,
 	}
 
@@ -129,7 +129,7 @@ func (suite *DatabaseTestSuite) TestSQLiteFileMode() {
 
 	suite.Require().NoError(tempFile.Close(), "Temporary file should close successfully")
 
-	config := &config.DatasourceConfig{
+	config := &config.DataSourceConfig{
 		Type: config.SQLite,
 		Path: tempFile.Name(),
 	}
@@ -145,7 +145,7 @@ func (suite *DatabaseTestSuite) TestSQLiteFileMode() {
 
 // TestMySQLValidation tests MySQL configuration validation for missing required fields.
 func (suite *DatabaseTestSuite) TestMySQLValidation() {
-	config := &config.DatasourceConfig{
+	config := &config.DataSourceConfig{
 		Type: config.MySQL,
 		Host: "localhost",
 		Port: 3306,
@@ -160,7 +160,7 @@ func (suite *DatabaseTestSuite) TestMySQLValidation() {
 
 // TestConnectionPoolConfiguration tests custom connection pool configuration.
 func (suite *DatabaseTestSuite) TestConnectionPoolConfiguration() {
-	config := &config.DatasourceConfig{
+	config := &config.DataSourceConfig{
 		Type: config.SQLite,
 	}
 
@@ -265,7 +265,7 @@ func (suite *SQLGuardTestSuite) SetupSuite() {
 }
 
 func (suite *SQLGuardTestSuite) createTestDB(enableGuard bool) *bun.DB {
-	cfg := &config.DatasourceConfig{
+	cfg := &config.DataSourceConfig{
 		Type:           config.SQLite,
 		EnableSQLGuard: enableGuard,
 	}

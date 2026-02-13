@@ -17,7 +17,7 @@ var (
 		"vef:database",
 		fx.Provide(
 			fx.Annotate(
-				func(lc fx.Lifecycle, cfg *config.DatasourceConfig) (db *bun.DB, err error) {
+				func(lc fx.Lifecycle, cfg *config.DataSourceConfig) (db *bun.DB, err error) {
 					if db, err = New(cfg); err != nil {
 						return db, err
 					}

@@ -50,7 +50,7 @@ func (suite *MonitorResourceTestSuite) SetupSuite() {
 	suite.app, suite.stop = apptest.NewTestApp(
 		suite.T(),
 		fx.Replace(
-			&config.DatasourceConfig{
+			&config.DataSourceConfig{
 				Type: "sqlite",
 			},
 			monitorConfig,

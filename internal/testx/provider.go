@@ -35,7 +35,7 @@ func ForEachDB(t *testing.T, fn func(t *testing.T, env *DBEnv)) {
 }
 
 // newDBEnv creates a complete DBEnv with database connection and automatic cleanup.
-func newDBEnv(t *testing.T, ctx context.Context, dsConfig *config.DatasourceConfig) *DBEnv {
+func newDBEnv(t *testing.T, ctx context.Context, dsConfig *config.DataSourceConfig) *DBEnv {
 	db, err := database.New(dsConfig)
 	require.NoError(t, err)
 
@@ -69,6 +69,6 @@ func setupMySQL(t *testing.T) *DBEnv {
 
 func setupSQLite(t *testing.T) *DBEnv {
 	ctx := context.Background()
-	dsConfig := &config.DatasourceConfig{Type: config.SQLite}
+	dsConfig := &config.DataSourceConfig{Type: config.SQLite}
 	return newDBEnv(t, ctx, dsConfig)
 }

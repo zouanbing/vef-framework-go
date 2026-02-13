@@ -9,7 +9,7 @@ import (
 )
 
 type databaseOptions struct {
-	Config          *config.DatasourceConfig
+	Config          *config.DataSourceConfig
 	PoolConfig      *ConnectionPoolConfig
 	EnableQueryHook bool
 	Logger          log.Logger
@@ -19,7 +19,7 @@ type databaseOptions struct {
 
 type Option func(*databaseOptions)
 
-func newDefaultOptions(cfg *config.DatasourceConfig) *databaseOptions {
+func newDefaultOptions(cfg *config.DataSourceConfig) *databaseOptions {
 	var guardConfig *sqlguard.Config
 	if cfg.EnableSQLGuard {
 		guardConfig = sqlguard.DefaultConfig()

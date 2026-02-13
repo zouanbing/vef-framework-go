@@ -13,9 +13,9 @@ import (
 )
 
 type DatabaseProvider interface {
-	Connect(config *config.DatasourceConfig) (*sql.DB, schema.Dialect, error)
+	Connect(config *config.DataSourceConfig) (*sql.DB, schema.Dialect, error)
 	Type() config.DBType
-	ValidateConfig(config *config.DatasourceConfig) error
+	ValidateConfig(config *config.DataSourceConfig) error
 	QueryVersion(db *bun.DB) (string, error)
 }
 

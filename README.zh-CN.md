@@ -62,7 +62,7 @@ func main() {
 name = "my-app"
 port = 8080
 
-[vef.datasource]
+[vef.data_source]
 type = "postgres"
 host = "localhost"
 port = 5432
@@ -884,7 +884,7 @@ name = "my-app"          # 应用名称
 port = 8080              # HTTP 端口
 body_limit = "10MB"      # 请求体大小限制
 
-[vef.datasource]
+[vef.data_source]
 type = "postgres"        # 数据库类型：postgres、mysql、sqlite、oracle、sqlserver
 host = "localhost"
 port = 5432

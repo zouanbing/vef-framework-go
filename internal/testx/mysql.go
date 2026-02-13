@@ -13,7 +13,7 @@ import (
 )
 
 type MySQLContainer struct {
-	DsConfig *config.DatasourceConfig
+	DsConfig *config.DataSourceConfig
 }
 
 func NewMySQLContainer(ctx context.Context, t testing.TB) *MySQLContainer {
@@ -46,7 +46,7 @@ func NewMySQLContainer(ctx context.Context, t testing.TB) *MySQLContainer {
 	require.NoError(t, err)
 
 	return &MySQLContainer{
-		DsConfig: &config.DatasourceConfig{
+		DsConfig: &config.DataSourceConfig{
 			Type:     "mysql",
 			Host:     host,
 			Port:     uint16(port.Int()),

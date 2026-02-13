@@ -98,7 +98,7 @@ type BaseSuite struct {
 	stop     func()
 	db       orm.DB
 	dbType   config.DBType
-	dsConfig *config.DatasourceConfig
+	dsConfig *config.DataSourceConfig
 }
 
 func (suite *BaseSuite) setupBaseSuite(resourceCtors ...any) {

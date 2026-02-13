@@ -39,7 +39,7 @@ func (suite *ParamResolversTestSuite) SetupSuite() {
 
 	opts := []fx.Option{
 		vef.ProvideAPIResource(NewTestParamResolversResource),
-		fx.Replace(&config.DatasourceConfig{
+		fx.Replace(&config.DataSourceConfig{
 			Type: config.SQLite,
 		}),
 		fx.Replace(&config.StorageConfig{

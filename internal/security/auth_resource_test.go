@@ -168,7 +168,7 @@ func (suite *AuthResourceTestSuite) setupTestApp() {
 			),
 		),
 		fx.Replace(
-			&config.DatasourceConfig{
+			&config.DataSourceConfig{
 				Type: "sqlite",
 			},
 			&config.SecurityConfig{

@@ -289,7 +289,7 @@ func TestNewEventPublisher(t *testing.T) {
 func setupTestDB(t *testing.T) (orm.DB, func()) {
 	t.Helper()
 
-	dsConfig := &config.DatasourceConfig{Type: config.SQLite}
+	dsConfig := &config.DataSourceConfig{Type: config.SQLite}
 	bunDB, err := database.New(dsConfig)
 	require.NoError(t, err, "Should create test database")
 

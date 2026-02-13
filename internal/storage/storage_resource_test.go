@@ -92,7 +92,7 @@ func (suite *StorageResourceTestSuite) setupTestApp() {
 		suite.T(),
 		// Replace storage config with test values
 		fx.Replace(
-			&config.DatasourceConfig{
+			&config.DataSourceConfig{
 				Type: "sqlite",
 			},
 			&config.StorageConfig{

@@ -27,7 +27,7 @@ func (p *Provider) Type() config.DBType {
 	return p.dbType
 }
 
-func (p *Provider) Connect(cfg *config.DatasourceConfig) (*sql.DB, schema.Dialect, error) {
+func (p *Provider) Connect(cfg *config.DataSourceConfig) (*sql.DB, schema.Dialect, error) {
 	if err := p.ValidateConfig(cfg); err != nil {
 		return nil, nil, err
 	}
@@ -52,7 +52,7 @@ func (p *Provider) Connect(cfg *config.DatasourceConfig) (*sql.DB, schema.Dialec
 	return sql.OpenDB(connector), pgdialect.New(), nil
 }
 
-func (*Provider) ValidateConfig(_ *config.DatasourceConfig) error {
+func (*Provider) ValidateConfig(_ *config.DataSourceConfig) error {
 	return nil
 }
 

@@ -13,7 +13,7 @@ import (
 )
 
 type PostgresContainer struct {
-	DsConfig *config.DatasourceConfig
+	DsConfig *config.DataSourceConfig
 }
 
 func NewPostgresContainer(ctx context.Context, t testing.TB) *PostgresContainer {
@@ -47,7 +47,7 @@ func NewPostgresContainer(ctx context.Context, t testing.TB) *PostgresContainer 
 	require.NoError(t, err)
 
 	return &PostgresContainer{
-		DsConfig: &config.DatasourceConfig{
+		DsConfig: &config.DataSourceConfig{
 			Type:     "postgres",
 			Host:     host,
 			Port:     uint16(port.Int()),

@@ -27,7 +27,7 @@ func (p *Provider) Type() config.DBType {
 	return p.dbType
 }
 
-func (p *Provider) Connect(cfg *config.DatasourceConfig) (*sql.DB, schema.Dialect, error) {
+func (p *Provider) Connect(cfg *config.DataSourceConfig) (*sql.DB, schema.Dialect, error) {
 	if err := p.ValidateConfig(cfg); err != nil {
 		return nil, nil, err
 	}
@@ -40,7 +40,7 @@ func (p *Provider) Connect(cfg *config.DatasourceConfig) (*sql.DB, schema.Dialec
 	return sql.OpenDB(connector), mysqldialect.New(), nil
 }
 
-func (*Provider) ValidateConfig(cfg *config.DatasourceConfig) error {
+func (*Provider) ValidateConfig(cfg *config.DataSourceConfig) error {
 	if cfg.Database == "" {
 		return ErrMySQLDatabaseRequired
 	}
@@ -52,7 +52,7 @@ func (*Provider) QueryVersion(db *bun.DB) (string, error) {
 	return queryVersion(db)
 }
 
-func (*Provider) buildConfig(cfg *config.DatasourceConfig) *mysql.Config {
+func (*Provider) buildConfig(cfg *config.DataSourceConfig) *mysql.Config {
 	mysqlCfg := mysql.NewConfig()
 	mysqlCfg.User = lo.Ternary(cfg.User != "", cfg.User, "root")
 	mysqlCfg.Passwd = cfg.Password

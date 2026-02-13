@@ -12,8 +12,8 @@ const (
 	SQLite    DBType = "sqlite"
 )
 
-// DatasourceConfig defines database connection settings.
-type DatasourceConfig struct {
+// DataSourceConfig defines database connection settings.
+type DataSourceConfig struct {
 	Type           DBType `config:"type"`
 	Host           string           `config:"host"`
 	Port           uint16           `config:"port"`

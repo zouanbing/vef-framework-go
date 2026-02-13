@@ -64,7 +64,7 @@ func (suite *TranslateTransformerTestSuite) SetupSuite() {
 
 	suite.app, suite.stop = apptest.NewTestApp(
 		suite.T(),
-		fx.Replace(&config.DatasourceConfig{
+		fx.Replace(&config.DataSourceConfig{
 			Type: config.SQLite,
 		}),
 		fx.Provide(func() mold.DataDictLoader {
@@ -394,7 +394,7 @@ func (suite *TranslateTransformerTestSuite) TestTranslateWithResolverError() {
 
 		_, stop := apptest.NewTestApp(
 			suite.T(),
-			fx.Replace(&config.DatasourceConfig{
+			fx.Replace(&config.DataSourceConfig{
 				Type: config.SQLite,
 			}),
 			fx.Provide(func() mold.DataDictLoader {
@@ -434,7 +434,7 @@ func (suite *TranslateTransformerTestSuite) TestTranslateWithMissingResolver() {
 
 		_, stop := apptest.NewTestApp(
 			suite.T(),
-			fx.Replace(&config.DatasourceConfig{
+			fx.Replace(&config.DataSourceConfig{
 				Type: config.SQLite,
 			}),
 			fx.Populate(&transformer),

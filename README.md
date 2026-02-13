@@ -62,7 +62,7 @@ Create `configs/application.toml`:
 name = "my-app"
 port = 8080
 
-[vef.datasource]
+[vef.data_source]
 type = "postgres"
 host = "localhost"
 port = 5432
@@ -884,7 +884,7 @@ name = "my-app"          # Application name
 port = 8080              # HTTP port
 body_limit = "10MB"      # Request body size limit
 
-[vef.datasource]
+[vef.data_source]
 type = "postgres"        # Database type: postgres, mysql, sqlite, oracle, sqlserver
 host = "localhost"
 port = 5432

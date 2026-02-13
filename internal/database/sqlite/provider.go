@@ -26,7 +26,7 @@ func (p *Provider) Type() config.DBType {
 	return p.dbType
 }
 
-func (p *Provider) Connect(cfg *config.DatasourceConfig) (*sql.DB, schema.Dialect, error) {
+func (p *Provider) Connect(cfg *config.DataSourceConfig) (*sql.DB, schema.Dialect, error) {
 	if err := p.ValidateConfig(cfg); err != nil {
 		return nil, nil, err
 	}
@@ -39,7 +39,7 @@ func (p *Provider) Connect(cfg *config.DatasourceConfig) (*sql.DB, schema.Dialec
 	return db, sqlitedialect.New(), nil
 }
 
-func (*Provider) ValidateConfig(_ *config.DatasourceConfig) error {
+func (*Provider) ValidateConfig(_ *config.DataSourceConfig) error {
 	return nil
 }
 
@@ -50,7 +50,7 @@ func (*Provider) QueryVersion(db *bun.DB) (string, error) {
 // buildDsn returns the DSN for SQLite. When no path is specified, it uses
 // file::memory: with shared cache to ensure multiple connections share
 // the same in-memory database.
-func (*Provider) buildDsn(cfg *config.DatasourceConfig) string {
+func (*Provider) buildDsn(cfg *config.DataSourceConfig) string {
 	if cfg.Path == "" {
 		return "file::memory:?mode=memory&cache=shared"
 	}

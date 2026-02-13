@@ -52,14 +52,14 @@ func (suite *SchemaResourceTestSuite) TestMySQLResource() {
 func (suite *SchemaResourceTestSuite) TestSQLiteResource() {
 	suite.T().Log("Testing Schema Resource for SQLite")
 
-	dsConfig := &config.DatasourceConfig{
+	dsConfig := &config.DataSourceConfig{
 		Type: config.SQLite,
 	}
 
 	suite.runResourceTests(dsConfig, "SQLite")
 }
 
-func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DatasourceConfig, dbType string) {
+func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSourceConfig, dbType string) {
 	var (
 		bunDB   *bun.DB
 		testApp *app.App

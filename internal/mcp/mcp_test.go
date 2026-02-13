@@ -107,7 +107,7 @@ func (suite *McpTestSuite) setupTestApp() {
 			),
 		),
 		fx.Replace(
-			&config.DatasourceConfig{
+			&config.DataSourceConfig{
 				Type: "sqlite",
 			},
 			&config.McpConfig{
