@@ -77,8 +77,6 @@ func (suite *DatabaseTestSuite) TestSQLiteWithOptions() {
 func (suite *DatabaseTestSuite) TestPostgreSQLConnection() {
 	config := suite.postgresContainer.DsConfig
 
-	suite.T().Logf("Testing PostgreSQL connection with config: %+v", config)
-
 	db, err := New(config)
 	suite.Require().NoError(err, "PostgreSQL connection should succeed")
 	suite.Require().NotNil(db, "Database instance should not be nil")
@@ -91,8 +89,6 @@ func (suite *DatabaseTestSuite) TestPostgreSQLConnection() {
 // TestMySQLConnection tests MySQL database connection via Testcontainers.
 func (suite *DatabaseTestSuite) TestMySQLConnection() {
 	config := suite.mysqlContainer.DsConfig
-
-	suite.T().Logf("Testing MySQL connection with config: %+v", config)
 
 	db, err := New(config)
 	suite.Require().NoError(err, "MySQL connection should succeed")

@@ -10,7 +10,7 @@ import (
 )
 
 func TestGetIP(t *testing.T) {
-	t.Run("xForwardedForHeader", func(t *testing.T) {
+	t.Run("XForwardedForHeader", func(t *testing.T) {
 		app := fiber.New()
 		forwardedIP := "192.168.1.100"
 
@@ -28,7 +28,7 @@ func TestGetIP(t *testing.T) {
 		require.Equal(t, 200, resp.StatusCode)
 	})
 
-	t.Run("fallbackToDirectIP", func(t *testing.T) {
+	t.Run("FallbackToDirectIP", func(t *testing.T) {
 		app := fiber.New()
 
 		app.Get("/test", func(c fiber.Ctx) error {
@@ -44,7 +44,7 @@ func TestGetIP(t *testing.T) {
 		require.Equal(t, 200, resp.StatusCode)
 	})
 
-	t.Run("xForwardedForOverridesDirectIP", func(t *testing.T) {
+	t.Run("XForwardedForOverridesDirectIP", func(t *testing.T) {
 		app := fiber.New()
 		forwardedIP := "10.0.0.1"
 
@@ -62,7 +62,7 @@ func TestGetIP(t *testing.T) {
 		require.Equal(t, 200, resp.StatusCode)
 	})
 
-	t.Run("emptyXForwardedForHeader", func(t *testing.T) {
+	t.Run("EmptyXForwardedForHeader", func(t *testing.T) {
 		app := fiber.New()
 
 		app.Get("/test", func(c fiber.Ctx) error {
@@ -79,7 +79,7 @@ func TestGetIP(t *testing.T) {
 		require.Equal(t, 200, resp.StatusCode)
 	})
 
-	t.Run("multipleIPsInXForwardedFor", func(t *testing.T) {
+	t.Run("MultipleIPsInXForwardedFor", func(t *testing.T) {
 		app := fiber.New()
 		forwardedIPs := "203.0.113.195, 70.41.3.18, 150.172.238.178"
 

@@ -154,28 +154,28 @@ func TestAlphanumRulesCombined(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			name:     "allValid",
+			name:     "AllValid",
 			action:   "get_user_info",
 			resource: "sys/user",
 			fileName: "config.yaml",
 			wantErr:  false,
 		},
 		{
-			name:     "invalidActionWithSlash",
+			name:     "InvalidActionWithSlash",
 			action:   "get/user",
 			resource: "sys/user",
 			fileName: "config.yaml",
 			wantErr:  true,
 		},
 		{
-			name:     "invalidResourceWithDot",
+			name:     "InvalidResourceWithDot",
 			action:   "get_user",
 			resource: "sys.user",
 			fileName: "config.yaml",
 			wantErr:  true,
 		},
 		{
-			name:     "invalidFilenameWithSlash",
+			name:     "InvalidFilenameWithSlash",
 			action:   "get_user",
 			resource: "sys/user",
 			fileName: "config/app.yaml",

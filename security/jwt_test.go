@@ -198,7 +198,7 @@ func TestJWTErrorMapping(t *testing.T) {
 		expectedError error
 	}{
 		{
-			name: "expired token",
+			name: "ExpiredToken",
 			tokenGen: func() string {
 				builder := NewJWTClaimsBuilder()
 				token, _ := jwt.Generate(builder, -1*time.Hour, 0)
@@ -208,7 +208,7 @@ func TestJWTErrorMapping(t *testing.T) {
 			expectedError: result.ErrTokenExpired,
 		},
 		{
-			name: "not yet valid token",
+			name: "NotYetValidToken",
 			tokenGen: func() string {
 				builder := NewJWTClaimsBuilder()
 				token, _ := jwt.Generate(builder, 1*time.Hour, 2*time.Minute)

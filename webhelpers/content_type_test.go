@@ -10,7 +10,7 @@ import (
 )
 
 func TestIsJSON(t *testing.T) {
-	t.Run("applicationJson", func(t *testing.T) {
+	t.Run("ApplicationJson", func(t *testing.T) {
 		app := fiber.New()
 
 		app.Post("/json", func(c fiber.Ctx) error {
@@ -28,7 +28,7 @@ func TestIsJSON(t *testing.T) {
 		require.Equal(t, fiber.StatusOK, resp.StatusCode)
 	})
 
-	t.Run("applicationJsonWithCharset", func(t *testing.T) {
+	t.Run("ApplicationJsonWithCharset", func(t *testing.T) {
 		app := fiber.New()
 
 		app.Post("/json", func(c fiber.Ctx) error {
@@ -46,7 +46,7 @@ func TestIsJSON(t *testing.T) {
 		require.Equal(t, fiber.StatusOK, resp.StatusCode)
 	})
 
-	t.Run("missingContentType", func(t *testing.T) {
+	t.Run("MissingContentType", func(t *testing.T) {
 		app := fiber.New()
 
 		app.Post("/json", func(c fiber.Ctx) error {
@@ -63,7 +63,7 @@ func TestIsJSON(t *testing.T) {
 		require.Equal(t, fiber.StatusOK, resp.StatusCode)
 	})
 
-	t.Run("nonJsonContentType", func(t *testing.T) {
+	t.Run("NonJsonContentType", func(t *testing.T) {
 		app := fiber.New()
 
 		app.Post("/json", func(c fiber.Ctx) error {
@@ -83,7 +83,7 @@ func TestIsJSON(t *testing.T) {
 }
 
 func TestIsMultipart(t *testing.T) {
-	t.Run("multipartFormData", func(t *testing.T) {
+	t.Run("MultipartFormData", func(t *testing.T) {
 		app := fiber.New()
 
 		app.Post("/multipart", func(c fiber.Ctx) error {
@@ -101,7 +101,7 @@ func TestIsMultipart(t *testing.T) {
 		require.Equal(t, fiber.StatusOK, resp.StatusCode)
 	})
 
-	t.Run("nonMultipartContentType", func(t *testing.T) {
+	t.Run("NonMultipartContentType", func(t *testing.T) {
 		app := fiber.New()
 
 		app.Post("/multipart", func(c fiber.Ctx) error {
@@ -119,7 +119,7 @@ func TestIsMultipart(t *testing.T) {
 		require.Equal(t, fiber.StatusOK, resp.StatusCode)
 	})
 
-	t.Run("missingContentType", func(t *testing.T) {
+	t.Run("MissingContentType", func(t *testing.T) {
 		app := fiber.New()
 
 		app.Post("/multipart", func(c fiber.Ctx) error {

@@ -27,7 +27,7 @@ func TestValidatorI18nMessages(t *testing.T) {
 		FileName:    "app/config.yaml",
 	}
 
-	t.Run("chineseMessages", func(t *testing.T) {
+	t.Run("ChineseMessages", func(t *testing.T) {
 		err := i18n.SetLanguage("zh-CN")
 		require.NoError(t, err, "Should set language to zh-CN")
 
@@ -45,7 +45,7 @@ func TestValidatorI18nMessages(t *testing.T) {
 			"Error message should contain Chinese labels")
 	})
 
-	t.Run("englishMessages", func(t *testing.T) {
+	t.Run("EnglishMessages", func(t *testing.T) {
 		err := i18n.SetLanguage("en")
 		require.NoError(t, err, "Should set language to en")
 
@@ -135,7 +135,7 @@ func TestValidatorI18nAlphanumRules(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "allValid",
+			name: "AllValid",
 			data: testStruct{
 				Action:   "get_user_info",
 				Resource: "sys/user",
@@ -144,7 +144,7 @@ func TestValidatorI18nAlphanumRules(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "actionWithSlashInvalid",
+			name: "ActionWithSlashInvalid",
 			data: testStruct{
 				Action:   "get/user",
 				Resource: "sys/user",
@@ -153,7 +153,7 @@ func TestValidatorI18nAlphanumRules(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "resourceWithDotInvalid",
+			name: "ResourceWithDotInvalid",
 			data: testStruct{
 				Action:   "get_user",
 				Resource: "sys.user",
@@ -162,7 +162,7 @@ func TestValidatorI18nAlphanumRules(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "fileNameWithSlashInvalid",
+			name: "FileNameWithSlashInvalid",
 			data: testStruct{
 				Action:   "get_user",
 				Resource: "sys/user",
@@ -171,7 +171,7 @@ func TestValidatorI18nAlphanumRules(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "multipleInvalidFields",
+			name: "MultipleInvalidFields",
 			data: testStruct{
 				Action:   "get-user",
 				Resource: "sys.user",

@@ -439,27 +439,27 @@ func TestAssertErrorContains(t *testing.T) {
 }
 
 func TestAssertHelpers(t *testing.T) {
-	t.Run("assertNoErrorWithContext", func(t *testing.T) {
+	t.Run("AssertNoErrorWithContext", func(t *testing.T) {
 		// Just verify the function works without panicking
 		_ = assertNoErrorWithContext(t, nil, "test context")
 	})
 
-	t.Run("assertErrorWithContext", func(t *testing.T) {
+	t.Run("AssertErrorWithContext", func(t *testing.T) {
 		// Just verify the function works without panicking
 		_ = assertErrorWithContext(t, errors.New("error"), "test context")
 	})
 
-	t.Run("assertNotEmptyWithContext", func(t *testing.T) {
+	t.Run("AssertNotEmptyWithContext", func(t *testing.T) {
 		// Just verify the function works without panicking
 		_ = assertNotEmptyWithContext(t, "value", "test context")
 	})
 
-	t.Run("assertContainsWithContext", func(t *testing.T) {
+	t.Run("AssertContainsWithContext", func(t *testing.T) {
 		// Just verify the function works without panicking
 		_ = assertContainsWithContext(t, "hello world", "world", "test context")
 	})
 
-	t.Run("assertEqualWithContext", func(t *testing.T) {
+	t.Run("AssertEqualWithContext", func(t *testing.T) {
 		// Just verify the function works without panicking
 		_ = assertEqualWithContext(t, 42, 42, "number field")
 	})

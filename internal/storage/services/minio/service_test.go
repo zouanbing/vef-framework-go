@@ -88,8 +88,6 @@ func (suite *MinIOServiceTestSuite) SetupTest() {
 }
 
 func (suite *MinIOServiceTestSuite) TestPutObject() {
-	suite.T().Logf("Testing PutObject for MinIO service")
-
 	suite.Run("Success", func() {
 		reader := bytes.NewReader(suite.testObjectData)
 
@@ -114,8 +112,6 @@ func (suite *MinIOServiceTestSuite) TestPutObject() {
 }
 
 func (suite *MinIOServiceTestSuite) TestGetObject() {
-	suite.T().Logf("Testing GetObject for MinIO service")
-
 	suite.Run("Success", func() {
 		suite.uploadTestObject()
 
@@ -145,8 +141,6 @@ func (suite *MinIOServiceTestSuite) TestGetObject() {
 }
 
 func (suite *MinIOServiceTestSuite) TestDeleteObject() {
-	suite.T().Logf("Testing DeleteObject for MinIO service")
-
 	suite.Run("Success", func() {
 		suite.uploadTestObject()
 
@@ -172,8 +166,6 @@ func (suite *MinIOServiceTestSuite) TestDeleteObject() {
 }
 
 func (suite *MinIOServiceTestSuite) TestDeleteObjects() {
-	suite.T().Logf("Testing DeleteObjects for MinIO service")
-
 	suite.Run("Success", func() {
 		keys := []string{"file1.txt", "file2.txt", "file3.txt"}
 		for _, key := range keys {
@@ -196,8 +188,6 @@ func (suite *MinIOServiceTestSuite) TestDeleteObjects() {
 }
 
 func (suite *MinIOServiceTestSuite) TestListObjects() {
-	suite.T().Logf("Testing ListObjects for MinIO service")
-
 	objects := map[string][]byte{
 		"folder1/file1.txt": []byte("content1"),
 		"folder1/file2.txt": []byte("content2"),
@@ -244,8 +234,6 @@ func (suite *MinIOServiceTestSuite) TestListObjects() {
 }
 
 func (suite *MinIOServiceTestSuite) TestGetPresignedURL() {
-	suite.T().Logf("Testing GetPresignedURL for MinIO service")
-
 	suite.Run("GetMethod", func() {
 		suite.uploadTestObject()
 
@@ -310,8 +298,6 @@ func (suite *MinIOServiceTestSuite) TestGetPresignedURL() {
 }
 
 func (suite *MinIOServiceTestSuite) TestCopyObject() {
-	suite.T().Logf("Testing CopyObject for MinIO service")
-
 	suite.Run("Success", func() {
 		suite.uploadTestObject()
 
@@ -351,8 +337,6 @@ func (suite *MinIOServiceTestSuite) TestCopyObject() {
 }
 
 func (suite *MinIOServiceTestSuite) TestMoveObject() {
-	suite.T().Logf("Testing MoveObject for MinIO service")
-
 	suite.Run("Success", func() {
 		suite.uploadTestObject()
 
@@ -389,8 +373,6 @@ func (suite *MinIOServiceTestSuite) TestMoveObject() {
 }
 
 func (suite *MinIOServiceTestSuite) TestStatObject() {
-	suite.T().Logf("Testing StatObject for MinIO service")
-
 	suite.Run("Success", func() {
 		suite.uploadTestObject()
 
@@ -419,8 +401,6 @@ func (suite *MinIOServiceTestSuite) TestStatObject() {
 }
 
 func (suite *MinIOServiceTestSuite) TestPromoteObject() {
-	suite.T().Logf("Testing PromoteObject for MinIO service")
-
 	suite.Run("Success", func() {
 		tempKey := storage.TempPrefix + "2025/01/15/test-promote.txt"
 		content := []byte("Content to be promoted")

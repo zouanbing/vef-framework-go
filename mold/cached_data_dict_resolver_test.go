@@ -42,8 +42,6 @@ func (s *CachedDataDictResolverTestSuite) newResolver(loader DataDictLoader) Dat
 }
 
 func (s *CachedDataDictResolverTestSuite) TestCachesEntries() {
-	s.T().Logf("Testing cache entries behavior")
-
 	loader := new(MockDataDictLoader)
 	loader.On("Load", mock.Anything, "status").Return(map[string]string{
 		"draft":     "草稿",
@@ -66,8 +64,6 @@ func (s *CachedDataDictResolverTestSuite) TestCachesEntries() {
 }
 
 func (s *CachedDataDictResolverTestSuite) TestInvalidatesSpecificKeys() {
-	s.T().Logf("Testing specific key invalidation")
-
 	loader := new(MockDataDictLoader)
 	loader.On("Load", mock.Anything, "status").Return(map[string]string{
 		"draft": "草稿",
@@ -97,8 +93,6 @@ func (s *CachedDataDictResolverTestSuite) TestInvalidatesSpecificKeys() {
 }
 
 func (s *CachedDataDictResolverTestSuite) TestInvalidatesAllKeys() {
-	s.T().Logf("Testing global key invalidation")
-
 	loader := new(MockDataDictLoader)
 	loader.On("Load", mock.Anything, "status").Return(map[string]string{
 		"draft": "草稿",
@@ -136,8 +130,6 @@ func (s *CachedDataDictResolverTestSuite) TestInvalidatesAllKeys() {
 }
 
 func (s *CachedDataDictResolverTestSuite) TestLoaderError() {
-	s.T().Logf("Testing loader error handling")
-
 	loader := new(MockDataDictLoader)
 	expectedErr := context.DeadlineExceeded
 	loader.On("Load", mock.Anything, "status").Return(map[string]string(nil), expectedErr).Once()
@@ -155,8 +147,6 @@ func (s *CachedDataDictResolverTestSuite) TestLoaderError() {
 }
 
 func (s *CachedDataDictResolverTestSuite) TestEmptyKeyOrCode() {
-	s.T().Logf("Testing empty key or code handling")
-
 	loader := new(MockDataDictLoader)
 
 	resolver := s.newResolver(loader)
@@ -175,8 +165,6 @@ func (s *CachedDataDictResolverTestSuite) TestEmptyKeyOrCode() {
 }
 
 func (s *CachedDataDictResolverTestSuite) TestCodeNotFound() {
-	s.T().Logf("Testing code not found scenario")
-
 	loader := new(MockDataDictLoader)
 	loader.On("Load", mock.Anything, "status").Return(map[string]string{
 		"draft":     "草稿",
@@ -194,8 +182,6 @@ func (s *CachedDataDictResolverTestSuite) TestCodeNotFound() {
 }
 
 func (s *CachedDataDictResolverTestSuite) TestPanicsWhenLoaderIsNil() {
-	s.T().Logf("Testing panic when loader is nil")
-
 	s.Panics(func() {
 		NewCachedDataDictResolver(nil, s.bus)
 	}, "Expected panic when loader is nil")
@@ -204,8 +190,6 @@ func (s *CachedDataDictResolverTestSuite) TestPanicsWhenLoaderIsNil() {
 }
 
 func (s *CachedDataDictResolverTestSuite) TestPanicsWhenBusIsNil() {
-	s.T().Logf("Testing panic when bus is nil")
-
 	loader := new(MockDataDictLoader)
 	s.Panics(func() {
 		NewCachedDataDictResolver(loader, nil)
@@ -215,8 +199,6 @@ func (s *CachedDataDictResolverTestSuite) TestPanicsWhenBusIsNil() {
 }
 
 func (s *CachedDataDictResolverTestSuite) TestNilCacheCreatesDefault() {
-	s.T().Logf("Testing default cache creation")
-
 	loader := new(MockDataDictLoader)
 	loader.On("Load", mock.Anything, "status").Return(map[string]string{
 		"draft": "草稿",
@@ -235,8 +217,6 @@ func (s *CachedDataDictResolverTestSuite) TestNilCacheCreatesDefault() {
 // TestSingleflightMergesConcurrentRequests verifies that concurrent requests for the same dictionary key
 // are merged by singleflight and only trigger one underlying load operation.
 func (s *CachedDataDictResolverTestSuite) TestSingleflightMergesConcurrentRequests() {
-	s.T().Logf("Testing singleflight concurrent request merging")
-
 	loader := new(MockDataDictLoader)
 
 	// Setup mock to return dictionary data for the key
