@@ -54,7 +54,7 @@ func NewMinIOContainer(ctx context.Context, t testing.TB) *MinIOContainer {
 			AccessKey: TestMinIOAccessKey,
 			SecretKey: TestMinIOSecretKey,
 			UseSSL:    false,
-			Bucket:    TestMinioBucket,
+			Bucket:    TestMinIOBucket,
 		},
 	}
 }

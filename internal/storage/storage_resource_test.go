@@ -49,7 +49,7 @@ func (suite *StorageResourceTestSuite) SetupSuite() {
 	suite.T().Log("Setting up StorageResourceTestSuite - starting MinIO container and test app")
 
 	suite.ctx = context.Background()
-	suite.testBucketName = testx.TestMinioBucket
+	suite.testBucketName = testx.TestMinIOBucket
 	suite.testObjectKey = "test-upload.txt"
 	suite.testObjectData = []byte("Hello, Storage API Test!")
 	suite.testContentType = "text/plain"

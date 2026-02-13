@@ -34,7 +34,7 @@ type MinIOServiceTestSuite struct {
 
 func (suite *MinIOServiceTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
-	suite.testBucketName = testx.TestMinioBucket
+	suite.testBucketName = testx.TestMinIOBucket
 	suite.testObjectKey = "test-file.txt"
 	suite.testObjectData = []byte("Hello, MinIO Test!")
 	suite.testContentType = "text/plain"

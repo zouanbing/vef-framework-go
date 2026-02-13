@@ -13,7 +13,7 @@ const (
 // Database credentials.
 const (
 	TestDatabaseName = "testdb"
-	TestUsername     = "testuser"
+	TestUsername      = "testuser"
 	TestPassword     = "testpass"
 )
 
@@ -21,10 +21,8 @@ const (
 const (
 	TestMinIOAccessKey = "testadmin"
 	TestMinIOSecretKey = "testadmin"
-	TestMinioBucket    = "testbucket"
+	TestMinIOBucket    = "testbucket"
 )
 
-// Timeouts.
-const (
-	DefaultContainerTimeout = 30 * time.Second
-)
+// DefaultContainerTimeout is the maximum wait time for container readiness.
+const DefaultContainerTimeout = 30 * time.Second
