@@ -7,7 +7,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/log"
 )
 
-var logger = log.Named("strhelpers")
+var logger = log.Named("strx")
 
 const (
 	// DefaultKey is the key used for values without an explicit key.
