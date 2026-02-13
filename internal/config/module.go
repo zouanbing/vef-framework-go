@@ -15,6 +15,6 @@ var Module = fx.Module(
 		newRedisConfig,
 		newStorageConfig,
 		newMonitorConfig,
-		newMcpConfig,
+		newMCPConfig,
 	),
 )

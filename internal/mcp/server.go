@@ -20,7 +20,7 @@ var logger = ilog.Named("mcp")
 type ServerParams struct {
 	fx.In
 
-	McpConfig         *config.McpConfig
+	MCPConfig         *config.MCPConfig
 	AppConfig         *config.AppConfig
 	ToolProviders     []mcp.ToolProvider             `group:"vef:mcp:tools"`
 	ResourceProviders []mcp.ResourceProvider         `group:"vef:mcp:resources"`
@@ -30,7 +30,7 @@ type ServerParams struct {
 }
 
 func NewServer(params ServerParams) *smcp.Server {
-	if !params.McpConfig.Enabled {
+	if !params.MCPConfig.Enabled {
 		logger.Info("MCP is disabled by configuration")
 
 		return nil

@@ -20,7 +20,7 @@ type Handler struct {
 type HandlerParams struct {
 	fx.In
 
-	McpConfig   *config.McpConfig
+	MCPConfig   *config.MCPConfig
 	Server      *mcp.Server `optional:"true"`
 	AuthManager security.AuthManager
 }
@@ -31,7 +31,7 @@ func NewHandler(params HandlerParams) *Handler {
 	}
 
 	httpHandler := createHTTPHandler(params.Server)
-	if params.McpConfig.RequireAuth {
+	if params.MCPConfig.RequireAuth {
 		httpHandler = applyAuthMiddleware(httpHandler, params.AuthManager)
 	}
 

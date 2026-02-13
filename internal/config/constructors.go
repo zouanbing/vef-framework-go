@@ -46,6 +46,6 @@ func newMonitorConfig(cfg config.Config) (*config.MonitorConfig, error) {
 	return unmarshalConfig(cfg, "vef.monitor", &monitorConfig)
 }
 
-func newMcpConfig(cfg config.Config) (*config.McpConfig, error) {
-	return unmarshalConfig(cfg, "vef.mcp", new(config.McpConfig))
+func newMCPConfig(cfg config.Config) (*config.MCPConfig, error) {
+	return unmarshalConfig(cfg, "vef.mcp", new(config.MCPConfig))
 }

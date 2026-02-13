@@ -9,8 +9,8 @@ import (
 
 const mcpPath = "/mcp"
 
-// McpMiddleware registers MCP routes if a handler is available.
-type McpMiddleware struct {
+// MCPMiddleware registers MCP routes if a handler is available.
+type MCPMiddleware struct {
 	handler *Handler
 }
 
@@ -28,18 +28,18 @@ func NewMiddleware(params MiddlewareParams) app.Middleware {
 		return nil
 	}
 
-	return &McpMiddleware{handler: params.Handler}
+	return &MCPMiddleware{handler: params.Handler}
 }
 
-func (*McpMiddleware) Name() string {
+func (*MCPMiddleware) Name() string {
 	return "mcp"
 }
 
-func (*McpMiddleware) Order() int {
+func (*MCPMiddleware) Order() int {
 	return 500
 }
 
-func (m *McpMiddleware) Apply(router fiber.Router) {
+func (m *MCPMiddleware) Apply(router fiber.Router) {
 	if m.handler == nil {
 		return
 	}

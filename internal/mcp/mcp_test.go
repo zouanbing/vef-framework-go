@@ -47,8 +47,8 @@ func (m *MockUserLoader) LoadByID(ctx context.Context, id string) (*security.Pri
 	return args.Get(0).(*security.Principal), args.Error(1)
 }
 
-// McpTestSuite tests the MCP endpoint functionality with authentication.
-type McpTestSuite struct {
+// MCPTestSuite tests the MCP endpoint functionality with authentication.
+type MCPTestSuite struct {
 	suite.Suite
 
 	ctx        context.Context
@@ -60,8 +60,8 @@ type McpTestSuite struct {
 }
 
 // SetupSuite runs once before all tests in the suite.
-func (suite *McpTestSuite) SetupSuite() {
-	suite.T().Log("Setting up McpTestSuite - initializing test app with MCP")
+func (suite *MCPTestSuite) SetupSuite() {
+	suite.T().Log("Setting up MCPTestSuite - initializing test app with MCP")
 
 	suite.ctx = context.Background()
 	suite.jwtSecret = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
@@ -75,26 +75,26 @@ func (suite *McpTestSuite) SetupSuite() {
 
 	suite.setupTestApp()
 
-	suite.T().Log("McpTestSuite setup complete - test app ready")
+	suite.T().Log("MCPTestSuite setup complete - test app ready")
 }
 
 // TearDownSuite runs once after all tests in the suite.
-func (suite *McpTestSuite) TearDownSuite() {
-	suite.T().Log("Tearing down McpTestSuite")
+func (suite *MCPTestSuite) TearDownSuite() {
+	suite.T().Log("Tearing down MCPTestSuite")
 
 	if suite.stop != nil {
 		suite.stop()
 	}
 
-	suite.T().Log("McpTestSuite teardown complete")
+	suite.T().Log("MCPTestSuite teardown complete")
 }
 
 // SetupTest runs before each test.
-func (suite *McpTestSuite) SetupTest() {
+func (suite *MCPTestSuite) SetupTest() {
 	suite.userLoader.Calls = nil
 }
 
-func (suite *McpTestSuite) setupTestApp() {
+func (suite *MCPTestSuite) setupTestApp() {
 	hashedPassword, err := password.NewBcryptEncoder().Encode("password123")
 	suite.Require().NoError(err)
 
@@ -110,7 +110,7 @@ func (suite *McpTestSuite) setupTestApp() {
 			&config.DataSourceConfig{
 				Type: "sqlite",
 			},
-			&config.McpConfig{
+			&config.MCPConfig{
 				Enabled:     true,
 				RequireAuth: true,
 			},
@@ -136,7 +136,7 @@ func (suite *McpTestSuite) setupTestApp() {
 
 // Helper methods
 
-func (suite *McpTestSuite) makeMcpRequest(body string) *http.Response {
+func (suite *MCPTestSuite) makeMCPRequest(body string) *http.Response {
 	req := httptest.NewRequest(fiber.MethodPost, "/mcp", strings.NewReader(body))
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 	req.Header.Set("Accept", "application/json, text/event-stream")
@@ -147,7 +147,7 @@ func (suite *McpTestSuite) makeMcpRequest(body string) *http.Response {
 	return resp
 }
 
-func (suite *McpTestSuite) makeMcpRequestWithToken(body, token string) *http.Response {
+func (suite *MCPTestSuite) makeMCPRequestWithToken(body, token string) *http.Response {
 	req := httptest.NewRequest(fiber.MethodPost, "/mcp", strings.NewReader(body))
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 	req.Header.Set("Accept", "application/json, text/event-stream")
@@ -159,7 +159,7 @@ func (suite *McpTestSuite) makeMcpRequestWithToken(body, token string) *http.Res
 	return resp
 }
 
-func (suite *McpTestSuite) getAccessToken() string {
+func (suite *MCPTestSuite) getAccessToken() string {
 	hashedPassword, _ := password.NewBcryptEncoder().Encode("password123")
 
 	suite.userLoader.On("LoadByUsername", mock.Anything, "testuser").
@@ -209,7 +209,7 @@ func (suite *McpTestSuite) getAccessToken() string {
 	return bodyStr[startIdx:endIdx]
 }
 
-func (suite *McpTestSuite) readBody(resp *http.Response) string {
+func (suite *MCPTestSuite) readBody(resp *http.Response) string {
 	body, err := io.ReadAll(resp.Body)
 	defer resp.Body.Close()
 
@@ -220,16 +220,16 @@ func (suite *McpTestSuite) readBody(resp *http.Response) string {
 
 // Test Cases
 
-// TestMcpEndpointRequiresAuthentication tests that MCP endpoint requires authentication.
+// TestMCPEndpointRequiresAuthentication tests that MCP endpoint requires authentication.
 // It verifies that requests without valid tokens are rejected with 401 Unauthorized.
-func (suite *McpTestSuite) TestMcpEndpointRequiresAuthentication() {
+func (suite *MCPTestSuite) TestMCPEndpointRequiresAuthentication() {
 	suite.T().Log("Testing MCP endpoint authentication requirement")
 
 	// Test 1: Request without any token
 	suite.Run("RequestWithoutToken", func() {
 		body := `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test-client","version":"1.0.0"}}}`
 
-		resp := suite.makeMcpRequest(body)
+		resp := suite.makeMCPRequest(body)
 
 		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized without token")
 		suite.T().Log("Request without token correctly rejected with 401")
@@ -239,7 +239,7 @@ func (suite *McpTestSuite) TestMcpEndpointRequiresAuthentication() {
 	suite.Run("RequestWithInvalidToken", func() {
 		body := `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test-client","version":"1.0.0"}}}`
 
-		resp := suite.makeMcpRequestWithToken(body, "invalid.token.here")
+		resp := suite.makeMCPRequestWithToken(body, "invalid.token.here")
 
 		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized with invalid token")
 		suite.T().Log("Request with invalid token correctly rejected with 401")
@@ -249,16 +249,16 @@ func (suite *McpTestSuite) TestMcpEndpointRequiresAuthentication() {
 	suite.Run("RequestWithEmptyToken", func() {
 		body := `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test-client","version":"1.0.0"}}}`
 
-		resp := suite.makeMcpRequestWithToken(body, "")
+		resp := suite.makeMCPRequestWithToken(body, "")
 
 		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized with empty token")
 		suite.T().Log("Request with empty token correctly rejected with 401")
 	})
 }
 
-// TestMcpEndpointWithValidToken tests MCP endpoint accepts valid authentication.
+// TestMCPEndpointWithValidToken tests MCP endpoint accepts valid authentication.
 // It verifies that authenticated requests are processed successfully.
-func (suite *McpTestSuite) TestMcpEndpointWithValidToken() {
+func (suite *MCPTestSuite) TestMCPEndpointWithValidToken() {
 	suite.T().Log("Testing MCP endpoint with valid authentication")
 
 	// Test 1: Initialize with valid JWT token
@@ -269,7 +269,7 @@ func (suite *McpTestSuite) TestMcpEndpointWithValidToken() {
 
 		body := `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test-client","version":"1.0.0"}}}`
 
-		resp := suite.makeMcpRequestWithToken(body, token)
+		resp := suite.makeMCPRequestWithToken(body, token)
 
 		// Step 1: Should not return 401 when token is valid
 		suite.NotEqual(401, resp.StatusCode, "Should not return 401 with valid token")
@@ -286,8 +286,8 @@ func (suite *McpTestSuite) TestMcpEndpointWithValidToken() {
 	})
 }
 
-// TestMcpEndpointMethods tests various MCP methods with authentication.
-func (suite *McpTestSuite) TestMcpEndpointMethods() {
+// TestMCPEndpointMethods tests various MCP methods with authentication.
+func (suite *MCPTestSuite) TestMCPEndpointMethods() {
 	suite.T().Log("Testing MCP endpoint methods")
 
 	token := suite.getAccessToken()
@@ -296,13 +296,13 @@ func (suite *McpTestSuite) TestMcpEndpointMethods() {
 	suite.Run("ListTools", func() {
 		// First initialize
 		initBody := `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test-client","version":"1.0.0"}}}`
-		initResp := suite.makeMcpRequestWithToken(initBody, token)
+		initResp := suite.makeMCPRequestWithToken(initBody, token)
 		suite.NotEqual(401, initResp.StatusCode, "Initialize should not return 401")
 
 		// Then list tools
 		body := `{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}`
 
-		resp := suite.makeMcpRequestWithToken(body, token)
+		resp := suite.makeMCPRequestWithToken(body, token)
 
 		suite.NotEqual(401, resp.StatusCode, "ListTools should not return 401 with valid token")
 
@@ -313,7 +313,7 @@ func (suite *McpTestSuite) TestMcpEndpointMethods() {
 	suite.Run("ListResources", func() {
 		body := `{"jsonrpc":"2.0","id":3,"method":"resources/list","params":{}}`
 
-		resp := suite.makeMcpRequestWithToken(body, token)
+		resp := suite.makeMCPRequestWithToken(body, token)
 
 		suite.NotEqual(401, resp.StatusCode, "ListResources should not return 401 with valid token")
 	})
@@ -321,15 +321,15 @@ func (suite *McpTestSuite) TestMcpEndpointMethods() {
 	suite.Run("ListPrompts", func() {
 		body := `{"jsonrpc":"2.0","id":4,"method":"prompts/list","params":{}}`
 
-		resp := suite.makeMcpRequestWithToken(body, token)
+		resp := suite.makeMCPRequestWithToken(body, token)
 
 		suite.NotEqual(401, resp.StatusCode, "ListPrompts should not return 401 with valid token")
 	})
 }
 
-// TestMcpEndpointTokenExpiration tests that expired tokens are rejected.
+// TestMCPEndpointTokenExpiration tests that expired tokens are rejected.
 // It verifies token expiration and signature validation.
-func (suite *McpTestSuite) TestMcpEndpointTokenExpiration() {
+func (suite *MCPTestSuite) TestMCPEndpointTokenExpiration() {
 	suite.T().Log("Testing MCP endpoint token expiration handling")
 
 	// Test 1: Expired or malformed token
@@ -339,15 +339,15 @@ func (suite *McpTestSuite) TestMcpEndpointTokenExpiration() {
 
 		body := `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test-client","version":"1.0.0"}}}`
 
-		resp := suite.makeMcpRequestWithToken(body, expiredToken)
+		resp := suite.makeMCPRequestWithToken(body, expiredToken)
 
 		suite.Equal(401, resp.StatusCode, "Should return 401 with expired/invalid token")
 		suite.T().Log("Expired token correctly rejected with 401")
 	})
 }
 
-// TestMcpEndpointAuthorizationHeader tests different Authorization header formats.
-func (suite *McpTestSuite) TestMcpEndpointAuthorizationHeader() {
+// TestMCPEndpointAuthorizationHeader tests different Authorization header formats.
+func (suite *MCPTestSuite) TestMCPEndpointAuthorizationHeader() {
 	suite.T().Log("Testing MCP endpoint Authorization header formats")
 
 	token := suite.getAccessToken()
@@ -397,6 +397,6 @@ func (suite *McpTestSuite) TestMcpEndpointAuthorizationHeader() {
 	})
 }
 
-func TestMcpTestSuite(t *testing.T) {
-	suite.Run(t, new(McpTestSuite))
+func TestMCPTestSuite(t *testing.T) {
+	suite.Run(t, new(MCPTestSuite))
 }
