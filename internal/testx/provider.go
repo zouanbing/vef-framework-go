@@ -11,24 +11,32 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 )
 
-type dbProvider struct {
-	dbType      config.DBType
-	displayName string
-	setup       func(t *testing.T) *DBEnv
-}
+// dbSetupFunc creates a DataSourceConfig (spinning up a container if needed).
+type dbSetupFunc func(ctx context.Context, t *testing.T) *config.DataSourceConfig
 
-var providers = []dbProvider{
-	{dbType: config.Postgres, displayName: "Postgres", setup: setupPostgres},
-	{dbType: config.MySQL, displayName: "MySQL", setup: setupMySQL},
-	{dbType: config.SQLite, displayName: "SQLite", setup: setupSQLite},
+var providers = []struct {
+	name  string
+	setup dbSetupFunc
+}{
+	{"Postgres", func(ctx context.Context, t *testing.T) *config.DataSourceConfig {
+		return NewPostgresContainer(ctx, t).DsConfig
+	}},
+	{"MySQL", func(ctx context.Context, t *testing.T) *config.DataSourceConfig {
+		return NewMySQLContainer(ctx, t).DsConfig
+	}},
+	{"SQLite", func(_ context.Context, _ *testing.T) *config.DataSourceConfig {
+		return &config.DataSourceConfig{Type: config.SQLite}
+	}},
 }
 
 // ForEachDB runs fn once per enabled database, managing container lifecycle automatically.
 // Test hierarchy: t.Run("<DisplayName>", fn).
 func ForEachDB(t *testing.T, fn func(t *testing.T, env *DBEnv)) {
 	for _, p := range providers {
-		t.Run(p.displayName, func(t *testing.T) {
-			env := p.setup(t)
+		t.Run(p.name, func(t *testing.T) {
+			ctx := context.Background()
+			dsConfig := p.setup(ctx, t)
+			env := newDBEnv(t, ctx, dsConfig)
 			fn(t, env)
 		})
 	}
@@ -53,22 +61,4 @@ func newDBEnv(t *testing.T, ctx context.Context, dsConfig *config.DataSourceConf
 		DBType:   dsConfig.Type,
 		DsConfig: dsConfig,
 	}
-}
-
-func setupPostgres(t *testing.T) *DBEnv {
-	ctx := context.Background()
-	c := NewPostgresContainer(ctx, t)
-	return newDBEnv(t, ctx, c.DsConfig)
-}
-
-func setupMySQL(t *testing.T) *DBEnv {
-	ctx := context.Background()
-	c := NewMySQLContainer(ctx, t)
-	return newDBEnv(t, ctx, c.DsConfig)
-}
-
-func setupSQLite(t *testing.T) *DBEnv {
-	ctx := context.Background()
-	dsConfig := &config.DataSourceConfig{Type: config.SQLite}
-	return newDBEnv(t, ctx, dsConfig)
 }
