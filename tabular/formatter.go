@@ -109,7 +109,7 @@ func (f *defaultFormatter) Format(value any) (string, error) {
 	}
 
 	// Handle formatted output for specific types
-	if f.format != "" {
+	if f.format != constants.Empty {
 		switch v := value.(type) {
 		case float32, float64:
 			return fmt.Sprintf(f.format, v), nil

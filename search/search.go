@@ -117,6 +117,8 @@ func applyCondition(cb orm.ConditionBuilder, c Condition, columns []string, valu
 		ContainsIgnoreCase, NotContainsIgnoreCase, StartsWithIgnoreCase, NotStartsWithIgnoreCase,
 		EndsWithIgnoreCase, NotEndsWithIgnoreCase:
 		applyLikeCondition(cb, columns, value, c.Operator)
+	default:
+		logger.Warnf("Unknown operator %q for columns %v, condition ignored", c.Operator, columns)
 	}
 }
 
