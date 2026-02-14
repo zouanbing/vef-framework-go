@@ -1,7 +1,6 @@
 package orm_test
 
 import (
-	"database/sql"
 	"time"
 
 	"github.com/stretchr/testify/suite"
@@ -20,8 +19,48 @@ func init() {
 // UpdateTestSuite tests UPDATE operations including CTE operations, table sources,
 // selection methods, filter operations, column updates, flags, ordering, RETURNING clause,
 // Apply methods, and execution methods across all databases.
+//
+// SetupTest inserts fresh test data before each test method; TearDownTest cleans it up.
+// This ensures update operations never modify fixture data.
 type UpdateTestSuite struct {
 	*BaseTestSuite
+	testUsers []*User
+	testPosts []*Post
+}
+
+// SetupTest inserts isolated test data before each test method.
+func (suite *UpdateTestSuite) SetupTest() {
+	suite.testUsers = []*User{
+		{Name: "UT Alice", Email: "ut_alice@test.com", Age: 30, IsActive: true},
+		{Name: "UT Bob", Email: "ut_bob@test.com", Age: 25, IsActive: true},
+		{Name: "UT Charlie", Email: "ut_charlie@test.com", Age: 35, IsActive: false},
+	}
+
+	_, err := suite.db.NewInsert().Model(&suite.testUsers).Exec(suite.ctx)
+	suite.Require().NoError(err, "Failed to insert test users")
+
+	suite.testPosts = []*Post{
+		{Title: "UT Post Alpha", Content: "Content A", UserID: suite.testUsers[0].ID, CategoryID: "cat001", Status: "published", ViewCount: 100},
+		{Title: "UT Post Beta", Content: "Content B", UserID: suite.testUsers[0].ID, CategoryID: "cat001", Status: "draft", ViewCount: 50},
+		{Title: "UT Post Gamma", Content: "Content C", UserID: suite.testUsers[1].ID, CategoryID: "cat002", Status: "published", ViewCount: 75},
+		{Title: "UT Post Delta", Content: "Content D", UserID: suite.testUsers[2].ID, CategoryID: "cat001", Status: "review", ViewCount: 30},
+	}
+
+	_, err = suite.db.NewInsert().Model(&suite.testPosts).Exec(suite.ctx)
+	suite.Require().NoError(err, "Failed to insert test posts")
+}
+
+// TearDownTest removes all test-inserted data (created_at >= 2026) after each test method.
+func (suite *UpdateTestSuite) TearDownTest() {
+	// Delete test posts first (FK constraint on user_id)
+	_, _ = suite.db.NewDelete().Model((*Post)(nil)).Where(func(cb orm.ConditionBuilder) {
+		cb.GreaterThanOrEqual("created_at", fixtureEndDate)
+	}).Exec(suite.ctx)
+
+	// Delete test users
+	_, _ = suite.db.NewDelete().Model((*User)(nil)).Where(func(cb orm.ConditionBuilder) {
+		cb.GreaterThanOrEqual("created_at", fixtureEndDate)
+	}).Exec(suite.ctx)
 }
 
 // TestCTE tests Common Table Expression methods (With, WithValues, WithRecursive).
@@ -29,13 +68,15 @@ func (suite *UpdateTestSuite) TestCTE() {
 	suite.T().Logf("Testing CTE methods for %s", suite.ds.Kind)
 
 	suite.Run("WithBasicCTE", func() {
-		// Create CTE of active users, then update posts from those users
+		// Create CTE of active test users, then update their posts
+		activeUserIDs := []string{suite.testUsers[0].ID, suite.testUsers[1].ID}
+
 		result, err := suite.db.NewUpdate().
 			With("active_users", func(query orm.SelectQuery) {
 				query.Model((*User)(nil)).
 					Select("id").
 					Where(func(cb orm.ConditionBuilder) {
-						cb.IsTrue("is_active")
+						cb.In("id", activeUserIDs).IsTrue("is_active")
 					})
 			}).
 			Model((*Post)(nil)).
@@ -57,24 +98,7 @@ func (suite *UpdateTestSuite) TestCTE() {
 	})
 
 	suite.Run("WithValuesCTE", func() {
-		// First, get specific post IDs to update (to avoid affecting other tests)
-		var postsToUpdate []Post
-
-		err := suite.db.NewSelect().
-			Model(&postsToUpdate).
-			Where(func(cb orm.ConditionBuilder) {
-				cb.In("status", []string{"published", "draft"})
-			}).
-			OrderBy("id").
-			Limit(2). // Only update 2 posts to minimize impact
-			Scan(suite.ctx)
-		suite.NoError(err, "Should fetch posts to update")
-		suite.True(len(postsToUpdate) >= 2, "Should have at least 2 posts to update")
-
-		postIDs := make([]string, len(postsToUpdate))
-		for i, p := range postsToUpdate {
-			postIDs[i] = p.ID
-		}
+		postIDs := []string{suite.testPosts[0].ID, suite.testPosts[1].ID}
 
 		type StatusMapping struct {
 			OldStatus string `bun:"old_status"`
@@ -95,7 +119,7 @@ func (suite *UpdateTestSuite) TestCTE() {
 			}).
 			Where(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("status", "sm.old_status").
-					In("id", postIDs) // Only update the specific posts we selected
+					In("id", postIDs)
 			}).
 			Exec(suite.ctx)
 
@@ -115,7 +139,7 @@ func (suite *UpdateTestSuite) TestTableSource() {
 			Model((*User)(nil)).
 			Set("updated_by", "model_test").
 			Where(func(cb orm.ConditionBuilder) {
-				cb.Equals("email", "alice@example.com")
+				cb.PKEquals(suite.testUsers[0].ID)
 			}).
 			Exec(suite.ctx)
 
@@ -133,7 +157,7 @@ func (suite *UpdateTestSuite) TestTableSource() {
 			ModelTable("test_user", "u").
 			Set("updated_by", "model_table_test").
 			Where(func(cb orm.ConditionBuilder) {
-				cb.Equals("u.email", "alice@example.com")
+				cb.Equals("u.id", suite.testUsers[0].ID)
 			}).
 			Exec(suite.ctx)
 
@@ -146,18 +170,11 @@ func (suite *UpdateTestSuite) TestTableSource() {
 	})
 
 	suite.Run("TableDirect", func() {
-		testPosts := []Post{
-			{Title: "Table Direct Post", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "draft"},
-		}
-
-		_, err := suite.db.NewInsert().Model(&testPosts).Exec(suite.ctx)
-		suite.NoError(err, "Should insert test post")
-
 		result, err := suite.db.NewUpdate().
 			Table("test_post", "p").
 			Set("status", "published").
 			Where(func(cb orm.ConditionBuilder) {
-				cb.Equals("p.title", "Table Direct Post")
+				cb.Equals("p.id", suite.testPosts[1].ID)
 			}).
 			Exec(suite.ctx)
 
@@ -171,18 +188,11 @@ func (suite *UpdateTestSuite) TestTableSource() {
 	})
 
 	suite.Run("TableFrom", func() {
-		testPosts := []Post{
-			{Title: "TableFrom Post", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "draft"},
-		}
-
-		_, err := suite.db.NewInsert().Model(&testPosts).Exec(suite.ctx)
-		suite.NoError(err, "Should insert test post")
-
 		result, err := suite.db.NewUpdate().
 			TableFrom((*Post)(nil), "p").
 			Set("status", "archived").
 			Where(func(cb orm.ConditionBuilder) {
-				cb.Equals("p.title", "TableFrom Post")
+				cb.Equals("p.id", suite.testPosts[0].ID)
 			}).
 			Exec(suite.ctx)
 
@@ -196,29 +206,8 @@ func (suite *UpdateTestSuite) TestTableSource() {
 	})
 
 	suite.Run("TableExpr", func() {
-		// Setup: Create an inactive user and their post
-		testUser := &User{
-			Name:     "Inactive Author",
-			Email:    "inactive.author@example.com",
-			Age:      30,
-			IsActive: false,
-		}
-		_, err := suite.db.NewInsert().Model(testUser).Exec(suite.ctx)
-		suite.NoError(err, "Should insert test user")
-
-		testPost := &Post{
-			Title:      "Post by Inactive User",
-			Content:    "This post should be archived",
-			UserID:     testUser.ID,
-			CategoryID: "cat1",
-			Status:     "published",
-		}
-		_, err = suite.db.NewInsert().Model(testPost).Exec(suite.ctx)
-		suite.NoError(err, "Should insert test post")
-
-		var result sql.Result
-
-		result, err = suite.db.NewUpdate().
+		// Use the inactive test user (testUsers[2]) and their post (testPosts[3])
+		result, err := suite.db.NewUpdate().
 			Model((*Post)(nil)).
 			TableExpr(func(eb orm.ExprBuilder) any {
 				return eb.SubQuery(func(sq orm.SelectQuery) {
@@ -229,7 +218,7 @@ func (suite *UpdateTestSuite) TestTableSource() {
 			Set("updated_by", "multi_table_update").
 			Where(func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("user_id", "u.id").
-					IsFalse("u.is_active")
+					Equals("u.id", suite.testUsers[2].ID)
 			}).
 			Exec(suite.ctx)
 
@@ -248,28 +237,13 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 	suite.T().Logf("Testing selection methods for %s", suite.ds.Kind)
 
 	suite.Run("SelectSpecificColumns", func() {
-		// First, get the user ID
-		var existingUser User
-
-		err := suite.db.NewSelect().
-			Model(&existingUser).
-			Where(func(cb orm.ConditionBuilder) {
-				cb.Equals("email", "alice@example.com")
-			}).
-			Scan(suite.ctx)
-		suite.NoError(err, "Should fetch user")
-
-		originalEmail := existingUser.Email
-		originalIsActive := existingUser.IsActive
-		userID := existingUser.ID
+		tu := suite.testUsers[0]
 
 		// Create a NEW user instance (not from database query)
 		user := User{
-			Model: orm.Model{
-				ID: userID,
-			},
-			Name: "Alice Updated",
-			Age:  99,
+			Model: orm.Model{ID: tu.ID},
+			Name:  "UT Alice Updated",
+			Age:   99,
 		}
 
 		result, err := suite.db.NewUpdate().
@@ -289,35 +263,37 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 		err = suite.db.NewSelect().
 			Model(&updatedUser).
 			Where(func(cb orm.ConditionBuilder) {
-				cb.PKEquals(userID)
+				cb.PKEquals(tu.ID)
 			}).
 			Scan(suite.ctx)
 		suite.NoError(err, "Should fetch updated user")
 
-		suite.Equal("Alice Updated", updatedUser.Name, "Name should be updated")
+		suite.Equal("UT Alice Updated", updatedUser.Name, "Name should be updated")
 		suite.Equal(int16(99), updatedUser.Age, "Age should be updated")
-		suite.Equal(originalEmail, updatedUser.Email, "Email should NOT be updated")
-		suite.Equal(originalIsActive, updatedUser.IsActive, "IsActive should NOT be updated")
+		suite.Equal(tu.Email, updatedUser.Email, "Email should NOT be updated")
+		suite.Equal(tu.IsActive, updatedUser.IsActive, "IsActive should NOT be updated")
 
 		suite.T().Logf("Select updated only name and age: name=%s, age=%d, email=%s (unchanged), is_active=%v (unchanged)",
 			updatedUser.Name, updatedUser.Age, updatedUser.Email, updatedUser.IsActive)
 	})
 
 	suite.Run("SelectAllColumns", func() {
+		tu := suite.testUsers[1]
+
 		var user User
 
 		err := suite.db.NewSelect().
 			Model(&user).
 			Where(func(cb orm.ConditionBuilder) {
-				cb.Equals("email", "bob@example.com")
+				cb.PKEquals(tu.ID)
 			}).
 			Scan(suite.ctx)
 		suite.NoError(err, "Should fetch user")
 
 		// Modify all fields
-		user.Name = "Bob Updated"
+		user.Name = "UT Bob Updated"
 		user.Age = 88
-		user.Email = "bob.new@example.com"
+		user.Email = "ut_bob_new@test.com"
 		user.IsActive = false
 
 		result, err := suite.db.NewUpdate().
@@ -342,9 +318,9 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 			Scan(suite.ctx)
 		suite.NoError(err, "Should fetch updated user")
 
-		suite.Equal("Bob Updated", updatedUser.Name, "Name should be updated")
+		suite.Equal("UT Bob Updated", updatedUser.Name, "Name should be updated")
 		suite.Equal(int16(88), updatedUser.Age, "Age should be updated")
-		suite.Equal("bob.new@example.com", updatedUser.Email, "Email should be updated")
+		suite.Equal("ut_bob_new@test.com", updatedUser.Email, "Email should be updated")
 		suite.Equal(false, updatedUser.IsActive, "IsActive should be updated")
 
 		suite.T().Logf("SelectAll updated all columns: name=%s, age=%d, email=%s, is_active=%v",
@@ -352,12 +328,14 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 	})
 
 	suite.Run("ExcludeSpecificColumns", func() {
+		tu := suite.testUsers[2]
+
 		var user User
 
 		err := suite.db.NewSelect().
 			Model(&user).
 			Where(func(cb orm.ConditionBuilder) {
-				cb.Equals("email", "charlie@example.com")
+				cb.PKEquals(tu.ID)
 			}).
 			Scan(suite.ctx)
 		suite.NoError(err, "Should fetch user")
@@ -366,9 +344,9 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 		originalAge := user.Age
 
 		// Modify multiple fields but exclude some from update
-		user.Name = "Charlie Updated"
+		user.Name = "UT Charlie Updated"
 		user.Age = 77
-		user.Email = "charlie.new@example.com"
+		user.Email = "ut_charlie_new@test.com"
 		user.IsActive = true
 
 		result, err := suite.db.NewUpdate().
@@ -393,7 +371,7 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 			Scan(suite.ctx)
 		suite.NoError(err, "Should fetch updated user")
 
-		suite.Equal("Charlie Updated", updatedUser.Name, "Name should be updated")
+		suite.Equal("UT Charlie Updated", updatedUser.Name, "Name should be updated")
 		suite.Equal(true, updatedUser.IsActive, "IsActive should be updated")
 		suite.Equal(originalEmail, updatedUser.Email, "Email should NOT be updated (excluded)")
 		suite.Equal(originalAge, updatedUser.Age, "Age should NOT be updated (excluded)")
@@ -403,12 +381,14 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 	})
 
 	suite.Run("ExcludeAllColumns", func() {
+		tu := suite.testUsers[0]
+
 		var user User
 
 		err := suite.db.NewSelect().
 			Model(&user).
 			Where(func(cb orm.ConditionBuilder) {
-				cb.Equals("email", "alice@example.com")
+				cb.PKEquals(tu.ID)
 			}).
 			Scan(suite.ctx)
 		suite.NoError(err, "Should fetch user")
@@ -417,9 +397,9 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 		originalEmail := user.Email
 
 		// Modify multiple fields
-		user.Name = "Alice Updated Again"
-		user.Age = 77 // Use a different value than previous tests
-		user.Email = "alice.new@example.com"
+		user.Name = "UT Alice Updated Again"
+		user.Age = 77
+		user.Email = "ut_alice_new@test.com"
 
 		// Select name and email first, then ExcludeAll clears them, then Select age
 		// Result: only age should be updated
@@ -461,37 +441,30 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 	suite.T().Logf("Testing filter operations for %s", suite.ds.Kind)
 
 	suite.Run("WhereBasic", func() {
+		activeIDs := []string{suite.testUsers[0].ID, suite.testUsers[1].ID}
+
 		result, err := suite.db.NewUpdate().
 			Model((*User)(nil)).
 			Set("updated_by", "where_test").
 			Where(func(cb orm.ConditionBuilder) {
-				cb.IsTrue("is_active")
+				cb.In("id", activeIDs).IsTrue("is_active")
 			}).
 			Exec(suite.ctx)
 
 		suite.NoError(err, "Where should work correctly")
 
 		rowsAffected, _ := result.RowsAffected()
-		suite.True(rowsAffected > 0, "Should update active users")
+		suite.Equal(int64(2), rowsAffected, "Should update 2 active test users")
 
 		suite.T().Logf("Updated %d users with Where", rowsAffected)
 	})
 
 	suite.Run("WherePK", func() {
-		var user User
-
-		err := suite.db.NewSelect().
-			Model(&user).
-			OrderBy("id").
-			Limit(1).
-			Scan(suite.ctx)
-		suite.NoError(err, "Should fetch a user")
-
 		result, err := suite.db.NewUpdate().
 			Model((*User)(nil)).
 			Set("updated_by", "where_pk_test").
 			Where(func(cb orm.ConditionBuilder) {
-				cb.PKEquals(user.ID)
+				cb.PKEquals(suite.testUsers[0].ID)
 			}).
 			Exec(suite.ctx)
 
@@ -500,7 +473,7 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 		rowsAffected, _ := result.RowsAffected()
 		suite.Equal(int64(1), rowsAffected, "Should affect 1 row")
 
-		suite.T().Logf("Updated user by PK: %s", user.ID)
+		suite.T().Logf("Updated user by PK: %s", suite.testUsers[0].ID)
 	})
 
 	suite.Run("WhereDeletedAndIncludeDeleted", func() {
@@ -513,12 +486,8 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 			DeletedAt time.Time `json:"deletedAt" bun:",soft_delete,nullzero"`
 		}
 
-		_, err := suite.db.NewDropTable().Model((*SoftDeleteArticle)(nil)).IfExists().Exec(suite.ctx)
-		suite.Require().NoError(err, "Should drop existing soft delete table")
-
-		_, err = suite.db.NewCreateTable().Model((*SoftDeleteArticle)(nil)).IfNotExists().Exec(suite.ctx)
-
-		suite.Require().NoError(err, "Should create soft delete table")
+		err := suite.db.ResetModel(suite.ctx, (*SoftDeleteArticle)(nil))
+		suite.Require().NoError(err, "Should reset soft delete table")
 		defer func() {
 			_, dropErr := suite.db.NewDropTable().Model((*SoftDeleteArticle)(nil)).IfExists().Exec(suite.ctx)
 			suite.Require().NoError(dropErr, "Should cleanup soft delete table")
@@ -595,25 +564,15 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 func (suite *UpdateTestSuite) TestColumnUpdates() {
 	suite.T().Logf("Testing column update methods for %s", suite.ds.Kind)
 
-	var post Post
-
-	err := suite.db.NewSelect().
-		Model(&post).
-		Where(func(cb orm.ConditionBuilder) {
-			cb.Contains("title", "Introduction")
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err, "Should fetch a post")
-
 	suite.Run("ColumnMethod", func() {
-		// Column method is used to override model values during update
-		// When using Model(&post), Column can override specific field values
+		tp := suite.testPosts[0]
+
 		var post Post
 
 		err := suite.db.NewSelect().
 			Model(&post).
 			Where(func(cb orm.ConditionBuilder) {
-				cb.Equals("title", "Database Design Basics")
+				cb.PKEquals(tp.ID)
 			}).
 			Scan(suite.ctx)
 		suite.NoError(err, "Should fetch post")
@@ -621,7 +580,7 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 		originalViewCount := post.ViewCount
 
 		// Modify the model
-		post.Title = "Updated Title from Model"
+		post.Title = "UT Updated Title from Model"
 		post.ViewCount = 999
 
 		// Use Column to override model's view_count value
@@ -646,7 +605,7 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 			}).
 			Scan(suite.ctx)
 		suite.NoError(err, "Should retrieve updated post")
-		suite.Equal("Updated Title from Model", updatedPost.Title, "Title should be from model")
+		suite.Equal("UT Updated Title from Model", updatedPost.Title, "Title should be from model")
 		suite.Equal(int32(555), int32(updatedPost.ViewCount), "View count should be from Column, not model")
 
 		suite.T().Logf("Column overrode model: view_count=%d (model was 999, original was %d)",
@@ -654,14 +613,14 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 	})
 
 	suite.Run("ColumnExprMethod", func() {
-		// ColumnExpr method is used to override model values with expressions
-		// When using Model(&post), ColumnExpr can override with calculated values
+		tp := suite.testPosts[2]
+
 		var post Post
 
 		err := suite.db.NewSelect().
 			Model(&post).
 			Where(func(cb orm.ConditionBuilder) {
-				cb.Equals("title", "Machine Learning Basics")
+				cb.PKEquals(tp.ID)
 			}).
 			Scan(suite.ctx)
 		suite.NoError(err, "Should fetch post")
@@ -669,7 +628,7 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 		originalViewCount := post.ViewCount
 
 		// Modify the model
-		post.Title = "Updated Title from Model"
+		post.Title = "UT Updated Title from Model"
 		post.ViewCount = 888
 
 		// Use ColumnExpr to override model's view_count with an expression
@@ -697,7 +656,7 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 			}).
 			Scan(suite.ctx)
 		suite.NoError(err, "Should retrieve updated post")
-		suite.Equal("Updated Title from Model", updatedPost.Title, "Title should be from model")
+		suite.Equal("UT Updated Title from Model", updatedPost.Title, "Title should be from model")
 		suite.Equal(int32(originalViewCount+100), int32(updatedPost.ViewCount), "View count should be from ColumnExpr")
 
 		suite.T().Logf("ColumnExpr overrode model: view_count=%d (was %d, model was 888)",
@@ -709,7 +668,7 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 			Model((*Post)(nil)).
 			Set("updated_by", "set_test").
 			Where(func(cb orm.ConditionBuilder) {
-				cb.PKEquals(post.ID)
+				cb.PKEquals(suite.testPosts[0].ID)
 			}).
 			Exec(suite.ctx)
 
@@ -728,7 +687,7 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 				return eb.Concat(eb.Column("title"), " [Updated]")
 			}).
 			Where(func(cb orm.ConditionBuilder) {
-				cb.PKEquals(post.ID)
+				cb.PKEquals(suite.testPosts[1].ID)
 			}).
 			Exec(suite.ctx)
 
@@ -746,20 +705,12 @@ func (suite *UpdateTestSuite) TestUpdateFlags() {
 	suite.T().Logf("Testing update flags for %s", suite.ds.Kind)
 
 	suite.Run("OmitZeroFlag", func() {
-		var user User
-
-		err := suite.db.NewSelect().
-			Model(&user).
-			Where(func(cb orm.ConditionBuilder) {
-				cb.Equals("email", "alice@example.com")
-			}).
-			Scan(suite.ctx)
-		suite.NoError(err, "Should fetch user")
+		tu := suite.testUsers[0]
 
 		// Update with a full User model but only set Name, leave Age as zero
 		partialUpdate := &User{
-			Model: orm.Model{ID: user.ID},
-			Name:  "Alice Updated with OmitZero",
+			Model: orm.Model{ID: tu.ID},
+			Name:  "UT Alice Updated with OmitZero",
 			// Age will be zero, OmitZero should skip it
 		}
 
@@ -778,19 +729,25 @@ func (suite *UpdateTestSuite) TestUpdateFlags() {
 	})
 
 	suite.Run("BulkUpdate", func() {
-		// Fetch multiple posts to update (use all posts to ensure we have enough)
+		// Fetch test posts for bulk update
 		var posts []Post
+
+		postIDs := make([]string, len(suite.testPosts))
+		for i, tp := range suite.testPosts {
+			postIDs[i] = tp.ID
+		}
 
 		err := suite.db.NewSelect().
 			Model(&posts).
+			Where(func(cb orm.ConditionBuilder) {
+				cb.In("id", postIDs)
+			}).
 			OrderBy("id").
-			Limit(3).
 			Scan(suite.ctx)
-		suite.NoError(err, "Should fetch posts for bulk update")
-		suite.True(len(posts) >= 2, "Should have at least 2 posts")
+		suite.NoError(err, "Should fetch test posts for bulk update")
+		suite.Equal(len(suite.testPosts), len(posts), "Should have all test posts")
 
 		originalCount := len(posts)
-		suite.T().Logf("Fetched %d posts for bulk update", originalCount)
 
 		// Store original view counts for verification
 		originalViewCounts := make([]int, len(posts))
@@ -814,7 +771,7 @@ func (suite *UpdateTestSuite) TestUpdateFlags() {
 		suite.NoError(err, "Bulk update should work")
 
 		rowsAffected, _ := result.RowsAffected()
-		suite.Equal(int64(originalCount), rowsAffected, "Should update all fetched posts")
+		suite.Equal(int64(originalCount), rowsAffected, "Should update all test posts")
 
 		// Verify each post was updated with its specific value
 		for i, post := range posts {
@@ -847,12 +804,22 @@ func (suite *UpdateTestSuite) TestOrderingAndLimits() {
 		suite.T().Skipf("Database %s doesn't support ORDER BY and LIMIT in UPDATE statements", suite.ds.Kind)
 	}
 
+	postIDs := make([]string, len(suite.testPosts))
+	for i, tp := range suite.testPosts {
+		postIDs[i] = tp.ID
+	}
+
+	userIDs := make([]string, len(suite.testUsers))
+	for i, tu := range suite.testUsers {
+		userIDs[i] = tu.ID
+	}
+
 	suite.Run("OrderByBasic", func() {
 		result, err := suite.db.NewUpdate().
 			Model((*Post)(nil)).
 			Set("updated_by", "order_test").
 			Where(func(cb orm.ConditionBuilder) {
-				cb.Equals("status", "published")
+				cb.In("id", postIDs).Equals("status", "published")
 			}).
 			OrderBy("title").
 			Limit(2).
@@ -870,7 +837,7 @@ func (suite *UpdateTestSuite) TestOrderingAndLimits() {
 			Model((*Post)(nil)).
 			Set("updated_by", "order_desc_test").
 			Where(func(cb orm.ConditionBuilder) {
-				cb.Equals("status", "draft")
+				cb.In("id", postIDs).Equals("status", "draft")
 			}).
 			OrderByDesc("view_count").
 			Limit(1).
@@ -885,7 +852,7 @@ func (suite *UpdateTestSuite) TestOrderingAndLimits() {
 			Model((*Post)(nil)).
 			Set("updated_by", "order_expr_test").
 			Where(func(cb orm.ConditionBuilder) {
-				cb.NotEquals("status", "deleted")
+				cb.In("id", postIDs)
 			}).
 			OrderByExpr(func(eb orm.ExprBuilder) any {
 				return eb.Column("view_count")
@@ -902,7 +869,7 @@ func (suite *UpdateTestSuite) TestOrderingAndLimits() {
 			Model((*User)(nil)).
 			Set("updated_by", "limit_test").
 			Where(func(cb orm.ConditionBuilder) {
-				cb.IsTrue("is_active")
+				cb.In("id", userIDs).IsTrue("is_active")
 			}).
 			Limit(1).
 			Exec(suite.ctx)
@@ -936,7 +903,7 @@ func (suite *UpdateTestSuite) TestReturningClause() {
 			Model((*User)(nil)).
 			Set("age", 28).
 			Where(func(cb orm.ConditionBuilder) {
-				cb.Equals("email", "bob@example.com")
+				cb.PKEquals(suite.testUsers[1].ID)
 			}).
 			Returning("id", "name", "age").
 			Scan(suite.ctx, &result)
@@ -962,7 +929,7 @@ func (suite *UpdateTestSuite) TestReturningClause() {
 			Model((*User)(nil)).
 			Set("age", 29).
 			Where(func(cb orm.ConditionBuilder) {
-				cb.Equals("email", "charlie@example.com")
+				cb.PKEquals(suite.testUsers[2].ID)
 			}).
 			ReturningAll().
 			Scan(suite.ctx, &result)
@@ -979,7 +946,7 @@ func (suite *UpdateTestSuite) TestReturningClause() {
 			Model((*User)(nil)).
 			Set("age", 30).
 			Where(func(cb orm.ConditionBuilder) {
-				cb.Equals("email", "alice@example.com")
+				cb.PKEquals(suite.testUsers[0].ID)
 			}).
 			ReturningNone().
 			Exec(suite.ctx)
@@ -997,10 +964,15 @@ func (suite *UpdateTestSuite) TestReturningClause() {
 func (suite *UpdateTestSuite) TestApplyMethods() {
 	suite.T().Logf("Testing Apply methods for %s", suite.ds.Kind)
 
+	userIDs := make([]string, len(suite.testUsers))
+	for i, tu := range suite.testUsers {
+		userIDs[i] = tu.ID
+	}
+
 	suite.Run("ApplyBasic", func() {
 		applyActive := func(query orm.UpdateQuery) {
 			query.Where(func(cb orm.ConditionBuilder) {
-				cb.IsTrue("is_active")
+				cb.In("id", userIDs).IsTrue("is_active")
 			})
 		}
 
@@ -1017,7 +989,7 @@ func (suite *UpdateTestSuite) TestApplyMethods() {
 		suite.NoError(err, "Apply should work correctly")
 
 		rowsAffected, _ := result.RowsAffected()
-		suite.True(rowsAffected > 0, "Should update active users")
+		suite.Equal(int64(2), rowsAffected, "Should update 2 active test users")
 
 		suite.T().Logf("Applied functions updated %d users", rowsAffected)
 	})
@@ -1033,7 +1005,7 @@ func (suite *UpdateTestSuite) TestApplyMethods() {
 			Model((*User)(nil)).
 			Set("updated_by", "apply_if_true").
 			Where(func(cb orm.ConditionBuilder) {
-				cb.IsTrue("is_active")
+				cb.In("id", userIDs).IsTrue("is_active")
 			}).
 			ApplyIf(true, addFilter).
 			Exec(suite.ctx)
@@ -1057,7 +1029,7 @@ func (suite *UpdateTestSuite) TestApplyMethods() {
 			Model((*User)(nil)).
 			Set("updated_by", "apply_if_false").
 			Where(func(cb orm.ConditionBuilder) {
-				cb.IsTrue("is_active")
+				cb.In("id", userIDs).IsTrue("is_active")
 			}).
 			ApplyIf(false, addFilter).
 			Exec(suite.ctx)
@@ -1065,7 +1037,7 @@ func (suite *UpdateTestSuite) TestApplyMethods() {
 		suite.NoError(err, "ApplyIf(false) should skip function")
 
 		rowsAffected, _ := result.RowsAffected()
-		suite.True(rowsAffected > 0, "Should update without applied filter")
+		suite.Equal(int64(2), rowsAffected, "Should update 2 active test users without applied filter")
 
 		suite.T().Logf("ApplyIf(false) updated %d users", rowsAffected)
 	})
@@ -1080,7 +1052,7 @@ func (suite *UpdateTestSuite) TestExecution() {
 			Model((*User)(nil)).
 			Set("age", 40).
 			Where(func(cb orm.ConditionBuilder) {
-				cb.Equals("email", "alice@example.com")
+				cb.PKEquals(suite.testUsers[0].ID)
 			}).
 			Exec(suite.ctx)
 
@@ -1109,7 +1081,7 @@ func (suite *UpdateTestSuite) TestExecution() {
 			Model((*User)(nil)).
 			Set("age", 41).
 			Where(func(cb orm.ConditionBuilder) {
-				cb.Equals("email", "bob@example.com")
+				cb.PKEquals(suite.testUsers[1].ID)
 			}).
 			Returning("id", "name").
 			Scan(suite.ctx, &result)
@@ -1144,7 +1116,7 @@ func (suite *UpdateTestSuite) TestExecution() {
 			Model((*User)(nil)).
 			Set("nonexistent_field", "value").
 			Where(func(cb orm.ConditionBuilder) {
-				cb.Equals("email", "alice@example.com")
+				cb.PKEquals(suite.testUsers[0].ID)
 			}).
 			Exec(suite.ctx)
 
@@ -1152,4 +1124,191 @@ func (suite *UpdateTestSuite) TestExecution() {
 
 		suite.T().Logf("Exec with invalid field correctly returned error")
 	})
+}
+
+// TestUpdateDB tests DB() method on UpdateQuery.
+func (suite *UpdateTestSuite) TestUpdateDB() {
+	suite.T().Logf("Testing Update DB for %s", suite.ds.Kind)
+
+	query := suite.db.NewUpdate().Model((*Tag)(nil))
+	db := query.DB()
+
+	suite.NotNil(db, "DB() should return non-nil")
+}
+
+// TestUpdateWithRecursive tests WithRecursive on UpdateQuery.
+func (suite *UpdateTestSuite) TestUpdateWithRecursive() {
+	suite.T().Logf("Testing Update WithRecursive for %s", suite.ds.Kind)
+
+	// Insert a test tag to update
+	tag := &Tag{Name: "RecursiveUpdateTest"}
+	tag.ID = "test-upd-recursive"
+
+	_, err := suite.db.NewInsert().Model(tag).Exec(suite.ctx)
+	suite.NoError(err)
+
+	// Update using WithRecursive (simple usage to cover the method)
+	_, err = suite.db.NewUpdate().
+		WithRecursive("ids", func(sq orm.SelectQuery) {
+			sq.Model((*Tag)(nil)).
+				Select("id").
+				Where(func(cb orm.ConditionBuilder) {
+					cb.Equals("id", "test-upd-recursive")
+				})
+		}).
+		Model((*Tag)(nil)).
+		Set("name", "RecursiveUpdated").
+		Where(func(cb orm.ConditionBuilder) {
+			cb.InSubQuery("id", func(sq orm.SelectQuery) {
+				sq.TableExpr(func(eb orm.ExprBuilder) any {
+					return eb.Column("ids", false)
+				}).
+					Select("id")
+			})
+		}).
+		Exec(suite.ctx)
+
+	suite.NoError(err, "Update WithRecursive should work")
+
+	// Clean up
+	_, _ = suite.db.NewDelete().Model((*Tag)(nil)).Where(func(cb orm.ConditionBuilder) {
+		cb.Equals("id", "test-upd-recursive")
+	}).Exec(suite.ctx)
+}
+
+// TestUpdateTableSubQuery tests Update TableSubQuery method.
+func (suite *UpdateTestSuite) TestUpdateTableSubQuery() {
+	suite.T().Logf("Testing Update TableSubQuery for %s", suite.ds.Kind)
+
+	query := suite.db.NewUpdate().
+		TableSubQuery(func(sq orm.SelectQuery) {
+			sq.Model((*Tag)(nil)).Select("id", "name")
+		}, "t").
+		Set("name", "updated")
+
+	suite.NotNil(query, "Update TableSubQuery should return non-nil")
+}
+
+// TestUpdateModelTableWithAlias tests Update ModelTable with alias.
+func (suite *UpdateTestSuite) TestUpdateModelTableWithAlias() {
+	suite.T().Logf("Testing Update ModelTable with alias for %s", suite.ds.Kind)
+
+	query := suite.db.NewUpdate().
+		ModelTable("test_tag", "t").
+		Set("name", "updated").
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("id", "nonexistent")
+		})
+
+	suite.NotNil(query, "Update ModelTable with alias should return non-nil")
+}
+
+// TestUpdateTableWithAlias tests Update Table with alias.
+func (suite *UpdateTestSuite) TestUpdateTableWithAlias() {
+	suite.T().Logf("Testing Update Table with alias for %s", suite.ds.Kind)
+
+	query := suite.db.NewUpdate().
+		Table("test_tag", "t").
+		Set("name", "updated").
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("id", "nonexistent")
+		})
+
+	suite.NotNil(query, "Update Table with alias should return non-nil")
+}
+
+// TestUpdateTableExprWithAlias tests Update TableExpr with alias.
+func (suite *UpdateTestSuite) TestUpdateTableExprWithAlias() {
+	suite.T().Logf("Testing Update TableExpr with alias for %s", suite.ds.Kind)
+
+	query := suite.db.NewUpdate().
+		TableExpr(func(eb orm.ExprBuilder) any {
+			return eb.SubQuery(func(sq orm.SelectQuery) {
+				sq.Model((*Tag)(nil)).Select("id", "name")
+			})
+		}, "t").
+		Set("name", "updated").
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("id", "nonexistent")
+		})
+
+	suite.NotNil(query, "Update TableExpr with alias should return non-nil")
+}
+
+// TestUpdateTableSubQueryWithAlias tests Update TableSubQuery with alias.
+func (suite *UpdateTestSuite) TestUpdateTableSubQueryWithAlias() {
+	suite.T().Logf("Testing Update TableSubQuery with alias for %s", suite.ds.Kind)
+
+	query := suite.db.NewUpdate().
+		TableSubQuery(func(sq orm.SelectQuery) {
+			sq.Model((*Tag)(nil)).Select("id", "name")
+		}, "t").
+		Set("name", "updated").
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("id", "nonexistent")
+		})
+
+	suite.NotNil(query, "Update TableSubQuery with alias should return non-nil")
+}
+
+// TestUpdateModelTableNoAlias tests Update ModelTable without alias.
+func (suite *UpdateTestSuite) TestUpdateModelTableNoAlias() {
+	suite.T().Logf("Testing Update ModelTable without alias for %s", suite.ds.Kind)
+
+	query := suite.db.NewUpdate().
+		ModelTable("test_tag").
+		Set("name", "updated").
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("id", "nonexistent")
+		})
+
+	suite.NotNil(query, "Update ModelTable no alias should return non-nil")
+}
+
+// TestUpdateTableNoAlias tests Update Table without alias.
+func (suite *UpdateTestSuite) TestUpdateTableNoAlias() {
+	suite.T().Logf("Testing Update Table without alias for %s", suite.ds.Kind)
+
+	query := suite.db.NewUpdate().
+		Table("test_tag").
+		Set("name", "updated").
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("id", "nonexistent")
+		})
+
+	suite.NotNil(query, "Update Table no alias should return non-nil")
+}
+
+// TestUpdateTableExprNoAlias tests Update TableExpr without alias.
+func (suite *UpdateTestSuite) TestUpdateTableExprNoAlias() {
+	suite.T().Logf("Testing Update TableExpr without alias for %s", suite.ds.Kind)
+
+	query := suite.db.NewUpdate().
+		TableExpr(func(eb orm.ExprBuilder) any {
+			return eb.SubQuery(func(sq orm.SelectQuery) {
+				sq.Model((*Tag)(nil)).Select("id", "name")
+			})
+		}).
+		Set("name", "updated").
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("id", "nonexistent")
+		})
+
+	suite.NotNil(query, "Update TableExpr no alias should return non-nil")
+}
+
+// TestUpdateTableSubQueryNoAlias tests Update TableSubQuery without alias.
+func (suite *UpdateTestSuite) TestUpdateTableSubQueryNoAlias() {
+	suite.T().Logf("Testing Update TableSubQuery without alias for %s", suite.ds.Kind)
+
+	query := suite.db.NewUpdate().
+		TableSubQuery(func(sq orm.SelectQuery) {
+			sq.Model((*Tag)(nil)).Select("id", "name")
+		}).
+		Set("name", "updated").
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("id", "nonexistent")
+		})
+
+	suite.NotNil(query, "Update TableSubQuery no alias should return non-nil")
 }

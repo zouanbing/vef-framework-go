@@ -38,8 +38,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToString() {
 
 		var toStringResults []ToStringResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToString(eb.Column("view_count"))
@@ -72,8 +71,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToInteger() {
 
 		var toIntResults []ToIntegerResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToString(eb.Column("view_count"))
@@ -108,8 +106,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToFloat() {
 
 		var toFloatResults []ToFloatResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToFloat(eb.Column("view_count"))
@@ -141,8 +138,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDecimal() {
 
 		var toDecimalResults []ToDecimalResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToDecimal(eb.Column("view_count"), 10, 2)
@@ -174,8 +170,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToBool() {
 
 		var toBoolResults []ToBoolResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToBool(eb.Expr("CASE WHEN ? > 0 THEN 1 ELSE 0 END", eb.Column("view_count")))
@@ -206,8 +201,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDate() {
 
 		var toDateResults []ToDateResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "created_at").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToDate(eb.Column("created_at"))
@@ -239,8 +233,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTime() {
 
 		var toTimeResults []ToTimeResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "created_at").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToTime(eb.Column("created_at"))
@@ -272,8 +265,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTimestamp() {
 
 		var toTimestampResults []ToTimestampResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "created_at").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToTimestamp(eb.Column("created_at"))
@@ -305,8 +297,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToJSON() {
 
 		var toJSONResults []ToJSONResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToJSON(eb.JSONObject("title", eb.Column("title"), "id", eb.Column("id")))
@@ -338,8 +329,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToStringNullHandling() {
 
 		var results []NullToStringResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToString(eb.Expr("NULL"))
@@ -371,8 +361,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToIntegerNullHandling() {
 
 		var results []NullToIntegerResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToInteger(eb.Expr("NULL"))
@@ -404,8 +393,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToFloatNullHandling() {
 
 		var results []NullToFloatResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToFloat(eb.Expr("NULL"))
@@ -437,8 +425,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDecimalNullHandling() {
 
 		var results []NullToDecimalResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToDecimal(eb.Expr("NULL"), 10, 2)
@@ -470,8 +457,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToBoolNullHandling() {
 
 		var results []NullToBoolResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToBool(eb.Expr("NULL"))
@@ -503,8 +489,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDateNullHandling() {
 
 		var results []NullToDateResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToDate(eb.Expr("NULL"))
@@ -536,8 +521,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTimeNullHandling() {
 
 		var results []NullToTimeResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToTime(eb.Expr("NULL"))
@@ -569,8 +553,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTimestampNullHandling() {
 
 		var results []NullToTimestampResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToTimestamp(eb.Expr("NULL"))
@@ -602,8 +585,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToJSONNullHandling() {
 
 		var results []NullToJSONResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToJSON(eb.Expr("NULL"))
@@ -635,8 +617,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDecimalPrecisionVariation
 
 		var results []DecimalPrecisionResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToDecimal(eb.Column("view_count"), 10, 2)
@@ -662,8 +643,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDecimalPrecisionVariation
 
 		var results []DecimalPrecisionOnlyResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToDecimal(eb.Column("view_count"), 10)
@@ -689,8 +669,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDecimalPrecisionVariation
 
 		var results []DecimalNoParamsResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToDecimal(eb.Column("view_count"))
@@ -721,8 +700,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDateWithFormat() {
 
 		var results []DateNoFormatResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "created_at").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToDate(eb.Column("created_at"))
@@ -758,8 +736,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDateWithFormat() {
 			formatStr = "YYYY-MM-DD"
 		}
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToDate(eb.Expr("?", "2024-01-15"), formatStr)
@@ -791,8 +768,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTimeWithFormat() {
 
 		var results []TimeNoFormatResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "created_at").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToTime(eb.Column("created_at"))
@@ -828,8 +804,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTimeWithFormat() {
 			formatStr = "HH24:MI:SS"
 		}
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToTime(eb.Expr("?", "14:30:00"), formatStr)
@@ -861,8 +836,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTimestampWithFormat() {
 
 		var results []TimestampNoFormatResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "created_at").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToTimestamp(eb.Column("created_at"))
@@ -898,8 +872,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTimestampWithFormat() {
 			formatStr = "YYYY-MM-DD HH24:MI:SS"
 		}
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToTimestamp(eb.Expr("?", "2024-01-15 14:30:00"), formatStr)
@@ -931,8 +904,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToStringFromDifferentTypes(
 
 		var results []BoolToStringResult
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("id", "is_active").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToString(eb.Column("is_active"))
@@ -959,8 +931,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToStringFromDifferentTypes(
 
 		var results []DateToStringResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "created_at").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToString(eb.ToDate(eb.Column("created_at")))
@@ -991,8 +962,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToIntegerFromStrings() {
 
 		var results []NegativeIntResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToInteger(eb.Expr("?", "-123"))
@@ -1017,8 +987,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToIntegerFromStrings() {
 
 		var results []ZeroIntResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToInteger(eb.Expr("?", "0"))
@@ -1048,8 +1017,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToFloatFromStrings() {
 
 		var results []DecimalStringResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToFloat(eb.Expr("?", "3.14159"))
@@ -1074,8 +1042,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToFloatFromStrings() {
 
 		var results []NegativeFloatResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToFloat(eb.Expr("?", "-99.99"))
@@ -1105,8 +1072,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToBoolDirectConversion() {
 
 		var results []PositiveIntBoolResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToBool(eb.Expr("?", 1))
@@ -1131,8 +1097,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToBoolDirectConversion() {
 
 		var results []ZeroBoolResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToBool(eb.Expr("?", 0))
@@ -1157,8 +1122,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToBoolDirectConversion() {
 
 		var results []NegativeIntBoolResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToBool(eb.Expr("?", -1))
@@ -1188,8 +1152,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToIntegerBoundaryConditions
 
 		var results []LargePositiveResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToInteger(eb.Expr("?", 2147483647))
@@ -1214,8 +1177,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToIntegerBoundaryConditions
 
 		var results []LargeNegativeResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToInteger(eb.Expr("?", -2147483647))
@@ -1245,8 +1207,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToFloatPrecisionAndBoundari
 
 		var results []VerySmallFloatResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToFloat(eb.Expr("?", 0.000001))
@@ -1271,8 +1232,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToFloatPrecisionAndBoundari
 
 		var results []VeryLargeFloatResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToFloat(eb.Expr("?", 999999999.99))
@@ -1297,8 +1257,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToFloatPrecisionAndBoundari
 
 		var results []ZeroFloatResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToFloat(eb.Expr("?", 0.0))
@@ -1329,8 +1288,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToBoolDatabaseSpecificBehav
 
 		var results []BoolRepresentationResult
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("id", "is_active").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ToBool(eb.Column("is_active"))

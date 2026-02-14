@@ -27,8 +27,7 @@ func (suite *CBStringOperationsTestSuite) TestContains() {
 
 	suite.Run("BasicContains", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.Contains("name", "Alice")
 				}),
@@ -42,8 +41,7 @@ func (suite *CBStringOperationsTestSuite) TestContains() {
 
 	suite.Run("OrContains", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.Contains("name", "Alice").
 						OrContains("name", "Bob")
@@ -63,8 +61,7 @@ func (suite *CBStringOperationsTestSuite) TestStartsWith() {
 
 	suite.Run("BasicStartsWith", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.StartsWith("name", "Alice")
 				}),
@@ -79,8 +76,7 @@ func (suite *CBStringOperationsTestSuite) TestStartsWith() {
 
 	suite.Run("OrStartsWith", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.StartsWith("name", "Alice").
 						OrStartsWith("name", "Bob")
@@ -100,8 +96,7 @@ func (suite *CBStringOperationsTestSuite) TestEndsWith() {
 
 	suite.Run("BasicEndsWith", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.EndsWith("name", "Johnson")
 				}),
@@ -116,8 +111,7 @@ func (suite *CBStringOperationsTestSuite) TestEndsWith() {
 
 	suite.Run("OrEndsWith", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.EndsWith("name", "Johnson").
 						OrEndsWith("name", "Smith")
@@ -137,8 +131,7 @@ func (suite *CBStringOperationsTestSuite) TestContainsIgnoreCase() {
 
 	suite.Run("BasicIContains", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.ContainsIgnoreCase("name", "alice")
 				}),
@@ -151,8 +144,7 @@ func (suite *CBStringOperationsTestSuite) TestContainsIgnoreCase() {
 
 	suite.Run("OrIContains", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.ContainsIgnoreCase("name", "alice").
 						OrContainsIgnoreCase("name", "bob")
@@ -172,8 +164,7 @@ func (suite *CBStringOperationsTestSuite) TestStartsWithIgnoreCase() {
 
 	suite.Run("BasicIStartsWith", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.StartsWithIgnoreCase("name", "alice")
 				}),
@@ -186,8 +177,7 @@ func (suite *CBStringOperationsTestSuite) TestStartsWithIgnoreCase() {
 
 	suite.Run("OrIStartsWith", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.StartsWithIgnoreCase("name", "alice").
 						OrStartsWithIgnoreCase("name", "bob")
@@ -207,8 +197,7 @@ func (suite *CBStringOperationsTestSuite) TestEndsWithIgnoreCase() {
 
 	suite.Run("BasicIEndsWith", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.EndsWithIgnoreCase("name", "johnson")
 				}),
@@ -221,8 +210,7 @@ func (suite *CBStringOperationsTestSuite) TestEndsWithIgnoreCase() {
 
 	suite.Run("OrIEndsWith", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.EndsWithIgnoreCase("name", "johnson").
 						OrEndsWithIgnoreCase("name", "smith")
@@ -242,8 +230,7 @@ func (suite *CBStringOperationsTestSuite) TestContainsAny() {
 
 	suite.Run("BasicContainsAny", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.ContainsAny("name", []string{"Alice", "Bob"})
 				}).
@@ -257,8 +244,7 @@ func (suite *CBStringOperationsTestSuite) TestContainsAny() {
 
 	suite.Run("OrContainsAny", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.ContainsAny("name", []string{"Alice"}).
 						OrContainsAny("name", []string{"Charlie"})
@@ -278,8 +264,7 @@ func (suite *CBStringOperationsTestSuite) TestStartsWithAny() {
 
 	suite.Run("BasicStartsWithAny", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.StartsWithAny("name", []string{"Alice", "Bob"})
 				}).
@@ -293,8 +278,7 @@ func (suite *CBStringOperationsTestSuite) TestStartsWithAny() {
 
 	suite.Run("OrStartsWithAny", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.StartsWithAny("name", []string{"Alice"}).
 						OrStartsWithAny("name", []string{"Charlie"})
@@ -314,8 +298,7 @@ func (suite *CBStringOperationsTestSuite) TestEndsWithAny() {
 
 	suite.Run("BasicEndsWithAny", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.EndsWithAny("name", []string{"Johnson", "Smith"})
 				}).
@@ -329,8 +312,7 @@ func (suite *CBStringOperationsTestSuite) TestEndsWithAny() {
 
 	suite.Run("OrEndsWithAny", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.EndsWithAny("name", []string{"Johnson"}).
 						OrEndsWithAny("name", []string{"Brown"})

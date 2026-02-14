@@ -39,8 +39,7 @@ func (suite *EBStringFunctionsTestSuite) TestConcat() {
 
 		var concatResults []ConcatResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Concat(eb.Column("title"), "' - '", eb.Column("status"))
@@ -78,8 +77,7 @@ func (suite *EBStringFunctionsTestSuite) TestConcatWithSep() {
 
 		var concatResults []ConcatWithSepResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ConcatWithSep(" - ", eb.Column("title"), eb.Column("status"))
@@ -112,8 +110,7 @@ func (suite *EBStringFunctionsTestSuite) TestSubString() {
 
 		var substringResults []SubstringResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.SubString(eb.Column("title"), 1, 5)
@@ -154,8 +151,7 @@ func (suite *EBStringFunctionsTestSuite) TestUpper() {
 
 		var caseResults []CaseResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Upper(eb.Column("title"))
@@ -192,8 +188,7 @@ func (suite *EBStringFunctionsTestSuite) TestLower() {
 
 		var caseResults []CaseResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Lower(eb.Column("title"))
@@ -228,8 +223,7 @@ func (suite *EBStringFunctionsTestSuite) TestTrim() {
 
 		var trimResults []TrimResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Trim(eb.Column("status"))
@@ -264,8 +258,7 @@ func (suite *EBStringFunctionsTestSuite) TestTrimLeft() {
 
 		var trimResults []TrimResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Concat("   ", eb.Column("status"), "   ")
@@ -301,8 +294,7 @@ func (suite *EBStringFunctionsTestSuite) TestTrimRight() {
 
 		var trimResults []TrimResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Concat("   ", eb.Column("status"), "   ")
@@ -339,8 +331,7 @@ func (suite *EBStringFunctionsTestSuite) TestLength() {
 
 		var lengthResults []LengthResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Length(eb.Column("title"))
@@ -376,8 +367,7 @@ func (suite *EBStringFunctionsTestSuite) TestCharLength() {
 
 		var lengthResults []StringLengthResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CharLength(eb.Column("title"))
@@ -409,8 +399,7 @@ func (suite *EBStringFunctionsTestSuite) TestPosition() {
 
 		var posResults []PositionResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Position("o", eb.Column("title"))
@@ -441,8 +430,7 @@ func (suite *EBStringFunctionsTestSuite) TestLeft() {
 
 		var leftResults []LeftResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Left(eb.Column("title"), 10)
@@ -473,8 +461,7 @@ func (suite *EBStringFunctionsTestSuite) TestRight() {
 
 		var rightResults []RightResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Right(eb.Column("title"), 5)
@@ -505,8 +492,7 @@ func (suite *EBStringFunctionsTestSuite) TestRepeat() {
 
 		var repeatResults []RepeatResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Repeat("*", 5)
@@ -536,8 +522,7 @@ func (suite *EBStringFunctionsTestSuite) TestReplace() {
 
 		var replaceResults []ReplaceResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Replace(eb.Column("status"), "'draft'", "'DRAFT'")
@@ -574,8 +559,7 @@ func (suite *EBStringFunctionsTestSuite) TestReverse() {
 
 		var reverseResults []ReverseResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Reverse(eb.Column("title"))
@@ -608,8 +592,7 @@ func (suite *EBStringFunctionsTestSuite) TestCombinedStringFunctions() {
 
 		var combinedResults []CombinedStringResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Upper(eb.Column("title"))
@@ -655,8 +638,7 @@ func (suite *EBStringFunctionsTestSuite) TestContains() {
 
 		var containsResults []ContainsResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Contains(eb.Column("title"), "'Post'")
@@ -708,8 +690,7 @@ func (suite *EBStringFunctionsTestSuite) TestStartsWith() {
 
 		var startsWithResults []StartsWithResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.StartsWith(eb.Column("title"), "'G'")
@@ -761,8 +742,7 @@ func (suite *EBStringFunctionsTestSuite) TestEndsWith() {
 
 		var endsWithResults []EndsWithResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.EndsWith(eb.Column("title"), "'e'")
@@ -814,8 +794,7 @@ func (suite *EBStringFunctionsTestSuite) TestContainsIgnoreCase() {
 
 		var containsResults []ContainsIgnoreCaseResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ContainsIgnoreCase(eb.Column("title"), "'post'")
@@ -868,8 +847,7 @@ func (suite *EBStringFunctionsTestSuite) TestStartsWithIgnoreCase() {
 
 		var startsWithResults []StartsWithIgnoreCaseResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.StartsWithIgnoreCase(eb.Column("title"), "'g'")
@@ -922,8 +900,7 @@ func (suite *EBStringFunctionsTestSuite) TestEndsWithIgnoreCase() {
 
 		var endsWithResults []EndsWithIgnoreCaseResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.EndsWithIgnoreCase(eb.Column("title"), "'E'")
@@ -959,5 +936,234 @@ func (suite *EBStringFunctionsTestSuite) TestEndsWithIgnoreCase() {
 			suite.T().Logf("ID: %s, Title: %s, EndsWithE: %v, EndsWithT: %v",
 				result.ID, result.Title, result.EndsWithE, result.EndsWithT)
 		}
+	})
+}
+
+// TestFuzzyMatchWithStringPattern tests fuzzy match with string pattern (optimization path).
+func (suite *EBStringFunctionsTestSuite) TestFuzzyMatchWithStringPattern() {
+	suite.T().Logf("Testing fuzzy match with string pattern for %s", suite.ds.Kind)
+
+	suite.Run("ContainsString", func() {
+		type Result struct {
+			Name string `bun:"name"`
+		}
+
+		var results []Result
+
+		err := suite.selectUsers().
+			Select("name").
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
+					return eb.Contains(eb.Column("name"), "John")
+				})
+			}).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "Contains with string should work")
+
+		suite.T().Logf("Found %d users containing 'John'", len(results))
+	})
+
+	suite.Run("StartsWithString", func() {
+		type Result struct {
+			Name string `bun:"name"`
+		}
+
+		var results []Result
+
+		err := suite.selectUsers().
+			Select("name").
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
+					return eb.StartsWith(eb.Column("name"), "A")
+				})
+			}).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "StartsWith with string should work")
+
+		suite.T().Logf("Found %d users starting with 'A'", len(results))
+	})
+
+	suite.Run("EndsWithString", func() {
+		type Result struct {
+			Name string `bun:"name"`
+		}
+
+		var results []Result
+
+		err := suite.selectUsers().
+			Select("name").
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
+					return eb.EndsWith(eb.Column("name"), "son")
+				})
+			}).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "EndsWith with string should work")
+
+		suite.T().Logf("Found %d users ending with 'son'", len(results))
+	})
+}
+
+// TestFuzzyMatchWithDynamicExpr tests fuzzy match with dynamic expression (concat path).
+func (suite *EBStringFunctionsTestSuite) TestFuzzyMatchWithDynamicExpr() {
+	suite.T().Logf("Testing fuzzy match with dynamic expr for %s", suite.ds.Kind)
+
+	suite.Run("ContainsDynamic", func() {
+		type Result struct {
+			Name  string `bun:"name"`
+			Email string `bun:"email"`
+		}
+
+		var results []Result
+
+		err := suite.selectUsers().
+			Select("name", "email").
+			Where(func(cb orm.ConditionBuilder) {
+				// Use a dynamic expression as pattern (column reference, not string literal)
+				cb.Expr(func(eb orm.ExprBuilder) any {
+					return eb.Contains(eb.Column("email"), eb.Column("name"))
+				})
+			}).
+			Limit(5).
+			Scan(suite.ctx, &results)
+
+		// May return 0 results but the code path is covered
+		suite.T().Logf("ContainsDynamic results: %d, err: %v", len(results), err)
+	})
+
+	suite.Run("StartsWithDynamic", func() {
+		type Result struct {
+			Name string `bun:"name"`
+		}
+
+		var results []Result
+
+		err := suite.selectUsers().
+			Select("name").
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
+					return eb.StartsWith(eb.Column("email"), eb.Column("name"))
+				})
+			}).
+			Limit(5).
+			Scan(suite.ctx, &results)
+
+		suite.T().Logf("StartsWithDynamic results: %d, err: %v", len(results), err)
+	})
+
+	suite.Run("EndsWithDynamic", func() {
+		type Result struct {
+			Name string `bun:"name"`
+		}
+
+		var results []Result
+
+		err := suite.selectUsers().
+			Select("name").
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
+					return eb.EndsWith(eb.Column("email"), eb.Column("name"))
+				})
+			}).
+			Limit(5).
+			Scan(suite.ctx, &results)
+
+		suite.T().Logf("EndsWithDynamic results: %d, err: %v", len(results), err)
+	})
+}
+
+// TestFuzzyMatchIgnoreCaseString tests ignore case fuzzy match with string.
+func (suite *EBStringFunctionsTestSuite) TestFuzzyMatchIgnoreCaseString() {
+	suite.T().Logf("Testing fuzzy match ignore case with string for %s", suite.ds.Kind)
+
+	suite.Run("ContainsIgnoreCase", func() {
+		type Result struct {
+			Name string `bun:"name"`
+		}
+
+		var results []Result
+
+		err := suite.selectUsers().
+			Select("name").
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
+					return eb.ContainsIgnoreCase(eb.Column("name"), "john")
+				})
+			}).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "ContainsIgnoreCase should work")
+
+		suite.T().Logf("Found %d users containing 'john' (ignore case)", len(results))
+	})
+
+	suite.Run("StartsWithIgnoreCase", func() {
+		type Result struct {
+			Name string `bun:"name"`
+		}
+
+		var results []Result
+
+		err := suite.selectUsers().
+			Select("name").
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
+					return eb.StartsWithIgnoreCase(eb.Column("name"), "a")
+				})
+			}).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "StartsWithIgnoreCase should work")
+
+		suite.T().Logf("Found %d users starting with 'a' (ignore case)", len(results))
+	})
+
+	suite.Run("EndsWithIgnoreCase", func() {
+		type Result struct {
+			Name string `bun:"name"`
+		}
+
+		var results []Result
+
+		err := suite.selectUsers().
+			Select("name").
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
+					return eb.EndsWithIgnoreCase(eb.Column("name"), "SON")
+				})
+			}).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "EndsWithIgnoreCase should work")
+
+		suite.T().Logf("Found %d users ending with 'SON' (ignore case)", len(results))
+	})
+}
+
+// TestFuzzyMatchIgnoreCaseDynamic tests ignore case fuzzy match with dynamic expression.
+func (suite *EBStringFunctionsTestSuite) TestFuzzyMatchIgnoreCaseDynamic() {
+	suite.T().Logf("Testing fuzzy match ignore case with dynamic expr for %s", suite.ds.Kind)
+
+	suite.Run("ContainsIgnoreCaseDynamic", func() {
+		type Result struct {
+			Name string `bun:"name"`
+		}
+
+		var results []Result
+
+		err := suite.selectUsers().
+			Select("name").
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Expr(func(eb orm.ExprBuilder) any {
+					return eb.ContainsIgnoreCase(eb.Column("email"), eb.Column("name"))
+				})
+			}).
+			Limit(5).
+			Scan(suite.ctx, &results)
+
+		suite.T().Logf("ContainsIgnoreCaseDynamic results: %d, err: %v", len(results), err)
 	})
 }

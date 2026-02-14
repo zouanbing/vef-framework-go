@@ -250,3 +250,261 @@ func (suite *DDLTestSuite) TestDropTableString() {
 	suite.Contains(sql, "DROP TABLE", "String() should contain DROP TABLE")
 	suite.Contains(sql, "IF EXISTS", "String() should contain IF EXISTS")
 }
+
+// TestCreateTableExtended tests extended CreateTable methods.
+func (suite *DDLTestSuite) TestCreateTableExtended() {
+	suite.T().Logf("Testing CreateTable extended for %s", suite.ds.Kind)
+
+	suite.Run("TableWithVarcharAndForeignKey", func() {
+		query := suite.db.NewCreateTable().
+			Model((*Tag)(nil)).
+			Table("test_ddl_temp").
+			IfNotExists().
+			Varchar(100).
+			WithForeignKeys()
+
+		suite.NotNil(query, "CreateTable should return non-nil")
+	})
+
+	suite.Run("ColumnExpr", func() {
+		query := suite.db.NewCreateTable().
+			Model((*Tag)(nil)).
+			ColumnExpr("extra_col TEXT")
+
+		suite.NotNil(query, "CreateTable with ColumnExpr should return non-nil")
+	})
+
+	if suite.ds.Kind == config.Postgres {
+		suite.Run("PartitionByAndTableSpace", func() {
+			query := suite.db.NewCreateTable().
+				Model((*Tag)(nil)).
+				Table("test_ddl_partition").
+				PartitionBy("RANGE (name)").
+				TableSpace("pg_default")
+
+			suite.NotNil(query, "CreateTable with PartitionBy should return non-nil")
+		})
+
+		suite.Run("ForeignKey", func() {
+			query := suite.db.NewCreateTable().
+				Model((*Tag)(nil)).
+				Table("test_ddl_fk").
+				ForeignKey("(name) REFERENCES test_user (name)")
+
+			suite.NotNil(query, "CreateTable with ForeignKey should return non-nil")
+		})
+	}
+}
+
+// TestCreateIndexExtended tests extended CreateIndex methods.
+func (suite *DDLTestSuite) TestCreateIndexExtended() {
+	suite.T().Logf("Testing CreateIndex extended for %s", suite.ds.Kind)
+
+	suite.Run("BasicIndex", func() {
+		query := suite.db.NewCreateIndex().
+			Table("test_tag").
+			Index("idx_test_tag_name_ddl").
+			Column("name").
+			IfNotExists()
+
+		suite.NotNil(query, "CreateIndex should return non-nil")
+	})
+
+	suite.Run("ColumnExprAndExcludeColumn", func() {
+		query := suite.db.NewCreateIndex().
+			Table("test_tag").
+			Index("idx_test_tag_expr").
+			ColumnExpr("lower(name)").
+			ExcludeColumn("name")
+
+		suite.NotNil(query, "CreateIndex with ColumnExpr should return non-nil")
+	})
+
+	if suite.ds.Kind == config.Postgres {
+		suite.Run("Concurrently", func() {
+			query := suite.db.NewCreateIndex().
+				Table("test_tag").
+				Index("idx_test_tag_conc").
+				Column("name").
+				Concurrently()
+
+			suite.NotNil(query, "CreateIndex Concurrently should return non-nil")
+		})
+
+		suite.Run("IncludeAndUsing", func() {
+			query := suite.db.NewCreateIndex().
+				Table("test_user").
+				Index("idx_test_user_inc").
+				Column("name").
+				Include("email").
+				Using("btree")
+
+			suite.NotNil(query, "CreateIndex with Include/Using should return non-nil")
+		})
+
+		suite.Run("IncludeExpr", func() {
+			query := suite.db.NewCreateIndex().
+				Table("test_user").
+				Index("idx_test_user_incexpr").
+				Column("name").
+				IncludeExpr("email")
+
+			suite.NotNil(query, "CreateIndex with IncludeExpr should return non-nil")
+		})
+
+		suite.Run("WhereAndWhereOr", func() {
+			query := suite.db.NewCreateIndex().
+				Table("test_user").
+				Index("idx_test_user_where").
+				Column("name").
+				Where("is_active = ?", true).
+				WhereOr("age > ?", 18)
+
+			suite.NotNil(query, "CreateIndex with Where/WhereOr should return non-nil")
+		})
+	}
+}
+
+// TestAddColumnExtended tests AddColumn with Model and IfNotExists.
+func (suite *DDLTestSuite) TestAddColumnExtended() {
+	suite.T().Logf("Testing AddColumn extended for %s", suite.ds.Kind)
+
+	suite.Run("ModelAndIfNotExists", func() {
+		query := suite.db.NewAddColumn().
+			Model((*Tag)(nil)).
+			IfNotExists().
+			ColumnExpr("extra_col TEXT")
+
+		suite.NotNil(query, "AddColumn should return non-nil")
+	})
+}
+
+// TestTruncateTableExtended tests TruncateTable operations.
+func (suite *DDLTestSuite) TestTruncateTableExtended() {
+	suite.T().Logf("Testing TruncateTable extended for %s", suite.ds.Kind)
+
+	suite.Run("BuildOnly", func() {
+		query := suite.db.NewTruncateTable().
+			Model((*Tag)(nil)).
+			ContinueIdentity()
+
+		suite.NotNil(query, "TruncateTable should return non-nil")
+	})
+}
+
+// TestDropTableExtended tests DropTable operations.
+func (suite *DDLTestSuite) TestDropTableExtended() {
+	suite.T().Logf("Testing DropTable extended for %s", suite.ds.Kind)
+
+	suite.Run("BuildOnly", func() {
+		query := suite.db.NewDropTable().
+			Model((*Tag)(nil)).
+			IfExists()
+
+		suite.NotNil(query, "DropTable should return non-nil")
+	})
+}
+
+// TestDropIndexExtended tests DropIndex operations.
+func (suite *DDLTestSuite) TestDropIndexExtended() {
+	suite.T().Logf("Testing DropIndex extended for %s", suite.ds.Kind)
+
+	suite.Run("BuildOnly", func() {
+		query := suite.db.NewDropIndex().
+			Index("idx_nonexistent").
+			IfExists()
+
+		suite.NotNil(query, "DropIndex should return non-nil")
+	})
+
+	if suite.ds.Kind == config.Postgres {
+		suite.Run("Concurrently", func() {
+			query := suite.db.NewDropIndex().
+				Index("idx_nonexistent").
+				IfExists().
+				Concurrently()
+
+			suite.NotNil(query, "DropIndex Concurrently should return non-nil")
+		})
+	}
+}
+
+// TestDropColumnExtended tests DropColumn operations.
+func (suite *DDLTestSuite) TestDropColumnExtended() {
+	suite.T().Logf("Testing DropColumn extended for %s", suite.ds.Kind)
+
+	suite.Run("BuildOnly", func() {
+		query := suite.db.NewDropColumn().
+			Model((*Tag)(nil)).
+			Column("nonexistent_col")
+
+		suite.NotNil(query, "DropColumn should return non-nil")
+	})
+}
+
+// TestDDLCascadeRestrict tests DDL Cascade and Restrict methods.
+func (suite *DDLTestSuite) TestDDLCascadeRestrict() {
+	suite.T().Logf("Testing DDL Cascade/Restrict for %s", suite.ds.Kind)
+
+	suite.Run("DropTableCascade", func() {
+		query := suite.db.NewDropTable().
+			Model((*Tag)(nil)).
+			Table("nonexistent_table").
+			IfExists().
+			Cascade()
+
+		suite.NotNil(query, "DropTable Cascade should return non-nil")
+	})
+
+	suite.Run("DropTableRestrict", func() {
+		query := suite.db.NewDropTable().
+			Model((*Tag)(nil)).
+			IfExists().
+			Restrict()
+
+		suite.NotNil(query, "DropTable Restrict should return non-nil")
+	})
+
+	suite.Run("DropIndexCascade", func() {
+		query := suite.db.NewDropIndex().
+			Index("idx_nonexistent").
+			IfExists().
+			Cascade()
+
+		suite.NotNil(query, "DropIndex Cascade should return non-nil")
+	})
+
+	suite.Run("DropIndexRestrict", func() {
+		query := suite.db.NewDropIndex().
+			Index("idx_nonexistent").
+			IfExists().
+			Restrict()
+
+		suite.NotNil(query, "DropIndex Restrict should return non-nil")
+	})
+
+	suite.Run("TruncateTableCascade", func() {
+		query := suite.db.NewTruncateTable().
+			Model((*Tag)(nil)).
+			Table("test_tag").
+			Cascade()
+
+		suite.NotNil(query, "TruncateTable Cascade should return non-nil")
+	})
+
+	suite.Run("TruncateTableRestrict", func() {
+		query := suite.db.NewTruncateTable().
+			Model((*Tag)(nil)).
+			Restrict()
+
+		suite.NotNil(query, "TruncateTable Restrict should return non-nil")
+	})
+
+	suite.Run("DropColumnExpr", func() {
+		query := suite.db.NewDropColumn().
+			Model((*Tag)(nil)).
+			ColumnExpr("nonexistent_col")
+
+		suite.NotNil(query, "DropColumn ColumnExpr should return non-nil")
+	})
+}

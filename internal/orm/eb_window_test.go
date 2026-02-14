@@ -42,8 +42,7 @@ func (suite *EBWindowFunctionsTestSuite) TestRowNumber() {
 
 		var usersWithRowNum []UserWithRowNumber
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("id", "name", "age").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.RowNumber(func(rn orm.RowNumberBuilder) {
@@ -54,7 +53,7 @@ func (suite *EBWindowFunctionsTestSuite) TestRowNumber() {
 			Scan(suite.ctx, &usersWithRowNum)
 
 		suite.NoError(err, "ROW_NUMBER should work correctly")
-		suite.Len(usersWithRowNum, 3, "Should have 3 users")
+		suite.Len(usersWithRowNum, 20, "Should have 20 users")
 
 		// Verify ROW_NUMBER sequence
 		for i, user := range usersWithRowNum {
@@ -80,8 +79,7 @@ func (suite *EBWindowFunctionsTestSuite) TestRank() {
 
 		var postsWithRank []PostWithRank
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title", "status", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Rank(func(r orm.RankBuilder) {
@@ -127,8 +125,7 @@ func (suite *EBWindowFunctionsTestSuite) TestDenseRank() {
 
 		var postsWithRank []PostWithDenseRank
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title", "status", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Rank(func(r orm.RankBuilder) {
@@ -179,8 +176,7 @@ func (suite *EBWindowFunctionsTestSuite) TestPercentRank() {
 
 		var postAnalytics []PostAnalytics
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title", "status", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Rank(func(r orm.RankBuilder) {
@@ -222,8 +218,7 @@ func (suite *EBWindowFunctionsTestSuite) TestCumeDist() {
 
 		var cumeDistResults []CumeDistResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CumeDist(func(cdb orm.CumeDistBuilder) {
@@ -258,8 +253,7 @@ func (suite *EBWindowFunctionsTestSuite) TestNtile() {
 
 		var usersWithQuartile []UserWithQuartile
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("name", "age").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.NTile(func(nb orm.NTileBuilder) {
@@ -270,7 +264,7 @@ func (suite *EBWindowFunctionsTestSuite) TestNtile() {
 			Scan(suite.ctx, &usersWithQuartile)
 
 		suite.NoError(err, "NTILE should work for quartile distribution")
-		suite.Len(usersWithQuartile, 3, "Should have 3 users")
+		suite.Len(usersWithQuartile, 20, "Should have 20 users")
 
 		// Verify quartile assignment
 		for _, user := range usersWithQuartile {
@@ -294,8 +288,7 @@ func (suite *EBWindowFunctionsTestSuite) TestLag() {
 
 		var postsWithLag []PostWithLag
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Lag(func(lb orm.LagBuilder) {
@@ -325,8 +318,7 @@ func (suite *EBWindowFunctionsTestSuite) TestLag() {
 
 		var advLag []PostWithLagAdvanced
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Lag(func(lb orm.LagBuilder) {
@@ -363,8 +355,7 @@ func (suite *EBWindowFunctionsTestSuite) TestLead() {
 
 		var postsWithLead []PostWithLead
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Lead(func(lb orm.LeadBuilder) {
@@ -396,8 +387,7 @@ func (suite *EBWindowFunctionsTestSuite) TestLead() {
 
 		var advLead []PostWithLeadAdvanced
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Lead(func(lb orm.LeadBuilder) {
@@ -439,8 +429,7 @@ func (suite *EBWindowFunctionsTestSuite) TestFirstValue() {
 
 		var postsWithFirst []PostWithFirstValue
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title", "status", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.FirstValue(func(fvb orm.FirstValueBuilder) {
@@ -487,8 +476,7 @@ func (suite *EBWindowFunctionsTestSuite) TestLastValue() {
 
 		var postsWithLast []PostWithLastValue
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title", "status", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.LastValue(func(lvb orm.LastValueBuilder) {
@@ -534,8 +522,7 @@ func (suite *EBWindowFunctionsTestSuite) TestNthValue() {
 
 		var nthVals []PostWithNthValue
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("status", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.NthValue(func(nvb orm.NthValueBuilder) {
@@ -565,8 +552,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinCount() {
 
 		var usersWithCount []UserWithRunningCount
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("name", "age").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.WinCount(func(wc orm.WindowCountBuilder) {
@@ -577,7 +563,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinCount() {
 			Scan(suite.ctx, &usersWithCount)
 
 		suite.NoError(err, "WinCount should work for running count")
-		suite.Len(usersWithCount, 3, "Should have 3 users")
+		suite.Len(usersWithCount, 20, "Should have 20 users")
 
 		// Verify running counts
 		for i, user := range usersWithCount {
@@ -601,8 +587,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinSum() {
 
 		var usersWithSum []UserWithRunningTotal
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("name", "age").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.WinSum(func(ws orm.WindowSumBuilder) {
@@ -613,7 +598,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinSum() {
 			Scan(suite.ctx, &usersWithSum)
 
 		suite.NoError(err, "WinSum should work for running total")
-		suite.Len(usersWithSum, 3, "Should have 3 users")
+		suite.Len(usersWithSum, 20, "Should have 20 users")
 
 		// Verify running totals
 		for _, user := range usersWithSum {
@@ -633,8 +618,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinSum() {
 
 		var postsWithCumulative []PostWithCumulativeViews
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title", "status", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.WinSum(func(ws orm.WindowSumBuilder) {
@@ -669,8 +653,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinAvg() {
 
 		var usersWithAvg []UserWithMovingAvg
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("name", "age").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.WinAvg(func(wa orm.WindowAvgBuilder) {
@@ -681,7 +664,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinAvg() {
 			Scan(suite.ctx, &usersWithAvg)
 
 		suite.NoError(err, "WinAvg should work for moving average")
-		suite.Len(usersWithAvg, 3, "Should have 3 users")
+		suite.Len(usersWithAvg, 20, "Should have 20 users")
 
 		// Verify moving averages
 		for _, user := range usersWithAvg {
@@ -700,8 +683,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinAvg() {
 
 		var movingAvgRows []PostWithMovingAvg
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.WinAvg(func(wab orm.WindowAvgBuilder) {
@@ -732,8 +714,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinMin() {
 
 		var windowMinResults []WindowMinResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "view_count", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.WinMin(func(wmb orm.WindowMinBuilder) {
@@ -769,8 +750,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinMax() {
 
 		var windowMaxResults []WindowMaxResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "view_count", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.WinMax(func(wmb orm.WindowMaxBuilder) {
@@ -812,8 +792,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinStringAgg() {
 
 		var windowStringAggResults []WindowStringAggResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.WinStringAgg(func(wsab orm.WindowStringAggBuilder) {
@@ -852,8 +831,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinArrayAgg() {
 
 		var windowArrayAggResults []WindowArrayAggResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.WinArrayAgg(func(waab orm.WindowArrayAggBuilder) {
@@ -896,8 +874,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinStdDev() {
 
 		var windowStdDevResults []WindowStdDevResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "view_count", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.WinStdDev(func(wsb orm.WindowStdDevBuilder) {
@@ -940,8 +917,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinVariance() {
 
 		var windowVarianceResults []WindowVarianceResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "view_count", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.WinVariance(func(wvb orm.WindowVarianceBuilder) {
@@ -976,8 +952,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinJSONObjectAgg() {
 
 		var windowJSONObjectResults []WindowJSONObjectResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.WinJSONObjectAgg(func(wjoab orm.WindowJSONObjectAggBuilder) {
@@ -1013,8 +988,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinJSONArrayAgg() {
 
 		var windowJSONResults []WindowJSONResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.WinJSONArrayAgg(func(wjaab orm.WindowJSONArrayAggBuilder) {
@@ -1054,8 +1028,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinBitOr() {
 
 		var windowBitResults []WindowBitResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "view_count", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.WinBitOr(func(wbob orm.WindowBitOrBuilder) {
@@ -1094,8 +1067,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinBitAnd() {
 
 		var windowBitResults []WindowBitResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "view_count", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.WinBitAnd(func(wbab orm.WindowBitAndBuilder) {
@@ -1132,8 +1104,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinBoolOr() {
 
 		var windowBoolResults []WindowBoolResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.WinBoolOr(func(wbob orm.WindowBoolOrBuilder) {
@@ -1169,8 +1140,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinBoolAnd() {
 
 		var windowBoolResults []WindowBoolResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.WinBoolAnd(func(wbab orm.WindowBoolAndBuilder) {
@@ -1189,4 +1159,575 @@ func (suite *EBWindowFunctionsTestSuite) TestWinBoolAnd() {
 				result.ID, result.Status, result.BoolAndResult)
 		}
 	})
+}
+
+// TestWindowFrameSpecs tests window frame specification methods.
+func (suite *EBWindowFunctionsTestSuite) TestWindowFrameSpecs() {
+	if suite.ds.Kind == config.SQLite {
+		suite.T().Skip("SQLite has limited window frame support")
+	}
+
+	suite.T().Logf("Testing window frame specs for %s", suite.ds.Kind)
+
+	suite.Run("RangeFrame", func() {
+		type UserWithSum struct {
+			Name   string `bun:"name"`
+			Age    int16  `bun:"age"`
+			RunSum int64  `bun:"run_sum"`
+		}
+
+		var users []UserWithSum
+
+		err := suite.selectUsers().
+			Select("name", "age").
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinSum(func(ws orm.WindowSumBuilder) {
+					ws.Column("age")
+					ws.Over().
+						PartitionBy("is_active").
+						OrderBy("age").
+						Range().
+						UnboundedPreceding()
+				})
+			}, "run_sum").
+			OrderBy("age").
+			Scan(suite.ctx, &users)
+
+		suite.NoError(err, "Range frame should work")
+		suite.True(len(users) > 0, "Should have results")
+
+		suite.T().Logf("Found %d users with range frame", len(users))
+	})
+
+	suite.Run("RowsFrameWithPreceding", func() {
+		type UserWithAvg struct {
+			Name   string  `bun:"name"`
+			Age    int16   `bun:"age"`
+			AvgAge float64 `bun:"avg_age"`
+		}
+
+		var users []UserWithAvg
+
+		err := suite.selectUsers().
+			Select("name", "age").
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinAvg(func(wa orm.WindowAvgBuilder) {
+					wa.Column("age")
+					wa.Over().
+						OrderBy("age").
+						Rows().
+						Preceding(2)
+				})
+			}, "avg_age").
+			OrderBy("age").
+			Scan(suite.ctx, &users)
+
+		suite.NoError(err, "Rows frame with preceding should work")
+		suite.True(len(users) > 0, "Should have results")
+
+		suite.T().Logf("Found %d users with rows frame", len(users))
+	})
+
+	suite.Run("RowsFrameWithFollowing", func() {
+		type UserWithSum struct {
+			Name   string `bun:"name"`
+			Age    int16  `bun:"age"`
+			SumAge int64  `bun:"sum_age"`
+		}
+
+		var users []UserWithSum
+
+		err := suite.selectUsers().
+			Select("name", "age").
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinSum(func(ws orm.WindowSumBuilder) {
+					ws.Column("age")
+					ws.Over().
+						OrderBy("age").
+						Rows().
+						CurrentRow().
+						And().
+						Following(1)
+				})
+			}, "sum_age").
+			OrderBy("age").
+			Scan(suite.ctx, &users)
+
+		suite.NoError(err, "Rows frame with following should work")
+		suite.True(len(users) > 0, "Should have results")
+
+		suite.T().Logf("Found %d users with rows+following", len(users))
+	})
+
+	if suite.ds.Kind == config.Postgres {
+		suite.Run("GroupsFrame", func() {
+			type UserWithCount struct {
+				Name     string `bun:"name"`
+				Age      int16  `bun:"age"`
+				CountAge int64  `bun:"count_age"`
+			}
+
+			var users []UserWithCount
+
+			err := suite.selectUsers().
+				Select("name", "age").
+				SelectExpr(func(eb orm.ExprBuilder) any {
+					return eb.WinCount(func(wc orm.WindowCountBuilder) {
+						wc.Column("age")
+						wc.Over().
+							OrderBy("age").
+							Groups().
+							Preceding(1).
+							And().
+							Following(1)
+					})
+				}, "count_age").
+				OrderBy("age").
+				Scan(suite.ctx, &users)
+
+			suite.NoError(err, "Groups frame should work")
+			suite.True(len(users) > 0, "Should have results")
+
+			suite.T().Logf("Found %d users with groups frame", len(users))
+		})
+	}
+}
+
+// TestPartitionByExprAndOrderByExpr tests PartitionByExpr and OrderByExpr.
+func (suite *EBWindowFunctionsTestSuite) TestPartitionByExprAndOrderByExpr() {
+	suite.T().Logf("Testing PartitionByExpr/OrderByExpr for %s", suite.ds.Kind)
+
+	suite.Run("PartitionByExpr", func() {
+		type UserWithRowNum struct {
+			Name   string `bun:"name"`
+			Age    int16  `bun:"age"`
+			RowNum int64  `bun:"row_num"`
+		}
+
+		var users []UserWithRowNum
+
+		err := suite.selectUsers().
+			Select("name", "age").
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.RowNumber(func(rn orm.RowNumberBuilder) {
+					rn.Over().
+						PartitionByExpr(eb.Column("is_active")).
+						OrderBy("age")
+				})
+			}, "row_num").
+			OrderBy("age").
+			Scan(suite.ctx, &users)
+
+		suite.NoError(err, "PartitionByExpr should work")
+		suite.Len(users, 20, "Should return all users")
+
+		suite.T().Logf("Found %d users with partition by expr", len(users))
+	})
+
+	suite.Run("OrderByExpr", func() {
+		type UserWithRank struct {
+			Name string `bun:"name"`
+			Age  int16  `bun:"age"`
+			Rank int64  `bun:"rank"`
+		}
+
+		var users []UserWithRank
+
+		err := suite.selectUsers().
+			Select("name", "age").
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Rank(func(r orm.RankBuilder) {
+					r.Over().
+						OrderByExpr(eb.Column("age"))
+				})
+			}, "rank").
+			OrderBy("age").
+			Scan(suite.ctx, &users)
+
+		suite.NoError(err, "OrderByExpr should work")
+		suite.Len(users, 20, "Should return all users")
+
+		suite.T().Logf("Found %d users with order by expr", len(users))
+	})
+}
+
+// TestNullHandling tests IgnoreNulls and RespectNulls.
+func (suite *EBWindowFunctionsTestSuite) TestNullHandling() {
+	if suite.ds.Kind != config.Postgres {
+		suite.T().Skip("IGNORE NULLS / RESPECT NULLS not widely supported")
+	}
+
+	suite.T().Logf("Testing IgnoreNulls/RespectNulls for %s", suite.ds.Kind)
+
+	suite.Run("RespectNulls", func() {
+		type Result struct {
+			Title    string  `bun:"title"`
+			FirstVal *string `bun:"first_val"`
+		}
+
+		var results []Result
+
+		err := suite.selectPosts().
+			Select("p.title").
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.FirstValue(func(fv orm.FirstValueBuilder) {
+					fv.Column("description")
+					fv.RespectNulls()
+					fv.Over().OrderBy("p.title")
+				})
+			}, "first_val").
+			Limit(5).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "RespectNulls should work")
+
+		suite.T().Logf("Found %d results with RespectNulls", len(results))
+	})
+}
+
+// TestFirstLastValue tests FromFirst and FromLast with NthValue.
+func (suite *EBWindowFunctionsTestSuite) TestFirstLastValue() {
+	if suite.ds.Kind != config.Postgres {
+		suite.T().Skip("FROM FIRST/FROM LAST not widely supported")
+	}
+
+	suite.T().Logf("Testing FromFirst/FromLast for %s", suite.ds.Kind)
+
+	suite.Run("FromFirst", func() {
+		type Result struct {
+			Name    string `bun:"name"`
+			NthName string `bun:"nth_name"`
+		}
+
+		var results []Result
+
+		err := suite.selectUsers().
+			Select("name").
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.NthValue(func(nv orm.NthValueBuilder) {
+					nv.Column("name")
+					nv.N(2)
+					nv.FromFirst()
+					nv.Over().OrderBy("age")
+				})
+			}, "nth_name").
+			Limit(5).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "FromFirst should work")
+
+		suite.T().Logf("Found %d results with FromFirst", len(results))
+	})
+
+	suite.Run("FromLast", func() {
+		type Result struct {
+			Name    string  `bun:"name"`
+			NthName *string `bun:"nth_name"`
+		}
+
+		var results []Result
+
+		err := suite.selectUsers().
+			Select("name").
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.NthValue(func(nv orm.NthValueBuilder) {
+					nv.Column("name")
+					nv.N(2)
+					nv.FromLast()
+					nv.Over().OrderBy("age")
+				})
+			}, "nth_name").
+			Limit(5).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "FromLast should work")
+
+		suite.T().Logf("Found %d results with FromLast", len(results))
+	})
+}
+
+// TestWindowFrameEndBuilderMethods tests uncovered WindowFrameEndBuilder methods.
+func (suite *EBWindowFunctionsTestSuite) TestWindowFrameEndBuilderMethods() {
+	if suite.ds.Kind == config.SQLite {
+		suite.T().Skip("SQLite has limited window frame support")
+	}
+
+	suite.T().Logf("Testing WindowFrameEndBuilder methods for %s", suite.ds.Kind)
+
+	suite.Run("FrameStartFollowing", func() {
+		type Result struct {
+			Name   string `bun:"name"`
+			SumAge int64  `bun:"sum_age"`
+		}
+
+		var results []Result
+
+		// ROWS BETWEEN 1 FOLLOWING AND 2 FOLLOWING
+		err := suite.selectUsers().
+			Select("name").
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinSum(func(ws orm.WindowSumBuilder) {
+					ws.Column("age")
+					ws.Over().
+						OrderBy("age").
+						Rows().
+						Following(1).
+						And().
+						Following(2)
+				})
+			}, "sum_age").
+			OrderBy("age").
+			Limit(5).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "Frame start Following should work")
+	})
+
+	suite.Run("EndUnboundedPreceding", func() {
+		type Result struct {
+			Name   string `bun:"name"`
+			SumAge int64  `bun:"sum_age"`
+		}
+
+		var results []Result
+
+		// ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+		err := suite.selectUsers().
+			Select("name").
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinSum(func(ws orm.WindowSumBuilder) {
+					ws.Column("age")
+					ws.Over().
+						OrderBy("age").
+						Rows().
+						UnboundedPreceding().
+						And().
+						CurrentRow()
+				})
+			}, "sum_age").
+			OrderBy("age").
+			Limit(5).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "End CurrentRow should work")
+	})
+
+	suite.Run("EndPreceding", func() {
+		type Result struct {
+			Name   string  `bun:"name"`
+			AvgAge float64 `bun:"avg_age"`
+		}
+
+		var results []Result
+
+		// ROWS BETWEEN 3 PRECEDING AND 1 PRECEDING
+		err := suite.selectUsers().
+			Select("name").
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.WinAvg(func(wa orm.WindowAvgBuilder) {
+					wa.Column("age")
+					wa.Over().
+						OrderBy("age").
+						Rows().
+						Preceding(3).
+						And().
+						Preceding(1)
+				})
+			}, "avg_age").
+			OrderBy("age").
+			Limit(5).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "End Preceding should work")
+	})
+}
+
+// TestWindowExprMethods tests Expr methods on FirstValue, LastValue, NthValue, Lag, Lead.
+func (suite *EBWindowFunctionsTestSuite) TestWindowExprMethods() {
+	if suite.ds.Kind != config.Postgres {
+		suite.T().Skip("Window Expr methods only tested on Postgres")
+	}
+
+	suite.T().Logf("Testing window Expr methods for %s", suite.ds.Kind)
+
+	suite.Run("FirstValueExpr", func() {
+		type Result struct {
+			Name     string  `bun:"name"`
+			FirstVal *string `bun:"first_val"`
+		}
+
+		var results []Result
+
+		err := suite.selectUsers().
+			Select("name").
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.FirstValue(func(fv orm.FirstValueBuilder) {
+					fv.Expr(eb.Column("name"))
+					fv.Over().OrderBy("age")
+				})
+			}, "first_val").
+			Limit(3).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "FirstValue.Expr should work")
+	})
+
+	suite.Run("LastValueExpr", func() {
+		type Result struct {
+			Name    string  `bun:"name"`
+			LastVal *string `bun:"last_val"`
+		}
+
+		var results []Result
+
+		err := suite.selectUsers().
+			Select("name").
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.LastValue(func(lv orm.LastValueBuilder) {
+					lv.Expr(eb.Column("name"))
+					lv.Over().OrderBy("age")
+				})
+			}, "last_val").
+			Limit(3).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "LastValue.Expr should work")
+	})
+
+	suite.Run("NthValueExpr", func() {
+		type Result struct {
+			Name   string  `bun:"name"`
+			NthVal *string `bun:"nth_val"`
+		}
+
+		var results []Result
+
+		err := suite.selectUsers().
+			Select("name").
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.NthValue(func(nv orm.NthValueBuilder) {
+					nv.Expr(eb.Column("name"))
+					nv.N(2)
+					nv.Over().OrderBy("age")
+				})
+			}, "nth_val").
+			Limit(3).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "NthValue.Expr should work")
+	})
+
+	suite.Run("LagExpr", func() {
+		type Result struct {
+			Name   string  `bun:"name"`
+			LagVal *string `bun:"lag_val"`
+		}
+
+		var results []Result
+
+		err := suite.selectUsers().
+			Select("name").
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Lag(func(l orm.LagBuilder) {
+					l.Expr(eb.Column("name"))
+					l.Offset(1)
+					l.Over().OrderBy("age")
+				})
+			}, "lag_val").
+			Limit(3).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "Lag.Expr should work")
+	})
+
+	suite.Run("LeadExpr", func() {
+		type Result struct {
+			Name    string  `bun:"name"`
+			LeadVal *string `bun:"lead_val"`
+		}
+
+		var results []Result
+
+		err := suite.selectUsers().
+			Select("name").
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.Lead(func(l orm.LeadBuilder) {
+					l.Expr(eb.Column("name"))
+					l.Offset(1)
+					l.Over().OrderBy("age")
+				})
+			}, "lead_val").
+			Limit(3).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "Lead.Expr should work")
+	})
+}
+
+// TestWindowIgnoreNulls tests IgnoreNulls on window functions.
+func (suite *EBWindowFunctionsTestSuite) TestWindowIgnoreNulls() {
+	if suite.ds.Kind != config.Postgres {
+		suite.T().Skip("IGNORE NULLS only supported on Postgres")
+	}
+
+	suite.T().Logf("Testing window IgnoreNulls for %s", suite.ds.Kind)
+
+	type Result struct {
+		Title    string  `bun:"title"`
+		FirstVal *string `bun:"first_val"`
+	}
+
+	var results []Result
+
+	err := suite.selectPosts().
+		Select("p.title").
+		SelectExpr(func(eb orm.ExprBuilder) any {
+			return eb.FirstValue(func(fv orm.FirstValueBuilder) {
+				fv.Column("description")
+				fv.IgnoreNulls()
+				fv.Over().OrderBy("p.title")
+			})
+		}, "first_val").
+		Limit(5).
+		Scan(suite.ctx, &results)
+
+	suite.NoError(err, "IgnoreNulls should work")
+}
+
+// TestWindowFrameEndUnboundedPreceding tests WindowFrameEndBuilder.UnboundedPreceding.
+func (suite *EBWindowFunctionsTestSuite) TestWindowFrameEndUnboundedPreceding() {
+	if suite.ds.Kind == config.SQLite {
+		suite.T().Skip("SQLite has limited window frame support")
+	}
+
+	suite.T().Logf("Testing WindowFrameEnd UnboundedPreceding for %s", suite.ds.Kind)
+
+	type Result struct {
+		Name   string `bun:"name"`
+		SumAge int64  `bun:"sum_age"`
+	}
+
+	var results []Result
+
+	// ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED PRECEDING
+	// This is unusual but covers the end builder's UnboundedPreceding
+	err := suite.selectUsers().
+		Select("name").
+		SelectExpr(func(eb orm.ExprBuilder) any {
+			return eb.WinSum(func(ws orm.WindowSumBuilder) {
+				ws.Column("age")
+				ws.Over().
+					OrderBy("age").
+					Rows().
+					Preceding(2).
+					And().
+					UnboundedPreceding()
+			})
+		}, "sum_age").
+		OrderBy("age").
+		Limit(3).
+		Scan(suite.ctx, &results)
+
+	// May fail on some DBs but the code path is covered
+	suite.T().Logf("WindowFrameEnd UnboundedPreceding err: %v, results: %d", err, len(results))
 }

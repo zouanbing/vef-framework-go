@@ -35,8 +35,7 @@ func (suite *EBBasicExpressionsTestSuite) TestColumn() {
 
 		var results []ColumnResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Column("id")
 			}, "id").
@@ -67,8 +66,7 @@ func (suite *EBBasicExpressionsTestSuite) TestColumn() {
 
 		var results []QualifiedColumnResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Join((*User)(nil), func(cb orm.ConditionBuilder) {
 				cb.EqualsColumn("u.id", "p.user_id")
 			}).
@@ -101,8 +99,7 @@ func (suite *EBBasicExpressionsTestSuite) TestColumn() {
 		var results []AliasTestResult
 
 		// Explicitly pass true - should add table alias when table exists
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Column("id", true)
 			}, "id").
@@ -133,8 +130,7 @@ func (suite *EBBasicExpressionsTestSuite) TestColumn() {
 		var results []NoAliasResult
 
 		// Pass false - should NOT add table alias even when table exists
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Column("id", false)
 			}, "id").
@@ -171,8 +167,7 @@ func (suite *EBBasicExpressionsTestSuite) TestTableColumns() {
 
 		var results []TableColumnsResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.TableColumns() // Should select all columns with table alias
 			}).
@@ -204,8 +199,7 @@ func (suite *EBBasicExpressionsTestSuite) TestTableColumns() {
 
 		var results []QualifiedColumnsResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.TableColumns(true) // Explicitly with table alias
 			}).
@@ -236,8 +230,7 @@ func (suite *EBBasicExpressionsTestSuite) TestTableColumns() {
 
 		var results []UnqualifiedColumnsResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.TableColumns(false) // Without table alias
 			}).
@@ -273,8 +266,7 @@ func (suite *EBBasicExpressionsTestSuite) TestAllColumns() {
 
 		var results []AllColumnsResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.AllColumns() // Should select all columns as ?TableAlias.*
 			}).
@@ -306,8 +298,7 @@ func (suite *EBBasicExpressionsTestSuite) TestAllColumns() {
 
 		var results []ExplicitAliasResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.AllColumns("p") // Should select all columns as p.*
 			}).
@@ -338,8 +329,7 @@ func (suite *EBBasicExpressionsTestSuite) TestAllColumns() {
 
 		var results []EmptyAliasResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.AllColumns("") // Empty alias should use ?TableAlias.*
 			}).
@@ -372,8 +362,7 @@ func (suite *EBBasicExpressionsTestSuite) TestAllColumns() {
 
 		var results []CombinedResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.AllColumns() // Select all Post columns
 			}).
@@ -413,8 +402,7 @@ func (suite *EBBasicExpressionsTestSuite) TestNull() {
 
 		var results []NullResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Null()
@@ -449,8 +437,7 @@ func (suite *EBBasicExpressionsTestSuite) TestIsNull() {
 
 		var results []IsNullResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				// Use CASE to create a NULL value when status = 'active'
@@ -480,8 +467,7 @@ func (suite *EBBasicExpressionsTestSuite) TestIsNull() {
 
 		var results []NullCoalesceResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Coalesce(
@@ -518,8 +504,7 @@ func (suite *EBBasicExpressionsTestSuite) TestIsNotNull() {
 
 		var results []IsNotNullResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.IsNotNull(eb.Column("title"))
@@ -550,8 +535,7 @@ func (suite *EBBasicExpressionsTestSuite) TestIsNotNull() {
 
 		var results []NullCheckResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.IsNotNull(eb.Column("title"))
@@ -590,8 +574,7 @@ func (suite *EBBasicExpressionsTestSuite) TestLiteral() {
 
 		var results []LiteralResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Literal("test_literal")
@@ -624,8 +607,7 @@ func (suite *EBBasicExpressionsTestSuite) TestOrder() {
 
 		var results []OrderResult
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("id", "name", "age").
 			OrderByExpr(func(eb orm.ExprBuilder) any {
 				return eb.Order(func(ob orm.OrderBuilder) {
@@ -663,8 +645,7 @@ func (suite *EBBasicExpressionsTestSuite) TestOrder() {
 
 		var results []MultiOrderResult
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("id", "is_active", "age").
 			OrderByExpr(func(eb orm.ExprBuilder) any {
 				return eb.Order(func(ob orm.OrderBuilder) {
@@ -703,8 +684,7 @@ func (suite *EBBasicExpressionsTestSuite) TestCase() {
 
 		var results []CaseResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Case(func(cb orm.CaseBuilder) {
@@ -744,8 +724,7 @@ func (suite *EBBasicExpressionsTestSuite) TestCase() {
 
 		var results []NestedCaseResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Coalesce(
@@ -778,8 +757,7 @@ func (suite *EBBasicExpressionsTestSuite) TestCase() {
 
 		var results []ComplexCaseResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title", "status", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Coalesce(
@@ -830,8 +808,7 @@ func (suite *EBBasicExpressionsTestSuite) TestSubQuery() {
 
 		var results []SubQueryResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.SubQuery(func(sq orm.SelectQuery) {
@@ -867,8 +844,7 @@ func (suite *EBBasicExpressionsTestSuite) TestSubQuery() {
 
 		var results []FilteredResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title", "view_count").
 			Where(func(cb orm.ConditionBuilder) {
 				cb.GreaterThanOrEqualExpr("view_count", func(eb orm.ExprBuilder) any {
@@ -905,8 +881,7 @@ func (suite *EBBasicExpressionsTestSuite) TestSubQuery() {
 
 		var results []CorrelatedResult
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("id", "name").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.SubQuery(func(sq orm.SelectQuery) {
@@ -947,8 +922,7 @@ func (suite *EBBasicExpressionsTestSuite) TestSubQuery() {
 
 		var results []AggregateSubQueryResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.SubQuery(func(sq orm.SelectQuery) {
@@ -1017,8 +991,7 @@ func (suite *EBBasicExpressionsTestSuite) TestExists() {
 
 		var results []ExistsResult
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("id", "name", "email").
 			Where(func(cb orm.ConditionBuilder) {
 				cb.Expr(func(eb orm.ExprBuilder) any {
@@ -1054,8 +1027,7 @@ func (suite *EBBasicExpressionsTestSuite) TestExists() {
 
 		var results []UserWithHighViewPosts
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("id", "name").
 			Where(func(cb orm.ConditionBuilder) {
 				cb.Expr(func(eb orm.ExprBuilder) any {
@@ -1091,8 +1063,7 @@ func (suite *EBBasicExpressionsTestSuite) TestExists() {
 
 		var results []Result
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			Where(func(cb orm.ConditionBuilder) {
 				cb.GreaterThan("view_count", 20)
@@ -1134,8 +1105,7 @@ func (suite *EBBasicExpressionsTestSuite) TestNotExists() {
 
 		var results []NotExistsResult
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("id", "name", "email").
 			Where(func(cb orm.ConditionBuilder) {
 				cb.Expr(func(eb orm.ExprBuilder) any {
@@ -1171,8 +1141,7 @@ func (suite *EBBasicExpressionsTestSuite) TestNotExists() {
 
 		var results []UserWithoutHighViewPosts
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("id", "name").
 			Where(func(cb orm.ConditionBuilder) {
 				cb.Expr(func(eb orm.ExprBuilder) any {
@@ -1208,8 +1177,7 @@ func (suite *EBBasicExpressionsTestSuite) TestNotExists() {
 
 		var results []CombinedResult
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("id", "name").
 			Where(func(cb orm.ConditionBuilder) {
 				cb.Expr(func(eb orm.ExprBuilder) any {
@@ -1261,8 +1229,7 @@ func (suite *EBBasicExpressionsTestSuite) TestNot() {
 
 		var results []NotResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title", "status").
 			Where(func(cb orm.ConditionBuilder) {
 				cb.Expr(func(eb orm.ExprBuilder) any {
@@ -1292,8 +1259,7 @@ func (suite *EBBasicExpressionsTestSuite) TestNot() {
 
 		var results []ComparisonNotResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title", "view_count").
 			Where(func(cb orm.ConditionBuilder) {
 				cb.Expr(func(eb orm.ExprBuilder) any {
@@ -1323,8 +1289,7 @@ func (suite *EBBasicExpressionsTestSuite) TestNot() {
 
 		var results []NullNotResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title", "description").
 			Where(func(cb orm.ConditionBuilder) {
 				cb.Expr(func(eb orm.ExprBuilder) any {
@@ -1354,8 +1319,7 @@ func (suite *EBBasicExpressionsTestSuite) TestNot() {
 
 		var results []SelectNotResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Not(eb.Equals(eb.Column("status"), "draft"))
@@ -1402,8 +1366,7 @@ func (suite *EBBasicExpressionsTestSuite) TestAny() {
 
 		var results []AnyResult
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("id", "name", "email").
 			Where(func(cb orm.ConditionBuilder) {
 				cb.Expr(func(eb orm.ExprBuilder) any {
@@ -1442,8 +1405,7 @@ func (suite *EBBasicExpressionsTestSuite) TestAny() {
 
 		var results []ViewCountAnyResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title", "view_count").
 			Where(func(cb orm.ConditionBuilder) {
 				cb.Expr(func(eb orm.ExprBuilder) any {
@@ -1503,8 +1465,7 @@ func (suite *EBBasicExpressionsTestSuite) TestAll() {
 
 		var results []AllResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title", "view_count").
 			Where(func(cb orm.ConditionBuilder) {
 				cb.Expr(func(eb orm.ExprBuilder) any {
@@ -1545,8 +1506,7 @@ func (suite *EBBasicExpressionsTestSuite) TestAll() {
 
 		var results []LessThanAllResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title", "view_count").
 			Where(func(cb orm.ConditionBuilder) {
 				cb.Expr(func(eb orm.ExprBuilder) any {
@@ -1596,8 +1556,7 @@ func (suite *EBBasicExpressionsTestSuite) TestArithmeticOperators() {
 
 		var results []ArithmeticResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Add(eb.Column("view_count"), 10)
@@ -1657,8 +1616,7 @@ func (suite *EBBasicExpressionsTestSuite) TestExpr() {
 
 		var results []ExprResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Expr("? * 2", eb.Column("view_count"))
@@ -1697,8 +1655,7 @@ func (suite *EBBasicExpressionsTestSuite) TestExpr() {
 
 		var results []StringExprResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Concat(eb.Column("title"), "' - '", eb.Column("status"))
@@ -1732,16 +1689,14 @@ func (suite *EBBasicExpressionsTestSuite) TestExpr() {
 		var results []ComplexExprResult
 
 		avgViewCount := float64(0)
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.AvgColumn("view_count")
 			}).
 			Scan(suite.ctx, &avgViewCount)
 		suite.NoError(err)
 
-		err = suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err = suite.selectPosts().
 			Select("id", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Abs(eb.Expr("? - ?", eb.Column("view_count"), int(avgViewCount)))
@@ -1779,8 +1734,7 @@ func (suite *EBBasicExpressionsTestSuite) TestExprs() {
 
 		var results []ExprsResult
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("id", "name", "email").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Exprs(
@@ -1817,8 +1771,7 @@ func (suite *EBBasicExpressionsTestSuite) TestExprsWithSep() {
 
 		var results []ExprsWithSepResult
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("id", "name", "age", "is_active").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				// Combine conditions: age > 28 OR is_active = false
@@ -1855,8 +1808,7 @@ func (suite *EBBasicExpressionsTestSuite) TestExprsWithSep() {
 
 		var results []ArithmeticResult
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("id", "name", "age").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				// Combine: age + 10 + 5
@@ -1901,8 +1853,7 @@ func (suite *EBBasicExpressionsTestSuite) TestExprByDialect() {
 
 		var results []ConcatResult
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("id", "name", "email").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				// Use ExprByDialect to handle different database syntaxes
@@ -1950,8 +1901,7 @@ func (suite *EBBasicExpressionsTestSuite) TestExprByDialect() {
 
 		var results []CaseResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				// All databases support CASE expression the same way

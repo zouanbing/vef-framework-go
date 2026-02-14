@@ -33,8 +33,7 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 
 		var decodeStatusResults []DecodeStatusResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Decode(
@@ -82,8 +81,7 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 
 		var decodePriorityResults []DecodePriorityResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Decode(
@@ -132,8 +130,7 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 
 		var decodeCombinedResults []DecodeCombinedResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Decode(
@@ -194,8 +191,7 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 
 		var results []DecodeInvalidResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Decode(eb.Column("status"))
@@ -223,8 +219,7 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 
 		var results []DecodeMinimalResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Decode(
@@ -268,8 +263,7 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 
 		var results []DecodeNoDefaultResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Decode(
@@ -318,8 +312,7 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 
 		var results []DecodeNullMappingResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title", "description").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Decode(
@@ -365,8 +358,7 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 
 		var results []DecodeNestedResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Case(func(cb orm.CaseBuilder) {

@@ -27,8 +27,7 @@ func (suite *EBMathFunctionsTestSuite) TestAbs() {
 		// First get average view count
 		var avgViewCount float64
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.AvgColumn("view_count")
 			}).
@@ -44,8 +43,7 @@ func (suite *EBMathFunctionsTestSuite) TestAbs() {
 
 		var results []AbsResult
 
-		err = suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err = suite.selectPosts().
 			Select("title", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Expr("? - ?", eb.Column("view_count"), int(avgViewCount))
@@ -88,8 +86,7 @@ func (suite *EBMathFunctionsTestSuite) TestCeil() {
 
 		var results []CeilResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Expr("? / 3.0", eb.Column("view_count"))
@@ -125,8 +122,7 @@ func (suite *EBMathFunctionsTestSuite) TestFloor() {
 
 		var results []FloorResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Expr("? / 3.0", eb.Column("view_count"))
@@ -163,8 +159,7 @@ func (suite *EBMathFunctionsTestSuite) TestRound() {
 
 		var results []RoundResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Round(eb.Expr("? * 1.456", eb.Column("view_count")))
@@ -205,8 +200,7 @@ func (suite *EBMathFunctionsTestSuite) TestTrunc() {
 
 		var results []TruncResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Expr("? / 3.0", eb.Column("view_count"))
@@ -242,8 +236,7 @@ func (suite *EBMathFunctionsTestSuite) TestPower() {
 
 		var results []PowerResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Power(eb.Column("view_count"), 2)
@@ -279,8 +272,7 @@ func (suite *EBMathFunctionsTestSuite) TestSqrt() {
 
 		var results []SqrtResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Sqrt(eb.Column("view_count"))
@@ -311,8 +303,7 @@ func (suite *EBMathFunctionsTestSuite) TestExp() {
 
 		var results []ExpResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Exp(eb.Expr("? / 100.0", eb.Column("view_count")))
@@ -344,8 +335,7 @@ func (suite *EBMathFunctionsTestSuite) TestLn() {
 
 		var results []LnResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Ln(eb.Column("view_count"))
@@ -379,8 +369,7 @@ func (suite *EBMathFunctionsTestSuite) TestLog() {
 
 		var results []LogResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Log(10, eb.Column("view_count"))
@@ -414,8 +403,7 @@ func (suite *EBMathFunctionsTestSuite) TestSin() {
 
 		var results []SinResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Sin(eb.Expr("? / 100.0", eb.Column("view_count")))
@@ -447,8 +435,7 @@ func (suite *EBMathFunctionsTestSuite) TestCos() {
 
 		var results []CosResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Cos(eb.Expr("? / 100.0", eb.Column("view_count")))
@@ -480,8 +467,7 @@ func (suite *EBMathFunctionsTestSuite) TestTan() {
 
 		var results []TanResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Tan(eb.Expr("? / 100.0", eb.Column("view_count")))
@@ -512,13 +498,12 @@ func (suite *EBMathFunctionsTestSuite) TestAsin() {
 
 		var results []AsinResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
-				return eb.Expr("? / 200.0", eb.Column("view_count"))
+				return eb.Expr("? / 500.0", eb.Column("view_count"))
 			}, "value").
 			SelectExpr(func(eb orm.ExprBuilder) any {
-				return eb.Asin(eb.Expr("? / 200.0", eb.Column("view_count")))
+				return eb.Asin(eb.Expr("? / 500.0", eb.Column("view_count")))
 			}, "asin_value").
 			OrderBy("view_count").
 			Limit(5).
@@ -546,13 +531,12 @@ func (suite *EBMathFunctionsTestSuite) TestAcos() {
 
 		var results []AcosResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
-				return eb.Expr("? / 200.0", eb.Column("view_count"))
+				return eb.Expr("? / 500.0", eb.Column("view_count"))
 			}, "value").
 			SelectExpr(func(eb orm.ExprBuilder) any {
-				return eb.Acos(eb.Expr("? / 200.0", eb.Column("view_count")))
+				return eb.Acos(eb.Expr("? / 500.0", eb.Column("view_count")))
 			}, "acos_value").
 			OrderBy("view_count").
 			Limit(5).
@@ -580,8 +564,7 @@ func (suite *EBMathFunctionsTestSuite) TestAtan() {
 
 		var results []AtanResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Expr("? / 200.0", eb.Column("view_count"))
 			}, "value").
@@ -614,8 +597,7 @@ func (suite *EBMathFunctionsTestSuite) TestPi() {
 
 		var results []PiResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Pi()
 			}, "pi_value").
@@ -659,8 +641,7 @@ func (suite *EBMathFunctionsTestSuite) TestRandom() {
 
 		var results []RandomResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Random()
@@ -691,8 +672,7 @@ func (suite *EBMathFunctionsTestSuite) TestSign() {
 
 		var results []SignResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Sign(eb.Expr("? - 50", eb.Column("view_count")))
@@ -724,8 +704,7 @@ func (suite *EBMathFunctionsTestSuite) TestMod() {
 
 		var results []ModResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Mod(eb.Column("view_count"), 5)
@@ -761,8 +740,7 @@ func (suite *EBMathFunctionsTestSuite) TestGreatest() {
 
 		var results []GreatestResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Greatest(eb.Column("view_count"), 20, 30, 40)
@@ -793,8 +771,7 @@ func (suite *EBMathFunctionsTestSuite) TestLeast() {
 
 		var results []LeastResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Least(eb.Column("view_count"), 20, 30, 40)
@@ -829,8 +806,7 @@ func (suite *EBMathFunctionsTestSuite) TestCombinedMathFunctions() {
 
 		var results []CombinedBasicResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Abs(eb.Expr("? - 100", eb.Column("view_count")))
@@ -872,8 +848,7 @@ func (suite *EBMathFunctionsTestSuite) TestCombinedMathFunctions() {
 
 		var results []CombinedAdvancedResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title", "view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Power(eb.Column("view_count"), 2)
@@ -915,8 +890,7 @@ func (suite *EBMathFunctionsTestSuite) TestCombinedMathFunctions() {
 
 		var results []CombinedTrigResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Sin(eb.Expr("? / 100.0", eb.Column("view_count")))
@@ -952,8 +926,7 @@ func (suite *EBMathFunctionsTestSuite) TestCombinedMathFunctions() {
 
 		var results []CombinedLogResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("view_count").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Sin(eb.Ln(eb.Column("view_count")))

@@ -28,8 +28,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestInSubQuery() {
 
 	suite.Run("BasicInSubQuery", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.db.NewSelect().
-				Model((*Post)(nil)).
+			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.InSubQuery("user_id", func(sq orm.SelectQuery) {
 						sq.Model((*User)(nil)).
@@ -48,8 +47,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestInSubQuery() {
 
 	suite.Run("OrInSubQuery", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.db.NewSelect().
-				Model((*Post)(nil)).
+			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.InSubQuery("user_id", func(sq orm.SelectQuery) {
 						sq.Model((*User)(nil)).
@@ -79,8 +77,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestNotInSubQuery() {
 
 	suite.Run("BasicNotInSubQuery", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.db.NewSelect().
-				Model((*Post)(nil)).
+			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.NotInSubQuery("user_id", func(sq orm.SelectQuery) {
 						sq.Model((*User)(nil)).
@@ -99,8 +96,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestNotInSubQuery() {
 
 	suite.Run("OrNotInSubQuery", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.db.NewSelect().
-				Model((*Post)(nil)).
+			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.NotInSubQuery("user_id", func(sq orm.SelectQuery) {
 						sq.Model((*User)(nil)).
@@ -130,8 +126,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestEqualsSubQuery() {
 
 	suite.Run("BasicEqualsSubQuery", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.db.NewSelect().
-				Model((*Post)(nil)).
+			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.EqualsSubQuery("user_id", func(sq orm.SelectQuery) {
 						sq.Model((*User)(nil)).
@@ -151,8 +146,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestEqualsSubQuery() {
 
 	suite.Run("OrEqualsSubQuery", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.db.NewSelect().
-				Model((*Post)(nil)).
+			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.EqualsSubQuery("user_id", func(sq orm.SelectQuery) {
 						sq.Model((*User)(nil)).
@@ -184,8 +178,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestNotEqualsSubQuery() {
 
 	suite.Run("BasicNotEqualsSubQuery", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.db.NewSelect().
-				Model((*Post)(nil)).
+			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.NotEqualsSubQuery("user_id", func(sq orm.SelectQuery) {
 						sq.Model((*User)(nil)).
@@ -205,8 +198,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestNotEqualsSubQuery() {
 
 	suite.Run("OrNotEqualsSubQuery", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.db.NewSelect().
-				Model((*Post)(nil)).
+			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.NotEqualsSubQuery("user_id", func(sq orm.SelectQuery) {
 						sq.Model((*User)(nil)).
@@ -238,8 +230,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestGreaterThanSubQuery() {
 
 	suite.Run("BasicGreaterThanSubQuery", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.GreaterThanSubQuery("age", func(sq orm.SelectQuery) {
 						sq.Model((*User)(nil)).
@@ -262,8 +253,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestGreaterThanSubQuery() {
 
 	suite.Run("OrGreaterThanSubQuery", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.GreaterThanSubQuery("age", func(sq orm.SelectQuery) {
 						sq.Model((*User)(nil)).
@@ -293,8 +283,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestLessThanSubQuery() {
 
 	suite.Run("BasicLessThanSubQuery", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.LessThanSubQuery("age", func(sq orm.SelectQuery) {
 						sq.Model((*User)(nil)).
@@ -317,8 +306,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestLessThanSubQuery() {
 
 	suite.Run("OrLessThanSubQuery", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.LessThanSubQuery("age", func(sq orm.SelectQuery) {
 						sq.Model((*User)(nil)).
@@ -357,8 +345,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestEqualsAll() {
 	suite.Run("BasicEqualsAll", func() {
 		// Find users whose age equals all ages in a subquery returning a single value
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.EqualsAll("age", func(sq orm.SelectQuery) {
 						sq.Model((*User)(nil)).
@@ -377,8 +364,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestEqualsAll() {
 
 	suite.Run("OrEqualsAll", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.EqualsAll("age", func(sq orm.SelectQuery) {
 						sq.Model((*User)(nil)).
@@ -416,8 +402,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestNotEqualsAll() {
 	suite.Run("BasicNotEqualsAll", func() {
 		// Find users whose age does not equal all ages in a subquery
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.NotEqualsAll("age", func(sq orm.SelectQuery) {
 						sq.Model((*User)(nil)).
@@ -429,7 +414,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestNotEqualsAll() {
 				OrderBy("age"),
 		)
 
-		suite.Len(users, 2, "Should find two users")
+		suite.Len(users, 19, "Should find all users except age 30")
 
 		for _, user := range users {
 			suite.NotEqual(int16(30), user.Age, "Age should not be 30")
@@ -440,8 +425,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestNotEqualsAll() {
 
 	suite.Run("OrNotEqualsAll", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.NotEqualsAll("age", func(sq orm.SelectQuery) {
 						sq.Model((*User)(nil)).
@@ -471,8 +455,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestExists() {
 	suite.Run("BasicExists", func() {
 		// Find posts where the author exists and is active
 		posts := suite.assertQueryReturnsPosts(
-			suite.db.NewSelect().
-				Model((*Post)(nil)).
+			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.Expr(func(eb orm.ExprBuilder) any {
 						return eb.Exists(func(sq orm.SelectQuery) {
@@ -493,8 +476,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestExists() {
 
 	suite.Run("OrExists", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.db.NewSelect().
-				Model((*Post)(nil)).
+			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.Expr(func(eb orm.ExprBuilder) any {
 						return eb.Exists(func(sq orm.SelectQuery) {
@@ -529,8 +511,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestNotExists() {
 	suite.Run("BasicNotExists", func() {
 		// Find posts where there's no corresponding category
 		posts := suite.assertQueryReturnsPosts(
-			suite.db.NewSelect().
-				Model((*Post)(nil)).
+			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.Expr(func(eb orm.ExprBuilder) any {
 						return eb.NotExists(func(sq orm.SelectQuery) {
@@ -551,8 +532,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestNotExists() {
 
 	suite.Run("OrNotExists", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.db.NewSelect().
-				Model((*Post)(nil)).
+			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.Expr(func(eb orm.ExprBuilder) any {
 						return eb.NotExists(func(sq orm.SelectQuery) {

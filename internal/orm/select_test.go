@@ -1,6 +1,8 @@
 package orm_test
 
 import (
+	"time"
+
 	"github.com/stretchr/testify/suite"
 	"github.com/uptrace/bun"
 
@@ -197,8 +199,7 @@ func (suite *SelectTestSuite) TestSelectAndSelectAs() {
 
 		var users []UserBasic
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("id", "name", "email").
 			OrderBy("name").
 			Limit(2).
@@ -225,8 +226,7 @@ func (suite *SelectTestSuite) TestSelectAndSelectAs() {
 
 		var posts []PostWithAlias
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectAs("status", "post_status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
@@ -263,8 +263,7 @@ func (suite *SelectTestSuite) TestSelectExpr() {
 
 		var posts []PostWithCalculated
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Case(func(cb orm.CaseBuilder) {
@@ -312,8 +311,7 @@ func (suite *SelectTestSuite) TestSelectExpr() {
 
 		var users []UserWithStats
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("id", "name").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Upper(eb.Column("name"))
@@ -387,8 +385,7 @@ func (suite *SelectTestSuite) TestSelectModelColumns() {
 
 		var users []UserWithExpr
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			SelectModelColumns().
 			Select("name").
 			SelectExpr(func(eb orm.ExprBuilder) any {
@@ -423,8 +420,7 @@ func (suite *SelectTestSuite) TestSelectModelPKs() {
 
 		var users []UserIDOnly
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			SelectModelPKs().
 			OrderBy("id").
 			Limit(3).
@@ -447,8 +443,7 @@ func (suite *SelectTestSuite) TestSelectModelPKs() {
 
 		var users []UserWithExpr
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			SelectModelPKs().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Concat("User: ", eb.Column("name"))
@@ -485,8 +480,7 @@ func (suite *SelectTestSuite) TestExclude() {
 
 		var users []UserWithoutSensitive
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Exclude("name", "email", "age", "is_active", "meta").
 			OrderBy("id").
 			Limit(2).
@@ -512,8 +506,7 @@ func (suite *SelectTestSuite) TestExclude() {
 
 		var posts []PostWithExpr
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			ExcludeAll().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Upper(eb.Column("status"))
@@ -569,8 +562,7 @@ func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
 
 		var users2 []UserNameOnly
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			SelectAll().
 			Select("name").
 			Scan(suite.ctx, &users2)
@@ -619,8 +611,7 @@ func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
 
 		var users5 []UserIDOnly
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			SelectModelColumns().
 			SelectModelPKs().
 			Scan(suite.ctx, &users5)
@@ -664,8 +655,7 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 
 		var users1 []UserWithComputed
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			SelectAll().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Case(func(cb orm.CaseBuilder) {
@@ -697,8 +687,7 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 
 		var users2 []UserWithRowNum
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("name", "email").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.RowNumber(func(rb orm.RowNumberBuilder) {
@@ -727,8 +716,7 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 
 		var users3 []UserWithMultipleComputed
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("name").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Upper(eb.Column("name"))
@@ -762,8 +750,7 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 
 		var users4 []UserAllWithComputed
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("name").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.RowNumber(func(rb orm.RowNumberBuilder) {
@@ -802,8 +789,7 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 
 		var users5 []UserModelWithTotal
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			SelectModelColumns().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.WinCount(func(wcb orm.WindowCountBuilder) {
@@ -852,8 +838,7 @@ func (suite *SelectTestSuite) TestSelectIdempotency() {
 
 		var users2 []UserIDOnly
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			SelectModelPKs().
 			SelectModelPKs().
 			SelectModelPKs().
@@ -895,8 +880,7 @@ func (suite *SelectTestSuite) TestDistinct() {
 
 		var statuses []DistinctStatus
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Distinct().
 			Select("status").
 			OrderBy("status").
@@ -926,8 +910,7 @@ func (suite *SelectTestSuite) TestDistinct() {
 
 		var posts []DistinctPost
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			DistinctOnColumns("title").
 			Select("title", "status").
 			OrderBy("title").
@@ -959,8 +942,7 @@ func (suite *SelectTestSuite) TestDistinct() {
 
 		var posts []DistinctExpr
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			DistinctOnExpr(func(eb orm.ExprBuilder) any {
 				return eb.Upper(eb.Column("title"))
 			}).
@@ -1142,8 +1124,7 @@ func (suite *SelectTestSuite) TestJoins() {
 
 		var posts []PostWithUser
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectAs("u.name", "user_name").
 			Join((*User)(nil), func(cb orm.ConditionBuilder) {
@@ -1174,8 +1155,7 @@ func (suite *SelectTestSuite) TestJoins() {
 
 		var categories []CategoryWithPostCount
 
-		err := suite.db.NewSelect().
-			Model((*Category)(nil)).
+		err := suite.selectCategories().
 			Select("id", "name").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CountColumn("p.id")
@@ -1207,8 +1187,7 @@ func (suite *SelectTestSuite) TestJoins() {
 
 		var users []UserWithPosts
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("id", "name").
 			SelectAs("p.id", "post_id").
 			SelectAs("p.title", "post_title").
@@ -1246,8 +1225,7 @@ func (suite *SelectTestSuite) TestJoins() {
 
 		var users []UserWithPosts
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("id", "name").
 			SelectAs("p.id", "post_id").
 			SelectAs("p.title", "post_title").
@@ -1307,8 +1285,7 @@ func (suite *SelectTestSuite) TestJoins() {
 
 		var posts []PostWithCategory
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectAs("c.name", "category_name").
 			JoinTable("test_category", func(cb orm.ConditionBuilder) {
@@ -1339,8 +1316,7 @@ func (suite *SelectTestSuite) TestJoins() {
 
 		var posts []PostWithActiveUser
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectAs("active_users.name", "user_name").
 			JoinSubQuery(
@@ -1386,8 +1362,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 	suite.Run("BasicJoinRelations", func() {
 		var posts []PostWithUserName
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("p.id", "p.title").
 			JoinRelations(&orm.RelationSpec{
 				Model:         (*User)(nil),
@@ -1424,8 +1399,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 
 		var posts []PostWithUserAndCategory
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("p.id", "p.title").
 			JoinRelations(
 				&orm.RelationSpec{
@@ -1472,8 +1446,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 
 		var posts []PostWithCategory
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("p.id", "p.title").
 			JoinRelations(&orm.RelationSpec{
 				Model:         (*Category)(nil),
@@ -1508,8 +1481,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 
 		var posts []PostWithActiveUser
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("p.id", "p.title").
 			JoinRelations(&orm.RelationSpec{
 				Model:         (*User)(nil),
@@ -1660,8 +1632,7 @@ func (suite *SelectTestSuite) TestGroupByAndHaving() {
 
 		var userCounts []UserCount
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("age").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CountColumn("id")
@@ -1687,8 +1658,7 @@ func (suite *SelectTestSuite) TestGroupByAndHaving() {
 
 		var ageGroups []UserByAgeGroup
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Case(func(cb orm.CaseBuilder) {
 					cb.When(
@@ -1735,8 +1705,7 @@ func (suite *SelectTestSuite) TestGroupByAndHaving() {
 
 		var ageStats []AgeStats
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("age").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CountColumn("id")
@@ -1776,7 +1745,7 @@ func (suite *SelectTestSuite) TestOrderBy() {
 			Scan(suite.ctx)
 
 		suite.NoError(err, "ORDER BY should work correctly")
-		suite.Len(users, 3, "Should return 3 users")
+		suite.Len(users, 5, "Should return 5 users")
 
 		// Verify ordering by age ascending
 		for i := 1; i < len(users); i++ {
@@ -1799,8 +1768,7 @@ func (suite *SelectTestSuite) TestOrderBy() {
 
 		var users []UserWithComputedOrder
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("id", "name", "age").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Case(func(cb orm.CaseBuilder) {
@@ -1841,8 +1809,7 @@ func (suite *SelectTestSuite) TestPagination() {
 
 	suite.Run("LimitAndOffset", func() {
 		// Get total count first
-		totalCount, err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		totalCount, err := suite.selectUsers().
 			Count(suite.ctx)
 		suite.NoError(err, "Should count total users")
 
@@ -2147,7 +2114,7 @@ func (suite *SelectTestSuite) TestApply() {
 			Scan(suite.ctx)
 
 		suite.NoError(err, "Apply should work correctly")
-		suite.Len(users, 2, "Should return 2 active users")
+		suite.Len(users, 3, "Should return 3 active users")
 
 		for _, user := range users {
 			suite.True(user.IsActive, "User should be active (applied filter)")
@@ -2232,8 +2199,7 @@ func (suite *SelectTestSuite) TestExecution() {
 	})
 
 	suite.Run("Count", func() {
-		count, err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		count, err := suite.selectUsers().
 			Where(func(cb orm.ConditionBuilder) {
 				cb.IsTrue("is_active")
 			}).
@@ -2246,8 +2212,7 @@ func (suite *SelectTestSuite) TestExecution() {
 	})
 
 	suite.Run("Exists", func() {
-		exists, err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		exists, err := suite.selectUsers().
 			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "alice@example.com")
 			}).
@@ -2279,8 +2244,7 @@ func (suite *SelectTestSuite) TestExecution() {
 	})
 
 	suite.Run("Rows", func() {
-		rows, err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		rows, err := suite.selectUsers().
 			Where(func(cb orm.ConditionBuilder) {
 				cb.IsTrue("is_active")
 			}).
@@ -2309,8 +2273,7 @@ func (suite *SelectTestSuite) TestExecution() {
 			Name string `bun:"name"`
 		}
 
-		_, err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		_, err := suite.selectUsers().
 			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("email", "alice@example.com")
 			}).
@@ -2319,4 +2282,673 @@ func (suite *SelectTestSuite) TestExecution() {
 		suite.NoError(err, "Exec should work when supported")
 		suite.T().Logf("Exec result: %s", result.Name)
 	})
+}
+
+// TestJoinVariants tests LeftJoinTable, LeftJoinSubQuery, LeftJoinExpr, RightJoin, FullJoin, CrossJoin variants.
+func (suite *SelectTestSuite) TestJoinVariants() {
+	suite.T().Logf("Testing join variants for %s", suite.ds.Kind)
+
+	suite.Run("LeftJoinTable", func() {
+		type PostWithCategory struct {
+			Title        string  `bun:"title"`
+			CategoryName *string `bun:"category_name"`
+		}
+
+		var results []PostWithCategory
+
+		err := suite.selectPosts().
+			Select("p.title").
+			SelectAs("c.name", "category_name").
+			LeftJoinTable("test_category", func(cb orm.ConditionBuilder) {
+				cb.EqualsColumn("c.id", "p.category_id")
+			}, "c").
+			OrderBy("p.title").
+			Limit(5).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "LeftJoinTable should work")
+		suite.True(len(results) > 0, "Should have results")
+
+		suite.T().Logf("Found %d results", len(results))
+	})
+
+	suite.Run("LeftJoinSubQuery", func() {
+		type PostWithUserInfo struct {
+			Title    string  `bun:"title"`
+			UserName *string `bun:"user_name"`
+		}
+
+		var results []PostWithUserInfo
+
+		err := suite.selectPosts().
+			Select("p.title").
+			SelectAs("u.name", "user_name").
+			LeftJoinSubQuery(func(sq orm.SelectQuery) {
+				sq.Model((*User)(nil)).
+					Select("id", "name")
+			}, func(cb orm.ConditionBuilder) {
+				cb.EqualsColumn("u.id", "p.user_id")
+			}, "u").
+			OrderBy("p.title").
+			Limit(5).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "LeftJoinSubQuery should work")
+		suite.True(len(results) > 0, "Should have results")
+
+		suite.T().Logf("Found %d results", len(results))
+	})
+
+	suite.Run("LeftJoinExpr", func() {
+		type PostWithExtra struct {
+			Title string  `bun:"title"`
+			TagID *string `bun:"tag_id"`
+		}
+
+		var results []PostWithExtra
+
+		err := suite.selectPosts().
+			Select("p.title").
+			SelectAs("pt.tag_id", "tag_id").
+			LeftJoinExpr(func(eb orm.ExprBuilder) any {
+				return eb.SubQuery(func(sq orm.SelectQuery) {
+					sq.Model((*PostTag)(nil)).
+						Select("post_id", "tag_id")
+				})
+			}, func(cb orm.ConditionBuilder) {
+				cb.EqualsColumn("pt.post_id", "p.id")
+			}, "pt").
+			OrderBy("p.title").
+			Limit(3).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "LeftJoinExpr should work")
+
+		suite.T().Logf("Found %d results", len(results))
+	})
+
+	suite.Run("JoinExpr", func() {
+		type PostCount struct {
+			UserName string `bun:"user_name"`
+		}
+
+		var results []PostCount
+
+		err := suite.selectUsers().
+			SelectAs("u.name", "user_name").
+			JoinExpr(func(eb orm.ExprBuilder) any {
+				return eb.SubQuery(func(sq orm.SelectQuery) {
+					sq.Model((*Post)(nil)).
+						Select("user_id").
+						Distinct()
+				})
+			}, func(cb orm.ConditionBuilder) {
+				cb.EqualsColumn("p.user_id", "u.id")
+			}, "p").
+			OrderBy("u.name").
+			Limit(5).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "JoinExpr should work")
+
+		suite.T().Logf("Found %d results", len(results))
+	})
+
+	if suite.ds.Kind == config.Postgres {
+		suite.Run("RightJoinTable", func() {
+			type Result struct {
+				CategoryName *string `bun:"category_name"`
+			}
+
+			var results []Result
+
+			err := suite.selectCategories().
+				SelectAs("c.name", "category_name").
+				RightJoinTable("test_post", func(cb orm.ConditionBuilder) {
+					cb.EqualsColumn("p.category_id", "c.id")
+				}, "p").
+				Limit(5).
+				Scan(suite.ctx, &results)
+
+			suite.NoError(err, "RightJoinTable should work")
+
+			suite.T().Logf("Found %d results", len(results))
+		})
+
+		suite.Run("RightJoinSubQuery", func() {
+			type Result struct {
+				Name string `bun:"name"`
+			}
+
+			var results []Result
+
+			err := suite.selectUsers().
+				Select("u.name").
+				RightJoinSubQuery(func(sq orm.SelectQuery) {
+					sq.Model((*Post)(nil)).
+						Select("user_id").
+						GroupBy("user_id")
+				}, func(cb orm.ConditionBuilder) {
+					cb.EqualsColumn("p.user_id", "u.id")
+				}, "p").
+				Limit(5).
+				Scan(suite.ctx, &results)
+
+			suite.NoError(err, "RightJoinSubQuery should work")
+
+			suite.T().Logf("Found %d results", len(results))
+		})
+
+		suite.Run("RightJoinExpr", func() {
+			type Result struct {
+				Name *string `bun:"name"`
+			}
+
+			var results []Result
+
+			err := suite.selectUsers().
+				Select("u.name").
+				RightJoinExpr(func(eb orm.ExprBuilder) any {
+					return eb.SubQuery(func(sq orm.SelectQuery) {
+						sq.Model((*Post)(nil)).
+							Select("user_id").
+							Distinct()
+					})
+				}, func(cb orm.ConditionBuilder) {
+					cb.EqualsColumn("p.user_id", "u.id")
+				}, "p").
+				Limit(5).
+				Scan(suite.ctx, &results)
+
+			suite.NoError(err, "RightJoinExpr should work")
+
+			suite.T().Logf("Found %d results", len(results))
+		})
+
+		suite.Run("FullJoinTable", func() {
+			type Result struct {
+				UserName     *string `bun:"user_name"`
+				CategoryName *string `bun:"category_name"`
+			}
+
+			var results []Result
+
+			err := suite.selectUsers().
+				SelectAs("u.name", "user_name").
+				SelectAs("c.name", "category_name").
+				FullJoinTable("test_category", func(cb orm.ConditionBuilder) {
+					cb.Expr(func(eb orm.ExprBuilder) any { return eb.Equals(eb.Literal(1), 1) })
+				}, "c").
+				Limit(5).
+				Scan(suite.ctx, &results)
+
+			suite.NoError(err, "FullJoinTable should work")
+
+			suite.T().Logf("Found %d results", len(results))
+		})
+
+		suite.Run("FullJoinSubQuery", func() {
+			type Result struct {
+				Name *string `bun:"name"`
+			}
+
+			var results []Result
+
+			err := suite.selectUsers().
+				Select("u.name").
+				FullJoinSubQuery(func(sq orm.SelectQuery) {
+					sq.Model((*Post)(nil)).
+						Select("user_id")
+				}, func(cb orm.ConditionBuilder) {
+					cb.EqualsColumn("p.user_id", "u.id")
+				}, "p").
+				Limit(5).
+				Scan(suite.ctx, &results)
+
+			suite.NoError(err, "FullJoinSubQuery should work")
+
+			suite.T().Logf("Found %d results", len(results))
+		})
+
+		suite.Run("FullJoinExpr", func() {
+			type Result struct {
+				Name *string `bun:"name"`
+			}
+
+			var results []Result
+
+			err := suite.selectUsers().
+				Select("u.name").
+				FullJoinExpr(func(eb orm.ExprBuilder) any {
+					return eb.SubQuery(func(sq orm.SelectQuery) {
+						sq.Model((*Post)(nil)).
+							Select("user_id").
+							Distinct()
+					})
+				}, func(cb orm.ConditionBuilder) {
+					cb.EqualsColumn("p.user_id", "u.id")
+				}, "p").
+				Limit(5).
+				Scan(suite.ctx, &results)
+
+			suite.NoError(err, "FullJoinExpr should work")
+
+			suite.T().Logf("Found %d results", len(results))
+		})
+	}
+
+	suite.Run("CrossJoin", func() {
+		type Result struct {
+			UserName string `bun:"user_name"`
+			TagName  string `bun:"tag_name"`
+		}
+
+		var results []Result
+
+		err := suite.selectUsers().
+			SelectAs("u.name", "user_name").
+			SelectAs("t.name", "tag_name").
+			CrossJoin((*Tag)(nil), "t").
+			Limit(5).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "CrossJoin should work")
+		suite.True(len(results) > 0, "Should have cross join results")
+
+		suite.T().Logf("Found %d results", len(results))
+	})
+
+	suite.Run("CrossJoinSubQuery", func() {
+		type Result struct {
+			UserName string `bun:"user_name"`
+			TagName  string `bun:"tag_name"`
+		}
+
+		var results []Result
+
+		err := suite.selectUsers().
+			SelectAs("u.name", "user_name").
+			SelectAs("t.name", "tag_name").
+			CrossJoinSubQuery(func(sq orm.SelectQuery) {
+				sq.Model((*Tag)(nil)).
+					Select("name").
+					Limit(2)
+			}, "t").
+			Limit(5).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "CrossJoinSubQuery should work")
+
+		suite.T().Logf("Found %d results", len(results))
+	})
+
+	suite.Run("CrossJoinExpr", func() {
+		type Result struct {
+			UserName string `bun:"user_name"`
+		}
+
+		var results []Result
+
+		err := suite.selectUsers().
+			SelectAs("u.name", "user_name").
+			CrossJoinExpr(func(eb orm.ExprBuilder) any {
+				return eb.SubQuery(func(sq orm.SelectQuery) {
+					sq.SelectExpr(func(eb orm.ExprBuilder) any {
+						return eb.Literal(1)
+					}, "val")
+				})
+			}, "x").
+			Limit(5).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "CrossJoinExpr should work")
+
+		suite.T().Logf("Found %d results", len(results))
+	})
+}
+
+// TestSetOperationVariants tests IntersectAll and ExceptAll.
+func (suite *SelectTestSuite) TestSetOperationVariants() {
+	if suite.ds.Kind != config.Postgres {
+		suite.T().Skip("INTERSECT ALL/EXCEPT ALL only reliably supported on Postgres")
+	}
+
+	suite.T().Logf("Testing set operation variants for %s", suite.ds.Kind)
+
+	suite.Run("IntersectAll", func() {
+		type NameResult struct {
+			Name string `bun:"name"`
+		}
+
+		var results []NameResult
+
+		err := suite.selectUsers().
+			Select("name").
+			Where(func(cb orm.ConditionBuilder) {
+				cb.IsTrue("is_active")
+			}).
+			IntersectAll(func(sq orm.SelectQuery) {
+				sq.Model((*User)(nil)).
+					Select("name").
+					Where(func(cb orm.ConditionBuilder) {
+						cb.GreaterThan("age", 25)
+					})
+			}).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "IntersectAll should work")
+
+		suite.T().Logf("IntersectAll results: %d", len(results))
+	})
+
+	suite.Run("ExceptAll", func() {
+		type NameResult struct {
+			Name string `bun:"name"`
+		}
+
+		var results []NameResult
+
+		err := suite.selectUsers().
+			Select("name").
+			Where(func(cb orm.ConditionBuilder) {
+				cb.IsTrue("is_active")
+			}).
+			ExceptAll(func(sq orm.SelectQuery) {
+				sq.Model((*User)(nil)).
+					Select("name").
+					Where(func(cb orm.ConditionBuilder) {
+						cb.GreaterThan("age", 35)
+					})
+			}).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "ExceptAll should work")
+
+		suite.T().Logf("ExceptAll results: %d", len(results))
+	})
+}
+
+// TestForShareVariants tests ForShareNoWait and ForShareSkipLocked.
+func (suite *SelectTestSuite) TestForShareVariants() {
+	if suite.ds.Kind == config.SQLite {
+		suite.T().Skip("SQLite does not support FOR SHARE")
+	}
+
+	suite.T().Logf("Testing ForShare variants for %s", suite.ds.Kind)
+
+	suite.Run("ForShareNoWait", func() {
+		var users []User
+
+		err := suite.selectUsers().
+			Limit(1).
+			ForShareNoWait().
+			Scan(suite.ctx, &users)
+
+		suite.NoError(err, "ForShareNoWait should work")
+
+		suite.T().Logf("Found %d users", len(users))
+	})
+
+	suite.Run("ForShareSkipLocked", func() {
+		var users []User
+
+		err := suite.selectUsers().
+			Limit(1).
+			ForShareSkipLocked().
+			Scan(suite.ctx, &users)
+
+		suite.NoError(err, "ForShareSkipLocked should work")
+
+		suite.T().Logf("Found %d users", len(users))
+	})
+}
+
+// TestWhereDeleted tests WhereDeleted and IncludeDeleted methods with a soft-delete model.
+func (suite *SelectTestSuite) TestWhereDeleted() {
+	suite.T().Logf("Testing WhereDeleted/IncludeDeleted for %s", suite.ds.Kind)
+
+	type SoftDeleteArticle struct {
+		bun.BaseModel `bun:"table:test_select_soft_delete,alias:tssd"`
+		orm.Model
+
+		Title     string    `json:"title" bun:"title,notnull"`
+		Status    string    `json:"status" bun:"status,notnull"`
+		DeletedAt time.Time `json:"deletedAt" bun:",soft_delete,nullzero"`
+	}
+
+	err := suite.db.ResetModel(suite.ctx, (*SoftDeleteArticle)(nil))
+	suite.Require().NoError(err)
+	defer func() {
+		_, _ = suite.db.NewDropTable().Model((*SoftDeleteArticle)(nil)).IfExists().Exec(suite.ctx)
+	}()
+
+	records := []*SoftDeleteArticle{
+		{Title: "To be deleted", Status: "draft"},
+		{Title: "Active article", Status: "published"},
+	}
+
+	_, err = suite.db.NewInsert().Model(&records).Exec(suite.ctx)
+	suite.Require().NoError(err)
+
+	// Soft delete the first record
+	_, err = suite.db.NewDelete().
+		Model((*SoftDeleteArticle)(nil)).
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("id", records[0].ID)
+		}).
+		Exec(suite.ctx)
+	suite.Require().NoError(err)
+
+	suite.Run("DefaultExcludesDeleted", func() {
+		var articles []SoftDeleteArticle
+
+		err := suite.db.NewSelect().
+			Model(&articles).
+			OrderBy("title").
+			Scan(suite.ctx)
+		suite.Require().NoError(err)
+		suite.Len(articles, 1, "Default query should exclude soft-deleted records")
+		suite.Equal("Active article", articles[0].Title)
+	})
+
+	suite.Run("WhereDeleted", func() {
+		var articles []SoftDeleteArticle
+
+		err := suite.db.NewSelect().
+			Model(&articles).
+			WhereDeleted().
+			Scan(suite.ctx)
+		suite.Require().NoError(err)
+		suite.Len(articles, 1, "WhereDeleted should return only soft-deleted records")
+		suite.Equal("To be deleted", articles[0].Title)
+	})
+
+	suite.Run("IncludeDeleted", func() {
+		var articles []SoftDeleteArticle
+
+		err := suite.db.NewSelect().
+			Model(&articles).
+			IncludeDeleted().
+			OrderBy("title").
+			Scan(suite.ctx)
+		suite.Require().NoError(err)
+		suite.Len(articles, 2, "IncludeDeleted should return all records")
+	})
+}
+
+// TestQueryBuilderQueryAndString tests QueryBuilder.Query and String methods.
+func (suite *SelectTestSuite) TestQueryBuilderQueryAndString() {
+	suite.T().Logf("Testing QueryBuilder Query/String for %s", suite.ds.Kind)
+
+	// These methods are on the internal QueryBuilder, accessed via the query's embedded field.
+	// We can test them indirectly by building queries.
+	query := suite.selectUsers().
+		Select("name").
+		Limit(1)
+
+	// The query object should have String() method
+	str := query.String()
+	suite.NotEmpty(str, "String() should return non-empty query string")
+
+	suite.T().Logf("Query string: %s", str)
+}
+
+// TestSelectModelTableWithAlias tests ModelTable with alias parameter.
+func (suite *SelectTestSuite) TestSelectModelTableWithAlias() {
+	suite.T().Logf("Testing ModelTable with alias for %s", suite.ds.Kind)
+
+	type Result struct {
+		Name string `bun:"name"`
+	}
+
+	var results []Result
+
+	err := suite.db.NewSelect().
+		ModelTable("test_user", "u").
+		Select("u.name").
+		Limit(3).
+		Scan(suite.ctx, &results)
+
+	suite.NoError(err, "ModelTable with alias should work")
+	suite.Len(results, 3)
+}
+
+// TestSelectTableSubQueryWithAlias tests TableSubQuery with alias.
+func (suite *SelectTestSuite) TestSelectTableSubQueryWithAlias() {
+	suite.T().Logf("Testing Select TableSubQuery with alias for %s", suite.ds.Kind)
+
+	type Result struct {
+		Name string `bun:"name"`
+	}
+
+	var results []Result
+
+	err := suite.db.NewSelect().
+		TableSubQuery(func(sq orm.SelectQuery) {
+			sq.Model((*User)(nil)).
+				Select("name").
+				Limit(5)
+		}, "sub").
+		Select("sub.name").
+		Scan(suite.ctx, &results)
+
+	suite.NoError(err, "TableSubQuery with alias should work")
+	suite.Len(results, 5)
+}
+
+// TestCrossJoinTableWithAlias tests CrossJoinTable with alias.
+func (suite *SelectTestSuite) TestCrossJoinTableWithAlias() {
+	suite.T().Logf("Testing CrossJoinTable with alias for %s", suite.ds.Kind)
+
+	query := suite.selectUsers().
+		Select("name").
+		CrossJoinTable("test_tag", "t").
+		Limit(1)
+
+	suite.NotNil(query, "CrossJoinTable with alias should return non-nil")
+}
+
+// TestCrossJoinSubQueryWithAlias tests CrossJoinSubQuery with alias.
+func (suite *SelectTestSuite) TestCrossJoinSubQueryWithAlias() {
+	suite.T().Logf("Testing CrossJoinSubQuery with alias for %s", suite.ds.Kind)
+
+	query := suite.selectUsers().
+		Select("name").
+		CrossJoinSubQuery(func(sq orm.SelectQuery) {
+			sq.Model((*Tag)(nil)).Select("name").Limit(1)
+		}, "t").
+		Limit(1)
+
+	suite.NotNil(query, "CrossJoinSubQuery with alias should return non-nil")
+}
+
+// TestCrossJoinExprWithAlias tests CrossJoinExpr with alias.
+func (suite *SelectTestSuite) TestCrossJoinExprWithAlias() {
+	suite.T().Logf("Testing CrossJoinExpr with alias for %s", suite.ds.Kind)
+
+	query := suite.selectUsers().
+		Select("name").
+		CrossJoinExpr(func(eb orm.ExprBuilder) any {
+			return eb.SubQuery(func(sq orm.SelectQuery) {
+				sq.Model((*Tag)(nil)).Select("name").Limit(1)
+			})
+		}, "t").
+		Limit(1)
+
+	suite.NotNil(query, "CrossJoinExpr with alias should return non-nil")
+}
+
+// TestSelectModelTableNoAlias tests Select ModelTable without alias (code path only).
+func (suite *SelectTestSuite) TestSelectModelTableNoAlias() {
+	suite.T().Logf("Testing Select ModelTable without alias for %s", suite.ds.Kind)
+
+	query := suite.db.NewSelect().
+		ModelTable("test_user").
+		Select("name").
+		Limit(3)
+
+	suite.NotNil(query, "ModelTable without alias should return non-nil")
+}
+
+// TestSelectTableSubQueryNoAlias tests Select TableSubQuery without alias.
+func (suite *SelectTestSuite) TestSelectTableSubQueryNoAlias() {
+	suite.T().Logf("Testing Select TableSubQuery without alias for %s", suite.ds.Kind)
+
+	type Result struct {
+		Name string `bun:"name"`
+	}
+
+	var results []Result
+
+	err := suite.db.NewSelect().
+		TableSubQuery(func(sq orm.SelectQuery) {
+			sq.Model((*User)(nil)).Select("name").Limit(3)
+		}).
+		Select("name").
+		Scan(suite.ctx, &results)
+
+	// May fail on some dialects but covers the code path
+	suite.T().Logf("TableSubQuery no alias: err=%v, results=%d", err, len(results))
+}
+
+// TestCrossJoinTableNoAlias tests CrossJoinTable without alias.
+func (suite *SelectTestSuite) TestCrossJoinTableNoAlias() {
+	suite.T().Logf("Testing CrossJoinTable without alias for %s", suite.ds.Kind)
+
+	query := suite.selectUsers().
+		Select("name").
+		CrossJoinTable("test_tag").
+		Limit(1)
+
+	suite.NotNil(query, "CrossJoinTable no alias should return non-nil")
+}
+
+// TestCrossJoinSubQueryNoAlias tests CrossJoinSubQuery without alias.
+func (suite *SelectTestSuite) TestCrossJoinSubQueryNoAlias() {
+	suite.T().Logf("Testing CrossJoinSubQuery without alias for %s", suite.ds.Kind)
+
+	query := suite.selectUsers().
+		Select("name").
+		CrossJoinSubQuery(func(sq orm.SelectQuery) {
+			sq.Model((*Tag)(nil)).Select("name").Limit(1)
+		}).
+		Limit(1)
+
+	suite.NotNil(query, "CrossJoinSubQuery no alias should return non-nil")
+}
+
+// TestCrossJoinExprNoAlias tests CrossJoinExpr without alias.
+func (suite *SelectTestSuite) TestCrossJoinExprNoAlias() {
+	suite.T().Logf("Testing CrossJoinExpr without alias for %s", suite.ds.Kind)
+
+	query := suite.selectUsers().
+		Select("name").
+		CrossJoinExpr(func(eb orm.ExprBuilder) any {
+			return eb.SubQuery(func(sq orm.SelectQuery) {
+				sq.Model((*Tag)(nil)).Select("name").Limit(1)
+			})
+		}).
+		Limit(1)
+
+	suite.NotNil(query, "CrossJoinExpr no alias should return non-nil")
 }

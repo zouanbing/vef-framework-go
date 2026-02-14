@@ -34,8 +34,7 @@ func (suite *EBConditionalFunctionsTestSuite) TestCoalesce() {
 
 		var coalesceResults []CoalesceResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title").
 			SelectAs("description", "description").
 			SelectExpr(func(eb orm.ExprBuilder) any {
@@ -85,8 +84,7 @@ func (suite *EBConditionalFunctionsTestSuite) TestNullIf() {
 
 		var nullIfResults []NullIfResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.NullIf(eb.Column("status"), "'draft'")
@@ -94,6 +92,9 @@ func (suite *EBConditionalFunctionsTestSuite) TestNullIf() {
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.NullIf(eb.Column("view_count"), 0)
 			}, "check_views").
+			Where(func(cb orm.ConditionBuilder) {
+				cb.NotEquals("status", "draft")
+			}).
 			OrderBy("title").
 			Limit(5).
 			Scan(suite.ctx, &nullIfResults)
@@ -102,12 +103,9 @@ func (suite *EBConditionalFunctionsTestSuite) TestNullIf() {
 		suite.True(len(nullIfResults) > 0, "Should have NullIf results")
 
 		for _, result := range nullIfResults {
-			if result.Status == "draft" {
-				suite.Nil(result.CheckDraft, "NullIf should return NULL when values are equal (draft)")
-			} else {
-				suite.NotNil(result.CheckDraft, "NullIf should return first argument when values differ")
-				suite.Equal(result.Status, *result.CheckDraft, "NullIf should return status when not draft")
-			}
+			suite.NotEqual("draft", result.Status, "Should not have draft posts")
+			suite.NotNil(result.CheckDraft, "NullIf should return first argument when values differ")
+			suite.Equal(result.Status, *result.CheckDraft, "NullIf should return status when not draft")
 
 			suite.T().Logf("Post %s: Status=%s, CheckDraft=%v, CheckViews=%v",
 				result.Title, result.Status, result.CheckDraft, result.CheckViews)
@@ -128,8 +126,7 @@ func (suite *EBConditionalFunctionsTestSuite) TestIfNull() {
 
 		var ifNullResults []IfNullResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.IfNull(eb.Column("description"), "'[No description]'")
@@ -170,8 +167,7 @@ func (suite *EBConditionalFunctionsTestSuite) TestCombinedConditionalFunctions()
 
 		var combinedResults []CombinedResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("title", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.IfNull(eb.Column("status"), "'unknown'")
@@ -231,8 +227,7 @@ func (suite *EBConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
 
 		var results []SingleArgResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Coalesce(eb.Column("title"), eb.Column("title"))
@@ -259,8 +254,7 @@ func (suite *EBConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
 
 		var results []AllNullResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Coalesce(eb.Expr("NULL"), eb.Expr("NULL"), eb.Expr("NULL"))
@@ -287,8 +281,7 @@ func (suite *EBConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
 
 		var results []ManyArgsResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Coalesce(
@@ -326,8 +319,7 @@ func (suite *EBConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
 
 		var results []FirstNullResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.NullIf(eb.Expr("NULL"), "'value'")
@@ -354,8 +346,7 @@ func (suite *EBConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
 
 		var results []SecondNullResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.NullIf(eb.Column("status"), eb.Expr("NULL"))
@@ -382,8 +373,7 @@ func (suite *EBConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
 
 		var results []BothNullResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.NullIf(eb.Expr("NULL"), eb.Expr("NULL"))
@@ -415,8 +405,7 @@ func (suite *EBConditionalFunctionsTestSuite) TestIfNullWithNullArguments() {
 
 		var results []DefaultNullResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.IfNull(eb.Expr("NULL"), eb.Expr("NULL"))
@@ -444,8 +433,7 @@ func (suite *EBConditionalFunctionsTestSuite) TestIfNullWithNullArguments() {
 
 		var results []ValueNullDefaultResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title", "status").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.IfNull(eb.Column("status"), eb.Expr("NULL"))
@@ -484,8 +472,7 @@ func (suite *EBConditionalFunctionsTestSuite) TestConditionalFunctionsSpecialVal
 
 		var results []EmptyStringResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(_ orm.ExprBuilder) any {
 				return ""
@@ -529,8 +516,7 @@ func (suite *EBConditionalFunctionsTestSuite) TestConditionalFunctionsSpecialVal
 
 		var results []ZeroVsNullResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "title").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Expr("0")

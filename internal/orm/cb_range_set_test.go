@@ -26,27 +26,25 @@ func (suite *CBRangeSetOperationsTestSuite) TestBetween() {
 
 	suite.Run("BasicBetween", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.Between("age", 25, 30)
 				}).
 				OrderBy("age"),
 		)
 
-		suite.Len(users, 2, "Should find two users")
+		suite.Len(users, 6, "Should find users with age between 25 and 30")
 
 		for _, user := range users {
 			suite.True(user.Age >= 25 && user.Age <= 30, "Age should be between 25 and 30")
 		}
 
-		suite.T().Logf("Found users with ages: %d, %d", users[0].Age, users[1].Age)
+		suite.T().Logf("Found %d users with age between 25 and 30", len(users))
 	})
 
 	suite.Run("OrBetween", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.Between("age", 25, 26).
 						OrBetween("age", 34, 36)
@@ -71,8 +69,7 @@ func (suite *CBRangeSetOperationsTestSuite) TestNotBetween() {
 
 	suite.Run("BasicNotBetween", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.NotBetween("age", 26, 34)
 				}).
@@ -90,8 +87,7 @@ func (suite *CBRangeSetOperationsTestSuite) TestNotBetween() {
 
 	suite.Run("OrNotBetween", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.NotBetween("age", 26, 29).
 						OrNotBetween("age", 31, 34)
@@ -111,8 +107,7 @@ func (suite *CBRangeSetOperationsTestSuite) TestBetweenExpr() {
 
 	suite.Run("BasicBetweenExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.BetweenExpr("age",
 						func(eb orm.ExprBuilder) any {
@@ -126,19 +121,18 @@ func (suite *CBRangeSetOperationsTestSuite) TestBetweenExpr() {
 				OrderBy("age"),
 		)
 
-		suite.Len(users, 2, "Should find two users")
+		suite.Len(users, 6, "Should find users with age between 25 and 30")
 
 		for _, user := range users {
 			suite.True(user.Age >= 25 && user.Age <= 30, "Age should be between 25 and 30")
 		}
 
-		suite.T().Logf("Found %d users", len(users))
+		suite.T().Logf("Found %d users with age between 25 and 30", len(users))
 	})
 
 	suite.Run("OrBetweenExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.BetweenExpr("age",
 						func(eb orm.ExprBuilder) any { return eb.Expr("?", 25) },
@@ -163,8 +157,7 @@ func (suite *CBRangeSetOperationsTestSuite) TestNotBetweenExpr() {
 
 	suite.Run("BasicNotBetweenExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.NotBetweenExpr("age",
 						func(eb orm.ExprBuilder) any { return eb.Expr("?", 26) },
@@ -185,8 +178,7 @@ func (suite *CBRangeSetOperationsTestSuite) TestNotBetweenExpr() {
 
 	suite.Run("OrNotBetweenExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.NotBetweenExpr("age",
 						func(eb orm.ExprBuilder) any { return eb.Expr("?", 26) },
@@ -211,8 +203,7 @@ func (suite *CBRangeSetOperationsTestSuite) TestIn() {
 
 	suite.Run("BasicInWithStrings", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.In("email", []string{"alice@example.com", "bob@example.com"})
 				}).
@@ -229,8 +220,7 @@ func (suite *CBRangeSetOperationsTestSuite) TestIn() {
 
 	suite.Run("BasicInWithIntegers", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.In("age", []int16{25, 35})
 				}).
@@ -246,8 +236,7 @@ func (suite *CBRangeSetOperationsTestSuite) TestIn() {
 
 	suite.Run("OrIn", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.In("age", []int16{25}).
 						OrIn("age", []int16{35})
@@ -267,15 +256,14 @@ func (suite *CBRangeSetOperationsTestSuite) TestNotIn() {
 
 	suite.Run("BasicNotIn", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.NotIn("email", []string{"charlie@example.com"})
 				}).
 				OrderBy("name"),
 		)
 
-		suite.Len(users, 2, "Should find two users")
+		suite.Len(users, 19, "Should find all users except Charlie")
 
 		for _, user := range users {
 			suite.NotEqual("charlie@example.com", user.Email)
@@ -286,8 +274,7 @@ func (suite *CBRangeSetOperationsTestSuite) TestNotIn() {
 
 	suite.Run("OrNotIn", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.NotIn("age", []int16{25}).
 						OrNotIn("age", []int16{30})
@@ -307,8 +294,7 @@ func (suite *CBRangeSetOperationsTestSuite) TestInExpr() {
 
 	suite.Run("BasicInExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.InExpr("age", func(eb orm.ExprBuilder) any {
 						return eb.Expr("?, ?", 25, 35)
@@ -324,8 +310,7 @@ func (suite *CBRangeSetOperationsTestSuite) TestInExpr() {
 
 	suite.Run("OrInExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.InExpr("age", func(eb orm.ExprBuilder) any {
 						return eb.Expr("?", 25)
@@ -348,8 +333,7 @@ func (suite *CBRangeSetOperationsTestSuite) TestNotInExpr() {
 
 	suite.Run("BasicNotInExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.NotInExpr("age", func(eb orm.ExprBuilder) any {
 						return eb.Expr("(?)", 30)
@@ -369,8 +353,7 @@ func (suite *CBRangeSetOperationsTestSuite) TestNotInExpr() {
 
 	suite.Run("OrNotInExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.NotInExpr("age", func(eb orm.ExprBuilder) any {
 						return eb.Expr("(?)", 25)

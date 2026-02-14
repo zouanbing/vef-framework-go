@@ -26,8 +26,7 @@ func (suite *CBLogicalGroupingTestSuite) TestGroup() {
 
 	suite.Run("BasicGroup", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.Group(func(cb orm.ConditionBuilder) {
 						cb.Equals("is_active", true).
@@ -49,8 +48,7 @@ func (suite *CBLogicalGroupingTestSuite) TestGroup() {
 
 	suite.Run("MultipleGroups", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.Group(func(cb orm.ConditionBuilder) {
 						cb.Equals("is_active", true)
@@ -68,8 +66,7 @@ func (suite *CBLogicalGroupingTestSuite) TestGroup() {
 
 	suite.Run("NestedGroups", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.Group(func(cb orm.ConditionBuilder) {
 						cb.Equals("is_active", true).
@@ -119,8 +116,7 @@ func (suite *CBLogicalGroupingTestSuite) TestOrGroup() {
 
 	suite.Run("MixedGroupAndOrGroup", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.Group(func(cb orm.ConditionBuilder) {
 						cb.Equals("is_active", true)
@@ -140,8 +136,7 @@ func (suite *CBLogicalGroupingTestSuite) TestOrGroup() {
 	suite.Run("ComplexNestedGrouping", func() {
 		// (is_active = true AND age > 25) OR (name LIKE '%Alice%' OR name LIKE '%Bob%')
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.Group(func(cb orm.ConditionBuilder) {
 						cb.Equals("is_active", true).
@@ -162,8 +157,7 @@ func (suite *CBLogicalGroupingTestSuite) TestOrGroup() {
 	suite.Run("DeeplyNestedGrouping", func() {
 		// ((age > 20 AND age < 40) OR (age > 50)) AND is_active = true
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.Group(func(cb orm.ConditionBuilder) {
 						cb.Group(func(cb orm.ConditionBuilder) {
@@ -190,8 +184,7 @@ func (suite *CBLogicalGroupingTestSuite) TestComplexLogicalCombinations() {
 	suite.Run("ThreeLevelNesting", func() {
 		// (((age = 25 OR age = 30) AND is_active = true) OR (age = 35 AND name LIKE '%Charlie%'))
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.Group(func(cb orm.ConditionBuilder) {
 						cb.Group(func(cb orm.ConditionBuilder) {
@@ -214,8 +207,7 @@ func (suite *CBLogicalGroupingTestSuite) TestComplexLogicalCombinations() {
 	suite.Run("MultipleOrGroupsWithAnd", func() {
 		// (age = 25 OR age = 30) AND (is_active = true OR name LIKE '%Alice%')
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.OrGroup(func(cb orm.ConditionBuilder) {
 						cb.Equals("age", 25).

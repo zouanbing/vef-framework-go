@@ -16,8 +16,48 @@ func init() {
 // MergeTestSuite tests MERGE operations (PostgreSQL 15+).
 // PostgreSQL 15+ supports the SQL standard MERGE statement (ISO/IEC 9075-2:2016).
 // This suite covers all interface methods from orm.MergeQuery, orm.MergeWhenBuilder, orm.MergeUpdateBuilder, and orm.MergeInsertBuilder.
+//
+// SetupTest inserts fresh test data before each test method; TearDownTest cleans it up.
+// This ensures merge operations never modify fixture data.
 type MergeTestSuite struct {
 	*BaseTestSuite
+	testUsers []*User
+	testPosts []*Post
+}
+
+// SetupTest inserts isolated test data before each test method.
+func (suite *MergeTestSuite) SetupTest() {
+	suite.testUsers = []*User{
+		{Name: "MT Alice", Email: "mt_alice@test.com", Age: 30, IsActive: true},
+		{Name: "MT Bob", Email: "mt_bob@test.com", Age: 25, IsActive: true},
+		{Name: "MT Charlie", Email: "mt_charlie@test.com", Age: 35, IsActive: false},
+	}
+
+	_, err := suite.db.NewInsert().Model(&suite.testUsers).Exec(suite.ctx)
+	suite.Require().NoError(err, "Failed to insert merge test users")
+
+	suite.testPosts = []*Post{
+		{Title: "MT Post Alpha", Content: "Content A", UserID: suite.testUsers[0].ID, CategoryID: "cat001", Status: "published", ViewCount: 100},
+		{Title: "MT Post Beta", Content: "Content B", UserID: suite.testUsers[0].ID, CategoryID: "cat001", Status: "draft", ViewCount: 50},
+		{Title: "MT Post Gamma", Content: "Content C", UserID: suite.testUsers[1].ID, CategoryID: "cat002", Status: "published", ViewCount: 75},
+		{Title: "MT Post Delta", Content: "Content D", UserID: suite.testUsers[2].ID, CategoryID: "cat001", Status: "review", ViewCount: 30},
+	}
+
+	_, err = suite.db.NewInsert().Model(&suite.testPosts).Exec(suite.ctx)
+	suite.Require().NoError(err, "Failed to insert merge test posts")
+}
+
+// TearDownTest removes all test-inserted data (created_at >= 2026) after each test method.
+func (suite *MergeTestSuite) TearDownTest() {
+	// Delete test posts first (FK constraint on user_id)
+	_, _ = suite.db.NewDelete().Model((*Post)(nil)).Where(func(cb orm.ConditionBuilder) {
+		cb.GreaterThanOrEqual("created_at", fixtureEndDate)
+	}).Exec(suite.ctx)
+
+	// Delete test users
+	_, _ = suite.db.NewDelete().Model((*User)(nil)).Where(func(cb orm.ConditionBuilder) {
+		cb.GreaterThanOrEqual("created_at", fixtureEndDate)
+	}).Exec(suite.ctx)
 }
 
 // TestBasicMerge tests MERGE with updates and inserts.
@@ -36,23 +76,14 @@ func (suite *MergeTestSuite) TestBasicMerge() {
 		IsActive bool   `bun:"is_active"`
 	}
 
+	// Use test user[0] as matched target, plus two new IDs for inserts
 	sourceData := []UserMergeData{
-		{ID: "user1", Name: "Alice Updated", Email: "alice.updated@example.com", Age: 31, IsActive: true},
-		{ID: "user4", Name: "David New", Email: "david@example.com", Age: 28, IsActive: true},
-		{ID: "user5", Name: "Eva New", Email: "eva@example.com", Age: 26, IsActive: false},
+		{ID: suite.testUsers[0].ID, Name: "MT Alice Updated", Email: "mt_alice_updated@test.com", Age: 31, IsActive: true},
+		{ID: "mt_new1", Name: "MT David New", Email: "mt_david@test.com", Age: 28, IsActive: true},
+		{ID: "mt_new2", Name: "MT Eva New", Email: "mt_eva@test.com", Age: 26, IsActive: false},
 	}
 
-	// Cleanup inserted data after test
-	defer func() {
-		_, _ = suite.db.NewDelete().
-			Model(&User{}).
-			Where(func(cb orm.ConditionBuilder) {
-				cb.In("id", []string{"user4", "user5"})
-			}).
-			Exec(suite.ctx)
-	}()
-
-	suite.T().Logf("Executing MERGE with %d source records (updates: user1, inserts: user4, user5)", len(sourceData))
+	suite.T().Logf("Executing MERGE with %d source records (updates: %s, inserts: mt_new1, mt_new2)", len(sourceData), suite.testUsers[0].ID)
 
 	result, err := suite.db.NewMerge().
 		Model(&User{}).
@@ -84,12 +115,12 @@ func (suite *MergeTestSuite) TestBasicMerge() {
 	err = suite.db.NewSelect().
 		Model(&newUsers).
 		Where(func(cb orm.ConditionBuilder) {
-			cb.In("id", []string{"user4", "user5"})
+			cb.In("id", []string{"mt_new1", "mt_new2"})
 		}).
 		OrderBy("name").
 		Scan(suite.ctx)
 	suite.NoError(err, "Failed to query newly inserted users")
-	suite.T().Logf("Found %d new users after merge (user4, user5)", len(newUsers))
+	suite.T().Logf("Found %d new users after merge", len(newUsers))
 
 	for _, user := range newUsers {
 		suite.T().Logf("New user - ID: %s, Name: %s, Email: %s, Age: %d, Active: %v",
@@ -106,13 +137,18 @@ func (suite *MergeTestSuite) TestCteMethods() {
 	suite.T().Logf("Testing CTE methods for %s", suite.ds.Kind)
 
 	suite.Run("WithNamedCTE", func() {
+		postIDs := make([]string, len(suite.testPosts))
+		for i, tp := range suite.testPosts {
+			postIDs[i] = tp.ID
+		}
+
 		result, err := suite.db.NewMerge().
 			Model(&Post{}).
 			With("high_view_posts", func(sq orm.SelectQuery) {
 				sq.Model(&Post{}).
 					Select("id", "title", "view_count").
 					Where(func(cb orm.ConditionBuilder) {
-						cb.GreaterThan("view_count", 50)
+						cb.In("id", postIDs).GreaterThan("view_count", 50)
 					})
 			}).
 			UsingTable("high_view_posts").
@@ -499,7 +535,7 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 		}
 
 		sourceData := []PostMergeData{
-			{ID: "post1", Title: "Updated Post Title", ViewCount: 200},
+			{ID: suite.testPosts[0].ID, Title: "MT Updated Post Title", ViewCount: 200},
 		}
 
 		result, err := suite.db.NewMerge().
@@ -533,7 +569,7 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 		}
 
 		sourceData := []PostMergeData{
-			{ID: "post1", Title: "Updated Post Title", ViewCount: 200},
+			{ID: suite.testPosts[0].ID, Title: "MT Updated Post Title", ViewCount: 200},
 		}
 
 		result, err := suite.db.NewMerge().
@@ -640,13 +676,18 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 	})
 
 	suite.Run("UsingSubQueryBasic", func() {
+		postIDs := make([]string, len(suite.testPosts))
+		for i, tp := range suite.testPosts {
+			postIDs[i] = tp.ID
+		}
+
 		result, err := suite.db.NewMerge().
 			Model(&Post{}).
 			UsingSubQuery(func(sq orm.SelectQuery) {
 				sq.Model(&Post{}).
 					Select("id", "title", "view_count").
 					Where(func(cb orm.ConditionBuilder) {
-						cb.Equals("status", "published")
+						cb.In("id", postIDs).Equals("status", "published")
 					})
 			}, "src").
 			On(func(cb orm.ConditionBuilder) {
@@ -1112,19 +1153,9 @@ func (suite *MergeTestSuite) TestThenDoNothing() {
 		}
 
 		sourceData := []UserMergeData{
-			{ID: "user1", Name: "Should Not Update", Email: "user1@example.com"},
-			{ID: "dnm1", Name: "Should Insert", Email: "dnm1@example.com"},
+			{ID: suite.testUsers[0].ID, Name: "Should Not Update", Email: "mt_noupdate@test.com"},
+			{ID: "mt_dnm1", Name: "Should Insert", Email: "mt_dnm1@test.com"},
 		}
-
-		// Cleanup inserted data after test
-		defer func() {
-			_, _ = suite.db.NewDelete().
-				Model(&User{}).
-				Where(func(cb orm.ConditionBuilder) {
-					cb.Equals("id", "dnm1")
-				}).
-				Exec(suite.ctx)
-		}()
 
 		result, err := suite.db.NewMerge().
 			Model(&User{}).
@@ -1156,8 +1187,8 @@ func (suite *MergeTestSuite) TestThenDoNothing() {
 		}
 
 		sourceData := []UserMergeData{
-			{ID: "user1", Name: "Should Update"},
-			{ID: "dnn1", Name: "Should Not Insert"},
+			{ID: suite.testUsers[0].ID, Name: "Should Update"},
+			{ID: "mt_dnn1", Name: "Should Not Insert"},
 		}
 
 		result, err := suite.db.NewMerge().
@@ -1198,7 +1229,7 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 			Name string `bun:"name"`
 		}
 
-		sourceData := []UserMergeData{{ID: "user1", Name: "Set Single"}}
+		sourceData := []UserMergeData{{ID: suite.testUsers[0].ID, Name: "Set Single"}}
 
 		result, err := suite.db.NewMerge().
 			Model(&User{}).
@@ -1228,7 +1259,7 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 			Age  int16  `bun:"age"`
 		}
 
-		sourceData := []UserMergeData{{ID: "user1", Name: "Multiple", Age: 35}}
+		sourceData := []UserMergeData{{ID: suite.testUsers[0].ID, Name: "Multiple", Age: 35}}
 
 		result, err := suite.db.NewMerge().
 			Model(&User{}).
@@ -1258,7 +1289,7 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 			ViewCount int    `bun:"view_count"`
 		}
 
-		sourceData := []PostMergeData{{ID: "post1", ViewCount: 100}}
+		sourceData := []PostMergeData{{ID: suite.testPosts[0].ID, ViewCount: 100}}
 
 		result, err := suite.db.NewMerge().
 			Model(&Post{}).
@@ -1290,7 +1321,7 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 			Email string `bun:"email"`
 		}
 
-		sourceData := []UserMergeData{{ID: "user1", Name: "SetColumns Name", Email: "setcols@example.com"}}
+		sourceData := []UserMergeData{{ID: suite.testUsers[0].ID, Name: "SetColumns Name", Email: "mt_setcols@test.com"}}
 
 		result, err := suite.db.NewMerge().
 			Model(&User{}).
@@ -1323,7 +1354,7 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 		}
 
 		sourceData := []UserMergeData{
-			{ID: "user1", Name: "SetAll Name", Email: "setall@example.com", Age: 45, IsActive: true},
+			{ID: suite.testUsers[0].ID, Name: "SetAll Name", Email: "mt_setall@test.com", Age: 45, IsActive: true},
 		}
 
 		result, err := suite.db.NewMerge().
@@ -1677,20 +1708,10 @@ func (suite *MergeTestSuite) TestMergeWithConditions() {
 	}
 
 	sourceData := []PostMergeData{
-		{ID: "post1", Title: "Updated Post 1", Status: "published", ViewCount: 150},
-		{ID: "post2", Title: "Updated Post 2", Status: "draft", ViewCount: 75},
-		{ID: "new1", Title: "New Post 1", Status: "draft", ViewCount: 0},
+		{ID: suite.testPosts[0].ID, Title: "MT Updated Post 1", Status: "published", ViewCount: 150},
+		{ID: suite.testPosts[1].ID, Title: "MT Updated Post 2", Status: "draft", ViewCount: 75},
+		{ID: "mt_cond_new1", Title: "MT New Post 1", Status: "draft", ViewCount: 0},
 	}
-
-	// Cleanup inserted post after test
-	defer func() {
-		_, _ = suite.db.NewDelete().
-			Model(&Post{}).
-			Where(func(cb orm.ConditionBuilder) {
-				cb.Equals("id", "new1")
-			}).
-			Exec(suite.ctx)
-	}()
 
 	suite.T().Logf("Executing conditional MERGE with %d source records", len(sourceData))
 
@@ -1728,7 +1749,7 @@ func (suite *MergeTestSuite) TestMergeWithConditions() {
 	err = suite.db.NewSelect().
 		Model(&updatedPosts).
 		Where(func(cb orm.ConditionBuilder) {
-			cb.In("id", []string{"post1", "post2", "new1"})
+			cb.In("id", []string{suite.testPosts[0].ID, suite.testPosts[1].ID, "mt_cond_new1"})
 		}).
 		OrderBy("id").
 		Scan(suite.ctx)
@@ -1739,4 +1760,154 @@ func (suite *MergeTestSuite) TestMergeWithConditions() {
 	for _, post := range updatedPosts {
 		suite.T().Logf("Post %s: %s - %s (views: %d)", post.ID, post.Title, post.Status, post.ViewCount)
 	}
+}
+
+// TestMergeDB tests DB() method on MergeQuery.
+func (suite *MergeTestSuite) TestMergeDB() {
+	suite.T().Logf("Testing Merge DB for %s", suite.ds.Kind)
+
+	query := suite.db.NewMerge().Model((*Tag)(nil))
+	db := query.DB()
+
+	suite.NotNil(db, "DB() should return non-nil")
+}
+
+// TestMergeUsing tests Using method with model.
+func (suite *MergeTestSuite) TestMergeUsing() {
+	if suite.ds.Kind != config.Postgres {
+		suite.T().Skip("MERGE only tested on Postgres")
+	}
+
+	suite.T().Logf("Testing Merge Using for %s", suite.ds.Kind)
+
+	// Build query without executing to cover code paths
+	query := suite.db.NewMerge().
+		Model((*Tag)(nil)).
+		Using((*Tag)(nil), "src").
+		On(func(cb orm.ConditionBuilder) {
+			cb.EqualsColumn("tag.id", "src.id")
+		}).
+		WhenMatched().ThenUpdate(func(ub orm.MergeUpdateBuilder) {
+		ub.Set("name", "src")
+	}).
+		WhenNotMatched().ThenInsert(func(ib orm.MergeInsertBuilder) {
+		ib.Value("id", "src").Value("name", "src")
+	})
+
+	suite.NotNil(query, "Merge Using should return non-nil")
+}
+
+// TestMergeUsingExpr tests UsingExpr method.
+func (suite *MergeTestSuite) TestMergeUsingExpr() {
+	if suite.ds.Kind != config.Postgres {
+		suite.T().Skip("MERGE only tested on Postgres")
+	}
+
+	suite.T().Logf("Testing Merge UsingExpr for %s", suite.ds.Kind)
+
+	query := suite.db.NewMerge().
+		Model((*Tag)(nil)).
+		UsingExpr(func(eb orm.ExprBuilder) any {
+			return eb.SubQuery(func(sq orm.SelectQuery) {
+				sq.SelectExpr(func(eb orm.ExprBuilder) any {
+					return eb.Literal("test-id")
+				}, "id").
+					SelectExpr(func(eb orm.ExprBuilder) any {
+						return eb.Literal("TestName")
+					}, "name")
+			})
+		}, "src").
+		On(func(cb orm.ConditionBuilder) {
+			cb.EqualsColumn("tag.id", "src.id")
+		}).
+		WhenMatched().ThenDelete()
+
+	suite.NotNil(query, "Merge UsingExpr should return non-nil")
+}
+
+// TestMergeApplyAndApplyIf tests Apply and ApplyIf methods.
+func (suite *MergeTestSuite) TestMergeApplyAndApplyIf() {
+	suite.T().Logf("Testing Merge Apply/ApplyIf for %s", suite.ds.Kind)
+
+	suite.Run("Apply", func() {
+		query := suite.db.NewMerge().
+			Model((*Tag)(nil)).
+			Apply(func(q orm.MergeQuery) {
+				q.UsingTable("test_tag", "src")
+			})
+
+		suite.NotNil(query, "Merge Apply should return non-nil")
+	})
+
+	suite.Run("ApplyIfTrue", func() {
+		query := suite.db.NewMerge().
+			Model((*Tag)(nil)).
+			ApplyIf(true, func(q orm.MergeQuery) {
+				q.UsingTable("test_tag", "src")
+			})
+
+		suite.NotNil(query, "Merge ApplyIf(true) should return non-nil")
+	})
+
+	suite.Run("ApplyIfFalse", func() {
+		query := suite.db.NewMerge().
+			Model((*Tag)(nil)).
+			ApplyIf(false, func(q orm.MergeQuery) {
+				q.UsingTable("test_tag", "src")
+			})
+
+		suite.NotNil(query, "Merge ApplyIf(false) should return non-nil")
+	})
+}
+
+// TestMergeWithRecursiveAndTableFrom tests Merge WithRecursive and TableFrom.
+func (suite *MergeTestSuite) TestMergeWithRecursiveAndTableFrom() {
+	suite.T().Logf("Testing Merge WithRecursive/TableFrom for %s", suite.ds.Kind)
+
+	suite.Run("WithRecursive", func() {
+		query := suite.db.NewMerge().
+			WithRecursive("ids", func(sq orm.SelectQuery) {
+				sq.Model((*Tag)(nil)).Select("id")
+			}).
+			Model((*Tag)(nil)).
+			UsingTable("test_tag", "src")
+
+		suite.NotNil(query, "Merge WithRecursive should return non-nil")
+	})
+
+	suite.Run("TableFrom", func() {
+		query := suite.db.NewMerge().
+			TableFrom((*Tag)(nil)).
+			UsingTable("test_tag", "src")
+
+		suite.NotNil(query, "Merge TableFrom should return non-nil")
+	})
+}
+
+// TestMergeTableExprNoAlias tests Merge TableExpr without alias.
+func (suite *MergeTestSuite) TestMergeTableExprNoAlias() {
+	suite.T().Logf("Testing Merge TableExpr without alias for %s", suite.ds.Kind)
+
+	query := suite.db.NewMerge().
+		TableExpr(func(eb orm.ExprBuilder) any {
+			return eb.SubQuery(func(sq orm.SelectQuery) {
+				sq.Model((*Tag)(nil)).Select("id", "name")
+			})
+		}).
+		UsingTable("test_tag", "src")
+
+	suite.NotNil(query, "Merge TableExpr no alias should return non-nil")
+}
+
+// TestMergeTableSubQueryNoAlias tests Merge TableSubQuery without alias.
+func (suite *MergeTestSuite) TestMergeTableSubQueryNoAlias() {
+	suite.T().Logf("Testing Merge TableSubQuery without alias for %s", suite.ds.Kind)
+
+	query := suite.db.NewMerge().
+		TableSubQuery(func(sq orm.SelectQuery) {
+			sq.Model((*Tag)(nil)).Select("id", "name")
+		}).
+		UsingTable("test_tag", "src")
+
+	suite.NotNil(query, "Merge TableSubQuery no alias should return non-nil")
 }

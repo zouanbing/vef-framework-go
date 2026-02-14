@@ -28,16 +28,14 @@ func (suite *CBPrimaryKeyConditionsTestSuite) TestPKEquals() {
 		// Get a user first to get their ID
 		var firstUser User
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			OrderBy("id").
 			Limit(1).
 			Scan(suite.ctx, &firstUser)
 		suite.NoError(err, "Should get a user")
 
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.PKEquals(firstUser.ID)
 				}),
@@ -53,8 +51,7 @@ func (suite *CBPrimaryKeyConditionsTestSuite) TestPKEquals() {
 		// Get two users
 		var allUsers []User
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			OrderBy("id").
 			Limit(2).
 			Scan(suite.ctx, &allUsers)
@@ -62,8 +59,7 @@ func (suite *CBPrimaryKeyConditionsTestSuite) TestPKEquals() {
 		suite.Len(allUsers, 2, "Should have two users")
 
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.PKEquals(allUsers[0].ID).
 						OrPKEquals(allUsers[1].ID)
@@ -87,23 +83,21 @@ func (suite *CBPrimaryKeyConditionsTestSuite) TestPKNotEquals() {
 		// Get a user first
 		var firstUser User
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			OrderBy("id").
 			Limit(1).
 			Scan(suite.ctx, &firstUser)
 		suite.NoError(err, "Should get a user")
 
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.PKNotEquals(firstUser.ID)
 				}).
 				OrderBy("id"),
 		)
 
-		suite.Len(users, 2, "Should find two users")
+		suite.Len(users, 19, "Should find all users except the excluded one")
 
 		for _, user := range users {
 			suite.NotEqual(firstUser.ID, user.ID, "Should not be the excluded user")
@@ -115,16 +109,14 @@ func (suite *CBPrimaryKeyConditionsTestSuite) TestPKNotEquals() {
 	suite.Run("OrPKNotEquals", func() {
 		var allUsers []User
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			OrderBy("id").
 			Limit(2).
 			Scan(suite.ctx, &allUsers)
 		suite.NoError(err, "Should get users")
 
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.PKNotEquals(allUsers[0].ID).
 						OrPKNotEquals(allUsers[1].ID)
@@ -146,8 +138,7 @@ func (suite *CBPrimaryKeyConditionsTestSuite) TestPKIn() {
 		// Get two users
 		var allUsers []User
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			OrderBy("id").
 			Limit(2).
 			Scan(suite.ctx, &allUsers)
@@ -157,8 +148,7 @@ func (suite *CBPrimaryKeyConditionsTestSuite) TestPKIn() {
 		ids := []string{allUsers[0].ID, allUsers[1].ID}
 
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.PKIn(ids)
 				}).
@@ -175,16 +165,14 @@ func (suite *CBPrimaryKeyConditionsTestSuite) TestPKIn() {
 	suite.Run("OrPKIn", func() {
 		var allUsers []User
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			OrderBy("id").
 			Limit(2).
 			Scan(suite.ctx, &allUsers)
 		suite.NoError(err, "Should get users")
 
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.PKIn([]string{allUsers[0].ID}).
 						OrPKIn([]string{allUsers[1].ID})
@@ -206,23 +194,21 @@ func (suite *CBPrimaryKeyConditionsTestSuite) TestPKNotIn() {
 		// Get one user to exclude
 		var firstUser User
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			OrderBy("id").
 			Limit(1).
 			Scan(suite.ctx, &firstUser)
 		suite.NoError(err, "Should get a user")
 
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.PKNotIn([]string{firstUser.ID})
 				}).
 				OrderBy("id"),
 		)
 
-		suite.Len(users, 2, "Should find two users")
+		suite.Len(users, 19, "Should find all users except the excluded one")
 
 		for _, user := range users {
 			suite.NotEqual(firstUser.ID, user.ID, "Should not be the excluded user")
@@ -234,16 +220,14 @@ func (suite *CBPrimaryKeyConditionsTestSuite) TestPKNotIn() {
 	suite.Run("OrPKNotIn", func() {
 		var allUsers []User
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			OrderBy("id").
 			Limit(2).
 			Scan(suite.ctx, &allUsers)
 		suite.NoError(err, "Should get users")
 
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.PKNotIn([]string{allUsers[0].ID}).
 						OrPKNotIn([]string{allUsers[1].ID})

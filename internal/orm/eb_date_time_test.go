@@ -40,8 +40,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestCurrentDate() {
 
 		var result CurrentDateResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CurrentDate()
 			}, "current_date").
@@ -71,8 +70,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestCurrentTime() {
 
 		var result CurrentTimeResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CurrentTime()
 			}, "current_time").
@@ -99,8 +97,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestCurrentTimestamp() {
 
 		var result CurrentTimestampResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CurrentTimestamp()
 			}, "current_timestamp").
@@ -130,8 +127,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestNow() {
 
 		var result NowResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.Now()
 			}, "now").
@@ -158,8 +154,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestNow() {
 
 		var result AllCurrentResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.CurrentDate()
 			}, "current_date").
@@ -200,8 +195,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractYear() {
 
 		var results []YearResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("created_at").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ExtractYear(eb.Column("created_at"))
@@ -234,8 +228,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractMonth() {
 
 		var results []MonthResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("created_at").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ExtractMonth(eb.Column("created_at"))
@@ -269,8 +262,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractDay() {
 
 		var results []DayResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("created_at").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ExtractDay(eb.Column("created_at"))
@@ -304,8 +296,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractHour() {
 
 		var results []HourResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("created_at").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ExtractHour(eb.Column("created_at"))
@@ -339,8 +330,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractMinute() {
 
 		var results []MinuteResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("created_at").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ExtractMinute(eb.Column("created_at"))
@@ -375,8 +365,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractSecond() {
 
 		var results []SecondResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("id", "created_at").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ExtractSecond(eb.Column("created_at"))
@@ -409,8 +398,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractSecond() {
 
 		var results []AllExtractResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("created_at").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ExtractYear(eb.Column("created_at"))
@@ -474,8 +462,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateTrunc() {
 
 		var results []TruncResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("created_at").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.DateTrunc(orm.UnitYear, eb.Column("created_at"))
@@ -524,8 +511,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateAdd() {
 
 		var results []DateAddResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("created_at").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.DateAdd(eb.Column("created_at"), 7, orm.UnitDay)
@@ -564,8 +550,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateAdd() {
 
 		var results []TimeAddResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("created_at").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.DateAdd(eb.Column("created_at"), 30, orm.UnitSecond)
@@ -609,8 +594,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateSubtract() {
 
 		var results []DateSubtractResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("created_at").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.DateSubtract(eb.Column("created_at"), 5, orm.UnitDay)
@@ -649,8 +633,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateSubtract() {
 
 		var results []TimeSubtractResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("created_at").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.DateSubtract(eb.Column("created_at"), 45, orm.UnitSecond)
@@ -696,8 +679,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateDiff() {
 
 		var results []TimeDiffResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("created_at", "updated_at").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.DateDiff(eb.Column("created_at"), eb.Column("updated_at"), orm.UnitSecond)
@@ -745,8 +727,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateDiff() {
 
 		var results []DateDiffResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("created_at", "updated_at").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.DateDiff(eb.Column("created_at"), eb.Column("updated_at"), orm.UnitDay)
@@ -800,8 +781,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestAge() {
 
 		var results []AgeResult
 
-		err := suite.db.NewSelect().
-			Model((*User)(nil)).
+		err := suite.selectUsers().
 			Select("id", "created_at", "updated_at").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				// Calculate age between created_at and updated_at
@@ -884,8 +864,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestCombinedDateTimeFunctions() {
 
 		var results []CombinedResult
 
-		err := suite.db.NewSelect().
-			Model((*Post)(nil)).
+		err := suite.selectPosts().
 			Select("created_at").
 			SelectExpr(func(eb orm.ExprBuilder) any {
 				return eb.ExtractYear(eb.Column("created_at"))

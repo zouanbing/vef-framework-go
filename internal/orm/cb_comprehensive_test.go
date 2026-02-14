@@ -28,8 +28,7 @@ func (suite *CBComprehensiveTestSuite) TestApplyIf() {
 		applyCondition := true
 
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.ApplyIf(applyCondition, func(cb orm.ConditionBuilder) {
 						cb.Equals("is_active", true)
@@ -50,8 +49,7 @@ func (suite *CBComprehensiveTestSuite) TestApplyIf() {
 		applyCondition := false
 
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.ApplyIf(applyCondition, func(cb orm.ConditionBuilder) {
 						cb.Equals("is_active", false)
@@ -59,7 +57,7 @@ func (suite *CBComprehensiveTestSuite) TestApplyIf() {
 				}),
 		)
 
-		suite.Len(users, 3, "Should find all users (condition not applied)")
+		suite.Len(users, 20, "Should find all users (condition not applied)")
 
 		suite.T().Logf("Found %d users", len(users))
 	})
@@ -69,8 +67,7 @@ func (suite *CBComprehensiveTestSuite) TestApplyIf() {
 		applyActive := false
 
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.ApplyIf(applyAge, func(cb orm.ConditionBuilder) {
 						cb.GreaterThan("age", 25)
@@ -103,8 +100,7 @@ func (suite *CBComprehensiveTestSuite) TestComplexConditionCombinations() {
 		isActive := true
 
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.ApplyIf(searchName != "", func(cb orm.ConditionBuilder) {
 						cb.Contains("name", searchName)
@@ -124,8 +120,7 @@ func (suite *CBComprehensiveTestSuite) TestComplexConditionCombinations() {
 	suite.Run("ComplexOrConditionsWithGrouping", func() {
 		// (name LIKE '%Alice%' OR name LIKE '%Bob%') AND (age > 20 AND age < 40) AND is_active = true
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.OrGroup(func(cb orm.ConditionBuilder) {
 						cb.Contains("name", "Alice").
@@ -146,8 +141,7 @@ func (suite *CBComprehensiveTestSuite) TestComplexConditionCombinations() {
 	suite.Run("SubqueryWithComplexConditions", func() {
 		// Find posts by active users with age > 25
 		posts := suite.assertQueryReturnsPosts(
-			suite.db.NewSelect().
-				Model((*Post)(nil)).
+			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.InSubQuery("user_id", func(sq orm.SelectQuery) {
 						sq.Model((*User)(nil)).
@@ -172,8 +166,7 @@ func (suite *CBComprehensiveTestSuite) TestEdgeCases() {
 
 	suite.Run("EmptyInList", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.In("age", []int16{})
 				}),
@@ -186,8 +179,7 @@ func (suite *CBComprehensiveTestSuite) TestEdgeCases() {
 
 	suite.Run("NullComparisons", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.db.NewSelect().
-				Model((*Post)(nil)).
+			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.IsNull("description").
 						OrIsNotNull("description")
@@ -201,8 +193,7 @@ func (suite *CBComprehensiveTestSuite) TestEdgeCases() {
 
 	suite.Run("ChainedOrConditions", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("age", 25).
 						OrEquals("age", 30).
@@ -219,8 +210,7 @@ func (suite *CBComprehensiveTestSuite) TestEdgeCases() {
 	suite.Run("MixedAndOrConditions", func() {
 		// age = 25 OR (age = 30 AND is_active = true)
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("age", 25).
 						OrGroup(func(cb orm.ConditionBuilder) {
@@ -244,8 +234,7 @@ func (suite *CBComprehensiveTestSuite) TestPerformanceScenarios() {
 	suite.Run("ManyConditions", func() {
 		// Test with many conditions to ensure no performance degradation
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.IsNotNull("id").
 						IsNotNull("name").
@@ -267,8 +256,7 @@ func (suite *CBComprehensiveTestSuite) TestPerformanceScenarios() {
 	suite.Run("DeeplyNestedConditions", func() {
 		// Test deeply nested conditions
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.Group(func(cb orm.ConditionBuilder) {
 						cb.Group(func(cb orm.ConditionBuilder) {

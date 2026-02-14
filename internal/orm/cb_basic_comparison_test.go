@@ -27,8 +27,7 @@ func (suite *CBBasicComparisonTestSuite) TestEquals() {
 
 	suite.Run("BasicEquals", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("name", "Alice Johnson")
 				}),
@@ -42,8 +41,7 @@ func (suite *CBBasicComparisonTestSuite) TestEquals() {
 
 	suite.Run("OrEquals", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("name", "Alice Johnson").
 						OrEquals("name", "Bob Smith")
@@ -61,8 +59,7 @@ func (suite *CBBasicComparisonTestSuite) TestEquals() {
 	suite.Run("EqualsWithDifferentTypes", func() {
 		// Test with integer
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("age", 30)
 				}),
@@ -73,8 +70,7 @@ func (suite *CBBasicComparisonTestSuite) TestEquals() {
 
 		// Test with boolean
 		activeUsers := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.Equals("is_active", true)
 				}),
@@ -96,27 +92,25 @@ func (suite *CBBasicComparisonTestSuite) TestNotEquals() {
 
 	suite.Run("BasicNotEquals", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.NotEquals("name", "Alice Johnson")
 				}).
 				OrderBy("name"),
 		)
 
-		suite.Len(users, 2, "Should find two users")
+		suite.Len(users, 19, "Should find all users except Alice")
 
 		for _, user := range users {
 			suite.NotEqual("Alice Johnson", user.Name, "Should not be Alice Johnson")
 		}
 
-		suite.T().Logf("Found users: %s, %s", users[0].Name, users[1].Name)
+		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrNotEquals", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.NotEquals("name", "Alice Johnson").
 						OrNotEquals("age", 25)
@@ -141,24 +135,24 @@ func (suite *CBBasicComparisonTestSuite) TestGreaterThan() {
 
 	suite.Run("BasicGreaterThan", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.GreaterThan("age", 30)
 				}),
 		)
 
-		suite.Len(users, 1, "Should find one user")
-		suite.Equal("Charlie Brown", users[0].Name)
-		suite.True(users[0].Age > 30, "Age should be greater than 30")
+		suite.Len(users, 10, "Should find users with age > 30")
 
-		suite.T().Logf("Found user: %s (age: %d)", users[0].Name, users[0].Age)
+		for _, user := range users {
+			suite.True(user.Age > 30, "Age should be greater than 30")
+		}
+
+		suite.T().Logf("Found %d users with age > 30", len(users))
 	})
 
 	suite.Run("OrGreaterThan", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.GreaterThan("age", 30).
 						OrGreaterThan("age", 24)
@@ -183,27 +177,25 @@ func (suite *CBBasicComparisonTestSuite) TestGreaterThanOrEqual() {
 
 	suite.Run("BasicGreaterThanOrEqual", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.GreaterThanOrEqual("age", 30)
 				}).
 				OrderBy("age"),
 		)
 
-		suite.Len(users, 2, "Should find two users")
+		suite.Len(users, 11, "Should find users with age >= 30")
 
 		for _, user := range users {
 			suite.True(user.Age >= 30, "Age should be >= 30")
 		}
 
-		suite.T().Logf("Found users with ages: %d, %d", users[0].Age, users[1].Age)
+		suite.T().Logf("Found %d users with age >= 30", len(users))
 	})
 
 	suite.Run("OrGreaterThanOrEqual", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.GreaterThanOrEqual("age", 35).
 						OrGreaterThanOrEqual("age", 25)
@@ -228,24 +220,24 @@ func (suite *CBBasicComparisonTestSuite) TestLessThan() {
 
 	suite.Run("BasicLessThan", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.LessThan("age", 30)
 				}),
 		)
 
-		suite.Len(users, 1, "Should find one user")
-		suite.Equal("Bob Smith", users[0].Name)
-		suite.True(users[0].Age < 30, "Age should be less than 30")
+		suite.Len(users, 9, "Should find users with age < 30")
 
-		suite.T().Logf("Found user: %s (age: %d)", users[0].Name, users[0].Age)
+		for _, user := range users {
+			suite.True(user.Age < 30, "Age should be less than 30")
+		}
+
+		suite.T().Logf("Found %d users with age < 30", len(users))
 	})
 
 	suite.Run("OrLessThan", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.LessThan("age", 26).
 						OrLessThan("age", 31)
@@ -270,27 +262,25 @@ func (suite *CBBasicComparisonTestSuite) TestLessThanOrEqual() {
 
 	suite.Run("BasicLessThanOrEqual", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.LessThanOrEqual("age", 30)
 				}).
 				OrderBy("age"),
 		)
 
-		suite.Len(users, 2, "Should find two users")
+		suite.Len(users, 10, "Should find users with age <= 30")
 
 		for _, user := range users {
 			suite.True(user.Age <= 30, "Age should be <= 30")
 		}
 
-		suite.T().Logf("Found users with ages: %d, %d", users[0].Age, users[1].Age)
+		suite.T().Logf("Found %d users with age <= 30", len(users))
 	})
 
 	suite.Run("OrLessThanOrEqual", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.LessThanOrEqual("age", 25).
 						OrLessThanOrEqual("age", 35)
@@ -315,8 +305,7 @@ func (suite *CBBasicComparisonTestSuite) TestEqualsColumn() {
 
 	suite.Run("BasicEqualsColumn", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.EqualsColumn("created_at", "updated_at")
 				}),
@@ -329,8 +318,7 @@ func (suite *CBBasicComparisonTestSuite) TestEqualsColumn() {
 
 	suite.Run("OrEqualsColumn", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.EqualsColumn("created_at", "updated_at").
 						OrEqualsColumn("created_by", "updated_by")
@@ -349,22 +337,20 @@ func (suite *CBBasicComparisonTestSuite) TestNotEqualsColumn() {
 
 	suite.Run("BasicNotEqualsColumn", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.NotEqualsColumn("created_at", "updated_at")
 				}),
 		)
 
-		suite.Len(users, 3, "All users have different created_at and updated_at")
+		suite.Len(users, 20, "All users have different created_at and updated_at")
 
 		suite.T().Logf("Found %d users with different timestamps", len(users))
 	})
 
 	suite.Run("OrNotEqualsColumn", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.db.NewSelect().
-				Model((*User)(nil)).
+			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.NotEqualsColumn("name", "email").
 						OrNotEqualsColumn("created_at", "updated_at")
@@ -383,8 +369,7 @@ func (suite *CBBasicComparisonTestSuite) TestGreaterThanColumn() {
 
 	suite.Run("BasicGreaterThanColumn", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.db.NewSelect().
-				Model((*Post)(nil)).
+			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.GreaterThanColumn("view_count", "view_count")
 				}),
@@ -397,8 +382,7 @@ func (suite *CBBasicComparisonTestSuite) TestGreaterThanColumn() {
 
 	suite.Run("OrGreaterThanColumn", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.db.NewSelect().
-				Model((*Post)(nil)).
+			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.GreaterThanColumn("view_count", "view_count").
 						OrGreaterThanColumn("id", "user_id")
@@ -417,8 +401,7 @@ func (suite *CBBasicComparisonTestSuite) TestGreaterThanOrEqualColumn() {
 
 	suite.Run("BasicGreaterThanOrEqualColumn", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.db.NewSelect().
-				Model((*Post)(nil)).
+			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.GreaterThanOrEqualColumn("view_count", "view_count")
 				}),
@@ -431,8 +414,7 @@ func (suite *CBBasicComparisonTestSuite) TestGreaterThanOrEqualColumn() {
 
 	suite.Run("OrGreaterThanOrEqualColumn", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.db.NewSelect().
-				Model((*Post)(nil)).
+			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.GreaterThanOrEqualColumn("view_count", "view_count").
 						OrGreaterThanOrEqualColumn("id", "user_id")
@@ -451,8 +433,7 @@ func (suite *CBBasicComparisonTestSuite) TestLessThanColumn() {
 
 	suite.Run("BasicLessThanColumn", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.db.NewSelect().
-				Model((*Post)(nil)).
+			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.LessThanColumn("view_count", "view_count")
 				}),
@@ -465,8 +446,7 @@ func (suite *CBBasicComparisonTestSuite) TestLessThanColumn() {
 
 	suite.Run("OrLessThanColumn", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.db.NewSelect().
-				Model((*Post)(nil)).
+			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.LessThanColumn("view_count", "view_count").
 						OrLessThanColumn("user_id", "id")
@@ -485,8 +465,7 @@ func (suite *CBBasicComparisonTestSuite) TestLessThanOrEqualColumn() {
 
 	suite.Run("BasicLessThanOrEqualColumn", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.db.NewSelect().
-				Model((*Post)(nil)).
+			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.LessThanOrEqualColumn("view_count", "view_count")
 				}),
@@ -499,8 +478,7 @@ func (suite *CBBasicComparisonTestSuite) TestLessThanOrEqualColumn() {
 
 	suite.Run("OrLessThanOrEqualColumn", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.db.NewSelect().
-				Model((*Post)(nil)).
+			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
 					cb.LessThanOrEqualColumn("view_count", "view_count").
 						OrLessThanOrEqualColumn("user_id", "id")
