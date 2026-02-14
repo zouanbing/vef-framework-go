@@ -16,8 +16,8 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *BaseSuite) suite.TestingSuite {
-		return &ExportTestSuite{BaseSuite: base.clone()}
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
+		return &ExportTestSuite{BaseTestSuite: base.clone()}
 	})
 }
 
@@ -169,7 +169,7 @@ func NewTestUserExportCSVWithFilenameResource() api.Resource {
 // including basic Excel/CSV exports, custom options, filename builders, pre-processors,
 // filters, format overrides, and negative cases.
 type ExportTestSuite struct {
-	BaseSuite
+	BaseTestSuite
 }
 
 // SetupSuite runs once before all tests in the suite.
@@ -194,7 +194,7 @@ func (suite *ExportTestSuite) TearDownSuite() {
 // Export Tests
 
 func (suite *ExportTestSuite) TestExportBasic() {
-	suite.T().Logf("Testing basic Excel export for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing basic Excel export for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -224,7 +224,7 @@ func (suite *ExportTestSuite) TestExportBasic() {
 }
 
 func (suite *ExportTestSuite) TestExportWithSearchFilter() {
-	suite.T().Logf("Testing export with search filters for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing export with search filters for %s", suite.ds.Kind)
 
 	suite.Run("FilterByStatus", func() {
 		status := "active"
@@ -274,7 +274,7 @@ func (suite *ExportTestSuite) TestExportWithSearchFilter() {
 }
 
 func (suite *ExportTestSuite) TestExportWithCustomFilename() {
-	suite.T().Logf("Testing export with custom filename for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing export with custom filename for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -294,7 +294,7 @@ func (suite *ExportTestSuite) TestExportWithCustomFilename() {
 }
 
 func (suite *ExportTestSuite) TestExportWithPreProcessor() {
-	suite.T().Logf("Testing export with pre-processor for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing export with pre-processor for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -314,7 +314,7 @@ func (suite *ExportTestSuite) TestExportWithPreProcessor() {
 }
 
 func (suite *ExportTestSuite) TestExportWithFilterApplier() {
-	suite.T().Logf("Testing export with filter applier for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing export with filter applier for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -350,7 +350,7 @@ func (suite *ExportTestSuite) TestExportWithFilterApplier() {
 }
 
 func (suite *ExportTestSuite) TestExportEmptyResult() {
-	suite.T().Logf("Testing export with empty result for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing export with empty result for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -379,7 +379,7 @@ func (suite *ExportTestSuite) TestExportEmptyResult() {
 }
 
 func (suite *ExportTestSuite) TestExportWithOptions() {
-	suite.T().Logf("Testing export with options for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing export with options for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -409,7 +409,7 @@ func (suite *ExportTestSuite) TestExportWithOptions() {
 }
 
 func (suite *ExportTestSuite) TestExportNegativeCases() {
-	suite.T().Logf("Testing export negative cases for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing export negative cases for %s", suite.ds.Kind)
 
 	suite.Run("InvalidSearchParameter", func() {
 		// Export should handle invalid search parameters gracefully
@@ -436,7 +436,7 @@ func (suite *ExportTestSuite) TestExportNegativeCases() {
 }
 
 func (suite *ExportTestSuite) TestExportContentType() {
-	suite.T().Logf("Testing export content type for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing export content type for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -460,7 +460,7 @@ func (suite *ExportTestSuite) TestExportContentType() {
 }
 
 func (suite *ExportTestSuite) TestExportResponseHeaders() {
-	suite.T().Logf("Testing export response headers for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing export response headers for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -487,7 +487,7 @@ func (suite *ExportTestSuite) TestExportResponseHeaders() {
 // CSV Export Tests
 
 func (suite *ExportTestSuite) TestExportCSVBasic() {
-	suite.T().Logf("Testing basic CSV export for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing basic CSV export for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -516,7 +516,7 @@ func (suite *ExportTestSuite) TestExportCSVBasic() {
 }
 
 func (suite *ExportTestSuite) TestExportCSVWithSearchFilter() {
-	suite.T().Logf("Testing CSV export with search filters for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing CSV export with search filters for %s", suite.ds.Kind)
 
 	suite.Run("FilterByStatus", func() {
 		status := "active"
@@ -566,7 +566,7 @@ func (suite *ExportTestSuite) TestExportCSVWithSearchFilter() {
 }
 
 func (suite *ExportTestSuite) TestExportCSVWithCustomFilename() {
-	suite.T().Logf("Testing CSV export with custom filename for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing CSV export with custom filename for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -586,7 +586,7 @@ func (suite *ExportTestSuite) TestExportCSVWithCustomFilename() {
 }
 
 func (suite *ExportTestSuite) TestExportCSVWithOptions() {
-	suite.T().Logf("Testing CSV export with options for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing CSV export with options for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -616,7 +616,7 @@ func (suite *ExportTestSuite) TestExportCSVWithOptions() {
 }
 
 func (suite *ExportTestSuite) TestExportCSVEmptyResult() {
-	suite.T().Logf("Testing CSV export with empty result for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing CSV export with empty result for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -645,7 +645,7 @@ func (suite *ExportTestSuite) TestExportCSVEmptyResult() {
 }
 
 func (suite *ExportTestSuite) TestExportFormatOverride() {
-	suite.T().Logf("Testing export format override for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing export format override for %s", suite.ds.Kind)
 
 	// Test format parameter override - use Excel endpoint but override to CSV
 	resp := suite.makeAPIRequest(api.Request{
@@ -673,7 +673,7 @@ func (suite *ExportTestSuite) TestExportFormatOverride() {
 }
 
 func (suite *ExportTestSuite) TestExportCSVContentType() {
-	suite.T().Logf("Testing CSV export content type for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing CSV export content type for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{

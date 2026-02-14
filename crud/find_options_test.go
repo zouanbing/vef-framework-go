@@ -11,8 +11,8 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *BaseSuite) suite.TestingSuite {
-		return &FindOptionsTestSuite{BaseSuite: base.clone()}
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
+		return &FindOptionsTestSuite{BaseTestSuite: base.clone()}
 	})
 }
 
@@ -92,7 +92,7 @@ func NewMetaUserFindOptionsResource() api.Resource {
 // FindOptionsTestSuite tests the FindOptions API functionality
 // including basic queries, custom column mappings, search filters, filter appliers, meta columns, and negative cases.
 type FindOptionsTestSuite struct {
-	BaseSuite
+	BaseTestSuite
 }
 
 // SetupSuite runs once before all tests in the suite.
@@ -112,7 +112,7 @@ func (suite *FindOptionsTestSuite) TearDownSuite() {
 
 // TestFindOptionsBasic tests basic FindOptions functionality.
 func (suite *FindOptionsTestSuite) TestFindOptionsBasic() {
-	suite.T().Logf("Testing FindOptions API basic functionality for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing FindOptions API basic functionality for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -141,7 +141,7 @@ func (suite *FindOptionsTestSuite) TestFindOptionsBasic() {
 
 // TestFindOptionsWithConfig tests FindOptions with custom config.
 func (suite *FindOptionsTestSuite) TestFindOptionsWithConfig() {
-	suite.T().Logf("Testing FindOptions API with custom config for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing FindOptions API with custom config for %s", suite.ds.Kind)
 
 	suite.Run("DefaultConfig", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -217,7 +217,7 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithConfig() {
 
 // TestFindOptionsWithSearch tests FindOptions with search conditions.
 func (suite *FindOptionsTestSuite) TestFindOptionsWithSearch() {
-	suite.T().Logf("Testing FindOptions API with search conditions for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing FindOptions API with search conditions for %s", suite.ds.Kind)
 
 	suite.Run("SearchByStatus", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -267,7 +267,7 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithSearch() {
 
 // TestFindOptionsWithFilterApplier tests FindOptions with filter applier.
 func (suite *FindOptionsTestSuite) TestFindOptionsWithFilterApplier() {
-	suite.T().Logf("Testing FindOptions API with filter applier for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing FindOptions API with filter applier for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -289,7 +289,7 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithFilterApplier() {
 
 // TestFindOptionsNegativeCases tests negative scenarios.
 func (suite *FindOptionsTestSuite) TestFindOptionsNegativeCases() {
-	suite.T().Logf("Testing FindOptions API negative cases for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing FindOptions API negative cases for %s", suite.ds.Kind)
 
 	suite.Run("NoMatchingRecords", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -336,7 +336,7 @@ func (suite *FindOptionsTestSuite) TestFindOptionsNegativeCases() {
 
 // TestFindOptionsWithMeta tests FindOptions with meta columns.
 func (suite *FindOptionsTestSuite) TestFindOptionsWithMeta() {
-	suite.T().Logf("Testing FindOptions API with meta columns for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing FindOptions API with meta columns for %s", suite.ds.Kind)
 
 	suite.Run("DefaultMetaColumns", func() {
 		resp := suite.makeAPIRequest(api.Request{

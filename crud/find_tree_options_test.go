@@ -12,8 +12,8 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *BaseSuite) suite.TestingSuite {
-		return &FindTreeOptionsTestSuite{BaseSuite: base.clone()}
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
+		return &FindTreeOptionsTestSuite{BaseTestSuite: base.clone()}
 	})
 }
 
@@ -103,12 +103,12 @@ func NewMetaCategoryFindTreeOptionsResource() api.Resource {
 // FindTreeOptionsTestSuite tests the FindTreeOptions API functionality
 // including basic tree options, custom column mappings, search filters, filter appliers, meta columns, and tree-specific features.
 type FindTreeOptionsTestSuite struct {
-	BaseSuite
+	BaseTestSuite
 }
 
 // SetupSuite runs once before all tests in the suite.
 func (suite *FindTreeOptionsTestSuite) SetupSuite() {
-	if suite.dsConfig.Kind == config.SQLite {
+	if suite.ds.Kind == config.SQLite {
 		suite.T().Skip("Skipping FindTreeOptions tests for SQLite due to Bun recursive CTE syntax issue")
 	}
 
@@ -127,7 +127,7 @@ func (suite *FindTreeOptionsTestSuite) TearDownSuite() {
 
 // TestFindTreeOptionsBasic tests basic FindTreeOptions functionality.
 func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsBasic() {
-	suite.T().Logf("Testing FindTreeOptions API basic functionality for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing FindTreeOptions API basic functionality for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -171,7 +171,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsBasic() {
 
 // TestFindTreeOptionsWithConfig tests FindTreeOptions with custom config.
 func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithConfig() {
-	suite.T().Logf("Testing FindTreeOptions API with custom config for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing FindTreeOptions API with custom config for %s", suite.ds.Kind)
 
 	suite.Run("DefaultConfig", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -251,7 +251,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithConfig() {
 
 // TestFindTreeOptionsWithSearch tests FindTreeOptions with search conditions.
 func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithSearch() {
-	suite.T().Logf("Testing FindTreeOptions API with search conditions for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing FindTreeOptions API with search conditions for %s", suite.ds.Kind)
 
 	suite.Run("SearchByCode", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -303,7 +303,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithSearch() {
 
 // TestFindTreeOptionsWithFilterApplier tests FindTreeOptions with filter applier.
 func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithFilterApplier() {
-	suite.T().Logf("Testing FindTreeOptions API with filter applier for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing FindTreeOptions API with filter applier for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -331,7 +331,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithFilterApplier() {
 
 // TestFindTreeOptionsNegativeCases tests negative scenarios.
 func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsNegativeCases() {
-	suite.T().Logf("Testing FindTreeOptions API negative cases for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing FindTreeOptions API negative cases for %s", suite.ds.Kind)
 
 	suite.Run("NoMatchingRecords", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -378,7 +378,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsNegativeCases() {
 
 // TestFindTreeOptionsWithMeta tests FindTreeOptions with meta columns.
 func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithMeta() {
-	suite.T().Logf("Testing FindTreeOptions API with meta columns for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing FindTreeOptions API with meta columns for %s", suite.ds.Kind)
 
 	suite.Run("DefaultMetaColumns", func() {
 		resp := suite.makeAPIRequest(api.Request{

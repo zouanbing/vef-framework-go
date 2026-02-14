@@ -14,8 +14,8 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *BaseSuite) suite.TestingSuite {
-		return &DeleteManyTestSuite{BaseSuite: base.clone()}
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
+		return &DeleteManyTestSuite{BaseTestSuite: base.clone()}
 	})
 }
 
@@ -98,7 +98,7 @@ func NewTestUserDeleteManyWithPostHookResource() api.Resource {
 // DeleteManyTestSuite tests the DeleteMany API functionality
 // including basic batch delete, PreDeleteMany/PostDeleteMany hooks, negative cases, transaction rollback, and primary key formats.
 type DeleteManyTestSuite struct {
-	BaseSuite
+	BaseTestSuite
 }
 
 // SetupSuite runs once before all tests in the suite.
@@ -148,7 +148,7 @@ func (suite *DeleteManyTestSuite) TearDownSuite() {
 
 // TestDeleteManyBasic tests basic DeleteMany functionality.
 func (suite *DeleteManyTestSuite) TestDeleteManyBasic() {
-	suite.T().Logf("Testing DeleteMany API basic functionality for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing DeleteMany API basic functionality for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -171,7 +171,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyBasic() {
 
 // TestDeleteManyWithPreHook tests DeleteMany with PreDeleteMany hook.
 func (suite *DeleteManyTestSuite) TestDeleteManyWithPreHook() {
-	suite.T().Logf("Testing DeleteMany API with PreDeleteMany hook for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing DeleteMany API with PreDeleteMany hook for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -197,7 +197,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyWithPreHook() {
 
 // TestDeleteManyWithPostHook tests DeleteMany with PostDeleteMany hook.
 func (suite *DeleteManyTestSuite) TestDeleteManyWithPostHook() {
-	suite.T().Logf("Testing DeleteMany API with PostDeleteMany hook for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing DeleteMany API with PostDeleteMany hook for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -223,7 +223,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyWithPostHook() {
 
 // TestDeleteManyNegativeCases tests negative scenarios.
 func (suite *DeleteManyTestSuite) TestDeleteManyNegativeCases() {
-	suite.T().Logf("Testing DeleteMany API negative cases for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing DeleteMany API negative cases for %s", suite.ds.Kind)
 
 	suite.Run("EmptyArray", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -384,7 +384,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyNegativeCases() {
 
 // TestDeleteManyTransactionRollback tests that the entire batch rolls back on error.
 func (suite *DeleteManyTestSuite) TestDeleteManyTransactionRollback() {
-	suite.T().Logf("Testing DeleteMany API transaction rollback for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing DeleteMany API transaction rollback for %s", suite.ds.Kind)
 
 	suite.Run("AllOrNothingSemantics", func() {
 		// Try to delete a batch where the second item doesn't exist
@@ -416,7 +416,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyTransactionRollback() {
 
 // TestDeleteManyPrimaryKeyFormats tests different primary key format support.
 func (suite *DeleteManyTestSuite) TestDeleteManyPrimaryKeyFormats() {
-	suite.T().Logf("Testing DeleteMany API primary key formats for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing DeleteMany API primary key formats for %s", suite.ds.Kind)
 
 	suite.Run("SinglePK_DirectValues", func() {
 		// Single PK with direct value array: ["id1", "id2"]

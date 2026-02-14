@@ -90,49 +90,49 @@ type TestCompositePKItem struct {
 	CreatedBy string `json:"createdBy" bun:",notnull"`
 }
 
-type BaseSuite struct {
+type BaseTestSuite struct {
 	suite.Suite
 
-	ctx      context.Context
-	app      *app.App
-	stop     func()
-	db       orm.DB
-	bunDB    *bun.DB
-	dsConfig *config.DataSourceConfig
+	ctx   context.Context
+	app   *app.App
+	stop  func()
+	db    orm.DB
+	bunDB *bun.DB
+	ds    *config.DataSourceConfig
 }
 
 // clone creates a shallow copy of BaseSuite without copying the embedded suite.Suite
 // (which contains sync.RWMutex). Each cloned suite gets a fresh suite.Suite.
-func (suite *BaseSuite) clone() BaseSuite {
-	return BaseSuite{
-		ctx:      suite.ctx,
-		db:       suite.db,
-		bunDB:    suite.bunDB,
-		dsConfig: suite.dsConfig,
+func (suite *BaseTestSuite) clone() BaseTestSuite {
+	return BaseTestSuite{
+		ctx:   suite.ctx,
+		db:    suite.db,
+		bunDB: suite.bunDB,
+		ds:    suite.ds,
 	}
 }
 
-func (suite *BaseSuite) setupBaseSuite(resourceCtors ...any) {
+func (suite *BaseTestSuite) setupBaseSuite(resourceCtors ...any) {
 	// Reload fixtures so each suite starts from a clean, known state
 	// regardless of execution order.
-	setupTestFixtures(suite.T(), suite.ctx, suite.db, suite.bunDB.DB, suite.dsConfig.Kind)
+	setupTestFixtures(suite.T(), suite.ctx, suite.db, suite.bunDB.DB, suite.ds.Kind)
 
 	opts := make([]fx.Option, 0, len(resourceCtors)+2)
 	for _, ctor := range resourceCtors {
 		opts = append(opts, vef.ProvideAPIResource(ctor))
 	}
-	opts = append(opts, fx.Replace(suite.dsConfig))
+	opts = append(opts, fx.Replace(suite.ds))
 
 	suite.app, suite.stop = apptest.NewTestAppWithDB(suite.T(), suite.bunDB, opts...)
 }
 
-func (suite *BaseSuite) tearDownBaseSuite() {
+func (suite *BaseTestSuite) tearDownBaseSuite() {
 	if suite.stop != nil {
 		suite.stop()
 	}
 }
 
-func (suite *BaseSuite) makeAPIRequest(body api.Request) *http.Response {
+func (suite *BaseTestSuite) makeAPIRequest(body api.Request) *http.Response {
 	jsonBody, err := encoding.ToJSON(body)
 	suite.Require().NoError(err)
 
@@ -145,7 +145,7 @@ func (suite *BaseSuite) makeAPIRequest(body api.Request) *http.Response {
 	return resp
 }
 
-func (suite *BaseSuite) readBody(resp *http.Response) result.Result {
+func (suite *BaseTestSuite) readBody(resp *http.Response) result.Result {
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
@@ -157,14 +157,14 @@ func (suite *BaseSuite) readBody(resp *http.Response) result.Result {
 	return *res
 }
 
-func (suite *BaseSuite) readDataAsSlice(data any) []any {
+func (suite *BaseTestSuite) readDataAsSlice(data any) []any {
 	slice, ok := data.([]any)
 	suite.Require().True(ok, "Expected data to be a slice")
 
 	return slice
 }
 
-func (suite *BaseSuite) readDataAsMap(data any) map[string]any {
+func (suite *BaseTestSuite) readDataAsMap(data any) map[string]any {
 	m, ok := data.(map[string]any)
 	suite.Require().True(ok, "Expected data to be a map")
 

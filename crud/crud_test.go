@@ -15,17 +15,17 @@ import (
 
 // registry holds all CRUD test suite factories, populated by init() in each suite file.
 // Execution order is irrelevant: each suite reloads fixtures in SetupSuite.
-var registry = testx.NewRegistry[BaseSuite]()
+var registry = testx.NewRegistry[BaseTestSuite]()
 
 // baseFactory creates a BaseSuite from a DBEnv — called once per database.
-func baseFactory(env *testx.DBEnv) *BaseSuite {
+func baseFactory(env *testx.DBEnv) *BaseTestSuite {
 	setupTestFixtures(env.T, env.Ctx, env.DB, env.RawDB, env.DS.Kind)
 
-	return &BaseSuite{
-		ctx:      env.Ctx,
-		db:       env.DB,
-		bunDB:    env.BunDB,
-		dsConfig: env.DS,
+	return &BaseTestSuite{
+		ctx:   env.Ctx,
+		db:    env.DB,
+		bunDB: env.BunDB,
+		ds:    env.DS,
 	}
 }
 

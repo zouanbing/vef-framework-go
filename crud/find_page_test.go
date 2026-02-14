@@ -12,8 +12,8 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *BaseSuite) suite.TestingSuite {
-		return &FindPageTestSuite{BaseSuite: base.clone()}
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
+		return &FindPageTestSuite{BaseTestSuite: base.clone()}
 	})
 }
 
@@ -91,7 +91,7 @@ func NewAuditUserTestUserFindPageResource() api.Resource {
 // FindPageTestSuite tests the FindPage API functionality
 // including basic pagination, search filters, processors, filter appliers, audit user names, and negative cases.
 type FindPageTestSuite struct {
-	BaseSuite
+	BaseTestSuite
 }
 
 // SetupSuite runs once before all tests in the suite.
@@ -111,7 +111,7 @@ func (suite *FindPageTestSuite) TearDownSuite() {
 
 // TestFindPageBasic tests basic FindPage functionality.
 func (suite *FindPageTestSuite) TestFindPageBasic() {
-	suite.T().Logf("Testing FindPage API basic functionality for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing FindPage API basic functionality for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -144,7 +144,7 @@ func (suite *FindPageTestSuite) TestFindPageBasic() {
 
 // TestFindPagePagination tests pagination functionality.
 func (suite *FindPageTestSuite) TestFindPagePagination() {
-	suite.T().Logf("Testing FindPage API pagination for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing FindPage API pagination for %s", suite.ds.Kind)
 
 	suite.Run("FirstPage", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -258,7 +258,7 @@ func (suite *FindPageTestSuite) TestFindPagePagination() {
 
 // TestFindPageWithSearch tests FindPage with search conditions.
 func (suite *FindPageTestSuite) TestFindPageWithSearch() {
-	suite.T().Logf("Testing FindPage API with search filters for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing FindPage API with search filters for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -290,7 +290,7 @@ func (suite *FindPageTestSuite) TestFindPageWithSearch() {
 
 // TestFindPageWithProcessor tests FindPage with post-processing.
 func (suite *FindPageTestSuite) TestFindPageWithWithProcessor() {
-	suite.T().Logf("Testing FindPage API with processor for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing FindPage API with processor for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -322,7 +322,7 @@ func (suite *FindPageTestSuite) TestFindPageWithWithProcessor() {
 
 // TestFindPageWithFilterApplier tests FindPage with filter applier.
 func (suite *FindPageTestSuite) TestFindPageWithFilterApplier() {
-	suite.T().Logf("Testing FindPage API with filter applier for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing FindPage API with filter applier for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -351,7 +351,7 @@ func (suite *FindPageTestSuite) TestFindPageWithFilterApplier() {
 
 // TestFindPageNegativeCases tests negative scenarios.
 func (suite *FindPageTestSuite) TestFindPageNegativeCases() {
-	suite.T().Logf("Testing FindPage API negative cases for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing FindPage API negative cases for %s", suite.ds.Kind)
 
 	suite.Run("InvalidPageNumber", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -433,7 +433,7 @@ func (suite *FindPageTestSuite) TestFindPageNegativeCases() {
 
 // TestFindPageWithAuditUserNames tests FindPage with audit user names populated.
 func (suite *FindPageTestSuite) TestFindPageWithAuditUserNames() {
-	suite.T().Logf("Testing FindPage API with audit user names for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing FindPage API with audit user names for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{

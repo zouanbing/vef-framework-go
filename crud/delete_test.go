@@ -12,8 +12,8 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *BaseSuite) suite.TestingSuite {
-		return &DeleteTestSuite{BaseSuite: base.clone()}
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
+		return &DeleteTestSuite{BaseTestSuite: base.clone()}
 	})
 }
 
@@ -75,7 +75,7 @@ func NewTestUserDeleteWithPostHookResource() api.Resource {
 // DeleteTestSuite tests the Delete API functionality
 // including basic delete, PreDelete/PostDelete hooks, negative cases, and primary key requirements.
 type DeleteTestSuite struct {
-	BaseSuite
+	BaseTestSuite
 }
 
 // SetupSuite runs once before all tests in the suite.
@@ -94,7 +94,7 @@ func (suite *DeleteTestSuite) TearDownSuite() {
 
 // TestDeleteBasic tests basic Delete functionality.
 func (suite *DeleteTestSuite) TestDeleteBasic() {
-	suite.T().Logf("Testing Delete API basic functionality for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing Delete API basic functionality for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -117,7 +117,7 @@ func (suite *DeleteTestSuite) TestDeleteBasic() {
 
 // TestDeleteWithPreHook tests Delete with PreDelete hook.
 func (suite *DeleteTestSuite) TestDeleteWithPreHook() {
-	suite.T().Logf("Testing Delete API with PreDelete hook for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing Delete API with PreDelete hook for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -142,7 +142,7 @@ func (suite *DeleteTestSuite) TestDeleteWithPreHook() {
 
 // TestDeleteWithPostHook tests Delete with PostDelete hook.
 func (suite *DeleteTestSuite) TestDeleteWithPostHook() {
-	suite.T().Logf("Testing Delete API with PostDelete hook for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing Delete API with PostDelete hook for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -167,7 +167,7 @@ func (suite *DeleteTestSuite) TestDeleteWithPostHook() {
 
 // TestDeleteNegativeCases tests negative scenarios.
 func (suite *DeleteTestSuite) TestDeleteNegativeCases() {
-	suite.T().Logf("Testing Delete API negative cases for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing Delete API negative cases for %s", suite.ds.Kind)
 
 	suite.Run("NonExistentUser", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -251,7 +251,7 @@ func (suite *DeleteTestSuite) TestDeleteNegativeCases() {
 
 // TestDeleteRequiresPrimaryKey tests that delete requires primary key.
 func (suite *DeleteTestSuite) TestDeleteRequiresPrimaryKey() {
-	suite.T().Logf("Testing Delete API primary key requirement for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing Delete API primary key requirement for %s", suite.ds.Kind)
 
 	suite.Run("DeleteByEmailShouldFail", func() {
 		// Delete operation only supports deletion by primary key, not by other fields

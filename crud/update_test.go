@@ -12,8 +12,8 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *BaseSuite) suite.TestingSuite {
-		return &UpdateTestSuite{BaseSuite: base.clone()}
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
+		return &UpdateTestSuite{BaseTestSuite: base.clone()}
 	})
 }
 
@@ -80,7 +80,7 @@ type TestUserUpdateParams struct {
 
 // UpdateTestSuite tests the Update API functionality.
 type UpdateTestSuite struct {
-	BaseSuite
+	BaseTestSuite
 }
 
 func (suite *UpdateTestSuite) SetupSuite() {
@@ -97,7 +97,7 @@ func (suite *UpdateTestSuite) TearDownSuite() {
 
 // TestUpdateBasic tests basic Update functionality.
 func (suite *UpdateTestSuite) TestUpdateBasic() {
-	suite.T().Logf("Testing Update API basic functionality for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing Update API basic functionality for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -125,7 +125,7 @@ func (suite *UpdateTestSuite) TestUpdateBasic() {
 
 // TestUpdateWithPreHook tests Update with PreUpdate hook.
 func (suite *UpdateTestSuite) TestUpdateWithPreHook() {
-	suite.T().Logf("Testing Update API with PreUpdate hook for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing Update API with PreUpdate hook for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -153,7 +153,7 @@ func (suite *UpdateTestSuite) TestUpdateWithPreHook() {
 
 // TestUpdateWithPostHook tests Update with PostUpdate hook.
 func (suite *UpdateTestSuite) TestUpdateWithPostHook() {
-	suite.T().Logf("Testing Update API with PostUpdate hook for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing Update API with PostUpdate hook for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -182,7 +182,7 @@ func (suite *UpdateTestSuite) TestUpdateWithPostHook() {
 
 // TestUpdateNegativeCases tests negative scenarios.
 func (suite *UpdateTestSuite) TestUpdateNegativeCases() {
-	suite.T().Logf("Testing Update API negative cases for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing Update API negative cases for %s", suite.ds.Kind)
 
 	suite.Run("NonExistentUser", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -305,7 +305,7 @@ func (suite *UpdateTestSuite) TestUpdateNegativeCases() {
 
 // TestPartialUpdate tests partial field updates.
 func (suite *UpdateTestSuite) TestPartialUpdate() {
-	suite.T().Logf("Testing Update API partial update for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing Update API partial update for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{

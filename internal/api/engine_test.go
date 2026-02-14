@@ -14,63 +14,63 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 )
 
-// mockResource implements api.Resource for testing.
-type mockResource struct {
+// MockResource implements api.Resource for testing.
+type MockResource struct {
 	kind    api.Kind
 	name    string
 	version string
 	auth    *api.AuthConfig
 }
 
-func (m *mockResource) Kind() api.Kind                { return m.kind }
-func (m *mockResource) Name() string                  { return m.name }
-func (m *mockResource) Version() string               { return m.version }
-func (m *mockResource) Auth() *api.AuthConfig         { return m.auth }
-func (*mockResource) Operations() []api.OperationSpec { return nil }
+func (m *MockResource) Kind() api.Kind                { return m.kind }
+func (m *MockResource) Name() string                  { return m.name }
+func (m *MockResource) Version() string               { return m.version }
+func (m *MockResource) Auth() *api.AuthConfig         { return m.auth }
+func (*MockResource) Operations() []api.OperationSpec { return nil }
 
-// mockRouterStrategy implements api.RouterStrategy for testing.
-type mockRouterStrategy struct {
+// MockRouterStrategy implements api.RouterStrategy for testing.
+type MockRouterStrategy struct {
 	name       string
 	setupErr   error
 	setupCalls int
 	routeCalls int
 }
 
-func (m *mockRouterStrategy) Name() string {
+func (m *MockRouterStrategy) Name() string {
 	return m.name
 }
 
-func (m *mockRouterStrategy) CanHandle(kind api.Kind) bool {
+func (m *MockRouterStrategy) CanHandle(kind api.Kind) bool {
 	return kind.String() == m.name
 }
 
-func (m *mockRouterStrategy) Setup(fiber.Router) error {
+func (m *MockRouterStrategy) Setup(fiber.Router) error {
 	m.setupCalls++
 
 	return m.setupErr
 }
 
-func (m *mockRouterStrategy) Route(fiber.Handler, *api.Operation) {
+func (m *MockRouterStrategy) Route(fiber.Handler, *api.Operation) {
 	m.routeCalls++
 }
 
-// mockOperationsCollector implements api.OperationsCollector for testing.
-type mockOperationsCollector struct {
+// MockOperationsCollector implements api.OperationsCollector for testing.
+type MockOperationsCollector struct {
 	specs []api.OperationSpec
 }
 
-func (m *mockOperationsCollector) Collect(api.Resource) []api.OperationSpec {
+func (m *MockOperationsCollector) Collect(api.Resource) []api.OperationSpec {
 	return m.specs
 }
 
-// mockHandlerResolver implements api.HandlerResolver for testing.
-type mockHandlerResolver struct {
+// MockHandlerResolver implements api.HandlerResolver for testing.
+type MockHandlerResolver struct {
 	handler   any
 	err       error
 	returnNil bool
 }
 
-func (m *mockHandlerResolver) Resolve(api.Resource, api.OperationSpec) (any, error) {
+func (m *MockHandlerResolver) Resolve(api.Resource, api.OperationSpec) (any, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
@@ -82,13 +82,13 @@ func (m *mockHandlerResolver) Resolve(api.Resource, api.OperationSpec) (any, err
 	return m.handler, nil
 }
 
-// mockHandlerAdapter implements api.HandlerAdapter for testing.
-type mockHandlerAdapter struct {
+// MockHandlerAdapter implements api.HandlerAdapter for testing.
+type MockHandlerAdapter struct {
 	err       error
 	returnNil bool
 }
 
-func (m *mockHandlerAdapter) Adapt(handler any, _ *api.Operation) (fiber.Handler, error) {
+func (m *MockHandlerAdapter) Adapt(handler any, _ *api.Operation) (fiber.Handler, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
@@ -100,8 +100,8 @@ func (m *mockHandlerAdapter) Adapt(handler any, _ *api.Operation) (fiber.Handler
 	return func(fiber.Ctx) error { return nil }, nil
 }
 
-// dummyHandler is a simple handler for testing.
-func dummyHandler(fiber.Ctx) error {
+// DummyHandler is a simple handler for testing.
+func DummyHandler(fiber.Ctx) error {
 	return nil
 }
 
@@ -193,8 +193,8 @@ func TestEngineOptions(t *testing.T) {
 	})
 
 	t.Run("WithRouters", func(t *testing.T) {
-		router1 := &mockRouterStrategy{name: "rpc"}
-		router2 := &mockRouterStrategy{name: "rest"}
+		router1 := &MockRouterStrategy{name: "rpc"}
+		router2 := &MockRouterStrategy{name: "rest"}
 		eng, _ := NewEngine(WithRouters(router1, router2))
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
@@ -203,7 +203,7 @@ func TestEngineOptions(t *testing.T) {
 	})
 
 	t.Run("WithOperationCollectors", func(t *testing.T) {
-		collector := &mockOperationsCollector{}
+		collector := &MockOperationsCollector{}
 		eng, _ := NewEngine(WithOperationCollectors(collector))
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
@@ -211,7 +211,7 @@ func TestEngineOptions(t *testing.T) {
 	})
 
 	t.Run("WithHandlerResolvers", func(t *testing.T) {
-		resolver := &mockHandlerResolver{handler: dummyHandler}
+		resolver := &MockHandlerResolver{handler: DummyHandler}
 		eng, _ := NewEngine(WithHandlerResolvers(resolver))
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
@@ -219,7 +219,7 @@ func TestEngineOptions(t *testing.T) {
 	})
 
 	t.Run("WithHandlerAdapters", func(t *testing.T) {
-		adapter := &mockHandlerAdapter{}
+		adapter := &MockHandlerAdapter{}
 		eng, _ := NewEngine(WithHandlerAdapters(adapter))
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
@@ -252,105 +252,105 @@ func TestEngineRegister(t *testing.T) {
 
 	t.Run("EmptyResourceName", func(t *testing.T) {
 		eng, _ := NewEngine(
-			WithOperationCollectors(&mockOperationsCollector{
+			WithOperationCollectors(&MockOperationsCollector{
 				specs: []api.OperationSpec{{Action: "create"}},
 			}),
 		)
-		res := &mockResource{kind: api.KindRPC, name: ""}
+		res := &MockResource{kind: api.KindRPC, name: ""}
 		err := eng.Register(res)
 		assert.Error(t, err, "Register should return error for empty resource name")
 		assert.Contains(t, err.Error(), "empty", "Error message should mention empty")
 	})
 
 	t.Run("EmptyActionName", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc"}
-		collector := &mockOperationsCollector{
+		router := &MockRouterStrategy{name: "rpc"}
+		collector := &MockOperationsCollector{
 			specs: []api.OperationSpec{{Action: ""}},
 		}
 		eng, _ := NewEngine(
 			WithRouters(router),
 			WithOperationCollectors(collector),
 		)
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 		err := eng.Register(res)
 		assert.Error(t, err, "Register should return error for empty action name")
 		assert.Contains(t, err.Error(), "empty", "Error message should mention empty")
 	})
 
 	t.Run("NoRouterForKind", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rest"} // Only REST router, but resource is RPC
-		collector := &mockOperationsCollector{
-			specs: []api.OperationSpec{{Action: "create", Handler: dummyHandler}},
+		router := &MockRouterStrategy{name: "rest"} // Only REST router, but resource is RPC
+		collector := &MockOperationsCollector{
+			specs: []api.OperationSpec{{Action: "create", Handler: DummyHandler}},
 		}
 		eng, _ := NewEngine(
 			WithRouters(router),
 			WithOperationCollectors(collector),
 		)
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 		err := eng.Register(res)
 		assert.Error(t, err, "Register should return error when no router handles kind")
 		assert.Contains(t, err.Error(), "no router", "Error message should mention no router")
 	})
 
 	t.Run("HandlerResolverError", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc"}
-		collector := &mockOperationsCollector{
+		router := &MockRouterStrategy{name: "rpc"}
+		collector := &MockOperationsCollector{
 			specs: []api.OperationSpec{{Action: "create"}},
 		}
-		resolver := &mockHandlerResolver{err: errors.New("resolve failed")}
+		resolver := &MockHandlerResolver{err: errors.New("resolve failed")}
 		eng, _ := NewEngine(
 			WithRouters(router),
 			WithOperationCollectors(collector),
 			WithHandlerResolvers(resolver),
 		)
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 		err := eng.Register(res)
 		assert.Error(t, err, "Register should return error when handler resolver fails")
 		assert.Contains(t, err.Error(), "resolve", "Error message should mention resolve")
 	})
 
 	t.Run("NoHandlerResolver", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc"}
-		collector := &mockOperationsCollector{
+		router := &MockRouterStrategy{name: "rpc"}
+		collector := &MockOperationsCollector{
 			specs: []api.OperationSpec{{Action: "create"}},
 		}
 		eng, _ := NewEngine(
 			WithRouters(router),
 			WithOperationCollectors(collector),
 		)
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 		err := eng.Register(res)
 		assert.Error(t, err, "Register should return error when no handler resolver found")
 	})
 
 	t.Run("SuccessfulRegistration", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc"}
-		collector := &mockOperationsCollector{
+		router := &MockRouterStrategy{name: "rpc"}
+		collector := &MockOperationsCollector{
 			specs: []api.OperationSpec{{Action: "create"}},
 		}
-		resolver := &mockHandlerResolver{handler: dummyHandler}
+		resolver := &MockHandlerResolver{handler: DummyHandler}
 		eng, _ := NewEngine(
 			WithRouters(router),
 			WithOperationCollectors(collector),
 			WithHandlerResolvers(resolver),
 		)
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 		err := eng.Register(res)
 		assert.NoError(t, err, "Register should succeed")
 	})
 
 	t.Run("DuplicateOperation", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc"}
-		collector := &mockOperationsCollector{
+		router := &MockRouterStrategy{name: "rpc"}
+		collector := &MockOperationsCollector{
 			specs: []api.OperationSpec{{Action: "create"}},
 		}
-		resolver := &mockHandlerResolver{handler: dummyHandler}
+		resolver := &MockHandlerResolver{handler: DummyHandler}
 		eng, _ := NewEngine(
 			WithRouters(router),
 			WithOperationCollectors(collector),
 			WithHandlerResolvers(resolver),
 		)
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 
 		err := eng.Register(res)
 		assert.NoError(t, err, "First registration should succeed")
@@ -363,35 +363,35 @@ func TestEngineRegister(t *testing.T) {
 	})
 
 	t.Run("MultipleResources", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc"}
-		collector := &mockOperationsCollector{
+		router := &MockRouterStrategy{name: "rpc"}
+		collector := &MockOperationsCollector{
 			specs: []api.OperationSpec{{Action: "create"}},
 		}
-		resolver := &mockHandlerResolver{handler: dummyHandler}
+		resolver := &MockHandlerResolver{handler: DummyHandler}
 		eng, _ := NewEngine(
 			WithRouters(router),
 			WithOperationCollectors(collector),
 			WithHandlerResolvers(resolver),
 		)
-		res1 := &mockResource{kind: api.KindRPC, name: "test/resource1"}
-		res2 := &mockResource{kind: api.KindRPC, name: "test/resource2"}
+		res1 := &MockResource{kind: api.KindRPC, name: "test/resource1"}
+		res2 := &MockResource{kind: api.KindRPC, name: "test/resource2"}
 
 		err := eng.Register(res1, res2)
 		assert.NoError(t, err, "Registering multiple resources should succeed")
 	})
 
 	t.Run("ResourceWithCustomVersion", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc"}
-		collector := &mockOperationsCollector{
+		router := &MockRouterStrategy{name: "rpc"}
+		collector := &MockOperationsCollector{
 			specs: []api.OperationSpec{{Action: "create"}},
 		}
-		resolver := &mockHandlerResolver{handler: dummyHandler}
+		resolver := &MockHandlerResolver{handler: DummyHandler}
 		eng, _ := NewEngine(
 			WithRouters(router),
 			WithOperationCollectors(collector),
 			WithHandlerResolvers(resolver),
 		)
-		res := &mockResource{kind: api.KindRPC, name: "test/resource", version: "v2"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource", version: "v2"}
 
 		err := eng.Register(res)
 		assert.NoError(t, err, "Registration with custom version should succeed")
@@ -401,18 +401,18 @@ func TestEngineRegister(t *testing.T) {
 	})
 
 	t.Run("ResourceWithCustomAuth", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc"}
-		collector := &mockOperationsCollector{
+		router := &MockRouterStrategy{name: "rpc"}
+		collector := &MockOperationsCollector{
 			specs: []api.OperationSpec{{Action: "create"}},
 		}
-		resolver := &mockHandlerResolver{handler: dummyHandler}
+		resolver := &MockHandlerResolver{handler: DummyHandler}
 		eng, _ := NewEngine(
 			WithRouters(router),
 			WithOperationCollectors(collector),
 			WithHandlerResolvers(resolver),
 		)
 		customAuth := api.SignatureAuth()
-		res := &mockResource{kind: api.KindRPC, name: "test/resource", auth: customAuth}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource", auth: customAuth}
 
 		err := eng.Register(res)
 		assert.NoError(t, err, "Registration with custom auth should succeed")
@@ -423,17 +423,17 @@ func TestEngineRegister(t *testing.T) {
 	})
 
 	t.Run("OperationWithPermToken", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc"}
-		collector := &mockOperationsCollector{
+		router := &MockRouterStrategy{name: "rpc"}
+		collector := &MockOperationsCollector{
 			specs: []api.OperationSpec{{Action: "delete", PermToken: "sys:user:delete"}},
 		}
-		resolver := &mockHandlerResolver{handler: dummyHandler}
+		resolver := &MockHandlerResolver{handler: DummyHandler}
 		eng, _ := NewEngine(
 			WithRouters(router),
 			WithOperationCollectors(collector),
 			WithHandlerResolvers(resolver),
 		)
-		res := &mockResource{kind: api.KindRPC, name: "sys/user"}
+		res := &MockResource{kind: api.KindRPC, name: "sys/user"}
 
 		err := eng.Register(res)
 		assert.NoError(t, err, "Registration with perm token should succeed")
@@ -445,17 +445,17 @@ func TestEngineRegister(t *testing.T) {
 	})
 
 	t.Run("OperationWithCustomTimeout", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc"}
-		collector := &mockOperationsCollector{
+		router := &MockRouterStrategy{name: "rpc"}
+		collector := &MockOperationsCollector{
 			specs: []api.OperationSpec{{Action: "export", Timeout: 2 * time.Minute}},
 		}
-		resolver := &mockHandlerResolver{handler: dummyHandler}
+		resolver := &MockHandlerResolver{handler: DummyHandler}
 		eng, _ := NewEngine(
 			WithRouters(router),
 			WithOperationCollectors(collector),
 			WithHandlerResolvers(resolver),
 		)
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 
 		err := eng.Register(res)
 		assert.NoError(t, err, "Registration with custom timeout should succeed")
@@ -466,18 +466,18 @@ func TestEngineRegister(t *testing.T) {
 	})
 
 	t.Run("OperationWithCustomRateLimit", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc"}
+		router := &MockRouterStrategy{name: "rpc"}
 		customRateLimit := &api.RateLimitConfig{Max: 10, Period: 1 * time.Minute}
-		collector := &mockOperationsCollector{
+		collector := &MockOperationsCollector{
 			specs: []api.OperationSpec{{Action: "login", RateLimit: customRateLimit}},
 		}
-		resolver := &mockHandlerResolver{handler: dummyHandler}
+		resolver := &MockHandlerResolver{handler: DummyHandler}
 		eng, _ := NewEngine(
 			WithRouters(router),
 			WithOperationCollectors(collector),
 			WithHandlerResolvers(resolver),
 		)
-		res := &mockResource{kind: api.KindRPC, name: "auth"}
+		res := &MockResource{kind: api.KindRPC, name: "auth"}
 
 		err := eng.Register(res)
 		assert.NoError(t, err, "Registration with custom rate limit should succeed")
@@ -488,17 +488,17 @@ func TestEngineRegister(t *testing.T) {
 	})
 
 	t.Run("OperationWithEnableAudit", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc"}
-		collector := &mockOperationsCollector{
+		router := &MockRouterStrategy{name: "rpc"}
+		collector := &MockOperationsCollector{
 			specs: []api.OperationSpec{{Action: "update", EnableAudit: true}},
 		}
-		resolver := &mockHandlerResolver{handler: dummyHandler}
+		resolver := &MockHandlerResolver{handler: DummyHandler}
 		eng, _ := NewEngine(
 			WithRouters(router),
 			WithOperationCollectors(collector),
 			WithHandlerResolvers(resolver),
 		)
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 
 		err := eng.Register(res)
 		assert.NoError(t, err, "Registration with audit enabled should succeed")
@@ -519,17 +519,17 @@ func TestEngineLookup(t *testing.T) {
 	})
 
 	t.Run("Found", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc"}
-		collector := &mockOperationsCollector{
+		router := &MockRouterStrategy{name: "rpc"}
+		collector := &MockOperationsCollector{
 			specs: []api.OperationSpec{{Action: "create"}},
 		}
-		resolver := &mockHandlerResolver{handler: dummyHandler}
+		resolver := &MockHandlerResolver{handler: DummyHandler}
 		eng, _ := NewEngine(
 			WithRouters(router),
 			WithOperationCollectors(collector),
 			WithHandlerResolvers(resolver),
 		)
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 		_ = eng.Register(res)
 
 		op := eng.Lookup(api.Identifier{Resource: "test/resource", Action: "create", Version: api.VersionV1})
@@ -540,17 +540,17 @@ func TestEngineLookup(t *testing.T) {
 	})
 
 	t.Run("VersionMismatch", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc"}
-		collector := &mockOperationsCollector{
+		router := &MockRouterStrategy{name: "rpc"}
+		collector := &MockOperationsCollector{
 			specs: []api.OperationSpec{{Action: "create"}},
 		}
-		resolver := &mockHandlerResolver{handler: dummyHandler}
+		resolver := &MockHandlerResolver{handler: DummyHandler}
 		eng, _ := NewEngine(
 			WithRouters(router),
 			WithOperationCollectors(collector),
 			WithHandlerResolvers(resolver),
 		)
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 		_ = eng.Register(res)
 
 		op := eng.Lookup(api.Identifier{Resource: "test/resource", Action: "create", Version: "v2"})
@@ -558,17 +558,17 @@ func TestEngineLookup(t *testing.T) {
 	})
 
 	t.Run("ActionMismatch", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc"}
-		collector := &mockOperationsCollector{
+		router := &MockRouterStrategy{name: "rpc"}
+		collector := &MockOperationsCollector{
 			specs: []api.OperationSpec{{Action: "create"}},
 		}
-		resolver := &mockHandlerResolver{handler: dummyHandler}
+		resolver := &MockHandlerResolver{handler: DummyHandler}
 		eng, _ := NewEngine(
 			WithRouters(router),
 			WithOperationCollectors(collector),
 			WithHandlerResolvers(resolver),
 		)
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 		_ = eng.Register(res)
 
 		op := eng.Lookup(api.Identifier{Resource: "test/resource", Action: "update", Version: api.VersionV1})
@@ -576,21 +576,21 @@ func TestEngineLookup(t *testing.T) {
 	})
 
 	t.Run("MultipleOperations", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc"}
-		collector := &mockOperationsCollector{
+		router := &MockRouterStrategy{name: "rpc"}
+		collector := &MockOperationsCollector{
 			specs: []api.OperationSpec{
 				{Action: "create"},
 				{Action: "update"},
 				{Action: "delete"},
 			},
 		}
-		resolver := &mockHandlerResolver{handler: dummyHandler}
+		resolver := &MockHandlerResolver{handler: DummyHandler}
 		eng, _ := NewEngine(
 			WithRouters(router),
 			WithOperationCollectors(collector),
 			WithHandlerResolvers(resolver),
 		)
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 		_ = eng.Register(res)
 
 		for _, action := range []string{"create", "update", "delete"} {
@@ -604,7 +604,7 @@ func TestEngineMount(t *testing.T) {
 	t.Log("Testing Engine.Mount method")
 
 	t.Run("SetupError", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc", setupErr: errors.New("setup failed")}
+		router := &MockRouterStrategy{name: "rpc", setupErr: errors.New("setup failed")}
 		eng, _ := NewEngine(WithRouters(router))
 
 		app := fiber.New()
@@ -616,19 +616,19 @@ func TestEngineMount(t *testing.T) {
 	})
 
 	t.Run("SuccessfulMount", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc"}
-		collector := &mockOperationsCollector{
+		router := &MockRouterStrategy{name: "rpc"}
+		collector := &MockOperationsCollector{
 			specs: []api.OperationSpec{{Action: "create"}},
 		}
-		resolver := &mockHandlerResolver{handler: dummyHandler}
-		adapter := &mockHandlerAdapter{}
+		resolver := &MockHandlerResolver{handler: DummyHandler}
+		adapter := &MockHandlerAdapter{}
 		eng, _ := NewEngine(
 			WithRouters(router),
 			WithOperationCollectors(collector),
 			WithHandlerResolvers(resolver),
 			WithHandlerAdapters(adapter),
 		)
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 		_ = eng.Register(res)
 
 		app := fiber.New()
@@ -641,21 +641,21 @@ func TestEngineMount(t *testing.T) {
 	})
 
 	t.Run("MultipleRouters", func(t *testing.T) {
-		rpcRouter := &mockRouterStrategy{name: "rpc"}
-		restRouter := &mockRouterStrategy{name: "rest"}
-		collector := &mockOperationsCollector{
+		rpcRouter := &MockRouterStrategy{name: "rpc"}
+		restRouter := &MockRouterStrategy{name: "rest"}
+		collector := &MockOperationsCollector{
 			specs: []api.OperationSpec{{Action: "create"}},
 		}
-		resolver := &mockHandlerResolver{handler: dummyHandler}
-		adapter := &mockHandlerAdapter{}
+		resolver := &MockHandlerResolver{handler: DummyHandler}
+		adapter := &MockHandlerAdapter{}
 		eng, _ := NewEngine(
 			WithRouters(rpcRouter, restRouter),
 			WithOperationCollectors(collector),
 			WithHandlerResolvers(resolver),
 			WithHandlerAdapters(adapter),
 		)
-		res1 := &mockResource{kind: api.KindRPC, name: "test/rpc"}
-		res2 := &mockResource{kind: api.KindREST, name: "test/rest"}
+		res1 := &MockResource{kind: api.KindRPC, name: "test/rpc"}
+		res2 := &MockResource{kind: api.KindREST, name: "test/rest"}
 		_ = eng.Register(res1)
 		_ = eng.Register(res2)
 
@@ -669,19 +669,19 @@ func TestEngineMount(t *testing.T) {
 	})
 
 	t.Run("AdapterError", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc"}
-		collector := &mockOperationsCollector{
+		router := &MockRouterStrategy{name: "rpc"}
+		collector := &MockOperationsCollector{
 			specs: []api.OperationSpec{{Action: "create"}},
 		}
-		resolver := &mockHandlerResolver{handler: dummyHandler}
-		adapter := &mockHandlerAdapter{err: errors.New("adapt failed")}
+		resolver := &MockHandlerResolver{handler: DummyHandler}
+		adapter := &MockHandlerAdapter{err: errors.New("adapt failed")}
 		eng, _ := NewEngine(
 			WithRouters(router),
 			WithOperationCollectors(collector),
 			WithHandlerResolvers(resolver),
 			WithHandlerAdapters(adapter),
 		)
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 		_ = eng.Register(res)
 
 		app := fiber.New()
@@ -693,7 +693,7 @@ func TestEngineMount(t *testing.T) {
 	})
 
 	t.Run("OperationNotFoundInOperationsMap", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc"}
+		router := &MockRouterStrategy{name: "rpc"}
 		eng, _ := NewEngine(WithRouters(router))
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
@@ -773,8 +773,8 @@ func TestFindRouterStrategy(t *testing.T) {
 	t.Log("Testing findRouterStrategy method")
 
 	t.Run("FindRPCRouter", func(t *testing.T) {
-		rpcRouter := &mockRouterStrategy{name: "rpc"}
-		restRouter := &mockRouterStrategy{name: "rest"}
+		rpcRouter := &MockRouterStrategy{name: "rpc"}
+		restRouter := &MockRouterStrategy{name: "rest"}
 		eng, _ := NewEngine(WithRouters(rpcRouter, restRouter))
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
@@ -785,8 +785,8 @@ func TestFindRouterStrategy(t *testing.T) {
 	})
 
 	t.Run("FindRESTRouter", func(t *testing.T) {
-		rpcRouter := &mockRouterStrategy{name: "rpc"}
-		restRouter := &mockRouterStrategy{name: "rest"}
+		rpcRouter := &MockRouterStrategy{name: "rpc"}
+		restRouter := &MockRouterStrategy{name: "rest"}
 		eng, _ := NewEngine(WithRouters(rpcRouter, restRouter))
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
@@ -797,7 +797,7 @@ func TestFindRouterStrategy(t *testing.T) {
 	})
 
 	t.Run("NotFound", func(t *testing.T) {
-		rpcRouter := &mockRouterStrategy{name: "rpc"}
+		rpcRouter := &MockRouterStrategy{name: "rpc"}
 		eng, _ := NewEngine(WithRouters(rpcRouter))
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
@@ -811,26 +811,26 @@ func TestAdaptHandler(t *testing.T) {
 	t.Log("Testing adaptHandler method")
 
 	t.Run("FirstAdapterSucceeds", func(t *testing.T) {
-		adapter1 := &mockHandlerAdapter{}
-		adapter2 := &mockHandlerAdapter{}
+		adapter1 := &MockHandlerAdapter{}
+		adapter2 := &MockHandlerAdapter{}
 		eng, _ := NewEngine(WithHandlerAdapters(adapter1, adapter2))
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
 
-		op := &api.Operation{Handler: dummyHandler}
+		op := &api.Operation{Handler: DummyHandler}
 		result, err := e.adaptHandler(op)
 		assert.NoError(t, err, "adaptHandler should not return error")
 		assert.NotNil(t, result, "adaptHandler should return handler")
 	})
 
 	t.Run("FirstAdapterReturnsNilSecondSucceeds", func(t *testing.T) {
-		adapter1 := &mockHandlerAdapter{returnNil: true} // Returns nil to trigger chain
-		adapter2 := &mockHandlerAdapter{}
+		adapter1 := &MockHandlerAdapter{returnNil: true} // Returns nil to trigger chain
+		adapter2 := &MockHandlerAdapter{}
 		eng, _ := NewEngine(WithHandlerAdapters(adapter1, adapter2))
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
 
-		op := &api.Operation{Handler: dummyHandler}
+		op := &api.Operation{Handler: DummyHandler}
 		result, err := e.adaptHandler(op)
 		assert.NoError(t, err, "adaptHandler should not return error")
 		assert.NotNil(t, result, "adaptHandler should return handler from second adapter")
@@ -841,7 +841,7 @@ func TestAdaptHandler(t *testing.T) {
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
 
-		op := &api.Operation{Handler: dummyHandler}
+		op := &api.Operation{Handler: DummyHandler}
 		result, err := e.adaptHandler(op)
 		assert.Error(t, err, "adaptHandler should return error when no adapter handles")
 		assert.Nil(t, result, "adaptHandler should return nil handler")
@@ -849,12 +849,12 @@ func TestAdaptHandler(t *testing.T) {
 	})
 
 	t.Run("AdapterError", func(t *testing.T) {
-		adapter := &mockHandlerAdapter{err: errors.New("adapt failed")}
+		adapter := &MockHandlerAdapter{err: errors.New("adapt failed")}
 		eng, _ := NewEngine(WithHandlerAdapters(adapter))
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
 
-		op := &api.Operation{Handler: dummyHandler}
+		op := &api.Operation{Handler: DummyHandler}
 		result, err := e.adaptHandler(op)
 		assert.Error(t, err, "adaptHandler should return error")
 		assert.Nil(t, result, "adaptHandler should return nil handler")
@@ -933,7 +933,7 @@ func TestResolveAuthConfig(t *testing.T) {
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
 
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 		spec := api.OperationSpec{Action: "ping", Public: true}
 
 		result := e.resolveAuthConfig(res, spec)
@@ -948,7 +948,7 @@ func TestResolveAuthConfig(t *testing.T) {
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
 
-		res := &mockResource{kind: api.KindRPC, name: "test/resource", auth: resourceAuth}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource", auth: resourceAuth}
 		spec := api.OperationSpec{Action: "create"}
 
 		result := e.resolveAuthConfig(res, spec)
@@ -962,7 +962,7 @@ func TestResolveAuthConfig(t *testing.T) {
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
 
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 		spec := api.OperationSpec{Action: "create"}
 
 		result := e.resolveAuthConfig(res, spec)
@@ -976,7 +976,7 @@ func TestResolveAuthConfig(t *testing.T) {
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
 
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 		spec := api.OperationSpec{Action: "create"}
 
 		result := e.resolveAuthConfig(res, spec)
@@ -991,7 +991,7 @@ func TestResolveAuthConfig(t *testing.T) {
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
 
-		res := &mockResource{kind: api.KindRPC, name: "test/resource", auth: resourceAuth}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource", auth: resourceAuth}
 		spec := api.OperationSpec{Action: "create"}
 
 		result := e.resolveAuthConfig(res, spec)
@@ -1005,13 +1005,13 @@ func TestResolveHandler(t *testing.T) {
 	t.Log("Testing resolveHandler method")
 
 	t.Run("FirstResolverSucceeds", func(t *testing.T) {
-		resolver1 := &mockHandlerResolver{handler: dummyHandler}
-		resolver2 := &mockHandlerResolver{handler: dummyHandler}
+		resolver1 := &MockHandlerResolver{handler: DummyHandler}
+		resolver2 := &MockHandlerResolver{handler: DummyHandler}
 		eng, _ := NewEngine(WithHandlerResolvers(resolver1, resolver2))
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
 
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 		spec := api.OperationSpec{Action: "create"}
 
 		result, err := e.resolveHandler(spec, res)
@@ -1020,13 +1020,13 @@ func TestResolveHandler(t *testing.T) {
 	})
 
 	t.Run("FirstResolverReturnsNilSecondSucceeds", func(t *testing.T) {
-		resolver1 := &mockHandlerResolver{returnNil: true}
-		resolver2 := &mockHandlerResolver{handler: dummyHandler}
+		resolver1 := &MockHandlerResolver{returnNil: true}
+		resolver2 := &MockHandlerResolver{handler: DummyHandler}
 		eng, _ := NewEngine(WithHandlerResolvers(resolver1, resolver2))
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
 
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 		spec := api.OperationSpec{Action: "create"}
 
 		result, err := e.resolveHandler(spec, res)
@@ -1035,13 +1035,13 @@ func TestResolveHandler(t *testing.T) {
 	})
 
 	t.Run("AllResolversReturnNil", func(t *testing.T) {
-		resolver1 := &mockHandlerResolver{returnNil: true}
-		resolver2 := &mockHandlerResolver{returnNil: true}
+		resolver1 := &MockHandlerResolver{returnNil: true}
+		resolver2 := &MockHandlerResolver{returnNil: true}
 		eng, _ := NewEngine(WithHandlerResolvers(resolver1, resolver2))
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
 
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 		spec := api.OperationSpec{Action: "create"}
 
 		result, err := e.resolveHandler(spec, res)
@@ -1051,12 +1051,12 @@ func TestResolveHandler(t *testing.T) {
 	})
 
 	t.Run("ResolverError", func(t *testing.T) {
-		resolver := &mockHandlerResolver{err: errors.New("resolve failed")}
+		resolver := &MockHandlerResolver{err: errors.New("resolve failed")}
 		eng, _ := NewEngine(WithHandlerResolvers(resolver))
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
 
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 		spec := api.OperationSpec{Action: "create"}
 
 		result, err := e.resolveHandler(spec, res)
@@ -1069,25 +1069,25 @@ func TestRegisterResource(t *testing.T) {
 	t.Log("Testing registerResource method")
 
 	t.Run("NoCollectorsReturnsSuccess", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc"}
+		router := &MockRouterStrategy{name: "rpc"}
 		eng, _ := NewEngine(WithRouters(router))
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
 
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 
 		err := e.registerResource(res)
 		assert.NoError(t, err, "registerResource with no collectors should succeed")
 	})
 
 	t.Run("CollectorReturnsEmptySpecs", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc"}
-		collector := &mockOperationsCollector{specs: []api.OperationSpec{}}
+		router := &MockRouterStrategy{name: "rpc"}
+		collector := &MockOperationsCollector{specs: []api.OperationSpec{}}
 		eng, _ := NewEngine(WithRouters(router), WithOperationCollectors(collector))
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
 
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 
 		err := e.registerResource(res)
 		assert.NoError(t, err, "registerResource with empty specs should succeed")
@@ -1098,12 +1098,12 @@ func TestRegisterAfterMount(t *testing.T) {
 	t.Log("Testing Register after Mount")
 
 	t.Run("RegisterAfterMountRoutesImmediately", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc"}
-		collector := &mockOperationsCollector{
+		router := &MockRouterStrategy{name: "rpc"}
+		collector := &MockOperationsCollector{
 			specs: []api.OperationSpec{{Action: "create"}},
 		}
-		resolver := &mockHandlerResolver{handler: dummyHandler}
-		adapter := &mockHandlerAdapter{}
+		resolver := &MockHandlerResolver{handler: DummyHandler}
+		adapter := &MockHandlerAdapter{}
 		eng, _ := NewEngine(
 			WithRouters(router),
 			WithOperationCollectors(collector),
@@ -1118,19 +1118,19 @@ func TestRegisterAfterMount(t *testing.T) {
 		assert.NoError(t, err, "Mount should succeed")
 		assert.Equal(t, 0, router.routeCalls, "No routes before registration")
 
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 		err = eng.Register(res)
 		assert.NoError(t, err, "Register after Mount should succeed")
 		assert.Equal(t, 1, router.routeCalls, "Route should be called immediately after registration")
 	})
 
 	t.Run("RegisterAfterMountAdapterError", func(t *testing.T) {
-		router := &mockRouterStrategy{name: "rpc"}
-		collector := &mockOperationsCollector{
+		router := &MockRouterStrategy{name: "rpc"}
+		collector := &MockOperationsCollector{
 			specs: []api.OperationSpec{{Action: "create"}},
 		}
-		resolver := &mockHandlerResolver{handler: dummyHandler}
-		adapter := &mockHandlerAdapter{err: errors.New("adapt failed")}
+		resolver := &MockHandlerResolver{handler: DummyHandler}
+		adapter := &MockHandlerAdapter{err: errors.New("adapt failed")}
 		eng, _ := NewEngine(
 			WithRouters(router),
 			WithOperationCollectors(collector),
@@ -1144,7 +1144,7 @@ func TestRegisterAfterMount(t *testing.T) {
 		err := eng.Mount(app)
 		assert.NoError(t, err, "Mount should succeed with no operations")
 
-		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
+		res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 		err = eng.Register(res)
 		assert.Error(t, err, "Register after Mount should fail when adapter fails")
 		assert.Contains(t, err.Error(), "adapt", "Error should mention adapt")
@@ -1155,12 +1155,12 @@ func TestAdaptHandlerAllReturnNil(t *testing.T) {
 	t.Log("Testing adaptHandler when all adapters return nil")
 
 	t.Run("SingleAdapterReturnsNil", func(t *testing.T) {
-		adapter := &mockHandlerAdapter{returnNil: true}
+		adapter := &MockHandlerAdapter{returnNil: true}
 		eng, _ := NewEngine(WithHandlerAdapters(adapter))
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
 
-		op := &api.Operation{Handler: dummyHandler}
+		op := &api.Operation{Handler: DummyHandler}
 		result, err := e.adaptHandler(op)
 		assert.Error(t, err, "adaptHandler should return error when adapter returns nil")
 		assert.Nil(t, result, "adaptHandler should return nil handler")
@@ -1168,13 +1168,13 @@ func TestAdaptHandlerAllReturnNil(t *testing.T) {
 	})
 
 	t.Run("MultipleAdaptersAllReturnNil", func(t *testing.T) {
-		adapter1 := &mockHandlerAdapter{returnNil: true}
-		adapter2 := &mockHandlerAdapter{returnNil: true}
+		adapter1 := &MockHandlerAdapter{returnNil: true}
+		adapter2 := &MockHandlerAdapter{returnNil: true}
 		eng, _ := NewEngine(WithHandlerAdapters(adapter1, adapter2))
 		e, ok := eng.(*engine)
 		require.True(t, ok, "Type assertion to *engine should succeed")
 
-		op := &api.Operation{Handler: dummyHandler}
+		op := &api.Operation{Handler: DummyHandler}
 		result, err := e.adaptHandler(op)
 		assert.Error(t, err, "adaptHandler should return error when all adapters return nil")
 		assert.Nil(t, result, "adaptHandler should return nil handler")

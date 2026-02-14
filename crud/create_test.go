@@ -12,8 +12,8 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *BaseSuite) suite.TestingSuite {
-		return &CreateTestSuite{BaseSuite: base.clone()}
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
+		return &CreateTestSuite{BaseTestSuite: base.clone()}
 	})
 }
 
@@ -84,7 +84,7 @@ type TestUserCreateParams struct {
 // CreateTestSuite tests the Create API functionality
 // including basic create, PreCreate/PostCreate hooks, and negative cases.
 type CreateTestSuite struct {
-	BaseSuite
+	BaseTestSuite
 }
 
 // SetupSuite runs once before all tests in the suite.
@@ -103,7 +103,7 @@ func (suite *CreateTestSuite) TearDownSuite() {
 
 // TestCreateBasic tests basic Create functionality.
 func (suite *CreateTestSuite) TestCreateBasic() {
-	suite.T().Logf("Testing Create API basic functionality for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing Create API basic functionality for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -134,7 +134,7 @@ func (suite *CreateTestSuite) TestCreateBasic() {
 
 // TestCreateWithPreHook tests Create with PreCreate hook.
 func (suite *CreateTestSuite) TestCreateWithPreHook() {
-	suite.T().Logf("Testing Create API with PreCreate hook for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing Create API with PreCreate hook for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -162,7 +162,7 @@ func (suite *CreateTestSuite) TestCreateWithPreHook() {
 
 // TestCreateWithPostHook tests Create with PostCreate hook.
 func (suite *CreateTestSuite) TestCreateWithPostHook() {
-	suite.T().Logf("Testing Create API with PostCreate hook for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing Create API with PostCreate hook for %s", suite.ds.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -192,7 +192,7 @@ func (suite *CreateTestSuite) TestCreateWithPostHook() {
 
 // TestCreateNegativeCases tests negative scenarios.
 func (suite *CreateTestSuite) TestCreateNegativeCases() {
-	suite.T().Logf("Testing Create API negative cases for %s", suite.dsConfig.Kind)
+	suite.T().Logf("Testing Create API negative cases for %s", suite.ds.Kind)
 
 	suite.Run("MissingRequiredField", func() {
 		resp := suite.makeAPIRequest(api.Request{
