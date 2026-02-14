@@ -11,20 +11,22 @@ type ConditionBuilderTestSuite struct {
 // Helper methods for common test patterns
 
 // assertQueryReturnsUsers executes a query and returns the users for further assertions.
+// Automatically applies fixtureScope to filter out test-inserted data.
 func (suite *ConditionBuilderTestSuite) assertQueryReturnsUsers(query orm.SelectQuery) []User {
 	var users []User
 
-	err := query.Scan(suite.ctx, &users)
+	err := query.Where(fixtureScope).Scan(suite.ctx, &users)
 	suite.NoError(err, "Query should execute successfully")
 
 	return users
 }
 
 // assertQueryReturnsPosts executes a query and returns the posts for further assertions.
+// Automatically applies fixtureScope to filter out test-inserted data.
 func (suite *ConditionBuilderTestSuite) assertQueryReturnsPosts(query orm.SelectQuery) []Post {
 	var posts []Post
 
-	err := query.Scan(suite.ctx, &posts)
+	err := query.Where(fixtureScope).Scan(suite.ctx, &posts)
 	suite.NoError(err, "Query should execute successfully")
 
 	return posts

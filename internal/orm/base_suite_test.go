@@ -3,8 +3,8 @@ package orm_test
 import (
 	"context"
 	"database/sql"
+	"time"
 
-	"github.com/go-testfixtures/testfixtures/v3"
 	"github.com/stretchr/testify/suite"
 	"github.com/uptrace/bun"
 
@@ -83,6 +83,33 @@ type Category struct {
 	Children []Category `json:"children" bun:"rel:has-many,join:id=parent_id"`
 }
 
+// Comment represents a user comment on a post with tree structure for replies.
+type Comment struct {
+	bun.BaseModel `bun:"table:test_comment,alias:cm"`
+	orm.Model
+
+	Content  string  `json:"content"  bun:"content,notnull"`
+	PostID   string  `json:"postId"   bun:"post_id,notnull"`
+	UserID   string  `json:"userId"   bun:"user_id,notnull"`
+	ParentID *string `json:"parentId" bun:"parent_id"`
+	Likes    int     `json:"likes"    bun:"likes,notnull,default:0"`
+
+	// Relations
+	Post     *Post     `json:"post"     bun:"rel:belongs-to,join:post_id=id"`
+	User     *User     `json:"user"     bun:"rel:belongs-to,join:user_id=id"`
+	Parent   *Comment  `json:"parent"   bun:"rel:belongs-to,join:parent_id=id"`
+	Children []Comment `json:"children" bun:"rel:has-many,join:id=parent_id"`
+}
+
+// fixtureEndDate is the upper bound for fixture data timestamps.
+// All fixture data has created_at in 2025; test-inserted data will have 2026+ timestamps.
+var fixtureEndDate = time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+
+// fixtureScope limits query to fixture data only (created_at < 2026).
+func fixtureScope(cb orm.ConditionBuilder) {
+	cb.LessThan("created_at", fixtureEndDate)
+}
+
 // BaseTestSuite contains all the actual test methods and works with orm.DB interface.
 // This suite will be run against multiple databases to verify cross-database compatibility.
 type BaseTestSuite struct {
@@ -94,25 +121,22 @@ type BaseTestSuite struct {
 	ds    *config.DataSourceConfig
 }
 
-// SetupSuite initializes the test suite (called once per database).
-func (suite *BaseTestSuite) SetupSuite() {
-	models := []any{
-		(*User)(nil),
-		(*Post)(nil),
-		(*Tag)(nil),
-		(*PostTag)(nil),
-		(*Category)(nil),
-	}
+// selectUsers returns a User select query scoped to fixture data.
+func (suite *BaseTestSuite) selectUsers() orm.SelectQuery {
+	return suite.db.NewSelect().Model((*User)(nil)).Where(fixtureScope)
+}
 
-	suite.db.RegisterModel(models...)
-	suite.Require().NoError(suite.db.ResetModel(suite.ctx, models...), "Failed to reset models")
+// selectPosts returns a Post select query scoped to fixture data.
+func (suite *BaseTestSuite) selectPosts() orm.SelectQuery {
+	return suite.db.NewSelect().Model((*Post)(nil)).Where(fixtureScope)
+}
 
-	fixtures, err := testfixtures.New(
-		testfixtures.Database(suite.rawDB),
-		testfixtures.Dialect(string(suite.ds.Kind)),
-		testfixtures.Directory("fixtures"),
-		testfixtures.DangerousSkipTestDatabaseCheck(),
-	)
-	suite.Require().NoError(err, "Failed to create fixtures loader")
-	suite.Require().NoError(fixtures.Load(), "Failed to load fixtures")
+// selectCategories returns a Category select query scoped to fixture data.
+func (suite *BaseTestSuite) selectCategories() orm.SelectQuery {
+	return suite.db.NewSelect().Model((*Category)(nil)).Where(fixtureScope)
+}
+
+// selectComments returns a Comment select query scoped to fixture data.
+func (suite *BaseTestSuite) selectComments() orm.SelectQuery {
+	return suite.db.NewSelect().Model((*Comment)(nil)).Where(fixtureScope)
 }
