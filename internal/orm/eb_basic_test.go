@@ -24,7 +24,7 @@ type EBBasicExpressionsTestSuite struct {
 }
 
 func (suite *EBBasicExpressionsTestSuite) TestColumn() {
-	suite.T().Logf("Testing Column expression for %s", suite.dbType)
+	suite.T().Logf("Testing Column expression for %s", suite.dbKind)
 
 	// Test 1: Simple column reference
 	suite.Run("SimpleColumnReference", func() {
@@ -157,7 +157,7 @@ func (suite *EBBasicExpressionsTestSuite) TestColumn() {
 }
 
 func (suite *EBBasicExpressionsTestSuite) TestTableColumns() {
-	suite.T().Logf("Testing TableColumns expression for %s", suite.dbType)
+	suite.T().Logf("Testing TableColumns expression for %s", suite.dbKind)
 
 	// Test 1: TableColumns with default behavior (withTableAlias = true)
 	suite.Run("TableColumnsWithDefaultAlias", func() {
@@ -259,7 +259,7 @@ func (suite *EBBasicExpressionsTestSuite) TestTableColumns() {
 }
 
 func (suite *EBBasicExpressionsTestSuite) TestAllColumns() {
-	suite.T().Logf("Testing AllColumns expression for %s", suite.dbType)
+	suite.T().Logf("Testing AllColumns expression for %s", suite.dbKind)
 
 	// Test 1: AllColumns without alias (uses table alias when available)
 	suite.Run("AllColumnsWithDefaultBehavior", func() {
@@ -401,7 +401,7 @@ func (suite *EBBasicExpressionsTestSuite) TestAllColumns() {
 }
 
 func (suite *EBBasicExpressionsTestSuite) TestNull() {
-	suite.T().Logf("Testing Null expression for %s", suite.dbType)
+	suite.T().Logf("Testing Null expression for %s", suite.dbKind)
 
 	// Test: NULL value in SELECT
 	suite.Run("NullValueInSelect", func() {
@@ -437,7 +437,7 @@ func (suite *EBBasicExpressionsTestSuite) TestNull() {
 }
 
 func (suite *EBBasicExpressionsTestSuite) TestIsNull() {
-	suite.T().Logf("Testing IsNull function for %s", suite.dbType)
+	suite.T().Logf("Testing IsNull function for %s", suite.dbKind)
 
 	// Test 1: IsNull - check for NULL values
 	suite.Run("CheckNullValues", func() {
@@ -506,7 +506,7 @@ func (suite *EBBasicExpressionsTestSuite) TestIsNull() {
 }
 
 func (suite *EBBasicExpressionsTestSuite) TestIsNotNull() {
-	suite.T().Logf("Testing IsNotNull function for %s", suite.dbType)
+	suite.T().Logf("Testing IsNotNull function for %s", suite.dbKind)
 
 	// Test 1: IsNotNull - check for NOT NULL values
 	suite.Run("CheckNotNullValues", func() {
@@ -578,7 +578,7 @@ func (suite *EBBasicExpressionsTestSuite) TestIsNotNull() {
 }
 
 func (suite *EBBasicExpressionsTestSuite) TestLiteral() {
-	suite.T().Logf("Testing Literal expression for %s", suite.dbType)
+	suite.T().Logf("Testing Literal expression for %s", suite.dbKind)
 
 	// Test: Literal values in expressions
 	suite.Run("LiteralValuesInExpressions", func() {
@@ -612,7 +612,7 @@ func (suite *EBBasicExpressionsTestSuite) TestLiteral() {
 }
 
 func (suite *EBBasicExpressionsTestSuite) TestOrder() {
-	suite.T().Logf("Testing Order expression for %s", suite.dbType)
+	suite.T().Logf("Testing Order expression for %s", suite.dbKind)
 
 	// Test 1: Simple ORDER BY expression
 	suite.Run("SimpleOrderBy", func() {
@@ -691,7 +691,7 @@ func (suite *EBBasicExpressionsTestSuite) TestOrder() {
 }
 
 func (suite *EBBasicExpressionsTestSuite) TestCase() {
-	suite.T().Logf("Testing Case expression for %s", suite.dbType)
+	suite.T().Logf("Testing Case expression for %s", suite.dbKind)
 
 	// Test 1: Simple CASE expression
 	suite.Run("SimpleCaseExpression", func() {
@@ -817,7 +817,7 @@ func (suite *EBBasicExpressionsTestSuite) TestCase() {
 }
 
 func (suite *EBBasicExpressionsTestSuite) TestSubQuery() {
-	suite.T().Logf("Testing SubQuery expression for %s", suite.dbType)
+	suite.T().Logf("Testing SubQuery expression for %s", suite.dbKind)
 
 	// Test 1: Simple subquery in SELECT clause
 	suite.Run("SimpleSubQueryInSelect", func() {
@@ -1006,7 +1006,7 @@ func (suite *EBBasicExpressionsTestSuite) TestSubQuery() {
 
 // TestExists tests the Exists expression.
 func (suite *EBBasicExpressionsTestSuite) TestExists() {
-	suite.T().Logf("Testing Exists expression for %s", suite.dbType)
+	suite.T().Logf("Testing Exists expression for %s", suite.dbKind)
 
 	suite.Run("ExistsInWhereClause", func() {
 		type ExistsResult struct {
@@ -1123,7 +1123,7 @@ func (suite *EBBasicExpressionsTestSuite) TestExists() {
 
 // TestNotExists tests the NotExists expression.
 func (suite *EBBasicExpressionsTestSuite) TestNotExists() {
-	suite.T().Logf("Testing NotExists expression for %s", suite.dbType)
+	suite.T().Logf("Testing NotExists expression for %s", suite.dbKind)
 
 	suite.Run("NotExistsInWhereClause", func() {
 		type NotExistsResult struct {
@@ -1249,7 +1249,7 @@ func (suite *EBBasicExpressionsTestSuite) TestNotExists() {
 
 // TestNot tests the Not method for negating boolean expressions.
 func (suite *EBBasicExpressionsTestSuite) TestNot() {
-	suite.T().Logf("Testing Not expression for %s", suite.dbType)
+	suite.T().Logf("Testing Not expression for %s", suite.dbKind)
 
 	// Test 1: NOT with equality condition
 	suite.Run("NotWithEqualityCondition", func() {
@@ -1379,19 +1379,19 @@ func (suite *EBBasicExpressionsTestSuite) TestNot() {
 // Note: SQLite does not support ANY/ALL operators natively and simulation is not trivial.
 // MySQL supports ANY/ALL but does not allow LIMIT in ANY/ALL subqueries (Error 1235).
 func (suite *EBBasicExpressionsTestSuite) TestAny() {
-	if suite.dbType == config.SQLite {
-		suite.T().Skipf("Test skipped for %s (ANY operator not supported and cannot be easily simulated)", suite.dbType)
+	if suite.dbKind == config.SQLite {
+		suite.T().Skipf("Test skipped for %s (ANY operator not supported and cannot be easily simulated)", suite.dbKind)
 
 		return
 	}
 
-	if suite.dbType == config.MySQL {
-		suite.T().Skipf("Test skipped for %s (LIMIT in ANY/ALL subqueries not supported - Error 1235)", suite.dbType)
+	if suite.dbKind == config.MySQL {
+		suite.T().Skipf("Test skipped for %s (LIMIT in ANY/ALL subqueries not supported - Error 1235)", suite.dbKind)
 
 		return
 	}
 
-	suite.T().Logf("Testing Any expression for %s", suite.dbType)
+	suite.T().Logf("Testing Any expression for %s", suite.dbKind)
 
 	suite.Run("AnyWithEqualityCondition", func() {
 		type AnyResult struct {
@@ -1480,19 +1480,19 @@ func (suite *EBBasicExpressionsTestSuite) TestAny() {
 // Note: SQLite does not support ANY/ALL operators natively and simulation is not trivial.
 // MySQL supports ANY/ALL but does not allow LIMIT in ANY/ALL subqueries (Error 1235).
 func (suite *EBBasicExpressionsTestSuite) TestAll() {
-	if suite.dbType == config.SQLite {
-		suite.T().Skipf("Test skipped for %s (ALL operator not supported and cannot be easily simulated)", suite.dbType)
+	if suite.dbKind == config.SQLite {
+		suite.T().Skipf("Test skipped for %s (ALL operator not supported and cannot be easily simulated)", suite.dbKind)
 
 		return
 	}
 
-	if suite.dbType == config.MySQL {
-		suite.T().Skipf("Test skipped for %s (LIMIT in ANY/ALL subqueries not supported - Error 1235)", suite.dbType)
+	if suite.dbKind == config.MySQL {
+		suite.T().Skipf("Test skipped for %s (LIMIT in ANY/ALL subqueries not supported - Error 1235)", suite.dbKind)
 
 		return
 	}
 
-	suite.T().Logf("Testing All expression for %s", suite.dbType)
+	suite.T().Logf("Testing All expression for %s", suite.dbKind)
 
 	suite.Run("AllWithEqualityCondition", func() {
 		type AllResult struct {
@@ -1581,7 +1581,7 @@ func (suite *EBBasicExpressionsTestSuite) TestAll() {
 
 // TestArithmeticOperators tests the Add, Subtract, Multiply, Divide, and Paren methods.
 func (suite *EBBasicExpressionsTestSuite) TestArithmeticOperators() {
-	suite.T().Logf("Testing arithmetic operators for %s", suite.dbType)
+	suite.T().Logf("Testing arithmetic operators for %s", suite.dbKind)
 
 	suite.Run("BasicArithmeticOperations", func() {
 		type ArithmeticResult struct {
@@ -1643,7 +1643,7 @@ func (suite *EBBasicExpressionsTestSuite) TestArithmeticOperators() {
 }
 
 func (suite *EBBasicExpressionsTestSuite) TestExpr() {
-	suite.T().Logf("Testing Expr function for %s", suite.dbType)
+	suite.T().Logf("Testing Expr function for %s", suite.dbKind)
 
 	// Test 1: Simple arithmetic expression
 	suite.Run("SimpleArithmeticExpression", func() {
@@ -1766,7 +1766,7 @@ func (suite *EBBasicExpressionsTestSuite) TestExpr() {
 }
 
 func (suite *EBBasicExpressionsTestSuite) TestExprs() {
-	suite.T().Logf("Testing Exprs function for %s", suite.dbType)
+	suite.T().Logf("Testing Exprs function for %s", suite.dbKind)
 
 	// Test: Combine multiple expressions with comma separator
 	suite.Run("CombineMultipleExpressions", func() {
@@ -1803,7 +1803,7 @@ func (suite *EBBasicExpressionsTestSuite) TestExprs() {
 }
 
 func (suite *EBBasicExpressionsTestSuite) TestExprsWithSep() {
-	suite.T().Logf("Testing ExprsWithSep function for %s", suite.dbType)
+	suite.T().Logf("Testing ExprsWithSep function for %s", suite.dbKind)
 
 	// Test 1: Combine boolean expressions with OR
 	suite.Run("CombineConditionsWithOR", func() {
@@ -1885,7 +1885,7 @@ func (suite *EBBasicExpressionsTestSuite) TestExprsWithSep() {
 }
 
 func (suite *EBBasicExpressionsTestSuite) TestExprByDialect() {
-	suite.T().Logf("Testing ExprByDialect function for %s", suite.dbType)
+	suite.T().Logf("Testing ExprByDialect function for %s", suite.dbKind)
 
 	// Test: Cross-database string concatenation
 	// Different databases use different syntax for string concatenation:
@@ -1992,7 +1992,7 @@ func (suite *EBBasicExpressionsTestSuite) TestExprByDialect() {
 }
 
 func (suite *EBBasicExpressionsTestSuite) TestExecByDialect() {
-	suite.T().Logf("Testing ExecByDialect function for %s", suite.dbType)
+	suite.T().Logf("Testing ExecByDialect function for %s", suite.dbKind)
 
 	// Test: Execute database-specific side effects
 	suite.Run("DatabaseSpecificSideEffects", func() {
@@ -2019,7 +2019,7 @@ func (suite *EBBasicExpressionsTestSuite) TestExecByDialect() {
 		})
 
 		// Verify the correct callback was executed based on current database
-		switch suite.dbType {
+		switch suite.dbKind {
 		case config.Postgres:
 			suite.Equal("postgres", executed, "Postgres callback should be executed")
 		case config.MySQL:
@@ -2048,12 +2048,12 @@ func (suite *EBBasicExpressionsTestSuite) TestExecByDialect() {
 
 		// Default callback should be executed for all databases
 		suite.Equal("default", executed, "Default callback should be executed")
-		suite.T().Logf("Default callback executed for %s", suite.dbType)
+		suite.T().Logf("Default callback executed for %s", suite.dbKind)
 	})
 }
 
 func (suite *EBBasicExpressionsTestSuite) TestExecByDialectWithErr() {
-	suite.T().Logf("Testing ExecByDialectWithErr function for %s", suite.dbType)
+	suite.T().Logf("Testing ExecByDialectWithErr function for %s", suite.dbKind)
 
 	// Test: Execute database-specific callbacks with error handling
 	suite.Run("DatabaseSpecificWithError", func() {
@@ -2085,7 +2085,7 @@ func (suite *EBBasicExpressionsTestSuite) TestExecByDialectWithErr() {
 		suite.NoError(err, "ExecByDialectWithErr should not return error on success")
 
 		// Verify the correct callback was executed
-		switch suite.dbType {
+		switch suite.dbKind {
 		case config.Postgres:
 			suite.Equal("postgres", executed, "Postgres callback should be executed")
 		case config.MySQL:
@@ -2104,7 +2104,7 @@ func (suite *EBBasicExpressionsTestSuite) TestExecByDialectWithErr() {
 		eb := query.ExprBuilder()
 
 		// Execute callbacks that return an error
-		testErr := fmt.Errorf("test error from %s", suite.dbType)
+		testErr := fmt.Errorf("test error from %s", suite.dbKind)
 		err := eb.ExecByDialectWithErr(orm.DialectExecsWithErr{
 			Postgres: func() error {
 				return testErr
@@ -2119,7 +2119,7 @@ func (suite *EBBasicExpressionsTestSuite) TestExecByDialectWithErr() {
 
 		suite.Error(err, "ExecByDialectWithErr should return error when callback fails")
 		suite.Equal(testErr, err, "Should return the exact error from callback")
-		suite.T().Logf("Error handling works correctly for %s: %v", suite.dbType, err)
+		suite.T().Logf("Error handling works correctly for %s: %v", suite.dbKind, err)
 	})
 
 	// Test: Default callback with error
@@ -2144,12 +2144,12 @@ func (suite *EBBasicExpressionsTestSuite) TestExecByDialectWithErr() {
 		})
 		suite.Error(err, "Default callback error should be returned")
 		suite.Equal(testErr, err, "Should return the exact error from default callback")
-		suite.T().Logf("Default callback error handling works for %s", suite.dbType)
+		suite.T().Logf("Default callback error handling works for %s", suite.dbKind)
 	})
 }
 
 func (suite *EBBasicExpressionsTestSuite) TestFragmentByDialect() {
-	suite.T().Logf("Testing FragmentByDialect function for %s", suite.dbType)
+	suite.T().Logf("Testing FragmentByDialect function for %s", suite.dbKind)
 
 	// Test: Generate database-specific query fragments
 	suite.Run("DatabaseSpecificFragments", func() {
@@ -2175,7 +2175,7 @@ func (suite *EBBasicExpressionsTestSuite) TestFragmentByDialect() {
 
 		// Verify the correct fragment was generated
 		fragmentStr := string(fragment)
-		switch suite.dbType {
+		switch suite.dbKind {
 		case config.Postgres:
 			suite.Contains(fragmentStr, "PostgreSQL", "Should contain PostgreSQL fragment")
 		case config.MySQL:
@@ -2184,7 +2184,7 @@ func (suite *EBBasicExpressionsTestSuite) TestFragmentByDialect() {
 			suite.Contains(fragmentStr, "SQLite", "Should contain SQLite fragment")
 		}
 
-		suite.T().Logf("Generated fragment for %s: %s", suite.dbType, fragmentStr)
+		suite.T().Logf("Generated fragment for %s: %s", suite.dbKind, fragmentStr)
 	})
 
 	// Test: Error handling in fragment generation
@@ -2227,7 +2227,7 @@ func (suite *EBBasicExpressionsTestSuite) TestFragmentByDialect() {
 
 		suite.NoError(err, "Default fragment callback should work")
 		suite.Equal(defaultFragment, fragment, "Should return default fragment")
-		suite.T().Logf("Default fragment works for %s: %s", suite.dbType, string(fragment))
+		suite.T().Logf("Default fragment works for %s: %s", suite.dbKind, string(fragment))
 	})
 
 	// Test: Empty fragment (nil bytes)
@@ -2244,6 +2244,6 @@ func (suite *EBBasicExpressionsTestSuite) TestFragmentByDialect() {
 
 		suite.NoError(err, "Empty fragment should not cause error")
 		suite.Nil(fragment, "Fragment should be nil when callback returns nil")
-		suite.T().Logf("Empty fragment handling works for %s", suite.dbType)
+		suite.T().Logf("Empty fragment handling works for %s", suite.dbKind)
 	})
 }

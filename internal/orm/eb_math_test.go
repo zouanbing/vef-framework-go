@@ -21,7 +21,7 @@ type EBMathFunctionsTestSuite struct {
 
 // TestAbs tests the Abs function.
 func (suite *EBMathFunctionsTestSuite) TestAbs() {
-	suite.T().Logf("Testing Abs function for %s", suite.dbType)
+	suite.T().Logf("Testing Abs function for %s", suite.dbKind)
 
 	suite.Run("AbsoluteValue", func() {
 		// First get average view count
@@ -77,7 +77,7 @@ func (suite *EBMathFunctionsTestSuite) TestAbs() {
 
 // TestCeil tests the Ceil function.
 func (suite *EBMathFunctionsTestSuite) TestCeil() {
-	suite.T().Logf("Testing Ceil function for %s", suite.dbType)
+	suite.T().Logf("Testing Ceil function for %s", suite.dbKind)
 
 	suite.Run("CeilDecimalValues", func() {
 		type CeilResult struct {
@@ -114,7 +114,7 @@ func (suite *EBMathFunctionsTestSuite) TestCeil() {
 
 // TestFloor tests the Floor function.
 func (suite *EBMathFunctionsTestSuite) TestFloor() {
-	suite.T().Logf("Testing Floor function for %s", suite.dbType)
+	suite.T().Logf("Testing Floor function for %s", suite.dbKind)
 
 	suite.Run("FloorDecimalValues", func() {
 		type FloorResult struct {
@@ -151,7 +151,7 @@ func (suite *EBMathFunctionsTestSuite) TestFloor() {
 
 // TestRound tests the Round function.
 func (suite *EBMathFunctionsTestSuite) TestRound() {
-	suite.T().Logf("Testing Round function for %s", suite.dbType)
+	suite.T().Logf("Testing Round function for %s", suite.dbKind)
 
 	suite.Run("RoundWithDifferentPrecisions", func() {
 		type RoundResult struct {
@@ -194,7 +194,7 @@ func (suite *EBMathFunctionsTestSuite) TestRound() {
 
 // TestTrunc tests the Trunc function.
 func (suite *EBMathFunctionsTestSuite) TestTrunc() {
-	suite.T().Logf("Testing Trunc function for %s", suite.dbType)
+	suite.T().Logf("Testing Trunc function for %s", suite.dbKind)
 
 	suite.Run("TruncateDecimalValues", func() {
 		type TruncResult struct {
@@ -231,7 +231,7 @@ func (suite *EBMathFunctionsTestSuite) TestTrunc() {
 
 // TestPower tests the Power function.
 func (suite *EBMathFunctionsTestSuite) TestPower() {
-	suite.T().Logf("Testing Power function for %s", suite.dbType)
+	suite.T().Logf("Testing Power function for %s", suite.dbKind)
 
 	suite.Run("PowerOfNumbers", func() {
 		type PowerResult struct {
@@ -269,7 +269,7 @@ func (suite *EBMathFunctionsTestSuite) TestPower() {
 
 // TestSqrt tests the Sqrt function.
 func (suite *EBMathFunctionsTestSuite) TestSqrt() {
-	suite.T().Logf("Testing Sqrt function for %s", suite.dbType)
+	suite.T().Logf("Testing Sqrt function for %s", suite.dbKind)
 
 	suite.Run("SquareRootOfNumbers", func() {
 		type SqrtResult struct {
@@ -301,7 +301,7 @@ func (suite *EBMathFunctionsTestSuite) TestSqrt() {
 
 // TestExp tests the Exp function.
 func (suite *EBMathFunctionsTestSuite) TestExp() {
-	suite.T().Logf("Testing Exp function for %s", suite.dbType)
+	suite.T().Logf("Testing Exp function for %s", suite.dbKind)
 
 	suite.Run("ExponentialFunction", func() {
 		type ExpResult struct {
@@ -334,7 +334,7 @@ func (suite *EBMathFunctionsTestSuite) TestExp() {
 
 // TestLn tests the Ln function.
 func (suite *EBMathFunctionsTestSuite) TestLn() {
-	suite.T().Logf("Testing Ln function for %s", suite.dbType)
+	suite.T().Logf("Testing Ln function for %s", suite.dbKind)
 
 	suite.Run("NaturalLogarithm", func() {
 		type LnResult struct {
@@ -369,7 +369,7 @@ func (suite *EBMathFunctionsTestSuite) TestLn() {
 
 // TestLog tests the Log function.
 func (suite *EBMathFunctionsTestSuite) TestLog() {
-	suite.T().Logf("Testing Log function for %s", suite.dbType)
+	suite.T().Logf("Testing Log function for %s", suite.dbKind)
 
 	suite.Run("LogarithmBaseTen", func() {
 		type LogResult struct {
@@ -404,7 +404,7 @@ func (suite *EBMathFunctionsTestSuite) TestLog() {
 
 // TestSin tests the Sin function.
 func (suite *EBMathFunctionsTestSuite) TestSin() {
-	suite.T().Logf("Testing Sin function for %s", suite.dbType)
+	suite.T().Logf("Testing Sin function for %s", suite.dbKind)
 
 	suite.Run("SineTrigonometric", func() {
 		type SinResult struct {
@@ -437,7 +437,7 @@ func (suite *EBMathFunctionsTestSuite) TestSin() {
 
 // TestCos tests the Cos function.
 func (suite *EBMathFunctionsTestSuite) TestCos() {
-	suite.T().Logf("Testing Cos function for %s", suite.dbType)
+	suite.T().Logf("Testing Cos function for %s", suite.dbKind)
 
 	suite.Run("CosineTrigonometric", func() {
 		type CosResult struct {
@@ -470,7 +470,7 @@ func (suite *EBMathFunctionsTestSuite) TestCos() {
 
 // TestTan tests the Tan function.
 func (suite *EBMathFunctionsTestSuite) TestTan() {
-	suite.T().Logf("Testing Tan function for %s", suite.dbType)
+	suite.T().Logf("Testing Tan function for %s", suite.dbKind)
 
 	suite.Run("TangentTrigonometric", func() {
 		type TanResult struct {
@@ -502,7 +502,7 @@ func (suite *EBMathFunctionsTestSuite) TestTan() {
 
 // TestAsin tests the Asin function.
 func (suite *EBMathFunctionsTestSuite) TestAsin() {
-	suite.T().Logf("Testing Asin function for %s", suite.dbType)
+	suite.T().Logf("Testing Asin function for %s", suite.dbKind)
 
 	suite.Run("ArcsineInverse", func() {
 		type AsinResult struct {
@@ -536,7 +536,7 @@ func (suite *EBMathFunctionsTestSuite) TestAsin() {
 
 // TestAcos tests the Acos function.
 func (suite *EBMathFunctionsTestSuite) TestAcos() {
-	suite.T().Logf("Testing Acos function for %s", suite.dbType)
+	suite.T().Logf("Testing Acos function for %s", suite.dbKind)
 
 	suite.Run("ArccosineInverse", func() {
 		type AcosResult struct {
@@ -570,7 +570,7 @@ func (suite *EBMathFunctionsTestSuite) TestAcos() {
 
 // TestAtan tests the Atan function.
 func (suite *EBMathFunctionsTestSuite) TestAtan() {
-	suite.T().Logf("Testing Atan function for %s", suite.dbType)
+	suite.T().Logf("Testing Atan function for %s", suite.dbKind)
 
 	suite.Run("ArctangentInverse", func() {
 		type AtanResult struct {
@@ -603,7 +603,7 @@ func (suite *EBMathFunctionsTestSuite) TestAtan() {
 
 // TestPi tests the Pi function.
 func (suite *EBMathFunctionsTestSuite) TestPi() {
-	suite.T().Logf("Testing Pi function for %s", suite.dbType)
+	suite.T().Logf("Testing Pi function for %s", suite.dbKind)
 
 	suite.Run("PiConstant", func() {
 		type PiResult struct {
@@ -649,7 +649,7 @@ func (suite *EBMathFunctionsTestSuite) TestPi() {
 
 // TestRandom tests the Random function.
 func (suite *EBMathFunctionsTestSuite) TestRandom() {
-	suite.T().Logf("Testing Random function for %s", suite.dbType)
+	suite.T().Logf("Testing Random function for %s", suite.dbKind)
 
 	suite.Run("RandomNumberGeneration", func() {
 		type RandomResult struct {
@@ -681,7 +681,7 @@ func (suite *EBMathFunctionsTestSuite) TestRandom() {
 
 // TestSign tests the Sign function.
 func (suite *EBMathFunctionsTestSuite) TestSign() {
-	suite.T().Logf("Testing Sign function for %s", suite.dbType)
+	suite.T().Logf("Testing Sign function for %s", suite.dbKind)
 
 	suite.Run("SignFunction", func() {
 		type SignResult struct {
@@ -713,7 +713,7 @@ func (suite *EBMathFunctionsTestSuite) TestSign() {
 
 // TestMod tests the Mod function.
 func (suite *EBMathFunctionsTestSuite) TestMod() {
-	suite.T().Logf("Testing Mod function for %s", suite.dbType)
+	suite.T().Logf("Testing Mod function for %s", suite.dbKind)
 
 	suite.Run("ModuloOperation", func() {
 		type ModResult struct {
@@ -751,7 +751,7 @@ func (suite *EBMathFunctionsTestSuite) TestMod() {
 
 // TestGreatest tests the Greatest function.
 func (suite *EBMathFunctionsTestSuite) TestGreatest() {
-	suite.T().Logf("Testing Greatest function for %s", suite.dbType)
+	suite.T().Logf("Testing Greatest function for %s", suite.dbKind)
 
 	suite.Run("GreatestValue", func() {
 		type GreatestResult struct {
@@ -783,7 +783,7 @@ func (suite *EBMathFunctionsTestSuite) TestGreatest() {
 
 // TestLeast tests the Least function.
 func (suite *EBMathFunctionsTestSuite) TestLeast() {
-	suite.T().Logf("Testing Least function for %s", suite.dbType)
+	suite.T().Logf("Testing Least function for %s", suite.dbKind)
 
 	suite.Run("LeastValue", func() {
 		type LeastResult struct {
@@ -815,7 +815,7 @@ func (suite *EBMathFunctionsTestSuite) TestLeast() {
 
 // TestCombinedMathFunctions tests multiple math functions working together.
 func (suite *EBMathFunctionsTestSuite) TestCombinedMathFunctions() {
-	suite.T().Logf("Testing combined math functions for %s", suite.dbType)
+	suite.T().Logf("Testing combined math functions for %s", suite.dbKind)
 
 	suite.Run("BasicMathCombination", func() {
 		type CombinedBasicResult struct {

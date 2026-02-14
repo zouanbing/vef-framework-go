@@ -17,6 +17,6 @@ type DBEnv struct {
 	Ctx      context.Context
 	BunDB    bun.IDB
 	DB       orm.DB
-	DBType   config.DBType
+	DBKind   config.DBKind
 	DsConfig *config.DataSourceConfig
 }

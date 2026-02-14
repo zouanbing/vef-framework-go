@@ -44,13 +44,13 @@ func (suite *ServiceTestSuite) TestSQLiteService() {
 	suite.T().Log("Testing Service for SQLite")
 
 	dsConfig := &config.DataSourceConfig{
-		Type: config.SQLite,
+		Kind: config.SQLite,
 	}
 
 	suite.runServiceTests(dsConfig, "SQLite")
 }
 
-func (suite *ServiceTestSuite) runServiceTests(dsConfig *config.DataSourceConfig, dbType string) {
+func (suite *ServiceTestSuite) runServiceTests(dsConfig *config.DataSourceConfig, dbKind string) {
 	db, err := database.New(dsConfig)
 	suite.Require().NoError(err, "Database connection should succeed")
 
@@ -58,7 +58,7 @@ func (suite *ServiceTestSuite) runServiceTests(dsConfig *config.DataSourceConfig
 		suite.Require().NoError(db.Close(), "Database should close without error")
 	}()
 
-	suite.setupTestTables(db.DB, dsConfig.Type)
+	suite.setupTestTables(db.DB, dsConfig.Kind)
 
 	defer suite.cleanupTestTables(db.DB)
 
@@ -75,7 +75,7 @@ func (suite *ServiceTestSuite) runServiceTests(dsConfig *config.DataSourceConfig
 			tableNames[i] = t.Name
 		}
 
-		suite.T().Logf("%s tables: %v", dbType, tableNames)
+		suite.T().Logf("%s tables: %v", dbKind, tableNames)
 		suite.Contains(tableNames, "service_test_categories", "Should find service_test_categories table")
 		suite.Contains(tableNames, "service_test_products", "Should find service_test_products table")
 
@@ -99,7 +99,7 @@ func (suite *ServiceTestSuite) runServiceTests(dsConfig *config.DataSourceConfig
 			columnMap[col.Name] = col
 		}
 
-		suite.T().Logf("%s service_test_categories columns: %d", dbType, len(tableSchema.Columns))
+		suite.T().Logf("%s service_test_categories columns: %d", dbKind, len(tableSchema.Columns))
 
 		for _, col := range tableSchema.Columns {
 			suite.T().Logf("  Column: %s, Type: %s, Nullable: %v, PK: %v, AutoIncrement: %v",
@@ -123,20 +123,20 @@ func (suite *ServiceTestSuite) runServiceTests(dsConfig *config.DataSourceConfig
 		suite.Contains(tableSchema.PrimaryKey.Columns, "id", "Primary key should include id column")
 
 		suite.T().Logf("%s service_test_categories PrimaryKey: %v",
-			dbType, tableSchema.PrimaryKey.Columns)
+			dbKind, tableSchema.PrimaryKey.Columns)
 	})
 
 	suite.Run("GetTableSchemaWithIndexes", func() {
 		tableSchema, err := svc.GetTableSchema(suite.ctx, "service_test_products")
 		suite.NoError(err, "GetTableSchema should succeed")
 
-		suite.T().Logf("%s service_test_products indexes: %d", dbType, len(tableSchema.Indexes))
+		suite.T().Logf("%s service_test_products indexes: %d", dbKind, len(tableSchema.Indexes))
 
 		for _, idx := range tableSchema.Indexes {
 			suite.T().Logf("  Index: %s, Columns: %v", idx.Name, idx.Columns)
 		}
 
-		suite.T().Logf("%s service_test_products unique keys: %d", dbType, len(tableSchema.UniqueKeys))
+		suite.T().Logf("%s service_test_products unique keys: %d", dbKind, len(tableSchema.UniqueKeys))
 
 		for _, uk := range tableSchema.UniqueKeys {
 			suite.T().Logf("  UniqueKey: %s, Columns: %v", uk.Name, uk.Columns)
@@ -147,7 +147,7 @@ func (suite *ServiceTestSuite) runServiceTests(dsConfig *config.DataSourceConfig
 		tableSchema, err := svc.GetTableSchema(suite.ctx, "service_test_products")
 		suite.NoError(err, "GetTableSchema should succeed")
 
-		suite.T().Logf("%s service_test_products foreign keys: %d", dbType, len(tableSchema.ForeignKeys))
+		suite.T().Logf("%s service_test_products foreign keys: %d", dbKind, len(tableSchema.ForeignKeys))
 
 		for _, fk := range tableSchema.ForeignKeys {
 			suite.T().Logf("  ForeignKey: %s, Columns: %v -> %s(%v), OnDelete: %s, OnUpdate: %s",
@@ -168,13 +168,13 @@ func (suite *ServiceTestSuite) runServiceTests(dsConfig *config.DataSourceConfig
 	})
 }
 
-func (suite *ServiceTestSuite) setupTestTables(db *sql.DB, dbType config.DBType) {
+func (suite *ServiceTestSuite) setupTestTables(db *sql.DB, dbKind config.DBKind) {
 	var (
 		categoriesSQL, productsSQL string
 		additionalSQL              []string
 	)
 
-	switch dbType {
+	switch dbKind {
 	case config.Postgres:
 		categoriesSQL = `
 			CREATE TABLE IF NOT EXISTS service_test_categories (

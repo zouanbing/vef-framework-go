@@ -14,17 +14,17 @@ import (
 )
 
 type Provider struct {
-	dbType config.DBType
+	dbKind config.DBKind
 }
 
 func NewProvider() *Provider {
 	return &Provider{
-		dbType: config.Postgres,
+		dbKind: config.Postgres,
 	}
 }
 
-func (p *Provider) Type() config.DBType {
-	return p.dbType
+func (p *Provider) Kind() config.DBKind {
+	return p.dbKind
 }
 
 func (p *Provider) Connect(cfg *config.DataSourceConfig) (*sql.DB, schema.Dialect, error) {

@@ -291,7 +291,7 @@ func (suite *RPCEngineTestSuite) setupTestApp() {
 		}),
 		fx.Replace(
 			&config.DataSourceConfig{
-				Type: config.SQLite,
+				Kind: config.SQLite,
 			},
 			&security.JWTConfig{
 				Secret:   suite.jwtSecret,

@@ -36,7 +36,7 @@ func (suite *DatabaseTestSuite) SetupSuite() {
 // TestSQLiteConnection tests SQLite in-memory database connection and basic operations.
 func (suite *DatabaseTestSuite) TestSQLiteConnection() {
 	config := &config.DataSourceConfig{
-		Type: config.SQLite,
+		Kind: config.SQLite,
 	}
 
 	db, err := database.New(config)
@@ -51,7 +51,7 @@ func (suite *DatabaseTestSuite) TestSQLiteConnection() {
 // TestSQLiteWithOptions tests SQLite with custom configuration options.
 func (suite *DatabaseTestSuite) TestSQLiteWithOptions() {
 	config := &config.DataSourceConfig{
-		Type: config.SQLite,
+		Kind: config.SQLite,
 	}
 
 	db, err := database.New(config, database.DisableQueryHook())
@@ -89,10 +89,10 @@ func (suite *DatabaseTestSuite) TestMySQLConnection() {
 	suite.Require().NoError(db.Close(), "Database should close without error")
 }
 
-// TestUnsupportedDatabaseType tests error handling for unsupported database types.
-func (suite *DatabaseTestSuite) TestUnsupportedDatabaseType() {
+// TestUnsupportedDatabaseKind tests error handling for unsupported database kinds.
+func (suite *DatabaseTestSuite) TestUnsupportedDatabaseKind() {
 	config := &config.DataSourceConfig{
-		Type: "unsupported",
+		Kind: "unsupported",
 	}
 
 	db, err := database.New(config)
@@ -104,7 +104,7 @@ func (suite *DatabaseTestSuite) TestUnsupportedDatabaseType() {
 // TestSQLiteInMemoryMode tests SQLite in-memory mode explicitly.
 func (suite *DatabaseTestSuite) TestSQLiteInMemoryMode() {
 	config := &config.DataSourceConfig{
-		Type: config.SQLite,
+		Kind: config.SQLite,
 	}
 
 	db, err := database.New(config)
@@ -130,7 +130,7 @@ func (suite *DatabaseTestSuite) TestSQLiteFileMode() {
 	suite.Require().NoError(tempFile.Close(), "Temporary file should close successfully")
 
 	config := &config.DataSourceConfig{
-		Type: config.SQLite,
+		Kind: config.SQLite,
 		Path: tempFile.Name(),
 	}
 
@@ -146,7 +146,7 @@ func (suite *DatabaseTestSuite) TestSQLiteFileMode() {
 // TestMySQLValidation tests MySQL configuration validation for missing required fields.
 func (suite *DatabaseTestSuite) TestMySQLValidation() {
 	config := &config.DataSourceConfig{
-		Type: config.MySQL,
+		Kind: config.MySQL,
 		Host: "localhost",
 		Port: 3306,
 		User: "root",
@@ -161,7 +161,7 @@ func (suite *DatabaseTestSuite) TestMySQLValidation() {
 // TestConnectionPoolConfiguration tests custom connection pool configuration.
 func (suite *DatabaseTestSuite) TestConnectionPoolConfiguration() {
 	config := &config.DataSourceConfig{
-		Type: config.SQLite,
+		Kind: config.SQLite,
 	}
 
 	customPoolConfig := &database.ConnectionPoolConfig{
@@ -187,8 +187,8 @@ func (suite *DatabaseTestSuite) TestConnectionPoolConfiguration() {
 	suite.Require().NoError(db.Close(), "Database should close without error")
 }
 
-func (suite *DatabaseTestSuite) testBasicDBOperations(db *bun.DB, dbType string) {
-	suite.T().Logf("Testing basic operations for %s", dbType)
+func (suite *DatabaseTestSuite) testBasicDBOperations(db *bun.DB, dbKind string) {
+	suite.T().Logf("Testing basic operations for %s", dbKind)
 
 	var result int
 
@@ -197,7 +197,7 @@ func (suite *DatabaseTestSuite) testBasicDBOperations(db *bun.DB, dbType string)
 	suite.Equal(1, result, "Query result should be 1")
 
 	var version string
-	switch dbType {
+	switch dbKind {
 	case "SQLite", "SQLite In-Memory", "SQLite File":
 		err = db.NewSelect().ColumnExpr("sqlite_version()").Scan(suite.ctx, &version)
 	case "PostgreSQL", "MySQL":
@@ -206,7 +206,7 @@ func (suite *DatabaseTestSuite) testBasicDBOperations(db *bun.DB, dbType string)
 
 	suite.Require().NoError(err, "Version query should succeed")
 	suite.NotEmpty(version, "Version should not be empty")
-	suite.T().Logf("%s version: %s", dbType, version)
+	suite.T().Logf("%s version: %s", dbKind, version)
 
 	_, err = db.NewCreateTable().
 		Model((*TestTable)(nil)).
@@ -215,7 +215,7 @@ func (suite *DatabaseTestSuite) testBasicDBOperations(db *bun.DB, dbType string)
 	suite.Require().NoError(err, "Table creation should succeed")
 
 	testData := &TestTable{
-		Name:  fmt.Sprintf("test_%s", dbType),
+		Name:  fmt.Sprintf("test_%s", dbKind),
 		Value: 42,
 	}
 
@@ -266,7 +266,7 @@ func (suite *SQLGuardTestSuite) SetupSuite() {
 
 func (suite *SQLGuardTestSuite) createTestDB(enableGuard bool) *bun.DB {
 	cfg := &config.DataSourceConfig{
-		Type:           config.SQLite,
+		Kind:           config.SQLite,
 		EnableSQLGuard: enableGuard,
 	}
 

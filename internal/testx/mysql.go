@@ -47,7 +47,7 @@ func NewMySQLContainer(ctx context.Context, t testing.TB) *MySQLContainer {
 
 	return &MySQLContainer{
 		DsConfig: &config.DataSourceConfig{
-			Type:     "mysql",
+			Kind:     "mysql",
 			Host:     host,
 			Port:     uint16(port.Int()),
 			User:     TestUsername,

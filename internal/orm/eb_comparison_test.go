@@ -21,7 +21,7 @@ type EBComparisonExpressionsTestSuite struct {
 
 // TestEquals tests the Equals comparison operator.
 func (suite *EBComparisonExpressionsTestSuite) TestEquals() {
-	suite.T().Logf("Testing Equals comparison for %s", suite.dbType)
+	suite.T().Logf("Testing Equals comparison for %s", suite.dbKind)
 
 	// Test 1: Simple equals with string
 	suite.Run("SimpleStringEquals", func() {
@@ -120,7 +120,7 @@ func (suite *EBComparisonExpressionsTestSuite) TestEquals() {
 
 // TestNotEquals tests the NotEquals comparison operator.
 func (suite *EBComparisonExpressionsTestSuite) TestNotEquals() {
-	suite.T().Logf("Testing NotEquals comparison for %s", suite.dbType)
+	suite.T().Logf("Testing NotEquals comparison for %s", suite.dbKind)
 
 	// Test 1: Simple NotEquals with string
 	suite.Run("SimpleStringNotEquals", func() {
@@ -220,7 +220,7 @@ func (suite *EBComparisonExpressionsTestSuite) TestNotEquals() {
 
 // TestGreaterThan tests the GreaterThan comparison operator.
 func (suite *EBComparisonExpressionsTestSuite) TestGreaterThan() {
-	suite.T().Logf("Testing GreaterThan comparison for %s", suite.dbType)
+	suite.T().Logf("Testing GreaterThan comparison for %s", suite.dbKind)
 
 	// Test 1: Simple GreaterThan
 	suite.Run("SimpleGreaterThan", func() {
@@ -290,7 +290,7 @@ func (suite *EBComparisonExpressionsTestSuite) TestGreaterThan() {
 
 // TestGreaterThanOrEqual tests the GreaterThanOrEqual comparison operator.
 func (suite *EBComparisonExpressionsTestSuite) TestGreaterThanOrEqual() {
-	suite.T().Logf("Testing GreaterThanOrEqual comparison for %s", suite.dbType)
+	suite.T().Logf("Testing GreaterThanOrEqual comparison for %s", suite.dbKind)
 
 	// Test 1: Simple GreaterThanOrEqual
 	suite.Run("SimpleGreaterThanOrEqual", func() {
@@ -354,7 +354,7 @@ func (suite *EBComparisonExpressionsTestSuite) TestGreaterThanOrEqual() {
 
 // TestLessThan tests the LessThan comparison operator.
 func (suite *EBComparisonExpressionsTestSuite) TestLessThan() {
-	suite.T().Logf("Testing LessThan comparison for %s", suite.dbType)
+	suite.T().Logf("Testing LessThan comparison for %s", suite.dbKind)
 
 	// Test 1: Simple LessThan
 	suite.Run("SimpleLessThan", func() {
@@ -424,7 +424,7 @@ func (suite *EBComparisonExpressionsTestSuite) TestLessThan() {
 
 // TestLessThanOrEqual tests the LessThanOrEqual comparison operator.
 func (suite *EBComparisonExpressionsTestSuite) TestLessThanOrEqual() {
-	suite.T().Logf("Testing LessThanOrEqual comparison for %s", suite.dbType)
+	suite.T().Logf("Testing LessThanOrEqual comparison for %s", suite.dbKind)
 
 	// Test 1: Simple LessThanOrEqual
 	suite.Run("SimpleLessThanOrEqual", func() {
@@ -488,7 +488,7 @@ func (suite *EBComparisonExpressionsTestSuite) TestLessThanOrEqual() {
 
 // TestBetween tests the Between comparison operator.
 func (suite *EBComparisonExpressionsTestSuite) TestBetween() {
-	suite.T().Logf("Testing Between comparison for %s", suite.dbType)
+	suite.T().Logf("Testing Between comparison for %s", suite.dbKind)
 
 	// Test 1: Simple Between with integers
 	suite.Run("SimpleBetweenIntegers", func() {
@@ -584,7 +584,7 @@ func (suite *EBComparisonExpressionsTestSuite) TestBetween() {
 
 // TestNotBetween tests the NotBetween comparison operator.
 func (suite *EBComparisonExpressionsTestSuite) TestNotBetween() {
-	suite.T().Logf("Testing NotBetween comparison for %s", suite.dbType)
+	suite.T().Logf("Testing NotBetween comparison for %s", suite.dbKind)
 
 	// Test 1: Simple NotBetween
 	suite.Run("SimpleNotBetween", func() {
@@ -653,7 +653,7 @@ func (suite *EBComparisonExpressionsTestSuite) TestNotBetween() {
 
 // TestIn tests the In comparison operator.
 func (suite *EBComparisonExpressionsTestSuite) TestIn() {
-	suite.T().Logf("Testing In comparison for %s", suite.dbType)
+	suite.T().Logf("Testing In comparison for %s", suite.dbKind)
 
 	// Test 1: Simple In with strings
 	suite.Run("SimpleInStrings", func() {
@@ -781,7 +781,7 @@ func (suite *EBComparisonExpressionsTestSuite) TestIn() {
 
 // TestNotIn tests the NotIn comparison operator.
 func (suite *EBComparisonExpressionsTestSuite) TestNotIn() {
-	suite.T().Logf("Testing NotIn comparison for %s", suite.dbType)
+	suite.T().Logf("Testing NotIn comparison for %s", suite.dbKind)
 
 	// Test 1: Simple NotIn with strings
 	suite.Run("SimpleNotInStrings", func() {
@@ -881,7 +881,7 @@ func (suite *EBComparisonExpressionsTestSuite) TestNotIn() {
 
 // TestCombinedComparisons tests using multiple comparison operators together.
 func (suite *EBComparisonExpressionsTestSuite) TestCombinedComparisons() {
-	suite.T().Logf("Testing combined comparison operators for %s", suite.dbType)
+	suite.T().Logf("Testing combined comparison operators for %s", suite.dbKind)
 
 	// Test 1: Combined comparisons in SELECT
 	suite.Run("CombinedComparisonsInSelect", func() {
@@ -938,7 +938,7 @@ func (suite *EBComparisonExpressionsTestSuite) TestCombinedComparisons() {
 
 // TestIsTrue tests the IsTrue comparison operator for boolean expressions.
 func (suite *EBComparisonExpressionsTestSuite) TestIsTrue() {
-	suite.T().Logf("Testing IsTrue comparison for %s", suite.dbType)
+	suite.T().Logf("Testing IsTrue comparison for %s", suite.dbKind)
 
 	suite.Run("IsTrueOnBooleanColumn", func() {
 		type IsTrueResult struct {
@@ -1008,7 +1008,7 @@ func (suite *EBComparisonExpressionsTestSuite) TestIsTrue() {
 
 // TestIsFalse tests the IsFalse comparison operator for boolean expressions.
 func (suite *EBComparisonExpressionsTestSuite) TestIsFalse() {
-	suite.T().Logf("Testing IsFalse comparison for %s", suite.dbType)
+	suite.T().Logf("Testing IsFalse comparison for %s", suite.dbKind)
 
 	suite.Run("IsFalseOnBooleanColumn", func() {
 		type IsFalseResult struct {

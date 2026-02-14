@@ -53,13 +53,13 @@ func (suite *SchemaResourceTestSuite) TestSQLiteResource() {
 	suite.T().Log("Testing Schema Resource for SQLite")
 
 	dsConfig := &config.DataSourceConfig{
-		Type: config.SQLite,
+		Kind: config.SQLite,
 	}
 
 	suite.runResourceTests(dsConfig, "SQLite")
 }
 
-func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSourceConfig, dbType string) {
+func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSourceConfig, dbKind string) {
 	var (
 		bunDB   *bun.DB
 		testApp *app.App
@@ -73,8 +73,8 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSour
 
 	defer stop()
 
-	suite.setupTestTables(bunDB.DB, dsConfig.Type)
-	defer suite.cleanupTestTables(bunDB.DB, dsConfig.Type)
+	suite.setupTestTables(bunDB.DB, dsConfig.Kind)
+	defer suite.cleanupTestTables(bunDB.DB, dsConfig.Kind)
 
 	suite.Run("ListTables", func() {
 		resp := suite.makeAPIRequest(testApp, api.Request{
@@ -103,7 +103,7 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSour
 			}
 		}
 
-		suite.T().Logf("%s tables found via API: %v", dbType, tableNames)
+		suite.T().Logf("%s tables found via API: %v", dbKind, tableNames)
 		suite.Contains(tableNames, "resource_test_orders", "Should find resource_test_orders table")
 		suite.Contains(tableNames, "resource_test_items", "Should find resource_test_items table")
 	})
@@ -144,7 +144,7 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSour
 			}
 		}
 
-		suite.T().Logf("%s resource_test_orders columns via API: %v", dbType, columnNames)
+		suite.T().Logf("%s resource_test_orders columns via API: %v", dbKind, columnNames)
 		suite.Contains(columnNames, "id", "Should have id column")
 		suite.Contains(columnNames, "customer_name", "Should have customer_name column")
 		suite.Contains(columnNames, "total_amount", "Should have total_amount column")
@@ -176,7 +176,7 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSour
 		suite.True(ok, "PrimaryKey columns should be an array")
 		suite.NotEmpty(pkColumns, "PrimaryKey columns should not be empty")
 
-		suite.T().Logf("%s resource_test_orders primary key via API: %v", dbType, pkColumns)
+		suite.T().Logf("%s resource_test_orders primary key via API: %v", dbKind, pkColumns)
 	})
 
 	suite.Run("GetTableSchemaNotFound", func() {
@@ -197,7 +197,7 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSour
 		suite.False(body.IsOk(), "get_table_schema should fail for nonexistent table")
 		suite.Equal(result.ErrCodeSchemaTableNotFound, body.Code, "Error code should be ErrCodeSchemaTableNotFound")
 
-		suite.T().Logf("%s table not found error: code=%d, message=%s", dbType, body.Code, body.Message)
+		suite.T().Logf("%s table not found error: code=%d, message=%s", dbKind, body.Code, body.Message)
 	})
 
 	suite.Run("GetTableSchemaValidationError", func() {
@@ -215,7 +215,7 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSour
 		body := suite.readBody(resp)
 		suite.False(body.IsOk(), "get_table_schema should fail without name parameter")
 
-		suite.T().Logf("%s validation error: code=%d, message=%s", dbType, body.Code, body.Message)
+		suite.T().Logf("%s validation error: code=%d, message=%s", dbKind, body.Code, body.Message)
 	})
 }
 
@@ -244,10 +244,10 @@ func (suite *SchemaResourceTestSuite) readBody(resp *http.Response) result.Resul
 	return *res
 }
 
-func (suite *SchemaResourceTestSuite) setupTestTables(db *sql.DB, dbType config.DBType) {
+func (suite *SchemaResourceTestSuite) setupTestTables(db *sql.DB, dbKind config.DBKind) {
 	var ordersSQL, itemsSQL string
 
-	switch dbType {
+	switch dbKind {
 	case config.Postgres:
 		ordersSQL = `
 			CREATE TABLE IF NOT EXISTS resource_test_orders (
@@ -315,7 +315,7 @@ func (suite *SchemaResourceTestSuite) setupTestTables(db *sql.DB, dbType config.
 	suite.Require().NoError(err, "Creating resource_test_items table should succeed")
 }
 
-func (suite *SchemaResourceTestSuite) cleanupTestTables(db *sql.DB, _ config.DBType) {
+func (suite *SchemaResourceTestSuite) cleanupTestTables(db *sql.DB, _ config.DBKind) {
 	_, _ = db.ExecContext(suite.ctx, "DROP TABLE IF EXISTS resource_test_items")
 	_, _ = db.ExecContext(suite.ctx, "DROP TABLE IF EXISTS resource_test_orders")
 }

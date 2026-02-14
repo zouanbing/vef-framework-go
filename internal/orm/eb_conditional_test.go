@@ -21,7 +21,7 @@ type EBConditionalFunctionsTestSuite struct {
 
 // TestCoalesce tests the Coalesce function.
 func (suite *EBConditionalFunctionsTestSuite) TestCoalesce() {
-	suite.T().Logf("Testing Coalesce function for %s", suite.dbType)
+	suite.T().Logf("Testing Coalesce function for %s", suite.dbKind)
 
 	suite.Run("CoalesceWithDefaults", func() {
 		type CoalesceResult struct {
@@ -73,7 +73,7 @@ func (suite *EBConditionalFunctionsTestSuite) TestCoalesce() {
 
 // TestNullIf tests the NullIf function.
 func (suite *EBConditionalFunctionsTestSuite) TestNullIf() {
-	suite.T().Logf("Testing NullIf function for %s", suite.dbType)
+	suite.T().Logf("Testing NullIf function for %s", suite.dbKind)
 
 	suite.Run("NullIfEqualityCheck", func() {
 		type NullIfResult struct {
@@ -117,7 +117,7 @@ func (suite *EBConditionalFunctionsTestSuite) TestNullIf() {
 
 // TestIfNull tests the IfNull function.
 func (suite *EBConditionalFunctionsTestSuite) TestIfNull() {
-	suite.T().Logf("Testing IfNull function for %s", suite.dbType)
+	suite.T().Logf("Testing IfNull function for %s", suite.dbKind)
 
 	suite.Run("IfNullWithDefaults", func() {
 		type IfNullResult struct {
@@ -156,7 +156,7 @@ func (suite *EBConditionalFunctionsTestSuite) TestIfNull() {
 
 // TestCombinedConditionalFunctions tests multiple conditional functions working together.
 func (suite *EBConditionalFunctionsTestSuite) TestCombinedConditionalFunctions() {
-	suite.T().Logf("Testing combined conditional functions for %s", suite.dbType)
+	suite.T().Logf("Testing combined conditional functions for %s", suite.dbKind)
 
 	suite.Run("NestedConditionalFunctions", func() {
 		type CombinedResult struct {
@@ -220,7 +220,7 @@ func (suite *EBConditionalFunctionsTestSuite) TestCombinedConditionalFunctions()
 
 // TestCoalesceBoundaryConditions tests Coalesce function with boundary conditions.
 func (suite *EBConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
-	suite.T().Logf("Testing Coalesce boundary conditions for %s", suite.dbType)
+	suite.T().Logf("Testing Coalesce boundary conditions for %s", suite.dbKind)
 
 	suite.Run("CoalesceSingleArgument", func() {
 		type SingleArgResult struct {
@@ -315,7 +315,7 @@ func (suite *EBConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
 
 // TestNullIfWithNullArguments tests NullIf function with NULL arguments.
 func (suite *EBConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
-	suite.T().Logf("Testing NullIf with NULL arguments for %s", suite.dbType)
+	suite.T().Logf("Testing NullIf with NULL arguments for %s", suite.dbKind)
 
 	suite.Run("NullIfFirstArgumentNull", func() {
 		type FirstNullResult struct {
@@ -404,7 +404,7 @@ func (suite *EBConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
 
 // TestIfNullWithNullArguments tests IfNull function with NULL arguments.
 func (suite *EBConditionalFunctionsTestSuite) TestIfNullWithNullArguments() {
-	suite.T().Logf("Testing IfNull with NULL arguments for %s", suite.dbType)
+	suite.T().Logf("Testing IfNull with NULL arguments for %s", suite.dbKind)
 
 	suite.Run("IfNullDefaultValueNull", func() {
 		type DefaultNullResult struct {
@@ -470,7 +470,7 @@ func (suite *EBConditionalFunctionsTestSuite) TestIfNullWithNullArguments() {
 
 // TestConditionalFunctionsSpecialValues tests conditional functions with special values.
 func (suite *EBConditionalFunctionsTestSuite) TestConditionalFunctionsSpecialValues() {
-	suite.T().Logf("Testing conditional functions with special values for %s", suite.dbType)
+	suite.T().Logf("Testing conditional functions with special values for %s", suite.dbKind)
 
 	suite.Run("EmptyStringVsNull", func() {
 		type EmptyStringResult struct {

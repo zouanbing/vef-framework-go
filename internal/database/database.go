@@ -13,10 +13,10 @@ import (
 func logDBVersion(provider DatabaseProvider, db *bun.DB, logger log.Logger) error {
 	version, err := provider.QueryVersion(db)
 	if err != nil {
-		return wrapVersionQueryError(provider.Type(), err)
+		return wrapVersionQueryError(provider.Kind(), err)
 	}
 
-	logger.Infof("Database type: %s | Database version: %s", provider.Type(), version)
+	logger.Infof("Database type: %s | Database version: %s", provider.Kind(), version)
 
 	return nil
 }
@@ -34,9 +34,9 @@ func setupBunDB(sqlDB *sql.DB, dialect schema.Dialect, opts *databaseOptions) *b
 }
 
 func New(cfg *config.DataSourceConfig, options ...Option) (*bun.DB, error) {
-	provider, exists := registry.provider(cfg.Type)
+	provider, exists := registry.provider(cfg.Kind)
 	if !exists {
-		return nil, newUnsupportedDBTypeError(cfg.Type)
+		return nil, newUnsupportedDBKindError(cfg.Kind)
 	}
 
 	sqlDB, dialect, err := provider.Connect(cfg)

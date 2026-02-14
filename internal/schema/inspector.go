@@ -16,7 +16,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/config"
 )
 
-var ErrUnsupportedDBType = errors.New("unsupported database type")
+var ErrUnsupportedDBKind = errors.New("unsupported database type")
 
 type AtlasInspector struct {
 	inspector as.Inspector
@@ -24,14 +24,14 @@ type AtlasInspector struct {
 }
 
 // NewInspector creates a new Atlas Inspector for the given database connection.
-func NewInspector(db *sql.DB, dbType config.DBType, schemaName string) (Inspector, error) {
+func NewInspector(db *sql.DB, dbKind config.DBKind, schemaName string) (Inspector, error) {
 	var (
 		inspector as.Inspector
 		schema    string
 		err       error
 	)
 
-	switch dbType {
+	switch dbKind {
 	case config.Postgres:
 		inspector, err = postgres.Open(db)
 		schema = lo.CoalesceOrEmpty(schemaName, "public")
@@ -46,11 +46,11 @@ func NewInspector(db *sql.DB, dbType config.DBType, schemaName string) (Inspecto
 		schema = "main"
 
 	default:
-		return nil, fmt.Errorf("%w: %s", ErrUnsupportedDBType, dbType)
+		return nil, fmt.Errorf("%w: %s", ErrUnsupportedDBKind, dbKind)
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to open %s inspector: %w", dbType, err)
+		return nil, fmt.Errorf("failed to open %s inspector: %w", dbKind, err)
 	}
 
 	return &AtlasInspector{

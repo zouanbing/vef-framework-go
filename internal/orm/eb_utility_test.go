@@ -20,7 +20,7 @@ type EBUtilityFunctionsTestSuite struct {
 
 // TestDecode tests the Decode utility function.
 func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
-	suite.T().Logf("Testing Decode utility function for %s", suite.dbType)
+	suite.T().Logf("Testing Decode utility function for %s", suite.dbKind)
 
 	// Test 1: DECODE for status mapping with string results
 	suite.Run("DecodeStatusDescriptionMapping", func() {

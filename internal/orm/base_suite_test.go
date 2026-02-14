@@ -104,7 +104,7 @@ type OrmTestSuite struct {
 
 	ctx    context.Context
 	db     orm.DB
-	dbType config.DBType
+	dbKind config.DBKind
 }
 
 // SetupSuite initializes the test suite (called once per database).
@@ -155,19 +155,19 @@ func (suite *OrmTestSuite) getBunDB() *bun.DB {
 func (suite *OrmTestSuite) AssertCount(query orm.SelectQuery, expectedCount int64) {
 	count, err := query.Count(suite.ctx)
 	suite.NoError(err)
-	suite.Equal(expectedCount, count, "Count mismatch for %s", suite.dbType)
+	suite.Equal(expectedCount, count, "Count mismatch for %s", suite.dbKind)
 }
 
 // AssertExists verifies that a query returns at least one result.
 func (suite *OrmTestSuite) AssertExists(query orm.SelectQuery) {
 	exists, err := query.Exists(suite.ctx)
 	suite.NoError(err)
-	suite.True(exists, "Query should return results for %s", suite.dbType)
+	suite.True(exists, "Query should return results for %s", suite.dbKind)
 }
 
 // AssertNotExists verifies that a query returns no results.
 func (suite *OrmTestSuite) AssertNotExists(query orm.SelectQuery) {
 	exists, err := query.Exists(suite.ctx)
 	suite.NoError(err)
-	suite.False(exists, "Query should not return results for %s", suite.dbType)
+	suite.False(exists, "Query should not return results for %s", suite.dbKind)
 }

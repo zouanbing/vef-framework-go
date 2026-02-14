@@ -18,7 +18,7 @@ type DefaultService struct {
 
 // NewService creates a new schema service.
 func NewService(db *sql.DB, dsConfig *config.DataSourceConfig) (schema.Service, error) {
-	inspector, err := NewInspector(db, dsConfig.Type, dsConfig.Schema)
+	inspector, err := NewInspector(db, dsConfig.Kind, dsConfig.Schema)
 	if err != nil {
 		return nil, err
 	}

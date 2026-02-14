@@ -48,7 +48,7 @@ func NewPostgresContainer(ctx context.Context, t testing.TB) *PostgresContainer 
 
 	return &PostgresContainer{
 		DsConfig: &config.DataSourceConfig{
-			Type:     "postgres",
+			Kind:     "postgres",
 			Host:     host,
 			Port:     uint16(port.Int()),
 			User:     TestUsername,

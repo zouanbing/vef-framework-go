@@ -15,12 +15,7 @@ import (
 
 func init() {
 	registry.Add(func(base *BaseSuite) suite.TestingSuite {
-		return &UpdateManyTestSuite{BaseSuite: BaseSuite{
-			ctx:      base.ctx,
-			db:       base.db,
-			dbType:   base.dbType,
-			dsConfig: base.dsConfig,
-		}}
+		return &UpdateManyTestSuite{BaseSuite: base.clone()}
 	})
 }
 
@@ -103,7 +98,7 @@ func (suite *UpdateManyTestSuite) TearDownSuite() {
 
 // TestUpdateManyBasic tests basic UpdateMany functionality.
 func (suite *UpdateManyTestSuite) TestUpdateManyBasic() {
-	suite.T().Logf("Testing UpdateMany API basic functionality for %s", suite.dbType)
+	suite.T().Logf("Testing UpdateMany API basic functionality for %s", suite.dbKind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -143,7 +138,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyBasic() {
 
 // TestUpdateManyWithPreHook tests UpdateMany with PreUpdateMany hook.
 func (suite *UpdateManyTestSuite) TestUpdateManyWithPreHook() {
-	suite.T().Logf("Testing UpdateMany API with PreUpdateMany hook for %s", suite.dbType)
+	suite.T().Logf("Testing UpdateMany API with PreUpdateMany hook for %s", suite.dbKind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -183,7 +178,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyWithPreHook() {
 
 // TestUpdateManyWithPostHook tests UpdateMany with PostUpdateMany hook.
 func (suite *UpdateManyTestSuite) TestUpdateManyWithPostHook() {
-	suite.T().Logf("Testing UpdateMany API with PostUpdateMany hook for %s", suite.dbType)
+	suite.T().Logf("Testing UpdateMany API with PostUpdateMany hook for %s", suite.dbKind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -224,7 +219,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyWithPostHook() {
 
 // TestUpdateManyNegativeCases tests negative scenarios.
 func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
-	suite.T().Logf("Testing UpdateMany API negative cases for %s", suite.dbType)
+	suite.T().Logf("Testing UpdateMany API negative cases for %s", suite.dbKind)
 
 	suite.Run("EmptyArray", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -447,7 +442,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 
 // TestUpdateManyTransactionRollback tests that the entire batch rolls back on error.
 func (suite *UpdateManyTestSuite) TestUpdateManyTransactionRollback() {
-	suite.T().Logf("Testing UpdateMany API transaction rollback for %s", suite.dbType)
+	suite.T().Logf("Testing UpdateMany API transaction rollback for %s", suite.dbKind)
 
 	suite.Run("AllOrNothingSemantics", func() {
 		// Try to update a batch where the second item will fail
@@ -496,7 +491,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyTransactionRollback() {
 
 // TestUpdateManyPartialUpdate tests updating only some fields.
 func (suite *UpdateManyTestSuite) TestUpdateManyPartialUpdate() {
-	suite.T().Logf("Testing UpdateMany API partial update for %s", suite.dbType)
+	suite.T().Logf("Testing UpdateMany API partial update for %s", suite.dbKind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{

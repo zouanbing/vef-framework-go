@@ -65,7 +65,7 @@ func (suite *TranslateTransformerTestSuite) SetupSuite() {
 	suite.app, suite.stop = apptest.NewTestApp(
 		suite.T(),
 		fx.Replace(&config.DataSourceConfig{
-			Type: config.SQLite,
+			Kind: config.SQLite,
 		}),
 		fx.Provide(func() mold.DataDictLoader {
 			return &MockDataDictLoader{shouldError: false}
@@ -322,7 +322,7 @@ func (suite *TranslateTransformerTestSuite) TestTranslateMissingTargetField() {
 }
 
 // TestTranslateIntFieldType tests translation with int field type (now supported).
-func (suite *TranslateTransformerTestSuite) TestTranslateIntFieldType() {
+func (suite *TranslateTransformerTestSuite) TestTranslateIntFieldKind() {
 	suite.T().Log("Testing translate transformer with int field type")
 
 	suite.Run("IntFieldTypeSupported", func() {
@@ -345,7 +345,7 @@ func (suite *TranslateTransformerTestSuite) TestTranslateIntFieldType() {
 }
 
 // TestTranslateUnsupportedFieldType tests error handling for unsupported field types.
-func (suite *TranslateTransformerTestSuite) TestTranslateUnsupportedFieldType() {
+func (suite *TranslateTransformerTestSuite) TestTranslateUnsupportedFieldKind() {
 	suite.T().Log("Testing translate transformer with unsupported field types")
 
 	suite.Run("UnsupportedSourceFieldType", func() {
@@ -395,7 +395,7 @@ func (suite *TranslateTransformerTestSuite) TestTranslateWithResolverError() {
 		_, stop := apptest.NewTestApp(
 			suite.T(),
 			fx.Replace(&config.DataSourceConfig{
-				Type: config.SQLite,
+				Kind: config.SQLite,
 			}),
 			fx.Provide(func() mold.DataDictLoader {
 				return &MockDataDictLoader{shouldError: true}
@@ -435,7 +435,7 @@ func (suite *TranslateTransformerTestSuite) TestTranslateWithMissingResolver() {
 		_, stop := apptest.NewTestApp(
 			suite.T(),
 			fx.Replace(&config.DataSourceConfig{
-				Type: config.SQLite,
+				Kind: config.SQLite,
 			}),
 			fx.Populate(&transformer),
 		)

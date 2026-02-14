@@ -47,7 +47,7 @@ func (suite *AppTestSuite) SetupSuite() {
 	suite.app, suite.stop = apptest.NewTestApp(
 		suite.T(),
 		fx.Replace(&config.DataSourceConfig{
-			Type: config.SQLite,
+			Kind: config.SQLite,
 		}),
 		fx.Invoke(func() {
 			// Re-initialize i18n with default language after clearing env var

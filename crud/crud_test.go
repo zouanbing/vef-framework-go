@@ -13,17 +13,18 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/testx"
 )
 
-// registry holds all CRUD test suite factories, populated by init() functions in each suite file.
+// registry holds all CRUD test suite factories, populated by init() in each suite file.
+// Execution order is irrelevant: each suite reloads fixtures in SetupSuite.
 var registry = testx.NewRegistry[BaseSuite]()
 
 // baseFactory creates a BaseSuite from a DBEnv — called once per database.
 func baseFactory(env *testx.DBEnv) *BaseSuite {
-	setupTestFixtures(env.T, env.Ctx, env.BunDB, env.DBType)
+	setupTestFixtures(env.T, env.Ctx, env.BunDB, env.DBKind)
 
 	return &BaseSuite{
 		ctx:      env.Ctx,
 		db:       env.DB,
-		dbType:   env.DBType,
+		dbKind:   env.DBKind,
 		dsConfig: env.DsConfig,
 	}
 }
@@ -35,7 +36,7 @@ func TestAll(t *testing.T) {
 }
 
 // setupTestFixtures loads test data from fixture files using dbfixture.
-func setupTestFixtures(t *testing.T, ctx context.Context, db bun.IDB, dbType config.DBType) {
+func setupTestFixtures(t *testing.T, ctx context.Context, db bun.IDB, dbKind config.DBKind) {
 	t.Helper()
 
 	bunDB, ok := db.(*bun.DB)
@@ -52,5 +53,5 @@ func setupTestFixtures(t *testing.T, ctx context.Context, db bun.IDB, dbType con
 
 	fixture := dbfixture.New(bunDB, dbfixture.WithRecreateTables())
 	err := fixture.Load(ctx, os.DirFS("testdata"), "fixture.yaml")
-	require.NoError(t, err, "Failed to load fixtures for %s", dbType)
+	require.NoError(t, err, "Failed to load fixtures for %s", dbKind)
 }

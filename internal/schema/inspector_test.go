@@ -43,13 +43,13 @@ func (suite *InspectorTestSuite) TestSQLiteInspector() {
 	suite.T().Log("Testing Inspector for SQLite")
 
 	dsConfig := &config.DataSourceConfig{
-		Type: config.SQLite,
+		Kind: config.SQLite,
 	}
 
 	suite.runInspectorTests(dsConfig, "SQLite")
 }
 
-func (suite *InspectorTestSuite) runInspectorTests(dsConfig *config.DataSourceConfig, dbType string) {
+func (suite *InspectorTestSuite) runInspectorTests(dsConfig *config.DataSourceConfig, dbKind string) {
 	db, err := database.New(dsConfig)
 	suite.Require().NoError(err, "Database connection should succeed")
 
@@ -57,11 +57,11 @@ func (suite *InspectorTestSuite) runInspectorTests(dsConfig *config.DataSourceCo
 		suite.Require().NoError(db.Close(), "Database should close without error")
 	}()
 
-	suite.setupTestTables(db.DB, dsConfig.Type)
+	suite.setupTestTables(db.DB, dsConfig.Kind)
 
 	defer suite.cleanupTestTables(db.DB)
 
-	inspector, err := schema.NewInspector(db.DB, dsConfig.Type, dsConfig.Schema)
+	inspector, err := schema.NewInspector(db.DB, dsConfig.Kind, dsConfig.Schema)
 	suite.Require().NoError(err, "Inspector creation should succeed")
 
 	suite.Run("InspectSchema", func() {
@@ -74,7 +74,7 @@ func (suite *InspectorTestSuite) runInspectorTests(dsConfig *config.DataSourceCo
 			tableNames[i] = t.Name
 		}
 
-		suite.T().Logf("%s tables found: %v", dbType, tableNames)
+		suite.T().Logf("%s tables found: %v", dbKind, tableNames)
 		suite.Contains(tableNames, "inspector_test_users", "Should find inspector_test_users table")
 		suite.Contains(tableNames, "inspector_test_posts", "Should find inspector_test_posts table")
 	})
@@ -90,7 +90,7 @@ func (suite *InspectorTestSuite) runInspectorTests(dsConfig *config.DataSourceCo
 			columnNames[i] = col.Name
 		}
 
-		suite.T().Logf("%s inspector_test_users columns: %v", dbType, columnNames)
+		suite.T().Logf("%s inspector_test_users columns: %v", dbKind, columnNames)
 		suite.Contains(columnNames, "id", "Should have id column")
 		suite.Contains(columnNames, "name", "Should have name column")
 		suite.Contains(columnNames, "email", "Should have email column")
@@ -103,10 +103,10 @@ func (suite *InspectorTestSuite) runInspectorTests(dsConfig *config.DataSourceCo
 	})
 }
 
-func (suite *InspectorTestSuite) setupTestTables(db *sql.DB, dbType config.DBType) {
+func (suite *InspectorTestSuite) setupTestTables(db *sql.DB, dbKind config.DBKind) {
 	var usersSQL, postsSQL string
 
-	switch dbType {
+	switch dbKind {
 	case config.Postgres:
 		usersSQL = `
 			CREATE TABLE IF NOT EXISTS inspector_test_users (

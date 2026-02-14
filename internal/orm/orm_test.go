@@ -14,7 +14,7 @@ func baseFactory(env *testx.DBEnv) *OrmTestSuite {
 	return &OrmTestSuite{
 		ctx:    env.Ctx,
 		db:     env.DB,
-		dbType: env.DBType,
+		dbKind: env.DBKind,
 	}
 }
 

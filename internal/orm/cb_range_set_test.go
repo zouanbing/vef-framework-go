@@ -22,7 +22,7 @@ type CBRangeSetOperationsTestSuite struct {
 
 // TestBetween tests the Between and OrBetween conditions.
 func (suite *CBRangeSetOperationsTestSuite) TestBetween() {
-	suite.T().Logf("Testing Between condition for %s", suite.dbType)
+	suite.T().Logf("Testing Between condition for %s", suite.dbKind)
 
 	suite.Run("BasicBetween", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -67,7 +67,7 @@ func (suite *CBRangeSetOperationsTestSuite) TestBetween() {
 
 // TestNotBetween tests the NotBetween and OrNotBetween conditions.
 func (suite *CBRangeSetOperationsTestSuite) TestNotBetween() {
-	suite.T().Logf("Testing NotBetween condition for %s", suite.dbType)
+	suite.T().Logf("Testing NotBetween condition for %s", suite.dbKind)
 
 	suite.Run("BasicNotBetween", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -107,7 +107,7 @@ func (suite *CBRangeSetOperationsTestSuite) TestNotBetween() {
 
 // TestBetweenExpr tests the BetweenExpr and OrBetweenExpr conditions.
 func (suite *CBRangeSetOperationsTestSuite) TestBetweenExpr() {
-	suite.T().Logf("Testing BetweenExpr condition for %s", suite.dbType)
+	suite.T().Logf("Testing BetweenExpr condition for %s", suite.dbKind)
 
 	suite.Run("BasicBetweenExpr", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -159,7 +159,7 @@ func (suite *CBRangeSetOperationsTestSuite) TestBetweenExpr() {
 
 // TestNotBetweenExpr tests the NotBetweenExpr and OrNotBetweenExpr conditions.
 func (suite *CBRangeSetOperationsTestSuite) TestNotBetweenExpr() {
-	suite.T().Logf("Testing NotBetweenExpr condition for %s", suite.dbType)
+	suite.T().Logf("Testing NotBetweenExpr condition for %s", suite.dbKind)
 
 	suite.Run("BasicNotBetweenExpr", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -207,7 +207,7 @@ func (suite *CBRangeSetOperationsTestSuite) TestNotBetweenExpr() {
 
 // TestIn tests the In and OrIn conditions.
 func (suite *CBRangeSetOperationsTestSuite) TestIn() {
-	suite.T().Logf("Testing In condition for %s", suite.dbType)
+	suite.T().Logf("Testing In condition for %s", suite.dbKind)
 
 	suite.Run("BasicInWithStrings", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -263,7 +263,7 @@ func (suite *CBRangeSetOperationsTestSuite) TestIn() {
 
 // TestNotIn tests the NotIn and OrNotIn conditions.
 func (suite *CBRangeSetOperationsTestSuite) TestNotIn() {
-	suite.T().Logf("Testing NotIn condition for %s", suite.dbType)
+	suite.T().Logf("Testing NotIn condition for %s", suite.dbKind)
 
 	suite.Run("BasicNotIn", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -303,7 +303,7 @@ func (suite *CBRangeSetOperationsTestSuite) TestNotIn() {
 
 // TestInExpr tests the InExpr and OrInExpr conditions.
 func (suite *CBRangeSetOperationsTestSuite) TestInExpr() {
-	suite.T().Logf("Testing InExpr condition for %s", suite.dbType)
+	suite.T().Logf("Testing InExpr condition for %s", suite.dbKind)
 
 	suite.Run("BasicInExpr", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -344,7 +344,7 @@ func (suite *CBRangeSetOperationsTestSuite) TestInExpr() {
 
 // TestNotInExpr tests the NotInExpr and OrNotInExpr conditions.
 func (suite *CBRangeSetOperationsTestSuite) TestNotInExpr() {
-	suite.T().Logf("Testing NotInExpr condition for %s", suite.dbType)
+	suite.T().Logf("Testing NotInExpr condition for %s", suite.dbKind)
 
 	suite.Run("BasicNotInExpr", func() {
 		users := suite.assertQueryReturnsUsers(

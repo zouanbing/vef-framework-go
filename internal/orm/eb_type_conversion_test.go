@@ -27,7 +27,7 @@ type EBTypeConversionFunctionsTestSuite struct {
 
 // TestToString tests the ToString function.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToString() {
-	suite.T().Logf("Testing ToString function for %s", suite.dbType)
+	suite.T().Logf("Testing ToString function for %s", suite.dbKind)
 
 	suite.Run("ConvertNumberToString", func() {
 		type ToStringResult struct {
@@ -61,7 +61,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToString() {
 
 // TestToInteger tests the ToInteger function.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToInteger() {
-	suite.T().Logf("Testing ToInteger function for %s", suite.dbType)
+	suite.T().Logf("Testing ToInteger function for %s", suite.dbKind)
 
 	suite.Run("ConvertStringToInteger", func() {
 		type ToIntegerResult struct {
@@ -97,7 +97,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToInteger() {
 
 // TestToFloat tests the ToFloat function.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToFloat() {
-	suite.T().Logf("Testing ToFloat function for %s", suite.dbType)
+	suite.T().Logf("Testing ToFloat function for %s", suite.dbKind)
 
 	suite.Run("ConvertNumberToFloat", func() {
 		type ToFloatResult struct {
@@ -130,7 +130,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToFloat() {
 
 // TestToDecimal tests the ToDecimal function.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToDecimal() {
-	suite.T().Logf("Testing ToDecimal function for %s", suite.dbType)
+	suite.T().Logf("Testing ToDecimal function for %s", suite.dbKind)
 
 	suite.Run("ConvertToDecimalWithPrecision", func() {
 		type ToDecimalResult struct {
@@ -163,7 +163,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDecimal() {
 
 // TestToBool tests the ToBool function.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToBool() {
-	suite.T().Logf("Testing ToBool function for %s", suite.dbType)
+	suite.T().Logf("Testing ToBool function for %s", suite.dbKind)
 
 	suite.Run("ConvertExpressionToBoolean", func() {
 		type ToBoolResult struct {
@@ -195,7 +195,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToBool() {
 
 // TestToDate tests the ToDate function.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToDate() {
-	suite.T().Logf("Testing ToDate function for %s", suite.dbType)
+	suite.T().Logf("Testing ToDate function for %s", suite.dbKind)
 
 	suite.Run("ConvertTimestampToDate", func() {
 		type ToDateResult struct {
@@ -228,7 +228,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDate() {
 
 // TestToTime tests the ToTime function.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToTime() {
-	suite.T().Logf("Testing ToTime function for %s", suite.dbType)
+	suite.T().Logf("Testing ToTime function for %s", suite.dbKind)
 
 	suite.Run("ConvertTimestampToTime", func() {
 		type ToTimeResult struct {
@@ -261,7 +261,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTime() {
 
 // TestToTimestamp tests the ToTimestamp function.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToTimestamp() {
-	suite.T().Logf("Testing ToTimestamp function for %s", suite.dbType)
+	suite.T().Logf("Testing ToTimestamp function for %s", suite.dbKind)
 
 	suite.Run("ConvertToTimestamp", func() {
 		type ToTimestampResult struct {
@@ -294,7 +294,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTimestamp() {
 
 // TestToJSON tests the ToJSON function.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToJSON() {
-	suite.T().Logf("Testing ToJSON function for %s", suite.dbType)
+	suite.T().Logf("Testing ToJSON function for %s", suite.dbKind)
 
 	suite.Run("ConvertToJSON", func() {
 		type ToJSONResult struct {
@@ -327,7 +327,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToJSON() {
 
 // TestToStringNullHandling tests the ToString function with NULL values.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToStringNullHandling() {
-	suite.T().Logf("Testing ToString NULL handling for %s", suite.dbType)
+	suite.T().Logf("Testing ToString NULL handling for %s", suite.dbKind)
 
 	suite.Run("ConvertNullToString", func() {
 		type NullToStringResult struct {
@@ -360,7 +360,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToStringNullHandling() {
 
 // TestToIntegerNullHandling tests the ToInteger function with NULL values.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToIntegerNullHandling() {
-	suite.T().Logf("Testing ToInteger NULL handling for %s", suite.dbType)
+	suite.T().Logf("Testing ToInteger NULL handling for %s", suite.dbKind)
 
 	suite.Run("ConvertNullToInteger", func() {
 		type NullToIntegerResult struct {
@@ -393,7 +393,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToIntegerNullHandling() {
 
 // TestToFloatNullHandling tests the ToFloat function with NULL values.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToFloatNullHandling() {
-	suite.T().Logf("Testing ToFloat NULL handling for %s", suite.dbType)
+	suite.T().Logf("Testing ToFloat NULL handling for %s", suite.dbKind)
 
 	suite.Run("ConvertNullToFloat", func() {
 		type NullToFloatResult struct {
@@ -426,7 +426,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToFloatNullHandling() {
 
 // TestToDecimalNullHandling tests the ToDecimal function with NULL values.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToDecimalNullHandling() {
-	suite.T().Logf("Testing ToDecimal NULL handling for %s", suite.dbType)
+	suite.T().Logf("Testing ToDecimal NULL handling for %s", suite.dbKind)
 
 	suite.Run("ConvertNullToDecimal", func() {
 		type NullToDecimalResult struct {
@@ -459,7 +459,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDecimalNullHandling() {
 
 // TestToBoolNullHandling tests the ToBool function with NULL values.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToBoolNullHandling() {
-	suite.T().Logf("Testing ToBool NULL handling for %s", suite.dbType)
+	suite.T().Logf("Testing ToBool NULL handling for %s", suite.dbKind)
 
 	suite.Run("ConvertNullToBool", func() {
 		type NullToBoolResult struct {
@@ -492,7 +492,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToBoolNullHandling() {
 
 // TestToDateNullHandling tests the ToDate function with NULL values.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToDateNullHandling() {
-	suite.T().Logf("Testing ToDate NULL handling for %s", suite.dbType)
+	suite.T().Logf("Testing ToDate NULL handling for %s", suite.dbKind)
 
 	suite.Run("ConvertNullToDate", func() {
 		type NullToDateResult struct {
@@ -525,7 +525,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDateNullHandling() {
 
 // TestToTimeNullHandling tests the ToTime function with NULL values.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToTimeNullHandling() {
-	suite.T().Logf("Testing ToTime NULL handling for %s", suite.dbType)
+	suite.T().Logf("Testing ToTime NULL handling for %s", suite.dbKind)
 
 	suite.Run("ConvertNullToTime", func() {
 		type NullToTimeResult struct {
@@ -558,7 +558,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTimeNullHandling() {
 
 // TestToTimestampNullHandling tests the ToTimestamp function with NULL values.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToTimestampNullHandling() {
-	suite.T().Logf("Testing ToTimestamp NULL handling for %s", suite.dbType)
+	suite.T().Logf("Testing ToTimestamp NULL handling for %s", suite.dbKind)
 
 	suite.Run("ConvertNullToTimestamp", func() {
 		type NullToTimestampResult struct {
@@ -591,7 +591,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTimestampNullHandling() {
 
 // TestToJSONNullHandling tests the ToJSON function with NULL values.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToJSONNullHandling() {
-	suite.T().Logf("Testing ToJSON NULL handling for %s", suite.dbType)
+	suite.T().Logf("Testing ToJSON NULL handling for %s", suite.dbKind)
 
 	suite.Run("ConvertNullToJSON", func() {
 		type NullToJSONResult struct {
@@ -624,7 +624,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToJSONNullHandling() {
 
 // TestToDecimalPrecisionVariations tests the ToDecimal function with different precision parameters.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToDecimalPrecisionVariations() {
-	suite.T().Logf("Testing ToDecimal precision variations for %s", suite.dbType)
+	suite.T().Logf("Testing ToDecimal precision variations for %s", suite.dbKind)
 
 	suite.Run("DecimalWithPrecisionAndScale", func() {
 		type DecimalPrecisionResult struct {
@@ -710,7 +710,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDecimalPrecisionVariation
 
 // TestToDateWithFormat tests the ToDate function with format parameter.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToDateWithFormat() {
-	suite.T().Logf("Testing ToDate with format for %s", suite.dbType)
+	suite.T().Logf("Testing ToDate with format for %s", suite.dbKind)
 
 	suite.Run("DateWithoutFormat", func() {
 		type DateNoFormatResult struct {
@@ -749,7 +749,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDateWithFormat() {
 		var results []DateWithFormatResult
 
 		var formatStr string
-		switch suite.dbType {
+		switch suite.dbKind {
 		case config.MySQL:
 			formatStr = "%Y-%m-%d"
 		case config.Postgres:
@@ -780,7 +780,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDateWithFormat() {
 
 // TestToTimeWithFormat tests the ToTime function with format parameter.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToTimeWithFormat() {
-	suite.T().Logf("Testing ToTime with format for %s", suite.dbType)
+	suite.T().Logf("Testing ToTime with format for %s", suite.dbKind)
 
 	suite.Run("TimeWithoutFormat", func() {
 		type TimeNoFormatResult struct {
@@ -819,7 +819,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTimeWithFormat() {
 		var results []TimeWithFormatResult
 
 		var formatStr string
-		switch suite.dbType {
+		switch suite.dbKind {
 		case config.MySQL:
 			formatStr = "%H:%i:%s"
 		case config.Postgres:
@@ -850,7 +850,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTimeWithFormat() {
 
 // TestToTimestampWithFormat tests the ToTimestamp function with format parameter.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToTimestampWithFormat() {
-	suite.T().Logf("Testing ToTimestamp with format for %s", suite.dbType)
+	suite.T().Logf("Testing ToTimestamp with format for %s", suite.dbKind)
 
 	suite.Run("TimestampWithoutFormat", func() {
 		type TimestampNoFormatResult struct {
@@ -889,7 +889,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTimestampWithFormat() {
 		var results []TimestampWithFormatResult
 
 		var formatStr string
-		switch suite.dbType {
+		switch suite.dbKind {
 		case config.MySQL:
 			formatStr = "%Y-%m-%d %H:%i:%s"
 		case config.Postgres:
@@ -920,7 +920,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTimestampWithFormat() {
 
 // TestToStringFromDifferentTypes tests the ToString function with different source types.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToStringFromDifferentTypes() {
-	suite.T().Logf("Testing ToString from different types for %s", suite.dbType)
+	suite.T().Logf("Testing ToString from different types for %s", suite.dbKind)
 
 	suite.Run("ConvertBooleanToString", func() {
 		type BoolToStringResult struct {
@@ -981,7 +981,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToStringFromDifferentTypes(
 
 // TestToIntegerFromStrings tests the ToInteger function with string sources.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToIntegerFromStrings() {
-	suite.T().Logf("Testing ToInteger from strings for %s", suite.dbType)
+	suite.T().Logf("Testing ToInteger from strings for %s", suite.dbKind)
 
 	suite.Run("ConvertNegativeStringToInteger", func() {
 		type NegativeIntResult struct {
@@ -1038,7 +1038,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToIntegerFromStrings() {
 
 // TestToFloatFromStrings tests the ToFloat function with string sources.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToFloatFromStrings() {
-	suite.T().Logf("Testing ToFloat from strings for %s", suite.dbType)
+	suite.T().Logf("Testing ToFloat from strings for %s", suite.dbKind)
 
 	suite.Run("ConvertDecimalStringToFloat", func() {
 		type DecimalStringResult struct {
@@ -1095,7 +1095,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToFloatFromStrings() {
 
 // TestToBoolDirectConversion tests the ToBool function with direct numeric conversion.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToBoolDirectConversion() {
-	suite.T().Logf("Testing ToBool direct conversion for %s", suite.dbType)
+	suite.T().Logf("Testing ToBool direct conversion for %s", suite.dbKind)
 
 	suite.Run("ConvertPositiveIntegerToBool", func() {
 		type PositiveIntBoolResult struct {
@@ -1178,7 +1178,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToBoolDirectConversion() {
 
 // TestToIntegerBoundaryConditions tests the ToInteger function with boundary values.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToIntegerBoundaryConditions() {
-	suite.T().Logf("Testing ToInteger boundary conditions for %s", suite.dbType)
+	suite.T().Logf("Testing ToInteger boundary conditions for %s", suite.dbKind)
 
 	suite.Run("ConvertLargePositiveInteger", func() {
 		type LargePositiveResult struct {
@@ -1235,7 +1235,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToIntegerBoundaryConditions
 
 // TestToFloatPrecisionAndBoundaries tests the ToFloat function with precision and boundary values.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToFloatPrecisionAndBoundaries() {
-	suite.T().Logf("Testing ToFloat precision and boundaries for %s", suite.dbType)
+	suite.T().Logf("Testing ToFloat precision and boundaries for %s", suite.dbKind)
 
 	suite.Run("ConvertVerySmallFloat", func() {
 		type VerySmallFloatResult struct {
@@ -1318,7 +1318,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToFloatPrecisionAndBoundari
 
 // TestToBoolDatabaseSpecificBehavior tests ToBool function behavior across databases.
 func (suite *EBTypeConversionFunctionsTestSuite) TestToBoolDatabaseSpecificBehavior() {
-	suite.T().Logf("Testing ToBool database-specific behavior for %s", suite.dbType)
+	suite.T().Logf("Testing ToBool database-specific behavior for %s", suite.dbKind)
 
 	suite.Run("VerifyBooleanRepresentation", func() {
 		type BoolRepresentationResult struct {
@@ -1344,7 +1344,7 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToBoolDatabaseSpecificBehav
 		for _, result := range results {
 			suite.Equal(result.IsActive, result.BoolAsBool, "ToBool should preserve boolean value")
 			suite.T().Logf("ID: %s, IsActive: %v, BoolAsBool: %v (DB: %s)",
-				result.ID, result.IsActive, result.BoolAsBool, suite.dbType)
+				result.ID, result.IsActive, result.BoolAsBool, suite.dbKind)
 		}
 	})
 }

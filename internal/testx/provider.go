@@ -25,7 +25,7 @@ var providers = []struct {
 		return NewMySQLContainer(ctx, t).DsConfig
 	}},
 	{"SQLite", func(_ context.Context, _ *testing.T) *config.DataSourceConfig {
-		return &config.DataSourceConfig{Type: config.SQLite}
+		return &config.DataSourceConfig{Kind: config.SQLite}
 	}},
 }
 
@@ -49,7 +49,7 @@ func newDBEnv(t *testing.T, ctx context.Context, dsConfig *config.DataSourceConf
 
 	t.Cleanup(func() {
 		if err := db.Close(); err != nil {
-			t.Logf("Error closing database connection for %s: %v", dsConfig.Type, err)
+			t.Logf("Error closing database connection for %s: %v", dsConfig.Kind, err)
 		}
 	})
 
@@ -58,7 +58,7 @@ func newDBEnv(t *testing.T, ctx context.Context, dsConfig *config.DataSourceConf
 		Ctx:      ctx,
 		BunDB:    db,
 		DB:       orm.New(db),
-		DBType:   dsConfig.Type,
+		DBKind:   dsConfig.Kind,
 		DsConfig: dsConfig,
 	}
 }

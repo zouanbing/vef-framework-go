@@ -93,7 +93,7 @@ func (suite *StorageResourceTestSuite) setupTestApp() {
 		// Replace storage config with test values
 		fx.Replace(
 			&config.DataSourceConfig{
-				Type: "sqlite",
+				Kind: "sqlite",
 			},
 			&config.StorageConfig{
 				Provider: "minio",

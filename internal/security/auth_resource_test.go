@@ -169,7 +169,7 @@ func (suite *AuthResourceTestSuite) setupTestApp() {
 		),
 		fx.Replace(
 			&config.DataSourceConfig{
-				Type: "sqlite",
+				Kind: "sqlite",
 			},
 			&config.SecurityConfig{
 				TokenExpires: 24 * time.Hour,

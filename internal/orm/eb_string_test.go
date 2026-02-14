@@ -27,7 +27,7 @@ type EBStringFunctionsTestSuite struct {
 
 // TestConcat tests the Concat function.
 func (suite *EBStringFunctionsTestSuite) TestConcat() {
-	suite.T().Logf("Testing Concat function for %s", suite.dbType)
+	suite.T().Logf("Testing Concat function for %s", suite.dbKind)
 
 	suite.Run("ConcatTitleAndStatus", func() {
 		type ConcatResult struct {
@@ -68,7 +68,7 @@ func (suite *EBStringFunctionsTestSuite) TestConcat() {
 
 // TestConcatWithSep tests the ConcatWithSep function.
 func (suite *EBStringFunctionsTestSuite) TestConcatWithSep() {
-	suite.T().Logf("Testing ConcatWithSep function for %s", suite.dbType)
+	suite.T().Logf("Testing ConcatWithSep function for %s", suite.dbKind)
 
 	suite.Run("ConcatWithDashSeparator", func() {
 		type ConcatWithSepResult struct {
@@ -101,7 +101,7 @@ func (suite *EBStringFunctionsTestSuite) TestConcatWithSep() {
 // TestSubString tests the SubString function.
 // SubString extracts a substring from a string starting at a 1-based position.
 func (suite *EBStringFunctionsTestSuite) TestSubString() {
-	suite.T().Logf("Testing SubString function for %s", suite.dbType)
+	suite.T().Logf("Testing SubString function for %s", suite.dbKind)
 
 	suite.Run("ExtractSubstrings", func() {
 		type SubstringResult struct {
@@ -142,7 +142,7 @@ func (suite *EBStringFunctionsTestSuite) TestSubString() {
 
 // TestUpper tests the Upper function.
 func (suite *EBStringFunctionsTestSuite) TestUpper() {
-	suite.T().Logf("Testing Upper function for %s", suite.dbType)
+	suite.T().Logf("Testing Upper function for %s", suite.dbKind)
 
 	suite.Run("ConvertToUppercase", func() {
 		type CaseResult struct {
@@ -180,7 +180,7 @@ func (suite *EBStringFunctionsTestSuite) TestUpper() {
 
 // TestLower tests the Lower function.
 func (suite *EBStringFunctionsTestSuite) TestLower() {
-	suite.T().Logf("Testing Lower function for %s", suite.dbType)
+	suite.T().Logf("Testing Lower function for %s", suite.dbKind)
 
 	suite.Run("ConvertToLowercase", func() {
 		type CaseResult struct {
@@ -218,7 +218,7 @@ func (suite *EBStringFunctionsTestSuite) TestLower() {
 
 // TestTrim tests the Trim function.
 func (suite *EBStringFunctionsTestSuite) TestTrim() {
-	suite.T().Logf("Testing Trim function for %s", suite.dbType)
+	suite.T().Logf("Testing Trim function for %s", suite.dbKind)
 
 	suite.Run("TrimWhitespace", func() {
 		type TrimResult struct {
@@ -253,7 +253,7 @@ func (suite *EBStringFunctionsTestSuite) TestTrim() {
 
 // TestTrimLeft tests the TrimLeft function.
 func (suite *EBStringFunctionsTestSuite) TestTrimLeft() {
-	suite.T().Logf("Testing TrimLeft function for %s", suite.dbType)
+	suite.T().Logf("Testing TrimLeft function for %s", suite.dbKind)
 
 	suite.Run("TrimLeadingWhitespace", func() {
 		type TrimResult struct {
@@ -290,7 +290,7 @@ func (suite *EBStringFunctionsTestSuite) TestTrimLeft() {
 
 // TestTrimRight tests the TrimRight function.
 func (suite *EBStringFunctionsTestSuite) TestTrimRight() {
-	suite.T().Logf("Testing TrimRight function for %s", suite.dbType)
+	suite.T().Logf("Testing TrimRight function for %s", suite.dbKind)
 
 	suite.Run("TrimTrailingWhitespace", func() {
 		type TrimResult struct {
@@ -327,7 +327,7 @@ func (suite *EBStringFunctionsTestSuite) TestTrimRight() {
 
 // TestLength tests the Length function.
 func (suite *EBStringFunctionsTestSuite) TestLength() {
-	suite.T().Logf("Testing Length function for %s", suite.dbType)
+	suite.T().Logf("Testing Length function for %s", suite.dbKind)
 
 	suite.Run("CalculateStringLength", func() {
 		type LengthResult struct {
@@ -366,7 +366,7 @@ func (suite *EBStringFunctionsTestSuite) TestLength() {
 
 // TestCharLength tests the CharLength function.
 func (suite *EBStringFunctionsTestSuite) TestCharLength() {
-	suite.T().Logf("Testing CharLength function for %s", suite.dbType)
+	suite.T().Logf("Testing CharLength function for %s", suite.dbKind)
 
 	suite.Run("CalculateCharacterLength", func() {
 		type StringLengthResult struct {
@@ -399,7 +399,7 @@ func (suite *EBStringFunctionsTestSuite) TestCharLength() {
 // TestPosition tests the Position function.
 // Position finds the position of a substring within a string (1-based, 0 if not found).
 func (suite *EBStringFunctionsTestSuite) TestPosition() {
-	suite.T().Logf("Testing Position function for %s", suite.dbType)
+	suite.T().Logf("Testing Position function for %s", suite.dbKind)
 
 	suite.Run("FindSubstringPosition", func() {
 		type PositionResult struct {
@@ -431,7 +431,7 @@ func (suite *EBStringFunctionsTestSuite) TestPosition() {
 
 // TestLeft tests the Left function.
 func (suite *EBStringFunctionsTestSuite) TestLeft() {
-	suite.T().Logf("Testing Left function for %s", suite.dbType)
+	suite.T().Logf("Testing Left function for %s", suite.dbKind)
 
 	suite.Run("ExtractLeftmostCharacters", func() {
 		type LeftResult struct {
@@ -463,7 +463,7 @@ func (suite *EBStringFunctionsTestSuite) TestLeft() {
 
 // TestRight tests the Right function.
 func (suite *EBStringFunctionsTestSuite) TestRight() {
-	suite.T().Logf("Testing Right function for %s", suite.dbType)
+	suite.T().Logf("Testing Right function for %s", suite.dbKind)
 
 	suite.Run("ExtractRightmostCharacters", func() {
 		type RightResult struct {
@@ -495,7 +495,7 @@ func (suite *EBStringFunctionsTestSuite) TestRight() {
 
 // TestRepeat tests the Repeat function.
 func (suite *EBStringFunctionsTestSuite) TestRepeat() {
-	suite.T().Logf("Testing Repeat function for %s", suite.dbType)
+	suite.T().Logf("Testing Repeat function for %s", suite.dbKind)
 
 	suite.Run("RepeatString", func() {
 		type RepeatResult struct {
@@ -526,7 +526,7 @@ func (suite *EBStringFunctionsTestSuite) TestRepeat() {
 
 // TestReplace tests the Replace function.
 func (suite *EBStringFunctionsTestSuite) TestReplace() {
-	suite.T().Logf("Testing Replace function for %s", suite.dbType)
+	suite.T().Logf("Testing Replace function for %s", suite.dbKind)
 
 	suite.Run("ReplaceSubstring", func() {
 		type ReplaceResult struct {
@@ -560,11 +560,11 @@ func (suite *EBStringFunctionsTestSuite) TestReplace() {
 // TestReverse tests the Reverse function.
 // Reverse reverses a string (not supported on SQLite).
 func (suite *EBStringFunctionsTestSuite) TestReverse() {
-	suite.T().Logf("Testing Reverse function for %s", suite.dbType)
+	suite.T().Logf("Testing Reverse function for %s", suite.dbKind)
 
 	suite.Run("ReverseString", func() {
-		if suite.dbType == config.SQLite {
-			suite.T().Skipf("Reverse not supported on %s (framework limitation: no simulation provided)", suite.dbType)
+		if suite.dbKind == config.SQLite {
+			suite.T().Skipf("Reverse not supported on %s (framework limitation: no simulation provided)", suite.dbKind)
 		}
 
 		type ReverseResult struct {
@@ -596,7 +596,7 @@ func (suite *EBStringFunctionsTestSuite) TestReverse() {
 // TestCombinedStringFunctions tests using multiple string functions together.
 // This verifies that string functions can be nested and combined.
 func (suite *EBStringFunctionsTestSuite) TestCombinedStringFunctions() {
-	suite.T().Logf("Testing combined string functions for %s", suite.dbType)
+	suite.T().Logf("Testing combined string functions for %s", suite.dbKind)
 
 	suite.Run("NestedStringFunctions", func() {
 		type CombinedStringResult struct {
@@ -643,7 +643,7 @@ func (suite *EBStringFunctionsTestSuite) TestCombinedStringFunctions() {
 
 // TestContains tests the Contains function (case-sensitive substring check).
 func (suite *EBStringFunctionsTestSuite) TestContains() {
-	suite.T().Logf("Testing Contains function for %s", suite.dbType)
+	suite.T().Logf("Testing Contains function for %s", suite.dbKind)
 
 	suite.Run("ContainsSubstring", func() {
 		type ContainsResult struct {
@@ -696,7 +696,7 @@ func (suite *EBStringFunctionsTestSuite) TestContains() {
 
 // TestStartsWith tests the StartsWith function (case-sensitive prefix check).
 func (suite *EBStringFunctionsTestSuite) TestStartsWith() {
-	suite.T().Logf("Testing StartsWith function for %s", suite.dbType)
+	suite.T().Logf("Testing StartsWith function for %s", suite.dbKind)
 
 	suite.Run("StartsWithPrefix", func() {
 		type StartsWithResult struct {
@@ -749,7 +749,7 @@ func (suite *EBStringFunctionsTestSuite) TestStartsWith() {
 
 // TestEndsWith tests the EndsWith function (case-sensitive suffix check).
 func (suite *EBStringFunctionsTestSuite) TestEndsWith() {
-	suite.T().Logf("Testing EndsWith function for %s", suite.dbType)
+	suite.T().Logf("Testing EndsWith function for %s", suite.dbKind)
 
 	suite.Run("EndsWithSuffix", func() {
 		type EndsWithResult struct {
@@ -802,7 +802,7 @@ func (suite *EBStringFunctionsTestSuite) TestEndsWith() {
 
 // TestContainsIgnoreCase tests the ContainsIgnoreCase function (case-insensitive substring check).
 func (suite *EBStringFunctionsTestSuite) TestContainsIgnoreCase() {
-	suite.T().Logf("Testing ContainsIgnoreCase function for %s", suite.dbType)
+	suite.T().Logf("Testing ContainsIgnoreCase function for %s", suite.dbKind)
 
 	suite.Run("ContainsSubstringIgnoreCase", func() {
 		type ContainsIgnoreCaseResult struct {
@@ -856,7 +856,7 @@ func (suite *EBStringFunctionsTestSuite) TestContainsIgnoreCase() {
 
 // TestStartsWithIgnoreCase tests the StartsWithIgnoreCase function (case-insensitive prefix check).
 func (suite *EBStringFunctionsTestSuite) TestStartsWithIgnoreCase() {
-	suite.T().Logf("Testing StartsWithIgnoreCase function for %s", suite.dbType)
+	suite.T().Logf("Testing StartsWithIgnoreCase function for %s", suite.dbKind)
 
 	suite.Run("StartsWithPrefixIgnoreCase", func() {
 		type StartsWithIgnoreCaseResult struct {
@@ -910,7 +910,7 @@ func (suite *EBStringFunctionsTestSuite) TestStartsWithIgnoreCase() {
 
 // TestEndsWithIgnoreCase tests the EndsWithIgnoreCase function (case-insensitive suffix check).
 func (suite *EBStringFunctionsTestSuite) TestEndsWithIgnoreCase() {
-	suite.T().Logf("Testing EndsWithIgnoreCase function for %s", suite.dbType)
+	suite.T().Logf("Testing EndsWithIgnoreCase function for %s", suite.dbKind)
 
 	suite.Run("EndsWithSuffixIgnoreCase", func() {
 		type EndsWithIgnoreCaseResult struct {

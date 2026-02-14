@@ -24,7 +24,7 @@ type CBAuditConditionsTestSuite struct {
 
 // TestCreatedByEquals tests the CreatedByEquals and OrCreatedByEquals conditions.
 func (suite *CBAuditConditionsTestSuite) TestCreatedByEquals() {
-	suite.T().Logf("Testing CreatedByEquals condition for %s", suite.dbType)
+	suite.T().Logf("Testing CreatedByEquals condition for %s", suite.dbKind)
 
 	suite.Run("BasicCreatedByEquals", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -62,7 +62,7 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByEquals() {
 
 // TestCreatedByNotEquals tests the CreatedByNotEquals and OrCreatedByNotEquals conditions.
 func (suite *CBAuditConditionsTestSuite) TestCreatedByNotEquals() {
-	suite.T().Logf("Testing CreatedByNotEquals condition for %s", suite.dbType)
+	suite.T().Logf("Testing CreatedByNotEquals condition for %s", suite.dbKind)
 
 	suite.Run("BasicCreatedByNotEquals", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -96,7 +96,7 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByNotEquals() {
 
 // TestCreatedByIn tests the CreatedByIn and OrCreatedByIn conditions.
 func (suite *CBAuditConditionsTestSuite) TestCreatedByIn() {
-	suite.T().Logf("Testing CreatedByIn condition for %s", suite.dbType)
+	suite.T().Logf("Testing CreatedByIn condition for %s", suite.dbKind)
 
 	suite.Run("BasicCreatedByIn", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -130,7 +130,7 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByIn() {
 
 // TestUpdatedByEquals tests the UpdatedByEquals and OrUpdatedByEquals conditions.
 func (suite *CBAuditConditionsTestSuite) TestUpdatedByEquals() {
-	suite.T().Logf("Testing UpdatedByEquals condition for %s", suite.dbType)
+	suite.T().Logf("Testing UpdatedByEquals condition for %s", suite.dbKind)
 
 	suite.Run("BasicUpdatedByEquals", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -168,7 +168,7 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByEquals() {
 
 // TestCreatedAtBetween tests the CreatedAtBetween and OrCreatedAtBetween conditions.
 func (suite *CBAuditConditionsTestSuite) TestCreatedAtBetween() {
-	suite.T().Logf("Testing CreatedAtBetween condition for %s", suite.dbType)
+	suite.T().Logf("Testing CreatedAtBetween condition for %s", suite.dbKind)
 
 	suite.Run("BasicCreatedAtBetween", func() {
 		now := time.Now()
@@ -207,7 +207,7 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedAtBetween() {
 
 // TestUpdatedAtGreaterThan tests the UpdatedAtGreaterThan and OrUpdatedAtGreaterThan conditions.
 func (suite *CBAuditConditionsTestSuite) TestUpdatedAtGreaterThan() {
-	suite.T().Logf("Testing UpdatedAtGreaterThan condition for %s", suite.dbType)
+	suite.T().Logf("Testing UpdatedAtGreaterThan condition for %s", suite.dbKind)
 
 	suite.Run("BasicUpdatedAtGreaterThan", func() {
 		yesterday := time.Now().Add(-24 * time.Hour)

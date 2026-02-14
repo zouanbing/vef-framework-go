@@ -14,12 +14,7 @@ import (
 
 func init() {
 	registry.Add(func(base *BaseSuite) suite.TestingSuite {
-		return &FindOneTestSuite{BaseSuite: BaseSuite{
-			ctx:      base.ctx,
-			db:       base.db,
-			dbType:   base.dbType,
-			dsConfig: base.dsConfig,
-		}}
+		return &FindOneTestSuite{BaseSuite: base.clone()}
 	})
 }
 
@@ -136,7 +131,7 @@ func (suite *FindOneTestSuite) TearDownSuite() {
 
 // TestFindOneBasic tests basic FindOne functionality.
 func (suite *FindOneTestSuite) TestFindOneBasic() {
-	suite.T().Logf("Testing FindOne API basic functionality for %s", suite.dbType)
+	suite.T().Logf("Testing FindOne API basic functionality for %s", suite.dbKind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -168,7 +163,7 @@ func (suite *FindOneTestSuite) TestFindOneBasic() {
 
 // TestFindOneNotFound tests FindOne when record doesn't exist.
 func (suite *FindOneTestSuite) TestFindOneNotFound() {
-	suite.T().Logf("Testing FindOne API record not found for %s", suite.dbType)
+	suite.T().Logf("Testing FindOne API record not found for %s", suite.dbKind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -192,7 +187,7 @@ func (suite *FindOneTestSuite) TestFindOneNotFound() {
 
 // TestFindOneWithSearchApplier tests FindOne with custom search conditions.
 func (suite *FindOneTestSuite) TestFindOneWithSearchApplier() {
-	suite.T().Logf("Testing FindOne API with search filters for %s", suite.dbType)
+	suite.T().Logf("Testing FindOne API with search filters for %s", suite.dbKind)
 
 	suite.Run("SearchByKeyword", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -310,7 +305,7 @@ func (suite *FindOneTestSuite) TestFindOneWithSearchApplier() {
 
 // TestFindOneWithProcessor tests FindOne with post-processing.
 func (suite *FindOneTestSuite) TestFindOneWithWithProcessor() {
-	suite.T().Logf("Testing FindOne API with processor for %s", suite.dbType)
+	suite.T().Logf("Testing FindOne API with processor for %s", suite.dbKind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -342,7 +337,7 @@ func (suite *FindOneTestSuite) TestFindOneWithWithProcessor() {
 
 // TestFindOneWithFilterApplier tests FindOne with filter applier.
 func (suite *FindOneTestSuite) TestFindOneWithFilterApplier() {
-	suite.T().Logf("Testing FindOne API with filter applier for %s", suite.dbType)
+	suite.T().Logf("Testing FindOne API with filter applier for %s", suite.dbKind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -370,7 +365,7 @@ func (suite *FindOneTestSuite) TestFindOneWithFilterApplier() {
 
 // TestFindOneWithSortApplier tests FindOne with sort applier.
 func (suite *FindOneTestSuite) TestFindOneWithSortApplier() {
-	suite.T().Logf("Testing FindOne API with sort applier for %s", suite.dbType)
+	suite.T().Logf("Testing FindOne API with sort applier for %s", suite.dbKind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -398,7 +393,7 @@ func (suite *FindOneTestSuite) TestFindOneWithSortApplier() {
 
 // TestFindOneNegativeCases tests negative scenarios.
 func (suite *FindOneTestSuite) TestFindOneNegativeCases() {
-	suite.T().Logf("Testing FindOne API negative cases for %s", suite.dbType)
+	suite.T().Logf("Testing FindOne API negative cases for %s", suite.dbKind)
 
 	suite.Run("InvalidResource", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -503,7 +498,7 @@ func (suite *FindOneTestSuite) TestFindOneNegativeCases() {
 
 // TestFindOneWithAuditUserNames tests FindOne with audit user names populated.
 func (suite *FindOneTestSuite) TestFindOneWithAuditUserNames() {
-	suite.T().Logf("Testing FindOne API with audit user names for %s", suite.dbType)
+	suite.T().Logf("Testing FindOne API with audit user names for %s", suite.dbKind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{

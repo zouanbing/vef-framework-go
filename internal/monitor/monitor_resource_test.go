@@ -51,7 +51,7 @@ func (suite *MonitorResourceTestSuite) SetupSuite() {
 		suite.T(),
 		fx.Replace(
 			&config.DataSourceConfig{
-				Type: "sqlite",
+				Kind: "sqlite",
 			},
 			monitorConfig,
 		),

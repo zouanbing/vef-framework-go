@@ -97,12 +97,27 @@ type BaseSuite struct {
 	app      *app.App
 	stop     func()
 	db       orm.DB
-	dbType   config.DBType
+	dbKind   config.DBKind
 	dsConfig *config.DataSourceConfig
+}
+
+// clone creates a shallow copy of BaseSuite without copying the embedded suite.Suite
+// (which contains sync.RWMutex). Each cloned suite gets a fresh suite.Suite.
+func (suite *BaseSuite) clone() BaseSuite {
+	return BaseSuite{
+		ctx:      suite.ctx,
+		db:       suite.db,
+		dbKind:   suite.dbKind,
+		dsConfig: suite.dsConfig,
+	}
 }
 
 func (suite *BaseSuite) setupBaseSuite(resourceCtors ...any) {
 	bunDB := suite.db.(orm.Unwrapper[bun.IDB]).Unwrap()
+
+	// Reload fixtures so each suite starts from a clean, known state
+	// regardless of execution order.
+	setupTestFixtures(suite.T(), suite.ctx, bunDB, suite.dbKind)
 
 	opts := make([]fx.Option, 0, len(resourceCtors)+2)
 	for _, ctor := range resourceCtors {

@@ -25,7 +25,7 @@ type EBAggregationFunctionsTestSuite struct {
 
 // TestCount tests the Count aggregate function with various scenarios.
 func (suite *EBAggregationFunctionsTestSuite) TestCount() {
-	suite.T().Logf("Testing Count function for %s", suite.dbType)
+	suite.T().Logf("Testing Count function for %s", suite.dbKind)
 
 	suite.Run("ConditionalCountWithFilter", func() {
 		// Test Count with FILTER clause (PostgreSQL, SQLite) vs CASE equivalent (MySQL)
@@ -89,7 +89,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestCount() {
 
 // TestCountColumn tests the CountColumn aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestCountColumn() {
-	suite.T().Logf("Testing CountColumn function for %s", suite.dbType)
+	suite.T().Logf("Testing CountColumn function for %s", suite.dbKind)
 
 	suite.Run("BasicCountColumn", func() {
 		type AgeStats struct {
@@ -145,7 +145,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestCountColumn() {
 
 // TestCountAll tests the CountAll aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestCountAll() {
-	suite.T().Logf("Testing CountAll function for %s", suite.dbType)
+	suite.T().Logf("Testing CountAll function for %s", suite.dbKind)
 
 	suite.Run("CountAllWithGrouping", func() {
 		type StatusCount struct {
@@ -183,7 +183,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestCountAll() {
 
 // TestSum tests the Sum aggregate function with builder callback.
 func (suite *EBAggregationFunctionsTestSuite) TestSum() {
-	suite.T().Logf("Testing Sum function for %s", suite.dbType)
+	suite.T().Logf("Testing Sum function for %s", suite.dbKind)
 
 	suite.Run("SumWithFilter", func() {
 		type ConditionalSums struct {
@@ -298,7 +298,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestSum() {
 
 // TestSumColumn tests the SumColumn aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestSumColumn() {
-	suite.T().Logf("Testing SumColumn function for %s", suite.dbType)
+	suite.T().Logf("Testing SumColumn function for %s", suite.dbKind)
 
 	suite.Run("BasicSumColumn", func() {
 		type ViewStats struct {
@@ -328,7 +328,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestSumColumn() {
 
 // TestAvg tests the Avg aggregate function with builder callback.
 func (suite *EBAggregationFunctionsTestSuite) TestAvg() {
-	suite.T().Logf("Testing Avg function for %s", suite.dbType)
+	suite.T().Logf("Testing Avg function for %s", suite.dbKind)
 
 	suite.Run("AvgWithFilter", func() {
 		type ConditionalAvg struct {
@@ -359,7 +359,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestAvg() {
 
 // TestAvgColumn tests the AvgColumn aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestAvgColumn() {
-	suite.T().Logf("Testing AvgColumn function for %s", suite.dbType)
+	suite.T().Logf("Testing AvgColumn function for %s", suite.dbKind)
 
 	suite.Run("BasicAvgColumn", func() {
 		type AgeStats struct {
@@ -404,7 +404,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestAvgColumn() {
 
 // TestMin tests the Min aggregate function with builder callback.
 func (suite *EBAggregationFunctionsTestSuite) TestMin() {
-	suite.T().Logf("Testing Min function for %s", suite.dbType)
+	suite.T().Logf("Testing Min function for %s", suite.dbKind)
 
 	suite.Run("MinInCombinedStats", func() {
 		type CombinedStats struct {
@@ -446,7 +446,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestMin() {
 
 // TestMinColumn tests the MinColumn aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestMinColumn() {
-	suite.T().Logf("Testing MinColumn function for %s", suite.dbType)
+	suite.T().Logf("Testing MinColumn function for %s", suite.dbKind)
 
 	suite.Run("BasicMinColumn", func() {
 		type AgeStats struct {
@@ -471,7 +471,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestMinColumn() {
 
 // TestMax tests the Max aggregate function with builder callback.
 func (suite *EBAggregationFunctionsTestSuite) TestMax() {
-	suite.T().Logf("Testing Max function for %s", suite.dbType)
+	suite.T().Logf("Testing Max function for %s", suite.dbKind)
 
 	suite.Run("MaxWithFilter", func() {
 		type MaxResult struct {
@@ -527,7 +527,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestMax() {
 
 // TestMaxColumn tests the MaxColumn aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestMaxColumn() {
-	suite.T().Logf("Testing MaxColumn function for %s", suite.dbType)
+	suite.T().Logf("Testing MaxColumn function for %s", suite.dbKind)
 
 	suite.Run("BasicMaxColumn", func() {
 		type AgeStats struct {
@@ -552,7 +552,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestMaxColumn() {
 
 // TestStringAgg tests the StringAgg aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestStringAgg() {
-	suite.T().Logf("Testing StringAgg function for %s", suite.dbType)
+	suite.T().Logf("Testing StringAgg function for %s", suite.dbKind)
 
 	suite.Run("StringAggWithDistinctAndSeparator", func() {
 		type StringAggResult struct {
@@ -616,7 +616,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestStringAgg() {
 
 // TestArrayAgg tests the ArrayAgg aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestArrayAgg() {
-	suite.T().Logf("Testing ArrayAgg function for %s", suite.dbType)
+	suite.T().Logf("Testing ArrayAgg function for %s", suite.dbKind)
 
 	suite.Run("ArrayAggWithOrdering", func() {
 		type ArrayAggResult struct {
@@ -652,7 +652,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestArrayAgg() {
 		suite.True(len(result.UniqueStatuses) > 0, "Should have unique statuses")
 
 		// Verify ordering (only PostgreSQL supports ORDER BY in ARRAY_AGG)
-		if suite.dbType == config.Postgres {
+		if suite.dbKind == config.Postgres {
 			for i := 1; i < len(result.ViewCountArray); i++ {
 				suite.True(result.ViewCountArray[i-1] >= result.ViewCountArray[i],
 					"View counts should be in descending order")
@@ -694,7 +694,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestArrayAgg() {
 
 // TestJsonObjectAgg tests the JsonObjectAgg aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestJsonObjectAgg() {
-	suite.T().Logf("Testing JsonObjectAgg function for %s", suite.dbType)
+	suite.T().Logf("Testing JsonObjectAgg function for %s", suite.dbKind)
 
 	suite.Run("JsonObjectAggGroupedByStatus", func() {
 		type JSONObjectAggResult struct {
@@ -730,7 +730,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestJsonObjectAgg() {
 // TestJsonArrayAgg tests the JsonArrayAgg aggregate function.
 // Note: MySQL does not support ORDER BY or DISTINCT in JSON_ARRAYAGG.
 func (suite *EBAggregationFunctionsTestSuite) TestJsonArrayAgg() {
-	suite.T().Logf("Testing JsonArrayAgg function for %s", suite.dbType)
+	suite.T().Logf("Testing JsonArrayAgg function for %s", suite.dbKind)
 
 	suite.Run("JsonArrayAggBasic", func() {
 		type JSONArrayAggResult struct {
@@ -762,8 +762,8 @@ func (suite *EBAggregationFunctionsTestSuite) TestJsonArrayAgg() {
 	})
 
 	suite.Run("JsonArrayAggWithOrdering", func() {
-		if suite.dbType == config.MySQL {
-			suite.T().Skipf("JsonArrayAgg with ORDER BY skipped for %s (MySQL does not support ORDER BY in JSON_ARRAYAGG)", suite.dbType)
+		if suite.dbKind == config.MySQL {
+			suite.T().Skipf("JsonArrayAgg with ORDER BY skipped for %s (MySQL does not support ORDER BY in JSON_ARRAYAGG)", suite.dbKind)
 
 			return
 		}
@@ -797,8 +797,8 @@ func (suite *EBAggregationFunctionsTestSuite) TestJsonArrayAgg() {
 	})
 
 	suite.Run("JsonArrayAggWithDistinct", func() {
-		if suite.dbType == config.MySQL {
-			suite.T().Skipf("JsonArrayAgg with DISTINCT skipped for %s (MySQL does not support DISTINCT in JSON_ARRAYAGG)", suite.dbType)
+		if suite.dbKind == config.MySQL {
+			suite.T().Skipf("JsonArrayAgg with DISTINCT skipped for %s (MySQL does not support DISTINCT in JSON_ARRAYAGG)", suite.dbKind)
 
 			return
 		}
@@ -829,7 +829,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestJsonArrayAgg() {
 // Note: PostgreSQL and MySQL both support native BIT_OR (bitwise aggregation).
 // SQLite simulates it using MAX with CASE for boolean-like operations.
 func (suite *EBAggregationFunctionsTestSuite) TestBitOr() {
-	suite.T().Logf("Testing BitOr function for %s", suite.dbType)
+	suite.T().Logf("Testing BitOr function for %s", suite.dbKind)
 
 	suite.Run("BitOrBasic", func() {
 		type BitOrResult struct {
@@ -900,7 +900,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestBitOr() {
 // Note: PostgreSQL and MySQL both support native BIT_AND (bitwise aggregation).
 // SQLite simulates it using MIN with CASE for boolean-like operations.
 func (suite *EBAggregationFunctionsTestSuite) TestBitAnd() {
-	suite.T().Logf("Testing BitAnd function for %s", suite.dbType)
+	suite.T().Logf("Testing BitAnd function for %s", suite.dbKind)
 
 	suite.Run("BitAndBasic", func() {
 		type BitAndResult struct {
@@ -976,7 +976,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestBitAnd() {
 
 // TestBoolOr tests the BoolOr aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestBoolOr() {
-	suite.T().Logf("Testing BoolOr function for %s", suite.dbType)
+	suite.T().Logf("Testing BoolOr function for %s", suite.dbKind)
 
 	suite.Run("BoolOrWithBoolAnd", func() {
 		type BoolResult struct {
@@ -1016,7 +1016,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestBoolOr() {
 
 // TestBoolAnd tests the BoolAnd aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestBoolAnd() {
-	suite.T().Logf("Testing BoolAnd function for %s", suite.dbType)
+	suite.T().Logf("Testing BoolAnd function for %s", suite.dbKind)
 
 	suite.Run("BoolAndBasic", func() {
 		type BoolAndResult struct {
@@ -1070,11 +1070,11 @@ func (suite *EBAggregationFunctionsTestSuite) TestBoolAnd() {
 
 // TestStdDev tests the StdDev (standard deviation) aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestStdDev() {
-	suite.T().Logf("Testing StdDev function for %s", suite.dbType)
+	suite.T().Logf("Testing StdDev function for %s", suite.dbKind)
 
 	suite.Run("BasicStdDev", func() {
-		if suite.dbType == config.SQLite {
-			suite.T().Skipf("StdDev skipped for %s (SQLite does not support statistical functions)", suite.dbType)
+		if suite.dbKind == config.SQLite {
+			suite.T().Skipf("StdDev skipped for %s (SQLite does not support statistical functions)", suite.dbKind)
 		}
 
 		type StdDevResult struct {
@@ -1112,8 +1112,8 @@ func (suite *EBAggregationFunctionsTestSuite) TestStdDev() {
 	})
 
 	suite.Run("CombinedStatisticalFunctions", func() {
-		if suite.dbType == config.SQLite {
-			suite.T().Skipf("StdDev skipped for %s (SQLite does not support statistical functions)", suite.dbType)
+		if suite.dbKind == config.SQLite {
+			suite.T().Skipf("StdDev skipped for %s (SQLite does not support statistical functions)", suite.dbKind)
 		}
 
 		type CombinedStats struct {
@@ -1170,11 +1170,11 @@ func (suite *EBAggregationFunctionsTestSuite) TestStdDev() {
 
 // TestVariance tests the Variance aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestVariance() {
-	suite.T().Logf("Testing Variance function for %s", suite.dbType)
+	suite.T().Logf("Testing Variance function for %s", suite.dbKind)
 
 	suite.Run("BasicVariance", func() {
-		if suite.dbType == config.SQLite {
-			suite.T().Skipf("Variance skipped for %s (SQLite not supported)", suite.dbType)
+		if suite.dbKind == config.SQLite {
+			suite.T().Skipf("Variance skipped for %s (SQLite not supported)", suite.dbKind)
 		}
 
 		type VarianceResult struct {
@@ -1212,8 +1212,8 @@ func (suite *EBAggregationFunctionsTestSuite) TestVariance() {
 	})
 
 	suite.Run("VarianceWithPopulationAndSample", func() {
-		if suite.dbType == config.SQLite {
-			suite.T().Skipf("Variance with modes skipped for %s (SQLite not supported)", suite.dbType)
+		if suite.dbKind == config.SQLite {
+			suite.T().Skipf("Variance with modes skipped for %s (SQLite not supported)", suite.dbKind)
 		}
 
 		type VarianceModes struct {

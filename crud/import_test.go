@@ -22,12 +22,7 @@ import (
 
 func init() {
 	registry.Add(func(base *BaseSuite) suite.TestingSuite {
-		return &ImportTestSuite{BaseSuite: BaseSuite{
-			ctx:      base.ctx,
-			db:       base.db,
-			dbType:   base.dbType,
-			dsConfig: base.dsConfig,
-		}}
+		return &ImportTestSuite{BaseSuite: base.clone()}
 	})
 }
 
@@ -173,7 +168,7 @@ func (suite *ImportTestSuite) TearDownSuite() {
 // Import Tests
 
 func (suite *ImportTestSuite) TestImportBasic() {
-	suite.T().Logf("Testing basic Excel import for %s", suite.dbType)
+	suite.T().Logf("Testing basic Excel import for %s", suite.dbKind)
 
 	// Create test Excel file
 	exporter := excel.NewExporterFor[ImportUser]()
@@ -207,7 +202,7 @@ func (suite *ImportTestSuite) TestImportBasic() {
 }
 
 func (suite *ImportTestSuite) TestImportWithValidationErrors() {
-	suite.T().Logf("Testing import with validation errors for %s", suite.dbType)
+	suite.T().Logf("Testing import with validation errors for %s", suite.dbKind)
 
 	// Create test Excel file with invalid data
 	exporter := excel.NewExporterFor[ImportUser]()
@@ -243,7 +238,7 @@ func (suite *ImportTestSuite) TestImportWithValidationErrors() {
 }
 
 func (suite *ImportTestSuite) TestImportWithMissingRequiredFields() {
-	suite.T().Logf("Testing import with missing required fields for %s", suite.dbType)
+	suite.T().Logf("Testing import with missing required fields for %s", suite.dbKind)
 
 	// Create test Excel file with missing required fields
 	exporter := excel.NewExporterFor[ImportUser]()
@@ -273,7 +268,7 @@ func (suite *ImportTestSuite) TestImportWithMissingRequiredFields() {
 }
 
 func (suite *ImportTestSuite) TestImportWithPreProcessor() {
-	suite.T().Logf("Testing import with pre-processor for %s", suite.dbType)
+	suite.T().Logf("Testing import with pre-processor for %s", suite.dbKind)
 
 	// Create test Excel file with users
 	// The preprocessor will change "inactive" status to "pending"
@@ -305,7 +300,7 @@ func (suite *ImportTestSuite) TestImportWithPreProcessor() {
 }
 
 func (suite *ImportTestSuite) TestImportWithPostProcessor() {
-	suite.T().Logf("Testing import with post-processor for %s", suite.dbType)
+	suite.T().Logf("Testing import with post-processor for %s", suite.dbKind)
 
 	// Create test Excel file
 	exporter := excel.NewExporterFor[ImportUser]()
@@ -338,7 +333,7 @@ func (suite *ImportTestSuite) TestImportWithPostProcessor() {
 }
 
 func (suite *ImportTestSuite) TestImportEmptyFile() {
-	suite.T().Logf("Testing import with empty Excel file for %s", suite.dbType)
+	suite.T().Logf("Testing import with empty Excel file for %s", suite.dbKind)
 
 	// Create empty Excel file (with headers but no data rows)
 	exporter := excel.NewExporterFor[ImportUser]()
@@ -370,7 +365,7 @@ func (suite *ImportTestSuite) TestImportEmptyFile() {
 }
 
 func (suite *ImportTestSuite) TestImportLargeFile() {
-	suite.T().Logf("Testing import with large Excel file for %s", suite.dbType)
+	suite.T().Logf("Testing import with large Excel file for %s", suite.dbKind)
 
 	// Create large test file with many rows
 	exporter := excel.NewExporterFor[ImportUser]()
@@ -406,7 +401,7 @@ func (suite *ImportTestSuite) TestImportLargeFile() {
 }
 
 func (suite *ImportTestSuite) TestImportNegativeCases() {
-	suite.T().Logf("Testing import negative cases for %s", suite.dbType)
+	suite.T().Logf("Testing import negative cases for %s", suite.dbKind)
 
 	suite.Run("MissingFile", func() {
 		// Try to import without providing a file
@@ -499,7 +494,7 @@ func (suite *ImportTestSuite) TestImportNegativeCases() {
 // CSV Import Tests
 
 func (suite *ImportTestSuite) TestImportCSVBasic() {
-	suite.T().Logf("Testing basic CSV import for %s", suite.dbType)
+	suite.T().Logf("Testing basic CSV import for %s", suite.dbKind)
 
 	// Create test CSV file
 	exporter := csv.NewExporterFor[ImportUser]()
@@ -533,7 +528,7 @@ func (suite *ImportTestSuite) TestImportCSVBasic() {
 }
 
 func (suite *ImportTestSuite) TestImportCSVWithValidationErrors() {
-	suite.T().Logf("Testing CSV import with validation errors for %s", suite.dbType)
+	suite.T().Logf("Testing CSV import with validation errors for %s", suite.dbKind)
 
 	// Create test CSV file with invalid data
 	exporter := csv.NewExporterFor[ImportUser]()
@@ -569,7 +564,7 @@ func (suite *ImportTestSuite) TestImportCSVWithValidationErrors() {
 }
 
 func (suite *ImportTestSuite) TestImportCSVWithOptions() {
-	suite.T().Logf("Testing CSV import with custom delimiter for %s", suite.dbType)
+	suite.T().Logf("Testing CSV import with custom delimiter for %s", suite.dbKind)
 
 	// Create test CSV file with semicolon delimiter
 	exporter := csv.NewExporterFor[ImportUser](csv.WithExportDelimiter(';'))
@@ -599,7 +594,7 @@ func (suite *ImportTestSuite) TestImportCSVWithOptions() {
 }
 
 func (suite *ImportTestSuite) TestImportFormatOverride() {
-	suite.T().Logf("Testing import format override for %s", suite.dbType)
+	suite.T().Logf("Testing import format override for %s", suite.dbKind)
 
 	// Test format parameter override
 	exporter := csv.NewExporterFor[ImportUser]()

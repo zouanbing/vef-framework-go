@@ -26,7 +26,7 @@ type UpdateTestSuite struct {
 
 // TestCTE tests Common Table Expression methods (With, WithValues, WithRecursive).
 func (suite *UpdateTestSuite) TestCTE() {
-	suite.T().Logf("Testing CTE methods for %s", suite.dbType)
+	suite.T().Logf("Testing CTE methods for %s", suite.dbKind)
 
 	suite.Run("WithBasicCTE", func() {
 		// Create CTE of active users, then update posts from those users
@@ -108,7 +108,7 @@ func (suite *UpdateTestSuite) TestCTE() {
 
 // TestTableSource tests table source methods (Model, ModelTable, Table, TableFrom, TableExpr, TableSubQuery).
 func (suite *UpdateTestSuite) TestTableSource() {
-	suite.T().Logf("Testing table source methods for %s", suite.dbType)
+	suite.T().Logf("Testing table source methods for %s", suite.dbKind)
 
 	suite.Run("ModelBasic", func() {
 		result, err := suite.db.NewUpdate().
@@ -237,7 +237,7 @@ func (suite *UpdateTestSuite) TestTableSource() {
 
 		rowsAffected, _ := result.RowsAffected()
 		suite.True(rowsAffected > 0, "Should update posts from inactive users")
-		suite.T().Logf("Multi-table update affected %d posts on %s", rowsAffected, suite.dbType)
+		suite.T().Logf("Multi-table update affected %d posts on %s", rowsAffected, suite.dbKind)
 	})
 }
 
@@ -245,7 +245,7 @@ func (suite *UpdateTestSuite) TestTableSource() {
 // These methods (Select, Exclude, SelectAll, ExcludeAll) only work when updating with a model instance,
 // as the framework reflects all columns from the model and these methods control which ones to include in SET.
 func (suite *UpdateTestSuite) TestSelectionMethods() {
-	suite.T().Logf("Testing selection methods for %s", suite.dbType)
+	suite.T().Logf("Testing selection methods for %s", suite.dbKind)
 
 	suite.Run("SelectSpecificColumns", func() {
 		// First, get the user ID
@@ -458,7 +458,7 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 
 // TestFilterOperations tests filter methods (Where, WherePK, WhereDeleted, IncludeDeleted).
 func (suite *UpdateTestSuite) TestFilterOperations() {
-	suite.T().Logf("Testing filter operations for %s", suite.dbType)
+	suite.T().Logf("Testing filter operations for %s", suite.dbKind)
 
 	suite.Run("WhereBasic", func() {
 		result, err := suite.db.NewUpdate().
@@ -594,7 +594,7 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 
 // TestColumnUpdates tests column update methods (Column, ColumnExpr, Set, SetExpr).
 func (suite *UpdateTestSuite) TestColumnUpdates() {
-	suite.T().Logf("Testing column update methods for %s", suite.dbType)
+	suite.T().Logf("Testing column update methods for %s", suite.dbKind)
 
 	var post Post
 
@@ -744,7 +744,7 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 
 // TestUpdateFlags tests special flags (OmitZero, Bulk).
 func (suite *UpdateTestSuite) TestUpdateFlags() {
-	suite.T().Logf("Testing update flags for %s", suite.dbType)
+	suite.T().Logf("Testing update flags for %s", suite.dbKind)
 
 	suite.Run("OmitZeroFlag", func() {
 		var user User
@@ -841,11 +841,11 @@ func (suite *UpdateTestSuite) TestUpdateFlags() {
 
 // TestOrderingAndLimits tests ordering and limit methods (OrderBy, OrderByDesc, OrderByExpr, Limit).
 func (suite *UpdateTestSuite) TestOrderingAndLimits() {
-	suite.T().Logf("Testing ordering and limits for %s", suite.dbType)
+	suite.T().Logf("Testing ordering and limits for %s", suite.dbKind)
 
 	// Only MySQL supports ORDER BY and LIMIT in UPDATE statements
-	if suite.dbType != config.MySQL {
-		suite.T().Skipf("Database %s doesn't support ORDER BY and LIMIT in UPDATE statements", suite.dbType)
+	if suite.dbKind != config.MySQL {
+		suite.T().Skipf("Database %s doesn't support ORDER BY and LIMIT in UPDATE statements", suite.dbKind)
 	}
 
 	suite.Run("OrderByBasic", func() {
@@ -918,9 +918,9 @@ func (suite *UpdateTestSuite) TestOrderingAndLimits() {
 
 // TestReturningClause tests RETURNING clause methods (Returning, ReturningAll, ReturningNone).
 func (suite *UpdateTestSuite) TestReturningClause() {
-	suite.T().Logf("Testing RETURNING clause methods for %s", suite.dbType)
+	suite.T().Logf("Testing RETURNING clause methods for %s", suite.dbKind)
 
-	if suite.dbType == config.MySQL {
+	if suite.dbKind == config.MySQL {
 		suite.T().Skip("MySQL doesn't support RETURNING clause")
 	}
 
@@ -996,7 +996,7 @@ func (suite *UpdateTestSuite) TestReturningClause() {
 
 // TestApplyMethods tests Apply and ApplyIf methods.
 func (suite *UpdateTestSuite) TestApplyMethods() {
-	suite.T().Logf("Testing Apply methods for %s", suite.dbType)
+	suite.T().Logf("Testing Apply methods for %s", suite.dbKind)
 
 	suite.Run("ApplyBasic", func() {
 		applyActive := func(query orm.UpdateQuery) {
@@ -1074,7 +1074,7 @@ func (suite *UpdateTestSuite) TestApplyMethods() {
 
 // TestExecution tests execution methods (Exec, Scan).
 func (suite *UpdateTestSuite) TestExecution() {
-	suite.T().Logf("Testing execution methods for %s", suite.dbType)
+	suite.T().Logf("Testing execution methods for %s", suite.dbKind)
 
 	suite.Run("ExecBasic", func() {
 		result, err := suite.db.NewUpdate().
@@ -1095,7 +1095,7 @@ func (suite *UpdateTestSuite) TestExecution() {
 	})
 
 	suite.Run("ScanWithReturning", func() {
-		if suite.dbType == config.MySQL {
+		if suite.dbKind == config.MySQL {
 			suite.T().Skip("MySQL doesn't support RETURNING clause")
 		}
 
