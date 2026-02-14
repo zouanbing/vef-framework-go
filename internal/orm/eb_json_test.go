@@ -7,19 +7,19 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
-		return &EBJSONFunctionsTestSuite{OrmTestSuite: base}
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
+		return &EBJSONFunctionsTestSuite{BaseTestSuite: base}
 	})
 }
 
 // EBJSONFunctionsTestSuite tests JSON function methods of orm.ExprBuilder.
 type EBJSONFunctionsTestSuite struct {
-	*OrmTestSuite
+	*BaseTestSuite
 }
 
 // TestJsonObject tests the JsonObject function.
 func (suite *EBJSONFunctionsTestSuite) TestJsonObject() {
-	suite.T().Logf("Testing JsonObject function for %s", suite.dbKind)
+	suite.T().Logf("Testing JsonObject function for %s", suite.ds.Kind)
 
 	suite.Run("CreateJsonObjectFromColumns", func() {
 		type JSONObjectResult struct {
@@ -53,7 +53,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonObject() {
 
 // TestJSONArray tests the JSONArray function.
 func (suite *EBJSONFunctionsTestSuite) TestJSONArray() {
-	suite.T().Logf("Testing JSONArray function for %s", suite.dbKind)
+	suite.T().Logf("Testing JSONArray function for %s", suite.ds.Kind)
 
 	suite.Run("CreateJSONArrayFromColumns", func() {
 		type JSONArrayResult struct {
@@ -85,7 +85,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJSONArray() {
 
 // TestJsonExtract tests the JsonExtract function.
 func (suite *EBJSONFunctionsTestSuite) TestJsonExtract() {
-	suite.T().Logf("Testing JsonExtract function for %s", suite.dbKind)
+	suite.T().Logf("Testing JsonExtract function for %s", suite.ds.Kind)
 
 	suite.Run("ExtractJsonPathValue", func() {
 		type JSONExtractResult struct {
@@ -122,7 +122,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonExtract() {
 
 // TestJsonValid tests the JsonValid function.
 func (suite *EBJSONFunctionsTestSuite) TestJsonValid() {
-	suite.T().Logf("Testing JsonValid function for %s", suite.dbKind)
+	suite.T().Logf("Testing JsonValid function for %s", suite.ds.Kind)
 
 	suite.Run("ValidateJsonObject", func() {
 		type JSONValidationResult struct {
@@ -159,7 +159,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonValid() {
 
 // TestJsonInsert tests the JsonInsert function.
 func (suite *EBJSONFunctionsTestSuite) TestJsonInsert() {
-	suite.T().Logf("Testing JsonInsert function for %s", suite.dbKind)
+	suite.T().Logf("Testing JsonInsert function for %s", suite.ds.Kind)
 
 	suite.Run("InsertIntoJsonObject", func() {
 		type JSONModifyResult struct {
@@ -198,7 +198,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonInsert() {
 
 // TestJsonReplace tests the JsonReplace function.
 func (suite *EBJSONFunctionsTestSuite) TestJsonReplace() {
-	suite.T().Logf("Testing JsonReplace function for %s", suite.dbKind)
+	suite.T().Logf("Testing JsonReplace function for %s", suite.ds.Kind)
 
 	suite.Run("ReplaceJsonValue", func() {
 		type JSONModifyResult struct {
@@ -236,7 +236,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonReplace() {
 
 // TestJsonLength tests the JsonLength function.
 func (suite *EBJSONFunctionsTestSuite) TestJsonLength() {
-	suite.T().Logf("Testing JsonLength function for %s", suite.dbKind)
+	suite.T().Logf("Testing JsonLength function for %s", suite.ds.Kind)
 
 	suite.Run("GetJsonObjectLength", func() {
 		type JSONLengthResult struct {
@@ -300,7 +300,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonLength() {
 
 // TestJsonType tests the JsonType function.
 func (suite *EBJSONFunctionsTestSuite) TestJsonType() {
-	suite.T().Logf("Testing JsonType function for %s", suite.dbKind)
+	suite.T().Logf("Testing JsonType function for %s", suite.ds.Kind)
 
 	suite.Run("GetJsonValueType", func() {
 		type JSONTypeResult struct {
@@ -320,7 +320,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonType() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonType should work for %s", suite.dbKind)
+		suite.NoError(err, "JsonType should work for %s", suite.ds.Kind)
 		suite.True(len(results) > 0, "Should have JsonType results")
 
 		for _, result := range results {
@@ -364,7 +364,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonType() {
 
 // TestJsonKeys tests the JsonKeys function.
 func (suite *EBJSONFunctionsTestSuite) TestJsonKeys() {
-	suite.T().Logf("Testing JsonKeys function for %s", suite.dbKind)
+	suite.T().Logf("Testing JsonKeys function for %s", suite.ds.Kind)
 
 	suite.Run("GetJsonObjectKeys", func() {
 		type JSONKeysResult struct {
@@ -384,7 +384,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonKeys() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonKeys should work for %s", suite.dbKind)
+		suite.NoError(err, "JsonKeys should work for %s", suite.ds.Kind)
 		suite.True(len(results) > 0, "Should have JsonKeys results")
 
 		for _, result := range results {
@@ -415,7 +415,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonKeys() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonKeys with constructed object should work for %s", suite.dbKind)
+		suite.NoError(err, "JsonKeys with constructed object should work for %s", suite.ds.Kind)
 		suite.True(len(results) > 0, "Should have JsonKeys with path results")
 
 		for _, result := range results {
@@ -427,7 +427,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonKeys() {
 
 // TestJsonContains tests the JsonContains function.
 func (suite *EBJSONFunctionsTestSuite) TestJsonContains() {
-	suite.T().Logf("Testing JsonContains function for %s", suite.dbKind)
+	suite.T().Logf("Testing JsonContains function for %s", suite.ds.Kind)
 
 	suite.Run("CheckJsonContainsValue", func() {
 		type JSONContainsResult struct {
@@ -447,7 +447,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonContains() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonContains should work for %s", suite.dbKind)
+		suite.NoError(err, "JsonContains should work for %s", suite.ds.Kind)
 		suite.True(len(results) > 0, "Should have JsonContains results")
 
 		for _, result := range results {
@@ -458,7 +458,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonContains() {
 
 // TestJsonContainsPath tests the JsonContainsPath function.
 func (suite *EBJSONFunctionsTestSuite) TestJsonContainsPath() {
-	suite.T().Logf("Testing JsonContainsPath function for %s", suite.dbKind)
+	suite.T().Logf("Testing JsonContainsPath function for %s", suite.ds.Kind)
 
 	suite.Run("CheckJsonPathExists", func() {
 		type JSONContainsPathResult struct {
@@ -478,7 +478,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonContainsPath() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonContainsPath should work for %s", suite.dbKind)
+		suite.NoError(err, "JsonContainsPath should work for %s", suite.ds.Kind)
 		suite.True(len(results) > 0, "Should have JsonContainsPath results")
 
 		for _, result := range results {
@@ -489,7 +489,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonContainsPath() {
 
 // TestJsonUnquote tests the JsonUnquote function.
 func (suite *EBJSONFunctionsTestSuite) TestJsonUnquote() {
-	suite.T().Logf("Testing JsonUnquote function for %s", suite.dbKind)
+	suite.T().Logf("Testing JsonUnquote function for %s", suite.ds.Kind)
 
 	suite.Run("RemoveJsonQuotes", func() {
 		type JSONUnquoteResult struct {
@@ -509,7 +509,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonUnquote() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonUnquote should work for %s", suite.dbKind)
+		suite.NoError(err, "JsonUnquote should work for %s", suite.ds.Kind)
 
 		for _, result := range results {
 			suite.T().Logf("ID: %s, Meta: %s, Unquoted: %s", result.ID, result.Meta, result.Unquoted)
@@ -519,7 +519,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonUnquote() {
 
 // TestJsonSet tests the JsonSet function.
 func (suite *EBJSONFunctionsTestSuite) TestJsonSet() {
-	suite.T().Logf("Testing JsonSet function for %s", suite.dbKind)
+	suite.T().Logf("Testing JsonSet function for %s", suite.ds.Kind)
 
 	suite.Run("SetJsonPathValue", func() {
 		type JSONSetResult struct {
@@ -539,7 +539,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonSet() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonSet should work for %s", suite.dbKind)
+		suite.NoError(err, "JsonSet should work for %s", suite.ds.Kind)
 		suite.True(len(results) > 0, "Should have JsonSet results")
 
 		for _, result := range results {
@@ -550,7 +550,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonSet() {
 
 // TestJSONArrayAppend tests the JSONArrayAppend function.
 func (suite *EBJSONFunctionsTestSuite) TestJSONArrayAppend() {
-	suite.T().Logf("Testing JSONArrayAppend function for %s", suite.dbKind)
+	suite.T().Logf("Testing JSONArrayAppend function for %s", suite.ds.Kind)
 
 	suite.Run("AppendToJSONArray", func() {
 		type JSONArrayAppendResult struct {
@@ -572,7 +572,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJSONArrayAppend() {
 		if err != nil {
 			suite.T().Logf("JSONArrayAppend test completed (may have errors if no array fields): %v", err)
 		} else {
-			suite.True(len(results) >= 0, "JSONArrayAppend should execute for %s", suite.dbKind)
+			suite.True(len(results) >= 0, "JSONArrayAppend should execute for %s", suite.ds.Kind)
 
 			for _, result := range results {
 				suite.T().Logf("ID: %s, Original: %s, Updated: %s", result.ID, result.Meta, result.UpdatedMeta)
@@ -583,7 +583,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJSONArrayAppend() {
 
 // TestJsonEdgeCases tests JSON function edge cases and boundary conditions.
 func (suite *EBJSONFunctionsTestSuite) TestJsonEdgeCases() {
-	suite.T().Logf("Testing JSON edge cases for %s", suite.dbKind)
+	suite.T().Logf("Testing JSON edge cases for %s", suite.ds.Kind)
 
 	suite.Run("EmptyJsonObject", func() {
 		type EmptyObjectResult struct {

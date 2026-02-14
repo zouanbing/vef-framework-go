@@ -1,0 +1,143 @@
+- id: pt001
+  created_at: '2025-01-01 00:41:00'
+  created_by: system
+  updated_at: '2025-01-01 00:42:00'
+  updated_by: system
+  post_id: post001
+  tag_id: tag001
+
+- id: pt002
+  created_at: '2025-01-01 00:43:00'
+  created_by: system
+  updated_at: '2025-01-01 00:44:00'
+  updated_by: system
+  post_id: post001
+  tag_id: tag003
+
+- id: pt003
+  created_at: '2025-01-01 00:45:00'
+  created_by: system
+  updated_at: '2025-01-01 00:46:00'
+  updated_by: system
+  post_id: post001
+  tag_id: tag004
+
+- id: pt004
+  created_at: '2025-01-01 00:47:00'
+  created_by: system
+  updated_at: '2025-01-01 00:48:00'
+  updated_by: system
+  post_id: post002
+  tag_id: tag002
+
+- id: pt005
+  created_at: '2025-01-01 00:49:00'
+  created_by: system
+  updated_at: '2025-01-01 00:50:00'
+  updated_by: system
+  post_id: post002
+  tag_id: tag004
+
+- id: pt006
+  created_at: '2025-01-01 00:51:00'
+  created_by: system
+  updated_at: '2025-01-01 00:52:00'
+  updated_by: system
+  post_id: post003
+  tag_id: tag004
+
+- id: pt007
+  created_at: '2025-01-01 00:53:00'
+  created_by: system
+  updated_at: '2025-01-01 00:54:00'
+  updated_by: system
+  post_id: post003
+  tag_id: tag005
+
+- id: pt008
+  created_at: '2025-01-01 00:55:00'
+  created_by: system
+  updated_at: '2025-01-01 00:56:00'
+  updated_by: system
+  post_id: post004
+  tag_id: tag005
+
+- id: pt009
+  created_at: '2025-01-01 00:57:00'
+  created_by: system
+  updated_at: '2025-01-01 00:58:00'
+  updated_by: system
+  post_id: post004
+  tag_id: tag004
+
+- id: pt010
+  created_at: '2025-01-01 00:59:00'
+  created_by: system
+  updated_at: '2025-01-01 01:00:00'
+  updated_by: system
+  post_id: post005
+  tag_id: tag003
+
+- id: pt011
+  created_at: '2025-01-01 01:01:00'
+  created_by: system
+  updated_at: '2025-01-01 01:02:00'
+  updated_by: system
+  post_id: post005
+  tag_id: tag001
+
+- id: pt012
+  created_at: '2025-01-01 01:03:00'
+  created_by: system
+  updated_at: '2025-01-01 01:04:00'
+  updated_by: system
+  post_id: post005
+  tag_id: tag005
+
+- id: pt013
+  created_at: '2025-01-01 01:05:00'
+  created_by: system
+  updated_at: '2025-01-01 01:06:00'
+  updated_by: system
+  post_id: post006
+  tag_id: tag004
+
+- id: pt014
+  created_at: '2025-01-01 01:07:00'
+  created_by: system
+  updated_at: '2025-01-01 01:08:00'
+  updated_by: system
+  post_id: post006
+  tag_id: tag005
+
+- id: pt015
+  created_at: '2025-01-01 01:09:00'
+  created_by: system
+  updated_at: '2025-01-01 01:10:00'
+  updated_by: system
+  post_id: post007
+  tag_id: tag004
+
+- id: pt016
+  created_at: '2025-01-01 01:11:00'
+  created_by: system
+  updated_at: '2025-01-01 01:12:00'
+  updated_by: system
+  post_id: post007
+  tag_id: tag001
+
+- id: pt017
+  created_at: '2025-01-01 01:13:00'
+  created_by: system
+  updated_at: '2025-01-01 01:14:00'
+  updated_by: system
+  post_id: post008
+  tag_id: tag005
+
+- id: pt018
+  created_at: '2025-01-01 01:15:00'
+  created_by: system
+  updated_at: '2025-01-01 01:16:00'
+  updated_by: system
+  post_id: post008
+  tag_id: tag004

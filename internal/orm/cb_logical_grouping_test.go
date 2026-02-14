@@ -7,9 +7,9 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
 		return &CBLogicalGroupingTestSuite{
-			ConditionBuilderTestSuite: &ConditionBuilderTestSuite{OrmTestSuite: base},
+			ConditionBuilderTestSuite: &ConditionBuilderTestSuite{BaseTestSuite: base},
 		}
 	})
 }
@@ -22,7 +22,7 @@ type CBLogicalGroupingTestSuite struct {
 
 // TestGroup tests the Group condition for AND grouping.
 func (suite *CBLogicalGroupingTestSuite) TestGroup() {
-	suite.T().Logf("Testing Group condition for %s", suite.dbKind)
+	suite.T().Logf("Testing Group condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicGroup", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -95,7 +95,7 @@ func (suite *CBLogicalGroupingTestSuite) TestGroup() {
 
 // TestOrGroup tests the OrGroup condition for OR grouping.
 func (suite *CBLogicalGroupingTestSuite) TestOrGroup() {
-	suite.T().Logf("Testing OrGroup condition for %s", suite.dbKind)
+	suite.T().Logf("Testing OrGroup condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicOrGroup", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -185,7 +185,7 @@ func (suite *CBLogicalGroupingTestSuite) TestOrGroup() {
 
 // TestComplexLogicalCombinations tests complex combinations of Group and OrGroup.
 func (suite *CBLogicalGroupingTestSuite) TestComplexLogicalCombinations() {
-	suite.T().Logf("Testing complex logical combinations for %s", suite.dbKind)
+	suite.T().Logf("Testing complex logical combinations for %s", suite.ds.Kind)
 
 	suite.Run("ThreeLevelNesting", func() {
 		// (((age = 25 OR age = 30) AND is_active = true) OR (age = 35 AND name LIKE '%Charlie%'))

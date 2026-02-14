@@ -7,9 +7,9 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
 		return &CBComprehensiveTestSuite{
-			ConditionBuilderTestSuite: &ConditionBuilderTestSuite{OrmTestSuite: base},
+			ConditionBuilderTestSuite: &ConditionBuilderTestSuite{BaseTestSuite: base},
 		}
 	})
 }
@@ -22,7 +22,7 @@ type CBComprehensiveTestSuite struct {
 
 // TestApplyIf tests the ApplyIf method for conditional application of conditions.
 func (suite *CBComprehensiveTestSuite) TestApplyIf() {
-	suite.T().Logf("Testing ApplyIf method for %s", suite.dbKind)
+	suite.T().Logf("Testing ApplyIf method for %s", suite.ds.Kind)
 
 	suite.Run("BasicApplyIf", func() {
 		applyCondition := true
@@ -93,7 +93,7 @@ func (suite *CBComprehensiveTestSuite) TestApplyIf() {
 
 // TestComplexConditionCombinations tests complex real-world condition scenarios.
 func (suite *CBComprehensiveTestSuite) TestComplexConditionCombinations() {
-	suite.T().Logf("Testing complex condition combinations for %s", suite.dbKind)
+	suite.T().Logf("Testing complex condition combinations for %s", suite.ds.Kind)
 
 	suite.Run("SearchWithMultipleFilters", func() {
 		// Simulate a search with multiple optional filters
@@ -168,7 +168,7 @@ func (suite *CBComprehensiveTestSuite) TestComplexConditionCombinations() {
 
 // TestEdgeCases tests edge cases and boundary conditions.
 func (suite *CBComprehensiveTestSuite) TestEdgeCases() {
-	suite.T().Logf("Testing edge cases for %s", suite.dbKind)
+	suite.T().Logf("Testing edge cases for %s", suite.ds.Kind)
 
 	suite.Run("EmptyInList", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -239,7 +239,7 @@ func (suite *CBComprehensiveTestSuite) TestEdgeCases() {
 
 // TestPerformanceScenarios tests performance-related scenarios.
 func (suite *CBComprehensiveTestSuite) TestPerformanceScenarios() {
-	suite.T().Logf("Testing performance scenarios for %s", suite.dbKind)
+	suite.T().Logf("Testing performance scenarios for %s", suite.ds.Kind)
 
 	suite.Run("ManyConditions", func() {
 		// Test with many conditions to ensure no performance degradation

@@ -170,7 +170,7 @@ func (suite *FindAllTestSuite) TearDownSuite() {
 
 // TestFindAllBasic tests basic FindAll functionality.
 func (suite *FindAllTestSuite) TestFindAllBasic() {
-	suite.T().Logf("Testing FindAll API basic functionality for %s", suite.dbKind)
+	suite.T().Logf("Testing FindAll API basic functionality for %s", suite.dsConfig.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -194,7 +194,7 @@ func (suite *FindAllTestSuite) TestFindAllBasic() {
 
 // TestFindAllWithSearchApplier tests FindAll with custom search conditions.
 func (suite *FindAllTestSuite) TestFindAllWithSearchApplier() {
-	suite.T().Logf("Testing FindAll API with search filters for %s", suite.dbKind)
+	suite.T().Logf("Testing FindAll API with search filters for %s", suite.dsConfig.Kind)
 
 	suite.Run("SearchByStatus", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -268,7 +268,7 @@ func (suite *FindAllTestSuite) TestFindAllWithSearchApplier() {
 
 // TestFindAllWithProcessor tests FindAll with post-processing.
 func (suite *FindAllTestSuite) TestFindAllWithWithProcessor() {
-	suite.T().Logf("Testing FindAll API with processor for %s", suite.dbKind)
+	suite.T().Logf("Testing FindAll API with processor for %s", suite.dsConfig.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -295,7 +295,7 @@ func (suite *FindAllTestSuite) TestFindAllWithWithProcessor() {
 
 // TestFindAllWithFilterApplier tests FindAll with filter applier.
 func (suite *FindAllTestSuite) TestFindAllWithFilterApplier() {
-	suite.T().Logf("Testing FindAll API with filter applier for %s", suite.dbKind)
+	suite.T().Logf("Testing FindAll API with filter applier for %s", suite.dsConfig.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -318,7 +318,7 @@ func (suite *FindAllTestSuite) TestFindAllWithFilterApplier() {
 
 // TestFindAllWithSortApplier tests FindAll with sort applier.
 func (suite *FindAllTestSuite) TestFindAllWithSortApplier() {
-	suite.T().Logf("Testing FindAll API with sort applier for %s", suite.dbKind)
+	suite.T().Logf("Testing FindAll API with sort applier for %s", suite.dsConfig.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -344,7 +344,7 @@ func (suite *FindAllTestSuite) TestFindAllWithSortApplier() {
 
 // TestFindAllNegativeCases tests negative scenarios.
 func (suite *FindAllTestSuite) TestFindAllNegativeCases() {
-	suite.T().Logf("Testing FindAll API negative cases for %s", suite.dbKind)
+	suite.T().Logf("Testing FindAll API negative cases for %s", suite.dsConfig.Kind)
 
 	suite.Run("EmptySearchCriteria", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -393,7 +393,7 @@ func (suite *FindAllTestSuite) TestFindAllNegativeCases() {
 
 // TestFindAllWithAuditUserNames tests FindAll with audit user names populated.
 func (suite *FindAllTestSuite) TestFindAllWithAuditUserNames() {
-	suite.T().Logf("Testing FindAll API with audit user names for %s", suite.dbKind)
+	suite.T().Logf("Testing FindAll API with audit user names for %s", suite.dsConfig.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -431,7 +431,7 @@ func (suite *FindAllTestSuite) TestFindAllWithAuditUserNames() {
 
 // TestFindAllDefaultSorting tests default sorting behavior.
 func (suite *FindAllTestSuite) TestFindAllDefaultSorting() {
-	suite.T().Logf("Testing FindAll API default sorting for %s", suite.dbKind)
+	suite.T().Logf("Testing FindAll API default sorting for %s", suite.dsConfig.Kind)
 
 	suite.Run("DefaultSortByPrimaryKey", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -547,7 +547,7 @@ func (suite *FindAllTestSuite) TestFindAllDefaultSorting() {
 
 // TestFindAllRequestSortOverride tests that request-specified sorting overrides default sorting.
 func (suite *FindAllTestSuite) TestFindAllRequestSortOverride() {
-	suite.T().Logf("Testing FindAll API request sort override for %s", suite.dbKind)
+	suite.T().Logf("Testing FindAll API request sort override for %s", suite.dsConfig.Kind)
 
 	suite.Run("OverrideDefaultSortWithRequestSort", func() {
 		resp := suite.makeAPIRequest(api.Request{

@@ -41,12 +41,12 @@ func (suite *SchemaResourceTestSuite) SetupSuite() {
 
 func (suite *SchemaResourceTestSuite) TestPostgresResource() {
 	suite.T().Log("Testing Schema Resource for PostgreSQL")
-	suite.runResourceTests(suite.postgresContainer.DsConfig, "PostgreSQL")
+	suite.runResourceTests(suite.postgresContainer.DataSource, "PostgreSQL")
 }
 
 func (suite *SchemaResourceTestSuite) TestMySQLResource() {
 	suite.T().Log("Testing Schema Resource for MySQL")
-	suite.runResourceTests(suite.mysqlContainer.DsConfig, "MySQL")
+	suite.runResourceTests(suite.mysqlContainer.DataSource, "MySQL")
 }
 
 func (suite *SchemaResourceTestSuite) TestSQLiteResource() {

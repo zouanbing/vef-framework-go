@@ -10,8 +10,8 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
-		return &EBDateTimeFunctionsTestSuite{OrmTestSuite: base}
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
+		return &EBDateTimeFunctionsTestSuite{BaseTestSuite: base}
 	})
 }
 
@@ -24,13 +24,13 @@ func init() {
 // PostgreSQL, MySQL, and SQLite. Note that SQLite has limited support for many
 // date/time functions and some tests are skipped accordingly.
 type EBDateTimeFunctionsTestSuite struct {
-	*OrmTestSuite
+	*BaseTestSuite
 }
 
 // TestCurrentDate tests the CurrentDate function.
 // CurrentDate returns the current date without time component.
 func (suite *EBDateTimeFunctionsTestSuite) TestCurrentDate() {
-	suite.T().Logf("Testing CurrentDate function for %s", suite.dbKind)
+	suite.T().Logf("Testing CurrentDate function for %s", suite.ds.Kind)
 
 	// Test 1: Get current date using CurrentDate()
 	suite.Run("GetCurrentDate", func() {
@@ -61,7 +61,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestCurrentDate() {
 // TestCurrentTime tests the CurrentTime function.
 // CurrentTime returns the current time without date component.
 func (suite *EBDateTimeFunctionsTestSuite) TestCurrentTime() {
-	suite.T().Logf("Testing CurrentTime function for %s", suite.dbKind)
+	suite.T().Logf("Testing CurrentTime function for %s", suite.ds.Kind)
 
 	// Test 1: Get current time using CurrentTime()
 	suite.Run("GetCurrentTime", func() {
@@ -89,7 +89,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestCurrentTime() {
 // TestCurrentTimestamp tests the CurrentTimestamp function.
 // CurrentTimestamp returns the current date and time.
 func (suite *EBDateTimeFunctionsTestSuite) TestCurrentTimestamp() {
-	suite.T().Logf("Testing CurrentTimestamp function for %s", suite.dbKind)
+	suite.T().Logf("Testing CurrentTimestamp function for %s", suite.ds.Kind)
 
 	// Test 1: Get current timestamp using CurrentTimestamp()
 	suite.Run("GetCurrentTimestamp", func() {
@@ -120,7 +120,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestCurrentTimestamp() {
 // TestNow tests the Now function.
 // Now returns the current timestamp (alias for CurrentTimestamp).
 func (suite *EBDateTimeFunctionsTestSuite) TestNow() {
-	suite.T().Logf("Testing Now function for %s", suite.dbKind)
+	suite.T().Logf("Testing Now function for %s", suite.ds.Kind)
 
 	// Test 1: Get current timestamp using Now()
 	suite.Run("GetNow", func() {
@@ -189,7 +189,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestNow() {
 // TestExtractYear tests the ExtractYear function.
 // ExtractYear extracts the year from a date/timestamp.
 func (suite *EBDateTimeFunctionsTestSuite) TestExtractYear() {
-	suite.T().Logf("Testing ExtractYear function for %s", suite.dbKind)
+	suite.T().Logf("Testing ExtractYear function for %s", suite.ds.Kind)
 
 	// Test 1: Extract year from created_at column
 	suite.Run("ExtractYearFromCreatedAt", func() {
@@ -223,7 +223,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractYear() {
 // TestExtractMonth tests the ExtractMonth function.
 // ExtractMonth extracts the month from a date/timestamp.
 func (suite *EBDateTimeFunctionsTestSuite) TestExtractMonth() {
-	suite.T().Logf("Testing ExtractMonth function for %s", suite.dbKind)
+	suite.T().Logf("Testing ExtractMonth function for %s", suite.ds.Kind)
 
 	// Test 1: Extract month from created_at column
 	suite.Run("ExtractMonthFromCreatedAt", func() {
@@ -258,7 +258,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractMonth() {
 // TestExtractDay tests the ExtractDay function.
 // ExtractDay extracts the day from a date/timestamp.
 func (suite *EBDateTimeFunctionsTestSuite) TestExtractDay() {
-	suite.T().Logf("Testing ExtractDay function for %s", suite.dbKind)
+	suite.T().Logf("Testing ExtractDay function for %s", suite.ds.Kind)
 
 	// Test 1: Extract day from created_at column
 	suite.Run("ExtractDayFromCreatedAt", func() {
@@ -293,7 +293,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractDay() {
 // TestExtractHour tests the ExtractHour function.
 // ExtractHour extracts the hour from a timestamp.
 func (suite *EBDateTimeFunctionsTestSuite) TestExtractHour() {
-	suite.T().Logf("Testing ExtractHour function for %s", suite.dbKind)
+	suite.T().Logf("Testing ExtractHour function for %s", suite.ds.Kind)
 
 	// Test 1: Extract hour from created_at column
 	suite.Run("ExtractHourFromCreatedAt", func() {
@@ -328,7 +328,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractHour() {
 // TestExtractMinute tests the ExtractMinute function.
 // ExtractMinute extracts the minute from a timestamp.
 func (suite *EBDateTimeFunctionsTestSuite) TestExtractMinute() {
-	suite.T().Logf("Testing ExtractMinute function for %s", suite.dbKind)
+	suite.T().Logf("Testing ExtractMinute function for %s", suite.ds.Kind)
 
 	// Test 1: Extract minute from created_at column
 	suite.Run("ExtractMinuteFromCreatedAt", func() {
@@ -363,7 +363,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractMinute() {
 // TestExtractSecond tests the ExtractSecond function.
 // ExtractSecond extracts the second from a timestamp.
 func (suite *EBDateTimeFunctionsTestSuite) TestExtractSecond() {
-	suite.T().Logf("Testing ExtractSecond function for %s", suite.dbKind)
+	suite.T().Logf("Testing ExtractSecond function for %s", suite.ds.Kind)
 
 	// Test 1: Extract second from created_at column
 	suite.Run("ExtractSecondFromCreatedAt", func() {
@@ -460,7 +460,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractSecond() {
 // TestDateTrunc tests the DateTrunc function.
 // DateTrunc truncates date/timestamp to specified precision.
 func (suite *EBDateTimeFunctionsTestSuite) TestDateTrunc() {
-	suite.T().Logf("Testing DateTrunc function for %s", suite.dbKind)
+	suite.T().Logf("Testing DateTrunc function for %s", suite.ds.Kind)
 
 	// Test 1: Truncate to different precisions (year, month, day, hour)
 	suite.Run("TruncateToDifferentPrecisions", func() {
@@ -511,7 +511,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateTrunc() {
 
 // TestDateAdd tests the DateAdd function.
 func (suite *EBDateTimeFunctionsTestSuite) TestDateAdd() {
-	suite.T().Logf("Testing DateAdd function for %s", suite.dbKind)
+	suite.T().Logf("Testing DateAdd function for %s", suite.ds.Kind)
 
 	// Test 1: Add different date intervals (7 days, 3 months, 1 year)
 	suite.Run("AddDateIntervals", func() {
@@ -596,7 +596,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateAdd() {
 
 // TestDateSubtract tests the DateSubtract function.
 func (suite *EBDateTimeFunctionsTestSuite) TestDateSubtract() {
-	suite.T().Logf("Testing DateSubtract function for %s", suite.dbKind)
+	suite.T().Logf("Testing DateSubtract function for %s", suite.ds.Kind)
 
 	// Test 1: Subtract different date intervals (5 days, 2 months, 1 year)
 	suite.Run("SubtractDateIntervals", func() {
@@ -682,7 +682,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateSubtract() {
 // TestDateDiff tests the DateDiff function.
 // Returns the difference between two dates in the specified unit.
 func (suite *EBDateTimeFunctionsTestSuite) TestDateDiff() {
-	suite.T().Logf("Testing DateDiff function for %s", suite.dbKind)
+	suite.T().Logf("Testing DateDiff function for %s", suite.ds.Kind)
 
 	// Test 1: Calculate time differences in time units (seconds, minutes, hours)
 	suite.Run("CalculateTimeDifferences", func() {
@@ -787,7 +787,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateDiff() {
 // Age returns the age (interval) between two timestamps in PostgreSQL-compatible format.
 // Returns a string in format: "X years Y mons Z days".
 func (suite *EBDateTimeFunctionsTestSuite) TestAge() {
-	suite.T().Logf("Testing Age function for %s", suite.dbKind)
+	suite.T().Logf("Testing Age function for %s", suite.ds.Kind)
 
 	// Test 1: Calculate age interval between updated_at and created_at
 	suite.Run("CalculateAgeInterval", func() {
@@ -861,7 +861,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestAge() {
 		suite.T().Logf("Age from 1957-06-13 to 2001-04-10: %s", result.Age)
 
 		// For PostgreSQL, we can verify the exact result
-		if suite.dbKind == config.Postgres {
+		if suite.ds.Kind == config.Postgres {
 			suite.Contains(result.Age, "43 years", "Should contain approximately 43 years")
 			suite.Contains(result.Age, "9 mons", "Should contain approximately 9 months")
 		}
@@ -871,7 +871,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestAge() {
 // TestCombinedDateTimeFunctions tests using multiple date/time functions together.
 // This verifies that date/time functions can be nested and combined.
 func (suite *EBDateTimeFunctionsTestSuite) TestCombinedDateTimeFunctions() {
-	suite.T().Logf("Testing combined date/time functions for %s", suite.dbKind)
+	suite.T().Logf("Testing combined date/time functions for %s", suite.ds.Kind)
 
 	// Test 1: Nest and combine multiple date/time functions (Extract, DateDiff, DateTrunc, Now)
 	suite.Run("NestedDateTimeFunctions", func() {

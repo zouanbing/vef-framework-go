@@ -10,8 +10,8 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
-		return &SelectTestSuite{OrmTestSuite: base}
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
+		return &SelectTestSuite{BaseTestSuite: base}
 	})
 }
 
@@ -19,12 +19,12 @@ func init() {
 // joins, subqueries, ordering, pagination, locking, set operations, and execution methods
 // across all databases (PostgreSQL, MySQL, SQLite).
 type SelectTestSuite struct {
-	*OrmTestSuite
+	*BaseTestSuite
 }
 
 // TestCTE tests Common Table Expression methods (With, WithValues, WithRecursive).
 func (suite *SelectTestSuite) TestCTE() {
-	suite.T().Logf("Testing CTE methods for %s", suite.dbKind)
+	suite.T().Logf("Testing CTE methods for %s", suite.ds.Kind)
 
 	suite.Run("WithBasicCTE", func() {
 		type PostWithUser struct {
@@ -109,7 +109,7 @@ func (suite *SelectTestSuite) TestCTE() {
 	})
 
 	suite.Run("WithRecursiveCTE", func() {
-		if suite.dbKind == config.SQLite {
+		if suite.ds.Kind == config.SQLite {
 			suite.T().Skip("Skipping for SQLite: bun framework bug causes extra parentheses in generated UNION SQL")
 		}
 
@@ -160,7 +160,7 @@ func (suite *SelectTestSuite) TestCTE() {
 
 // TestSelectAll tests SelectAll method.
 func (suite *SelectTestSuite) TestSelectAll() {
-	suite.T().Logf("Testing SelectAll for %s", suite.dbKind)
+	suite.T().Logf("Testing SelectAll for %s", suite.ds.Kind)
 
 	suite.Run("SelectAllUsers", func() {
 		var users []User
@@ -186,7 +186,7 @@ func (suite *SelectTestSuite) TestSelectAll() {
 
 // TestSelectAndSelectAs tests Select and SelectAs methods.
 func (suite *SelectTestSuite) TestSelectAndSelectAs() {
-	suite.T().Logf("Testing Select and SelectAs for %s", suite.dbKind)
+	suite.T().Logf("Testing Select and SelectAs for %s", suite.ds.Kind)
 
 	suite.Run("SelectSpecificColumns", func() {
 		type UserBasic struct {
@@ -251,7 +251,7 @@ func (suite *SelectTestSuite) TestSelectAndSelectAs() {
 
 // TestSelectExpr tests SelectExpr method.
 func (suite *SelectTestSuite) TestSelectExpr() {
-	suite.T().Logf("Testing SelectExpr for %s", suite.dbKind)
+	suite.T().Logf("Testing SelectExpr for %s", suite.ds.Kind)
 
 	suite.Run("SelectExpression", func() {
 		type PostWithCalculated struct {
@@ -350,7 +350,7 @@ func (suite *SelectTestSuite) TestSelectExpr() {
 
 // TestSelectModelColumns tests SelectModelColumns method.
 func (suite *SelectTestSuite) TestSelectModelColumns() {
-	suite.T().Logf("Testing SelectModelColumns for %s", suite.dbKind)
+	suite.T().Logf("Testing SelectModelColumns for %s", suite.ds.Kind)
 
 	suite.Run("SelectModelColumnsBasic", func() {
 		var users []User
@@ -414,7 +414,7 @@ func (suite *SelectTestSuite) TestSelectModelColumns() {
 
 // TestSelectModelPKs tests SelectModelPKs method.
 func (suite *SelectTestSuite) TestSelectModelPKs() {
-	suite.T().Logf("Testing SelectModelPKs for %s", suite.dbKind)
+	suite.T().Logf("Testing SelectModelPKs for %s", suite.ds.Kind)
 
 	suite.Run("SelectModelPKsBasic", func() {
 		type UserIDOnly struct {
@@ -471,7 +471,7 @@ func (suite *SelectTestSuite) TestSelectModelPKs() {
 
 // TestExclude tests Exclude and ExcludeAll methods.
 func (suite *SelectTestSuite) TestExclude() {
-	suite.T().Logf("Testing Exclude methods for %s", suite.dbKind)
+	suite.T().Logf("Testing Exclude methods for %s", suite.ds.Kind)
 
 	suite.Run("ExcludeSpecificColumns", func() {
 		type UserWithoutSensitive struct {
@@ -544,7 +544,7 @@ func (suite *SelectTestSuite) TestExclude() {
 
 // TestSelectMutualExclusivity tests that base column selection methods are mutually exclusive.
 func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
-	suite.T().Logf("Testing Select method mutual exclusivity for %s", suite.dbKind)
+	suite.T().Logf("Testing Select method mutual exclusivity for %s", suite.ds.Kind)
 
 	suite.Run("SelectAllOverridesSelect", func() {
 		var users1 []User
@@ -651,7 +651,7 @@ func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
 
 // TestSelectExprCumulative tests that SelectExpr is cumulative and works with any base selection.
 func (suite *SelectTestSuite) TestSelectExprCumulative() {
-	suite.T().Logf("Testing SelectExpr cumulative behavior for %s", suite.dbKind)
+	suite.T().Logf("Testing SelectExpr cumulative behavior for %s", suite.ds.Kind)
 
 	suite.Run("SelectExprWithSelectAll", func() {
 		type UserWithComputed struct {
@@ -826,7 +826,7 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 
 // TestSelectIdempotency tests that SelectModelColumns and SelectModelPKs are idempotent.
 func (suite *SelectTestSuite) TestSelectIdempotency() {
-	suite.T().Logf("Testing Select method idempotency for %s", suite.dbKind)
+	suite.T().Logf("Testing Select method idempotency for %s", suite.ds.Kind)
 
 	suite.Run("MultipleSelectModelColumnsCalls", func() {
 		var users1 []User
@@ -886,7 +886,7 @@ func (suite *SelectTestSuite) TestSelectIdempotency() {
 
 // TestDistinct tests Distinct, DistinctOnColumns, and DistinctOnExpr methods.
 func (suite *SelectTestSuite) TestDistinct() {
-	suite.T().Logf("Testing Distinct methods for %s", suite.dbKind)
+	suite.T().Logf("Testing Distinct methods for %s", suite.ds.Kind)
 
 	suite.Run("BasicDistinct", func() {
 		type DistinctStatus struct {
@@ -913,8 +913,8 @@ func (suite *SelectTestSuite) TestDistinct() {
 
 	suite.Run("DistinctOnColumns", func() {
 		// DISTINCT ON is PostgreSQL-specific, not supported by MySQL or SQLite
-		if suite.dbKind != "postgres" {
-			suite.T().Skipf("DISTINCT ON test skipped for %s", suite.dbKind)
+		if suite.ds.Kind != "postgres" {
+			suite.T().Skipf("DISTINCT ON test skipped for %s", suite.ds.Kind)
 
 			return
 		}
@@ -945,8 +945,8 @@ func (suite *SelectTestSuite) TestDistinct() {
 
 	suite.Run("DistinctOnExpr", func() {
 		// DISTINCT ON is PostgreSQL-specific, not supported by MySQL or SQLite
-		if suite.dbKind != "postgres" {
-			suite.T().Skipf("DISTINCT ON test skipped for %s", suite.dbKind)
+		if suite.ds.Kind != "postgres" {
+			suite.T().Skipf("DISTINCT ON test skipped for %s", suite.ds.Kind)
 
 			return
 		}
@@ -986,7 +986,7 @@ func (suite *SelectTestSuite) TestDistinct() {
 
 // TestModelAndTable tests Model, ModelTable, Table, TableFrom, TableExpr, and TableSubQuery methods.
 func (suite *SelectTestSuite) TestModelAndTable() {
-	suite.T().Logf("Testing Model and Table methods for %s", suite.dbKind)
+	suite.T().Logf("Testing Model and Table methods for %s", suite.ds.Kind)
 
 	suite.Run("ModelAndModelTable", func() {
 		type PostFromUserTable struct {
@@ -1131,7 +1131,7 @@ func (suite *SelectTestSuite) TestModelAndTable() {
 
 // TestJoins tests all join types and variants.
 func (suite *SelectTestSuite) TestJoins() {
-	suite.T().Logf("Testing Join methods for %s", suite.dbKind)
+	suite.T().Logf("Testing Join methods for %s", suite.ds.Kind)
 
 	suite.Run("BasicInnerJoin", func() {
 		type PostWithUser struct {
@@ -1231,7 +1231,7 @@ func (suite *SelectTestSuite) TestJoins() {
 	})
 
 	suite.Run("FullJoin", func() {
-		if suite.dbKind == config.MySQL {
+		if suite.ds.Kind == config.MySQL {
 			suite.T().Skip("Skipping for MySQL: FULL JOIN not supported (use LEFT JOIN UNION RIGHT JOIN instead)")
 
 			return
@@ -1374,7 +1374,7 @@ func (suite *SelectTestSuite) TestJoins() {
 
 // TestJoinRelations tests JoinRelations method with orm.RelationSpec.
 func (suite *SelectTestSuite) TestJoinRelations() {
-	suite.T().Logf("Testing JoinRelations for %s", suite.dbKind)
+	suite.T().Logf("Testing JoinRelations for %s", suite.ds.Kind)
 
 	// Define result struct for JoinRelations tests
 	type PostWithUserName struct {
@@ -1597,7 +1597,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 
 // TestWhere tests Where, WherePK, WhereDeleted, and IncludeDeleted methods.
 func (suite *SelectTestSuite) TestWhere() {
-	suite.T().Logf("Testing Where methods for %s", suite.dbKind)
+	suite.T().Logf("Testing Where methods for %s", suite.ds.Kind)
 
 	suite.Run("BasicWhere", func() {
 		var users []User
@@ -1650,7 +1650,7 @@ func (suite *SelectTestSuite) TestWhere() {
 
 // TestGroupByAndHaving tests GroupBy, GroupByExpr, and Having methods.
 func (suite *SelectTestSuite) TestGroupByAndHaving() {
-	suite.T().Logf("Testing GroupBy and Having methods for %s", suite.dbKind)
+	suite.T().Logf("Testing GroupBy and Having methods for %s", suite.ds.Kind)
 
 	suite.Run("BasicGroupBy", func() {
 		type UserCount struct {
@@ -1762,7 +1762,7 @@ func (suite *SelectTestSuite) TestGroupByAndHaving() {
 
 // TestOrderBy tests OrderBy, OrderByDesc, and OrderByExpr methods.
 func (suite *SelectTestSuite) TestOrderBy() {
-	suite.T().Logf("Testing OrderBy methods for %s", suite.dbKind)
+	suite.T().Logf("Testing OrderBy methods for %s", suite.ds.Kind)
 
 	suite.Run("OrderByColumns", func() {
 		var users []User
@@ -1837,7 +1837,7 @@ func (suite *SelectTestSuite) TestOrderBy() {
 
 // TestPagination tests Limit, Offset, and Paginate methods.
 func (suite *SelectTestSuite) TestPagination() {
-	suite.T().Logf("Testing Pagination methods for %s", suite.dbKind)
+	suite.T().Logf("Testing Pagination methods for %s", suite.ds.Kind)
 
 	suite.Run("LimitAndOffset", func() {
 		// Get total count first
@@ -1905,10 +1905,10 @@ func (suite *SelectTestSuite) TestPagination() {
 
 // TestLocking tests ForShare and ForUpdate methods.
 func (suite *SelectTestSuite) TestLocking() {
-	suite.T().Logf("Testing Locking methods for %s", suite.dbKind)
+	suite.T().Logf("Testing Locking methods for %s", suite.ds.Kind)
 
 	// SQLite doesn't support row-level locking (FOR SHARE/FOR UPDATE)
-	if suite.dbKind == config.SQLite {
+	if suite.ds.Kind == config.SQLite {
 		suite.T().Skip("Skipping for SQLite: row-level locking (FOR SHARE/FOR UPDATE) not supported, uses database-level locking instead")
 
 		return
@@ -2000,9 +2000,9 @@ func (suite *SelectTestSuite) TestLocking() {
 
 // TestSetOperations tests Union, Intersect, and Except methods.
 func (suite *SelectTestSuite) TestSetOperations() {
-	suite.T().Logf("Testing Set Operations for %s", suite.dbKind)
+	suite.T().Logf("Testing Set Operations for %s", suite.ds.Kind)
 
-	if suite.dbKind == config.SQLite {
+	if suite.ds.Kind == config.SQLite {
 		suite.T().Skip("Skipping for SQLite: bun framework bug causes extra parentheses in generated set operation SQL, resulting in syntax errors")
 
 		return
@@ -2126,7 +2126,7 @@ func (suite *SelectTestSuite) TestSetOperations() {
 
 // TestApply tests Apply and ApplyIf methods.
 func (suite *SelectTestSuite) TestApply() {
-	suite.T().Logf("Testing Apply methods for %s", suite.dbKind)
+	suite.T().Logf("Testing Apply methods for %s", suite.ds.Kind)
 
 	suite.Run("BasicApply", func() {
 		var users []User
@@ -2209,7 +2209,7 @@ func (suite *SelectTestSuite) TestApply() {
 
 // TestExecution tests Exec, Scan, Rows, ScanAndCount, Count, and Exists methods.
 func (suite *SelectTestSuite) TestExecution() {
-	suite.T().Logf("Testing Execution methods for %s", suite.dbKind)
+	suite.T().Logf("Testing Execution methods for %s", suite.ds.Kind)
 
 	suite.Run("BasicScan", func() {
 		var users []User

@@ -32,12 +32,12 @@ func (suite *ServiceTestSuite) SetupSuite() {
 
 func (suite *ServiceTestSuite) TestPostgresService() {
 	suite.T().Log("Testing Service for PostgreSQL")
-	suite.runServiceTests(suite.postgresContainer.DsConfig, "PostgreSQL")
+	suite.runServiceTests(suite.postgresContainer.DataSource, "PostgreSQL")
 }
 
 func (suite *ServiceTestSuite) TestMySQLService() {
 	suite.T().Log("Testing Service for MySQL")
-	suite.runServiceTests(suite.mysqlContainer.DsConfig, "MySQL")
+	suite.runServiceTests(suite.mysqlContainer.DataSource, "MySQL")
 }
 
 func (suite *ServiceTestSuite) TestSQLiteService() {

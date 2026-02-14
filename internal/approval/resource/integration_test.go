@@ -424,7 +424,7 @@ func (s *ApprovalSuite) SetupSuite() {
 	s.ctx = context.Background()
 
 	s.pgc = testx.NewPostgresContainer(s.ctx, s.T())
-	dsConfig := s.pgc.DsConfig
+	dsConfig := s.pgc.DataSource
 
 	bunDB, err := database.New(dsConfig)
 	s.Require().NoError(err)
@@ -475,13 +475,13 @@ func (s *ApprovalSuite) SetupSuite() {
 	s.authToken, err = jwtInstance.Generate(claims, 1*time.Hour, 0)
 	s.Require().NoError(err)
 
-	s.app, s.stop = apptest.NewTestApp(
+	s.app, s.stop = apptest.NewTestAppWithDB(
 		s.T(),
+		bunDB,
 		fx.Replace(
 			dsConfig,
 			jwtCfg,
 		),
-		fx.Decorate(func() bun.IDB { return bunDB }),
 		fx.Supply(
 			fx.Annotate(orgSvc, fx.As(new(approvalPkg.OrganizationService))),
 			fx.Annotate(userSvc, fx.As(new(approvalPkg.UserService))),

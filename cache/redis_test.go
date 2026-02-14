@@ -38,7 +38,7 @@ func (suite *RedisCacheTestSuite) SetupSuite() {
 	container := testx.NewRedisContainer(suite.ctx, suite.T())
 	suite.redisContainer = container
 
-	suite.client = redis.NewClient(container.RdsConfig, &config.AppConfig{Name: "test-app"})
+	suite.client = redis.NewClient(container.Redis, &config.AppConfig{Name: "test-app"})
 	err := suite.client.Ping(suite.ctx).Err()
 	suite.Require().NoError(err, "failed to ping redis client")
 }

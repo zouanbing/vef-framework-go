@@ -88,7 +88,7 @@ func (suite *RedisTestSuite) TestNewClient() {
 func (suite *RedisTestSuite) TestRedisConnection() {
 	suite.T().Log("Testing Redis connection and operations")
 
-	cfg := suite.redisContainer.RdsConfig
+	cfg := suite.redisContainer.Redis
 	client := NewClient(cfg, &config.AppConfig{
 		Name: "test-connection",
 	})
@@ -140,7 +140,7 @@ func (suite *RedisTestSuite) TestHealthCheck() {
 	suite.T().Log("Testing Redis health check")
 
 	suite.Run("HealthCheckSuccess", func() {
-		cfg := suite.redisContainer.RdsConfig
+		cfg := suite.redisContainer.Redis
 		client := NewClient(cfg, &config.AppConfig{
 			Name: "test-health",
 		})

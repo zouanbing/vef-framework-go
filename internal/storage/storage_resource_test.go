@@ -86,7 +86,7 @@ func (suite *StorageResourceTestSuite) TearDownSuite() {
 
 func (suite *StorageResourceTestSuite) setupTestApp() {
 	// Create MinIO config with bucket
-	minioConfig := *suite.minioContainer.MinIOConfig
+	minioConfig := *suite.minioContainer.MinIO
 
 	suite.app, suite.stop = apptest.NewTestApp(
 		suite.T(),

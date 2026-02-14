@@ -41,7 +41,7 @@ func (suite *MinIOServiceTestSuite) SetupSuite() {
 
 	suite.minioContainer = testx.NewMinIOContainer(suite.ctx, suite.T())
 
-	provider, err := New(*suite.minioContainer.MinIOConfig, &config.AppConfig{})
+	provider, err := New(*suite.minioContainer.MinIO, &config.AppConfig{})
 	suite.Require().NoError(err, "NewMinIOService should succeed")
 	suite.service = provider
 

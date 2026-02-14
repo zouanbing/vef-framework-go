@@ -31,12 +31,12 @@ func (suite *InspectorTestSuite) SetupSuite() {
 
 func (suite *InspectorTestSuite) TestPostgresInspector() {
 	suite.T().Log("Testing Inspector for PostgreSQL")
-	suite.runInspectorTests(suite.postgresContainer.DsConfig, "PostgreSQL")
+	suite.runInspectorTests(suite.postgresContainer.DataSource, "PostgreSQL")
 }
 
 func (suite *InspectorTestSuite) TestMySQLInspector() {
 	suite.T().Log("Testing Inspector for MySQL")
-	suite.runInspectorTests(suite.mysqlContainer.DsConfig, "MySQL")
+	suite.runInspectorTests(suite.mysqlContainer.DataSource, "MySQL")
 }
 
 func (suite *InspectorTestSuite) TestSQLiteInspector() {

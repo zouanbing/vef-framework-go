@@ -7,20 +7,20 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
-		return &EBUtilityFunctionsTestSuite{OrmTestSuite: base}
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
+		return &EBUtilityFunctionsTestSuite{BaseTestSuite: base}
 	})
 }
 
 // EBUtilityFunctionsTestSuite tests utility expression methods of orm.ExprBuilder
 // including Decode and other utility functions.
 type EBUtilityFunctionsTestSuite struct {
-	*OrmTestSuite
+	*BaseTestSuite
 }
 
 // TestDecode tests the Decode utility function.
 func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
-	suite.T().Logf("Testing Decode utility function for %s", suite.dbKind)
+	suite.T().Logf("Testing Decode utility function for %s", suite.ds.Kind)
 
 	// Test 1: DECODE for status mapping with string results
 	suite.Run("DecodeStatusDescriptionMapping", func() {

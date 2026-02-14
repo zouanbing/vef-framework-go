@@ -7,9 +7,9 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
 		return &CBPrimaryKeyConditionsTestSuite{
-			ConditionBuilderTestSuite: &ConditionBuilderTestSuite{OrmTestSuite: base},
+			ConditionBuilderTestSuite: &ConditionBuilderTestSuite{BaseTestSuite: base},
 		}
 	})
 }
@@ -22,7 +22,7 @@ type CBPrimaryKeyConditionsTestSuite struct {
 
 // TestPKEquals tests the PKEquals and OrPKEquals conditions.
 func (suite *CBPrimaryKeyConditionsTestSuite) TestPKEquals() {
-	suite.T().Logf("Testing PKEquals condition for %s", suite.dbKind)
+	suite.T().Logf("Testing PKEquals condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicPKEquals", func() {
 		// Get a user first to get their ID
@@ -81,7 +81,7 @@ func (suite *CBPrimaryKeyConditionsTestSuite) TestPKEquals() {
 
 // TestPKNotEquals tests the PKNotEquals and OrPKNotEquals conditions.
 func (suite *CBPrimaryKeyConditionsTestSuite) TestPKNotEquals() {
-	suite.T().Logf("Testing PKNotEquals condition for %s", suite.dbKind)
+	suite.T().Logf("Testing PKNotEquals condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicPKNotEquals", func() {
 		// Get a user first
@@ -140,7 +140,7 @@ func (suite *CBPrimaryKeyConditionsTestSuite) TestPKNotEquals() {
 
 // TestPKIn tests the PKIn and OrPKIn conditions.
 func (suite *CBPrimaryKeyConditionsTestSuite) TestPKIn() {
-	suite.T().Logf("Testing PKIn condition for %s", suite.dbKind)
+	suite.T().Logf("Testing PKIn condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicPKIn", func() {
 		// Get two users
@@ -200,7 +200,7 @@ func (suite *CBPrimaryKeyConditionsTestSuite) TestPKIn() {
 
 // TestPKNotIn tests the PKNotIn and OrPKNotIn conditions.
 func (suite *CBPrimaryKeyConditionsTestSuite) TestPKNotIn() {
-	suite.T().Logf("Testing PKNotIn condition for %s", suite.dbKind)
+	suite.T().Logf("Testing PKNotIn condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicPKNotIn", func() {
 		// Get one user to exclude

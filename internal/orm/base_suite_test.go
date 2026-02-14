@@ -2,17 +2,14 @@ package orm_test
 
 import (
 	"context"
-	"html/template"
-	"os"
+	"database/sql"
 
+	"github.com/go-testfixtures/testfixtures/v3"
 	"github.com/stretchr/testify/suite"
 	"github.com/uptrace/bun"
-	"github.com/uptrace/bun/dbfixture"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/id"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
-	"github.com/ilxqx/vef-framework-go/timex"
 )
 
 // User represents a user in the system.
@@ -20,12 +17,9 @@ type User struct {
 	bun.BaseModel `bun:"table:test_user,alias:u"`
 	orm.Model
 
-	Name  string `json:"name"     bun:"name,notnull"`
-	Email string `json:"email"    bun:"email,notnull,unique"`
-	Age   int16  `json:"age"      bun:"age,notnull,default:0"`
-	// Bun applies the struct default even when fixtures explicitly set this field to true, so we
-	// avoid declaring a default to keep fixture values intact.
-	// IsActive bool           `json:"isActive" bun:"is_active,notnull,default:TRUE"`
+	Name     string         `json:"name"     bun:"name,notnull"`
+	Email    string         `json:"email"    bun:"email,notnull,unique"`
+	Age      int16          `json:"age"      bun:"age,notnull,default:0"`
 	IsActive bool           `json:"isActive" bun:"is_active,notnull"`
 	Meta     map[string]any `json:"meta"     bun:"meta"`
 
@@ -88,86 +82,36 @@ type Category struct {
 	Children []Category `json:"children" bun:"rel:has-many,join:id=parent_id"`
 }
 
-// SimpleModel represents a simple test model for subquery tests.
-type SimpleModel struct {
-	bun.BaseModel `bun:"table:test_simple,alias:s"`
-	orm.Model
-
-	Name  string `json:"name"  bun:"name,notnull"`
-	Value int    `json:"value" bun:"value,notnull"`
-}
-
-// OrmTestSuite contains all the actual test methods and works with orm.DB interface.
+// BaseTestSuite contains all the actual test methods and works with orm.DB interface.
 // This suite will be run against multiple databases to verify cross-database compatibility.
-type OrmTestSuite struct {
+type BaseTestSuite struct {
 	suite.Suite
 
-	ctx    context.Context
-	db     orm.DB
-	bunDB  bun.IDB
-	dbKind config.DBKind
+	ctx   context.Context
+	db    orm.DB
+	rawDB *sql.DB
+	ds    *config.DataSourceConfig
 }
 
 // SetupSuite initializes the test suite (called once per database).
-func (suite *OrmTestSuite) SetupSuite() {
-	db := suite.getBunDB()
-	db.RegisterModel(
+func (suite *BaseTestSuite) SetupSuite() {
+	models := []any{
 		(*User)(nil),
 		(*Post)(nil),
 		(*Tag)(nil),
 		(*PostTag)(nil),
 		(*Category)(nil),
-		(*SimpleModel)(nil),
+	}
+
+	suite.db.RegisterModel(models...)
+	suite.Require().NoError(suite.db.ResetModel(suite.ctx, models...), "Failed to reset models")
+
+	fixtures, err := testfixtures.New(
+		testfixtures.Database(suite.rawDB),
+		testfixtures.Dialect(string(suite.ds.Kind)),
+		testfixtures.Directory("fixtures"),
+		testfixtures.DangerousSkipTestDatabaseCheck(),
 	)
-
-	// Monotonically increasing offsets starting from -12h ensure:
-	//   - All timestamps are in the past
-	//   - updated_at >= created_at (sequential calls in fixtures)
-	//   - Timestamps fall within the last 24 hours (for audit condition tests)
-	counter := 0
-	fixture := dbfixture.New(
-		db,
-		dbfixture.WithRecreateTables(),
-		dbfixture.WithTemplateFuncs(template.FuncMap{
-			"id": func() string { return id.Generate() },
-			"now": func() string {
-				counter++
-				return timex.Now().AddMinutes(counter - 720).String()
-			},
-		}),
-	)
-
-	err := fixture.Load(suite.ctx, os.DirFS("testdata"), "fixture.yaml")
-	suite.Require().NoError(err, "Failed to load fixtures")
-
-	_, err = db.NewCreateTable().IfNotExists().Model((*SimpleModel)(nil)).Exec(suite.ctx)
-	suite.Require().NoError(err, "Failed to create simple model table")
-}
-
-// getBunDB extracts the underlying *bun.DB from the test suite.
-func (suite *OrmTestSuite) getBunDB() *bun.DB {
-	db, ok := suite.bunDB.(*bun.DB)
-	suite.Require().True(ok, "Expected *bun.DB, got %T", suite.bunDB)
-	return db
-}
-
-// AssertCount verifies the count result of a select query.
-func (suite *OrmTestSuite) AssertCount(query orm.SelectQuery, expectedCount int64) {
-	count, err := query.Count(suite.ctx)
-	suite.NoError(err)
-	suite.Equal(expectedCount, count, "Count mismatch for %s", suite.dbKind)
-}
-
-// AssertExists verifies that a query returns at least one result.
-func (suite *OrmTestSuite) AssertExists(query orm.SelectQuery) {
-	exists, err := query.Exists(suite.ctx)
-	suite.NoError(err)
-	suite.True(exists, "Query should return results for %s", suite.dbKind)
-}
-
-// AssertNotExists verifies that a query returns no results.
-func (suite *OrmTestSuite) AssertNotExists(query orm.SelectQuery) {
-	exists, err := query.Exists(suite.ctx)
-	suite.NoError(err)
-	suite.False(exists, "Query should not return results for %s", suite.dbKind)
+	suite.Require().NoError(err, "Failed to create fixtures loader")
+	suite.Require().NoError(fixtures.Load(), "Failed to load fixtures")
 }

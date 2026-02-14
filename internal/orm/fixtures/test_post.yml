@@ -1,0 +1,103 @@
+- id: post001
+  created_at: '2025-01-01 00:25:00'
+  created_by: usr001
+  updated_at: '2025-01-01 00:26:00'
+  updated_by: usr001
+  title: Introduction to Go
+  content: Go is a programming language designed at Google.
+  description: Getting started with Go
+  user_id: usr001
+  category_id: cat004
+  status: published
+  view_count: 123
+
+- id: post002
+  created_at: '2025-01-01 00:27:00'
+  created_by: usr002
+  updated_at: '2025-01-01 00:28:00'
+  updated_by: usr002
+  title: Database Design Basics
+  content: Good database design principles.
+  description: Normalization and relationships
+  user_id: usr002
+  category_id: cat001
+  status: published
+  view_count: 87
+
+- id: post003
+  created_at: '2025-01-01 00:29:00'
+  created_by: usr001
+  updated_at: '2025-01-01 00:30:00'
+  updated_by: usr001
+  title: Machine Learning Basics
+  content: An introduction to ML concepts and workflows.
+  description: Supervised vs unsupervised learning
+  user_id: usr001
+  category_id: cat002
+  status: draft
+  view_count: 45
+
+- id: post004
+  created_at: '2025-01-01 00:31:00'
+  created_by: usr003
+  updated_at: '2025-01-01 00:32:00'
+  updated_by: usr003
+  title: Business Strategy Fundamentals
+  content: Effective business strategies and frameworks.
+  description: Strategic planning overview
+  user_id: usr003
+  category_id: cat003
+  status: published
+  view_count: 64
+
+- id: post005
+  created_at: '2025-01-01 00:33:00'
+  created_by: usr001
+  updated_at: '2025-01-01 00:34:00'
+  updated_by: usr001
+  title: Advanced Go Patterns
+  content: Exploring advanced patterns and best practices in Go.
+  description: Idiomatic Go techniques
+  user_id: usr001
+  category_id: cat004
+  status: review
+  view_count: 98
+
+- id: post006
+  created_at: '2025-01-01 00:35:00'
+  created_by: usr002
+  updated_at: '2025-01-01 00:36:00'
+  updated_by: usr002
+  title: Latest Trends in Science
+  content: A survey of recent scientific advancements.
+  description: Interdisciplinary highlights
+  user_id: usr002
+  category_id: cat002
+  status: published
+  view_count: 77
+
+- id: post007
+  created_at: '2025-01-01 00:37:00'
+  created_by: usr003
+  updated_at: '2025-01-01 00:38:00'
+  updated_by: usr003
+  title: Practical Tech Tutorials
+  content: Hands-on guides for modern technology stacks.
+  description: Step-by-step tutorials
+  user_id: usr003
+  category_id: cat001
+  status: published
+  view_count: 52
+
+- id: post008
+  created_at: '2025-01-01 00:39:00'
+  created_by: usr001
+  updated_at: '2025-01-01 00:40:00'
+  updated_by: usr001
+  title: Startup Finance 101
+  content: Financial basics for early-stage startups.
+  description: Cash flow, runway, and budgeting
+  user_id: usr001
+  category_id: cat003
+  status: published
+  view_count: 69

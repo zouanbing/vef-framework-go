@@ -5,7 +5,7 @@ import "github.com/ilxqx/vef-framework-go/internal/orm"
 // ConditionBuilderTestSuite is the base test suite for all condition builder tests.
 // It provides common helper methods and test utilities for condition testing.
 type ConditionBuilderTestSuite struct {
-	*OrmTestSuite
+	*BaseTestSuite
 }
 
 // Helper methods for common test patterns

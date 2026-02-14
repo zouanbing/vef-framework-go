@@ -7,9 +7,9 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
 		return &CBStringOperationsTestSuite{
-			ConditionBuilderTestSuite: &ConditionBuilderTestSuite{OrmTestSuite: base},
+			ConditionBuilderTestSuite: &ConditionBuilderTestSuite{BaseTestSuite: base},
 		}
 	})
 }
@@ -23,7 +23,7 @@ type CBStringOperationsTestSuite struct {
 
 // TestContains tests the Contains and OrContains conditions.
 func (suite *CBStringOperationsTestSuite) TestContains() {
-	suite.T().Logf("Testing Contains condition for %s", suite.dbKind)
+	suite.T().Logf("Testing Contains condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicContains", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -59,7 +59,7 @@ func (suite *CBStringOperationsTestSuite) TestContains() {
 
 // TestStartsWith tests the StartsWith and OrStartsWith conditions.
 func (suite *CBStringOperationsTestSuite) TestStartsWith() {
-	suite.T().Logf("Testing StartsWith condition for %s", suite.dbKind)
+	suite.T().Logf("Testing StartsWith condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicStartsWith", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -96,7 +96,7 @@ func (suite *CBStringOperationsTestSuite) TestStartsWith() {
 
 // TestEndsWith tests the EndsWith and OrEndsWith conditions.
 func (suite *CBStringOperationsTestSuite) TestEndsWith() {
-	suite.T().Logf("Testing EndsWith condition for %s", suite.dbKind)
+	suite.T().Logf("Testing EndsWith condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicEndsWith", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -133,7 +133,7 @@ func (suite *CBStringOperationsTestSuite) TestEndsWith() {
 
 // TestContainsIgnoreCase tests the ContainsIgnoreCase and OrContainsIgnoreCase conditions (case-insensitive).
 func (suite *CBStringOperationsTestSuite) TestContainsIgnoreCase() {
-	suite.T().Logf("Testing ContainsIgnoreCase condition for %s", suite.dbKind)
+	suite.T().Logf("Testing ContainsIgnoreCase condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicIContains", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -168,7 +168,7 @@ func (suite *CBStringOperationsTestSuite) TestContainsIgnoreCase() {
 
 // TestStartsWithIgnoreCase tests the StartsWithIgnoreCase and OrStartsWithIgnoreCase conditions (case-insensitive).
 func (suite *CBStringOperationsTestSuite) TestStartsWithIgnoreCase() {
-	suite.T().Logf("Testing StartsWithIgnoreCase condition for %s", suite.dbKind)
+	suite.T().Logf("Testing StartsWithIgnoreCase condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicIStartsWith", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -203,7 +203,7 @@ func (suite *CBStringOperationsTestSuite) TestStartsWithIgnoreCase() {
 
 // TestEndsWithIgnoreCase tests the EndsWithIgnoreCase and OrEndsWithIgnoreCase conditions (case-insensitive).
 func (suite *CBStringOperationsTestSuite) TestEndsWithIgnoreCase() {
-	suite.T().Logf("Testing EndsWithIgnoreCase condition for %s", suite.dbKind)
+	suite.T().Logf("Testing EndsWithIgnoreCase condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicIEndsWith", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -238,7 +238,7 @@ func (suite *CBStringOperationsTestSuite) TestEndsWithIgnoreCase() {
 
 // TestContainsAny tests the ContainsAny and OrContainsAny conditions.
 func (suite *CBStringOperationsTestSuite) TestContainsAny() {
-	suite.T().Logf("Testing ContainsAny condition for %s", suite.dbKind)
+	suite.T().Logf("Testing ContainsAny condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicContainsAny", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -274,7 +274,7 @@ func (suite *CBStringOperationsTestSuite) TestContainsAny() {
 
 // TestStartsWithAny tests the StartsWithAny and OrStartsWithAny conditions.
 func (suite *CBStringOperationsTestSuite) TestStartsWithAny() {
-	suite.T().Logf("Testing StartsWithAny condition for %s", suite.dbKind)
+	suite.T().Logf("Testing StartsWithAny condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicStartsWithAny", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -310,7 +310,7 @@ func (suite *CBStringOperationsTestSuite) TestStartsWithAny() {
 
 // TestEndsWithAny tests the EndsWithAny and OrEndsWithAny conditions.
 func (suite *CBStringOperationsTestSuite) TestEndsWithAny() {
-	suite.T().Logf("Testing EndsWithAny condition for %s", suite.dbKind)
+	suite.T().Logf("Testing EndsWithAny condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicEndsWithAny", func() {
 		users := suite.assertQueryReturnsUsers(

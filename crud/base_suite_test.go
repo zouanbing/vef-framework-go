@@ -97,8 +97,7 @@ type BaseSuite struct {
 	app      *app.App
 	stop     func()
 	db       orm.DB
-	bunDB    bun.IDB
-	dbKind   config.DBKind
+	bunDB    *bun.DB
 	dsConfig *config.DataSourceConfig
 }
 
@@ -109,7 +108,6 @@ func (suite *BaseSuite) clone() BaseSuite {
 		ctx:      suite.ctx,
 		db:       suite.db,
 		bunDB:    suite.bunDB,
-		dbKind:   suite.dbKind,
 		dsConfig: suite.dsConfig,
 	}
 }
@@ -117,18 +115,15 @@ func (suite *BaseSuite) clone() BaseSuite {
 func (suite *BaseSuite) setupBaseSuite(resourceCtors ...any) {
 	// Reload fixtures so each suite starts from a clean, known state
 	// regardless of execution order.
-	setupTestFixtures(suite.T(), suite.ctx, suite.bunDB, suite.dbKind)
+	setupTestFixtures(suite.T(), suite.ctx, suite.db, suite.bunDB.DB, suite.dsConfig.Kind)
 
 	opts := make([]fx.Option, 0, len(resourceCtors)+2)
 	for _, ctor := range resourceCtors {
 		opts = append(opts, vef.ProvideAPIResource(ctor))
 	}
-	opts = append(opts,
-		fx.Replace(suite.dsConfig),
-		fx.Decorate(func() bun.IDB { return suite.bunDB }),
-	)
+	opts = append(opts, fx.Replace(suite.dsConfig))
 
-	suite.app, suite.stop = apptest.NewTestApp(suite.T(), opts...)
+	suite.app, suite.stop = apptest.NewTestAppWithDB(suite.T(), suite.bunDB, opts...)
 }
 
 func (suite *BaseSuite) tearDownBaseSuite() {

@@ -8,9 +8,9 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
 		return &CBSubqueryOperationsTestSuite{
-			ConditionBuilderTestSuite: &ConditionBuilderTestSuite{OrmTestSuite: base},
+			ConditionBuilderTestSuite: &ConditionBuilderTestSuite{BaseTestSuite: base},
 		}
 	})
 }
@@ -24,7 +24,7 @@ type CBSubqueryOperationsTestSuite struct {
 
 // TestInSubQuery tests the InSubQuery and OrInSubQuery conditions.
 func (suite *CBSubqueryOperationsTestSuite) TestInSubQuery() {
-	suite.T().Logf("Testing InSubQuery condition for %s", suite.dbKind)
+	suite.T().Logf("Testing InSubQuery condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicInSubQuery", func() {
 		posts := suite.assertQueryReturnsPosts(
@@ -75,7 +75,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestInSubQuery() {
 
 // TestNotInSubQuery tests the NotInSubQuery and OrNotInSubQuery conditions.
 func (suite *CBSubqueryOperationsTestSuite) TestNotInSubQuery() {
-	suite.T().Logf("Testing NotInSubQuery condition for %s", suite.dbKind)
+	suite.T().Logf("Testing NotInSubQuery condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicNotInSubQuery", func() {
 		posts := suite.assertQueryReturnsPosts(
@@ -126,7 +126,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestNotInSubQuery() {
 
 // TestEqualsSubQuery tests the EqualsSubQuery and OrEqualsSubQuery conditions.
 func (suite *CBSubqueryOperationsTestSuite) TestEqualsSubQuery() {
-	suite.T().Logf("Testing EqualsSubQuery condition for %s", suite.dbKind)
+	suite.T().Logf("Testing EqualsSubQuery condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicEqualsSubQuery", func() {
 		posts := suite.assertQueryReturnsPosts(
@@ -180,7 +180,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestEqualsSubQuery() {
 
 // TestNotEqualsSubQuery tests the NotEqualsSubQuery and OrNotEqualsSubQuery conditions.
 func (suite *CBSubqueryOperationsTestSuite) TestNotEqualsSubQuery() {
-	suite.T().Logf("Testing NotEqualsSubQuery condition for %s", suite.dbKind)
+	suite.T().Logf("Testing NotEqualsSubQuery condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicNotEqualsSubQuery", func() {
 		posts := suite.assertQueryReturnsPosts(
@@ -234,7 +234,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestNotEqualsSubQuery() {
 
 // TestGreaterThanSubQuery tests the GreaterThanSubQuery and OrGreaterThanSubQuery conditions.
 func (suite *CBSubqueryOperationsTestSuite) TestGreaterThanSubQuery() {
-	suite.T().Logf("Testing GreaterThanSubQuery condition for %s", suite.dbKind)
+	suite.T().Logf("Testing GreaterThanSubQuery condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicGreaterThanSubQuery", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -289,7 +289,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestGreaterThanSubQuery() {
 
 // TestLessThanSubQuery tests the LessThanSubQuery and OrLessThanSubQuery conditions.
 func (suite *CBSubqueryOperationsTestSuite) TestLessThanSubQuery() {
-	suite.T().Logf("Testing LessThanSubQuery condition for %s", suite.dbKind)
+	suite.T().Logf("Testing LessThanSubQuery condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicLessThanSubQuery", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -345,11 +345,11 @@ func (suite *CBSubqueryOperationsTestSuite) TestLessThanSubQuery() {
 // TestEqualsAll tests the EqualsAll and OrEqualsAll conditions.
 // Note: SQLite does not support the ALL operator in subqueries (SQL standard feature).
 func (suite *CBSubqueryOperationsTestSuite) TestEqualsAll() {
-	suite.T().Logf("Testing EqualsAll condition for %s", suite.dbKind)
+	suite.T().Logf("Testing EqualsAll condition for %s", suite.ds.Kind)
 
 	// Skip on SQLite - ALL operator not supported
-	if suite.dbKind == config.SQLite {
-		suite.T().Skipf("ALL operator not supported on %s (SQL standard feature)", suite.dbKind)
+	if suite.ds.Kind == config.SQLite {
+		suite.T().Skipf("ALL operator not supported on %s (SQL standard feature)", suite.ds.Kind)
 
 		return
 	}
@@ -404,11 +404,11 @@ func (suite *CBSubqueryOperationsTestSuite) TestEqualsAll() {
 // TestNotEqualsAll tests the NotEqualsAll and OrNotEqualsAll conditions.
 // Note: SQLite does not support the ALL operator in subqueries (SQL standard feature).
 func (suite *CBSubqueryOperationsTestSuite) TestNotEqualsAll() {
-	suite.T().Logf("Testing NotEqualsAll condition for %s", suite.dbKind)
+	suite.T().Logf("Testing NotEqualsAll condition for %s", suite.ds.Kind)
 
 	// Skip on SQLite - ALL operator not supported
-	if suite.dbKind == config.SQLite {
-		suite.T().Skipf("ALL operator not supported on %s (SQL standard feature)", suite.dbKind)
+	if suite.ds.Kind == config.SQLite {
+		suite.T().Skipf("ALL operator not supported on %s (SQL standard feature)", suite.ds.Kind)
 
 		return
 	}
@@ -466,7 +466,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestNotEqualsAll() {
 
 // TestExists tests the Exists and OrExists conditions using Expr with orm.ExprBuilder.
 func (suite *CBSubqueryOperationsTestSuite) TestExists() {
-	suite.T().Logf("Testing Exists condition for %s", suite.dbKind)
+	suite.T().Logf("Testing Exists condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicExists", func() {
 		// Find posts where the author exists and is active
@@ -524,7 +524,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestExists() {
 
 // TestNotExists tests the NotExists and OrNotExists conditions using Expr with orm.ExprBuilder.
 func (suite *CBSubqueryOperationsTestSuite) TestNotExists() {
-	suite.T().Logf("Testing NotExists condition for %s", suite.dbKind)
+	suite.T().Logf("Testing NotExists condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicNotExists", func() {
 		// Find posts where there's no corresponding category

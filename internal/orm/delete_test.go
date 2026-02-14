@@ -10,8 +10,8 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
-		return &DeleteTestSuite{OrmTestSuite: base}
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
+		return &DeleteTestSuite{BaseTestSuite: base}
 	})
 }
 
@@ -19,12 +19,12 @@ func init() {
 // ordering, limiting, returning, force delete, conditional application, and execution methods
 // across all databases (PostgreSQL, MySQL, SQLite).
 type DeleteTestSuite struct {
-	*OrmTestSuite
+	*BaseTestSuite
 }
 
 // TestCTE tests Common Table Expression methods (With, WithValues, WithRecursive).
 func (suite *DeleteTestSuite) TestCTE() {
-	suite.T().Logf("Testing CTE methods for %s", suite.dbKind)
+	suite.T().Logf("Testing CTE methods for %s", suite.ds.Kind)
 
 	suite.Run("WithBasicCTE", func() {
 		testUsers := []*User{
@@ -118,7 +118,7 @@ func (suite *DeleteTestSuite) TestCTE() {
 	})
 
 	suite.Run("WithRecursiveCTE", func() {
-		if suite.dbKind == config.SQLite {
+		if suite.ds.Kind == config.SQLite {
 			suite.T().Skip("SQLite recursive CTE with DELETE requires special handling")
 
 			return
@@ -189,7 +189,7 @@ func (suite *DeleteTestSuite) TestCTE() {
 
 // TestTableSource tests table source methods (Model, ModelTable, Table, TableFrom, TableExpr, TableSubQuery).
 func (suite *DeleteTestSuite) TestTableSource() {
-	suite.T().Logf("Testing table source methods for %s", suite.dbKind)
+	suite.T().Logf("Testing table source methods for %s", suite.ds.Kind)
 
 	suite.Run("ModelAndModelTable", func() {
 		testUsers := []*User{
@@ -300,7 +300,7 @@ func (suite *DeleteTestSuite) TestTableSource() {
 
 // TestFiltering tests filtering methods (Where, WherePK, WhereDeleted, IncludeDeleted).
 func (suite *DeleteTestSuite) TestFiltering() {
-	suite.T().Logf("Testing filtering methods for %s", suite.dbKind)
+	suite.T().Logf("Testing filtering methods for %s", suite.ds.Kind)
 
 	suite.Run("WhereCondition", func() {
 		testUsers := []*User{
@@ -465,10 +465,10 @@ func (suite *DeleteTestSuite) TestFiltering() {
 // TestOrdering tests ordering methods (OrderBy, OrderByDesc, OrderByExpr) combined with Limit.
 // Note: PostgreSQL and SQLite (without SQLITE_ENABLE_UPDATE_DELETE_LIMIT) don't support DELETE with ORDER BY/LIMIT directly.
 func (suite *DeleteTestSuite) TestOrdering() {
-	suite.T().Logf("Testing ordering methods for %s", suite.dbKind)
+	suite.T().Logf("Testing ordering methods for %s", suite.ds.Kind)
 
-	if suite.dbKind == config.Postgres || suite.dbKind == config.SQLite {
-		suite.T().Skipf("%s doesn't support DELETE with ORDER BY/LIMIT in current configuration", suite.dbKind)
+	if suite.ds.Kind == config.Postgres || suite.ds.Kind == config.SQLite {
+		suite.T().Skipf("%s doesn't support DELETE with ORDER BY/LIMIT in current configuration", suite.ds.Kind)
 
 		return
 	}
@@ -618,10 +618,10 @@ func (suite *DeleteTestSuite) TestOrdering() {
 // TestLimit tests the Limit method.
 // Note: PostgreSQL and SQLite (without SQLITE_ENABLE_UPDATE_DELETE_LIMIT) don't support DELETE with LIMIT directly.
 func (suite *DeleteTestSuite) TestLimit() {
-	suite.T().Logf("Testing Limit method for %s", suite.dbKind)
+	suite.T().Logf("Testing Limit method for %s", suite.ds.Kind)
 
-	if suite.dbKind == config.Postgres || suite.dbKind == config.SQLite {
-		suite.T().Skipf("%s doesn't support DELETE with LIMIT in current configuration", suite.dbKind)
+	if suite.ds.Kind == config.Postgres || suite.ds.Kind == config.SQLite {
+		suite.T().Skipf("%s doesn't support DELETE with LIMIT in current configuration", suite.ds.Kind)
 
 		return
 	}
@@ -752,9 +752,9 @@ func (suite *DeleteTestSuite) TestLimit() {
 // TestReturning tests Returning methods (Returning, ReturningAll, ReturningNone).
 // Note: MySQL doesn't support RETURNING clause.
 func (suite *DeleteTestSuite) TestReturning() {
-	suite.T().Logf("Testing Returning methods for %s", suite.dbKind)
+	suite.T().Logf("Testing Returning methods for %s", suite.ds.Kind)
 
-	if suite.dbKind == config.MySQL {
+	if suite.ds.Kind == config.MySQL {
 		suite.T().Skip("MySQL doesn't support RETURNING clause")
 
 		return
@@ -870,7 +870,7 @@ func (suite *DeleteTestSuite) TestReturning() {
 
 // TestForceDelete tests ForceDelete method with soft-delete scenarios.
 func (suite *DeleteTestSuite) TestForceDelete() {
-	suite.T().Logf("Testing ForceDelete method for %s", suite.dbKind)
+	suite.T().Logf("Testing ForceDelete method for %s", suite.ds.Kind)
 
 	suite.Run("ForceDeleteNonDeleted", func() {
 		testUsers := []*User{
@@ -956,7 +956,7 @@ func (suite *DeleteTestSuite) TestForceDelete() {
 
 // TestApply tests Apply and ApplyIf methods for conditional query building.
 func (suite *DeleteTestSuite) TestApply() {
-	suite.T().Logf("Testing Apply methods for %s", suite.dbKind)
+	suite.T().Logf("Testing Apply methods for %s", suite.ds.Kind)
 
 	suite.Run("ApplyBasic", func() {
 		testUsers := []*User{
@@ -1076,7 +1076,7 @@ func (suite *DeleteTestSuite) TestApply() {
 
 // TestExecution tests execution methods (Exec, Scan) with various scenarios.
 func (suite *DeleteTestSuite) TestExecution() {
-	suite.T().Logf("Testing execution methods for %s", suite.dbKind)
+	suite.T().Logf("Testing execution methods for %s", suite.ds.Kind)
 
 	suite.Run("ExecSuccess", func() {
 		testUsers := []*User{
@@ -1121,7 +1121,7 @@ func (suite *DeleteTestSuite) TestExecution() {
 	})
 
 	suite.Run("ScanWithReturning", func() {
-		if suite.dbKind == config.MySQL {
+		if suite.ds.Kind == config.MySQL {
 			suite.T().Skip("MySQL doesn't support RETURNING with Scan")
 
 			return
@@ -1174,18 +1174,18 @@ func (suite *DeleteTestSuite) TestExecution() {
 	})
 
 	suite.Run("DeleteWithWhereClause", func() {
-		testModels := []*SimpleModel{
-			{Name: "Exec Simple 1", Value: 1},
-			{Name: "Exec Simple 2", Value: 2},
+		testUsers := []*User{
+			{Name: "ExecWhere User 1", Email: "exec-where-1@example.com", Age: 20, IsActive: true},
+			{Name: "ExecWhere User 2", Email: "exec-where-2@example.com", Age: 25, IsActive: true},
 		}
 
-		_, err := suite.db.NewInsert().Model(&testModels).Exec(suite.ctx)
-		suite.NoError(err, "Should insert test simple models")
+		_, err := suite.db.NewInsert().Model(&testUsers).Exec(suite.ctx)
+		suite.NoError(err, "Should insert test users")
 
 		result, err := suite.db.NewDelete().
-			Model((*SimpleModel)(nil)).
+			Model((*User)(nil)).
 			Where(func(cb orm.ConditionBuilder) {
-				cb.StartsWith("name", "Exec Simple")
+				cb.StartsWith("name", "ExecWhere User")
 			}).
 			Exec(suite.ctx)
 
@@ -1195,7 +1195,7 @@ func (suite *DeleteTestSuite) TestExecution() {
 		suite.NoError(err, "Should get rows affected count")
 		suite.Equal(int64(2), rowsAffected, "Should delete all test records")
 
-		suite.T().Logf("Deleted %d simple models with WHERE clause", rowsAffected)
+		suite.T().Logf("Deleted %d users with WHERE clause", rowsAffected)
 	})
 
 	suite.Run("PerformanceBulkDelete", func() {

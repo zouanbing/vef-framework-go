@@ -7,9 +7,9 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
 		return &CBExpressionOperationsTestSuite{
-			ConditionBuilderTestSuite: &ConditionBuilderTestSuite{OrmTestSuite: base},
+			ConditionBuilderTestSuite: &ConditionBuilderTestSuite{BaseTestSuite: base},
 		}
 	})
 }
@@ -22,7 +22,7 @@ type CBExpressionOperationsTestSuite struct {
 
 // TestEqualsExpr tests the EqualsExpr and OrEqualsExpr conditions.
 func (suite *CBExpressionOperationsTestSuite) TestEqualsExpr() {
-	suite.T().Logf("Testing EqualsExpr condition for %s", suite.dbKind)
+	suite.T().Logf("Testing EqualsExpr condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicEqualsExpr", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -63,7 +63,7 @@ func (suite *CBExpressionOperationsTestSuite) TestEqualsExpr() {
 
 // TestNotEqualsExpr tests the NotEqualsExpr and OrNotEqualsExpr conditions.
 func (suite *CBExpressionOperationsTestSuite) TestNotEqualsExpr() {
-	suite.T().Logf("Testing NotEqualsExpr condition for %s", suite.dbKind)
+	suite.T().Logf("Testing NotEqualsExpr condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicNotEqualsExpr", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -108,7 +108,7 @@ func (suite *CBExpressionOperationsTestSuite) TestNotEqualsExpr() {
 
 // TestGreaterThanExpr tests the GreaterThanExpr and OrGreaterThanExpr conditions.
 func (suite *CBExpressionOperationsTestSuite) TestGreaterThanExpr() {
-	suite.T().Logf("Testing GreaterThanExpr condition for %s", suite.dbKind)
+	suite.T().Logf("Testing GreaterThanExpr condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicGreaterThanExpr", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -149,7 +149,7 @@ func (suite *CBExpressionOperationsTestSuite) TestGreaterThanExpr() {
 
 // TestLessThanExpr tests the LessThanExpr and OrLessThanExpr conditions.
 func (suite *CBExpressionOperationsTestSuite) TestLessThanExpr() {
-	suite.T().Logf("Testing LessThanExpr condition for %s", suite.dbKind)
+	suite.T().Logf("Testing LessThanExpr condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicLessThanExpr", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -190,7 +190,7 @@ func (suite *CBExpressionOperationsTestSuite) TestLessThanExpr() {
 
 // TestExpr tests the Expr and OrExpr conditions.
 func (suite *CBExpressionOperationsTestSuite) TestExpr() {
-	suite.T().Logf("Testing Expr condition for %s", suite.dbKind)
+	suite.T().Logf("Testing Expr condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicExpr", func() {
 		users := suite.assertQueryReturnsUsers(

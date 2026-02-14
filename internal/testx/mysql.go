@@ -12,10 +12,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/config"
 )
 
-type MySQLContainer struct {
-	DsConfig *config.DataSourceConfig
-}
-
 func NewMySQLContainer(ctx context.Context, t testing.TB) *MySQLContainer {
 	t.Helper()
 
@@ -33,20 +29,15 @@ func NewMySQLContainer(ctx context.Context, t testing.TB) *MySQLContainer {
 	require.NoError(t, err)
 	t.Log("MySQL container started successfully")
 
-	t.Cleanup(func() {
-		if err := container.Terminate(ctx); err != nil {
-			t.Logf("Failed to terminate mysql container: %v", err)
-		}
-	})
-
 	host, err := container.Host(ctx)
 	require.NoError(t, err)
 
 	port, err := container.MappedPort(ctx, "3306")
 	require.NoError(t, err)
 
-	return &MySQLContainer{
-		DsConfig: &config.DataSourceConfig{
+	mc := &MySQLContainer{
+		container: container,
+		DataSource: &config.DataSourceConfig{
 			Kind:     "mysql",
 			Host:     host,
 			Port:     uint16(port.Int()),
@@ -55,4 +46,22 @@ func NewMySQLContainer(ctx context.Context, t testing.TB) *MySQLContainer {
 			Database: TestDatabaseName,
 		},
 	}
+
+	t.Cleanup(func() {
+		if err := mc.Terminate(ctx); err != nil {
+			t.Logf("Failed to terminate mysql container: %v", err)
+		}
+	})
+
+	return mc
+}
+
+type MySQLContainer struct {
+	DataSource *config.DataSourceConfig
+
+	container *mysql.MySQLContainer
+}
+
+func (c *MySQLContainer) Terminate(ctx context.Context) error {
+	return c.container.Terminate(ctx)
 }

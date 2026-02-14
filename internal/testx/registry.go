@@ -11,14 +11,14 @@ import (
 // SuiteFactory creates a testify suite instance from a shared base configuration.
 type SuiteFactory[B any] func(base *B) suite.TestingSuite
 
-type namedFactory[B any] struct {
+type NamedFactory[B any] struct {
 	name    string
 	factory SuiteFactory[B]
 }
 
 // SuiteRegistry holds suite factories and orchestrates their execution across databases.
 type SuiteRegistry[B any] struct {
-	factories []namedFactory[B]
+	factories []NamedFactory[B]
 }
 
 // NewRegistry creates a new empty suite registry.
@@ -34,12 +34,12 @@ func (r *SuiteRegistry[B]) Add(factory SuiteFactory[B]) {
 	typeName := reflect.TypeOf(s).Elem().Name()
 	name := strings.TrimSuffix(typeName, "TestSuite")
 
-	r.factories = append(r.factories, namedFactory[B]{name: name, factory: factory})
+	r.factories = append(r.factories, NamedFactory[B]{name: name, factory: factory})
 }
 
 // AddNamed registers a suite factory with an explicit display name.
 func (r *SuiteRegistry[B]) AddNamed(name string, factory SuiteFactory[B]) {
-	r.factories = append(r.factories, namedFactory[B]{name: name, factory: factory})
+	r.factories = append(r.factories, NamedFactory[B]{name: name, factory: factory})
 }
 
 // RunAll iterates all databases, creates a base via baseFactory for each, then runs

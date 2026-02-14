@@ -12,8 +12,8 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
-		return &InsertTestSuite{OrmTestSuite: base}
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
+		return &InsertTestSuite{BaseTestSuite: base}
 	})
 }
 
@@ -21,12 +21,12 @@ func init() {
 // Tests cover all orm.InsertQuery methods including CTE, table specification, column selection,
 // column values, conflict handling, RETURNING clause, Apply functions, bulk operations, and error handling.
 type InsertTestSuite struct {
-	*OrmTestSuite
+	*BaseTestSuite
 }
 
 // TestBasicInsert tests Model and Exec methods with single and bulk inserts.
 func (suite *InsertTestSuite) TestBasicInsert() {
-	suite.T().Logf("Testing basic INSERT for %s", suite.dbKind)
+	suite.T().Logf("Testing basic INSERT for %s", suite.ds.Kind)
 
 	suite.Run("InsertSingleRecord", func() {
 		user := &User{
@@ -104,10 +104,10 @@ func (suite *InsertTestSuite) TestBasicInsert() {
 // TestCTE tests With, WithValues, and WithRecursive methods.
 // MySQL does not support CTE in INSERT statements, so these tests are skipped for MySQL.
 func (suite *InsertTestSuite) TestCTE() {
-	suite.T().Logf("Testing CTE methods for %s", suite.dbKind)
+	suite.T().Logf("Testing CTE methods for %s", suite.ds.Kind)
 
-	if suite.dbKind == config.MySQL {
-		suite.T().Skipf("CTE in INSERT not supported on %s", suite.dbKind)
+	if suite.ds.Kind == config.MySQL {
+		suite.T().Skipf("CTE in INSERT not supported on %s", suite.ds.Kind)
 
 		return
 	}
@@ -215,7 +215,7 @@ func (suite *InsertTestSuite) TestCTE() {
 // Note: Table/ModelTable/TableFrom/TableExpr/TableSubQuery are primarily for INSERT...SELECT queries.
 // Model() is the standard method for inserting from struct values.
 func (suite *InsertTestSuite) TestTableSpecification() {
-	suite.T().Logf("Testing table specification methods for %s", suite.dbKind)
+	suite.T().Logf("Testing table specification methods for %s", suite.ds.Kind)
 
 	suite.Run("ModelTableWithModel", func() {
 		user := &User{
@@ -246,7 +246,7 @@ func (suite *InsertTestSuite) TestTableSpecification() {
 // TestColumnSelection tests Select and Exclude methods.
 // Note: SelectAll and ExcludeAll are less commonly used with Model-based inserts.
 func (suite *InsertTestSuite) TestColumnSelection() {
-	suite.T().Logf("Testing column selection methods for %s", suite.dbKind)
+	suite.T().Logf("Testing column selection methods for %s", suite.ds.Kind)
 
 	suite.Run("ExcludeSpecificColumns", func() {
 		user := &User{
@@ -289,7 +289,7 @@ func (suite *InsertTestSuite) TestColumnSelection() {
 
 // TestColumnValues tests Column and ColumnExpr methods.
 func (suite *InsertTestSuite) TestColumnValues() {
-	suite.T().Logf("Testing column value methods for %s", suite.dbKind)
+	suite.T().Logf("Testing column value methods for %s", suite.ds.Kind)
 
 	suite.Run("ColumnDirectValue", func() {
 		user := &User{
@@ -413,7 +413,7 @@ func (suite *InsertTestSuite) TestColumnValues() {
 
 // TestConflictHandling tests OnConflict with DO NOTHING and DO UPDATE.
 func (suite *InsertTestSuite) TestConflictHandling() {
-	suite.T().Logf("Testing conflict handling for %s", suite.dbKind)
+	suite.T().Logf("Testing conflict handling for %s", suite.ds.Kind)
 
 	suite.Run("OnConflictDoNothing", func() {
 		original := &User{
@@ -580,10 +580,10 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 // TestReturning tests Returning, ReturningAll, and ReturningNone.
 // RETURNING clause is only supported on PostgreSQL and SQLite.
 func (suite *InsertTestSuite) TestReturning() {
-	suite.T().Logf("Testing RETURNING clause for %s", suite.dbKind)
+	suite.T().Logf("Testing RETURNING clause for %s", suite.ds.Kind)
 
-	if suite.dbKind == config.MySQL {
-		suite.T().Skipf("RETURNING clause not supported on %s", suite.dbKind)
+	if suite.ds.Kind == config.MySQL {
+		suite.T().Skipf("RETURNING clause not supported on %s", suite.ds.Kind)
 
 		return
 	}
@@ -676,7 +676,7 @@ func (suite *InsertTestSuite) TestReturning() {
 
 // TestApply tests Apply and ApplyIf methods.
 func (suite *InsertTestSuite) TestApply() {
-	suite.T().Logf("Testing Apply methods for %s", suite.dbKind)
+	suite.T().Logf("Testing Apply methods for %s", suite.ds.Kind)
 
 	suite.Run("ApplyUnconditional", func() {
 		user := &User{
@@ -864,7 +864,7 @@ func (suite *InsertTestSuite) TestApply() {
 
 // TestBulkInsert tests bulk insert operations.
 func (suite *InsertTestSuite) TestBulkInsert() {
-	suite.T().Logf("Testing bulk INSERT for %s", suite.dbKind)
+	suite.T().Logf("Testing bulk INSERT for %s", suite.ds.Kind)
 
 	suite.Run("LargeBatchInsert", func() {
 		batchSize := 10
@@ -973,7 +973,7 @@ func (suite *InsertTestSuite) TestBulkInsert() {
 
 // TestErrorHandling tests error scenarios in insert operations.
 func (suite *InsertTestSuite) TestErrorHandling() {
-	suite.T().Logf("Testing error handling for %s", suite.dbKind)
+	suite.T().Logf("Testing error handling for %s", suite.ds.Kind)
 
 	suite.Run("UniqueConstraintViolation", func() {
 		original := &User{

@@ -15,6 +15,7 @@ require (
 	github.com/go-playground/universal-translator v0.18.1
 	github.com/go-playground/validator/v10 v10.30.1
 	github.com/go-sql-driver/mysql v1.9.3
+	github.com/go-testfixtures/testfixtures/v3 v3.19.0
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/gofiber/fiber/v3 v3.0.0
 	github.com/gofiber/utils/v2 v2.0.1
@@ -48,7 +49,6 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/redis v0.40.0
 	github.com/tjfoc/gmsm v1.4.1
 	github.com/uptrace/bun v1.2.16
-	github.com/uptrace/bun/dbfixture v1.2.16
 	github.com/uptrace/bun/dialect/mysqldialect v1.2.16
 	github.com/uptrace/bun/dialect/pgdialect v1.2.16
 	github.com/uptrace/bun/dialect/sqlitedialect v1.2.16
@@ -98,6 +98,7 @@ require (
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/go-openapi/inflect v0.21.5 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
+	github.com/goccy/go-yaml v1.18.0 // indirect
 	github.com/gofiber/schema v1.6.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/jsonschema-go v0.4.2 // indirect

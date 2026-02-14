@@ -2,14 +2,14 @@ package crud_test
 
 import (
 	"context"
-	"os"
+	"database/sql"
 	"testing"
 
+	"github.com/go-testfixtures/testfixtures/v3"
 	"github.com/stretchr/testify/require"
-	"github.com/uptrace/bun"
-	"github.com/uptrace/bun/dbfixture"
 
 	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/internal/testx"
 )
 
@@ -19,14 +19,13 @@ var registry = testx.NewRegistry[BaseSuite]()
 
 // baseFactory creates a BaseSuite from a DBEnv — called once per database.
 func baseFactory(env *testx.DBEnv) *BaseSuite {
-	setupTestFixtures(env.T, env.Ctx, env.BunDB, env.DBKind)
+	setupTestFixtures(env.T, env.Ctx, env.DB, env.RawDB, env.DS.Kind)
 
 	return &BaseSuite{
 		ctx:      env.Ctx,
 		db:       env.DB,
 		bunDB:    env.BunDB,
-		dbKind:   env.DBKind,
-		dsConfig: env.DsConfig,
+		dsConfig: env.DS,
 	}
 }
 
@@ -36,23 +35,28 @@ func TestAll(t *testing.T) {
 	registry.RunAll(t, baseFactory)
 }
 
-// setupTestFixtures loads test data from fixture files using dbfixture.
-func setupTestFixtures(t *testing.T, ctx context.Context, db bun.IDB, dbKind config.DBKind) {
+// setupTestFixtures creates tables and loads test data from fixture files.
+func setupTestFixtures(t *testing.T, ctx context.Context, db orm.DB, rawDB *sql.DB, kind config.DBKind) {
 	t.Helper()
 
-	bunDB, ok := db.(*bun.DB)
-	require.True(t, ok, "Expected *bun.DB, got %T", db)
-
-	bunDB.RegisterModel(
+	models := []any{
 		(*TestAuditUser)(nil),
 		(*TestUser)(nil),
 		(*TestCategory)(nil),
 		(*TestCompositePKItem)(nil),
 		(*ExportUser)(nil),
 		(*ImportUser)(nil),
-	)
+	}
 
-	fixture := dbfixture.New(bunDB, dbfixture.WithRecreateTables())
-	err := fixture.Load(ctx, os.DirFS("testdata"), "fixture.yaml")
-	require.NoError(t, err, "Failed to load fixtures for %s", dbKind)
+	db.RegisterModel(models...)
+	require.NoError(t, db.ResetModel(ctx, models...), "Failed to reset models for %s", kind)
+
+	fixtures, err := testfixtures.New(
+		testfixtures.Database(rawDB),
+		testfixtures.Dialect(string(kind)),
+		testfixtures.Directory("fixtures"),
+		testfixtures.DangerousSkipTestDatabaseCheck(),
+	)
+	require.NoError(t, err, "Failed to create fixtures loader for %s", kind)
+	require.NoError(t, fixtures.Load(), "Failed to load fixtures for %s", kind)
 }

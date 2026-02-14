@@ -1,0 +1,32 @@
+- id: usr001
+  created_at: '2025-01-01 00:01:00'
+  created_by: system
+  updated_at: '2025-01-01 00:02:00'
+  updated_by: system
+  name: Alice Johnson
+  email: alice@example.com
+  age: 30
+  is_active: true
+  meta: '{"role":"admin","interests":["golang","databases"]}'
+
+- id: usr002
+  created_at: '2025-01-01 00:03:00'
+  created_by: system
+  updated_at: '2025-01-01 00:04:00'
+  updated_by: system
+  name: Bob Smith
+  email: bob@example.com
+  age: 25
+  is_active: true
+  meta: '{"role":"editor","interests":["tutorials","postgres"]}'
+
+- id: usr003
+  created_at: '2025-01-01 00:05:00'
+  created_by: system
+  updated_at: '2025-01-01 00:06:00'
+  updated_by: system
+  name: Charlie Brown
+  email: charlie@example.com
+  age: 35
+  is_active: false
+  meta: '{"role":"viewer","interests":["science"]}'

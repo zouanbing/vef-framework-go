@@ -12,8 +12,8 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
-		return &UpdateTestSuite{OrmTestSuite: base}
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
+		return &UpdateTestSuite{BaseTestSuite: base}
 	})
 }
 
@@ -21,12 +21,12 @@ func init() {
 // selection methods, filter operations, column updates, flags, ordering, RETURNING clause,
 // Apply methods, and execution methods across all databases.
 type UpdateTestSuite struct {
-	*OrmTestSuite
+	*BaseTestSuite
 }
 
 // TestCTE tests Common Table Expression methods (With, WithValues, WithRecursive).
 func (suite *UpdateTestSuite) TestCTE() {
-	suite.T().Logf("Testing CTE methods for %s", suite.dbKind)
+	suite.T().Logf("Testing CTE methods for %s", suite.ds.Kind)
 
 	suite.Run("WithBasicCTE", func() {
 		// Create CTE of active users, then update posts from those users
@@ -108,7 +108,7 @@ func (suite *UpdateTestSuite) TestCTE() {
 
 // TestTableSource tests table source methods (Model, ModelTable, Table, TableFrom, TableExpr, TableSubQuery).
 func (suite *UpdateTestSuite) TestTableSource() {
-	suite.T().Logf("Testing table source methods for %s", suite.dbKind)
+	suite.T().Logf("Testing table source methods for %s", suite.ds.Kind)
 
 	suite.Run("ModelBasic", func() {
 		result, err := suite.db.NewUpdate().
@@ -237,7 +237,7 @@ func (suite *UpdateTestSuite) TestTableSource() {
 
 		rowsAffected, _ := result.RowsAffected()
 		suite.True(rowsAffected > 0, "Should update posts from inactive users")
-		suite.T().Logf("Multi-table update affected %d posts on %s", rowsAffected, suite.dbKind)
+		suite.T().Logf("Multi-table update affected %d posts on %s", rowsAffected, suite.ds.Kind)
 	})
 }
 
@@ -245,7 +245,7 @@ func (suite *UpdateTestSuite) TestTableSource() {
 // These methods (Select, Exclude, SelectAll, ExcludeAll) only work when updating with a model instance,
 // as the framework reflects all columns from the model and these methods control which ones to include in SET.
 func (suite *UpdateTestSuite) TestSelectionMethods() {
-	suite.T().Logf("Testing selection methods for %s", suite.dbKind)
+	suite.T().Logf("Testing selection methods for %s", suite.ds.Kind)
 
 	suite.Run("SelectSpecificColumns", func() {
 		// First, get the user ID
@@ -458,7 +458,7 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 
 // TestFilterOperations tests filter methods (Where, WherePK, WhereDeleted, IncludeDeleted).
 func (suite *UpdateTestSuite) TestFilterOperations() {
-	suite.T().Logf("Testing filter operations for %s", suite.dbKind)
+	suite.T().Logf("Testing filter operations for %s", suite.ds.Kind)
 
 	suite.Run("WhereBasic", func() {
 		result, err := suite.db.NewUpdate().
@@ -513,15 +513,14 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 			DeletedAt time.Time `json:"deletedAt" bun:",soft_delete,nullzero"`
 		}
 
-		bunDB := suite.getBunDB()
-		_, err := bunDB.NewDropTable().Model((*SoftDeleteArticle)(nil)).IfExists().Exec(suite.ctx)
+		_, err := suite.db.NewDropTable().Model((*SoftDeleteArticle)(nil)).IfExists().Exec(suite.ctx)
 		suite.Require().NoError(err, "Should drop existing soft delete table")
 
-		_, err = bunDB.NewCreateTable().Model((*SoftDeleteArticle)(nil)).IfNotExists().Exec(suite.ctx)
+		_, err = suite.db.NewCreateTable().Model((*SoftDeleteArticle)(nil)).IfNotExists().Exec(suite.ctx)
 
 		suite.Require().NoError(err, "Should create soft delete table")
 		defer func() {
-			_, dropErr := bunDB.NewDropTable().Model((*SoftDeleteArticle)(nil)).IfExists().Exec(suite.ctx)
+			_, dropErr := suite.db.NewDropTable().Model((*SoftDeleteArticle)(nil)).IfExists().Exec(suite.ctx)
 			suite.Require().NoError(dropErr, "Should cleanup soft delete table")
 		}()
 
@@ -594,7 +593,7 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 
 // TestColumnUpdates tests column update methods (Column, ColumnExpr, Set, SetExpr).
 func (suite *UpdateTestSuite) TestColumnUpdates() {
-	suite.T().Logf("Testing column update methods for %s", suite.dbKind)
+	suite.T().Logf("Testing column update methods for %s", suite.ds.Kind)
 
 	var post Post
 
@@ -744,7 +743,7 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 
 // TestUpdateFlags tests special flags (OmitZero, Bulk).
 func (suite *UpdateTestSuite) TestUpdateFlags() {
-	suite.T().Logf("Testing update flags for %s", suite.dbKind)
+	suite.T().Logf("Testing update flags for %s", suite.ds.Kind)
 
 	suite.Run("OmitZeroFlag", func() {
 		var user User
@@ -841,11 +840,11 @@ func (suite *UpdateTestSuite) TestUpdateFlags() {
 
 // TestOrderingAndLimits tests ordering and limit methods (OrderBy, OrderByDesc, OrderByExpr, Limit).
 func (suite *UpdateTestSuite) TestOrderingAndLimits() {
-	suite.T().Logf("Testing ordering and limits for %s", suite.dbKind)
+	suite.T().Logf("Testing ordering and limits for %s", suite.ds.Kind)
 
 	// Only MySQL supports ORDER BY and LIMIT in UPDATE statements
-	if suite.dbKind != config.MySQL {
-		suite.T().Skipf("Database %s doesn't support ORDER BY and LIMIT in UPDATE statements", suite.dbKind)
+	if suite.ds.Kind != config.MySQL {
+		suite.T().Skipf("Database %s doesn't support ORDER BY and LIMIT in UPDATE statements", suite.ds.Kind)
 	}
 
 	suite.Run("OrderByBasic", func() {
@@ -918,9 +917,9 @@ func (suite *UpdateTestSuite) TestOrderingAndLimits() {
 
 // TestReturningClause tests RETURNING clause methods (Returning, ReturningAll, ReturningNone).
 func (suite *UpdateTestSuite) TestReturningClause() {
-	suite.T().Logf("Testing RETURNING clause methods for %s", suite.dbKind)
+	suite.T().Logf("Testing RETURNING clause methods for %s", suite.ds.Kind)
 
-	if suite.dbKind == config.MySQL {
+	if suite.ds.Kind == config.MySQL {
 		suite.T().Skip("MySQL doesn't support RETURNING clause")
 	}
 
@@ -996,7 +995,7 @@ func (suite *UpdateTestSuite) TestReturningClause() {
 
 // TestApplyMethods tests Apply and ApplyIf methods.
 func (suite *UpdateTestSuite) TestApplyMethods() {
-	suite.T().Logf("Testing Apply methods for %s", suite.dbKind)
+	suite.T().Logf("Testing Apply methods for %s", suite.ds.Kind)
 
 	suite.Run("ApplyBasic", func() {
 		applyActive := func(query orm.UpdateQuery) {
@@ -1074,7 +1073,7 @@ func (suite *UpdateTestSuite) TestApplyMethods() {
 
 // TestExecution tests execution methods (Exec, Scan).
 func (suite *UpdateTestSuite) TestExecution() {
-	suite.T().Logf("Testing execution methods for %s", suite.dbKind)
+	suite.T().Logf("Testing execution methods for %s", suite.ds.Kind)
 
 	suite.Run("ExecBasic", func() {
 		result, err := suite.db.NewUpdate().
@@ -1095,7 +1094,7 @@ func (suite *UpdateTestSuite) TestExecution() {
 	})
 
 	suite.Run("ScanWithReturning", func() {
-		if suite.dbKind == config.MySQL {
+		if suite.ds.Kind == config.MySQL {
 			suite.T().Skip("MySQL doesn't support RETURNING clause")
 		}
 

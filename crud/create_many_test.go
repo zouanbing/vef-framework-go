@@ -96,7 +96,7 @@ func (suite *CreateManyTestSuite) TearDownSuite() {
 
 // TestCreateManyBasic tests basic CreateMany functionality.
 func (suite *CreateManyTestSuite) TestCreateManyBasic() {
-	suite.T().Logf("Testing CreateMany API basic functionality for %s", suite.dbKind)
+	suite.T().Logf("Testing CreateMany API basic functionality for %s", suite.dsConfig.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -149,7 +149,7 @@ func (suite *CreateManyTestSuite) TestCreateManyBasic() {
 
 // TestCreateManyWithPreHook tests CreateMany with PreCreateMany hook.
 func (suite *CreateManyTestSuite) TestCreateManyWithPreHook() {
-	suite.T().Logf("Testing CreateMany API with PreCreateMany hook for %s", suite.dbKind)
+	suite.T().Logf("Testing CreateMany API with PreCreateMany hook for %s", suite.dsConfig.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -191,7 +191,7 @@ func (suite *CreateManyTestSuite) TestCreateManyWithPreHook() {
 
 // TestCreateManyWithPostHook tests CreateMany with PostCreateMany hook.
 func (suite *CreateManyTestSuite) TestCreateManyWithPostHook() {
-	suite.T().Logf("Testing CreateMany API with PostCreateMany hook for %s", suite.dbKind)
+	suite.T().Logf("Testing CreateMany API with PostCreateMany hook for %s", suite.dsConfig.Kind)
 
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -237,7 +237,7 @@ func (suite *CreateManyTestSuite) TestCreateManyWithPostHook() {
 
 // TestCreateManyNegativeCases tests negative scenarios.
 func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
-	suite.T().Logf("Testing CreateMany API negative cases for %s", suite.dbKind)
+	suite.T().Logf("Testing CreateMany API negative cases for %s", suite.dsConfig.Kind)
 
 	suite.Run("EmptyArray", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -441,7 +441,7 @@ func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
 
 // TestCreateManyTransactionRollback tests that the entire batch rolls back on error.
 func (suite *CreateManyTestSuite) TestCreateManyTransactionRollback() {
-	suite.T().Logf("Testing CreateMany API transaction rollback for %s", suite.dbKind)
+	suite.T().Logf("Testing CreateMany API transaction rollback for %s", suite.dsConfig.Kind)
 
 	suite.Run("AllOrNothingSemantics", func() {
 		// Try to create a batch where the second item will fail

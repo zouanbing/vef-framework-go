@@ -12,10 +12,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/config"
 )
 
-type PostgresContainer struct {
-	DsConfig *config.DataSourceConfig
-}
-
 func NewPostgresContainer(ctx context.Context, t testing.TB) *PostgresContainer {
 	t.Helper()
 
@@ -34,20 +30,15 @@ func NewPostgresContainer(ctx context.Context, t testing.TB) *PostgresContainer 
 	require.NoError(t, err)
 	t.Log("PostgreSQL container started successfully")
 
-	t.Cleanup(func() {
-		if err := container.Terminate(ctx); err != nil {
-			t.Logf("Failed to terminate postgres container: %v", err)
-		}
-	})
-
 	host, err := container.Host(ctx)
 	require.NoError(t, err)
 
 	port, err := container.MappedPort(ctx, "5432")
 	require.NoError(t, err)
 
-	return &PostgresContainer{
-		DsConfig: &config.DataSourceConfig{
+	pc := &PostgresContainer{
+		container: container,
+		DataSource: &config.DataSourceConfig{
 			Kind:     "postgres",
 			Host:     host,
 			Port:     uint16(port.Int()),
@@ -56,4 +47,22 @@ func NewPostgresContainer(ctx context.Context, t testing.TB) *PostgresContainer 
 			Database: TestDatabaseName,
 		},
 	}
+
+	t.Cleanup(func() {
+		if err := pc.Terminate(ctx); err != nil {
+			t.Logf("Failed to terminate postgres container: %v", err)
+		}
+	})
+
+	return pc
+}
+
+type PostgresContainer struct {
+	DataSource *config.DataSourceConfig
+
+	container *postgres.PostgresContainer
+}
+
+func (c *PostgresContainer) Terminate(ctx context.Context) error {
+	return c.container.Terminate(ctx)
 }

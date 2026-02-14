@@ -2,6 +2,7 @@ package testx
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 
 	"github.com/uptrace/bun"
@@ -11,12 +12,12 @@ import (
 )
 
 // DBEnv encapsulates the database environment for cross-database integration tests.
-// Contains both the raw bun.IDB connection and a wrapped orm.DB for convenience.
+// Contains both the raw sql.DB connection and a wrapped orm.DB for convenience.
 type DBEnv struct {
-	T        *testing.T
-	Ctx      context.Context
-	BunDB    bun.IDB
-	DB       orm.DB
-	DBKind   config.DBKind
-	DsConfig *config.DataSourceConfig
+	T     *testing.T
+	Ctx   context.Context
+	RawDB *sql.DB
+	BunDB *bun.DB
+	DB    orm.DB
+	DS    *config.DataSourceConfig
 }

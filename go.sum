@@ -124,8 +124,12 @@ github.com/go-sql-driver/mysql v1.9.3 h1:U/N249h2WzJ3Ukj8SowVFjdtZKfu9vlLZxjPXV1
 github.com/go-sql-driver/mysql v1.9.3/go.mod h1:qn46aNg1333BRMNU69Lq93t8du/dwxI64Gl8i5p1WMU=
 github.com/go-test/deep v1.0.3 h1:ZrJSEWsXzPOxaZnFteGEfooLba+ju3FYIbOrS+rQd68=
 github.com/go-test/deep v1.0.3/go.mod h1:wGDj63lr65AM2AQyKZd/NYHGb0R+1RLqB8NKt3aSFNA=
+github.com/go-testfixtures/testfixtures/v3 v3.19.0 h1:/Y0bars250zggm+1A2PvwaJQsJel7/tS4D/Hhwt66Bc=
+github.com/go-testfixtures/testfixtures/v3 v3.19.0/go.mod h1:4/hVAuX2As0/ej3fLuAd+IvoCXV7/h2cj5nInI11uxM=
 github.com/go-viper/mapstructure/v2 v2.5.0 h1:vM5IJoUAy3d7zRSVtIwQgBj7BiWtMPfmPEgAXnvj1Ro=
 github.com/go-viper/mapstructure/v2 v2.5.0/go.mod h1:oJDH3BJKyqBA2TXFhDsKDGDTlndYOZ6rGS0BRZIxGhM=
+github.com/goccy/go-yaml v1.18.0 h1:8W7wMFS12Pcas7KU+VVkaiCng+kG8QiFeFwzFb+rwuw=
+github.com/goccy/go-yaml v1.18.0/go.mod h1:XBurs7gK8ATbW4ZPGKgcbrY1Br56PdM69F7LkFRi1kA=
 github.com/gofiber/fiber/v3 v3.0.0 h1:GPeCG8X60L42wLKrzgeewDHBr6pE6veAvwaXsqD3Xjk=
 github.com/gofiber/fiber/v3 v3.0.0/go.mod h1:kVZiO/AwyT5Pq6PgC8qRCJ+j/BHrMy5jNw1O9yH38aY=
 github.com/gofiber/schema v1.6.0 h1:rAgVDFwhndtC+hgV7Vu5ItQCn7eC2mBA4Eu1/ZTiEYY=
@@ -350,8 +354,6 @@ github.com/tmthrgd/go-hex v0.0.0-20190904060850-447a3041c3bc h1:9lRDQMhESg+zvGYm
 github.com/tmthrgd/go-hex v0.0.0-20190904060850-447a3041c3bc/go.mod h1:bciPuU6GHm1iF1pBvUfxfsH0Wmnc2VbpgvbI9ZWuIRs=
 github.com/uptrace/bun v1.2.16 h1:QlObi6ZIK5Ao7kAALnh91HWYNZUBbVwye52fmlQM9kc=
 github.com/uptrace/bun v1.2.16/go.mod h1:jMoNg2n56ckaawi/O/J92BHaECmrz6IRjuMWqlMaMTM=
-github.com/uptrace/bun/dbfixture v1.2.16 h1:nZ87tOFw/lMHPvCxpEdhjxAfl46hHMzuhLK8MYx5kkc=
-github.com/uptrace/bun/dbfixture v1.2.16/go.mod h1:Xn0tWtQgY1ackWFllcz+em8wblZjjZxyjkyZQMNz2+Y=
 github.com/uptrace/bun/dialect/mysqldialect v1.2.16 h1:ok06dAS094cEKvKg38SVAnXMroNHNaM5ZtpRkPE/Oz0=
 github.com/uptrace/bun/dialect/mysqldialect v1.2.16/go.mod h1:fjbFYeJZCK8z0m0ACvdgs+dbFdDIaLYWDr+jvaPLedQ=
 github.com/uptrace/bun/dialect/pgdialect v1.2.16 h1:KFNZ0LxAyczKNfK/IJWMyaleO6eI9/Z5tUv3DE1NVL4=

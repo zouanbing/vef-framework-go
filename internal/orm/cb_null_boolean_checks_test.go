@@ -7,9 +7,9 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
 		return &CBNullBooleanChecksTestSuite{
-			ConditionBuilderTestSuite: &ConditionBuilderTestSuite{OrmTestSuite: base},
+			ConditionBuilderTestSuite: &ConditionBuilderTestSuite{BaseTestSuite: base},
 		}
 	})
 }
@@ -22,7 +22,7 @@ type CBNullBooleanChecksTestSuite struct {
 
 // TestIsNull tests the IsNull and OrIsNull conditions.
 func (suite *CBNullBooleanChecksTestSuite) TestIsNull() {
-	suite.T().Logf("Testing IsNull condition for %s", suite.dbKind)
+	suite.T().Logf("Testing IsNull condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicIsNull", func() {
 		posts := suite.assertQueryReturnsPosts(
@@ -60,7 +60,7 @@ func (suite *CBNullBooleanChecksTestSuite) TestIsNull() {
 
 // TestIsNotNull tests the IsNotNull and OrIsNotNull conditions.
 func (suite *CBNullBooleanChecksTestSuite) TestIsNotNull() {
-	suite.T().Logf("Testing IsNotNull condition for %s", suite.dbKind)
+	suite.T().Logf("Testing IsNotNull condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicIsNotNull", func() {
 		posts := suite.assertQueryReturnsPosts(
@@ -98,7 +98,7 @@ func (suite *CBNullBooleanChecksTestSuite) TestIsNotNull() {
 
 // TestIsTrue tests the IsTrue and OrIsTrue conditions.
 func (suite *CBNullBooleanChecksTestSuite) TestIsTrue() {
-	suite.T().Logf("Testing IsTrue condition for %s", suite.dbKind)
+	suite.T().Logf("Testing IsTrue condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicIsTrue", func() {
 		users := suite.assertQueryReturnsUsers(
@@ -140,7 +140,7 @@ func (suite *CBNullBooleanChecksTestSuite) TestIsTrue() {
 
 // TestIsFalse tests the IsFalse and OrIsFalse conditions.
 func (suite *CBNullBooleanChecksTestSuite) TestIsFalse() {
-	suite.T().Logf("Testing IsFalse condition for %s", suite.dbKind)
+	suite.T().Logf("Testing IsFalse condition for %s", suite.ds.Kind)
 
 	suite.Run("BasicIsFalse", func() {
 		users := suite.assertQueryReturnsUsers(

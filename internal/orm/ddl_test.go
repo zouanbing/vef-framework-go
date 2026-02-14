@@ -9,8 +9,8 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
-		return &DDLTestSuite{OrmTestSuite: base}
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
+		return &DDLTestSuite{BaseTestSuite: base}
 	})
 }
 
@@ -26,12 +26,11 @@ type DDLModel struct {
 // DDLTestSuite tests DDL operations including CreateTable, DropTable, CreateIndex,
 // DropIndex, TruncateTable, AddColumn, and DropColumn across all databases.
 type DDLTestSuite struct {
-	*OrmTestSuite
+	*BaseTestSuite
 }
 
 func (suite *DDLTestSuite) SetupSuite() {
-	db := suite.getBunDB()
-	db.RegisterModel((*DDLModel)(nil))
+	suite.db.RegisterModel((*DDLModel)(nil))
 }
 
 // TestCreateTableAndDropTable tests creating and dropping a table via the orm.DB interface.
@@ -99,7 +98,7 @@ func (suite *DDLTestSuite) TestCreateIndexAndDropIndex() {
 	suite.Run("DropIndex", func() {
 		// MySQL requires table context for DROP INDEX and does not support IF EXISTS.
 		// PostgreSQL and SQLite support standalone DROP INDEX IF EXISTS.
-		if suite.dbKind == config.MySQL {
+		if suite.ds.Kind == config.MySQL {
 			_, err := suite.db.NewRaw("ALTER TABLE test_ddl_model DROP INDEX idx_ddl_model_label").
 				Exec(suite.ctx)
 			suite.NoError(err, "Should drop index on MySQL via raw SQL")

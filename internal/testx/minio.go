@@ -13,10 +13,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/config"
 )
 
-type MinIOContainer struct {
-	MinIOConfig *config.MinIOConfig
-}
-
 func NewMinIOContainer(ctx context.Context, t testing.TB) *MinIOContainer {
 	t.Helper()
 
@@ -36,20 +32,15 @@ func NewMinIOContainer(ctx context.Context, t testing.TB) *MinIOContainer {
 	require.NoError(t, err)
 	t.Log("MinIO container started successfully")
 
-	t.Cleanup(func() {
-		if err := container.Terminate(ctx); err != nil {
-			t.Logf("Failed to terminate MinIO container: %v", err)
-		}
-	})
-
 	host, err := container.Host(ctx)
 	require.NoError(t, err)
 
 	port, err := container.MappedPort(ctx, "9000")
 	require.NoError(t, err)
 
-	return &MinIOContainer{
-		MinIOConfig: &config.MinIOConfig{
+	mc := &MinIOContainer{
+		container: container,
+		MinIO: &config.MinIOConfig{
 			Endpoint:  fmt.Sprintf("%s:%s", host, port.Port()),
 			AccessKey: TestMinIOAccessKey,
 			SecretKey: TestMinIOSecretKey,
@@ -57,4 +48,22 @@ func NewMinIOContainer(ctx context.Context, t testing.TB) *MinIOContainer {
 			Bucket:    TestMinIOBucket,
 		},
 	}
+
+	t.Cleanup(func() {
+		if err := mc.Terminate(ctx); err != nil {
+			t.Logf("Failed to terminate MinIO container: %v", err)
+		}
+	})
+
+	return mc
+}
+
+type MinIOContainer struct {
+	MinIO *config.MinIOConfig
+
+	container *minio.MinioContainer
+}
+
+func (c *MinIOContainer) Terminate(ctx context.Context) error {
+	return c.container.Terminate(ctx)
 }

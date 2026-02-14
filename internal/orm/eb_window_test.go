@@ -10,8 +10,8 @@ import (
 )
 
 func init() {
-	registry.Add(func(base *OrmTestSuite) suite.TestingSuite {
-		return &EBWindowFunctionsTestSuite{OrmTestSuite: base}
+	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
+		return &EBWindowFunctionsTestSuite{BaseTestSuite: base}
 	})
 }
 
@@ -25,12 +25,12 @@ func init() {
 // This suite verifies cross-database compatibility for window functions across
 // PostgreSQL, MySQL, and SQLite, handling database-specific features appropriately.
 type EBWindowFunctionsTestSuite struct {
-	*OrmTestSuite
+	*BaseTestSuite
 }
 
 // TestRowNumber tests the ROW_NUMBER window function.
 func (suite *EBWindowFunctionsTestSuite) TestRowNumber() {
-	suite.T().Logf("Testing RowNumber function for %s", suite.dbKind)
+	suite.T().Logf("Testing RowNumber function for %s", suite.ds.Kind)
 
 	suite.Run("SequentialRowNumbers", func() {
 		type UserWithRowNumber struct {
@@ -67,7 +67,7 @@ func (suite *EBWindowFunctionsTestSuite) TestRowNumber() {
 
 // TestRank tests the RANK window function.
 func (suite *EBWindowFunctionsTestSuite) TestRank() {
-	suite.T().Logf("Testing Rank function for %s", suite.dbKind)
+	suite.T().Logf("Testing Rank function for %s", suite.ds.Kind)
 
 	suite.Run("RankPartitionedByStatus", func() {
 		type PostWithRank struct {
@@ -113,7 +113,7 @@ func (suite *EBWindowFunctionsTestSuite) TestRank() {
 
 // TestDenseRank tests the DENSE_RANK window function.
 func (suite *EBWindowFunctionsTestSuite) TestDenseRank() {
-	suite.T().Logf("Testing DenseRank function for %s", suite.dbKind)
+	suite.T().Logf("Testing DenseRank function for %s", suite.ds.Kind)
 
 	suite.Run("DenseRankPartitionedByStatus", func() {
 		type PostWithDenseRank struct {
@@ -166,7 +166,7 @@ func (suite *EBWindowFunctionsTestSuite) TestDenseRank() {
 
 // TestPercentRank tests the PERCENT_RANK window function.
 func (suite *EBWindowFunctionsTestSuite) TestPercentRank() {
-	suite.T().Logf("Testing PercentRank function for %s", suite.dbKind)
+	suite.T().Logf("Testing PercentRank function for %s", suite.ds.Kind)
 
 	suite.Run("PercentRankByViewCount", func() {
 		type PostAnalytics struct {
@@ -211,7 +211,7 @@ func (suite *EBWindowFunctionsTestSuite) TestPercentRank() {
 
 // TestCumeDist tests the CUME_DIST window function.
 func (suite *EBWindowFunctionsTestSuite) TestCumeDist() {
-	suite.T().Logf("Testing CumeDist function for %s", suite.dbKind)
+	suite.T().Logf("Testing CumeDist function for %s", suite.ds.Kind)
 
 	suite.Run("CumeDistByViewCount", func() {
 		type CumeDistResult struct {
@@ -247,7 +247,7 @@ func (suite *EBWindowFunctionsTestSuite) TestCumeDist() {
 
 // TestNtile tests the NTILE window function.
 func (suite *EBWindowFunctionsTestSuite) TestNtile() {
-	suite.T().Logf("Testing NTile function for %s", suite.dbKind)
+	suite.T().Logf("Testing NTile function for %s", suite.ds.Kind)
 
 	suite.Run("QuartilesUsingNtile", func() {
 		type UserWithQuartile struct {
@@ -283,7 +283,7 @@ func (suite *EBWindowFunctionsTestSuite) TestNtile() {
 
 // TestLag tests the LAG window function.
 func (suite *EBWindowFunctionsTestSuite) TestLag() {
-	suite.T().Logf("Testing Lag function for %s", suite.dbKind)
+	suite.T().Logf("Testing Lag function for %s", suite.ds.Kind)
 
 	suite.Run("LagWithDefaultOffset", func() {
 		type PostWithLag struct {
@@ -352,7 +352,7 @@ func (suite *EBWindowFunctionsTestSuite) TestLag() {
 
 // TestLead tests the LEAD window function.
 func (suite *EBWindowFunctionsTestSuite) TestLead() {
-	suite.T().Logf("Testing Lead function for %s", suite.dbKind)
+	suite.T().Logf("Testing Lead function for %s", suite.ds.Kind)
 
 	suite.Run("LeadWithDefaultOffset", func() {
 		type PostWithLead struct {
@@ -427,7 +427,7 @@ func (suite *EBWindowFunctionsTestSuite) TestLead() {
 
 // TestFirstValue tests the FIRST_VALUE window function.
 func (suite *EBWindowFunctionsTestSuite) TestFirstValue() {
-	suite.T().Logf("Testing FirstValue function for %s", suite.dbKind)
+	suite.T().Logf("Testing FirstValue function for %s", suite.ds.Kind)
 
 	suite.Run("FirstValuePartitionedByStatus", func() {
 		type PostWithFirstValue struct {
@@ -475,7 +475,7 @@ func (suite *EBWindowFunctionsTestSuite) TestFirstValue() {
 
 // TestLastValue tests the LAST_VALUE window function.
 func (suite *EBWindowFunctionsTestSuite) TestLastValue() {
-	suite.T().Logf("Testing LastValue function for %s", suite.dbKind)
+	suite.T().Logf("Testing LastValue function for %s", suite.ds.Kind)
 
 	suite.Run("LastValuePartitionedByStatus", func() {
 		type PostWithLastValue struct {
@@ -523,7 +523,7 @@ func (suite *EBWindowFunctionsTestSuite) TestLastValue() {
 
 // TestNthValue tests the NTH_VALUE window function.
 func (suite *EBWindowFunctionsTestSuite) TestNthValue() {
-	suite.T().Logf("Testing NthValue function for %s", suite.dbKind)
+	suite.T().Logf("Testing NthValue function for %s", suite.ds.Kind)
 
 	suite.Run("SecondValueInPartition", func() {
 		type PostWithNthValue struct {
@@ -554,7 +554,7 @@ func (suite *EBWindowFunctionsTestSuite) TestNthValue() {
 
 // TestWinCount tests the COUNT window function.
 func (suite *EBWindowFunctionsTestSuite) TestWinCount() {
-	suite.T().Logf("Testing WinCount function for %s", suite.dbKind)
+	suite.T().Logf("Testing WinCount function for %s", suite.ds.Kind)
 
 	suite.Run("RunningCount", func() {
 		type UserWithRunningCount struct {
@@ -590,7 +590,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinCount() {
 
 // TestWinSum tests the SUM window function.
 func (suite *EBWindowFunctionsTestSuite) TestWinSum() {
-	suite.T().Logf("Testing WinSum function for %s", suite.dbKind)
+	suite.T().Logf("Testing WinSum function for %s", suite.ds.Kind)
 
 	suite.Run("RunningTotal", func() {
 		type UserWithRunningTotal struct {
@@ -658,7 +658,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinSum() {
 
 // TestWinAvg tests the AVG window function.
 func (suite *EBWindowFunctionsTestSuite) TestWinAvg() {
-	suite.T().Logf("Testing WinAvg function for %s", suite.dbKind)
+	suite.T().Logf("Testing WinAvg function for %s", suite.ds.Kind)
 
 	suite.Run("MovingAverage", func() {
 		type UserWithMovingAvg struct {
@@ -720,7 +720,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinAvg() {
 
 // TestWinMin tests the MIN window function.
 func (suite *EBWindowFunctionsTestSuite) TestWinMin() {
-	suite.T().Logf("Testing WinMin function for %s", suite.dbKind)
+	suite.T().Logf("Testing WinMin function for %s", suite.ds.Kind)
 
 	suite.Run("MinInStatusPartition", func() {
 		type WindowMinResult struct {
@@ -757,7 +757,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinMin() {
 
 // TestWinMax tests the MAX window function.
 func (suite *EBWindowFunctionsTestSuite) TestWinMax() {
-	suite.T().Logf("Testing WinMax function for %s", suite.dbKind)
+	suite.T().Logf("Testing WinMax function for %s", suite.ds.Kind)
 
 	suite.Run("MaxInStatusPartition", func() {
 		type WindowMaxResult struct {
@@ -795,11 +795,11 @@ func (suite *EBWindowFunctionsTestSuite) TestWinMax() {
 // TestWinStringAgg tests the STRING_AGG window function.
 // Note: MySQL does not support GROUP_CONCAT as a window function.
 func (suite *EBWindowFunctionsTestSuite) TestWinStringAgg() {
-	suite.T().Logf("Testing WinStringAgg function for %s", suite.dbKind)
+	suite.T().Logf("Testing WinStringAgg function for %s", suite.ds.Kind)
 
 	suite.Run("StringAggPartitionedByStatus", func() {
-		if suite.dbKind == config.MySQL {
-			suite.T().Skipf("WinStringAgg skipped for %s (MySQL does not support GROUP_CONCAT as window function)", suite.dbKind)
+		if suite.ds.Kind == config.MySQL {
+			suite.T().Skipf("WinStringAgg skipped for %s (MySQL does not support GROUP_CONCAT as window function)", suite.ds.Kind)
 
 			return
 		}
@@ -837,11 +837,11 @@ func (suite *EBWindowFunctionsTestSuite) TestWinStringAgg() {
 
 // TestWinArrayAgg tests the ARRAY_AGG window function (PostgreSQL only).
 func (suite *EBWindowFunctionsTestSuite) TestWinArrayAgg() {
-	suite.T().Logf("Testing WinArrayAgg function for %s", suite.dbKind)
+	suite.T().Logf("Testing WinArrayAgg function for %s", suite.ds.Kind)
 
 	suite.Run("ArrayAggPartitionedByStatus", func() {
-		if suite.dbKind != config.Postgres {
-			suite.T().Skipf("WinArrayAgg skipped for %s (PostgreSQL only)", suite.dbKind)
+		if suite.ds.Kind != config.Postgres {
+			suite.T().Skipf("WinArrayAgg skipped for %s (PostgreSQL only)", suite.ds.Kind)
 		}
 
 		type WindowArrayAggResult struct {
@@ -878,11 +878,11 @@ func (suite *EBWindowFunctionsTestSuite) TestWinArrayAgg() {
 // TestWinStdDev tests the STDDEV window function.
 // Note: SQLite does not support statistical functions.
 func (suite *EBWindowFunctionsTestSuite) TestWinStdDev() {
-	suite.T().Logf("Testing WinStdDev function for %s", suite.dbKind)
+	suite.T().Logf("Testing WinStdDev function for %s", suite.ds.Kind)
 
 	suite.Run("StdDevInStatusPartition", func() {
-		if suite.dbKind == config.SQLite {
-			suite.T().Skipf("WinStdDev skipped for %s (SQLite does not support statistical functions)", suite.dbKind)
+		if suite.ds.Kind == config.SQLite {
+			suite.T().Skipf("WinStdDev skipped for %s (SQLite does not support statistical functions)", suite.ds.Kind)
 
 			return
 		}
@@ -922,11 +922,11 @@ func (suite *EBWindowFunctionsTestSuite) TestWinStdDev() {
 // TestWinVariance tests the VARIANCE window function.
 // Note: SQLite does not support statistical functions.
 func (suite *EBWindowFunctionsTestSuite) TestWinVariance() {
-	suite.T().Logf("Testing WinVariance function for %s", suite.dbKind)
+	suite.T().Logf("Testing WinVariance function for %s", suite.ds.Kind)
 
 	suite.Run("VarianceInStatusPartition", func() {
-		if suite.dbKind == config.SQLite {
-			suite.T().Skipf("WinVariance skipped for %s (SQLite does not support statistical functions)", suite.dbKind)
+		if suite.ds.Kind == config.SQLite {
+			suite.T().Skipf("WinVariance skipped for %s (SQLite does not support statistical functions)", suite.ds.Kind)
 
 			return
 		}
@@ -965,7 +965,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinVariance() {
 
 // TestWinJSONObjectAgg tests the JSON_OBJECT_AGG window function.
 func (suite *EBWindowFunctionsTestSuite) TestWinJSONObjectAgg() {
-	suite.T().Logf("Testing WinJSONObjectAgg function for %s", suite.dbKind)
+	suite.T().Logf("Testing WinJSONObjectAgg function for %s", suite.ds.Kind)
 
 	suite.Run("JSONObjectAggPartitionedByStatus", func() {
 		type WindowJSONObjectResult struct {
@@ -1002,7 +1002,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinJSONObjectAgg() {
 
 // TestWinJSONArrayAgg tests the JSON_ARRAY_AGG window function.
 func (suite *EBWindowFunctionsTestSuite) TestWinJSONArrayAgg() {
-	suite.T().Logf("Testing WinJSONArrayAgg function for %s", suite.dbKind)
+	suite.T().Logf("Testing WinJSONArrayAgg function for %s", suite.ds.Kind)
 
 	suite.Run("JSONArrayAggPartitionedByStatus", func() {
 		type WindowJSONResult struct {
@@ -1042,7 +1042,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinJSONArrayAgg() {
 // Note: PostgreSQL and MySQL support native BIT_OR.
 // SQLite simulates it using MAX with CASE for boolean-like operations.
 func (suite *EBWindowFunctionsTestSuite) TestWinBitOr() {
-	suite.T().Logf("Testing WinBitOr function for %s", suite.dbKind)
+	suite.T().Logf("Testing WinBitOr function for %s", suite.ds.Kind)
 
 	suite.Run("BitOrInStatusPartition", func() {
 		type WindowBitResult struct {
@@ -1082,7 +1082,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinBitOr() {
 // Note: PostgreSQL and MySQL support native BIT_AND.
 // SQLite simulates it using MIN with CASE for boolean-like operations.
 func (suite *EBWindowFunctionsTestSuite) TestWinBitAnd() {
-	suite.T().Logf("Testing WinBitAnd function for %s", suite.dbKind)
+	suite.T().Logf("Testing WinBitAnd function for %s", suite.ds.Kind)
 
 	suite.Run("BitAndInStatusPartition", func() {
 		type WindowBitResult struct {
@@ -1121,7 +1121,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinBitAnd() {
 // WinBoolOr performs boolean OR within a window frame.
 // Framework uses BOOL_OR (PostgreSQL), MAX+CASE simulation (MySQL/SQLite).
 func (suite *EBWindowFunctionsTestSuite) TestWinBoolOr() {
-	suite.T().Logf("Testing WinBoolOr function for %s", suite.dbKind)
+	suite.T().Logf("Testing WinBoolOr function for %s", suite.ds.Kind)
 
 	suite.Run("BoolOrInStatusPartition", func() {
 		type WindowBoolResult struct {
@@ -1158,7 +1158,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinBoolOr() {
 // WinBoolAnd performs boolean AND within a window frame.
 // Framework uses BOOL_AND (PostgreSQL), MIN+CASE simulation (MySQL/SQLite).
 func (suite *EBWindowFunctionsTestSuite) TestWinBoolAnd() {
-	suite.T().Logf("Testing WinBoolAnd function for %s", suite.dbKind)
+	suite.T().Logf("Testing WinBoolAnd function for %s", suite.ds.Kind)
 
 	suite.Run("BoolAndInStatusPartition", func() {
 		type WindowBoolResult struct {

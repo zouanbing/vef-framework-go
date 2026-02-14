@@ -24,14 +24,14 @@ type AtlasInspector struct {
 }
 
 // NewInspector creates a new Atlas Inspector for the given database connection.
-func NewInspector(db *sql.DB, dbKind config.DBKind, schemaName string) (Inspector, error) {
+func NewInspector(db *sql.DB, kind config.DBKind, schemaName string) (Inspector, error) {
 	var (
 		inspector as.Inspector
 		schema    string
 		err       error
 	)
 
-	switch dbKind {
+	switch kind {
 	case config.Postgres:
 		inspector, err = postgres.Open(db)
 		schema = lo.CoalesceOrEmpty(schemaName, "public")
@@ -46,11 +46,11 @@ func NewInspector(db *sql.DB, dbKind config.DBKind, schemaName string) (Inspecto
 		schema = "main"
 
 	default:
-		return nil, fmt.Errorf("%w: %s", ErrUnsupportedDBKind, dbKind)
+		return nil, fmt.Errorf("%w: %s", ErrUnsupportedDBKind, kind)
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to open %s inspector: %w", dbKind, err)
+		return nil, fmt.Errorf("failed to open %s inspector: %w", kind, err)
 	}
 
 	return &AtlasInspector{

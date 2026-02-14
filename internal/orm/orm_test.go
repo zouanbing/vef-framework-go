@@ -7,15 +7,15 @@ import (
 )
 
 // registry holds all ORM test suite factories, populated by init() functions in each suite file.
-var registry = testx.NewRegistry[OrmTestSuite]()
+var registry = testx.NewRegistry[BaseTestSuite]()
 
 // baseFactory creates an OrmTestSuite from a DBEnv — called once per database.
-func baseFactory(env *testx.DBEnv) *OrmTestSuite {
-	return &OrmTestSuite{
-		ctx:    env.Ctx,
-		db:     env.DB,
-		bunDB:  env.BunDB,
-		dbKind: env.DBKind,
+func baseFactory(env *testx.DBEnv) *BaseTestSuite {
+	return &BaseTestSuite{
+		ctx:   env.Ctx,
+		db:    env.DB,
+		rawDB: env.RawDB,
+		ds:    env.DS,
 	}
 }
 
