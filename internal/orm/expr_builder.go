@@ -979,6 +979,26 @@ func (b *QueryExprBuilder) Now() schema.QueryAppender {
 	})
 }
 
+// sqliteNormalizeTS converts the Go driver's timestamp format
+// "YYYY-MM-DD HH:MM:SS +HHMM TZ" into ISO-8601 "YYYY-MM-DD HH:MM:SS+HH:MM"
+// that SQLite date/time functions can parse. Short values (≤19 chars) pass through unchanged.
+// Use this for arithmetic operations (DateTrunc, DateAdd, DateSubtract, DateDiff, Age, ToDate, ToTime, ToTimestamp)
+// that require correct absolute-time semantics.
+func (b *QueryExprBuilder) sqliteNormalizeTS(expr any) schema.QueryAppender {
+	return b.Expr(
+		"CASE WHEN LENGTH(?) > 19 THEN SUBSTR(?, 1, 19) || SUBSTR(?, 21, 3) || ':' || SUBSTR(?, 24, 2) ELSE ? END",
+		expr, expr, expr, expr, expr,
+	)
+}
+
+// sqliteLocalTS strips the timezone suffix from the Go driver's timestamp
+// format, preserving the wall-clock datetime portion ("YYYY-MM-DD HH:MM:SS").
+// Use this for extraction functions (ExtractYear/Month/Day/Hour/Minute/Second)
+// where the caller expects local-time component values matching Go's time.Time accessors.
+func (b *QueryExprBuilder) sqliteLocalTS(expr any) schema.QueryAppender {
+	return b.Expr("SUBSTR(?, 1, 19)", expr)
+}
+
 func (b *QueryExprBuilder) ExtractYear(expr any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
@@ -989,7 +1009,7 @@ func (b *QueryExprBuilder) ExtractYear(expr any) schema.QueryAppender {
 		},
 		SQLite: func() schema.QueryAppender {
 			return b.ToInteger(
-				b.Expr("STRFTIME(?, ?)", "%Y", expr),
+				b.Expr("STRFTIME(?, ?)", "%Y", b.sqliteLocalTS(expr)),
 			)
 		},
 		Default: func() schema.QueryAppender {
@@ -1008,7 +1028,7 @@ func (b *QueryExprBuilder) ExtractMonth(expr any) schema.QueryAppender {
 		},
 		SQLite: func() schema.QueryAppender {
 			return b.ToInteger(
-				b.Expr("STRFTIME(?, ?)", "%m", expr),
+				b.Expr("STRFTIME(?, ?)", "%m", b.sqliteLocalTS(expr)),
 			)
 		},
 		Default: func() schema.QueryAppender {
@@ -1027,7 +1047,7 @@ func (b *QueryExprBuilder) ExtractDay(expr any) schema.QueryAppender {
 		},
 		SQLite: func() schema.QueryAppender {
 			return b.ToInteger(
-				b.Expr("STRFTIME(?, ?)", "%d", expr),
+				b.Expr("STRFTIME(?, ?)", "%d", b.sqliteLocalTS(expr)),
 			)
 		},
 		Default: func() schema.QueryAppender {
@@ -1046,7 +1066,7 @@ func (b *QueryExprBuilder) ExtractHour(expr any) schema.QueryAppender {
 		},
 		SQLite: func() schema.QueryAppender {
 			return b.ToInteger(
-				b.Expr("STRFTIME(?, ?)", "%H", expr),
+				b.Expr("STRFTIME(?, ?)", "%H", b.sqliteLocalTS(expr)),
 			)
 		},
 		Default: func() schema.QueryAppender {
@@ -1065,7 +1085,7 @@ func (b *QueryExprBuilder) ExtractMinute(expr any) schema.QueryAppender {
 		},
 		SQLite: func() schema.QueryAppender {
 			return b.ToInteger(
-				b.Expr("STRFTIME(?, ?)", "%M", expr),
+				b.Expr("STRFTIME(?, ?)", "%M", b.sqliteLocalTS(expr)),
 			)
 		},
 		Default: func() schema.QueryAppender {
@@ -1087,7 +1107,7 @@ func (b *QueryExprBuilder) ExtractSecond(expr any) schema.QueryAppender {
 		},
 		SQLite: func() schema.QueryAppender {
 			return b.ToDecimal(
-				b.Expr("STRFTIME(?, ?)", "%S", expr),
+				b.Expr("STRFTIME(?, ?)", "%S", b.sqliteLocalTS(expr)),
 				10, 6,
 			)
 		},
@@ -1121,19 +1141,20 @@ func (b *QueryExprBuilder) DateTrunc(unit DateTimeUnit, expr any) schema.QueryAp
 			}
 		},
 		SQLite: func() schema.QueryAppender {
+			nExpr := b.sqliteNormalizeTS(expr)
 			switch unit {
 			case UnitYear:
-				return b.Expr("STRFTIME(?, ?)", "%Y-01-01", expr)
+				return b.Expr("STRFTIME(?, ?)", "%Y-01-01", nExpr)
 			case UnitMonth:
-				return b.Expr("STRFTIME(?, ?)", "%Y-%m-01", expr)
+				return b.Expr("STRFTIME(?, ?)", "%Y-%m-01", nExpr)
 			case UnitHour:
-				return b.Expr("STRFTIME(?, ?)", "%Y-%m-%d %H:00:00", expr)
+				return b.Expr("STRFTIME(?, ?)", "%Y-%m-%d %H:00:00", nExpr)
 			case UnitMinute:
-				return b.Expr("STRFTIME(?, ?)", "%Y-%m-%d %H:%M:00", expr)
+				return b.Expr("STRFTIME(?, ?)", "%Y-%m-%d %H:%M:00", nExpr)
 			case UnitDay:
 				fallthrough
 			default:
-				return b.Expr("DATE(?)", expr)
+				return b.Expr("DATE(?)", nExpr)
 			}
 		},
 		Default: func() schema.QueryAppender {
@@ -1151,7 +1172,7 @@ func (b *QueryExprBuilder) DateAdd(expr, interval any, unit DateTimeUnit) schema
 			return b.Expr("DATE_ADD(?, INTERVAL ? ?)", expr, interval, b.Expr(unit.ForMySQL()))
 		},
 		SQLite: func() schema.QueryAppender {
-			return b.Expr("DATETIME(?, '+? ?')", expr, interval, b.Expr(unit.ForSQLite()))
+			return b.Expr("DATETIME(?, '+? ?')", b.sqliteNormalizeTS(expr), interval, b.Expr(unit.ForSQLite()))
 		},
 		Default: func() schema.QueryAppender {
 			return b.Expr("DATE_ADD(?, INTERVAL ? ?)", expr, interval, b.Expr(unit.String()))
@@ -1168,7 +1189,7 @@ func (b *QueryExprBuilder) DateSubtract(expr, interval any, unit DateTimeUnit) s
 			return b.Expr("DATE_SUB(?, INTERVAL ? ?)", expr, interval, b.Expr(unit.ForMySQL()))
 		},
 		SQLite: func() schema.QueryAppender {
-			return b.Expr("DATETIME(?, '-? ?')", expr, interval, b.Expr(unit.ForSQLite()))
+			return b.Expr("DATETIME(?, '-? ?')", b.sqliteNormalizeTS(expr), interval, b.Expr(unit.ForSQLite()))
 		},
 		Default: func() schema.QueryAppender {
 			return b.Expr("DATE_SUB(?, INTERVAL ? ?)", expr, interval, b.Expr(unit.String()))
@@ -1211,46 +1232,48 @@ func (b *QueryExprBuilder) DateDiff(start, end any, unit DateTimeUnit) schema.Qu
 			}
 		},
 		SQLite: func() schema.QueryAppender {
+			nStart := b.sqliteNormalizeTS(start)
+			nEnd := b.sqliteNormalizeTS(end)
 			switch unit {
 			case UnitSecond:
 				// (JULIANDAY difference) * 86400 seconds per day
 				return b.Multiply(
-					b.Paren(b.Subtract(b.Expr("JULIANDAY(?)", end), b.Expr("JULIANDAY(?)", start))),
+					b.Paren(b.Subtract(b.Expr("JULIANDAY(?)", nEnd), b.Expr("JULIANDAY(?)", nStart))),
 					86400,
 				)
 
 			case UnitMinute:
 				// (JULIANDAY difference) * 1440 minutes per day
 				return b.Multiply(
-					b.Paren(b.Subtract(b.Expr("JULIANDAY(?)", end), b.Expr("JULIANDAY(?)", start))),
+					b.Paren(b.Subtract(b.Expr("JULIANDAY(?)", nEnd), b.Expr("JULIANDAY(?)", nStart))),
 					1440,
 				)
 
 			case UnitHour:
 				// (JULIANDAY difference) * 24 hours per day
 				return b.Multiply(
-					b.Paren(b.Subtract(b.Expr("JULIANDAY(?)", end), b.Expr("JULIANDAY(?)", start))),
+					b.Paren(b.Subtract(b.Expr("JULIANDAY(?)", nEnd), b.Expr("JULIANDAY(?)", nStart))),
 					24,
 				)
 
 			case UnitMonth:
 				// Approximate: (JULIANDAY difference) / 30.44 days per month
 				return b.Divide(
-					b.Paren(b.Subtract(b.Expr("JULIANDAY(?)", end), b.Expr("JULIANDAY(?)", start))),
+					b.Paren(b.Subtract(b.Expr("JULIANDAY(?)", nEnd), b.Expr("JULIANDAY(?)", nStart))),
 					30.44,
 				)
 
 			case UnitYear:
 				// Approximate: (JULIANDAY difference) / 365.25 days per year
 				return b.Divide(
-					b.Paren(b.Subtract(b.Expr("JULIANDAY(?)", end), b.Expr("JULIANDAY(?)", start))),
+					b.Paren(b.Subtract(b.Expr("JULIANDAY(?)", nEnd), b.Expr("JULIANDAY(?)", nStart))),
 					365.25,
 				)
 
 			case UnitDay:
 				fallthrough
 			default:
-				return b.Subtract(b.Expr("JULIANDAY(?)", end), b.Expr("JULIANDAY(?)", start))
+				return b.Subtract(b.Expr("JULIANDAY(?)", nEnd), b.Expr("JULIANDAY(?)", nStart))
 			}
 		},
 		Default: func() schema.QueryAppender {
@@ -1298,15 +1321,18 @@ func (b *QueryExprBuilder) Age(start, end any) schema.QueryAppender {
 		},
 		SQLite: func() schema.QueryAppender {
 			// SQLite doesn't have AGE function, so we emulate it
+			nStart := b.sqliteNormalizeTS(start)
+			nEnd := b.sqliteNormalizeTS(end)
+
 			approxYears := b.Subtract(
 				b.ToInteger(b.ExtractYear(end)),
 				b.ToInteger(b.ExtractYear(start)),
 			)
 
 			// Dynamic value requires raw expression
-			startPlusYears := b.Expr(`DATE(?, '+' || CAST(? AS TEXT) || ' years')`, start, approxYears)
-			actualYears := b.Expr(`CASE WHEN ? > ? THEN (?) - 1 ELSE ? END`, startPlusYears, end, approxYears, approxYears)
-			startPlusActualYears := b.Expr(`DATE(?, '+' || CAST(? AS TEXT) || ' years')`, start, actualYears)
+			startPlusYears := b.Expr(`DATE(?, '+' || CAST(? AS TEXT) || ' years')`, nStart, approxYears)
+			actualYears := b.Expr(`CASE WHEN ? > ? THEN (?) - 1 ELSE ? END`, startPlusYears, nEnd, approxYears, approxYears)
+			startPlusActualYears := b.Expr(`DATE(?, '+' || CAST(? AS TEXT) || ' years')`, nStart, actualYears)
 
 			approxMonths := b.Add(
 				b.Multiply(
@@ -1323,13 +1349,13 @@ func (b *QueryExprBuilder) Age(start, end any) schema.QueryAppender {
 			)
 
 			startPlusYearsMonths := b.Expr(`DATE(?, '+' || CAST(? AS TEXT) || ' months')`, startPlusActualYears, approxMonths)
-			actualMonths := b.Expr(`CASE WHEN ? > ? THEN (?) - 1 ELSE ? END`, startPlusYearsMonths, end, approxMonths, approxMonths)
+			actualMonths := b.Expr(`CASE WHEN ? > ? THEN (?) - 1 ELSE ? END`, startPlusYearsMonths, nEnd, approxMonths, approxMonths)
 			startPlusActualYearsMonths := b.Expr(`DATE(?, '+' || CAST(? AS TEXT) || ' years', '+' || CAST(? AS TEXT) || ' months')`,
-				start, actualYears, actualMonths)
+				nStart, actualYears, actualMonths)
 
 			days := b.ToInteger(
 				b.Subtract(
-					b.Expr("JULIANDAY(?)", end),
+					b.Expr("JULIANDAY(?)", nEnd),
 					b.Expr("JULIANDAY(?)", startPlusActualYearsMonths),
 				),
 			)
@@ -1661,11 +1687,12 @@ func (b *QueryExprBuilder) ToDate(expr any, format ...any) schema.QueryAppender 
 			return b.Expr("CAST(? AS DATE)", expr)
 		},
 		SQLite: func() schema.QueryAppender {
+			nExpr := b.sqliteNormalizeTS(expr)
 			if len(format) > 0 {
-				return b.Expr("STRFTIME(?, ?)", "%Y-%m-%d", expr)
+				return b.Expr("STRFTIME(?, ?)", "%Y-%m-%d", nExpr)
 			}
 
-			return b.Expr("DATE(?)", expr)
+			return b.Expr("DATE(?)", nExpr)
 		},
 		Default: func() schema.QueryAppender {
 			if len(format) > 0 {
@@ -1694,11 +1721,12 @@ func (b *QueryExprBuilder) ToTime(expr any, format ...any) schema.QueryAppender 
 			return b.Expr("CAST(? AS TIME)", expr)
 		},
 		SQLite: func() schema.QueryAppender {
+			nExpr := b.sqliteNormalizeTS(expr)
 			if len(format) > 0 {
-				return b.Expr("STRFTIME(?, ?)", "%H:%M:%S", expr)
+				return b.Expr("STRFTIME(?, ?)", "%H:%M:%S", nExpr)
 			}
 
-			return b.Expr("TIME(?)", expr)
+			return b.Expr("TIME(?)", nExpr)
 		},
 		Default: func() schema.QueryAppender {
 			if len(format) > 0 {
@@ -1727,11 +1755,12 @@ func (b *QueryExprBuilder) ToTimestamp(expr any, format ...any) schema.QueryAppe
 			return b.Expr("CAST(? AS DATETIME)", expr)
 		},
 		SQLite: func() schema.QueryAppender {
+			nExpr := b.sqliteNormalizeTS(expr)
 			if len(format) > 0 {
-				return b.Expr("STRFTIME(?, ?)", "%Y-%m-%d %H:%M:%S", expr)
+				return b.Expr("STRFTIME(?, ?)", "%Y-%m-%d %H:%M:%S", nExpr)
 			}
 
-			return b.Expr("DATETIME(?)", expr)
+			return b.Expr("DATETIME(?)", nExpr)
 		},
 		Default: func() schema.QueryAppender {
 			if len(format) > 0 {
