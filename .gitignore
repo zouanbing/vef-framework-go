@@ -27,6 +27,8 @@ go.work.sum
 # macOS files
 **/.DS_Store
 
+.cursor/
+.windsurf/
 .claude/
 CLAUDE.md
 AGENTS.md
