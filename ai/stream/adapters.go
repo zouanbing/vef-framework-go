@@ -3,61 +3,8 @@ package stream
 import (
 	"io"
 
-	"github.com/cloudwego/eino/schema"
-
 	"github.com/ilxqx/vef-framework-go/ai"
 )
-
-// Eino adapter
-
-type einoSource struct {
-	reader *schema.StreamReader[*schema.Message]
-}
-
-// NewEinoSource creates an adapter for Eino's StreamReader.
-func NewEinoSource(reader *schema.StreamReader[*schema.Message]) MessageSource {
-	return &einoSource{reader: reader}
-}
-
-func (e *einoSource) Recv() (Message, error) {
-	msg, err := e.reader.Recv()
-	if err != nil {
-		return Message{}, err
-	}
-
-	return convertEinoMessage(msg), nil
-}
-
-func (e *einoSource) Close() error {
-	e.reader.Close()
-
-	return nil
-}
-
-func convertEinoMessage(msg *schema.Message) Message {
-	result := Message{
-		Role:       Role(msg.Role),
-		Content:    msg.Content,
-		ToolCallID: msg.ToolCallID,
-	}
-	if len(msg.ToolCalls) > 0 {
-		result.ToolCalls = make([]ToolCall, len(msg.ToolCalls))
-		for i, tc := range msg.ToolCalls {
-			result.ToolCalls[i] = ToolCall{
-				ID:        tc.ID,
-				Name:      tc.Function.Name,
-				Arguments: tc.Function.Arguments,
-			}
-		}
-	}
-
-	return result
-}
-
-// FromEino creates a Builder with an Eino StreamReader as the source.
-func FromEino(reader *schema.StreamReader[*schema.Message]) *Builder {
-	return New().WithSource(NewEinoSource(reader))
-}
 
 // Channel adapter
 
