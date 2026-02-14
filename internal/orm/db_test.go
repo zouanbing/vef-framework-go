@@ -121,7 +121,6 @@ func (suite *DBTestSuite) TestTxCommit() {
 		count, err := tx.NewSelect().
 			Model((*User)(nil)).
 			Count(ctx)
-
 		if err != nil {
 			return err
 		}

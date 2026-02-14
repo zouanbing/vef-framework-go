@@ -11,17 +11,13 @@ type ClauseConditionBuilder struct {
 	conditions []schema.QueryWithSep
 }
 
-// newConditionBuilder creates a new ClauseConditionBuilder.
 func newConditionBuilder(qb QueryBuilder) *ClauseConditionBuilder {
 	cb := &CriteriaBuilder{
-		qb: qb,
-		eb: qb.ExprBuilder(),
-		and: func(string, ...any) {
-		},
-		or: func(string, ...any) {
-		},
-		group: func(string, func(ConditionBuilder)) {
-		},
+		qb:    qb,
+		eb:    qb.ExprBuilder(),
+		and:   func(string, ...any) {},
+		or:    func(string, ...any) {},
+		group: func(string, func(ConditionBuilder)) {},
 	}
 
 	builder := &ClauseConditionBuilder{CriteriaBuilder: cb}
@@ -62,6 +58,7 @@ func (cb *ClauseConditionBuilder) AppendGroup(sep string, conditions []schema.Qu
 
 	cb.AppendConditions(schema.SafeQueryWithSep("", nil, sep))
 	cb.AppendConditions(schema.SafeQueryWithSep("", nil, "("))
+
 	conditions[0].Sep = ""
 	cb.AppendConditions(conditions...)
 	cb.AppendConditions(schema.SafeQueryWithSep("", nil, ")"))

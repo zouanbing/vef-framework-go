@@ -21,6 +21,7 @@ func init() {
 // This ensures merge operations never modify fixture data.
 type MergeTestSuite struct {
 	*BaseTestSuite
+
 	testUsers []*User
 	testPosts []*Post
 }

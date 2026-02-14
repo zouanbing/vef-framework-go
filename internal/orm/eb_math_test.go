@@ -21,8 +21,6 @@ type EBMathFunctionsTestSuite struct {
 
 // TestAbs tests the Abs function.
 func (suite *EBMathFunctionsTestSuite) TestAbs() {
-	suite.T().Logf("Testing Abs function for %s", suite.ds.Kind)
-
 	suite.Run("AbsoluteValue", func() {
 		// First get average view count
 		var avgViewCount float64
@@ -32,16 +30,16 @@ func (suite *EBMathFunctionsTestSuite) TestAbs() {
 				return eb.AvgColumn("view_count")
 			}).
 			Scan(suite.ctx, &avgViewCount)
-		suite.NoError(err, "Average calculation should work")
+		suite.NoError(err)
 
-		type AbsResult struct {
+		type Result struct {
 			Title      string `bun:"title"`
 			ViewCount  int64  `bun:"view_count"`
 			Difference int64  `bun:"difference"`
 			AbsDiff    int64  `bun:"abs_diff"`
 		}
 
-		var results []AbsResult
+		var results []Result
 
 		err = suite.selectPosts().
 			Select("title", "view_count").
@@ -55,8 +53,8 @@ func (suite *EBMathFunctionsTestSuite) TestAbs() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Abs should work correctly")
-		suite.True(len(results) > 0, "Should have abs results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.AbsDiff >= 0, "Absolute value should always be non-negative")
@@ -67,24 +65,20 @@ func (suite *EBMathFunctionsTestSuite) TestAbs() {
 			}
 
 			suite.Equal(expectedAbs, result.AbsDiff, "Abs should return absolute value")
-			suite.T().Logf("Post %s: ViewCount=%d, Diff=%d, AbsDiff=%d",
-				result.Title, result.ViewCount, result.Difference, result.AbsDiff)
 		}
 	})
 }
 
 // TestCeil tests the Ceil function.
 func (suite *EBMathFunctionsTestSuite) TestCeil() {
-	suite.T().Logf("Testing Ceil function for %s", suite.ds.Kind)
-
 	suite.Run("CeilDecimalValues", func() {
-		type CeilResult struct {
+		type Result struct {
 			ViewCount    int64   `bun:"view_count"`
 			DecimalValue float64 `bun:"decimal_value"`
 			CeiledValue  float64 `bun:"ceiled_value"`
 		}
 
-		var results []CeilResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("view_count").
@@ -98,29 +92,25 @@ func (suite *EBMathFunctionsTestSuite) TestCeil() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Ceil should work correctly")
-		suite.True(len(results) > 0, "Should have ceil results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.CeiledValue >= result.DecimalValue, "Ceil should be >= original value")
-			suite.T().Logf("ViewCount: %d, Decimal: %.2f, Ceiled: %.0f",
-				result.ViewCount, result.DecimalValue, result.CeiledValue)
 		}
 	})
 }
 
 // TestFloor tests the Floor function.
 func (suite *EBMathFunctionsTestSuite) TestFloor() {
-	suite.T().Logf("Testing Floor function for %s", suite.ds.Kind)
-
 	suite.Run("FloorDecimalValues", func() {
-		type FloorResult struct {
+		type Result struct {
 			ViewCount    int64   `bun:"view_count"`
 			DecimalValue float64 `bun:"decimal_value"`
 			FlooredValue float64 `bun:"floored_value"`
 		}
 
-		var results []FloorResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("view_count").
@@ -134,30 +124,26 @@ func (suite *EBMathFunctionsTestSuite) TestFloor() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Floor should work correctly")
-		suite.True(len(results) > 0, "Should have floor results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.FlooredValue <= result.DecimalValue, "Floor should be <= original value")
-			suite.T().Logf("ViewCount: %d, Decimal: %.2f, Floored: %.0f",
-				result.ViewCount, result.DecimalValue, result.FlooredValue)
 		}
 	})
 }
 
 // TestRound tests the Round function.
 func (suite *EBMathFunctionsTestSuite) TestRound() {
-	suite.T().Logf("Testing Round function for %s", suite.ds.Kind)
-
 	suite.Run("RoundWithDifferentPrecisions", func() {
-		type RoundResult struct {
+		type Result struct {
 			ViewCount     int64   `bun:"view_count"`
 			RoundedNoPrec float64 `bun:"rounded_no_prec"`
 			RoundedPrec1  float64 `bun:"rounded_prec1"`
 			RoundedPrec2  float64 `bun:"rounded_prec2"`
 		}
 
-		var results []RoundResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("view_count").
@@ -174,31 +160,27 @@ func (suite *EBMathFunctionsTestSuite) TestRound() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Round should work correctly")
-		suite.True(len(results) > 0, "Should have round results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.RoundedNoPrec >= 0, "Rounded value should be non-negative")
 			suite.True(result.RoundedPrec1 >= 0, "Rounded value with precision 1 should be non-negative")
 			suite.True(result.RoundedPrec2 >= 0, "Rounded value with precision 2 should be non-negative")
-			suite.T().Logf("ViewCount: %d, Rounded: %.0f, Prec1: %.1f, Prec2: %.2f",
-				result.ViewCount, result.RoundedNoPrec, result.RoundedPrec1, result.RoundedPrec2)
 		}
 	})
 }
 
 // TestTrunc tests the Trunc function.
 func (suite *EBMathFunctionsTestSuite) TestTrunc() {
-	suite.T().Logf("Testing Trunc function for %s", suite.ds.Kind)
-
 	suite.Run("TruncateDecimalValues", func() {
-		type TruncResult struct {
+		type Result struct {
 			ViewCount  int64   `bun:"view_count"`
 			Divided    float64 `bun:"divided"`
 			TruncValue float64 `bun:"trunc_value"`
 		}
 
-		var results []TruncResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("view_count").
@@ -212,29 +194,25 @@ func (suite *EBMathFunctionsTestSuite) TestTrunc() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Trunc should work correctly")
-		suite.True(len(results) > 0, "Should have trunc results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.TruncValue >= 0, "Truncated value should be non-negative")
-			suite.T().Logf("ViewCount: %d, Divided: %.4f, Truncated: %.2f",
-				result.ViewCount, result.Divided, result.TruncValue)
 		}
 	})
 }
 
 // TestPower tests the Power function.
 func (suite *EBMathFunctionsTestSuite) TestPower() {
-	suite.T().Logf("Testing Power function for %s", suite.ds.Kind)
-
 	suite.Run("PowerOfNumbers", func() {
-		type PowerResult struct {
+		type Result struct {
 			ViewCount int64   `bun:"view_count"`
 			Squared   float64 `bun:"squared"`
 			Cubed     float64 `bun:"cubed"`
 		}
 
-		var results []PowerResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("view_count").
@@ -248,29 +226,25 @@ func (suite *EBMathFunctionsTestSuite) TestPower() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Power should work correctly")
-		suite.True(len(results) > 0, "Should have power results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.Squared >= 0, "Squared value should be non-negative")
 			suite.True(result.Cubed >= 0, "Cubed value should be non-negative")
-			suite.T().Logf("ViewCount: %d, Squared: %.0f, Cubed: %.0f",
-				result.ViewCount, result.Squared, result.Cubed)
 		}
 	})
 }
 
 // TestSqrt tests the Sqrt function.
 func (suite *EBMathFunctionsTestSuite) TestSqrt() {
-	suite.T().Logf("Testing Sqrt function for %s", suite.ds.Kind)
-
 	suite.Run("SquareRootOfNumbers", func() {
-		type SqrtResult struct {
+		type Result struct {
 			ViewCount int64   `bun:"view_count"`
 			SqrtValue float64 `bun:"sqrt_value"`
 		}
 
-		var results []SqrtResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("view_count").
@@ -281,27 +255,24 @@ func (suite *EBMathFunctionsTestSuite) TestSqrt() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Sqrt should work correctly")
-		suite.True(len(results) > 0, "Should have sqrt results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.SqrtValue >= 0, "Square root should be non-negative")
-			suite.T().Logf("ViewCount: %d, Sqrt: %.2f", result.ViewCount, result.SqrtValue)
 		}
 	})
 }
 
 // TestExp tests the Exp function.
 func (suite *EBMathFunctionsTestSuite) TestExp() {
-	suite.T().Logf("Testing Exp function for %s", suite.ds.Kind)
-
 	suite.Run("ExponentialFunction", func() {
-		type ExpResult struct {
+		type Result struct {
 			ViewCount int64   `bun:"view_count"`
 			ExpValue  float64 `bun:"exp_value"`
 		}
 
-		var results []ExpResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("view_count").
@@ -312,28 +283,24 @@ func (suite *EBMathFunctionsTestSuite) TestExp() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Exp should work correctly")
-		suite.True(len(results) > 0, "Should have exp results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.ExpValue > 0, "Exponential should always be positive")
-			suite.T().Logf("ViewCount: %d, Exp(vc/100): %.4f",
-				result.ViewCount, result.ExpValue)
 		}
 	})
 }
 
 // TestLn tests the Ln function.
 func (suite *EBMathFunctionsTestSuite) TestLn() {
-	suite.T().Logf("Testing Ln function for %s", suite.ds.Kind)
-
 	suite.Run("NaturalLogarithm", func() {
-		type LnResult struct {
+		type Result struct {
 			ViewCount int64   `bun:"view_count"`
 			LnValue   float64 `bun:"ln_value"`
 		}
 
-		var results []LnResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("view_count").
@@ -347,27 +314,24 @@ func (suite *EBMathFunctionsTestSuite) TestLn() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Ln should work correctly")
-		suite.True(len(results) > 0, "Should have ln results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.LnValue > 0, "Natural log should be positive for view_count > 1")
-			suite.T().Logf("ViewCount: %d, Ln: %.4f", result.ViewCount, result.LnValue)
 		}
 	})
 }
 
 // TestLog tests the Log function.
 func (suite *EBMathFunctionsTestSuite) TestLog() {
-	suite.T().Logf("Testing Log function for %s", suite.ds.Kind)
-
 	suite.Run("LogarithmBaseTen", func() {
-		type LogResult struct {
+		type Result struct {
 			ViewCount int64   `bun:"view_count"`
 			LogValue  float64 `bun:"log_value"`
 		}
 
-		var results []LogResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("view_count").
@@ -381,27 +345,24 @@ func (suite *EBMathFunctionsTestSuite) TestLog() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Log should work correctly")
-		suite.True(len(results) > 0, "Should have log results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.LogValue > 0, "Log base 10 should be positive for view_count > 1")
-			suite.T().Logf("ViewCount: %d, Log10: %.4f", result.ViewCount, result.LogValue)
 		}
 	})
 }
 
 // TestSin tests the Sin function.
 func (suite *EBMathFunctionsTestSuite) TestSin() {
-	suite.T().Logf("Testing Sin function for %s", suite.ds.Kind)
-
 	suite.Run("SineTrigonometric", func() {
-		type SinResult struct {
+		type Result struct {
 			ViewCount int64   `bun:"view_count"`
 			SinValue  float64 `bun:"sin_value"`
 		}
 
-		var results []SinResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("view_count").
@@ -412,28 +373,24 @@ func (suite *EBMathFunctionsTestSuite) TestSin() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Sin should work correctly")
-		suite.True(len(results) > 0, "Should have sin results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.SinValue >= -1.0 && result.SinValue <= 1.0, "Sin value should be between -1 and 1")
-			suite.T().Logf("ViewCount: %d, Sin(vc/100): %.4f",
-				result.ViewCount, result.SinValue)
 		}
 	})
 }
 
 // TestCos tests the Cos function.
 func (suite *EBMathFunctionsTestSuite) TestCos() {
-	suite.T().Logf("Testing Cos function for %s", suite.ds.Kind)
-
 	suite.Run("CosineTrigonometric", func() {
-		type CosResult struct {
+		type Result struct {
 			ViewCount int64   `bun:"view_count"`
 			CosValue  float64 `bun:"cos_value"`
 		}
 
-		var results []CosResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("view_count").
@@ -444,28 +401,24 @@ func (suite *EBMathFunctionsTestSuite) TestCos() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Cos should work correctly")
-		suite.True(len(results) > 0, "Should have cos results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.CosValue >= -1.0 && result.CosValue <= 1.0, "Cos value should be between -1 and 1")
-			suite.T().Logf("ViewCount: %d, Cos(vc/100): %.4f",
-				result.ViewCount, result.CosValue)
 		}
 	})
 }
 
 // TestTan tests the Tan function.
 func (suite *EBMathFunctionsTestSuite) TestTan() {
-	suite.T().Logf("Testing Tan function for %s", suite.ds.Kind)
-
 	suite.Run("TangentTrigonometric", func() {
-		type TanResult struct {
+		type Result struct {
 			ViewCount int64   `bun:"view_count"`
 			TanValue  float64 `bun:"tan_value"`
 		}
 
-		var results []TanResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("view_count").
@@ -476,27 +429,20 @@ func (suite *EBMathFunctionsTestSuite) TestTan() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Tan should work correctly")
-		suite.True(len(results) > 0, "Should have tan results")
-
-		for _, result := range results {
-			suite.T().Logf("ViewCount: %d, Tan(vc/100): %.4f",
-				result.ViewCount, result.TanValue)
-		}
+		suite.NoError(err)
+		suite.NotEmpty(results)
 	})
 }
 
 // TestAsin tests the Asin function.
 func (suite *EBMathFunctionsTestSuite) TestAsin() {
-	suite.T().Logf("Testing Asin function for %s", suite.ds.Kind)
-
 	suite.Run("ArcsineInverse", func() {
-		type AsinResult struct {
+		type Result struct {
 			Value     float64 `bun:"value"`
 			AsinValue float64 `bun:"asin_value"`
 		}
 
-		var results []AsinResult
+		var results []Result
 
 		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
@@ -509,27 +455,24 @@ func (suite *EBMathFunctionsTestSuite) TestAsin() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Asin should work correctly")
-		suite.True(len(results) > 0, "Should have asin results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.Value >= -1.0 && result.Value <= 1.0, "Value should be in valid range for asin")
-			suite.T().Logf("Value: %.4f, Asin: %.4f", result.Value, result.AsinValue)
 		}
 	})
 }
 
 // TestAcos tests the Acos function.
 func (suite *EBMathFunctionsTestSuite) TestAcos() {
-	suite.T().Logf("Testing Acos function for %s", suite.ds.Kind)
-
 	suite.Run("ArccosineInverse", func() {
-		type AcosResult struct {
+		type Result struct {
 			Value     float64 `bun:"value"`
 			AcosValue float64 `bun:"acos_value"`
 		}
 
-		var results []AcosResult
+		var results []Result
 
 		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
@@ -542,27 +485,24 @@ func (suite *EBMathFunctionsTestSuite) TestAcos() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Acos should work correctly")
-		suite.True(len(results) > 0, "Should have acos results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.Value >= -1.0 && result.Value <= 1.0, "Value should be in valid range for acos")
-			suite.T().Logf("Value: %.4f, Acos: %.4f", result.Value, result.AcosValue)
 		}
 	})
 }
 
 // TestAtan tests the Atan function.
 func (suite *EBMathFunctionsTestSuite) TestAtan() {
-	suite.T().Logf("Testing Atan function for %s", suite.ds.Kind)
-
 	suite.Run("ArctangentInverse", func() {
-		type AtanResult struct {
+		type Result struct {
 			Value     float64 `bun:"value"`
 			AtanValue float64 `bun:"atan_value"`
 		}
 
-		var results []AtanResult
+		var results []Result
 
 		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
@@ -575,27 +515,21 @@ func (suite *EBMathFunctionsTestSuite) TestAtan() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Atan should work correctly")
-		suite.True(len(results) > 0, "Should have atan results")
-
-		for _, result := range results {
-			suite.T().Logf("Value: %.4f, Atan: %.4f", result.Value, result.AtanValue)
-		}
+		suite.NoError(err)
+		suite.NotEmpty(results)
 	})
 }
 
 // TestPi tests the Pi function.
 func (suite *EBMathFunctionsTestSuite) TestPi() {
-	suite.T().Logf("Testing Pi function for %s", suite.ds.Kind)
-
 	suite.Run("PiConstant", func() {
-		type PiResult struct {
+		type Result struct {
 			PiValue       float64 `bun:"pi_value"`
 			CircleArea    float64 `bun:"circle_area"`
 			Circumference float64 `bun:"circumference"`
 		}
 
-		var results []PiResult
+		var results []Result
 
 		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
@@ -616,30 +550,26 @@ func (suite *EBMathFunctionsTestSuite) TestPi() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Pi should work correctly")
-		suite.True(len(results) > 0, "Should have pi results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.InDelta(3.14159, result.PiValue, 0.001, "Pi value should be approximately 3.14159")
 			suite.True(result.CircleArea > 0, "Circle area should be positive")
 			suite.True(result.Circumference > 0, "Circumference should be positive")
-			suite.T().Logf("Pi: %.5f, Area: %.2f, Circumference: %.2f",
-				result.PiValue, result.CircleArea, result.Circumference)
 		}
 	})
 }
 
 // TestRandom tests the Random function.
 func (suite *EBMathFunctionsTestSuite) TestRandom() {
-	suite.T().Logf("Testing Random function for %s", suite.ds.Kind)
-
 	suite.Run("RandomNumberGeneration", func() {
-		type RandomResult struct {
+		type Result struct {
 			ID        string  `bun:"id"`
 			RandomVal float64 `bun:"random_val"`
 		}
 
-		var results []RandomResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("id").
@@ -650,27 +580,24 @@ func (suite *EBMathFunctionsTestSuite) TestRandom() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Random should work correctly")
-		suite.True(len(results) > 0, "Should have random results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.RandomVal >= 0 && result.RandomVal < 1, "Random should be in [0, 1)")
-			suite.T().Logf("ID: %s, Random: %.6f", result.ID, result.RandomVal)
 		}
 	})
 }
 
 // TestSign tests the Sign function.
 func (suite *EBMathFunctionsTestSuite) TestSign() {
-	suite.T().Logf("Testing Sign function for %s", suite.ds.Kind)
-
 	suite.Run("SignFunction", func() {
-		type SignResult struct {
+		type Result struct {
 			ViewCount int64   `bun:"view_count"`
 			SignValue float64 `bun:"sign_value"`
 		}
 
-		var results []SignResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("view_count").
@@ -681,28 +608,25 @@ func (suite *EBMathFunctionsTestSuite) TestSign() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Sign should work correctly")
-		suite.True(len(results) > 0, "Should have sign results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.Contains([]float64{-1.0, 0.0, 1.0}, result.SignValue, "Sign should be -1, 0, or 1")
-			suite.T().Logf("ViewCount: %d, Sign(vc-50): %.0f", result.ViewCount, result.SignValue)
 		}
 	})
 }
 
 // TestMod tests the Mod function.
 func (suite *EBMathFunctionsTestSuite) TestMod() {
-	suite.T().Logf("Testing Mod function for %s", suite.ds.Kind)
-
 	suite.Run("ModuloOperation", func() {
-		type ModResult struct {
+		type Result struct {
 			ViewCount int64 `bun:"view_count"`
 			Mod5      int64 `bun:"mod5"`
 			Mod10     int64 `bun:"mod10"`
 		}
 
-		var results []ModResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("view_count").
@@ -716,29 +640,25 @@ func (suite *EBMathFunctionsTestSuite) TestMod() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Mod should work correctly")
-		suite.True(len(results) > 0, "Should have mod results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.Mod5 >= 0 && result.Mod5 < 5, "Mod 5 should be between 0 and 4")
 			suite.True(result.Mod10 >= 0 && result.Mod10 < 10, "Mod 10 should be between 0 and 9")
-			suite.T().Logf("ViewCount: %d, Mod5: %d, Mod10: %d",
-				result.ViewCount, result.Mod5, result.Mod10)
 		}
 	})
 }
 
 // TestGreatest tests the Greatest function.
 func (suite *EBMathFunctionsTestSuite) TestGreatest() {
-	suite.T().Logf("Testing Greatest function for %s", suite.ds.Kind)
-
 	suite.Run("GreatestValue", func() {
-		type GreatestResult struct {
+		type Result struct {
 			ViewCount int64 `bun:"view_count"`
 			Greatest  int64 `bun:"greatest"`
 		}
 
-		var results []GreatestResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("view_count").
@@ -749,27 +669,24 @@ func (suite *EBMathFunctionsTestSuite) TestGreatest() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Greatest should work correctly")
-		suite.True(len(results) > 0, "Should have greatest results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.Greatest >= result.ViewCount, "Greatest should be >= view_count")
-			suite.T().Logf("ViewCount: %d, Greatest: %d", result.ViewCount, result.Greatest)
 		}
 	})
 }
 
 // TestLeast tests the Least function.
 func (suite *EBMathFunctionsTestSuite) TestLeast() {
-	suite.T().Logf("Testing Least function for %s", suite.ds.Kind)
-
 	suite.Run("LeastValue", func() {
-		type LeastResult struct {
+		type Result struct {
 			ViewCount int64 `bun:"view_count"`
 			Least     int64 `bun:"least"`
 		}
 
-		var results []LeastResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("view_count").
@@ -780,22 +697,19 @@ func (suite *EBMathFunctionsTestSuite) TestLeast() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Least should work correctly")
-		suite.True(len(results) > 0, "Should have least results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.Least <= result.ViewCount, "Least should be <= view_count")
-			suite.T().Logf("ViewCount: %d, Least: %d", result.ViewCount, result.Least)
 		}
 	})
 }
 
 // TestCombinedMathFunctions tests multiple math functions working together.
 func (suite *EBMathFunctionsTestSuite) TestCombinedMathFunctions() {
-	suite.T().Logf("Testing combined math functions for %s", suite.ds.Kind)
-
 	suite.Run("BasicMathCombination", func() {
-		type CombinedBasicResult struct {
+		type Result struct {
 			Title        string  `bun:"title"`
 			ViewCount    int64   `bun:"view_count"`
 			AbsViewCount int64   `bun:"abs_view_count"`
@@ -804,7 +718,7 @@ func (suite *EBMathFunctionsTestSuite) TestCombinedMathFunctions() {
 			RoundedViews float64 `bun:"rounded_views"`
 		}
 
-		var results []CombinedBasicResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("title", "view_count").
@@ -824,8 +738,8 @@ func (suite *EBMathFunctionsTestSuite) TestCombinedMathFunctions() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Combined basic math functions should work correctly")
-		suite.True(len(results) > 0, "Should have combined math results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.AbsViewCount >= 0, "Abs should be non-negative")
@@ -837,7 +751,7 @@ func (suite *EBMathFunctionsTestSuite) TestCombinedMathFunctions() {
 	})
 
 	suite.Run("AdvancedMathCombination", func() {
-		type CombinedAdvancedResult struct {
+		type Result struct {
 			Title       string  `bun:"title"`
 			ViewCount   int64   `bun:"view_count"`
 			PowerResult float64 `bun:"power_result"`
@@ -846,7 +760,7 @@ func (suite *EBMathFunctionsTestSuite) TestCombinedMathFunctions() {
 			SignResult  float64 `bun:"sign_result"`
 		}
 
-		var results []CombinedAdvancedResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("title", "view_count").
@@ -866,8 +780,8 @@ func (suite *EBMathFunctionsTestSuite) TestCombinedMathFunctions() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Combined advanced math functions should work correctly")
-		suite.True(len(results) > 0, "Should have combined advanced math results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.PowerResult >= 0, "Power result should be non-negative")
@@ -881,14 +795,14 @@ func (suite *EBMathFunctionsTestSuite) TestCombinedMathFunctions() {
 	})
 
 	suite.Run("TrigonometricCombination", func() {
-		type CombinedTrigResult struct {
+		type Result struct {
 			ViewCount int64   `bun:"view_count"`
 			SinValue  float64 `bun:"sin_value"`
 			CosValue  float64 `bun:"cos_value"`
 			TanValue  float64 `bun:"tan_value"`
 		}
 
-		var results []CombinedTrigResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("view_count").
@@ -905,26 +819,24 @@ func (suite *EBMathFunctionsTestSuite) TestCombinedMathFunctions() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Combined trigonometric functions should work correctly")
-		suite.True(len(results) > 0, "Should have combined trigonometric results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.SinValue >= -1.0 && result.SinValue <= 1.0, "Sin value should be between -1 and 1")
 			suite.True(result.CosValue >= -1.0 && result.CosValue <= 1.0, "Cos value should be between -1 and 1")
-			suite.T().Logf("ViewCount: %d, Sin: %.4f, Cos: %.4f, Tan: %.4f",
-				result.ViewCount, result.SinValue, result.CosValue, result.TanValue)
 		}
 	})
 
 	suite.Run("LogarithmicCombination", func() {
-		type CombinedLogResult struct {
+		type Result struct {
 			ViewCount int64   `bun:"view_count"`
 			SinLn     float64 `bun:"sin_ln"`
 			CosExp    float64 `bun:"cos_exp"`
 			TanLog    float64 `bun:"tan_log"`
 		}
 
-		var results []CombinedLogResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("view_count").
@@ -944,14 +856,12 @@ func (suite *EBMathFunctionsTestSuite) TestCombinedMathFunctions() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Combined logarithmic and trigonometric functions should work correctly")
-		suite.True(len(results) > 0, "Should have combined logarithmic results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.SinLn >= -1.0 && result.SinLn <= 1.0, "Sin(Ln) should be between -1 and 1")
 			suite.True(result.CosExp >= -1.0 && result.CosExp <= 1.0, "Cos should be between -1 and 1")
-			suite.T().Logf("ViewCount: %d, Sin(Ln): %.4f, Cos: %.4f, Tan(Log): %.4f",
-				result.ViewCount, result.SinLn, result.CosExp, result.TanLog)
 		}
 	})
 }

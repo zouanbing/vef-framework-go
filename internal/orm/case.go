@@ -33,9 +33,8 @@ type CaseWhenBuilder interface {
 // newCaseExpr creates a new CASE expression builder.
 func newCaseExpr(qb QueryBuilder) *caseExpr {
 	return &caseExpr{
-		qb:      qb,
-		eb:      qb.ExprBuilder(),
-		clauses: make([]caseClause, 0),
+		qb: qb,
+		eb: qb.ExprBuilder(),
 	}
 }
 
@@ -128,11 +127,9 @@ func (cw *caseWhenExpr) ThenSubQuery(builder func(query SelectQuery)) CaseBuilde
 	return cw.parent
 }
 
-// AppendQuery implements schema.QueryAppender interface.
 func (c *caseExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	b = append(b, "CASE"...)
 
-	// Add the CASE expression if it exists (for simple CASE)
 	if c.caseExpr != nil {
 		b = append(b, ' ')
 		if b, err = c.caseExpr.AppendQuery(gen, b); err != nil {
@@ -140,7 +137,6 @@ func (c *caseExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err err
 		}
 	}
 
-	// Add WHEN...THEN clauses
 	for _, clause := range c.clauses {
 		b = append(b, " WHEN "...)
 		if b, err = clause.whenExpr.AppendQuery(gen, b); err != nil {
@@ -153,7 +149,6 @@ func (c *caseExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err err
 		}
 	}
 
-	// Add ELSE clause if exists
 	if c.hasElse {
 		b = append(b, " ELSE "...)
 		if b, err = c.elseExpr.AppendQuery(gen, b); err != nil {

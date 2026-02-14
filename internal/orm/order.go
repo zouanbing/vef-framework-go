@@ -95,7 +95,7 @@ type orderByClause struct {
 	exprs []orderExpr
 }
 
-// newOrderExpr creates a new OrderBuilder with default ascending order.
+// AppendQuery renders the ORDER BY clause with all accumulated expressions.
 func (o *orderByClause) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	b = append(b, "ORDER BY "...)
 

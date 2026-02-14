@@ -19,7 +19,7 @@ func (b *QueryExprBuilder) Column(column string, withTableAlias ...bool) schema.
 	before, after, ok := strings.Cut(column, ".")
 	if ok {
 		alias, name := before, after
-		if strings.IndexByte(alias, '?') == 0 {
+		if strings.HasPrefix(alias, "?") {
 			var sb strings.Builder
 			sb.Grow(len(alias) + 2)
 			_, _ = sb.WriteString(alias)
@@ -136,13 +136,13 @@ func (b *QueryExprBuilder) Multiply(left, right any) schema.QueryAppender {
 // Note: To ensure consistent float results across all databases, we cast to REAL/DOUBLE/NUMERIC.
 // This prevents integer division behavior in SQLite and PostgreSQL.
 func (b *QueryExprBuilder) Divide(left, right any) schema.QueryAppender {
+	castDivide := func() schema.QueryAppender {
+		return b.Expr("? / ?", b.ToDecimal(left), b.ToDecimal(right))
+	}
+
 	return b.ExprByDialect(DialectExprs{
-		SQLite: func() schema.QueryAppender {
-			return b.Expr("? / ?", b.ToDecimal(left), b.ToDecimal(right))
-		},
-		Postgres: func() schema.QueryAppender {
-			return b.Expr("? / ?", b.ToDecimal(left), b.ToDecimal(right))
-		},
+		SQLite:   castDivide,
+		Postgres: castDivide,
 		Default: func() schema.QueryAppender {
 			return b.Expr("? / ?", left, right)
 		},
@@ -253,12 +253,10 @@ func (b *QueryExprBuilder) ExprByDialect(exprs DialectExprs) schema.QueryAppende
 		}
 	}
 
-	// Fallback to default if database-specific builder is not available
 	if exprs.Default != nil {
 		return exprs.Default()
 	}
 
-	// Return NULL if no suitable builder is found
 	return b.Null()
 }
 
@@ -964,12 +962,6 @@ func (b *QueryExprBuilder) CurrentTimestamp() schema.QueryAppender {
 
 func (b *QueryExprBuilder) Now() schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
-		Postgres: func() schema.QueryAppender {
-			return b.Expr("NOW()")
-		},
-		MySQL: func() schema.QueryAppender {
-			return b.Expr("NOW()")
-		},
 		SQLite: func() schema.QueryAppender {
 			return b.Expr("DATETIME('now')")
 		},
@@ -1001,12 +993,6 @@ func (b *QueryExprBuilder) sqliteLocalTS(expr any) schema.QueryAppender {
 
 func (b *QueryExprBuilder) ExtractYear(expr any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
-		Postgres: func() schema.QueryAppender {
-			return b.Expr("EXTRACT(YEAR FROM ?)", expr)
-		},
-		MySQL: func() schema.QueryAppender {
-			return b.Expr("EXTRACT(YEAR FROM ?)", expr)
-		},
 		SQLite: func() schema.QueryAppender {
 			return b.ToInteger(
 				b.Expr("STRFTIME(?, ?)", "%Y", b.sqliteLocalTS(expr)),
@@ -1020,12 +1006,6 @@ func (b *QueryExprBuilder) ExtractYear(expr any) schema.QueryAppender {
 
 func (b *QueryExprBuilder) ExtractMonth(expr any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
-		Postgres: func() schema.QueryAppender {
-			return b.Expr("EXTRACT(MONTH FROM ?)", expr)
-		},
-		MySQL: func() schema.QueryAppender {
-			return b.Expr("EXTRACT(MONTH FROM ?)", expr)
-		},
 		SQLite: func() schema.QueryAppender {
 			return b.ToInteger(
 				b.Expr("STRFTIME(?, ?)", "%m", b.sqliteLocalTS(expr)),
@@ -1039,12 +1019,6 @@ func (b *QueryExprBuilder) ExtractMonth(expr any) schema.QueryAppender {
 
 func (b *QueryExprBuilder) ExtractDay(expr any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
-		Postgres: func() schema.QueryAppender {
-			return b.Expr("EXTRACT(DAY FROM ?)", expr)
-		},
-		MySQL: func() schema.QueryAppender {
-			return b.Expr("EXTRACT(DAY FROM ?)", expr)
-		},
 		SQLite: func() schema.QueryAppender {
 			return b.ToInteger(
 				b.Expr("STRFTIME(?, ?)", "%d", b.sqliteLocalTS(expr)),
@@ -1058,12 +1032,6 @@ func (b *QueryExprBuilder) ExtractDay(expr any) schema.QueryAppender {
 
 func (b *QueryExprBuilder) ExtractHour(expr any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
-		Postgres: func() schema.QueryAppender {
-			return b.Expr("EXTRACT(HOUR FROM ?)", expr)
-		},
-		MySQL: func() schema.QueryAppender {
-			return b.Expr("EXTRACT(HOUR FROM ?)", expr)
-		},
 		SQLite: func() schema.QueryAppender {
 			return b.ToInteger(
 				b.Expr("STRFTIME(?, ?)", "%H", b.sqliteLocalTS(expr)),
@@ -1077,12 +1045,6 @@ func (b *QueryExprBuilder) ExtractHour(expr any) schema.QueryAppender {
 
 func (b *QueryExprBuilder) ExtractMinute(expr any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
-		Postgres: func() schema.QueryAppender {
-			return b.Expr("EXTRACT(MINUTE FROM ?)", expr)
-		},
-		MySQL: func() schema.QueryAppender {
-			return b.Expr("EXTRACT(MINUTE FROM ?)", expr)
-		},
 		SQLite: func() schema.QueryAppender {
 			return b.ToInteger(
 				b.Expr("STRFTIME(?, ?)", "%M", b.sqliteLocalTS(expr)),
@@ -1096,9 +1058,6 @@ func (b *QueryExprBuilder) ExtractMinute(expr any) schema.QueryAppender {
 
 func (b *QueryExprBuilder) ExtractSecond(expr any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
-		Postgres: func() schema.QueryAppender {
-			return b.Expr("EXTRACT(SECOND FROM ?)", expr)
-		},
 		MySQL: func() schema.QueryAppender {
 			return b.ToDecimal(
 				b.Expr("EXTRACT(SECOND FROM ?)", expr),
@@ -1233,6 +1192,7 @@ func (b *QueryExprBuilder) DateDiff(start, end any, unit DateTimeUnit) schema.Qu
 		},
 		SQLite: func() schema.QueryAppender {
 			nStart := b.sqliteNormalizeTS(start)
+
 			nEnd := b.sqliteNormalizeTS(end)
 			switch unit {
 			case UnitSecond:
@@ -1654,16 +1614,16 @@ func (b *QueryExprBuilder) ToFloat(expr any) schema.QueryAppender {
 }
 
 func (b *QueryExprBuilder) ToBool(expr any) schema.QueryAppender {
+	intNotZero := func() schema.QueryAppender {
+		return b.NotEquals(b.ToInteger(expr), 0)
+	}
+
 	return b.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
 			return b.Expr("?::BOOLEAN", b.Paren(expr))
 		},
-		MySQL: func() schema.QueryAppender {
-			return b.NotEquals(b.ToInteger(expr), 0)
-		},
-		SQLite: func() schema.QueryAppender {
-			return b.NotEquals(b.ToInteger(expr), 0)
-		},
+		MySQL:  intNotZero,
+		SQLite: intNotZero,
 		Default: func() schema.QueryAppender {
 			return b.Expr("CAST(? AS BOOLEAN)", expr)
 		},
@@ -1812,7 +1772,7 @@ func (b *QueryExprBuilder) processJSONPath(path any, dialectName dialect.Name) a
 				return "$"
 			}
 
-			return "$" + "." + pathStr
+			return "$." + pathStr
 		}
 
 		return b.Concat("$.", path)
@@ -1829,12 +1789,6 @@ func (b *QueryExprBuilder) JSONExtract(json, path any) schema.QueryAppender {
 		Postgres: func() schema.QueryAppender {
 			return b.Expr("? #>> ?::text[]", b.ToJSON(json), b.processJSONPath(path, dialect.PG))
 		},
-		MySQL: func() schema.QueryAppender {
-			return b.Expr("JSON_EXTRACT(?, ?)", json, b.processJSONPath(path, dialect.MySQL))
-		},
-		SQLite: func() schema.QueryAppender {
-			return b.Expr("JSON_EXTRACT(?, ?)", json, b.processJSONPath(path, dialect.SQLite))
-		},
 		Default: func() schema.QueryAppender {
 			return b.Expr("JSON_EXTRACT(?, ?)", json, b.processJSONPath(path, dialect.MySQL))
 		},
@@ -1842,16 +1796,13 @@ func (b *QueryExprBuilder) JSONExtract(json, path any) schema.QueryAppender {
 }
 
 func (b *QueryExprBuilder) JSONUnquote(expr any) schema.QueryAppender {
+	passThrough := func() schema.QueryAppender {
+		return b.Expr("?", expr)
+	}
+
 	return b.ExprByDialect(DialectExprs{
-		Postgres: func() schema.QueryAppender {
-			return b.Expr("?", expr)
-		},
-		MySQL: func() schema.QueryAppender {
-			return b.Expr("JSON_UNQUOTE(?)", expr)
-		},
-		SQLite: func() schema.QueryAppender {
-			return b.Expr("?", expr)
-		},
+		Postgres: passThrough,
+		SQLite:   passThrough,
 		Default: func() schema.QueryAppender {
 			return b.Expr("JSON_UNQUOTE(?)", expr)
 		},
@@ -1866,20 +1817,6 @@ func (b *QueryExprBuilder) JSONArray(args ...any) schema.QueryAppender {
 			}
 
 			return b.Expr("JSONB_BUILD_ARRAY(?)", b.Exprs(args...))
-		},
-		MySQL: func() schema.QueryAppender {
-			if len(args) == 0 {
-				return b.Expr("JSON_ARRAY()")
-			}
-
-			return b.Expr("JSON_ARRAY(?)", b.Exprs(args...))
-		},
-		SQLite: func() schema.QueryAppender {
-			if len(args) == 0 {
-				return b.Expr("JSON_ARRAY()")
-			}
-
-			return b.Expr("JSON_ARRAY(?)", b.Exprs(args...))
 		},
 		Default: func() schema.QueryAppender {
 			if len(args) == 0 {
@@ -1900,20 +1837,6 @@ func (b *QueryExprBuilder) JSONObject(keyValues ...any) schema.QueryAppender {
 
 			return b.Expr("JSONB_BUILD_OBJECT(?)", b.Exprs(keyValues...))
 		},
-		MySQL: func() schema.QueryAppender {
-			if len(keyValues) == 0 {
-				return b.Expr("JSON_OBJECT()")
-			}
-
-			return b.Expr("JSON_OBJECT(?)", b.Exprs(keyValues...))
-		},
-		SQLite: func() schema.QueryAppender {
-			if len(keyValues) == 0 {
-				return b.Expr("JSON_OBJECT()")
-			}
-
-			return b.Expr("JSON_OBJECT(?)", b.Exprs(keyValues...))
-		},
 		Default: func() schema.QueryAppender {
 			if len(keyValues) == 0 {
 				return b.Expr("JSON_OBJECT()")
@@ -1928,9 +1851,6 @@ func (b *QueryExprBuilder) JSONContains(json, value any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
 			return b.Expr("? @> ?", json, b.ToJSON(value))
-		},
-		MySQL: func() schema.QueryAppender {
-			return b.Expr("JSON_CONTAINS(?, ?)", json, value)
 		},
 		SQLite: func() schema.QueryAppender {
 			return b.Exists(func(sq SelectQuery) {
@@ -1955,11 +1875,7 @@ func (b *QueryExprBuilder) JSONContainsPath(json, path any) schema.QueryAppender
 	return b.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
 			// PostgreSQL uses jsonb_path_exists which requires JSONPath syntax ($.key)
-			// We use the same path formatting as MySQL
 			return b.Expr("JSONB_PATH_EXISTS(?, ?::jsonpath)", b.ToJSON(json), b.processJSONPath(path, dialect.MySQL))
-		},
-		MySQL: func() schema.QueryAppender {
-			return b.Expr("JSON_CONTAINS_PATH(?, ?, ?)", json, "one", b.processJSONPath(path, dialect.MySQL))
 		},
 		SQLite: func() schema.QueryAppender {
 			return b.IsNotNull(b.JSONExtract(json, path))
@@ -1978,13 +1894,6 @@ func (b *QueryExprBuilder) JSONKeys(json any, path ...any) schema.QueryAppender 
 			}
 
 			return b.Expr("JSONB_OBJECT_KEYS(?)", b.ToJSON(json))
-		},
-		MySQL: func() schema.QueryAppender {
-			if len(path) > 0 {
-				return b.Expr("JSON_KEYS(?, ?)", json, b.processJSONPath(path[0], dialect.MySQL))
-			}
-
-			return b.Expr("JSON_KEYS(?)", json)
 		},
 		SQLite: func() schema.QueryAppender {
 			buildKeyArray := func(source any) schema.QueryAppender {
@@ -2018,16 +1927,10 @@ func (b *QueryExprBuilder) JSONKeys(json any, path ...any) schema.QueryAppender 
 func (b *QueryExprBuilder) JSONLength(json any, path ...any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
-			// PostgreSQL: Support both arrays and objects by checking type
-			// For arrays: use JSONB_ARRAY_LENGTH
-			// For objects: count keys using JSONB_OBJECT_KEYS
-			// For other types: return 0
 			var jsonExpr schema.QueryAppender
 			if len(path) > 0 {
-				// With path: extract the value at path first
 				jsonExpr = b.Expr("? #> ?::text[]", b.ToJSON(json), b.processJSONPath(path[0], dialect.PG))
 			} else {
-				// Without path: work on the root value
 				jsonExpr = b.ToJSON(json)
 			}
 
@@ -2043,19 +1946,7 @@ func (b *QueryExprBuilder) JSONLength(json any, path ...any) schema.QueryAppende
 					Else(0)
 			})
 		},
-		MySQL: func() schema.QueryAppender {
-			// MySQL has JSON_LENGTH that works with both arrays and objects
-			if len(path) > 0 {
-				return b.Expr("JSON_LENGTH(?, ?)", json, b.processJSONPath(path[0], dialect.MySQL))
-			}
-
-			return b.Expr("JSON_LENGTH(?)", json)
-		},
 		SQLite: func() schema.QueryAppender {
-			// SQLite: Support both arrays and objects by checking type
-			// For arrays: use JSON_ARRAY_LENGTH
-			// For objects: count keys using JSON_EACH
-			// For other types: return 0
 			valueExpr := json
 			if len(path) > 0 {
 				valueExpr = b.JSONExtract(json, path[0])
@@ -2094,20 +1985,6 @@ func (b *QueryExprBuilder) JSONType(json any, path ...any) schema.QueryAppender 
 
 			return b.Expr("JSONB_TYPEOF(?)", b.ToJSON(json))
 		},
-		MySQL: func() schema.QueryAppender {
-			if len(path) > 0 {
-				return b.Expr("JSON_TYPE(?, ?)", json, b.processJSONPath(path[0], dialect.MySQL))
-			}
-
-			return b.Expr("JSON_TYPE(?)", json)
-		},
-		SQLite: func() schema.QueryAppender {
-			if len(path) > 0 {
-				return b.Expr("JSON_TYPE(?, ?)", json, b.processJSONPath(path[0], dialect.SQLite))
-			}
-
-			return b.Expr("JSON_TYPE(?)", json)
-		},
 		Default: func() schema.QueryAppender {
 			if len(path) > 0 {
 				return b.Expr("JSON_TYPE(?, ?)", json, b.processJSONPath(path[0], dialect.MySQL))
@@ -2123,12 +2000,6 @@ func (b *QueryExprBuilder) JSONValid(expr any) schema.QueryAppender {
 		Postgres: func() schema.QueryAppender {
 			return b.Expr("? AND ?", b.IsNotNull(expr), b.IsNotNull(b.ToJSON(b.ToString(expr))))
 		},
-		MySQL: func() schema.QueryAppender {
-			return b.Expr("JSON_VALID(?)", expr)
-		},
-		SQLite: func() schema.QueryAppender {
-			return b.Expr("JSON_VALID(?)", expr)
-		},
 		Default: func() schema.QueryAppender {
 			return b.Expr("JSON_VALID(?)", expr)
 		},
@@ -2139,12 +2010,6 @@ func (b *QueryExprBuilder) JSONSet(json, path, value any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
 			return b.Expr("JSONB_SET(?, ?::text[], ?, TRUE)", b.ToJSON(json), b.processJSONPath(path, dialect.PG), b.ToJSON(value))
-		},
-		MySQL: func() schema.QueryAppender {
-			return b.Expr("JSON_SET(?, ?, ?)", json, b.processJSONPath(path, dialect.MySQL), value)
-		},
-		SQLite: func() schema.QueryAppender {
-			return b.Expr("JSON_SET(?, ?, ?)", json, b.processJSONPath(path, dialect.SQLite), value)
 		},
 		Default: func() schema.QueryAppender {
 			return b.Expr("JSON_SET(?, ?, ?)", json, b.processJSONPath(path, dialect.MySQL), value)
@@ -2157,12 +2022,6 @@ func (b *QueryExprBuilder) JSONInsert(json, path, value any) schema.QueryAppende
 		Postgres: func() schema.QueryAppender {
 			return b.Expr("JSONB_INSERT(?, ?::text[], TO_JSONB(?), FALSE)", b.ToJSON(json), b.processJSONPath(path, dialect.PG), value)
 		},
-		MySQL: func() schema.QueryAppender {
-			return b.Expr("JSON_INSERT(?, ?, ?)", json, b.processJSONPath(path, dialect.MySQL), value)
-		},
-		SQLite: func() schema.QueryAppender {
-			return b.Expr("JSON_INSERT(?, ?, ?)", json, b.processJSONPath(path, dialect.SQLite), value)
-		},
 		Default: func() schema.QueryAppender {
 			return b.Expr("JSON_INSERT(?, ?, ?)", json, b.processJSONPath(path, dialect.MySQL), value)
 		},
@@ -2174,12 +2033,6 @@ func (b *QueryExprBuilder) JSONReplace(json, path, value any) schema.QueryAppend
 		Postgres: func() schema.QueryAppender {
 			return b.Expr("JSONB_SET(?, ?::text[], TO_JSONB(?), FALSE)", b.ToJSON(json), b.processJSONPath(path, dialect.PG), value)
 		},
-		MySQL: func() schema.QueryAppender {
-			return b.Expr("JSON_REPLACE(?, ?, ?)", json, b.processJSONPath(path, dialect.MySQL), value)
-		},
-		SQLite: func() schema.QueryAppender {
-			return b.Expr("JSON_REPLACE(?, ?, ?)", json, b.processJSONPath(path, dialect.SQLite), value)
-		},
 		Default: func() schema.QueryAppender {
 			return b.Expr("JSON_REPLACE(?, ?, ?)", json, b.processJSONPath(path, dialect.MySQL), value)
 		},
@@ -2189,14 +2042,12 @@ func (b *QueryExprBuilder) JSONReplace(json, path, value any) schema.QueryAppend
 func (b *QueryExprBuilder) JSONArrayAppend(json, path, value any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
-			if pathStr, ok := path.(string); ok && (pathStr == "$") {
-				// Root level array
+			if pathStr, ok := path.(string); ok && pathStr == "$" {
 				return b.Expr("(? || ?)", b.ToJSON(json), b.JSONArray(value))
 			}
 
 			pgPath := b.processJSONPath(path, dialect.PG)
 
-			// Nested array - use jsonb_set with concatenation
 			return b.Expr(
 				"JSONB_SET(?, ?::text[], (? || ?))",
 				b.ToJSON(json),
@@ -2208,11 +2059,7 @@ func (b *QueryExprBuilder) JSONArrayAppend(json, path, value any) schema.QueryAp
 				b.JSONArray(value),
 			)
 		},
-		MySQL: func() schema.QueryAppender {
-			return b.Expr("JSON_ARRAY_APPEND(?, ?, ?)", json, b.processJSONPath(path, dialect.MySQL), value)
-		},
 		SQLite: func() schema.QueryAppender {
-			// Use helper composition to reuse JSON path logic
 			return b.JSONSet(
 				json,
 				path,
@@ -2239,16 +2086,14 @@ func (b *QueryExprBuilder) Decode(args ...any) schema.QueryAppender {
 		return b.Null()
 	}
 
+	convertToCase := func() schema.QueryAppender {
+		return b.convertDecodeToCase(args...)
+	}
+
 	return b.ExprByDialect(DialectExprs{
-		Postgres: func() schema.QueryAppender {
-			return b.convertDecodeToCase(args...)
-		},
-		MySQL: func() schema.QueryAppender {
-			return b.convertDecodeToCase(args...)
-		},
-		SQLite: func() schema.QueryAppender {
-			return b.convertDecodeToCase(args...)
-		},
+		Postgres: convertToCase,
+		MySQL:    convertToCase,
+		SQLite:   convertToCase,
 		Default: func() schema.QueryAppender {
 			return b.Expr("DECODE(?)", newExpressions(", ", args...))
 		},

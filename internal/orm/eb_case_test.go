@@ -20,8 +20,6 @@ type EBCaseTestSuite struct {
 
 // TestCaseColumn tests CaseColumn method.
 func (suite *EBCaseTestSuite) TestCaseColumn() {
-	suite.T().Logf("Testing CaseColumn for %s", suite.ds.Kind)
-
 	type PostWithLabel struct {
 		Title string `bun:"title"`
 		Label string `bun:"label"`
@@ -43,20 +41,16 @@ func (suite *EBCaseTestSuite) TestCaseColumn() {
 		Limit(5).
 		Scan(suite.ctx, &posts)
 
-	suite.NoError(err, "CaseColumn should work")
-	suite.True(len(posts) > 0, "Should have results")
+	suite.NoError(err)
+	suite.NotEmpty(posts)
 
 	for _, p := range posts {
 		suite.Contains([]string{"Published", "Draft", "Other"}, p.Label)
 	}
-
-	suite.T().Logf("Found %d posts with CaseColumn", len(posts))
 }
 
 // TestCaseSubQueryAndWhenSubQuery tests CaseSubQuery and WhenSubQuery methods.
 func (suite *EBCaseTestSuite) TestCaseSubQueryAndWhenSubQuery() {
-	suite.T().Logf("Testing CaseSubQuery/WhenSubQuery for %s", suite.ds.Kind)
-
 	suite.Run("CaseSubQuery", func() {
 		type PostWithLabel struct {
 			Title string `bun:"title"`
@@ -86,10 +80,8 @@ func (suite *EBCaseTestSuite) TestCaseSubQueryAndWhenSubQuery() {
 			Limit(5).
 			Scan(suite.ctx, &posts)
 
-		suite.NoError(err, "CaseSubQuery should work")
-		suite.True(len(posts) > 0, "Should have results")
-
-		suite.T().Logf("Found %d posts with CaseSubQuery", len(posts))
+		suite.NoError(err)
+		suite.NotEmpty(posts)
 	})
 
 	suite.Run("WhenSubQuery", func() {
@@ -114,17 +106,13 @@ func (suite *EBCaseTestSuite) TestCaseSubQueryAndWhenSubQuery() {
 			Limit(5).
 			Scan(suite.ctx, &users)
 
-		suite.NoError(err, "WhenSubQuery should work")
-		suite.True(len(users) > 0, "Should have results")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.NoError(err)
+		suite.NotEmpty(users)
 	})
 }
 
 // TestElseSubQuery tests ElseSubQuery method.
 func (suite *EBCaseTestSuite) TestElseSubQuery() {
-	suite.T().Logf("Testing ElseSubQuery for %s", suite.ds.Kind)
-
 	type UserWithDefault struct {
 		Name         string  `bun:"name"`
 		DefaultEmail *string `bun:"default_email"`
@@ -151,16 +139,12 @@ func (suite *EBCaseTestSuite) TestElseSubQuery() {
 		Limit(5).
 		Scan(suite.ctx, &users)
 
-	suite.NoError(err, "ElseSubQuery should work")
-	suite.True(len(users) > 0, "Should have results")
-
-	suite.T().Logf("Found %d users with ElseSubQuery", len(users))
+	suite.NoError(err)
+	suite.NotEmpty(users)
 }
 
 // TestCaseWhenSubQuery tests WhenSubQuery on CaseBuilder.
 func (suite *EBCaseTestSuite) TestCaseWhenSubQuery() {
-	suite.T().Logf("Testing Case WhenSubQuery for %s", suite.ds.Kind)
-
 	type Result struct {
 		Name  string `bun:"name"`
 		Label string `bun:"label"`
@@ -168,7 +152,9 @@ func (suite *EBCaseTestSuite) TestCaseWhenSubQuery() {
 
 	var results []Result
 
-	err := suite.selectUsers().
+	// WhenSubQuery may fail on some DBs because EXISTS returns int not bool,
+	// but the code path is covered regardless.
+	_ = suite.selectUsers().
 		Select("name").
 		SelectExpr(func(eb orm.ExprBuilder) any {
 			return eb.Case(func(c orm.CaseBuilder) {
@@ -188,8 +174,4 @@ func (suite *EBCaseTestSuite) TestCaseWhenSubQuery() {
 		OrderBy("name").
 		Limit(5).
 		Scan(suite.ctx, &results)
-
-	// WhenSubQuery may fail on some DBs because EXISTS returns int not bool
-	// but the code path is covered regardless
-	suite.T().Logf("WhenSubQuery err: %v, results: %d", err, len(results))
 }

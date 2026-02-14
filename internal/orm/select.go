@@ -87,10 +87,7 @@ func (q *BunSelectQuery) SelectAll() SelectQuery {
 }
 
 func (q *BunSelectQuery) Select(columns ...string) SelectQuery {
-	if q.hasSelectAll {
-		q.hasSelectAll = false
-	}
-
+	q.hasSelectAll = false
 	q.hasExplicitSelect = true
 
 	for _, column := range columns {
@@ -103,10 +100,7 @@ func (q *BunSelectQuery) Select(columns ...string) SelectQuery {
 }
 
 func (q *BunSelectQuery) SelectAs(column, alias string) SelectQuery {
-	if q.hasSelectAll {
-		q.hasSelectAll = false
-	}
-
+	q.hasSelectAll = false
 	q.hasExplicitSelect = true
 
 	q.explicitSelects = append(q.explicitSelects, func() {
@@ -137,28 +131,16 @@ func (q *BunSelectQuery) SelectExpr(builder func(ExprBuilder) any, alias ...stri
 }
 
 func (q *BunSelectQuery) SelectModelColumns() SelectQuery {
-	if q.hasSelectAll {
-		q.hasSelectAll = false
-	}
-
-	if q.hasSelectModelPKs {
-		q.hasSelectModelPKs = false
-	}
-
+	q.hasSelectAll = false
+	q.hasSelectModelPKs = false
 	q.hasSelectModelColumns = true
 
 	return q
 }
 
 func (q *BunSelectQuery) SelectModelPKs() SelectQuery {
-	if q.hasSelectAll {
-		q.hasSelectAll = false
-	}
-
-	if q.hasSelectModelColumns {
-		q.hasSelectModelColumns = false
-	}
-
+	q.hasSelectAll = false
+	q.hasSelectModelColumns = false
 	q.hasSelectModelPKs = true
 
 	return q
@@ -257,226 +239,143 @@ func (q *BunSelectQuery) TableSubQuery(builder func(query SelectQuery), alias ..
 }
 
 func (q *BunSelectQuery) Join(model any, builder func(ConditionBuilder), alias ...string) SelectQuery {
-	table := q.db.TableOf(model)
-
-	aliasToUse := table.Alias
-	if len(alias) > 0 && alias[0] != "" {
-		aliasToUse = alias[0]
-	}
-
-	q.query.Join(
-		"? ? AS ?",
-		bun.Safe(JoinInner.String()),
-		bun.Name(table.Name),
-		bun.Name(aliasToUse),
-	)
+	q.joinModel(JoinInner, model, alias...)
 	q.query.JoinOn("?", q.BuildCondition(builder))
 
 	return q
 }
 
 func (q *BunSelectQuery) JoinTable(name string, builder func(ConditionBuilder), alias ...string) SelectQuery {
-	if len(alias) > 0 && alias[0] != "" {
-		q.query.Join("? ? AS ?", bun.Safe(JoinInner.String()), bun.Name(name), bun.Name(alias[0]))
-	} else {
-		q.query.Join("? ?", bun.Safe(JoinInner.String()), bun.Name(name))
-	}
-
+	q.joinTable(JoinInner, name, alias...)
 	q.query.JoinOn("?", q.BuildCondition(builder))
 
 	return q
 }
 
 func (q *BunSelectQuery) JoinSubQuery(sqBuilder func(query SelectQuery), cBuilder func(ConditionBuilder), alias ...string) SelectQuery {
-	if len(alias) > 0 && alias[0] != "" {
-		q.query.Join("? (?) AS ?", bun.Safe(JoinInner.String()), q.BuildSubQuery(sqBuilder), bun.Name(alias[0]))
-	} else {
-		q.query.Join("? (?)", bun.Safe(JoinInner.String()), q.BuildSubQuery(sqBuilder))
-	}
-
+	q.joinSource(JoinInner, q.BuildSubQuery(sqBuilder), alias...)
 	q.query.JoinOn("?", q.BuildCondition(cBuilder))
 
 	return q
 }
 
 func (q *BunSelectQuery) JoinExpr(eBuilder func(ExprBuilder) any, cBuilder func(ConditionBuilder), alias ...string) SelectQuery {
-	if len(alias) > 0 && alias[0] != "" {
-		q.query.Join("? (?) AS ?", bun.Safe(JoinInner.String()), eBuilder(q.eb), bun.Name(alias[0]))
-	} else {
-		q.query.Join("? (?)", bun.Safe(JoinInner.String()), eBuilder(q.eb))
-	}
-
+	q.joinSource(JoinInner, eBuilder(q.eb), alias...)
 	q.query.JoinOn("?", q.BuildCondition(cBuilder))
 
 	return q
 }
 
 func (q *BunSelectQuery) LeftJoin(model any, builder func(ConditionBuilder), alias ...string) SelectQuery {
-	table := q.db.TableOf(model)
-
-	aliasToUse := table.Alias
-	if len(alias) > 0 && alias[0] != "" {
-		aliasToUse = alias[0]
-	}
-
-	q.query.Join(
-		"? ? AS ?",
-		bun.Safe(JoinLeft.String()),
-		bun.Name(table.Name),
-		bun.Name(aliasToUse),
-	)
+	q.joinModel(JoinLeft, model, alias...)
 	q.query.JoinOn("?", q.BuildCondition(builder))
 
 	return q
 }
 
 func (q *BunSelectQuery) LeftJoinTable(name string, builder func(ConditionBuilder), alias ...string) SelectQuery {
-	if len(alias) > 0 && alias[0] != "" {
-		q.query.Join("? ? AS ?", bun.Safe(JoinLeft.String()), bun.Name(name), bun.Name(alias[0]))
-	} else {
-		q.query.Join("? ?", bun.Safe(JoinLeft.String()), bun.Name(name))
-	}
-
+	q.joinTable(JoinLeft, name, alias...)
 	q.query.JoinOn("?", q.BuildCondition(builder))
 
 	return q
 }
 
 func (q *BunSelectQuery) LeftJoinSubQuery(sqBuilder func(query SelectQuery), cBuilder func(ConditionBuilder), alias ...string) SelectQuery {
-	if len(alias) > 0 && alias[0] != "" {
-		q.query.Join("? (?) AS ?", bun.Safe(JoinLeft.String()), q.BuildSubQuery(sqBuilder), bun.Name(alias[0]))
-	} else {
-		q.query.Join("? (?)", bun.Safe(JoinLeft.String()), q.BuildSubQuery(sqBuilder))
-	}
-
+	q.joinSource(JoinLeft, q.BuildSubQuery(sqBuilder), alias...)
 	q.query.JoinOn("?", q.BuildCondition(cBuilder))
 
 	return q
 }
 
 func (q *BunSelectQuery) LeftJoinExpr(eBuilder func(ExprBuilder) any, cBuilder func(ConditionBuilder), alias ...string) SelectQuery {
-	if len(alias) > 0 && alias[0] != "" {
-		q.query.Join("? (?) AS ?", bun.Safe(JoinLeft.String()), eBuilder(q.eb), bun.Name(alias[0]))
-	} else {
-		q.query.Join("? (?)", bun.Safe(JoinLeft.String()), eBuilder(q.eb))
-	}
-
+	q.joinSource(JoinLeft, eBuilder(q.eb), alias...)
 	q.query.JoinOn("?", q.BuildCondition(cBuilder))
 
 	return q
 }
 
 func (q *BunSelectQuery) RightJoin(model any, builder func(ConditionBuilder), alias ...string) SelectQuery {
-	table := q.db.TableOf(model)
-
-	aliasToUse := table.Alias
-	if len(alias) > 0 && alias[0] != "" {
-		aliasToUse = alias[0]
-	}
-
-	q.query.Join(
-		"? ? AS ?",
-		bun.Safe(JoinRight.String()),
-		bun.Name(table.Name),
-		bun.Name(aliasToUse),
-	)
+	q.joinModel(JoinRight, model, alias...)
 	q.query.JoinOn("?", q.BuildCondition(builder))
 
 	return q
 }
 
 func (q *BunSelectQuery) RightJoinTable(name string, builder func(ConditionBuilder), alias ...string) SelectQuery {
-	if len(alias) > 0 && alias[0] != "" {
-		q.query.Join("? ? AS ?", bun.Safe(JoinRight.String()), bun.Name(name), bun.Name(alias[0]))
-	} else {
-		q.query.Join("? ?", bun.Safe(JoinRight.String()), bun.Name(name))
-	}
-
+	q.joinTable(JoinRight, name, alias...)
 	q.query.JoinOn("?", q.BuildCondition(builder))
 
 	return q
 }
 
 func (q *BunSelectQuery) RightJoinSubQuery(sqBuilder func(query SelectQuery), cBuilder func(ConditionBuilder), alias ...string) SelectQuery {
-	if len(alias) > 0 && alias[0] != "" {
-		q.query.Join("? (?) AS ?", bun.Safe(JoinRight.String()), q.BuildSubQuery(sqBuilder), bun.Name(alias[0]))
-	} else {
-		q.query.Join("? (?)", bun.Safe(JoinRight.String()), q.BuildSubQuery(sqBuilder))
-	}
-
+	q.joinSource(JoinRight, q.BuildSubQuery(sqBuilder), alias...)
 	q.query.JoinOn("?", q.BuildCondition(cBuilder))
 
 	return q
 }
 
 func (q *BunSelectQuery) RightJoinExpr(eBuilder func(ExprBuilder) any, cBuilder func(ConditionBuilder), alias ...string) SelectQuery {
-	if len(alias) > 0 && alias[0] != "" {
-		q.query.Join("? (?) AS ?", bun.Safe(JoinRight.String()), eBuilder(q.eb), bun.Name(alias[0]))
-	} else {
-		q.query.Join("? (?)", bun.Safe(JoinRight.String()), eBuilder(q.eb))
-	}
-
+	q.joinSource(JoinRight, eBuilder(q.eb), alias...)
 	q.query.JoinOn("?", q.BuildCondition(cBuilder))
 
 	return q
 }
 
 func (q *BunSelectQuery) FullJoin(model any, builder func(ConditionBuilder), alias ...string) SelectQuery {
-	table := q.db.TableOf(model)
-
-	aliasToUse := table.Alias
-	if len(alias) > 0 && alias[0] != "" {
-		aliasToUse = alias[0]
-	}
-
-	q.query.Join(
-		"? ? AS ?",
-		bun.Safe(JoinFull.String()),
-		bun.Name(table.Name),
-		bun.Name(aliasToUse),
-	)
+	q.joinModel(JoinFull, model, alias...)
 	q.query.JoinOn("?", q.BuildCondition(builder))
 
 	return q
 }
 
 func (q *BunSelectQuery) FullJoinTable(name string, builder func(ConditionBuilder), alias ...string) SelectQuery {
-	if len(alias) > 0 && alias[0] != "" {
-		q.query.Join("? ? AS ?", bun.Safe(JoinFull.String()), bun.Name(name), bun.Name(alias[0]))
-	} else {
-		q.query.Join("? ?", bun.Safe(JoinFull.String()), bun.Name(name))
-	}
-
+	q.joinTable(JoinFull, name, alias...)
 	q.query.JoinOn("?", q.BuildCondition(builder))
 
 	return q
 }
 
 func (q *BunSelectQuery) FullJoinSubQuery(sqBuilder func(query SelectQuery), cBuilder func(ConditionBuilder), alias ...string) SelectQuery {
-	if len(alias) > 0 && alias[0] != "" {
-		q.query.Join("? (?) AS ?", bun.Safe(JoinFull.String()), q.BuildSubQuery(sqBuilder), bun.Name(alias[0]))
-	} else {
-		q.query.Join("? (?)", bun.Safe(JoinFull.String()), q.BuildSubQuery(sqBuilder))
-	}
-
+	q.joinSource(JoinFull, q.BuildSubQuery(sqBuilder), alias...)
 	q.query.JoinOn("?", q.BuildCondition(cBuilder))
 
 	return q
 }
 
 func (q *BunSelectQuery) FullJoinExpr(eBuilder func(ExprBuilder) any, cBuilder func(ConditionBuilder), alias ...string) SelectQuery {
-	if len(alias) > 0 && alias[0] != "" {
-		q.query.Join("? (?) AS ?", bun.Safe(JoinFull.String()), eBuilder(q.eb), bun.Name(alias[0]))
-	} else {
-		q.query.Join("? (?)", bun.Safe(JoinFull.String()), eBuilder(q.eb))
-	}
-
+	q.joinSource(JoinFull, eBuilder(q.eb), alias...)
 	q.query.JoinOn("?", q.BuildCondition(cBuilder))
 
 	return q
 }
 
 func (q *BunSelectQuery) CrossJoin(model any, alias ...string) SelectQuery {
+	q.joinModel(JoinCross, model, alias...)
+
+	return q
+}
+
+func (q *BunSelectQuery) CrossJoinTable(name string, alias ...string) SelectQuery {
+	q.joinTable(JoinCross, name, alias...)
+
+	return q
+}
+
+func (q *BunSelectQuery) CrossJoinSubQuery(sqBuilder func(query SelectQuery), alias ...string) SelectQuery {
+	q.joinSource(JoinCross, q.BuildSubQuery(sqBuilder), alias...)
+
+	return q
+}
+
+func (q *BunSelectQuery) CrossJoinExpr(eBuilder func(ExprBuilder) any, alias ...string) SelectQuery {
+	q.joinSource(JoinCross, eBuilder(q.eb), alias...)
+
+	return q
+}
+
+// joinModel adds a JOIN clause using a model's table schema.
+func (q *BunSelectQuery) joinModel(joinType JoinType, model any, alias ...string) {
 	table := q.db.TableOf(model)
 
 	aliasToUse := table.Alias
@@ -484,44 +383,25 @@ func (q *BunSelectQuery) CrossJoin(model any, alias ...string) SelectQuery {
 		aliasToUse = alias[0]
 	}
 
-	q.query.Join(
-		"? ? AS ?",
-		bun.Safe(JoinCross.String()),
-		bun.Name(table.Name),
-		bun.Name(aliasToUse),
-	)
-
-	return q
+	q.query.Join("? ? AS ?", bun.Safe(joinType.String()), bun.Name(table.Name), bun.Name(aliasToUse))
 }
 
-func (q *BunSelectQuery) CrossJoinTable(name string, alias ...string) SelectQuery {
+// joinTable adds a JOIN clause using a table name string.
+func (q *BunSelectQuery) joinTable(joinType JoinType, name string, alias ...string) {
 	if len(alias) > 0 && alias[0] != "" {
-		q.query.Join("? ? AS ?", bun.Safe(JoinCross.String()), bun.Name(name), bun.Name(alias[0]))
+		q.query.Join("? ? AS ?", bun.Safe(joinType.String()), bun.Name(name), bun.Name(alias[0]))
 	} else {
-		q.query.Join("? ?", bun.Safe(JoinCross.String()), bun.Name(name))
+		q.query.Join("? ?", bun.Safe(joinType.String()), bun.Name(name))
 	}
-
-	return q
 }
 
-func (q *BunSelectQuery) CrossJoinSubQuery(sqBuilder func(query SelectQuery), alias ...string) SelectQuery {
+// joinSource adds a JOIN clause using a subquery or expression source.
+func (q *BunSelectQuery) joinSource(joinType JoinType, source any, alias ...string) {
 	if len(alias) > 0 && alias[0] != "" {
-		q.query.Join("? (?) AS ?", bun.Safe(JoinCross.String()), q.BuildSubQuery(sqBuilder), bun.Name(alias[0]))
+		q.query.Join("? (?) AS ?", bun.Safe(joinType.String()), source, bun.Name(alias[0]))
 	} else {
-		q.query.Join("? (?)", bun.Safe(JoinCross.String()), q.BuildSubQuery(sqBuilder))
+		q.query.Join("? (?)", bun.Safe(joinType.String()), source)
 	}
-
-	return q
-}
-
-func (q *BunSelectQuery) CrossJoinExpr(eBuilder func(ExprBuilder) any, alias ...string) SelectQuery {
-	if len(alias) > 0 && alias[0] != "" {
-		q.query.Join("? (?) AS ?", bun.Safe(JoinCross.String()), eBuilder(q.eb), bun.Name(alias[0]))
-	} else {
-		q.query.Join("? (?)", bun.Safe(JoinCross.String()), eBuilder(q.eb))
-	}
-
-	return q
 }
 
 func (q *BunSelectQuery) JoinRelations(specs ...*RelationSpec) SelectQuery {
@@ -637,60 +517,44 @@ func (q *BunSelectQuery) Paginate(pageable page.Pageable) SelectQuery {
 }
 
 func (q *BunSelectQuery) ForShare(tables ...string) SelectQuery {
-	if len(tables) == 0 {
-		q.query.For("SHARE")
-	} else {
-		q.query.For("SHARE OF ?", Names(tables...))
-	}
-
-	return q
+	return q.forLock("SHARE", "", tables...)
 }
 
 func (q *BunSelectQuery) ForShareNoWait(tables ...string) SelectQuery {
-	if len(tables) == 0 {
-		q.query.For("SHARE NOWAIT")
-	} else {
-		q.query.For("SHARE OF ? NOWAIT", Names(tables...))
-	}
-
-	return q
+	return q.forLock("SHARE", "NOWAIT", tables...)
 }
 
 func (q *BunSelectQuery) ForShareSkipLocked(tables ...string) SelectQuery {
-	if len(tables) == 0 {
-		q.query.For("SHARE SKIP LOCKED")
-	} else {
-		q.query.For("SHARE OF ? SKIP LOCKED", Names(tables...))
-	}
-
-	return q
+	return q.forLock("SHARE", "SKIP LOCKED", tables...)
 }
 
 func (q *BunSelectQuery) ForUpdate(tables ...string) SelectQuery {
-	if len(tables) == 0 {
-		q.query.For("UPDATE")
-	} else {
-		q.query.For("UPDATE OF ?", Names(tables...))
-	}
-
-	return q
+	return q.forLock("UPDATE", "", tables...)
 }
 
 func (q *BunSelectQuery) ForUpdateNoWait(tables ...string) SelectQuery {
-	if len(tables) == 0 {
-		q.query.For("UPDATE NOWAIT")
-	} else {
-		q.query.For("UPDATE OF ? NOWAIT", Names(tables...))
-	}
-
-	return q
+	return q.forLock("UPDATE", "NOWAIT", tables...)
 }
 
 func (q *BunSelectQuery) ForUpdateSkipLocked(tables ...string) SelectQuery {
-	if len(tables) == 0 {
-		q.query.For("UPDATE SKIP LOCKED")
+	return q.forLock("UPDATE", "SKIP LOCKED", tables...)
+}
+
+// forLock builds a FOR lock clause with the given lock mode, optional suffix, and optional table names.
+func (q *BunSelectQuery) forLock(mode, suffix string, tables ...string) SelectQuery {
+	clause := mode
+	if len(tables) > 0 {
+		clause += " OF ?"
+	}
+
+	if suffix != "" {
+		clause += " " + suffix
+	}
+
+	if len(tables) > 0 {
+		q.query.For(clause, Names(tables...))
 	} else {
-		q.query.For("UPDATE OF ? SKIP LOCKED", Names(tables...))
+		q.query.For(clause)
 	}
 
 	return q

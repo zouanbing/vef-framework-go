@@ -24,6 +24,7 @@ func init() {
 // This ensures update operations never modify fixture data.
 type UpdateTestSuite struct {
 	*BaseTestSuite
+
 	testUsers []*User
 	testPosts []*Post
 }
@@ -487,6 +488,7 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 		}
 
 		err := suite.db.ResetModel(suite.ctx, (*SoftDeleteArticle)(nil))
+
 		suite.Require().NoError(err, "Should reset soft delete table")
 		defer func() {
 			_, dropErr := suite.db.NewDropTable().Model((*SoftDeleteArticle)(nil)).IfExists().Exec(suite.ctx)

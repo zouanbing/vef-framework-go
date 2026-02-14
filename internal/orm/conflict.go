@@ -91,13 +91,11 @@ func (b *InsertQueryConflictUpdateBuilder) Set(column string, value ...any) Conf
 		valueExpr = value[0]
 	} else {
 		b.parent.eb.ExecByDialect(DialectExecs{
-			Postgres: func() {
-				valueExpr = b.parent.eb.Expr("EXCLUDED.?", bun.Name(column))
-			},
 			MySQL: func() {
 				valueExpr = bun.Name(column)
 			},
-			SQLite: func() {
+			Default: func() {
+				// PostgreSQL/SQLite use EXCLUDED.<column> to reference the proposed row.
 				valueExpr = b.parent.eb.Expr("EXCLUDED.?", bun.Name(column))
 			},
 		})
@@ -107,10 +105,7 @@ func (b *InsertQueryConflictUpdateBuilder) Set(column string, value ...any) Conf
 		Postgres: func() schema.QueryAppender {
 			return b.parent.eb.Expr("? = ?", bun.Name(column), valueExpr)
 		},
-		MySQL: func() schema.QueryAppender {
-			return bun.SafeQuery("? = ?", bun.Name(column), valueExpr)
-		},
-		SQLite: func() schema.QueryAppender {
+		Default: func() schema.QueryAppender {
 			return bun.SafeQuery("? = ?", bun.Name(column), valueExpr)
 		},
 	})
@@ -122,18 +117,7 @@ func (b *InsertQueryConflictUpdateBuilder) Set(column string, value ...any) Conf
 
 func (b *InsertQueryConflictUpdateBuilder) SetExpr(column string, builder func(ExprBuilder) any) ConflictUpdateBuilder {
 	valueExpr := builder(b.parent.eb)
-	setExpr := b.parent.eb.ExprByDialect(DialectExprs{
-		Postgres: func() schema.QueryAppender {
-			return b.parent.eb.Expr("? = ?", bun.Name(column), valueExpr)
-		},
-		MySQL: func() schema.QueryAppender {
-			return b.parent.eb.Expr("? = ?", bun.Name(column), valueExpr)
-		},
-		SQLite: func() schema.QueryAppender {
-			return b.parent.eb.Expr("? = ?", bun.Name(column), valueExpr)
-		},
-	})
-
+	setExpr := b.parent.eb.Expr("? = ?", bun.Name(column), valueExpr)
 	b.parent.sets = append(b.parent.sets, setExpr)
 
 	return b

@@ -281,7 +281,9 @@ type partitionExpr struct {
 func (p *partitionExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	if p.column != "" {
 		return p.builders.Column(p.column).AppendQuery(gen, b)
-	} else if p.expr != nil {
+	}
+
+	if p.expr != nil {
 		return p.builders.Expr("?", p.expr).AppendQuery(gen, b)
 	}
 
@@ -357,11 +359,9 @@ func (w *baseWindowExpr) appendOrderByExpr(expr any) {
 
 func (w *baseWindowExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	if w.funcExpr == nil {
-		// Function name and arguments
 		b = append(b, w.funcName...)
 		b = append(b, '(')
 
-		// Function arguments
 		if len(w.args) > 0 {
 			if b, err = w.eb.Exprs(w.args...).AppendQuery(gen, b); err != nil {
 				return
@@ -370,7 +370,6 @@ func (w *baseWindowExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, e
 
 		b = append(b, ')')
 
-		// FROM DIRECTION/NULLS MODE: Oracle supports both, SQL Server only NULLS, others neither
 		if w.fromDir != FromDefault || w.nullsMode != NullsDefault {
 			dialectBytes, err := w.eb.FragmentByDialect(DialectFragments{
 				Oracle: func() ([]byte, error) {
@@ -412,11 +411,9 @@ func (w *baseWindowExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, e
 		}
 	}
 
-	// OVER clause
 	b = append(b, " OVER "...)
 	b = append(b, '(')
 
-	// PARTITION BY clause
 	if len(w.partitionExprs) > 0 {
 		b = append(b, "PARTITION BY "...)
 
@@ -431,7 +428,6 @@ func (w *baseWindowExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, e
 		}
 	}
 
-	// ORDER BY clause
 	if len(w.orderExprs) > 0 {
 		b = append(b, ' ')
 		if b, err = newOrderByClause(w.orderExprs...).AppendQuery(gen, b); err != nil {
@@ -439,7 +435,6 @@ func (w *baseWindowExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, e
 		}
 	}
 
-	// Frame clause
 	if w.frameType != FrameDefault {
 		if len(w.partitionExprs) > 0 || len(w.orderExprs) > 0 {
 			b = append(b, ' ')
@@ -449,7 +444,6 @@ func (w *baseWindowExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, e
 
 		b = append(b, ' ')
 		if w.frameEndKind != FrameBoundNone {
-			// Use BETWEEN syntax when both start and end bounds are present
 			b = append(b, "BETWEEN "...)
 			b = w.appendFrameBound(b, w.frameStartKind, w.frameStartN)
 			b = append(b, " AND "...)
@@ -564,14 +558,12 @@ type windowFrameBuilder struct {
 
 func (b *windowFrameBuilder) UnboundedPreceding() WindowFrameBuilder {
 	b.frameStartKind = FrameBoundUnboundedPreceding
-	b.frameStartN = 0
 
 	return b
 }
 
 func (b *windowFrameBuilder) CurrentRow() WindowFrameBuilder {
 	b.frameStartKind = FrameBoundCurrentRow
-	b.frameStartN = 0
 
 	return b
 }
@@ -600,14 +592,12 @@ type windowFrameEndBuilder struct {
 
 func (b *windowFrameEndBuilder) UnboundedPreceding() WindowFrameEndBuilder {
 	b.frameEndKind = FrameBoundUnboundedPreceding
-	b.frameEndN = 0
 
 	return b
 }
 
 func (b *windowFrameEndBuilder) CurrentRow() WindowFrameEndBuilder {
 	b.frameEndKind = FrameBoundCurrentRow
-	b.frameEndN = 0
 
 	return b
 }
@@ -628,7 +618,6 @@ func (b *windowFrameEndBuilder) Following(n int) WindowFrameEndBuilder {
 
 func (b *windowFrameEndBuilder) UnboundedFollowing() WindowFrameEndBuilder {
 	b.frameEndKind = FrameBoundUnboundedFollowing
-	b.frameEndN = 0
 
 	return b
 }

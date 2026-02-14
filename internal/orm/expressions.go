@@ -28,7 +28,6 @@ func (e *Expressions) AppendQuery(gen schema.QueryGen, b []byte) ([]byte, error)
 
 		for i := range sliceLen {
 			if i > 0 {
-				// Handle separator
 				switch sep := e.sep.(type) {
 				case string:
 					b = append(b, sep...)

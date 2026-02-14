@@ -25,8 +25,6 @@ type EBAggregationFunctionsTestSuite struct {
 
 // TestCount tests the Count aggregate function with various scenarios.
 func (suite *EBAggregationFunctionsTestSuite) TestCount() {
-	suite.T().Logf("Testing Count function for %s", suite.ds.Kind)
-
 	suite.Run("ConditionalCountWithFilter", func() {
 		// Test Count with FILTER clause (PostgreSQL, SQLite) vs CASE equivalent (MySQL)
 		type ConditionalCounts struct {
@@ -73,7 +71,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestCount() {
 			}, "high_view_posts").
 			Scan(suite.ctx, &counts)
 
-		suite.NoError(err, "Conditional count aggregation should work")
+		suite.NoError(err)
 		suite.True(counts.TotalPosts > 0, "Should have posts")
 		suite.True(counts.PublishedPosts >= 0, "Should count published posts")
 		suite.True(counts.DraftPosts >= 0, "Should count draft posts")
@@ -88,8 +86,6 @@ func (suite *EBAggregationFunctionsTestSuite) TestCount() {
 
 // TestCountColumn tests the CountColumn aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestCountColumn() {
-	suite.T().Logf("Testing CountColumn function for %s", suite.ds.Kind)
-
 	suite.Run("BasicCountColumn", func() {
 		type AgeStats struct {
 			CountAge int64 `bun:"count_age"`
@@ -103,10 +99,8 @@ func (suite *EBAggregationFunctionsTestSuite) TestCountColumn() {
 			}, "count_age").
 			Scan(suite.ctx, &ageStats)
 
-		suite.NoError(err, "CountColumn should work")
+		suite.NoError(err)
 		suite.Equal(int64(20), ageStats.CountAge, "Should count 20 users with age")
-
-		suite.T().Logf("Counted %d age values", ageStats.CountAge)
 	})
 
 	suite.Run("DistinctCountColumn", func() {
@@ -130,20 +124,15 @@ func (suite *EBAggregationFunctionsTestSuite) TestCountColumn() {
 			}, "distinct_user_ids").
 			Scan(suite.ctx, &stats)
 
-		suite.NoError(err, "DISTINCT CountColumn should work")
+		suite.NoError(err)
 		suite.True(stats.UniqueStatuses > 0, "Should have unique statuses")
 		suite.True(stats.UniqueCategories > 0, "Should have unique categories")
 		suite.True(stats.DistinctUserIDs > 0, "Should have distinct user IDs")
-
-		suite.T().Logf("Unique statuses: %d, categories: %d, users: %d",
-			stats.UniqueStatuses, stats.UniqueCategories, stats.DistinctUserIDs)
 	})
 }
 
 // TestCountAll tests the CountAll aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestCountAll() {
-	suite.T().Logf("Testing CountAll function for %s", suite.ds.Kind)
-
 	suite.Run("CountAllWithGrouping", func() {
 		type StatusCount struct {
 			Status string `bun:"status"`
@@ -161,14 +150,13 @@ func (suite *EBAggregationFunctionsTestSuite) TestCountAll() {
 			OrderBy("status").
 			Scan(suite.ctx, &statusCounts)
 
-		suite.NoError(err, "CountAll with GROUP BY should work")
-		suite.True(len(statusCounts) > 0, "Should have status counts")
+		suite.NoError(err)
+		suite.NotEmpty(statusCounts)
 
 		totalCount := int64(0)
 		for _, sc := range statusCounts {
 			suite.True(sc.Count > 0, "Each status should have at least 1 post")
 			totalCount += sc.Count
-			suite.T().Logf("Status %s: %d posts", sc.Status, sc.Count)
 		}
 
 		// Verify total matches expected post count from fixture
@@ -179,8 +167,6 @@ func (suite *EBAggregationFunctionsTestSuite) TestCountAll() {
 
 // TestSum tests the Sum aggregate function with builder callback.
 func (suite *EBAggregationFunctionsTestSuite) TestSum() {
-	suite.T().Logf("Testing Sum function for %s", suite.ds.Kind)
-
 	suite.Run("SumWithFilter", func() {
 		type ConditionalSums struct {
 			TotalViews     int64 `bun:"total_views"`
@@ -202,12 +188,10 @@ func (suite *EBAggregationFunctionsTestSuite) TestSum() {
 			}, "published_views").
 			Scan(suite.ctx, &sums)
 
-		suite.NoError(err, "Sum with Filter should work")
+		suite.NoError(err)
 		suite.True(sums.TotalViews > 0, "Should have total views")
 		suite.True(sums.PublishedViews >= 0, "Should have published views")
 		suite.True(sums.PublishedViews <= sums.TotalViews, "Published views should not exceed total")
-
-		suite.T().Logf("Total views: %d, Published views: %d", sums.TotalViews, sums.PublishedViews)
 	})
 
 	suite.Run("SumInComplexGroupBy", func() {
@@ -270,11 +254,11 @@ func (suite *EBAggregationFunctionsTestSuite) TestSum() {
 			OrderBy("c.name")
 
 		err := query.Scan(suite.ctx, &stats)
-		suite.NoError(err, "Complex GROUP BY with multiple aggregates should work")
-		suite.True(len(stats) > 0, "Should have category statistics")
+		suite.NoError(err)
+		suite.NotEmpty(stats)
 
 		for _, stat := range stats {
-			suite.NotEmpty(stat.CategoryName, "Category name should not be empty")
+			suite.NotEmpty(stat.CategoryName)
 			suite.True(stat.TotalPosts > 0, "Each category should have posts")
 			suite.True(stat.TotalViews >= 0, "Total views should be non-negative")
 			suite.True(stat.PublishedViews >= 0, "Published views should be non-negative")
@@ -292,8 +276,6 @@ func (suite *EBAggregationFunctionsTestSuite) TestSum() {
 
 // TestSumColumn tests the SumColumn aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestSumColumn() {
-	suite.T().Logf("Testing SumColumn function for %s", suite.ds.Kind)
-
 	suite.Run("BasicSumColumn", func() {
 		type ViewStats struct {
 			TotalViews int64   `bun:"total_views"`
@@ -311,18 +293,14 @@ func (suite *EBAggregationFunctionsTestSuite) TestSumColumn() {
 			}, "avg_views").
 			Scan(suite.ctx, &stats)
 
-		suite.NoError(err, "SumColumn should work")
+		suite.NoError(err)
 		suite.True(stats.TotalViews > 0, "Should have total views")
 		suite.True(stats.AvgViews > 0, "Should have average views")
-
-		suite.T().Logf("Total views: %d, Average views: %.2f", stats.TotalViews, stats.AvgViews)
 	})
 }
 
 // TestAvg tests the Avg aggregate function with builder callback.
 func (suite *EBAggregationFunctionsTestSuite) TestAvg() {
-	suite.T().Logf("Testing Avg function for %s", suite.ds.Kind)
-
 	suite.Run("AvgWithFilter", func() {
 		type ConditionalAvg struct {
 			AvgPublishedViews int64 `bun:"avg_published_views"`
@@ -342,17 +320,13 @@ func (suite *EBAggregationFunctionsTestSuite) TestAvg() {
 			}, "avg_published_views").
 			Scan(suite.ctx, &avg)
 
-		suite.NoError(err, "Avg with Filter should work")
+		suite.NoError(err)
 		suite.True(avg.AvgPublishedViews >= 0, "Average should be non-negative")
-
-		suite.T().Logf("Average published views: %d", avg.AvgPublishedViews)
 	})
 }
 
 // TestAvgColumn tests the AvgColumn aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestAvgColumn() {
-	suite.T().Logf("Testing AvgColumn function for %s", suite.ds.Kind)
-
 	suite.Run("BasicAvgColumn", func() {
 		type AgeStats struct {
 			AvgAge float64 `bun:"avg_age"`
@@ -366,10 +340,8 @@ func (suite *EBAggregationFunctionsTestSuite) TestAvgColumn() {
 			}, "avg_age").
 			Scan(suite.ctx, &stats)
 
-		suite.NoError(err, "AvgColumn should work")
+		suite.NoError(err)
 		suite.InDelta(31.4, stats.AvgAge, 1.0, "Average age should be around 31.4")
-
-		suite.T().Logf("Average age: %.2f", stats.AvgAge)
 	})
 
 	suite.Run("DistinctAvgColumn", func() {
@@ -385,17 +357,13 @@ func (suite *EBAggregationFunctionsTestSuite) TestAvgColumn() {
 			}, "avg_distinct_views").
 			Scan(suite.ctx, &avg)
 
-		suite.NoError(err, "DISTINCT AvgColumn should work")
+		suite.NoError(err)
 		suite.True(avg.AvgDistinctViews > 0, "Should have distinct average")
-
-		suite.T().Logf("Distinct average views: %.2f", avg.AvgDistinctViews)
 	})
 }
 
 // TestMin tests the Min aggregate function with builder callback.
 func (suite *EBAggregationFunctionsTestSuite) TestMin() {
-	suite.T().Logf("Testing Min function for %s", suite.ds.Kind)
-
 	suite.Run("MinInCombinedStats", func() {
 		type CombinedStats struct {
 			Status   string  `bun:"status"`
@@ -421,22 +389,18 @@ func (suite *EBAggregationFunctionsTestSuite) TestMin() {
 			OrderBy("status").
 			Scan(suite.ctx, &stats)
 
-		suite.NoError(err, "Min in combined stats should work")
-		suite.True(len(stats) > 0, "Should have results")
+		suite.NoError(err)
+		suite.NotEmpty(stats)
 
 		for _, stat := range stats {
 			suite.True(stat.MinViews >= 0, "Min should be non-negative")
 			suite.True(stat.MaxViews >= stat.MinViews, "Max should be >= Min")
-			suite.T().Logf("Status: %s, Min: %d, Max: %d, Avg: %.2f",
-				stat.Status, stat.MinViews, stat.MaxViews, stat.AvgViews)
 		}
 	})
 }
 
 // TestMinColumn tests the MinColumn aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestMinColumn() {
-	suite.T().Logf("Testing MinColumn function for %s", suite.ds.Kind)
-
 	suite.Run("BasicMinColumn", func() {
 		type AgeStats struct {
 			MinAge int16 `bun:"min_age"`
@@ -450,23 +414,19 @@ func (suite *EBAggregationFunctionsTestSuite) TestMinColumn() {
 			}, "min_age").
 			Scan(suite.ctx, &stats)
 
-		suite.NoError(err, "MinColumn should work")
+		suite.NoError(err)
 		suite.Equal(int16(21), stats.MinAge, "Min age should be 21")
-
-		suite.T().Logf("Minimum age: %d", stats.MinAge)
 	})
 }
 
 // TestMax tests the Max aggregate function with builder callback.
 func (suite *EBAggregationFunctionsTestSuite) TestMax() {
-	suite.T().Logf("Testing Max function for %s", suite.ds.Kind)
-
 	suite.Run("MaxWithFilter", func() {
-		type MaxResult struct {
+		type Result struct {
 			MaxPublishedViews int64 `bun:"max_published_views"`
 		}
 
-		var result MaxResult
+		var result Result
 
 		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
@@ -478,10 +438,8 @@ func (suite *EBAggregationFunctionsTestSuite) TestMax() {
 			}, "max_published_views").
 			Scan(suite.ctx, &result)
 
-		suite.NoError(err, "Max with Filter should work")
+		suite.NoError(err)
 		suite.True(result.MaxPublishedViews >= 0, "Max should be non-negative")
-
-		suite.T().Logf("Max published views: %d", result.MaxPublishedViews)
 	})
 
 	suite.Run("MaxInGroupBy", func() {
@@ -501,20 +459,17 @@ func (suite *EBAggregationFunctionsTestSuite) TestMax() {
 			OrderBy("status").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Max in GROUP BY should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.MaxViews >= 0, "Max should be non-negative")
-			suite.T().Logf("Status: %s, Max views: %d", result.Status, result.MaxViews)
 		}
 	})
 }
 
 // TestMaxColumn tests the MaxColumn aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestMaxColumn() {
-	suite.T().Logf("Testing MaxColumn function for %s", suite.ds.Kind)
-
 	suite.Run("BasicMaxColumn", func() {
 		type AgeStats struct {
 			MaxAge int16 `bun:"max_age"`
@@ -528,24 +483,20 @@ func (suite *EBAggregationFunctionsTestSuite) TestMaxColumn() {
 			}, "max_age").
 			Scan(suite.ctx, &stats)
 
-		suite.NoError(err, "MaxColumn should work")
+		suite.NoError(err)
 		suite.Equal(int16(45), stats.MaxAge, "Max age should be 45")
-
-		suite.T().Logf("Maximum age: %d", stats.MaxAge)
 	})
 }
 
 // TestStringAgg tests the StringAgg aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestStringAgg() {
-	suite.T().Logf("Testing StringAgg function for %s", suite.ds.Kind)
-
 	suite.Run("StringAggWithDistinctAndSeparator", func() {
-		type StringAggResult struct {
+		type Result struct {
 			StatusList       string `bun:"status_list"`
 			OrderedTitleList string `bun:"ordered_title_list"`
 		}
 
-		var result StringAggResult
+		var result Result
 
 		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
@@ -560,21 +511,18 @@ func (suite *EBAggregationFunctionsTestSuite) TestStringAgg() {
 			}, "ordered_title_list").
 			Scan(suite.ctx, &result)
 
-		suite.NoError(err, "StringAgg should work")
+		suite.NoError(err)
 		suite.NotEmpty(result.StatusList, "Should aggregate distinct statuses")
 		suite.NotEmpty(result.OrderedTitleList, "Should aggregate ordered titles")
-
-		suite.T().Logf("Status list: %s", result.StatusList)
-		suite.T().Logf("Ordered title list: %s", result.OrderedTitleList)
 	})
 
 	suite.Run("StringAggGroupedByStatus", func() {
-		type StringAggResult struct {
+		type Result struct {
 			Status string `bun:"status"`
 			Titles string `bun:"titles"`
 		}
 
-		var results []StringAggResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("status").
@@ -587,28 +535,25 @@ func (suite *EBAggregationFunctionsTestSuite) TestStringAgg() {
 			OrderBy("status").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "StringAgg with GROUP BY should work across all databases")
-		suite.True(len(results) > 0, "Should have StringAgg results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
-			suite.NotEmpty(result.Titles, "Aggregated titles should not be empty")
-			suite.T().Logf("Status: %s, Titles: %s", result.Status, result.Titles)
+			suite.NotEmpty(result.Titles)
 		}
 	})
 }
 
 // TestArrayAgg tests the ArrayAgg aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestArrayAgg() {
-	suite.T().Logf("Testing ArrayAgg function for %s", suite.ds.Kind)
-
 	suite.Run("ArrayAggWithOrdering", func() {
-		type ArrayAggResult struct {
+		type Result struct {
 			ViewCountArray []int64  `bun:"view_count_array,array"`
 			OrderedTitles  []string `bun:"ordered_titles,array"`
 			UniqueStatuses []string `bun:"unique_statuses,array"`
 		}
 
-		var result ArrayAggResult
+		var result Result
 
 		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
@@ -628,7 +573,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestArrayAgg() {
 			}, "unique_statuses").
 			Scan(suite.ctx, &result)
 
-		suite.NoError(err, "ArrayAgg should work")
+		suite.NoError(err)
 		suite.True(len(result.ViewCountArray) > 0, "Should have view count array")
 		suite.True(len(result.OrderedTitles) > 0, "Should have ordered titles")
 		suite.True(len(result.UniqueStatuses) > 0, "Should have unique statuses")
@@ -640,19 +585,15 @@ func (suite *EBAggregationFunctionsTestSuite) TestArrayAgg() {
 					"View counts should be in descending order")
 			}
 		}
-
-		suite.T().Logf("View count array length: %d", len(result.ViewCountArray))
-		suite.T().Logf("Ordered titles length: %d", len(result.OrderedTitles))
-		suite.T().Logf("Unique statuses: %v", result.UniqueStatuses)
 	})
 
 	suite.Run("ArrayAggGroupedByStatus", func() {
-		type ArrayAggResult struct {
+		type Result struct {
 			Status string `bun:"status"`
 			Count  int64  `bun:"count"`
 		}
 
-		var results []ArrayAggResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("status").
@@ -663,27 +604,24 @@ func (suite *EBAggregationFunctionsTestSuite) TestArrayAgg() {
 			OrderBy("status").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ArrayAgg supporting query should work across all databases")
-		suite.True(len(results) > 0, "Should have ArrayAgg supporting results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.Count > 0, "Count should be positive")
-			suite.T().Logf("Status: %s, Count: %d", result.Status, result.Count)
 		}
 	})
 }
 
 // TestJsonObjectAgg tests the JsonObjectAgg aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestJsonObjectAgg() {
-	suite.T().Logf("Testing JsonObjectAgg function for %s", suite.ds.Kind)
-
 	suite.Run("JsonObjectAggGroupedByStatus", func() {
-		type JSONObjectAggResult struct {
+		type Result struct {
 			Status     string `bun:"status"`
 			StatusMeta string `bun:"status_meta"`
 		}
 
-		var results []JSONObjectAggResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("status").
@@ -697,12 +635,11 @@ func (suite *EBAggregationFunctionsTestSuite) TestJsonObjectAgg() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonObjectAgg should work across all databases")
-		suite.True(len(results) > 0, "Should have JsonObjectAgg results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
-			suite.NotEmpty(result.StatusMeta, "Aggregated JSON should not be empty")
-			suite.T().Logf("Status: %s, Aggregated: %s", result.Status, result.StatusMeta)
+			suite.NotEmpty(result.StatusMeta)
 		}
 	})
 }
@@ -710,15 +647,13 @@ func (suite *EBAggregationFunctionsTestSuite) TestJsonObjectAgg() {
 // TestJsonArrayAgg tests the JsonArrayAgg aggregate function.
 // Note: MySQL does not support ORDER BY or DISTINCT in JSON_ARRAYAGG.
 func (suite *EBAggregationFunctionsTestSuite) TestJsonArrayAgg() {
-	suite.T().Logf("Testing JsonArrayAgg function for %s", suite.ds.Kind)
-
 	suite.Run("JsonArrayAggBasic", func() {
-		type JSONArrayAggResult struct {
+		type Result struct {
 			Status     string `bun:"status"`
 			TitlesJSON string `bun:"titles_json"`
 		}
 
-		var results []JSONArrayAggResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("status").
@@ -731,12 +666,11 @@ func (suite *EBAggregationFunctionsTestSuite) TestJsonArrayAgg() {
 			OrderBy("status").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonArrayAgg should work")
-		suite.True(len(results) > 0, "Should have JsonArrayAgg results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
-			suite.NotEmpty(result.TitlesJSON, "Aggregated JSON array should not be empty")
-			suite.T().Logf("Status: %s, JSON Array: %s", result.Status, result.TitlesJSON)
+			suite.NotEmpty(result.TitlesJSON)
 		}
 	})
 
@@ -765,12 +699,11 @@ func (suite *EBAggregationFunctionsTestSuite) TestJsonArrayAgg() {
 			OrderBy("status").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonArrayAgg with ORDER BY should work on supported databases")
-		suite.True(len(results) > 0, "Should have results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
-			suite.NotEmpty(result.TitlesJSON, "JSON array should not be empty")
-			suite.T().Logf("Status: %s, Ordered JSON Array: %s", result.Status, result.TitlesJSON)
+			suite.NotEmpty(result.TitlesJSON)
 		}
 	})
 
@@ -795,10 +728,8 @@ func (suite *EBAggregationFunctionsTestSuite) TestJsonArrayAgg() {
 			}, "all_statuses").
 			Scan(suite.ctx, &result)
 
-		suite.NoError(err, "JsonArrayAgg with DISTINCT should work on supported databases")
+		suite.NoError(err)
 		suite.NotEmpty(result.AllStatuses, "Should have JSON array of statuses")
-
-		suite.T().Logf("All Statuses JSON: %s", result.AllStatuses)
 	})
 }
 
@@ -806,15 +737,13 @@ func (suite *EBAggregationFunctionsTestSuite) TestJsonArrayAgg() {
 // Note: PostgreSQL and MySQL both support native BIT_OR (bitwise aggregation).
 // SQLite simulates it using MAX with CASE for boolean-like operations.
 func (suite *EBAggregationFunctionsTestSuite) TestBitOr() {
-	suite.T().Logf("Testing BitOr function for %s", suite.ds.Kind)
-
 	suite.Run("BitOrBasic", func() {
-		type BitOrResult struct {
+		type Result struct {
 			Status     string `bun:"status"`
 			BitOrValue int64  `bun:"bit_or_value"`
 		}
 
-		var results []BitOrResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("status").
@@ -827,12 +756,11 @@ func (suite *EBAggregationFunctionsTestSuite) TestBitOr() {
 			OrderBy("status").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "BitOr should work across all databases")
-		suite.True(len(results) > 0, "Should have BitOr results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.BitOrValue >= 0, "BitOr result should be non-negative")
-			suite.T().Logf("Status: %s, BitOr: %d", result.Status, result.BitOrValue)
 		}
 	})
 
@@ -859,14 +787,12 @@ func (suite *EBAggregationFunctionsTestSuite) TestBitOr() {
 			OrderBy("status").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "BitOr with GROUP BY should work")
-		suite.True(len(results) > 0, "Should have grouped results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.Count > 0, "Count should be positive")
 			suite.True(result.BitOrValue >= 0, "BitOr should be non-negative")
-			suite.T().Logf("Status: %s, Count: %d, BitOr: %d",
-				result.Status, result.Count, result.BitOrValue)
 		}
 	})
 }
@@ -875,15 +801,13 @@ func (suite *EBAggregationFunctionsTestSuite) TestBitOr() {
 // Note: PostgreSQL and MySQL both support native BIT_AND (bitwise aggregation).
 // SQLite simulates it using MIN with CASE for boolean-like operations.
 func (suite *EBAggregationFunctionsTestSuite) TestBitAnd() {
-	suite.T().Logf("Testing BitAnd function for %s", suite.ds.Kind)
-
 	suite.Run("BitAndBasic", func() {
-		type BitAndResult struct {
+		type Result struct {
 			Status      string `bun:"status"`
 			BitAndValue int64  `bun:"bit_and_value"`
 		}
 
-		var results []BitAndResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("status").
@@ -896,12 +820,11 @@ func (suite *EBAggregationFunctionsTestSuite) TestBitAnd() {
 			OrderBy("status").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "BitAnd should work across all databases")
-		suite.True(len(results) > 0, "Should have BitAnd results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.BitAndValue >= 0, "BitAnd result should be non-negative")
-			suite.T().Logf("Status: %s, BitAnd: %d", result.Status, result.BitAndValue)
 		}
 	})
 
@@ -934,31 +857,27 @@ func (suite *EBAggregationFunctionsTestSuite) TestBitAnd() {
 			OrderBy("status").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "BitAnd and BitOr with GROUP BY should work")
-		suite.True(len(results) > 0, "Should have grouped results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.Count > 0, "Count should be positive")
 			suite.True(result.BitAndValue >= 0, "BitAnd should be non-negative")
 			suite.True(result.BitOrValue >= 0, "BitOr should be non-negative")
-			suite.T().Logf("Status: %s, Count: %d, BitAnd: %d, BitOr: %d",
-				result.Status, result.Count, result.BitAndValue, result.BitOrValue)
 		}
 	})
 }
 
 // TestBoolOr tests the BoolOr aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestBoolOr() {
-	suite.T().Logf("Testing BoolOr function for %s", suite.ds.Kind)
-
 	suite.Run("BoolOrWithBoolAnd", func() {
-		type BoolResult struct {
+		type Result struct {
 			Status       string `bun:"status"`
 			AllHighViews bool   `bun:"all_high_views"`
 			AnyHighViews bool   `bun:"any_high_views"`
 		}
 
-		var results []BoolResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("status").
@@ -976,26 +895,19 @@ func (suite *EBAggregationFunctionsTestSuite) TestBoolOr() {
 			OrderBy("status").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "BoolOr and BoolAnd should work across all databases")
-		suite.True(len(results) > 0, "Should have boolean operation results")
-
-		for _, result := range results {
-			suite.T().Logf("Status: %s, AllHighViews: %v, AnyHighViews: %v",
-				result.Status, result.AllHighViews, result.AnyHighViews)
-		}
+		suite.NoError(err)
+		suite.NotEmpty(results)
 	})
 }
 
 // TestBoolAnd tests the BoolAnd aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestBoolAnd() {
-	suite.T().Logf("Testing BoolAnd function for %s", suite.ds.Kind)
-
 	suite.Run("BoolAndBasic", func() {
-		type BoolAndResult struct {
+		type Result struct {
 			AllMeetCriteria bool `bun:"all_meet_criteria"`
 		}
 
-		var result BoolAndResult
+		var result Result
 
 		err := suite.selectPosts().
 			SelectExpr(func(eb orm.ExprBuilder) any {
@@ -1005,8 +917,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestBoolAnd() {
 			}, "all_meet_criteria").
 			Scan(suite.ctx, &result)
 
-		suite.NoError(err, "BoolAnd should work across all databases")
-		suite.T().Logf("All posts have > 10 views: %v", result.AllMeetCriteria)
+		suite.NoError(err)
 	})
 
 	suite.Run("BoolAndGrouped", func() {
@@ -1028,32 +939,25 @@ func (suite *EBAggregationFunctionsTestSuite) TestBoolAnd() {
 			OrderBy("status").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "BoolAnd with GROUP BY should work across all databases")
-		suite.True(len(results) > 0, "Should have results")
-
-		for _, result := range results {
-			suite.T().Logf("Status: %s, All >= 30 views: %v",
-				result.Status, result.AllAboveThreshold)
-		}
+		suite.NoError(err)
+		suite.NotEmpty(results)
 	})
 }
 
 // TestStdDev tests the StdDev (standard deviation) aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestStdDev() {
-	suite.T().Logf("Testing StdDev function for %s", suite.ds.Kind)
-
 	suite.Run("BasicStdDev", func() {
 		if suite.ds.Kind == config.SQLite {
 			suite.T().Skipf("StdDev skipped for %s (SQLite does not support statistical functions)", suite.ds.Kind)
 		}
 
-		type StdDevResult struct {
+		type Result struct {
 			Status   string  `bun:"status"`
 			AvgViews float64 `bun:"avg_views"`
 			StdDev   float64 `bun:"std_dev"`
 		}
 
-		var results []StdDevResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("status").
@@ -1069,14 +973,12 @@ func (suite *EBAggregationFunctionsTestSuite) TestStdDev() {
 			OrderBy("status").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "StdDev should work on supported databases")
-		suite.True(len(results) > 0, "Should have StdDev results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.AvgViews >= 0, "Average should be non-negative")
 			suite.True(result.StdDev >= 0, "Standard deviation should be non-negative")
-			suite.T().Logf("Status: %s, AvgViews: %.2f, StdDev: %.2f",
-				result.Status, result.AvgViews, result.StdDev)
 		}
 	})
 
@@ -1119,8 +1021,8 @@ func (suite *EBAggregationFunctionsTestSuite) TestStdDev() {
 			OrderBy("status").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Combined statistical functions should work")
-		suite.True(len(results) > 0, "Should have combined stats results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.Count > 0, "Count should be positive")
@@ -1138,20 +1040,18 @@ func (suite *EBAggregationFunctionsTestSuite) TestStdDev() {
 
 // TestVariance tests the Variance aggregate function.
 func (suite *EBAggregationFunctionsTestSuite) TestVariance() {
-	suite.T().Logf("Testing Variance function for %s", suite.ds.Kind)
-
 	suite.Run("BasicVariance", func() {
 		if suite.ds.Kind == config.SQLite {
 			suite.T().Skipf("Variance skipped for %s (SQLite not supported)", suite.ds.Kind)
 		}
 
-		type VarianceResult struct {
+		type Result struct {
 			Status   string  `bun:"status"`
 			AvgViews float64 `bun:"avg_views"`
 			Variance float64 `bun:"variance"`
 		}
 
-		var results []VarianceResult
+		var results []Result
 
 		err := suite.selectPosts().
 			Select("status").
@@ -1167,14 +1067,12 @@ func (suite *EBAggregationFunctionsTestSuite) TestVariance() {
 			OrderBy("status").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Variance should work on supported databases")
-		suite.True(len(results) > 0, "Should have Variance results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.AvgViews >= 0, "Average should be non-negative")
 			suite.True(result.Variance >= 0, "Variance should be non-negative")
-			suite.T().Logf("Status: %s, AvgViews: %.2f, Variance: %.2f",
-				result.Status, result.AvgViews, result.Variance)
 		}
 	})
 
@@ -1219,17 +1117,14 @@ func (suite *EBAggregationFunctionsTestSuite) TestVariance() {
 			OrderBy("status").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Variance and StdDev with population/sample modes should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.NoError(err)
+		suite.NotEmpty(results)
 
 		for _, result := range results {
 			suite.True(result.VarPop >= 0, "Population variance should be non-negative")
 			suite.True(result.VarSamp >= 0, "Sample variance should be non-negative")
 			suite.True(result.StdDevPop >= 0, "Population stddev should be non-negative")
 			suite.True(result.StdDevSamp >= 0, "Sample stddev should be non-negative")
-
-			suite.T().Logf("Status: %s, VarPop: %.2f, VarSamp: %.2f, StdDevPop: %.2f, StdDevSamp: %.2f",
-				result.Status, result.VarPop, result.VarSamp, result.StdDevPop, result.StdDevSamp)
 		}
 	})
 }
@@ -1239,8 +1134,6 @@ func (suite *EBAggregationFunctionsTestSuite) TestStringAggOrderByExpr() {
 	if suite.ds.Kind != config.Postgres {
 		suite.T().Skip("StringAgg OrderByExpr only tested on Postgres")
 	}
-
-	suite.T().Logf("Testing StringAgg OrderByExpr for %s", suite.ds.Kind)
 
 	type Result struct {
 		Names string `bun:"names"`
@@ -1258,10 +1151,8 @@ func (suite *EBAggregationFunctionsTestSuite) TestStringAggOrderByExpr() {
 		}, "names").
 		Scan(suite.ctx, &result)
 
-	suite.NoError(err, "StringAgg with OrderByExpr should work")
+	suite.NoError(err)
 	suite.NotEmpty(result.Names, "Should have concatenated names")
-
-	suite.T().Logf("Aggregated names: %s", result.Names[:min(50, len(result.Names))])
 }
 
 // TestJSONObjectAggKeyExpr tests KeyExpr on JSON object aggregation.
@@ -1269,8 +1160,6 @@ func (suite *EBAggregationFunctionsTestSuite) TestJSONObjectAggKeyExpr() {
 	if suite.ds.Kind != config.Postgres {
 		suite.T().Skip("JSON_OBJECT_AGG only supported on Postgres")
 	}
-
-	suite.T().Logf("Testing JSONObjectAgg KeyExpr for %s", suite.ds.Kind)
 
 	type Result struct {
 		Obj string `bun:"obj"`
@@ -1290,15 +1179,11 @@ func (suite *EBAggregationFunctionsTestSuite) TestJSONObjectAggKeyExpr() {
 		}, "obj").
 		Scan(suite.ctx, &result)
 
-	suite.NoError(err, "JSONObjectAgg with KeyExpr should work")
-
-	suite.T().Logf("JSON object: %s", result.Obj)
+	suite.NoError(err)
 }
 
 // so we build the query without executing to cover the code path.
 func (suite *EBAggregationFunctionsTestSuite) TestAggregateIgnoreRespectNulls() {
-	suite.T().Logf("Testing aggregate IgnoreNulls/RespectNulls code paths for %s", suite.ds.Kind)
-
 	suite.Run("IgnoreNulls", func() {
 		query := suite.selectUsers().
 			SelectExpr(func(eb orm.ExprBuilder) any {
@@ -1309,7 +1194,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestAggregateIgnoreRespectNulls() 
 				})
 			}, "names")
 
-		suite.NotNil(query, "Query with IgnoreNulls should be non-nil")
+		suite.NotNil(query)
 	})
 
 	suite.Run("RespectNulls", func() {
@@ -1322,6 +1207,6 @@ func (suite *EBAggregationFunctionsTestSuite) TestAggregateIgnoreRespectNulls() 
 				})
 			}, "names")
 
-		suite.NotNil(query, "Query with RespectNulls should be non-nil")
+		suite.NotNil(query)
 	})
 }

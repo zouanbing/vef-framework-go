@@ -161,70 +161,44 @@ type dialectStrategy struct {
 	sqlsrv   *dialectAggConfig
 }
 
+// bitNonZeroCaseTransformer wraps the expression in CASE WHEN expr != 0 THEN 1 ELSE 0 END.
+// Used by SQLite to emulate BIT_OR/BIT_AND via MAX/MIN.
+func bitNonZeroCaseTransformer(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+	return eb.Case(func(cb CaseBuilder) {
+		cb.WhenExpr(eb.Expr("? != 0", state.argsExpr)).Then(1).Else(0)
+	})
+}
+
+// boolCaseTransformer wraps the expression in CASE WHEN expr THEN 1 ELSE 0 END.
+// Used by MySQL/SQLite to emulate BOOL_OR/BOOL_AND via MAX/MIN.
+func boolCaseTransformer(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+	return eb.Case(func(cb CaseBuilder) {
+		cb.WhenExpr(state.argsExpr).Then(1).Else(0)
+	})
+}
+
 var bitOrStrategy = &dialectStrategy{
 	postgres: &dialectAggConfig{funcName: "BIT_OR"},
 	mysql:    &dialectAggConfig{funcName: "BIT_OR"},
-	sqlite: &dialectAggConfig{
-		funcName: "MAX",
-		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
-			return eb.Case(func(cb CaseBuilder) {
-				cb.WhenExpr(eb.Expr("? != 0", state.argsExpr)).Then(1).Else(0)
-			})
-		},
-	},
+	sqlite:   &dialectAggConfig{funcName: "MAX", argsTransformer: bitNonZeroCaseTransformer},
 }
 
 var bitAndStrategy = &dialectStrategy{
 	postgres: &dialectAggConfig{funcName: "BIT_AND"},
 	mysql:    &dialectAggConfig{funcName: "BIT_AND"},
-	sqlite: &dialectAggConfig{
-		funcName: "MIN",
-		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
-			return eb.Case(func(cb CaseBuilder) {
-				cb.WhenExpr(eb.Expr("? != 0", state.argsExpr)).Then(1).Else(0)
-			})
-		},
-	},
+	sqlite:   &dialectAggConfig{funcName: "MIN", argsTransformer: bitNonZeroCaseTransformer},
 }
 
 var boolOrStrategy = &dialectStrategy{
 	postgres: &dialectAggConfig{funcName: "BOOL_OR"},
-	mysql: &dialectAggConfig{
-		funcName: "MAX",
-		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
-			return eb.Case(func(cb CaseBuilder) {
-				cb.WhenExpr(state.argsExpr).Then(1).Else(0)
-			})
-		},
-	},
-	sqlite: &dialectAggConfig{
-		funcName: "MAX",
-		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
-			return eb.Case(func(cb CaseBuilder) {
-				cb.WhenExpr(state.argsExpr).Then(1).Else(0)
-			})
-		},
-	},
+	mysql:    &dialectAggConfig{funcName: "MAX", argsTransformer: boolCaseTransformer},
+	sqlite:   &dialectAggConfig{funcName: "MAX", argsTransformer: boolCaseTransformer},
 }
 
 var boolAndStrategy = &dialectStrategy{
 	postgres: &dialectAggConfig{funcName: "BOOL_AND"},
-	mysql: &dialectAggConfig{
-		funcName: "MIN",
-		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
-			return eb.Case(func(cb CaseBuilder) {
-				cb.WhenExpr(state.argsExpr).Then(1).Else(0)
-			})
-		},
-	},
-	sqlite: &dialectAggConfig{
-		funcName: "MIN",
-		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
-			return eb.Case(func(cb CaseBuilder) {
-				cb.WhenExpr(state.argsExpr).Then(1).Else(0)
-			})
-		},
-	},
+	mysql:    &dialectAggConfig{funcName: "MIN", argsTransformer: boolCaseTransformer},
+	sqlite:   &dialectAggConfig{funcName: "MIN", argsTransformer: boolCaseTransformer},
 }
 
 var jsonArrayAggStrategy = &dialectStrategy{
@@ -239,37 +213,33 @@ var jsonObjectAggStrategy = &dialectStrategy{
 	sqlite:   &dialectAggConfig{funcName: "JSON_GROUP_OBJECT"},
 }
 
+// nullsIgnoreTransformer wraps the expression in CASE WHEN expr IS NOT NULL THEN expr END
+// when NullsIgnore mode is active. Used to emulate IGNORE NULLS on databases that lack native support.
+func nullsIgnoreTransformer(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+	if state.nullsMode == NullsIgnore {
+		return eb.Case(func(cb CaseBuilder) {
+			cb.WhenExpr(eb.IsNotNull(state.argsExpr)).Then(state.argsExpr)
+		})
+	}
+
+	return state.argsExpr
+}
+
 var arrayAggStrategy = &dialectStrategy{
 	postgres: &dialectAggConfig{funcName: "ARRAY_AGG"},
 	mysql: &dialectAggConfig{
-		funcName: "JSON_ARRAYAGG",
-		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
-			if state.nullsMode == NullsIgnore {
-				return eb.Case(func(cb CaseBuilder) {
-					cb.WhenExpr(eb.IsNotNull(state.argsExpr)).Then(state.argsExpr)
-				})
-			}
-
-			return state.argsExpr
-		},
-		clearDistinct:  true,
-		clearOrderBy:   true,
-		clearNullsMode: true,
+		funcName:        "JSON_ARRAYAGG",
+		argsTransformer: nullsIgnoreTransformer,
+		clearDistinct:   true,
+		clearOrderBy:    true,
+		clearNullsMode:  true,
 	},
 	sqlite: &dialectAggConfig{
-		funcName: "JSON_GROUP_ARRAY",
-		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
-			if state.nullsMode == NullsIgnore {
-				return eb.Case(func(cb CaseBuilder) {
-					cb.WhenExpr(eb.IsNotNull(state.argsExpr)).Then(state.argsExpr)
-				})
-			}
-
-			return state.argsExpr
-		},
-		clearDistinct:  true,
-		clearOrderBy:   true,
-		clearNullsMode: true,
+		funcName:        "JSON_GROUP_ARRAY",
+		argsTransformer: nullsIgnoreTransformer,
+		clearDistinct:   true,
+		clearOrderBy:    true,
+		clearNullsMode:  true,
 	},
 }
 
@@ -277,25 +247,13 @@ var stringAggStrategy = &dialectStrategy{
 	postgres: &dialectAggConfig{
 		funcName: "STRING_AGG",
 		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
-			argsExpr := state.argsExpr
-			if state.nullsMode == NullsIgnore {
-				argsExpr = eb.Case(func(cb CaseBuilder) {
-					cb.WhenExpr(eb.IsNotNull(state.argsExpr)).Then(state.argsExpr)
-				})
-			}
-
-			return eb.Expr("?, ?", argsExpr, state.separator)
+			return eb.Expr("?, ?", nullsIgnoreTransformer(eb, state), state.separator)
 		},
 	},
 	mysql: &dialectAggConfig{
 		funcName: "GROUP_CONCAT",
 		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
-			argsExpr := state.argsExpr
-			if state.nullsMode == NullsIgnore {
-				argsExpr = eb.Case(func(cb CaseBuilder) {
-					cb.WhenExpr(eb.IsNotNull(state.argsExpr)).Then(state.argsExpr)
-				})
-			}
+			argsExpr := nullsIgnoreTransformer(eb, state)
 			if len(state.orderExprs) > 0 {
 				return eb.Expr("? ? SEPARATOR ?", argsExpr, newOrderByClause(state.orderExprs...), state.separator)
 			}
@@ -308,12 +266,7 @@ var stringAggStrategy = &dialectStrategy{
 	sqlite: &dialectAggConfig{
 		funcName: "GROUP_CONCAT",
 		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
-			argsExpr := state.argsExpr
-			if state.nullsMode == NullsIgnore {
-				argsExpr = eb.Case(func(cb CaseBuilder) {
-					cb.WhenExpr(eb.IsNotNull(state.argsExpr)).Then(state.argsExpr)
-				})
-			}
+			argsExpr := nullsIgnoreTransformer(eb, state)
 			// SQLite DISTINCT limitation: only one argument allowed
 			if state.distinct {
 				return argsExpr

@@ -8,8 +8,6 @@ type ConditionBuilderTestSuite struct {
 	*BaseTestSuite
 }
 
-// Helper methods for common test patterns
-
 // assertQueryReturnsUsers executes a query and returns the users for further assertions.
 // Automatically applies fixtureScope to filter out test-inserted data.
 func (suite *ConditionBuilderTestSuite) assertQueryReturnsUsers(query orm.SelectQuery) []User {

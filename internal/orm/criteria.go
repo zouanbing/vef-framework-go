@@ -5,7 +5,6 @@ import (
 
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
-
 )
 
 type CriteriaBuilder struct {
@@ -765,38 +764,13 @@ func (cb *CriteriaBuilder) OrContainsAny(column string, values []string) Conditi
 }
 
 func (cb *CriteriaBuilder) ContainsIgnoreCase(column, value string) ConditionBuilder {
-	// Use ILIKE on Postgres; fallback to LOWER(column) LIKE LOWER(value) on others
-	expr := cb.eb.ExprByDialect(DialectExprs{
-		Postgres: func() schema.QueryAppender {
-			return cb.eb.Expr("? ILIKE ?", cb.eb.Column(column), FuzzyContains.BuildPattern(value))
-		},
-		Default: func() schema.QueryAppender {
-			return cb.eb.Expr(
-				"? LIKE ?",
-				cb.eb.Lower(cb.eb.Column(column)),
-				cb.eb.Lower(FuzzyContains.BuildPattern(value)),
-			)
-		},
-	})
-	cb.and("?", expr)
+	cb.and("?", cb.likeIgnoreCase(column, FuzzyContains.BuildPattern(value)))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrContainsIgnoreCase(column, value string) ConditionBuilder {
-	expr := cb.eb.ExprByDialect(DialectExprs{
-		Postgres: func() schema.QueryAppender {
-			return cb.eb.Expr("? ILIKE ?", cb.eb.Column(column), FuzzyContains.BuildPattern(value))
-		},
-		Default: func() schema.QueryAppender {
-			return cb.eb.Expr(
-				"? LIKE ?",
-				cb.eb.Lower(cb.eb.Column(column)),
-				cb.eb.Lower(FuzzyContains.BuildPattern(value)),
-			)
-		},
-	})
-	cb.or("?", expr)
+	cb.or("?", cb.likeIgnoreCase(column, FuzzyContains.BuildPattern(value)))
 
 	return cb
 }
@@ -854,37 +828,13 @@ func (cb *CriteriaBuilder) OrNotContainsAny(column string, values []string) Cond
 }
 
 func (cb *CriteriaBuilder) NotContainsIgnoreCase(column, value string) ConditionBuilder {
-	expr := cb.eb.ExprByDialect(DialectExprs{
-		Postgres: func() schema.QueryAppender {
-			return cb.eb.Expr("? NOT ILIKE ?", cb.eb.Column(column), FuzzyContains.BuildPattern(value))
-		},
-		Default: func() schema.QueryAppender {
-			return cb.eb.Expr(
-				"? NOT LIKE ?",
-				cb.eb.Lower(cb.eb.Column(column)),
-				cb.eb.Lower(FuzzyContains.BuildPattern(value)),
-			)
-		},
-	})
-	cb.and("?", expr)
+	cb.and("?", cb.notLikeIgnoreCase(column, FuzzyContains.BuildPattern(value)))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrNotContainsIgnoreCase(column, value string) ConditionBuilder {
-	expr := cb.eb.ExprByDialect(DialectExprs{
-		Postgres: func() schema.QueryAppender {
-			return cb.eb.Expr("? NOT ILIKE ?", cb.eb.Column(column), FuzzyContains.BuildPattern(value))
-		},
-		Default: func() schema.QueryAppender {
-			return cb.eb.Expr(
-				"? NOT LIKE ?",
-				cb.eb.Lower(cb.eb.Column(column)),
-				cb.eb.Lower(FuzzyContains.BuildPattern(value)),
-			)
-		},
-	})
-	cb.or("?", expr)
+	cb.or("?", cb.notLikeIgnoreCase(column, FuzzyContains.BuildPattern(value)))
 
 	return cb
 }
@@ -942,37 +892,13 @@ func (cb *CriteriaBuilder) OrStartsWithAny(column string, values []string) Condi
 }
 
 func (cb *CriteriaBuilder) StartsWithIgnoreCase(column, value string) ConditionBuilder {
-	expr := cb.eb.ExprByDialect(DialectExprs{
-		Postgres: func() schema.QueryAppender {
-			return cb.eb.Expr("? ILIKE ?", cb.eb.Column(column), FuzzyStarts.BuildPattern(value))
-		},
-		Default: func() schema.QueryAppender {
-			return cb.eb.Expr(
-				"? LIKE ?",
-				cb.eb.Lower(cb.eb.Column(column)),
-				cb.eb.Lower(FuzzyStarts.BuildPattern(value)),
-			)
-		},
-	})
-	cb.and("?", expr)
+	cb.and("?", cb.likeIgnoreCase(column, FuzzyStarts.BuildPattern(value)))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrStartsWithIgnoreCase(column, value string) ConditionBuilder {
-	expr := cb.eb.ExprByDialect(DialectExprs{
-		Postgres: func() schema.QueryAppender {
-			return cb.eb.Expr("? ILIKE ?", cb.eb.Column(column), FuzzyStarts.BuildPattern(value))
-		},
-		Default: func() schema.QueryAppender {
-			return cb.eb.Expr(
-				"? LIKE ?",
-				cb.eb.Lower(cb.eb.Column(column)),
-				cb.eb.Lower(FuzzyStarts.BuildPattern(value)),
-			)
-		},
-	})
-	cb.or("?", expr)
+	cb.or("?", cb.likeIgnoreCase(column, FuzzyStarts.BuildPattern(value)))
 
 	return cb
 }
@@ -1030,37 +956,13 @@ func (cb *CriteriaBuilder) OrNotStartsWithAny(column string, values []string) Co
 }
 
 func (cb *CriteriaBuilder) NotStartsWithIgnoreCase(column, value string) ConditionBuilder {
-	expr := cb.eb.ExprByDialect(DialectExprs{
-		Postgres: func() schema.QueryAppender {
-			return cb.eb.Expr("? NOT ILIKE ?", cb.eb.Column(column), FuzzyStarts.BuildPattern(value))
-		},
-		Default: func() schema.QueryAppender {
-			return cb.eb.Expr(
-				"? NOT LIKE ?",
-				cb.eb.Lower(cb.eb.Column(column)),
-				cb.eb.Lower(FuzzyStarts.BuildPattern(value)),
-			)
-		},
-	})
-	cb.and("?", expr)
+	cb.and("?", cb.notLikeIgnoreCase(column, FuzzyStarts.BuildPattern(value)))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrNotStartsWithIgnoreCase(column, value string) ConditionBuilder {
-	expr := cb.eb.ExprByDialect(DialectExprs{
-		Postgres: func() schema.QueryAppender {
-			return cb.eb.Expr("? NOT ILIKE ?", cb.eb.Column(column), FuzzyStarts.BuildPattern(value))
-		},
-		Default: func() schema.QueryAppender {
-			return cb.eb.Expr(
-				"? NOT LIKE ?",
-				cb.eb.Lower(cb.eb.Column(column)),
-				cb.eb.Lower(FuzzyStarts.BuildPattern(value)),
-			)
-		},
-	})
-	cb.or("?", expr)
+	cb.or("?", cb.notLikeIgnoreCase(column, FuzzyStarts.BuildPattern(value)))
 
 	return cb
 }
@@ -1118,37 +1020,13 @@ func (cb *CriteriaBuilder) OrEndsWithAny(column string, values []string) Conditi
 }
 
 func (cb *CriteriaBuilder) EndsWithIgnoreCase(column, value string) ConditionBuilder {
-	expr := cb.eb.ExprByDialect(DialectExprs{
-		Postgres: func() schema.QueryAppender {
-			return cb.eb.Expr("? ILIKE ?", cb.eb.Column(column), FuzzyEnds.BuildPattern(value))
-		},
-		Default: func() schema.QueryAppender {
-			return cb.eb.Expr(
-				"? LIKE ?",
-				cb.eb.Lower(cb.eb.Column(column)),
-				cb.eb.Lower(FuzzyEnds.BuildPattern(value)),
-			)
-		},
-	})
-	cb.and("?", expr)
+	cb.and("?", cb.likeIgnoreCase(column, FuzzyEnds.BuildPattern(value)))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrEndsWithIgnoreCase(column, value string) ConditionBuilder {
-	expr := cb.eb.ExprByDialect(DialectExprs{
-		Postgres: func() schema.QueryAppender {
-			return cb.eb.Expr("? ILIKE ?", cb.eb.Column(column), FuzzyEnds.BuildPattern(value))
-		},
-		Default: func() schema.QueryAppender {
-			return cb.eb.Expr(
-				"? LIKE ?",
-				cb.eb.Lower(cb.eb.Column(column)),
-				cb.eb.Lower(FuzzyEnds.BuildPattern(value)),
-			)
-		},
-	})
-	cb.or("?", expr)
+	cb.or("?", cb.likeIgnoreCase(column, FuzzyEnds.BuildPattern(value)))
 
 	return cb
 }
@@ -1206,37 +1084,13 @@ func (cb *CriteriaBuilder) OrNotEndsWithAny(column string, values []string) Cond
 }
 
 func (cb *CriteriaBuilder) NotEndsWithIgnoreCase(column, value string) ConditionBuilder {
-	expr := cb.eb.ExprByDialect(DialectExprs{
-		Postgres: func() schema.QueryAppender {
-			return cb.eb.Expr("? NOT ILIKE ?", cb.eb.Column(column), FuzzyEnds.BuildPattern(value))
-		},
-		Default: func() schema.QueryAppender {
-			return cb.eb.Expr(
-				"? NOT LIKE ?",
-				cb.eb.Lower(cb.eb.Column(column)),
-				cb.eb.Lower(FuzzyEnds.BuildPattern(value)),
-			)
-		},
-	})
-	cb.and("?", expr)
+	cb.and("?", cb.notLikeIgnoreCase(column, FuzzyEnds.BuildPattern(value)))
 
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrNotEndsWithIgnoreCase(column, value string) ConditionBuilder {
-	expr := cb.eb.ExprByDialect(DialectExprs{
-		Postgres: func() schema.QueryAppender {
-			return cb.eb.Expr("? NOT ILIKE ?", cb.eb.Column(column), FuzzyEnds.BuildPattern(value))
-		},
-		Default: func() schema.QueryAppender {
-			return cb.eb.Expr(
-				"? NOT LIKE ?",
-				cb.eb.Lower(cb.eb.Column(column)),
-				cb.eb.Lower(FuzzyEnds.BuildPattern(value)),
-			)
-		},
-	})
-	cb.or("?", expr)
+	cb.or("?", cb.notLikeIgnoreCase(column, FuzzyEnds.BuildPattern(value)))
 
 	return cb
 }
@@ -1259,6 +1113,32 @@ func (cb *CriteriaBuilder) OrNotEndsWithAnyIgnoreCase(column string, values []st
 	})
 
 	return cb
+}
+
+// likeIgnoreCase builds a dialect-aware case-insensitive LIKE expression.
+// Uses ILIKE on Postgres; falls back to LOWER(column) LIKE LOWER(pattern) on other dialects.
+func (cb *CriteriaBuilder) likeIgnoreCase(column string, pattern any) schema.QueryAppender {
+	return cb.eb.ExprByDialect(DialectExprs{
+		Postgres: func() schema.QueryAppender {
+			return cb.eb.Expr("? ILIKE ?", cb.eb.Column(column), pattern)
+		},
+		Default: func() schema.QueryAppender {
+			return cb.eb.Expr("? LIKE ?", cb.eb.Lower(cb.eb.Column(column)), cb.eb.Lower(pattern))
+		},
+	})
+}
+
+// notLikeIgnoreCase builds a dialect-aware case-insensitive NOT LIKE expression.
+// Uses NOT ILIKE on Postgres; falls back to LOWER(column) NOT LIKE LOWER(pattern) on other dialects.
+func (cb *CriteriaBuilder) notLikeIgnoreCase(column string, pattern any) schema.QueryAppender {
+	return cb.eb.ExprByDialect(DialectExprs{
+		Postgres: func() schema.QueryAppender {
+			return cb.eb.Expr("? NOT ILIKE ?", cb.eb.Column(column), pattern)
+		},
+		Default: func() schema.QueryAppender {
+			return cb.eb.Expr("? NOT LIKE ?", cb.eb.Lower(cb.eb.Column(column)), cb.eb.Lower(pattern))
+		},
+	})
 }
 
 func (cb *CriteriaBuilder) Expr(builder func(ExprBuilder) any) ConditionBuilder {

@@ -6,17 +6,14 @@ import (
 	"github.com/uptrace/bun/schema"
 )
 
-// autoColumnHandlers is the list of auto column handlers that are applied to all models.
-// These handlers automatically manage audit fields like ID generation, timestamps, and user tracking.
-var (
-	autoColumnHandlers = []ColumnHandler{
-		&IDHandler{},
-		&CreatedAtHandler{},
-		&UpdatedAtHandler{},
-		&CreatedByHandler{},
-		&UpdatedByHandler{},
-	}
-)
+// autoColumnHandlers manages audit fields (ID, timestamps, user tracking) on insert/update.
+var autoColumnHandlers = []ColumnHandler{
+	&IDHandler{},
+	&CreatedAtHandler{},
+	&UpdatedAtHandler{},
+	&CreatedByHandler{},
+	&UpdatedByHandler{},
+}
 
 // ColumnHandler is the base interface for all auto column handlers.
 // It provides the column name that the handler manages.
@@ -43,18 +40,14 @@ type UpdateColumnHandler interface {
 }
 
 // processAutoColumns applies auto column handlers to a model before insert/update operations.
-// It processes audit.Handler interfaces to automatically manage fields like IDs, timestamps, and user tracking.
 func processAutoColumns(query any, table *schema.Table, modelValue any, mv reflect.Value) {
-	// Check if the value is valid and not nil
 	if !mv.IsValid() || (mv.Kind() == reflect.Ptr && mv.IsNil()) {
-		// For nil model values (like (*User)(nil) in update queries), skip audit processing
-		// This is common in update queries where we only set specific fields
 		return
 	}
 
 	// Handle slice values (batch operations) by processing each element
 	if mv.Kind() == reflect.Slice {
-		for i := 0; i < mv.Len(); i++ {
+		for i := range mv.Len() {
 			elem := mv.Index(i)
 			if elem.Kind() == reflect.Ptr {
 				elem = elem.Elem()
@@ -67,19 +60,21 @@ func processAutoColumns(query any, table *schema.Table, modelValue any, mv refle
 	}
 
 	for _, handler := range autoColumnHandlers {
-		if field, ok := table.FieldMap[handler.Name()]; ok {
-			value := field.Value(mv)
+		field, ok := table.FieldMap[handler.Name()]
+		if !ok {
+			continue
+		}
 
-			// Handle different query types and handler interfaces
-			switch q := query.(type) {
-			case *BunInsertQuery:
-				if insertHandler, ok := handler.(InsertColumnHandler); ok {
-					insertHandler.OnInsert(q, table, field, modelValue, value)
-				}
-			case *BunUpdateQuery:
-				if updateHandler, ok := handler.(UpdateColumnHandler); ok {
-					updateHandler.OnUpdate(q, table, field, modelValue, value)
-				}
+		value := field.Value(mv)
+
+		switch q := query.(type) {
+		case *BunInsertQuery:
+			if insertHandler, ok := handler.(InsertColumnHandler); ok {
+				insertHandler.OnInsert(q, table, field, modelValue, value)
+			}
+		case *BunUpdateQuery:
+			if updateHandler, ok := handler.(UpdateColumnHandler); ok {
+				updateHandler.OnUpdate(q, table, field, modelValue, value)
 			}
 		}
 	}

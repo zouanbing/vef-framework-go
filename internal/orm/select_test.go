@@ -2717,6 +2717,7 @@ func (suite *SelectTestSuite) TestWhereDeleted() {
 	}
 
 	err := suite.db.ResetModel(suite.ctx, (*SoftDeleteArticle)(nil))
+
 	suite.Require().NoError(err)
 	defer func() {
 		_, _ = suite.db.NewDropTable().Model((*SoftDeleteArticle)(nil)).IfExists().Exec(suite.ctx)

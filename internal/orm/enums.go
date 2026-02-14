@@ -1,9 +1,5 @@
 package orm
 
-import (
-	"strings"
-)
-
 // JoinType specifies the type of JOIN operation.
 type JoinType int
 
@@ -26,8 +22,6 @@ func (j JoinType) String() string {
 		return "FULL JOIN"
 	case JoinCross:
 		return "CROSS JOIN"
-	case JoinInner:
-		fallthrough
 	default:
 		return "JOIN"
 	}
@@ -43,28 +37,15 @@ const (
 )
 
 // BuildPattern constructs a LIKE pattern string based on the FuzzyKind.
-// It efficiently builds the pattern using strings.Builder with pre-allocated capacity.
 func (k FuzzyKind) BuildPattern(value string) string {
-	var sb strings.Builder
-	if k == FuzzyStarts {
-		sb.Grow(len(value) + 1)
-	} else {
-		sb.Grow(len(value) + int(k))
-	}
-
 	switch k {
-	case FuzzyEnds, FuzzyContains:
-		_ = sb.WriteByte('%')
+	case FuzzyStarts:
+		return value + "%"
+	case FuzzyEnds:
+		return "%" + value
+	default:
+		return "%" + value + "%"
 	}
-
-	_, _ = sb.WriteString(value)
-
-	switch k {
-	case FuzzyStarts, FuzzyContains:
-		_ = sb.WriteByte('%')
-	}
-
-	return sb.String()
 }
 
 // NullsMode controls how NULLs are treated in window functions.
@@ -222,22 +203,16 @@ func (u DateTimeUnit) String() string {
 		return "MINUTE"
 	case UnitSecond:
 		return "SECOND"
-	case UnitDay:
-		fallthrough
 	default:
 		return "DAY"
 	}
 }
 
-// ForPostgres returns the PostgreSQL interval unit string (YEAR, MONTH, DAY, etc.).
-func (u DateTimeUnit) ForPostgres() string {
-	return u.String()
-}
+// ForPostgres returns the PostgreSQL interval unit string.
+func (u DateTimeUnit) ForPostgres() string { return u.String() }
 
-// ForMySQL returns the MySQL interval unit string (YEAR, MONTH, DAY, etc.).
-func (u DateTimeUnit) ForMySQL() string {
-	return u.String()
-}
+// ForMySQL returns the MySQL interval unit string.
+func (u DateTimeUnit) ForMySQL() string { return u.String() }
 
 // ForSQLite returns the SQLite datetime modifier string (years, months, days, etc.).
 func (u DateTimeUnit) ForSQLite() string {
@@ -252,8 +227,6 @@ func (u DateTimeUnit) ForSQLite() string {
 		return "minutes"
 	case UnitSecond:
 		return "seconds"
-	case UnitDay:
-		fallthrough
 	default:
 		return "days"
 	}
@@ -272,8 +245,6 @@ func (u DateTimeUnit) ForDateTrunc() string {
 		return "minute"
 	case UnitSecond:
 		return "second"
-	case UnitDay:
-		fallthrough
 	default:
 		return "day"
 	}

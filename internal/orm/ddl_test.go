@@ -253,8 +253,6 @@ func (suite *DDLTestSuite) TestDropTableString() {
 
 // TestCreateTableExtended tests extended CreateTable methods.
 func (suite *DDLTestSuite) TestCreateTableExtended() {
-	suite.T().Logf("Testing CreateTable extended for %s", suite.ds.Kind)
-
 	suite.Run("TableWithVarcharAndForeignKey", func() {
 		query := suite.db.NewCreateTable().
 			Model((*Tag)(nil)).
@@ -298,8 +296,6 @@ func (suite *DDLTestSuite) TestCreateTableExtended() {
 
 // TestCreateIndexExtended tests extended CreateIndex methods.
 func (suite *DDLTestSuite) TestCreateIndexExtended() {
-	suite.T().Logf("Testing CreateIndex extended for %s", suite.ds.Kind)
-
 	suite.Run("BasicIndex", func() {
 		query := suite.db.NewCreateIndex().
 			Table("test_tag").
@@ -367,8 +363,6 @@ func (suite *DDLTestSuite) TestCreateIndexExtended() {
 
 // TestAddColumnExtended tests AddColumn with Model and IfNotExists.
 func (suite *DDLTestSuite) TestAddColumnExtended() {
-	suite.T().Logf("Testing AddColumn extended for %s", suite.ds.Kind)
-
 	suite.Run("ModelAndIfNotExists", func() {
 		query := suite.db.NewAddColumn().
 			Model((*Tag)(nil)).
@@ -381,8 +375,6 @@ func (suite *DDLTestSuite) TestAddColumnExtended() {
 
 // TestTruncateTableExtended tests TruncateTable operations.
 func (suite *DDLTestSuite) TestTruncateTableExtended() {
-	suite.T().Logf("Testing TruncateTable extended for %s", suite.ds.Kind)
-
 	suite.Run("BuildOnly", func() {
 		query := suite.db.NewTruncateTable().
 			Model((*Tag)(nil)).
@@ -394,8 +386,6 @@ func (suite *DDLTestSuite) TestTruncateTableExtended() {
 
 // TestDropTableExtended tests DropTable operations.
 func (suite *DDLTestSuite) TestDropTableExtended() {
-	suite.T().Logf("Testing DropTable extended for %s", suite.ds.Kind)
-
 	suite.Run("BuildOnly", func() {
 		query := suite.db.NewDropTable().
 			Model((*Tag)(nil)).
@@ -407,8 +397,6 @@ func (suite *DDLTestSuite) TestDropTableExtended() {
 
 // TestDropIndexExtended tests DropIndex operations.
 func (suite *DDLTestSuite) TestDropIndexExtended() {
-	suite.T().Logf("Testing DropIndex extended for %s", suite.ds.Kind)
-
 	suite.Run("BuildOnly", func() {
 		query := suite.db.NewDropIndex().
 			Index("idx_nonexistent").
@@ -431,8 +419,6 @@ func (suite *DDLTestSuite) TestDropIndexExtended() {
 
 // TestDropColumnExtended tests DropColumn operations.
 func (suite *DDLTestSuite) TestDropColumnExtended() {
-	suite.T().Logf("Testing DropColumn extended for %s", suite.ds.Kind)
-
 	suite.Run("BuildOnly", func() {
 		query := suite.db.NewDropColumn().
 			Model((*Tag)(nil)).
@@ -444,8 +430,6 @@ func (suite *DDLTestSuite) TestDropColumnExtended() {
 
 // TestDDLCascadeRestrict tests DDL Cascade and Restrict methods.
 func (suite *DDLTestSuite) TestDDLCascadeRestrict() {
-	suite.T().Logf("Testing DDL Cascade/Restrict for %s", suite.ds.Kind)
-
 	suite.Run("DropTableCascade", func() {
 		query := suite.db.NewDropTable().
 			Model((*Tag)(nil)).

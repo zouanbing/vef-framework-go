@@ -9,46 +9,30 @@ type IDModel struct {
 
 // CreatedModel contains creation tracking fields.
 type CreatedModel struct {
-	// CreatedAt is the created at time of the model
-	CreatedAt timex.DateTime `json:"createdAt" bun:",notnull,type:timestamp,default:CURRENT_TIMESTAMP,skipupdate"`
-	// CreatedBy is the created by of the model
-	CreatedBy string `json:"createdBy" bun:",notnull,skipupdate" mold:"translate=user?"`
-	// CreatedByName is the created by name of the model
-	CreatedByName string `json:"createdByName" bun:",scanonly"`
+	CreatedAt     timex.DateTime `json:"createdAt" bun:",notnull,type:timestamp,default:CURRENT_TIMESTAMP,skipupdate"`
+	CreatedBy     string         `json:"createdBy" bun:",notnull,skipupdate" mold:"translate=user?"`
+	CreatedByName string         `json:"createdByName" bun:",scanonly"`
 }
 
 // AuditedModel contains full audit tracking fields (create + update).
 type AuditedModel struct {
-	// CreatedAt is the created at time of the model
-	CreatedAt timex.DateTime `json:"createdAt" bun:",notnull,type:timestamp,default:CURRENT_TIMESTAMP,skipupdate"`
-	// CreatedBy is the created by of the model
-	CreatedBy string `json:"createdBy" bun:",notnull,skipupdate" mold:"translate=user?"`
-	// CreatedByName is the created by name of the model
-	CreatedByName string `json:"createdByName" bun:",scanonly"`
-	// UpdatedAt is the updated at time of the model
-	UpdatedAt timex.DateTime `json:"updatedAt" bun:",notnull,type:timestamp,default:CURRENT_TIMESTAMP"`
-	// UpdatedBy is the updated by of the model
-	UpdatedBy string `json:"updatedBy" bun:",notnull" mold:"translate=user?"`
-	// UpdatedByName is the updated by name of the model
-	UpdatedByName string `json:"updatedByName" bun:",scanonly"`
+	CreatedAt     timex.DateTime `json:"createdAt" bun:",notnull,type:timestamp,default:CURRENT_TIMESTAMP,skipupdate"`
+	CreatedBy     string         `json:"createdBy" bun:",notnull,skipupdate" mold:"translate=user?"`
+	CreatedByName string         `json:"createdByName" bun:",scanonly"`
+	UpdatedAt     timex.DateTime `json:"updatedAt" bun:",notnull,type:timestamp,default:CURRENT_TIMESTAMP"`
+	UpdatedBy     string         `json:"updatedBy" bun:",notnull" mold:"translate=user?"`
+	UpdatedByName string         `json:"updatedByName" bun:",scanonly"`
 }
 
-// Model is the base model for all models.
+// Model is the base model with primary key and full audit tracking.
 type Model struct {
-	// ID is the primary key of the model
-	ID string `json:"id" bun:"id,pk"`
-	// CreatedAt is the created at time of the model
-	CreatedAt timex.DateTime `json:"createdAt" bun:",notnull,type:timestamp,default:CURRENT_TIMESTAMP,skipupdate"`
-	// CreatedBy is the created by of the model
-	CreatedBy string `json:"createdBy" bun:",notnull,skipupdate" mold:"translate=user?"`
-	// CreatedByName is the created by name of the model
-	CreatedByName string `json:"createdByName" bun:",scanonly"`
-	// UpdatedAt is the updated at time of the model
-	UpdatedAt timex.DateTime `json:"updatedAt" bun:",notnull,type:timestamp,default:CURRENT_TIMESTAMP"`
-	// UpdatedBy is the updated by of the model
-	UpdatedBy string `json:"updatedBy" bun:",notnull" mold:"translate=user?"`
-	// UpdatedByName is the updated by name of the model
-	UpdatedByName string `json:"updatedByName" bun:",scanonly"`
+	ID            string         `json:"id" bun:"id,pk"`
+	CreatedAt     timex.DateTime `json:"createdAt" bun:",notnull,type:timestamp,default:CURRENT_TIMESTAMP,skipupdate"`
+	CreatedBy     string         `json:"createdBy" bun:",notnull,skipupdate" mold:"translate=user?"`
+	CreatedByName string         `json:"createdByName" bun:",scanonly"`
+	UpdatedAt     timex.DateTime `json:"updatedAt" bun:",notnull,type:timestamp,default:CURRENT_TIMESTAMP"`
+	UpdatedBy     string         `json:"updatedBy" bun:",notnull" mold:"translate=user?"`
+	UpdatedByName string         `json:"updatedByName" bun:",scanonly"`
 }
 
 // RelationSpec specifies how to join a related model using automatic column resolution.

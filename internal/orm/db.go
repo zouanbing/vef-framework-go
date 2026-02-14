@@ -9,12 +9,9 @@ import (
 )
 
 var (
-	// TxOptions defines transaction options for read-write transactions.
 	txOptions = &sql.TxOptions{
 		Isolation: sql.LevelReadCommitted,
-		ReadOnly:  false,
 	}
-	// ReadOnlyTxOptions defines transaction options for read-only transactions.
 	readOnlyTxOptions = &sql.TxOptions{
 		Isolation: sql.LevelReadCommitted,
 		ReadOnly:  true,

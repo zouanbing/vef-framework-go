@@ -335,11 +335,8 @@ func (suite *CBSubqueryOperationsTestSuite) TestLessThanSubQuery() {
 func (suite *CBSubqueryOperationsTestSuite) TestEqualsAll() {
 	suite.T().Logf("Testing EqualsAll condition for %s", suite.ds.Kind)
 
-	// Skip on SQLite - ALL operator not supported
 	if suite.ds.Kind == config.SQLite {
-		suite.T().Skipf("ALL operator not supported on %s (SQL standard feature)", suite.ds.Kind)
-
-		return
+		suite.T().Skip("ALL operator not supported on SQLite")
 	}
 
 	suite.Run("BasicEqualsAll", func() {
@@ -392,11 +389,8 @@ func (suite *CBSubqueryOperationsTestSuite) TestEqualsAll() {
 func (suite *CBSubqueryOperationsTestSuite) TestNotEqualsAll() {
 	suite.T().Logf("Testing NotEqualsAll condition for %s", suite.ds.Kind)
 
-	// Skip on SQLite - ALL operator not supported
 	if suite.ds.Kind == config.SQLite {
-		suite.T().Skipf("ALL operator not supported on %s (SQL standard feature)", suite.ds.Kind)
-
-		return
+		suite.T().Skip("ALL operator not supported on SQLite")
 	}
 
 	suite.Run("BasicNotEqualsAll", func() {

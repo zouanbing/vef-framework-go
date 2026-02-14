@@ -49,26 +49,22 @@ func buildColumnExpr(column string, alias ...string) schema.QueryWithArgs {
 
 // applyRelationSpec applies a RelationSpec to a SelectQuery by creating the appropriate JOIN.
 func applyRelationSpec(spec *RelationSpec, query SelectQuery) {
-	var (
-		table            = query.DB().TableOf(spec.Model)
-		pk               string
-		alias            = spec.Alias
-		joinType         = spec.JoinType
-		foreignColumn    = spec.ForeignColumn
-		referencedColumn = spec.ReferencedColumn
-	)
+	table := query.DB().TableOf(spec.Model)
 
 	if len(table.PKs) != 1 {
 		logger.Panicf("applyRelationSpec: model %q requires exactly one primary key, got %d primary key(s)", table.TypeName, len(table.PKs))
 	}
 
-	pk = table.PKs[0].Name
+	pk := table.PKs[0].Name
+	alias := spec.Alias
+	joinType := spec.JoinType
+	foreignColumn := spec.ForeignColumn
+	referencedColumn := spec.ReferencedColumn
 
 	if alias == "" {
 		alias = table.Alias
 	}
 
-	// Default to LEFT JOIN if not specified
 	if joinType == JoinDefault {
 		joinType = JoinLeft
 	}

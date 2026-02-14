@@ -27,17 +27,15 @@ type EBStringFunctionsTestSuite struct {
 
 // TestConcat tests the Concat function.
 func (suite *EBStringFunctionsTestSuite) TestConcat() {
-	suite.T().Logf("Testing Concat function for %s", suite.ds.Kind)
-
 	suite.Run("ConcatTitleAndStatus", func() {
-		type ConcatResult struct {
+		type Result struct {
 			Title          string `bun:"title"`
 			Status         string `bun:"status"`
 			TitleAndStatus string `bun:"title_and_status"`
 			MultiConcat    string `bun:"multi_concat"`
 		}
 
-		var concatResults []ConcatResult
+		var concatResults []Result
 
 		err := suite.selectPosts().
 			Select("title", "status").
@@ -51,31 +49,27 @@ func (suite *EBStringFunctionsTestSuite) TestConcat() {
 			Limit(5).
 			Scan(suite.ctx, &concatResults)
 
-		suite.NoError(err, "Concat function should work correctly")
-		suite.True(len(concatResults) > 0, "Should have concat results")
+		suite.NoError(err)
+		suite.NotEmpty(concatResults)
 
 		for _, result := range concatResults {
 			suite.Contains(result.TitleAndStatus, result.Title, "Concat should include title")
 			suite.Contains(result.TitleAndStatus, result.Status, "Concat should include status")
 			suite.Contains(result.MultiConcat, result.Title, "Multi concat should include title")
 			suite.Contains(result.MultiConcat, result.Status, "Multi concat should include status")
-			suite.T().Logf("Post: %s | TitleAndStatus: %s | MultiConcat: %s",
-				result.Title, result.TitleAndStatus, result.MultiConcat)
 		}
 	})
 }
 
 // TestConcatWithSep tests the ConcatWithSep function.
 func (suite *EBStringFunctionsTestSuite) TestConcatWithSep() {
-	suite.T().Logf("Testing ConcatWithSep function for %s", suite.ds.Kind)
-
 	suite.Run("ConcatWithDashSeparator", func() {
-		type ConcatWithSepResult struct {
+		type Result struct {
 			ID     string `bun:"id"`
 			Joined string `bun:"joined"`
 		}
 
-		var concatResults []ConcatWithSepResult
+		var concatResults []Result
 
 		err := suite.selectPosts().
 			Select("id").
@@ -86,12 +80,11 @@ func (suite *EBStringFunctionsTestSuite) TestConcatWithSep() {
 			Limit(3).
 			Scan(suite.ctx, &concatResults)
 
-		suite.NoError(err, "ConcatWithSep should work correctly")
-		suite.True(len(concatResults) > 0, "Should have concatenated results")
+		suite.NoError(err)
+		suite.NotEmpty(concatResults)
 
 		for _, result := range concatResults {
 			suite.Contains(result.Joined, " - ", "Should contain separator")
-			suite.T().Logf("ID: %s, Joined: %s", result.ID, result.Joined)
 		}
 	})
 }
@@ -99,16 +92,14 @@ func (suite *EBStringFunctionsTestSuite) TestConcatWithSep() {
 // TestSubString tests the SubString function.
 // SubString extracts a substring from a string starting at a 1-based position.
 func (suite *EBStringFunctionsTestSuite) TestSubString() {
-	suite.T().Logf("Testing SubString function for %s", suite.ds.Kind)
-
 	suite.Run("ExtractSubstrings", func() {
-		type SubstringResult struct {
+		type Result struct {
 			Title        string `bun:"title"`
 			First5Chars  string `bun:"first5_chars"`
 			Middle3Chars string `bun:"middle3_chars"`
 		}
 
-		var substringResults []SubstringResult
+		var substringResults []Result
 
 		err := suite.selectPosts().
 			Select("title").
@@ -122,34 +113,29 @@ func (suite *EBStringFunctionsTestSuite) TestSubString() {
 			Limit(5).
 			Scan(suite.ctx, &substringResults)
 
-		suite.NoError(err, "SubString function should work correctly")
-		suite.True(len(substringResults) > 0, "Should have substring results")
+		suite.NoError(err)
+		suite.NotEmpty(substringResults)
 
 		for _, result := range substringResults {
 			if len(result.Title) >= 5 {
 				suite.True(len(result.First5Chars) <= 5, "First5Chars should be at most 5 characters")
 				suite.True(len(result.Middle3Chars) <= 3, "Middle3Chars should be at most 3 characters")
 			}
-
-			suite.T().Logf("Title: %s | First5: %s | Middle3: %s",
-				result.Title, result.First5Chars, result.Middle3Chars)
 		}
 	})
 }
 
 // TestUpper tests the Upper function.
 func (suite *EBStringFunctionsTestSuite) TestUpper() {
-	suite.T().Logf("Testing Upper function for %s", suite.ds.Kind)
-
 	suite.Run("ConvertToUppercase", func() {
-		type CaseResult struct {
+		type Result struct {
 			Title       string `bun:"title"`
 			UpperTitle  string `bun:"upper_title"`
 			Status      string `bun:"status"`
 			UpperStatus string `bun:"upper_status"`
 		}
 
-		var caseResults []CaseResult
+		var caseResults []Result
 
 		err := suite.selectPosts().
 			Select("title", "status").
@@ -163,30 +149,27 @@ func (suite *EBStringFunctionsTestSuite) TestUpper() {
 			Limit(5).
 			Scan(suite.ctx, &caseResults)
 
-		suite.NoError(err, "Upper function should work correctly")
-		suite.True(len(caseResults) > 0, "Should have case conversion results")
+		suite.NoError(err)
+		suite.NotEmpty(caseResults)
 
 		for _, result := range caseResults {
 			suite.Equal(strings.ToUpper(result.Title), result.UpperTitle, "Upper should convert title to uppercase")
 			suite.Equal(strings.ToUpper(result.Status), result.UpperStatus, "Upper should convert status to uppercase")
-			suite.T().Logf("Title: %s → Upper: %s", result.Title, result.UpperTitle)
 		}
 	})
 }
 
 // TestLower tests the Lower function.
 func (suite *EBStringFunctionsTestSuite) TestLower() {
-	suite.T().Logf("Testing Lower function for %s", suite.ds.Kind)
-
 	suite.Run("ConvertToLowercase", func() {
-		type CaseResult struct {
+		type Result struct {
 			Title       string `bun:"title"`
 			LowerTitle  string `bun:"lower_title"`
 			Status      string `bun:"status"`
 			LowerStatus string `bun:"lower_status"`
 		}
 
-		var caseResults []CaseResult
+		var caseResults []Result
 
 		err := suite.selectPosts().
 			Select("title", "status").
@@ -200,28 +183,25 @@ func (suite *EBStringFunctionsTestSuite) TestLower() {
 			Limit(5).
 			Scan(suite.ctx, &caseResults)
 
-		suite.NoError(err, "Lower function should work correctly")
-		suite.True(len(caseResults) > 0, "Should have case conversion results")
+		suite.NoError(err)
+		suite.NotEmpty(caseResults)
 
 		for _, result := range caseResults {
 			suite.Equal(strings.ToLower(result.Title), result.LowerTitle, "Lower should convert title to lowercase")
 			suite.Equal(strings.ToLower(result.Status), result.LowerStatus, "Lower should convert status to lowercase")
-			suite.T().Logf("Title: %s → Lower: %s", result.Title, result.LowerTitle)
 		}
 	})
 }
 
 // TestTrim tests the Trim function.
 func (suite *EBStringFunctionsTestSuite) TestTrim() {
-	suite.T().Logf("Testing Trim function for %s", suite.ds.Kind)
-
 	suite.Run("TrimWhitespace", func() {
-		type TrimResult struct {
+		type Result struct {
 			Status        string `bun:"status"`
 			TrimmedStatus string `bun:"trimmed_status"`
 		}
 
-		var trimResults []TrimResult
+		var trimResults []Result
 
 		err := suite.selectPosts().
 			Select("status").
@@ -232,31 +212,28 @@ func (suite *EBStringFunctionsTestSuite) TestTrim() {
 			Limit(5).
 			Scan(suite.ctx, &trimResults)
 
-		suite.NoError(err, "Trim function should work correctly")
-		suite.True(len(trimResults) > 0, "Should have trim results")
+		suite.NoError(err)
+		suite.NotEmpty(trimResults)
 
 		for _, result := range trimResults {
-			suite.NotEmpty(result.Status, "Status should not be empty")
-			suite.NotEmpty(result.TrimmedStatus, "Trimmed status should not be empty")
+			suite.NotEmpty(result.Status)
+			suite.NotEmpty(result.TrimmedStatus)
 			// Since status values don't have leading/trailing spaces, they should be equal
 			suite.Equal(result.Status, result.TrimmedStatus, "Trim should preserve non-whitespace text")
-			suite.T().Logf("Status: '%s' | Trimmed: '%s'", result.Status, result.TrimmedStatus)
 		}
 	})
 }
 
 // TestTrimLeft tests the TrimLeft function.
 func (suite *EBStringFunctionsTestSuite) TestTrimLeft() {
-	suite.T().Logf("Testing TrimLeft function for %s", suite.ds.Kind)
-
 	suite.Run("TrimLeadingWhitespace", func() {
-		type TrimResult struct {
+		type Result struct {
 			ID          string `bun:"id"`
 			Original    string `bun:"original"`
 			LeftTrimmed string `bun:"left_trimmed"`
 		}
 
-		var trimResults []TrimResult
+		var trimResults []Result
 
 		err := suite.selectPosts().
 			Select("id").
@@ -269,30 +246,26 @@ func (suite *EBStringFunctionsTestSuite) TestTrimLeft() {
 			Limit(3).
 			Scan(suite.ctx, &trimResults)
 
-		suite.NoError(err, "TrimLeft should work correctly")
-		suite.True(len(trimResults) > 0, "Should have trim results")
+		suite.NoError(err)
+		suite.NotEmpty(trimResults)
 
 		for _, result := range trimResults {
 			suite.Contains(result.Original, "   ", "Original should contain spaces")
 			suite.NotEqual(result.Original, result.LeftTrimmed, "Left trimmed should differ from original")
-			suite.T().Logf("ID: %s, Original: '%s', LeftTrim: '%s'",
-				result.ID, result.Original, result.LeftTrimmed)
 		}
 	})
 }
 
 // TestTrimRight tests the TrimRight function.
 func (suite *EBStringFunctionsTestSuite) TestTrimRight() {
-	suite.T().Logf("Testing TrimRight function for %s", suite.ds.Kind)
-
 	suite.Run("TrimTrailingWhitespace", func() {
-		type TrimResult struct {
+		type Result struct {
 			ID           string `bun:"id"`
 			Original     string `bun:"original"`
 			RightTrimmed string `bun:"right_trimmed"`
 		}
 
-		var trimResults []TrimResult
+		var trimResults []Result
 
 		err := suite.selectPosts().
 			Select("id").
@@ -305,31 +278,27 @@ func (suite *EBStringFunctionsTestSuite) TestTrimRight() {
 			Limit(3).
 			Scan(suite.ctx, &trimResults)
 
-		suite.NoError(err, "TrimRight should work correctly")
-		suite.True(len(trimResults) > 0, "Should have trim results")
+		suite.NoError(err)
+		suite.NotEmpty(trimResults)
 
 		for _, result := range trimResults {
 			suite.Contains(result.Original, "   ", "Original should contain spaces")
 			suite.NotEqual(result.Original, result.RightTrimmed, "Right trimmed should differ from original")
-			suite.T().Logf("ID: %s, Original: '%s', RightTrim: '%s'",
-				result.ID, result.Original, result.RightTrimmed)
 		}
 	})
 }
 
 // TestLength tests the Length function.
 func (suite *EBStringFunctionsTestSuite) TestLength() {
-	suite.T().Logf("Testing Length function for %s", suite.ds.Kind)
-
 	suite.Run("CalculateStringLength", func() {
-		type LengthResult struct {
+		type Result struct {
 			Title        string `bun:"title"`
 			TitleLength  int64  `bun:"title_length"`
 			Status       string `bun:"status"`
 			StatusLength int64  `bun:"status_length"`
 		}
 
-		var lengthResults []LengthResult
+		var lengthResults []Result
 
 		err := suite.selectPosts().
 			Select("title", "status").
@@ -343,29 +312,25 @@ func (suite *EBStringFunctionsTestSuite) TestLength() {
 			Limit(5).
 			Scan(suite.ctx, &lengthResults)
 
-		suite.NoError(err, "Length function should work correctly")
-		suite.True(len(lengthResults) > 0, "Should have length results")
+		suite.NoError(err)
+		suite.NotEmpty(lengthResults)
 
 		for _, result := range lengthResults {
 			suite.Equal(int64(len(result.Title)), result.TitleLength, "Length should match title byte length")
 			suite.Equal(int64(len(result.Status)), result.StatusLength, "Length should match status byte length")
-			suite.T().Logf("Title: %s (len=%d) | Status: %s (len=%d)",
-				result.Title, result.TitleLength, result.Status, result.StatusLength)
 		}
 	})
 }
 
 // TestCharLength tests the CharLength function.
 func (suite *EBStringFunctionsTestSuite) TestCharLength() {
-	suite.T().Logf("Testing CharLength function for %s", suite.ds.Kind)
-
 	suite.Run("CalculateCharacterLength", func() {
-		type StringLengthResult struct {
+		type Result struct {
 			Title   string `bun:"title"`
 			CharLen int64  `bun:"char_len"`
 		}
 
-		var lengthResults []StringLengthResult
+		var lengthResults []Result
 
 		err := suite.selectPosts().
 			Select("title").
@@ -376,12 +341,11 @@ func (suite *EBStringFunctionsTestSuite) TestCharLength() {
 			Limit(5).
 			Scan(suite.ctx, &lengthResults)
 
-		suite.NoError(err, "CharLength should work correctly")
-		suite.True(len(lengthResults) > 0, "Should have character length results")
+		suite.NoError(err)
+		suite.NotEmpty(lengthResults)
 
 		for _, result := range lengthResults {
 			suite.True(result.CharLen > 0, "Character length should be positive")
-			suite.T().Logf("Title: %s, CharLen: %d", result.Title, result.CharLen)
 		}
 	})
 }
@@ -389,15 +353,13 @@ func (suite *EBStringFunctionsTestSuite) TestCharLength() {
 // TestPosition tests the Position function.
 // Position finds the position of a substring within a string (1-based, 0 if not found).
 func (suite *EBStringFunctionsTestSuite) TestPosition() {
-	suite.T().Logf("Testing Position function for %s", suite.ds.Kind)
-
 	suite.Run("FindSubstringPosition", func() {
-		type PositionResult struct {
+		type Result struct {
 			Title    string `bun:"title"`
 			Position int64  `bun:"pos"`
 		}
 
-		var posResults []PositionResult
+		var posResults []Result
 
 		err := suite.selectPosts().
 			Select("title").
@@ -408,27 +370,24 @@ func (suite *EBStringFunctionsTestSuite) TestPosition() {
 			Limit(5).
 			Scan(suite.ctx, &posResults)
 
-		suite.NoError(err, "Position should work correctly")
-		suite.True(len(posResults) > 0, "Should have position results")
+		suite.NoError(err)
+		suite.NotEmpty(posResults)
 
 		for _, result := range posResults {
 			suite.True(result.Position >= 0, "Position should be non-negative (0 means not found)")
-			suite.T().Logf("Title: %s, Position of 'o': %d", result.Title, result.Position)
 		}
 	})
 }
 
 // TestLeft tests the Left function.
 func (suite *EBStringFunctionsTestSuite) TestLeft() {
-	suite.T().Logf("Testing Left function for %s", suite.ds.Kind)
-
 	suite.Run("ExtractLeftmostCharacters", func() {
-		type LeftResult struct {
+		type Result struct {
 			Title    string `bun:"title"`
 			LeftPart string `bun:"left_part"`
 		}
 
-		var leftResults []LeftResult
+		var leftResults []Result
 
 		err := suite.selectPosts().
 			Select("title").
@@ -439,27 +398,24 @@ func (suite *EBStringFunctionsTestSuite) TestLeft() {
 			Limit(5).
 			Scan(suite.ctx, &leftResults)
 
-		suite.NoError(err, "Left function should work correctly")
-		suite.True(len(leftResults) > 0, "Should have left part results")
+		suite.NoError(err)
+		suite.NotEmpty(leftResults)
 
 		for _, result := range leftResults {
 			suite.True(len(result.LeftPart) <= 10, "Left part should be at most 10 characters")
-			suite.T().Logf("Title: %s, Left(10): %s", result.Title, result.LeftPart)
 		}
 	})
 }
 
 // TestRight tests the Right function.
 func (suite *EBStringFunctionsTestSuite) TestRight() {
-	suite.T().Logf("Testing Right function for %s", suite.ds.Kind)
-
 	suite.Run("ExtractRightmostCharacters", func() {
-		type RightResult struct {
+		type Result struct {
 			Title     string `bun:"title"`
 			RightPart string `bun:"right_part"`
 		}
 
-		var rightResults []RightResult
+		var rightResults []Result
 
 		err := suite.selectPosts().
 			Select("title").
@@ -470,27 +426,24 @@ func (suite *EBStringFunctionsTestSuite) TestRight() {
 			Limit(5).
 			Scan(suite.ctx, &rightResults)
 
-		suite.NoError(err, "Right function should work correctly")
-		suite.True(len(rightResults) > 0, "Should have right part results")
+		suite.NoError(err)
+		suite.NotEmpty(rightResults)
 
 		for _, result := range rightResults {
 			suite.True(len(result.RightPart) <= 5, "Right part should be at most 5 characters")
-			suite.T().Logf("Title: %s, Right(5): %s", result.Title, result.RightPart)
 		}
 	})
 }
 
 // TestRepeat tests the Repeat function.
 func (suite *EBStringFunctionsTestSuite) TestRepeat() {
-	suite.T().Logf("Testing Repeat function for %s", suite.ds.Kind)
-
 	suite.Run("RepeatString", func() {
-		type RepeatResult struct {
+		type Result struct {
 			ID       string `bun:"id"`
 			Repeated string `bun:"repeated"`
 		}
 
-		var repeatResults []RepeatResult
+		var repeatResults []Result
 
 		err := suite.selectPosts().
 			Select("id").
@@ -500,27 +453,24 @@ func (suite *EBStringFunctionsTestSuite) TestRepeat() {
 			Limit(3).
 			Scan(suite.ctx, &repeatResults)
 
-		suite.NoError(err, "Repeat should work correctly")
-		suite.True(len(repeatResults) > 0, "Should have repeat results")
+		suite.NoError(err)
+		suite.NotEmpty(repeatResults)
 
 		for _, result := range repeatResults {
 			suite.Equal("*****", result.Repeated, "Should repeat '*' 5 times")
-			suite.T().Logf("ID: %s, Repeated: %s", result.ID, result.Repeated)
 		}
 	})
 }
 
 // TestReplace tests the Replace function.
 func (suite *EBStringFunctionsTestSuite) TestReplace() {
-	suite.T().Logf("Testing Replace function for %s", suite.ds.Kind)
-
 	suite.Run("ReplaceSubstring", func() {
-		type ReplaceResult struct {
+		type Result struct {
 			Status         string `bun:"status"`
 			ReplacedStatus string `bun:"replaced_status"`
 		}
 
-		var replaceResults []ReplaceResult
+		var replaceResults []Result
 
 		err := suite.selectPosts().
 			Select("status").
@@ -531,13 +481,12 @@ func (suite *EBStringFunctionsTestSuite) TestReplace() {
 			Limit(5).
 			Scan(suite.ctx, &replaceResults)
 
-		suite.NoError(err, "Replace function should work correctly")
-		suite.True(len(replaceResults) > 0, "Should have replace results")
+		suite.NoError(err)
+		suite.NotEmpty(replaceResults)
 
 		for _, result := range replaceResults {
-			suite.NotEmpty(result.Status, "Status should not be empty")
-			suite.NotEmpty(result.ReplacedStatus, "Replaced status should not be empty")
-			suite.T().Logf("Original: %s | Replaced: %s", result.Status, result.ReplacedStatus)
+			suite.NotEmpty(result.Status)
+			suite.NotEmpty(result.ReplacedStatus)
 		}
 	})
 }
@@ -545,19 +494,17 @@ func (suite *EBStringFunctionsTestSuite) TestReplace() {
 // TestReverse tests the Reverse function.
 // Reverse reverses a string (not supported on SQLite).
 func (suite *EBStringFunctionsTestSuite) TestReverse() {
-	suite.T().Logf("Testing Reverse function for %s", suite.ds.Kind)
-
 	suite.Run("ReverseString", func() {
 		if suite.ds.Kind == config.SQLite {
 			suite.T().Skipf("Reverse not supported on %s (framework limitation: no simulation provided)", suite.ds.Kind)
 		}
 
-		type ReverseResult struct {
+		type Result struct {
 			Title    string `bun:"title"`
 			Reversed string `bun:"reversed"`
 		}
 
-		var reverseResults []ReverseResult
+		var reverseResults []Result
 
 		err := suite.selectPosts().
 			Select("title").
@@ -567,12 +514,11 @@ func (suite *EBStringFunctionsTestSuite) TestReverse() {
 			Limit(3).
 			Scan(suite.ctx, &reverseResults)
 
-		suite.NoError(err, "Reverse should work on supported databases")
-		suite.True(len(reverseResults) > 0, "Should have reverse results")
+		suite.NoError(err)
+		suite.NotEmpty(reverseResults)
 
 		for _, result := range reverseResults {
-			suite.NotEmpty(result.Reversed, "Reversed string should not be empty")
-			suite.T().Logf("Title: %s, Reversed: %s", result.Title, result.Reversed)
+			suite.NotEmpty(result.Reversed)
 		}
 	})
 }
@@ -580,17 +526,15 @@ func (suite *EBStringFunctionsTestSuite) TestReverse() {
 // TestCombinedStringFunctions tests using multiple string functions together.
 // This verifies that string functions can be nested and combined.
 func (suite *EBStringFunctionsTestSuite) TestCombinedStringFunctions() {
-	suite.T().Logf("Testing combined string functions for %s", suite.ds.Kind)
-
 	suite.Run("NestedStringFunctions", func() {
-		type CombinedStringResult struct {
+		type Result struct {
 			Title       string `bun:"title"`
 			UpperTitle  string `bun:"upper_title"`
 			LowerTitle  string `bun:"lower_title"`
 			CombinedStr string `bun:"combined_str"`
 		}
 
-		var combinedResults []CombinedStringResult
+		var combinedResults []Result
 
 		err := suite.selectPosts().
 			Select("title").
@@ -611,32 +555,28 @@ func (suite *EBStringFunctionsTestSuite) TestCombinedStringFunctions() {
 			Limit(5).
 			Scan(suite.ctx, &combinedResults)
 
-		suite.NoError(err, "Combined string functions should work correctly")
-		suite.True(len(combinedResults) > 0, "Should have combined string results")
+		suite.NoError(err)
+		suite.NotEmpty(combinedResults)
 
 		for _, result := range combinedResults {
-			suite.NotEmpty(result.UpperTitle, "Upper title should not be empty")
-			suite.NotEmpty(result.LowerTitle, "Lower title should not be empty")
-			suite.NotEmpty(result.CombinedStr, "Combined string should not be empty")
-			suite.T().Logf("Original: %s | Upper: %s | Lower: %s | Combined: %s",
-				result.Title, result.UpperTitle, result.LowerTitle, result.CombinedStr)
+			suite.NotEmpty(result.UpperTitle)
+			suite.NotEmpty(result.LowerTitle)
+			suite.NotEmpty(result.CombinedStr)
 		}
 	})
 }
 
 // TestContains tests the Contains function (case-sensitive substring check).
 func (suite *EBStringFunctionsTestSuite) TestContains() {
-	suite.T().Logf("Testing Contains function for %s", suite.ds.Kind)
-
 	suite.Run("ContainsSubstring", func() {
-		type ContainsResult struct {
+		type Result struct {
 			ID            string `bun:"id"`
 			Title         string `bun:"title"`
 			ContainsPost  bool   `bun:"contains_post"`
 			ContainsGuide bool   `bun:"contains_guide"`
 		}
 
-		var containsResults []ContainsResult
+		var containsResults []Result
 
 		err := suite.selectPosts().
 			Select("id", "title").
@@ -650,12 +590,12 @@ func (suite *EBStringFunctionsTestSuite) TestContains() {
 			Limit(5).
 			Scan(suite.ctx, &containsResults)
 
-		suite.NoError(err, "Contains function should work correctly")
-		suite.True(len(containsResults) > 0, "Should have contains results")
+		suite.NoError(err)
+		suite.NotEmpty(containsResults)
 
 		for _, result := range containsResults {
-			suite.NotEmpty(result.ID, "ID should not be empty")
-			suite.NotEmpty(result.Title, "Title should not be empty")
+			suite.NotEmpty(result.ID)
+			suite.NotEmpty(result.Title)
 
 			// Verify case-sensitive matching
 			if strings.Contains(result.Title, "Post") {
@@ -669,26 +609,21 @@ func (suite *EBStringFunctionsTestSuite) TestContains() {
 			} else {
 				suite.False(result.ContainsGuide, "Should not contain 'Guide' when absent")
 			}
-
-			suite.T().Logf("ID: %s, Title: %s, ContainsPost: %v, ContainsGuide: %v",
-				result.ID, result.Title, result.ContainsPost, result.ContainsGuide)
 		}
 	})
 }
 
 // TestStartsWith tests the StartsWith function (case-sensitive prefix check).
 func (suite *EBStringFunctionsTestSuite) TestStartsWith() {
-	suite.T().Logf("Testing StartsWith function for %s", suite.ds.Kind)
-
 	suite.Run("StartsWithPrefix", func() {
-		type StartsWithResult struct {
+		type Result struct {
 			ID          string `bun:"id"`
 			Title       string `bun:"title"`
 			StartsWithG bool   `bun:"starts_with_g"`
 			StartsWithP bool   `bun:"starts_with_p"`
 		}
 
-		var startsWithResults []StartsWithResult
+		var startsWithResults []Result
 
 		err := suite.selectPosts().
 			Select("id", "title").
@@ -702,12 +637,12 @@ func (suite *EBStringFunctionsTestSuite) TestStartsWith() {
 			Limit(5).
 			Scan(suite.ctx, &startsWithResults)
 
-		suite.NoError(err, "StartsWith function should work correctly")
-		suite.True(len(startsWithResults) > 0, "Should have startsWith results")
+		suite.NoError(err)
+		suite.NotEmpty(startsWithResults)
 
 		for _, result := range startsWithResults {
-			suite.NotEmpty(result.ID, "ID should not be empty")
-			suite.NotEmpty(result.Title, "Title should not be empty")
+			suite.NotEmpty(result.ID)
+			suite.NotEmpty(result.Title)
 
 			// Verify case-sensitive prefix matching
 			if strings.HasPrefix(result.Title, "G") {
@@ -721,26 +656,21 @@ func (suite *EBStringFunctionsTestSuite) TestStartsWith() {
 			} else {
 				suite.False(result.StartsWithP, "Should not start with 'P' when absent")
 			}
-
-			suite.T().Logf("ID: %s, Title: %s, StartsWithG: %v, StartsWithP: %v",
-				result.ID, result.Title, result.StartsWithG, result.StartsWithP)
 		}
 	})
 }
 
 // TestEndsWith tests the EndsWith function (case-sensitive suffix check).
 func (suite *EBStringFunctionsTestSuite) TestEndsWith() {
-	suite.T().Logf("Testing EndsWith function for %s", suite.ds.Kind)
-
 	suite.Run("EndsWithSuffix", func() {
-		type EndsWithResult struct {
+		type Result struct {
 			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			EndsWithE bool   `bun:"ends_with_e"`
 			EndsWithT bool   `bun:"ends_with_t"`
 		}
 
-		var endsWithResults []EndsWithResult
+		var endsWithResults []Result
 
 		err := suite.selectPosts().
 			Select("id", "title").
@@ -754,12 +684,12 @@ func (suite *EBStringFunctionsTestSuite) TestEndsWith() {
 			Limit(5).
 			Scan(suite.ctx, &endsWithResults)
 
-		suite.NoError(err, "EndsWith function should work correctly")
-		suite.True(len(endsWithResults) > 0, "Should have endsWith results")
+		suite.NoError(err)
+		suite.NotEmpty(endsWithResults)
 
 		for _, result := range endsWithResults {
-			suite.NotEmpty(result.ID, "ID should not be empty")
-			suite.NotEmpty(result.Title, "Title should not be empty")
+			suite.NotEmpty(result.ID)
+			suite.NotEmpty(result.Title)
 
 			// Verify case-sensitive suffix matching
 			if strings.HasSuffix(result.Title, "e") {
@@ -773,26 +703,21 @@ func (suite *EBStringFunctionsTestSuite) TestEndsWith() {
 			} else {
 				suite.False(result.EndsWithT, "Should not end with 't' when absent")
 			}
-
-			suite.T().Logf("ID: %s, Title: %s, EndsWithE: %v, EndsWithT: %v",
-				result.ID, result.Title, result.EndsWithE, result.EndsWithT)
 		}
 	})
 }
 
 // TestContainsIgnoreCase tests the ContainsIgnoreCase function (case-insensitive substring check).
 func (suite *EBStringFunctionsTestSuite) TestContainsIgnoreCase() {
-	suite.T().Logf("Testing ContainsIgnoreCase function for %s", suite.ds.Kind)
-
 	suite.Run("ContainsSubstringIgnoreCase", func() {
-		type ContainsIgnoreCaseResult struct {
+		type Result struct {
 			ID            string `bun:"id"`
 			Title         string `bun:"title"`
 			ContainsPost  bool   `bun:"contains_post"`
 			ContainsGuide bool   `bun:"contains_guide"`
 		}
 
-		var containsResults []ContainsIgnoreCaseResult
+		var containsResults []Result
 
 		err := suite.selectPosts().
 			Select("id", "title").
@@ -806,12 +731,12 @@ func (suite *EBStringFunctionsTestSuite) TestContainsIgnoreCase() {
 			Limit(5).
 			Scan(suite.ctx, &containsResults)
 
-		suite.NoError(err, "ContainsIgnoreCase function should work correctly")
-		suite.True(len(containsResults) > 0, "Should have contains ignore case results")
+		suite.NoError(err)
+		suite.NotEmpty(containsResults)
 
 		for _, result := range containsResults {
-			suite.NotEmpty(result.ID, "ID should not be empty")
-			suite.NotEmpty(result.Title, "Title should not be empty")
+			suite.NotEmpty(result.ID)
+			suite.NotEmpty(result.Title)
 
 			// Verify case-insensitive matching
 			lowerTitle := strings.ToLower(result.Title)
@@ -826,26 +751,21 @@ func (suite *EBStringFunctionsTestSuite) TestContainsIgnoreCase() {
 			} else {
 				suite.False(result.ContainsGuide, "Should not contain 'guide' (case-insensitive) when absent")
 			}
-
-			suite.T().Logf("ID: %s, Title: %s, ContainsPost: %v, ContainsGuide: %v",
-				result.ID, result.Title, result.ContainsPost, result.ContainsGuide)
 		}
 	})
 }
 
 // TestStartsWithIgnoreCase tests the StartsWithIgnoreCase function (case-insensitive prefix check).
 func (suite *EBStringFunctionsTestSuite) TestStartsWithIgnoreCase() {
-	suite.T().Logf("Testing StartsWithIgnoreCase function for %s", suite.ds.Kind)
-
 	suite.Run("StartsWithPrefixIgnoreCase", func() {
-		type StartsWithIgnoreCaseResult struct {
+		type Result struct {
 			ID          string `bun:"id"`
 			Title       string `bun:"title"`
 			StartsWithG bool   `bun:"starts_with_g"`
 			StartsWithP bool   `bun:"starts_with_p"`
 		}
 
-		var startsWithResults []StartsWithIgnoreCaseResult
+		var startsWithResults []Result
 
 		err := suite.selectPosts().
 			Select("id", "title").
@@ -859,12 +779,12 @@ func (suite *EBStringFunctionsTestSuite) TestStartsWithIgnoreCase() {
 			Limit(5).
 			Scan(suite.ctx, &startsWithResults)
 
-		suite.NoError(err, "StartsWithIgnoreCase function should work correctly")
-		suite.True(len(startsWithResults) > 0, "Should have startsWithIgnoreCase results")
+		suite.NoError(err)
+		suite.NotEmpty(startsWithResults)
 
 		for _, result := range startsWithResults {
-			suite.NotEmpty(result.ID, "ID should not be empty")
-			suite.NotEmpty(result.Title, "Title should not be empty")
+			suite.NotEmpty(result.ID)
+			suite.NotEmpty(result.Title)
 
 			// Verify case-insensitive prefix matching
 			lowerTitle := strings.ToLower(result.Title)
@@ -879,26 +799,21 @@ func (suite *EBStringFunctionsTestSuite) TestStartsWithIgnoreCase() {
 			} else {
 				suite.False(result.StartsWithP, "Should not start with 'p' (case-insensitive) when absent")
 			}
-
-			suite.T().Logf("ID: %s, Title: %s, StartsWithG: %v, StartsWithP: %v",
-				result.ID, result.Title, result.StartsWithG, result.StartsWithP)
 		}
 	})
 }
 
 // TestEndsWithIgnoreCase tests the EndsWithIgnoreCase function (case-insensitive suffix check).
 func (suite *EBStringFunctionsTestSuite) TestEndsWithIgnoreCase() {
-	suite.T().Logf("Testing EndsWithIgnoreCase function for %s", suite.ds.Kind)
-
 	suite.Run("EndsWithSuffixIgnoreCase", func() {
-		type EndsWithIgnoreCaseResult struct {
+		type Result struct {
 			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			EndsWithE bool   `bun:"ends_with_e"`
 			EndsWithT bool   `bun:"ends_with_t"`
 		}
 
-		var endsWithResults []EndsWithIgnoreCaseResult
+		var endsWithResults []Result
 
 		err := suite.selectPosts().
 			Select("id", "title").
@@ -912,12 +827,12 @@ func (suite *EBStringFunctionsTestSuite) TestEndsWithIgnoreCase() {
 			Limit(5).
 			Scan(suite.ctx, &endsWithResults)
 
-		suite.NoError(err, "EndsWithIgnoreCase function should work correctly")
-		suite.True(len(endsWithResults) > 0, "Should have endsWithIgnoreCase results")
+		suite.NoError(err)
+		suite.NotEmpty(endsWithResults)
 
 		for _, result := range endsWithResults {
-			suite.NotEmpty(result.ID, "ID should not be empty")
-			suite.NotEmpty(result.Title, "Title should not be empty")
+			suite.NotEmpty(result.ID)
+			suite.NotEmpty(result.Title)
 
 			// Verify case-insensitive suffix matching
 			lowerTitle := strings.ToLower(result.Title)
@@ -932,17 +847,12 @@ func (suite *EBStringFunctionsTestSuite) TestEndsWithIgnoreCase() {
 			} else {
 				suite.False(result.EndsWithT, "Should not end with 't' (case-insensitive) when absent")
 			}
-
-			suite.T().Logf("ID: %s, Title: %s, EndsWithE: %v, EndsWithT: %v",
-				result.ID, result.Title, result.EndsWithE, result.EndsWithT)
 		}
 	})
 }
 
 // TestFuzzyMatchWithStringPattern tests fuzzy match with string pattern (optimization path).
 func (suite *EBStringFunctionsTestSuite) TestFuzzyMatchWithStringPattern() {
-	suite.T().Logf("Testing fuzzy match with string pattern for %s", suite.ds.Kind)
-
 	suite.Run("ContainsString", func() {
 		type Result struct {
 			Name string `bun:"name"`
@@ -959,9 +869,7 @@ func (suite *EBStringFunctionsTestSuite) TestFuzzyMatchWithStringPattern() {
 			}).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Contains with string should work")
-
-		suite.T().Logf("Found %d users containing 'John'", len(results))
+		suite.NoError(err)
 	})
 
 	suite.Run("StartsWithString", func() {
@@ -980,9 +888,7 @@ func (suite *EBStringFunctionsTestSuite) TestFuzzyMatchWithStringPattern() {
 			}).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "StartsWith with string should work")
-
-		suite.T().Logf("Found %d users starting with 'A'", len(results))
+		suite.NoError(err)
 	})
 
 	suite.Run("EndsWithString", func() {
@@ -1001,16 +907,12 @@ func (suite *EBStringFunctionsTestSuite) TestFuzzyMatchWithStringPattern() {
 			}).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "EndsWith with string should work")
-
-		suite.T().Logf("Found %d users ending with 'son'", len(results))
+		suite.NoError(err)
 	})
 }
 
 // TestFuzzyMatchWithDynamicExpr tests fuzzy match with dynamic expression (concat path).
 func (suite *EBStringFunctionsTestSuite) TestFuzzyMatchWithDynamicExpr() {
-	suite.T().Logf("Testing fuzzy match with dynamic expr for %s", suite.ds.Kind)
-
 	suite.Run("ContainsDynamic", func() {
 		type Result struct {
 			Name  string `bun:"name"`
@@ -1019,19 +921,16 @@ func (suite *EBStringFunctionsTestSuite) TestFuzzyMatchWithDynamicExpr() {
 
 		var results []Result
 
-		err := suite.selectUsers().
+		// May return 0 results but the code path is covered
+		_ = suite.selectUsers().
 			Select("name", "email").
 			Where(func(cb orm.ConditionBuilder) {
-				// Use a dynamic expression as pattern (column reference, not string literal)
 				cb.Expr(func(eb orm.ExprBuilder) any {
 					return eb.Contains(eb.Column("email"), eb.Column("name"))
 				})
 			}).
 			Limit(5).
 			Scan(suite.ctx, &results)
-
-		// May return 0 results but the code path is covered
-		suite.T().Logf("ContainsDynamic results: %d, err: %v", len(results), err)
 	})
 
 	suite.Run("StartsWithDynamic", func() {
@@ -1041,7 +940,8 @@ func (suite *EBStringFunctionsTestSuite) TestFuzzyMatchWithDynamicExpr() {
 
 		var results []Result
 
-		err := suite.selectUsers().
+		// May return 0 results but the code path is covered
+		_ = suite.selectUsers().
 			Select("name").
 			Where(func(cb orm.ConditionBuilder) {
 				cb.Expr(func(eb orm.ExprBuilder) any {
@@ -1050,8 +950,6 @@ func (suite *EBStringFunctionsTestSuite) TestFuzzyMatchWithDynamicExpr() {
 			}).
 			Limit(5).
 			Scan(suite.ctx, &results)
-
-		suite.T().Logf("StartsWithDynamic results: %d, err: %v", len(results), err)
 	})
 
 	suite.Run("EndsWithDynamic", func() {
@@ -1061,7 +959,8 @@ func (suite *EBStringFunctionsTestSuite) TestFuzzyMatchWithDynamicExpr() {
 
 		var results []Result
 
-		err := suite.selectUsers().
+		// May return 0 results but the code path is covered
+		_ = suite.selectUsers().
 			Select("name").
 			Where(func(cb orm.ConditionBuilder) {
 				cb.Expr(func(eb orm.ExprBuilder) any {
@@ -1070,15 +969,11 @@ func (suite *EBStringFunctionsTestSuite) TestFuzzyMatchWithDynamicExpr() {
 			}).
 			Limit(5).
 			Scan(suite.ctx, &results)
-
-		suite.T().Logf("EndsWithDynamic results: %d, err: %v", len(results), err)
 	})
 }
 
 // TestFuzzyMatchIgnoreCaseString tests ignore case fuzzy match with string.
 func (suite *EBStringFunctionsTestSuite) TestFuzzyMatchIgnoreCaseString() {
-	suite.T().Logf("Testing fuzzy match ignore case with string for %s", suite.ds.Kind)
-
 	suite.Run("ContainsIgnoreCase", func() {
 		type Result struct {
 			Name string `bun:"name"`
@@ -1095,9 +990,7 @@ func (suite *EBStringFunctionsTestSuite) TestFuzzyMatchIgnoreCaseString() {
 			}).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ContainsIgnoreCase should work")
-
-		suite.T().Logf("Found %d users containing 'john' (ignore case)", len(results))
+		suite.NoError(err)
 	})
 
 	suite.Run("StartsWithIgnoreCase", func() {
@@ -1116,9 +1009,7 @@ func (suite *EBStringFunctionsTestSuite) TestFuzzyMatchIgnoreCaseString() {
 			}).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "StartsWithIgnoreCase should work")
-
-		suite.T().Logf("Found %d users starting with 'a' (ignore case)", len(results))
+		suite.NoError(err)
 	})
 
 	suite.Run("EndsWithIgnoreCase", func() {
@@ -1137,16 +1028,12 @@ func (suite *EBStringFunctionsTestSuite) TestFuzzyMatchIgnoreCaseString() {
 			}).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "EndsWithIgnoreCase should work")
-
-		suite.T().Logf("Found %d users ending with 'SON' (ignore case)", len(results))
+		suite.NoError(err)
 	})
 }
 
 // TestFuzzyMatchIgnoreCaseDynamic tests ignore case fuzzy match with dynamic expression.
 func (suite *EBStringFunctionsTestSuite) TestFuzzyMatchIgnoreCaseDynamic() {
-	suite.T().Logf("Testing fuzzy match ignore case with dynamic expr for %s", suite.ds.Kind)
-
 	suite.Run("ContainsIgnoreCaseDynamic", func() {
 		type Result struct {
 			Name string `bun:"name"`
@@ -1154,7 +1041,8 @@ func (suite *EBStringFunctionsTestSuite) TestFuzzyMatchIgnoreCaseDynamic() {
 
 		var results []Result
 
-		err := suite.selectUsers().
+		// May return 0 results but the code path is covered
+		_ = suite.selectUsers().
 			Select("name").
 			Where(func(cb orm.ConditionBuilder) {
 				cb.Expr(func(eb orm.ExprBuilder) any {
@@ -1163,7 +1051,5 @@ func (suite *EBStringFunctionsTestSuite) TestFuzzyMatchIgnoreCaseDynamic() {
 			}).
 			Limit(5).
 			Scan(suite.ctx, &results)
-
-		suite.T().Logf("ContainsIgnoreCaseDynamic results: %d, err: %v", len(results), err)
 	})
 }

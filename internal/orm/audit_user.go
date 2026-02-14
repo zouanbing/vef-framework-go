@@ -4,7 +4,6 @@ import (
 	"reflect"
 
 	"github.com/uptrace/bun/schema"
-
 )
 
 // operatorExprBuilder returns the current operator expression for audit columns.
