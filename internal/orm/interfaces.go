@@ -176,13 +176,6 @@ type Returnable[T Executor] interface {
 	ReturningNone() T
 }
 
-// Unwrapper is an interface that defines the method for unwrapping the underlying query object.
-// It provides access to the original wrapped query implementation for advanced use cases.
-type Unwrapper[T any] interface {
-	// Unwrap returns the underlying query object.
-	Unwrap() T
-}
-
 // ApplyFunc is a function type that applies a shared operation to a query.
 // It enables reusable query modifications that can be applied to different query types.
 type ApplyFunc[T any] func(T)

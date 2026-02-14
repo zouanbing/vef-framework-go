@@ -648,9 +648,9 @@ func (q *BunSelectQuery) ForShare(tables ...string) SelectQuery {
 
 func (q *BunSelectQuery) ForShareNoWait(tables ...string) SelectQuery {
 	if len(tables) == 0 {
-		q.query.For("SHARE NO WAIT")
+		q.query.For("SHARE NOWAIT")
 	} else {
-		q.query.For("SHARE OF ? NO WAIT", Names(tables...))
+		q.query.For("SHARE OF ? NOWAIT", Names(tables...))
 	}
 
 	return q
@@ -870,8 +870,4 @@ func (q *BunSelectQuery) Exists(ctx context.Context) (bool, error) {
 	q.applySelectState()
 
 	return q.query.Exists(ctx)
-}
-
-func (q *BunSelectQuery) Unwrap() *bun.SelectQuery {
-	return q.query
 }

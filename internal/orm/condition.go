@@ -50,6 +50,8 @@ type AuditConditionBuilder interface {
 	OrCreatedByIn(createdBys []string, alias ...string) ConditionBuilder
 	// CreatedByInSubQuery is a condition that checks if the created by column is in a subquery.
 	CreatedByInSubQuery(builder func(query SelectQuery), alias ...string) ConditionBuilder
+	// OrCreatedByInSubQuery is an OR condition that checks if the created by column is in a subquery.
+	OrCreatedByInSubQuery(builder func(query SelectQuery), alias ...string) ConditionBuilder
 	// CreatedByNotIn is a condition that checks if the created by column is not in a list of values.
 	CreatedByNotIn(createdBys []string, alias ...string) ConditionBuilder
 	// OrCreatedByNotIn is a condition that checks if the created by column is not in a list of values.
@@ -80,6 +82,8 @@ type AuditConditionBuilder interface {
 	OrUpdatedByEqualsCurrent(alias ...string) ConditionBuilder
 	// UpdatedByNotEquals is a condition that checks if the updated by column is not equal to a value.
 	UpdatedByNotEquals(updatedBy string, alias ...string) ConditionBuilder
+	// OrUpdatedByNotEquals is an OR condition that checks if the updated by column is not equal to a value.
+	OrUpdatedByNotEquals(updatedBy string, alias ...string) ConditionBuilder
 	// UpdatedByNotEqualsSubQuery is a condition that checks if the updated by column is not equal to a subquery.
 	UpdatedByNotEqualsSubQuery(builder func(query SelectQuery), alias ...string) ConditionBuilder
 	// OrUpdatedByNotEqualsSubQuery is a condition that checks if the updated by column is not equal to a subquery.
@@ -98,6 +102,8 @@ type AuditConditionBuilder interface {
 	OrUpdatedByNotEqualsCurrent(alias ...string) ConditionBuilder
 	// UpdatedByIn is a condition that checks if the updated by column is in a list of values.
 	UpdatedByIn(updatedBys []string, alias ...string) ConditionBuilder
+	// OrUpdatedByIn is an OR condition that checks if the updated by column is in a list of values.
+	OrUpdatedByIn(updatedBys []string, alias ...string) ConditionBuilder
 	// UpdatedByInSubQuery is a condition that checks if the updated by column is in a subquery.
 	UpdatedByInSubQuery(builder func(query SelectQuery), alias ...string) ConditionBuilder
 	// OrUpdatedByInSubQuery is a condition that checks if the updated by column is in a subquery.

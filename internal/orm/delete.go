@@ -251,7 +251,3 @@ func (q *BunDeleteQuery) Scan(ctx context.Context, dest ...any) error {
 
 	return nil
 }
-
-func (q *BunDeleteQuery) Unwrap() *bun.DeleteQuery {
-	return q.query
-}
