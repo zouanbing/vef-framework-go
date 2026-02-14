@@ -50,6 +50,34 @@ func (d *BunDB) NewRaw(query string, args ...any) RawQuery {
 	return newRawQuery(d, query, args...)
 }
 
+func (d *BunDB) NewCreateTable() CreateTableQuery {
+	return NewCreateTableQuery(d)
+}
+
+func (d *BunDB) NewDropTable() DropTableQuery {
+	return NewDropTableQuery(d)
+}
+
+func (d *BunDB) NewCreateIndex() CreateIndexQuery {
+	return NewCreateIndexQuery(d)
+}
+
+func (d *BunDB) NewDropIndex() DropIndexQuery {
+	return NewDropIndexQuery(d)
+}
+
+func (d *BunDB) NewTruncateTable() TruncateTableQuery {
+	return NewTruncateTableQuery(d)
+}
+
+func (d *BunDB) NewAddColumn() AddColumnQuery {
+	return NewAddColumnQuery(d)
+}
+
+func (d *BunDB) NewDropColumn() DropColumnQuery {
+	return NewDropColumnQuery(d)
+}
+
 func (d *BunDB) RunInTX(ctx context.Context, fn func(context.Context, DB) error) error {
 	return d.db.RunInTx(
 		ctx,
@@ -68,6 +96,35 @@ func (d *BunDB) RunInReadOnlyTX(ctx context.Context, fn func(context.Context, DB
 			return fn(ctx, &BunDB{db: tx})
 		},
 	)
+}
+
+func (d *BunDB) BeginTx(ctx context.Context, opts *sql.TxOptions) (Tx, error) {
+	tx, err := d.db.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return &BunTx{BunDB: BunDB{db: tx}}, nil
+}
+
+func (d *BunDB) Conn(ctx context.Context) (*sql.Conn, error) {
+	return d.getBunDB().DB.Conn(ctx)
+}
+
+func (d *BunDB) RegisterModel(models ...any) {
+	d.getBunDB().RegisterModel(models...)
+}
+
+func (d *BunDB) ResetModel(ctx context.Context, models ...any) error {
+	return d.getBunDB().ResetModel(ctx, models...)
+}
+
+func (d *BunDB) ScanRows(ctx context.Context, rows *sql.Rows, dest ...any) error {
+	return d.getBunDB().ScanRows(ctx, rows, dest...)
+}
+
+func (d *BunDB) ScanRow(ctx context.Context, rows *sql.Rows, dest ...any) error {
+	return d.getBunDB().ScanRow(ctx, rows, dest...)
 }
 
 func (d *BunDB) WithNamedArg(name string, value any) DB {
@@ -109,10 +166,6 @@ func (d *BunDB) ModelPKFields(model any) []*PKField {
 
 func (d *BunDB) TableOf(model any) *schema.Table {
 	return getTableSchema(model, d.getBunDB())
-}
-
-func (d *BunDB) Unwrap() bun.IDB {
-	return d.db
 }
 
 // getBunDB extracts the underlying *bun.DB from the wrapper.

@@ -104,6 +104,7 @@ type OrmTestSuite struct {
 
 	ctx    context.Context
 	db     orm.DB
+	bunDB  bun.IDB
 	dbKind config.DBKind
 }
 
@@ -143,12 +144,11 @@ func (suite *OrmTestSuite) SetupSuite() {
 	suite.Require().NoError(err, "Failed to create simple model table")
 }
 
-// getBunDB extracts the underlying *bun.DB from the orm.DB interface.
+// getBunDB extracts the underlying *bun.DB from the test suite.
 func (suite *OrmTestSuite) getBunDB() *bun.DB {
-	idb := suite.db.(orm.Unwrapper[bun.IDB]).Unwrap()
-	bunDB, ok := idb.(*bun.DB)
-	suite.Require().True(ok, "Expected *bun.DB, got %T", idb)
-	return bunDB
+	db, ok := suite.bunDB.(*bun.DB)
+	suite.Require().True(ok, "Expected *bun.DB, got %T", suite.bunDB)
+	return db
 }
 
 // AssertCount verifies the count result of a select query.

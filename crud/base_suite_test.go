@@ -97,6 +97,7 @@ type BaseSuite struct {
 	app      *app.App
 	stop     func()
 	db       orm.DB
+	bunDB    bun.IDB
 	dbKind   config.DBKind
 	dsConfig *config.DataSourceConfig
 }
@@ -107,17 +108,16 @@ func (suite *BaseSuite) clone() BaseSuite {
 	return BaseSuite{
 		ctx:      suite.ctx,
 		db:       suite.db,
+		bunDB:    suite.bunDB,
 		dbKind:   suite.dbKind,
 		dsConfig: suite.dsConfig,
 	}
 }
 
 func (suite *BaseSuite) setupBaseSuite(resourceCtors ...any) {
-	bunDB := suite.db.(orm.Unwrapper[bun.IDB]).Unwrap()
-
 	// Reload fixtures so each suite starts from a clean, known state
 	// regardless of execution order.
-	setupTestFixtures(suite.T(), suite.ctx, bunDB, suite.dbKind)
+	setupTestFixtures(suite.T(), suite.ctx, suite.bunDB, suite.dbKind)
 
 	opts := make([]fx.Option, 0, len(resourceCtors)+2)
 	for _, ctor := range resourceCtors {
@@ -125,7 +125,7 @@ func (suite *BaseSuite) setupBaseSuite(resourceCtors ...any) {
 	}
 	opts = append(opts,
 		fx.Replace(suite.dsConfig),
-		fx.Decorate(func() bun.IDB { return bunDB }),
+		fx.Decorate(func() bun.IDB { return suite.bunDB }),
 	)
 
 	suite.app, suite.stop = apptest.NewTestApp(suite.T(), opts...)

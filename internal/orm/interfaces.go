@@ -17,18 +17,25 @@ type DBAccessor interface {
 	DB() DB
 }
 
-// QueryExecutor is an interface that defines the methods for executing database queries.
-// It provides the basic execution methods that all query types must implement.
-type QueryExecutor interface {
+// Executor is an interface that defines the Exec method for executing queries.
+// Both DML and DDL queries implement this interface.
+type Executor interface {
 	// Exec executes a query and returns the result.
 	Exec(ctx context.Context, dest ...any) (sql.Result, error)
+}
+
+// QueryExecutor is an interface that defines the methods for executing database queries.
+// It extends Executor with the Scan method for reading result rows.
+type QueryExecutor interface {
+	Executor
+
 	// Scan scans the result into a slice of any type.
 	Scan(ctx context.Context, dest ...any) error
 }
 
 // CTE is an interface that defines the methods for creating Common Table Expressions (CTEs).
 // CTEs allow you to define temporary result sets that exist only for the duration of a single query.
-type CTE[T QueryExecutor] interface {
+type CTE[T Executor] interface {
 	// With creates a common table expression.
 	With(name string, builder func(query SelectQuery)) T
 	// WithValues creates a common table expression with values.
@@ -39,7 +46,7 @@ type CTE[T QueryExecutor] interface {
 
 // Selectable is an interface that defines the methods for column selection in queries.
 // It provides methods to specify which columns to include or exclude from the result set.
-type Selectable[T QueryExecutor] interface {
+type Selectable[T Executor] interface {
 	// SelectAll selects all columns.
 	SelectAll() T
 	// Select selects specific columns.
@@ -52,7 +59,7 @@ type Selectable[T QueryExecutor] interface {
 
 // TableSource is an interface that defines the methods for specifying table sources in queries.
 // It supports both model-based and raw table references with optional aliases.
-type TableSource[T QueryExecutor] interface {
+type TableSource[T Executor] interface {
 	// Model sets the primary table with automatic table name and alias resolution from model structure.
 	Model(model any) T
 	// ModelTable overrides the table name and alias auto-resolved by Model method.
@@ -120,7 +127,7 @@ type JoinOperations[T any] interface {
 
 // Filterable is an interface that defines the methods for adding WHERE clauses to queries.
 // It provides methods for filtering results based on conditions and supports soft delete operations.
-type Filterable[T QueryExecutor] interface {
+type Filterable[T Executor] interface {
 	// Where adds a where clause to the query.
 	Where(func(ConditionBuilder)) T
 	// WherePK adds a where clause to the query using the primary key.
@@ -133,7 +140,7 @@ type Filterable[T QueryExecutor] interface {
 
 // Orderable is an interface that defines the methods for ordering query results.
 // It supports ordering by columns and expressions in ascending or descending order.
-type Orderable[T QueryExecutor] interface {
+type Orderable[T Executor] interface {
 	// OrderBy orders the query by a column.
 	OrderBy(columns ...string) T
 	// OrderByDesc orders the query by a column in descending order.
@@ -144,14 +151,14 @@ type Orderable[T QueryExecutor] interface {
 
 // Limitable is an interface that defines the methods for limiting the number of rows returned by a query.
 // It provides the LIMIT clause functionality for result set size control.
-type Limitable[T QueryExecutor] interface {
+type Limitable[T Executor] interface {
 	// Limit limits the number of rows returned by the query.
 	Limit(limit int) T
 }
 
 // ColumnUpdatable is an interface that defines the methods for setting column values in queries.
 // It supports both direct value assignment and expression-based column updates.
-type ColumnUpdatable[T QueryExecutor] interface {
+type ColumnUpdatable[T Executor] interface {
 	// Column sets a column to a specific value.
 	Column(name string, value any) T
 	// ColumnExpr sets a column using an expression builder.
@@ -160,7 +167,7 @@ type ColumnUpdatable[T QueryExecutor] interface {
 
 // Returnable is an interface that defines the methods for specifying RETURNING clauses in queries.
 // It allows queries to return data after INSERT, UPDATE, or DELETE operations.
-type Returnable[T QueryExecutor] interface {
+type Returnable[T Executor] interface {
 	// Returning returns the query with the specified columns.
 	Returning(columns ...string) T
 	// ReturningAll returns the query with all columns.
@@ -690,6 +697,7 @@ type ExprBuilder interface {
 // It extends QueryExecutor with additional methods specific to SELECT operations.
 type SelectQueryExecutor interface {
 	QueryExecutor
+
 	// Rows returns the result as a sql.Rows.
 	Rows(ctx context.Context) (*sql.Rows, error)
 	// ScanAndCount scans the result into a slice of any type and returns the count of the result.
@@ -872,6 +880,151 @@ type MergeQuery interface {
 	WhenNotMatchedBySource(builder ...func(ConditionBuilder)) MergeWhenBuilder
 }
 
+// TableTarget is an interface that defines the table targeting methods for DDL queries.
+// It provides a simplified subset of TableSource suitable for DDL operations.
+type TableTarget[T Executor] interface {
+	// Model sets the model to resolve the target table.
+	Model(model any) T
+	// Table sets the target table name.
+	Table(tables ...string) T
+}
+
+// CreateTableQuery is an interface that defines the methods for building and executing CREATE TABLE queries.
+// It supports temporary tables, conditional creation, column definitions, foreign keys, and partitioning.
+type CreateTableQuery interface {
+	Executor
+	TableTarget[CreateTableQuery]
+	fmt.Stringer
+
+	// ColumnExpr adds a custom column definition expression.
+	ColumnExpr(query string, args ...any) CreateTableQuery
+	// Temp creates a temporary table.
+	Temp() CreateTableQuery
+	// IfNotExists adds IF NOT EXISTS clause.
+	IfNotExists() CreateTableQuery
+	// Varchar sets the default VARCHAR length for string columns.
+	Varchar(n int) CreateTableQuery
+	// ForeignKey adds a foreign key constraint.
+	ForeignKey(query string, args ...any) CreateTableQuery
+	// PartitionBy sets the partition clause.
+	PartitionBy(query string, args ...any) CreateTableQuery
+	// TableSpace sets the tablespace.
+	TableSpace(tablespace string) CreateTableQuery
+	// WithForeignKeys creates foreign keys from model relations.
+	WithForeignKeys() CreateTableQuery
+}
+
+// DropTableQuery is an interface that defines the methods for building and executing DROP TABLE queries.
+// It supports conditional dropping and cascade/restrict options.
+type DropTableQuery interface {
+	Executor
+	TableTarget[DropTableQuery]
+	fmt.Stringer
+
+	// IfExists adds IF EXISTS clause.
+	IfExists() DropTableQuery
+	// Cascade drops dependent objects.
+	Cascade() DropTableQuery
+	// Restrict refuses to drop if dependent objects exist.
+	Restrict() DropTableQuery
+}
+
+// CreateIndexQuery is an interface that defines the methods for building and executing CREATE INDEX queries.
+// It supports unique indexes, concurrent creation, partial indexes, and covering indexes.
+type CreateIndexQuery interface {
+	Executor
+	TableTarget[CreateIndexQuery]
+
+	// Index sets the index name.
+	Index(name string) CreateIndexQuery
+	// Column adds columns to the index.
+	Column(columns ...string) CreateIndexQuery
+	// ColumnExpr adds a custom column expression to the index.
+	ColumnExpr(query string, args ...any) CreateIndexQuery
+	// ExcludeColumn excludes columns from the index.
+	ExcludeColumn(columns ...string) CreateIndexQuery
+	// Unique creates a unique index.
+	Unique() CreateIndexQuery
+	// Concurrently creates the index concurrently (PostgreSQL).
+	Concurrently() CreateIndexQuery
+	// IfNotExists adds IF NOT EXISTS clause.
+	IfNotExists() CreateIndexQuery
+	// Include adds covering columns (PostgreSQL INCLUDE clause).
+	Include(columns ...string) CreateIndexQuery
+	// IncludeExpr adds a custom covering column expression.
+	IncludeExpr(query string, args ...any) CreateIndexQuery
+	// Using sets the index method (e.g., btree, hash, gin, gist).
+	Using(query string, args ...any) CreateIndexQuery
+	// Where adds a partial index condition.
+	Where(query string, args ...any) CreateIndexQuery
+	// WhereOr adds a partial index condition with OR separator.
+	WhereOr(query string, args ...any) CreateIndexQuery
+}
+
+// DropIndexQuery is an interface that defines the methods for building and executing DROP INDEX queries.
+// It supports conditional dropping, concurrent dropping, and cascade/restrict options.
+type DropIndexQuery interface {
+	Executor
+
+	// Index sets the index name.
+	Index(name string, args ...any) DropIndexQuery
+	// IfExists adds IF EXISTS clause.
+	IfExists() DropIndexQuery
+	// Concurrently drops the index concurrently (PostgreSQL).
+	Concurrently() DropIndexQuery
+	// Cascade drops dependent objects.
+	Cascade() DropIndexQuery
+	// Restrict refuses to drop if dependent objects exist.
+	Restrict() DropIndexQuery
+}
+
+// TruncateTableQuery is an interface that defines the methods for building and executing TRUNCATE TABLE queries.
+// It supports identity management and cascade/restrict options.
+type TruncateTableQuery interface {
+	Executor
+	TableTarget[TruncateTableQuery]
+
+	// ContinueIdentity preserves identity column values.
+	ContinueIdentity() TruncateTableQuery
+	// Cascade truncates dependent tables.
+	Cascade() TruncateTableQuery
+	// Restrict refuses to truncate if dependent tables exist.
+	Restrict() TruncateTableQuery
+}
+
+// AddColumnQuery is an interface that defines the methods for building and executing ALTER TABLE ADD COLUMN queries.
+// It supports conditional column addition.
+type AddColumnQuery interface {
+	Executor
+	TableTarget[AddColumnQuery]
+
+	// ColumnExpr sets the column definition expression.
+	ColumnExpr(query string, args ...any) AddColumnQuery
+	// IfNotExists adds IF NOT EXISTS clause.
+	IfNotExists() AddColumnQuery
+}
+
+// DropColumnQuery is an interface that defines the methods for building and executing ALTER TABLE DROP COLUMN queries.
+type DropColumnQuery interface {
+	Executor
+	TableTarget[DropColumnQuery]
+
+	// Column sets the column to drop.
+	Column(columns ...string) DropColumnQuery
+	// ColumnExpr sets a custom column expression to drop.
+	ColumnExpr(query string, args ...any) DropColumnQuery
+}
+
+// Tx is an interface for database transactions with manual control.
+// It extends DB with Commit and Rollback methods for explicit transaction management.
+type Tx interface {
+	DB
+	// Commit commits the transaction.
+	Commit() error
+	// Rollback aborts the transaction.
+	Rollback() error
+}
+
 // DB is an interface that defines the methods for database operations.
 // It provides factory methods for creating different types of queries and supports transactions.
 type DB interface {
@@ -887,10 +1040,36 @@ type DB interface {
 	NewMerge() MergeQuery
 	// NewRaw creates a new raw query.
 	NewRaw(query string, args ...any) RawQuery
+	// NewCreateTable creates a new CREATE TABLE query.
+	NewCreateTable() CreateTableQuery
+	// NewDropTable creates a new DROP TABLE query.
+	NewDropTable() DropTableQuery
+	// NewCreateIndex creates a new CREATE INDEX query.
+	NewCreateIndex() CreateIndexQuery
+	// NewDropIndex creates a new DROP INDEX query.
+	NewDropIndex() DropIndexQuery
+	// NewTruncateTable creates a new TRUNCATE TABLE query.
+	NewTruncateTable() TruncateTableQuery
+	// NewAddColumn creates a new ALTER TABLE ADD COLUMN query.
+	NewAddColumn() AddColumnQuery
+	// NewDropColumn creates a new ALTER TABLE DROP COLUMN query.
+	NewDropColumn() DropColumnQuery
 	// RunInTX runs a transaction.
 	RunInTX(ctx context.Context, fn func(ctx context.Context, tx DB) error) error
 	// RunInReadOnlyTX runs a read-only transaction.
 	RunInReadOnlyTX(ctx context.Context, fn func(ctx context.Context, tx DB) error) error
+	// BeginTx starts a new transaction with the given options and returns a Tx for manual control.
+	BeginTx(ctx context.Context, opts *sql.TxOptions) (Tx, error)
+	// Conn returns a dedicated database connection from the pool.
+	Conn(ctx context.Context) (*sql.Conn, error)
+	// RegisterModel registers models by name so they can be referenced in table relations and fixtures.
+	RegisterModel(models ...any)
+	// ResetModel drops and recreates the tables for the given models.
+	ResetModel(ctx context.Context, models ...any) error
+	// ScanRows scans all rows from *sql.Rows into dest and closes the rows when done.
+	ScanRows(ctx context.Context, rows *sql.Rows, dest ...any) error
+	// ScanRow scans a single row from *sql.Rows into dest without closing the rows.
+	ScanRow(ctx context.Context, rows *sql.Rows, dest ...any) error
 	// WithNamedArg returns a new DB with the named arg.
 	WithNamedArg(name string, value any) DB
 	// ModelPKs returns the primary keys of a model.

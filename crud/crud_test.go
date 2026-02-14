@@ -24,6 +24,7 @@ func baseFactory(env *testx.DBEnv) *BaseSuite {
 	return &BaseSuite{
 		ctx:      env.Ctx,
 		db:       env.DB,
+		bunDB:    env.BunDB,
 		dbKind:   env.DBKind,
 		dsConfig: env.DsConfig,
 	}
