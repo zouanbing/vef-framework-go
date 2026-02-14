@@ -343,8 +343,11 @@ func (*engine) wrapHandlerIfNecessary(handler fiber.Handler, op *api.Operation) 
 
 	return timeout.New(handler, timeout.Config{
 		Timeout: op.Timeout,
-		OnTimeout: func(fiber.Ctx) error {
-			return result.ErrRequestTimeout
+		OnTimeout: func(c fiber.Ctx) error {
+			return result.Result{
+				Code:    result.ErrCodeRequestTimeout,
+				Message: result.ErrRequestTimeout.Message,
+			}.Response(c, fiber.StatusRequestTimeout)
 		},
 	})
 }
