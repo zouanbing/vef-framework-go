@@ -1,32 +1,24 @@
 - id: cat001
   created_at: '2025-01-01 00:07:00'
   created_by: system
-  updated_at: '2025-01-01 00:08:00'
-  updated_by: system
   name: Technology
   description: Tech-related posts
 
 - id: cat002
   created_at: '2025-01-01 00:09:00'
   created_by: system
-  updated_at: '2025-01-01 00:10:00'
-  updated_by: system
   name: Science
   description: Scientific articles
 
 - id: cat003
   created_at: '2025-01-01 00:11:00'
   created_by: system
-  updated_at: '2025-01-01 00:12:00'
-  updated_by: system
   name: Business
   description: Business and economics
 
 - id: cat004
   created_at: '2025-01-01 00:13:00'
   created_by: system
-  updated_at: '2025-01-01 00:14:00'
-  updated_by: system
   name: GoLang
   description: Go-related posts
   parent_id: cat001

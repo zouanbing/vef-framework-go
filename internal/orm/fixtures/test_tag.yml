@@ -1,39 +1,19 @@
 - id: tag001
-  created_at: '2025-01-01 00:15:00'
-  created_by: system
-  updated_at: '2025-01-01 00:16:00'
-  updated_by: system
   name: programming
   description: Programming related content
 
 - id: tag002
-  created_at: '2025-01-01 00:17:00'
-  created_by: system
-  updated_at: '2025-01-01 00:18:00'
-  updated_by: system
   name: database
   description: Database related content
 
 - id: tag003
-  created_at: '2025-01-01 00:19:00'
-  created_by: system
-  updated_at: '2025-01-01 00:20:00'
-  updated_by: system
   name: go
   description: Go language topics
 
 - id: tag004
-  created_at: '2025-01-01 00:21:00'
-  created_by: system
-  updated_at: '2025-01-01 00:22:00'
-  updated_by: system
   name: tutorial
   description: Tutorials and guides
 
 - id: tag005
-  created_at: '2025-01-01 00:23:00'
-  created_by: system
-  updated_at: '2025-01-01 00:24:00'
-  updated_by: system
   name: advanced
   description: Advanced topics

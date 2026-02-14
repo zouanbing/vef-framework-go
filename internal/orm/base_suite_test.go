@@ -45,19 +45,19 @@ type Post struct {
 	Category *Category `json:"category" bun:"rel:belongs-to,join:category_id=id"`
 }
 
-// Tag represents a content tag.
+// Tag represents a content tag (uses IDModel only, no audit fields).
 type Tag struct {
 	bun.BaseModel `bun:"table:test_tag,alias:t"`
-	orm.Model
+	orm.IDModel
 
 	Name        string  `json:"name"        bun:"name,notnull,unique"`
 	Description *string `json:"description" bun:"description"`
 }
 
-// PostTag represents the many-to-many relationship between posts and tags.
+// PostTag represents the many-to-many relationship between posts and tags (uses IDModel only).
 type PostTag struct {
 	bun.BaseModel `bun:"table:test_post_tag,alias:pt"`
-	orm.Model
+	orm.IDModel
 
 	PostID string `json:"postId" bun:"post_id,notnull"`
 	TagID  string `json:"tagId"  bun:"tag_id,notnull"`
@@ -67,10 +67,11 @@ type PostTag struct {
 	Tag  *Tag  `json:"tag"  bun:"rel:belongs-to,join:tag_id=id"`
 }
 
-// Category represents a content category.
+// Category represents a content category (uses IDModel + CreatedModel, no update audit).
 type Category struct {
 	bun.BaseModel `bun:"table:test_category,alias:c"`
-	orm.Model
+	orm.IDModel
+	orm.CreatedModel
 
 	Name        string  `json:"name"        bun:"name,notnull,unique"`
 	Description *string `json:"description" bun:"description"`
