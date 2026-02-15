@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/samber/lo"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
 )
@@ -109,22 +108,20 @@ func (q *BunMergeQuery) TableFrom(model any, alias ...string) MergeQuery {
 }
 
 func (q *BunMergeQuery) TableExpr(builder func(ExprBuilder) any, alias ...string) MergeQuery {
-	expr := builder(q.eb)
 	if len(alias) > 0 && alias[0] != "" {
-		q.query.TableExpr("(?) AS ?", expr, bun.Name(alias[0]))
+		q.query.TableExpr("(?) AS ?", builder(q.eb), bun.Name(alias[0]))
 	} else {
-		q.query.TableExpr("(?)", expr)
+		q.query.TableExpr("(?)", builder(q.eb))
 	}
 
 	return q
 }
 
 func (q *BunMergeQuery) TableSubQuery(builder func(SelectQuery), alias ...string) MergeQuery {
-	subQuery := q.BuildSubQuery(builder)
 	if len(alias) > 0 && alias[0] != "" {
-		q.query.TableExpr("(?) AS ?", subQuery, bun.Name(alias[0]))
+		q.query.TableExpr("(?) AS ?", q.BuildSubQuery(builder), bun.Name(alias[0]))
 	} else {
-		q.query.TableExpr("(?)", subQuery)
+		q.query.TableExpr("(?)", q.BuildSubQuery(builder))
 	}
 
 	return q
@@ -204,12 +201,12 @@ func (q *BunMergeQuery) WhenNotMatchedBySource(builder ...func(ConditionBuilder)
 }
 
 func (q *BunMergeQuery) Returning(columns ...string) MergeQuery {
-	expr := q.eb.Exprs(
-		lo.Map(columns, func(column string, _ int) any {
-			return q.eb.Column(column)
-		})...,
-	)
-	q.query.Returning("?", expr)
+	exprs := make([]any, len(columns))
+	for i, column := range columns {
+		exprs[i] = q.eb.Column(column)
+	}
+
+	q.query.Returning("?", q.eb.Exprs(exprs...))
 
 	return q
 }

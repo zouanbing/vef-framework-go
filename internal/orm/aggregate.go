@@ -278,49 +278,36 @@ var stringAggStrategy = &dialectStrategy{
 	},
 }
 
-var stdDevStrategy = &dialectStrategy{
-	postgres: &dialectAggConfig{
-		argsTransformer: func(_ ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
-			mode := lo.CoalesceOrEmpty(state.statisticalMode.String(), StatisticalPopulation.String())
-			state.funcName = "STDDEV" + "_" + mode
+// statisticalStrategy builds a dialectStrategy for statistical aggregates (STDDEV, VARIANCE).
+// pgPrefix is the PostgreSQL function prefix (e.g., "STDDEV", "VAR") used with "_POP"/"_SAMP" suffixes.
+// mysqlPrefix follows the same pattern. mysqlDefault is the fallback name when no mode is specified.
+func statisticalStrategy(pgPrefix, mysqlPrefix, mysqlDefault string) *dialectStrategy {
+	return &dialectStrategy{
+		postgres: &dialectAggConfig{
+			argsTransformer: func(_ ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+				mode := lo.CoalesceOrEmpty(state.statisticalMode.String(), StatisticalPopulation.String())
+				state.funcName = pgPrefix + "_" + mode
 
-			return state.argsExpr
+				return state.argsExpr
+			},
 		},
-	},
-	mysql: &dialectAggConfig{
-		argsTransformer: func(_ ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
-			if state.statisticalMode == StatisticalPopulation || state.statisticalMode == StatisticalSample {
-				state.funcName = "STDDEV" + "_" + state.statisticalMode.String()
-			} else {
-				state.funcName = "STDDEV"
-			}
+		mysql: &dialectAggConfig{
+			argsTransformer: func(_ ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+				if state.statisticalMode == StatisticalPopulation || state.statisticalMode == StatisticalSample {
+					state.funcName = mysqlPrefix + "_" + state.statisticalMode.String()
+				} else {
+					state.funcName = mysqlDefault
+				}
 
-			return state.argsExpr
+				return state.argsExpr
+			},
 		},
-	},
+	}
 }
 
-var varianceStrategy = &dialectStrategy{
-	postgres: &dialectAggConfig{
-		argsTransformer: func(_ ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
-			mode := lo.CoalesceOrEmpty(state.statisticalMode.String(), StatisticalPopulation.String())
-			state.funcName = "VAR" + "_" + mode
+var stdDevStrategy = statisticalStrategy("STDDEV", "STDDEV", "STDDEV")
 
-			return state.argsExpr
-		},
-	},
-	mysql: &dialectAggConfig{
-		argsTransformer: func(_ ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
-			if state.statisticalMode == StatisticalPopulation || state.statisticalMode == StatisticalSample {
-				state.funcName = "VAR" + "_" + state.statisticalMode.String()
-			} else {
-				state.funcName = "VARIANCE"
-			}
-
-			return state.argsExpr
-		},
-	},
-}
+var varianceStrategy = statisticalStrategy("VAR", "VAR", "VARIANCE")
 
 type aggregateQueryState struct {
 	funcName        string
@@ -654,22 +641,16 @@ func (c *countExpr[T]) All() T {
 	return c.self
 }
 
-type sumExpr[T any] struct {
+// distinctableAggExpr is a shared implementation for aggregates that support
+// DISTINCT operations (e.g., SUM, AVG).
+type distinctableAggExpr[T any] struct {
 	*baseAggregateExpr
 	*distinctableAggregateBuilder[T]
 }
 
-type avgExpr[T any] struct {
-	*baseAggregateExpr
-	*distinctableAggregateBuilder[T]
-}
-
-type minExpr[T any] struct {
-	*baseAggregateExpr
-	*baseAggregateBuilder[T]
-}
-
-type maxExpr[T any] struct {
+// simpleAggExpr is a shared implementation for aggregates that only need
+// BaseAggregate capabilities (e.g., MIN, MAX).
+type simpleAggExpr[T any] struct {
 	*baseAggregateExpr
 	*baseAggregateBuilder[T]
 }
@@ -796,40 +777,48 @@ func (j *jsonArrayAggExpr[T]) AppendQuery(gen schema.QueryGen, b []byte) ([]byte
 	return j.dialectAwareAppendQuery(gen, b)
 }
 
-type bitOrExpr[T any] struct {
+// dialectAggExpr is a shared implementation for dialect-aware aggregates that only need
+// BaseAggregate capabilities (e.g., BIT_OR, BIT_AND, BOOL_OR, BOOL_AND).
+type dialectAggExpr[T any] struct {
 	*baseAggregateExpr
 	*baseAggregateBuilder[T]
 }
 
-func (b *bitOrExpr[T]) AppendQuery(gen schema.QueryGen, buf []byte) ([]byte, error) {
+func (b *dialectAggExpr[T]) AppendQuery(gen schema.QueryGen, buf []byte) ([]byte, error) {
 	return b.dialectAwareAppendQuery(gen, buf)
 }
 
-type bitAndExpr[T any] struct {
-	*baseAggregateExpr
-	*baseAggregateBuilder[T]
+func newGenericSimpleAggExpr[T any](self T, qb QueryBuilder, funcName string) *simpleAggExpr[T] {
+	baseExpr := &baseAggregateExpr{
+		qb:       qb,
+		eb:       qb.ExprBuilder(),
+		funcName: funcName,
+	}
+	baseBuilder := &baseAggregateBuilder[T]{
+		baseAggregateExpr: baseExpr,
+	}
+	expr := &simpleAggExpr[T]{
+		baseAggregateExpr:    baseExpr,
+		baseAggregateBuilder: baseBuilder,
+	}
+
+	baseBuilder.self = self
+
+	return expr
 }
 
-func (b *bitAndExpr[T]) AppendQuery(gen schema.QueryGen, buf []byte) ([]byte, error) {
-	return b.dialectAwareAppendQuery(gen, buf)
+func newMinExpr(qb QueryBuilder) *simpleAggExpr[MinBuilder] {
+	expr := newGenericSimpleAggExpr[MinBuilder](nil, qb, "MIN")
+	expr.baseAggregateBuilder.self = expr
+
+	return expr
 }
 
-type boolOrExpr[T any] struct {
-	*baseAggregateExpr
-	*baseAggregateBuilder[T]
-}
+func newMaxExpr(qb QueryBuilder) *simpleAggExpr[MaxBuilder] {
+	expr := newGenericSimpleAggExpr[MaxBuilder](nil, qb, "MAX")
+	expr.baseAggregateBuilder.self = expr
 
-func (b *boolOrExpr[T]) AppendQuery(gen schema.QueryGen, buf []byte) ([]byte, error) {
-	return b.dialectAwareAppendQuery(gen, buf)
-}
-
-type boolAndExpr[T any] struct {
-	*baseAggregateExpr
-	*baseAggregateBuilder[T]
-}
-
-func (b *boolAndExpr[T]) AppendQuery(gen schema.QueryGen, buf []byte) ([]byte, error) {
-	return b.dialectAwareAppendQuery(gen, buf)
+	return expr
 }
 
 func newGenericCountExpr[T any](self T, qb QueryBuilder) *countExpr[T] {
@@ -854,36 +843,22 @@ func newGenericCountExpr[T any](self T, qb QueryBuilder) *countExpr[T] {
 }
 
 func newCountExpr(qb QueryBuilder) *countExpr[CountBuilder] {
-	baseExpr := &baseAggregateExpr{
-		qb:       qb,
-		eb:       qb.ExprBuilder(),
-		funcName: "COUNT",
-	}
-	baseBuilder := &baseAggregateBuilder[CountBuilder]{
-		baseAggregateExpr: baseExpr,
-	}
-	expr := &countExpr[CountBuilder]{
-		baseAggregateExpr: baseExpr,
-		distinctableAggregateBuilder: &distinctableAggregateBuilder[CountBuilder]{
-			baseAggregateBuilder: baseBuilder,
-		},
-	}
-
-	baseBuilder.self = expr
+	expr := newGenericCountExpr[CountBuilder](nil, qb)
+	expr.baseAggregateBuilder.self = expr
 
 	return expr
 }
 
-func newGenericSumExpr[T any](self T, qb QueryBuilder) *sumExpr[T] {
+func newGenericDistinctableAggExpr[T any](self T, qb QueryBuilder, funcName string) *distinctableAggExpr[T] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
-		funcName: "SUM",
+		funcName: funcName,
 	}
 	baseBuilder := &baseAggregateBuilder[T]{
 		baseAggregateExpr: baseExpr,
 	}
-	expr := &sumExpr[T]{
+	expr := &distinctableAggExpr[T]{
 		baseAggregateExpr: baseExpr,
 		distinctableAggregateBuilder: &distinctableAggregateBuilder[T]{
 			baseAggregateBuilder: baseBuilder,
@@ -895,143 +870,26 @@ func newGenericSumExpr[T any](self T, qb QueryBuilder) *sumExpr[T] {
 	return expr
 }
 
-func newSumExpr(qb QueryBuilder) *sumExpr[SumBuilder] {
-	baseExpr := &baseAggregateExpr{
-		qb:       qb,
-		eb:       qb.ExprBuilder(),
-		funcName: "SUM",
-	}
-	baseBuilder := &baseAggregateBuilder[SumBuilder]{
-		baseAggregateExpr: baseExpr,
-	}
-	expr := &sumExpr[SumBuilder]{
-		baseAggregateExpr: baseExpr,
-		distinctableAggregateBuilder: &distinctableAggregateBuilder[SumBuilder]{
-			baseAggregateBuilder: baseBuilder,
-		},
-	}
-
-	baseBuilder.self = expr
+func newSumExpr(qb QueryBuilder) *distinctableAggExpr[SumBuilder] {
+	expr := newGenericDistinctableAggExpr[SumBuilder](nil, qb, "SUM")
+	expr.baseAggregateBuilder.self = expr
 
 	return expr
 }
 
-func newGenericAvgExpr[T any](self T, qb QueryBuilder) *avgExpr[T] {
-	baseExpr := &baseAggregateExpr{
-		qb:       qb,
-		eb:       qb.ExprBuilder(),
-		funcName: "AVG",
-	}
-	baseBuilder := &baseAggregateBuilder[T]{
-		baseAggregateExpr: baseExpr,
-	}
-	expr := &avgExpr[T]{
-		baseAggregateExpr: baseExpr,
-		distinctableAggregateBuilder: &distinctableAggregateBuilder[T]{
-			baseAggregateBuilder: baseBuilder,
-		},
-	}
-
-	baseBuilder.self = self
+func newAvgExpr(qb QueryBuilder) *distinctableAggExpr[AvgBuilder] {
+	expr := newGenericDistinctableAggExpr[AvgBuilder](nil, qb, "AVG")
+	expr.baseAggregateBuilder.self = expr
 
 	return expr
 }
 
-func newAvgExpr(qb QueryBuilder) *avgExpr[AvgBuilder] {
-	baseExpr := &baseAggregateExpr{
-		qb:       qb,
-		eb:       qb.ExprBuilder(),
-		funcName: "AVG",
-	}
-	baseBuilder := &baseAggregateBuilder[AvgBuilder]{
-		baseAggregateExpr: baseExpr,
-	}
-	expr := &avgExpr[AvgBuilder]{
-		baseAggregateExpr: baseExpr,
-		distinctableAggregateBuilder: &distinctableAggregateBuilder[AvgBuilder]{
-			baseAggregateBuilder: baseBuilder,
-		},
-	}
-
-	baseBuilder.self = expr
-
-	return expr
+func newGenericMinExpr[T any](self T, qb QueryBuilder) *simpleAggExpr[T] {
+	return newGenericSimpleAggExpr(self, qb, "MIN")
 }
 
-func newGenericMinExpr[T any](self T, qb QueryBuilder) *minExpr[T] {
-	baseExpr := &baseAggregateExpr{
-		qb:       qb,
-		eb:       qb.ExprBuilder(),
-		funcName: "MIN",
-	}
-	baseBuilder := &baseAggregateBuilder[T]{
-		baseAggregateExpr: baseExpr,
-	}
-	expr := &minExpr[T]{
-		baseAggregateExpr:    baseExpr,
-		baseAggregateBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = self
-
-	return expr
-}
-
-func newMinExpr(qb QueryBuilder) *minExpr[MinBuilder] {
-	baseExpr := &baseAggregateExpr{
-		qb:       qb,
-		eb:       qb.ExprBuilder(),
-		funcName: "MIN",
-	}
-	baseBuilder := &baseAggregateBuilder[MinBuilder]{
-		baseAggregateExpr: baseExpr,
-	}
-	expr := &minExpr[MinBuilder]{
-		baseAggregateExpr:    baseExpr,
-		baseAggregateBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = expr
-
-	return expr
-}
-
-func newGenericMaxExpr[T any](self T, qb QueryBuilder) *maxExpr[T] {
-	baseExpr := &baseAggregateExpr{
-		qb:       qb,
-		eb:       qb.ExprBuilder(),
-		funcName: "MAX",
-	}
-	baseBuilder := &baseAggregateBuilder[T]{
-		baseAggregateExpr: baseExpr,
-	}
-	expr := &maxExpr[T]{
-		baseAggregateExpr:    baseExpr,
-		baseAggregateBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = self
-
-	return expr
-}
-
-func newMaxExpr(qb QueryBuilder) *maxExpr[MaxBuilder] {
-	baseExpr := &baseAggregateExpr{
-		qb:       qb,
-		eb:       qb.ExprBuilder(),
-		funcName: "MAX",
-	}
-	baseBuilder := &baseAggregateBuilder[MaxBuilder]{
-		baseAggregateExpr: baseExpr,
-	}
-	expr := &maxExpr[MaxBuilder]{
-		baseAggregateExpr:    baseExpr,
-		baseAggregateBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = expr
-
-	return expr
+func newGenericMaxExpr[T any](self T, qb QueryBuilder) *simpleAggExpr[T] {
+	return newGenericSimpleAggExpr(self, qb, "MAX")
 }
 
 func newGenericStringAggExpr[T any](self T, qb QueryBuilder) *stringAggExpr[T] {
@@ -1064,30 +922,8 @@ func newGenericStringAggExpr[T any](self T, qb QueryBuilder) *stringAggExpr[T] {
 }
 
 func newStringAggExpr(qb QueryBuilder) *stringAggExpr[StringAggBuilder] {
-	baseExpr := &baseAggregateExpr{
-		qb:       qb,
-		eb:       qb.ExprBuilder(),
-		strategy: stringAggStrategy,
-	}
-	baseBuilder := &baseAggregateBuilder[StringAggBuilder]{
-		baseAggregateExpr: baseExpr,
-	}
-	expr := &stringAggExpr[StringAggBuilder]{
-		baseAggregateExpr:    baseExpr,
-		baseAggregateBuilder: baseBuilder,
-		distinctableAggregateBuilder: &distinctableAggregateBuilder[StringAggBuilder]{
-			baseAggregateBuilder: baseBuilder,
-		},
-		orderableAggregateBuilder: &orderableAggregateBuilder[StringAggBuilder]{
-			baseAggregateBuilder: baseBuilder,
-		},
-		baseNullHandlingBuilder: &baseNullHandlingBuilder[StringAggBuilder]{
-			baseAggregateBuilder: baseBuilder,
-		},
-		separator: ",",
-	}
-
-	baseBuilder.self = expr
+	expr := newGenericStringAggExpr[StringAggBuilder](nil, qb)
+	expr.baseAggregateBuilder.self = expr
 
 	return expr
 }
@@ -1121,38 +957,17 @@ func newGenericArrayAggExpr[T any](self T, qb QueryBuilder) *arrayAggExpr[T] {
 }
 
 func newArrayAggExpr(qb QueryBuilder) *arrayAggExpr[ArrayAggBuilder] {
-	baseExpr := &baseAggregateExpr{
-		qb:       qb,
-		eb:       qb.ExprBuilder(),
-		strategy: arrayAggStrategy,
-	}
-	baseBuilder := &baseAggregateBuilder[ArrayAggBuilder]{
-		baseAggregateExpr: baseExpr,
-	}
-	expr := &arrayAggExpr[ArrayAggBuilder]{
-		baseAggregateExpr:    baseExpr,
-		baseAggregateBuilder: baseBuilder,
-		distinctableAggregateBuilder: &distinctableAggregateBuilder[ArrayAggBuilder]{
-			baseAggregateBuilder: baseBuilder,
-		},
-		orderableAggregateBuilder: &orderableAggregateBuilder[ArrayAggBuilder]{
-			baseAggregateBuilder: baseBuilder,
-		},
-		baseNullHandlingBuilder: &baseNullHandlingBuilder[ArrayAggBuilder]{
-			baseAggregateBuilder: baseBuilder,
-		},
-	}
-
-	baseBuilder.self = expr
+	expr := newGenericArrayAggExpr[ArrayAggBuilder](nil, qb)
+	expr.baseAggregateBuilder.self = expr
 
 	return expr
 }
 
-func newGenericStdDevExpr[T any](self T, qb QueryBuilder) *stdDevExpr[T] {
+func newStatisticalAggBase[T any](self T, qb QueryBuilder, strategy *dialectStrategy) (*statisticalAggExpr, *statisticalAggregateBuilder[T]) {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
-		strategy: stdDevStrategy,
+		strategy: strategy,
 	}
 	baseBuilder := &baseAggregateBuilder[T]{
 		baseAggregateExpr: baseExpr,
@@ -1160,90 +975,44 @@ func newGenericStdDevExpr[T any](self T, qb QueryBuilder) *stdDevExpr[T] {
 	statExpr := &statisticalAggExpr{
 		baseAggregateExpr: baseExpr,
 	}
-	expr := &stdDevExpr[T]{
-		statisticalAggExpr: statExpr,
-		statisticalAggregateBuilder: &statisticalAggregateBuilder[T]{
-			baseAggregateBuilder: baseBuilder,
-			statExpr:             statExpr,
-		},
+	statBuilder := &statisticalAggregateBuilder[T]{
+		baseAggregateBuilder: baseBuilder,
+		statExpr:             statExpr,
 	}
 
 	baseBuilder.self = self
 
-	return expr
+	return statExpr, statBuilder
+}
+
+func newGenericStdDevExpr[T any](self T, qb QueryBuilder) *stdDevExpr[T] {
+	statExpr, statBuilder := newStatisticalAggBase(self, qb, stdDevStrategy)
+
+	return &stdDevExpr[T]{
+		statisticalAggExpr:          statExpr,
+		statisticalAggregateBuilder: statBuilder,
+	}
 }
 
 func newStdDevExpr(qb QueryBuilder) *stdDevExpr[StdDevBuilder] {
-	baseExpr := &baseAggregateExpr{
-		qb:       qb,
-		eb:       qb.ExprBuilder(),
-		strategy: stdDevStrategy,
-	}
-	baseBuilder := &baseAggregateBuilder[StdDevBuilder]{
-		baseAggregateExpr: baseExpr,
-	}
-	statExpr := &statisticalAggExpr{
-		baseAggregateExpr: baseExpr,
-	}
-	expr := &stdDevExpr[StdDevBuilder]{
-		statisticalAggExpr: statExpr,
-		statisticalAggregateBuilder: &statisticalAggregateBuilder[StdDevBuilder]{
-			baseAggregateBuilder: baseBuilder,
-			statExpr:             statExpr,
-		},
-	}
-
-	baseBuilder.self = expr
+	expr := newGenericStdDevExpr[StdDevBuilder](nil, qb)
+	expr.baseAggregateBuilder.self = expr
 
 	return expr
 }
 
 func newGenericVarianceExpr[T any](self T, qb QueryBuilder) *varianceExpr[T] {
-	baseExpr := &baseAggregateExpr{
-		qb:       qb,
-		eb:       qb.ExprBuilder(),
-		strategy: varianceStrategy,
-	}
-	baseBuilder := &baseAggregateBuilder[T]{
-		baseAggregateExpr: baseExpr,
-	}
-	statExpr := &statisticalAggExpr{
-		baseAggregateExpr: baseExpr,
-	}
-	expr := &varianceExpr[T]{
-		statisticalAggExpr: statExpr,
-		statisticalAggregateBuilder: &statisticalAggregateBuilder[T]{
-			baseAggregateBuilder: baseBuilder,
-			statExpr:             statExpr,
-		},
-	}
+	statExpr, statBuilder := newStatisticalAggBase(self, qb, varianceStrategy)
 
-	baseBuilder.self = self
-
-	return expr
+	return &varianceExpr[T]{
+		statisticalAggExpr:          statExpr,
+		statisticalAggregateBuilder: statBuilder,
+	}
 }
 
 func newVarianceExpr(qb QueryBuilder) *varianceExpr[VarianceBuilder] {
-	baseExpr := &baseAggregateExpr{
-		qb:       qb,
-		eb:       qb.ExprBuilder(),
-		strategy: varianceStrategy,
-	}
-	baseBuilder := &baseAggregateBuilder[VarianceBuilder]{
-		baseAggregateExpr: baseExpr,
-	}
-	statExpr := &statisticalAggExpr{
-		baseAggregateExpr: baseExpr,
-	}
-	expr := &varianceExpr[VarianceBuilder]{
-		statisticalAggExpr: statExpr,
-		statisticalAggregateBuilder: &statisticalAggregateBuilder[VarianceBuilder]{
-			baseAggregateBuilder: baseBuilder,
-			statExpr:             statExpr,
-		},
-	}
-
-	baseBuilder.self = expr
+	expr := newGenericVarianceExpr[VarianceBuilder](nil, qb)
+	expr.baseAggregateBuilder.self = expr
 
 	return expr
 }
@@ -1274,26 +1043,8 @@ func newGenericJSONObjectAggExpr[T any](self T, qb QueryBuilder) *jsonObjectAggE
 }
 
 func newJSONObjectAggExpr(qb QueryBuilder) *jsonObjectAggExpr[JSONObjectAggBuilder] {
-	baseExpr := &baseAggregateExpr{
-		qb:       qb,
-		eb:       qb.ExprBuilder(),
-		strategy: jsonObjectAggStrategy,
-	}
-	baseBuilder := &baseAggregateBuilder[JSONObjectAggBuilder]{
-		baseAggregateExpr: baseExpr,
-	}
-	expr := &jsonObjectAggExpr[JSONObjectAggBuilder]{
-		baseAggregateExpr:    baseExpr,
-		baseAggregateBuilder: baseBuilder,
-		distinctableAggregateBuilder: &distinctableAggregateBuilder[JSONObjectAggBuilder]{
-			baseAggregateBuilder: baseBuilder,
-		},
-		orderableAggregateBuilder: &orderableAggregateBuilder[JSONObjectAggBuilder]{
-			baseAggregateBuilder: baseBuilder,
-		},
-	}
-
-	baseBuilder.self = expr
+	expr := newGenericJSONObjectAggExpr[JSONObjectAggBuilder](nil, qb)
+	expr.baseAggregateBuilder.self = expr
 
 	return expr
 }
@@ -1324,40 +1075,22 @@ func newGenericJSONArrayAggExpr[T any](self T, qb QueryBuilder) *jsonArrayAggExp
 }
 
 func newJSONArrayAggExpr(qb QueryBuilder) *jsonArrayAggExpr[JSONArrayAggBuilder] {
-	baseExpr := &baseAggregateExpr{
-		qb:       qb,
-		eb:       qb.ExprBuilder(),
-		strategy: jsonArrayAggStrategy,
-	}
-	baseBuilder := &baseAggregateBuilder[JSONArrayAggBuilder]{
-		baseAggregateExpr: baseExpr,
-	}
-	expr := &jsonArrayAggExpr[JSONArrayAggBuilder]{
-		baseAggregateExpr:    baseExpr,
-		baseAggregateBuilder: baseBuilder,
-		distinctableAggregateBuilder: &distinctableAggregateBuilder[JSONArrayAggBuilder]{
-			baseAggregateBuilder: baseBuilder,
-		},
-		orderableAggregateBuilder: &orderableAggregateBuilder[JSONArrayAggBuilder]{
-			baseAggregateBuilder: baseBuilder,
-		},
-	}
-
-	baseBuilder.self = expr
+	expr := newGenericJSONArrayAggExpr[JSONArrayAggBuilder](nil, qb)
+	expr.baseAggregateBuilder.self = expr
 
 	return expr
 }
 
-func newGenericBitOrExpr[T any](self T, qb QueryBuilder) *bitOrExpr[T] {
+func newGenericDialectAggExpr[T any](self T, qb QueryBuilder, strategy *dialectStrategy) *dialectAggExpr[T] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
-		strategy: bitOrStrategy,
+		strategy: strategy,
 	}
 	baseBuilder := &baseAggregateBuilder[T]{
 		baseAggregateExpr: baseExpr,
 	}
-	expr := &bitOrExpr[T]{
+	expr := &dialectAggExpr[T]{
 		baseAggregateExpr:    baseExpr,
 		baseAggregateBuilder: baseBuilder,
 	}
@@ -1367,135 +1100,30 @@ func newGenericBitOrExpr[T any](self T, qb QueryBuilder) *bitOrExpr[T] {
 	return expr
 }
 
-func newBitOrExpr(qb QueryBuilder) *bitOrExpr[BitOrBuilder] {
-	baseExpr := &baseAggregateExpr{
-		qb:       qb,
-		eb:       qb.ExprBuilder(),
-		strategy: bitOrStrategy,
-	}
-	baseBuilder := &baseAggregateBuilder[BitOrBuilder]{
-		baseAggregateExpr: baseExpr,
-	}
-	expr := &bitOrExpr[BitOrBuilder]{
-		baseAggregateExpr:    baseExpr,
-		baseAggregateBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = expr
+func newBitOrExpr(qb QueryBuilder) *dialectAggExpr[BitOrBuilder] {
+	expr := newGenericDialectAggExpr[BitOrBuilder](nil, qb, bitOrStrategy)
+	expr.baseAggregateBuilder.self = expr
 
 	return expr
 }
 
-func newGenericBitAndExpr[T any](self T, qb QueryBuilder) *bitAndExpr[T] {
-	baseExpr := &baseAggregateExpr{
-		qb:       qb,
-		eb:       qb.ExprBuilder(),
-		strategy: bitAndStrategy,
-	}
-	baseBuilder := &baseAggregateBuilder[T]{
-		baseAggregateExpr: baseExpr,
-	}
-	expr := &bitAndExpr[T]{
-		baseAggregateExpr:    baseExpr,
-		baseAggregateBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = self
+func newBitAndExpr(qb QueryBuilder) *dialectAggExpr[BitAndBuilder] {
+	expr := newGenericDialectAggExpr[BitAndBuilder](nil, qb, bitAndStrategy)
+	expr.baseAggregateBuilder.self = expr
 
 	return expr
 }
 
-func newBitAndExpr(qb QueryBuilder) *bitAndExpr[BitAndBuilder] {
-	baseExpr := &baseAggregateExpr{
-		qb:       qb,
-		eb:       qb.ExprBuilder(),
-		strategy: bitAndStrategy,
-	}
-	baseBuilder := &baseAggregateBuilder[BitAndBuilder]{
-		baseAggregateExpr: baseExpr,
-	}
-	expr := &bitAndExpr[BitAndBuilder]{
-		baseAggregateExpr:    baseExpr,
-		baseAggregateBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = expr
+func newBoolOrExpr(qb QueryBuilder) *dialectAggExpr[BoolOrBuilder] {
+	expr := newGenericDialectAggExpr[BoolOrBuilder](nil, qb, boolOrStrategy)
+	expr.baseAggregateBuilder.self = expr
 
 	return expr
 }
 
-func newGenericBoolOrExpr[T any](self T, qb QueryBuilder) *boolOrExpr[T] {
-	baseExpr := &baseAggregateExpr{
-		qb:       qb,
-		eb:       qb.ExprBuilder(),
-		strategy: boolOrStrategy,
-	}
-	baseBuilder := &baseAggregateBuilder[T]{
-		baseAggregateExpr: baseExpr,
-	}
-	expr := &boolOrExpr[T]{
-		baseAggregateExpr:    baseExpr,
-		baseAggregateBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = self
-
-	return expr
-}
-
-func newBoolOrExpr(qb QueryBuilder) *boolOrExpr[BoolOrBuilder] {
-	baseExpr := &baseAggregateExpr{
-		qb:       qb,
-		eb:       qb.ExprBuilder(),
-		strategy: boolOrStrategy,
-	}
-	baseBuilder := &baseAggregateBuilder[BoolOrBuilder]{
-		baseAggregateExpr: baseExpr,
-	}
-	expr := &boolOrExpr[BoolOrBuilder]{
-		baseAggregateExpr:    baseExpr,
-		baseAggregateBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = expr
-
-	return expr
-}
-
-func newGenericBoolAndExpr[T any](self T, qb QueryBuilder) *boolAndExpr[T] {
-	baseExpr := &baseAggregateExpr{
-		qb:       qb,
-		eb:       qb.ExprBuilder(),
-		strategy: boolAndStrategy,
-	}
-	baseBuilder := &baseAggregateBuilder[T]{
-		baseAggregateExpr: baseExpr,
-	}
-	expr := &boolAndExpr[T]{
-		baseAggregateExpr:    baseExpr,
-		baseAggregateBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = self
-
-	return expr
-}
-
-func newBoolAndExpr(qb QueryBuilder) *boolAndExpr[BoolAndBuilder] {
-	baseExpr := &baseAggregateExpr{
-		qb:       qb,
-		eb:       qb.ExprBuilder(),
-		strategy: boolAndStrategy,
-	}
-	baseBuilder := &baseAggregateBuilder[BoolAndBuilder]{
-		baseAggregateExpr: baseExpr,
-	}
-	expr := &boolAndExpr[BoolAndBuilder]{
-		baseAggregateExpr:    baseExpr,
-		baseAggregateBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = expr
+func newBoolAndExpr(qb QueryBuilder) *dialectAggExpr[BoolAndBuilder] {
+	expr := newGenericDialectAggExpr[BoolAndBuilder](nil, qb, boolAndStrategy)
+	expr.baseAggregateBuilder.self = expr
 
 	return expr
 }

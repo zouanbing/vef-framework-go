@@ -86,31 +86,21 @@ type InsertQueryConflictUpdateBuilder struct {
 }
 
 func (b *InsertQueryConflictUpdateBuilder) Set(column string, value ...any) ConflictUpdateBuilder {
+	eb := b.parent.eb
+	col := bun.Name(column)
+
 	var valueExpr any
 	if len(value) > 0 {
 		valueExpr = value[0]
 	} else {
-		b.parent.eb.ExecByDialect(DialectExecs{
-			MySQL: func() {
-				valueExpr = bun.Name(column)
-			},
-			Default: func() {
-				// PostgreSQL/SQLite use EXCLUDED.<column> to reference the proposed row.
-				valueExpr = b.parent.eb.Expr("EXCLUDED.?", bun.Name(column))
-			},
+		// MySQL uses column name reference; PostgreSQL/SQLite use EXCLUDED.column
+		eb.ExecByDialect(DialectExecs{
+			MySQL:   func() { valueExpr = col },
+			Default: func() { valueExpr = eb.Expr("EXCLUDED.?", col) },
 		})
 	}
 
-	setExpr := b.parent.eb.ExprByDialect(DialectExprs{
-		Postgres: func() schema.QueryAppender {
-			return b.parent.eb.Expr("? = ?", bun.Name(column), valueExpr)
-		},
-		Default: func() schema.QueryAppender {
-			return bun.SafeQuery("? = ?", bun.Name(column), valueExpr)
-		},
-	})
-
-	b.parent.sets = append(b.parent.sets, setExpr)
+	b.parent.sets = append(b.parent.sets, eb.Expr("? = ?", col, valueExpr))
 
 	return b
 }
@@ -131,71 +121,61 @@ func (b *InsertQueryConflictUpdateBuilder) Where(builder func(ConditionBuilder))
 
 // build applies the configured conflict handling to the underlying bun.InsertQuery.
 func (b *InsertQueryConflictBuilder) build(query *bun.InsertQuery) {
-	// Dialect specific handling
 	b.eb.ExecByDialect(DialectExecs{
-		MySQL: func() {
-			// MySQL: ON DUPLICATE KEY UPDATE ... or INSERT IGNORE for do-nothing
-			if b.action == ConflictDoNothing {
-				query.Ignore()
-
-				return
-			}
-
-			// Otherwise treat as DO UPDATE
-			query.On("DUPLICATE KEY UPDATE")
-
-			for _, set := range b.sets {
-				query.Set("?", set)
-			}
-			// MySQL has no DO UPDATE WHERE; ignore updateWhere/targetWhere
-		},
-		Default: func() {
-			// PostgreSQL/SQLite
-			// Build conflict target
-			var (
-				target  schema.QueryAppender
-				builder strings.Builder
-				args    []any
-			)
-
-			if b.constraint != "" {
-				target = b.eb.Expr("CONSTRAINT ?", bun.Name(b.constraint))
-			} else if len(b.columns) > 0 {
-				target = b.eb.Expr("(?)", Names(b.columns...))
-			}
-
-			_, _ = builder.WriteString("CONFLICT ")
-			if target == nil {
-				// PostgreSQL requires a conflict target (columns or constraint) for DO UPDATE.
-				// When no target is specified, fallback to DO NOTHING to avoid syntax errors.
-				_, _ = builder.WriteString(ConflictDoNothing.String())
-				query.On(builder.String())
-
-				return
-			}
-
-			_, _ = builder.WriteString("? ")
-
-			args = append(args, target)
-
-			if b.targetWhere != nil {
-				// Target WHERE (partial index)
-				_, _ = builder.WriteString("WHERE ? ")
-
-				args = append(args, b.targetWhere)
-			}
-
-			_, _ = builder.WriteString(b.action.String())
-
-			query.On(builder.String(), args...)
-
-			for _, set := range b.sets {
-				query.Set("?", set)
-			}
-
-			if b.updateWhere != nil {
-				query.Where("?", b.updateWhere)
-			}
-		},
+		MySQL:   func() { b.buildMySQL(query) },
+		Default: func() { b.buildPostgresSQLite(query) },
 	})
+}
+
+func (b *InsertQueryConflictBuilder) buildMySQL(query *bun.InsertQuery) {
+	if b.action == ConflictDoNothing {
+		query.Ignore()
+
+		return
+	}
+
+	query.On("DUPLICATE KEY UPDATE")
+
+	for _, set := range b.sets {
+		query.Set("?", set)
+	}
+}
+
+func (b *InsertQueryConflictBuilder) buildPostgresSQLite(query *bun.InsertQuery) {
+	var target schema.QueryAppender
+	if b.constraint != "" {
+		target = b.eb.Expr("CONSTRAINT ?", bun.Name(b.constraint))
+	} else if len(b.columns) > 0 {
+		target = b.eb.Expr("(?)", Names(b.columns...))
+	}
+
+	var sb strings.Builder
+	sb.WriteString("CONFLICT ")
+
+	if target == nil {
+		// PostgreSQL requires a conflict target for DO UPDATE; fallback to DO NOTHING.
+		sb.WriteString(ConflictDoNothing.String())
+		query.On(sb.String())
+
+		return
+	}
+
+	sb.WriteString("? ")
+	args := []any{target}
+
+	if b.targetWhere != nil {
+		sb.WriteString("WHERE ? ")
+		args = append(args, b.targetWhere)
+	}
+
+	sb.WriteString(b.action.String())
+	query.On(sb.String(), args...)
+
+	for _, set := range b.sets {
+		query.Set("?", set)
+	}
+
+	if b.updateWhere != nil {
+		query.Where("?", b.updateWhere)
+	}
 }

@@ -15,27 +15,20 @@ var autoColumnHandlers = []ColumnHandler{
 	&UpdatedByHandler{},
 }
 
-// ColumnHandler is the base interface for all auto column handlers.
-// It provides the column name that the handler manages.
+// ColumnHandler provides the column name that the handler manages.
 type ColumnHandler interface {
-	// Name returns the name of the column this handler manages.
 	Name() string
 }
 
-// InsertColumnHandler is an interface for handlers that automatically manage columns during insert operations.
-// Handlers implementing this interface will be called before insert operations to set column values.
+// InsertColumnHandler manages columns automatically during insert operations.
 type InsertColumnHandler interface {
 	ColumnHandler
-	// OnInsert is called when a new record is being inserted.
-	// It allows the handler to automatically set or modify column values.
 	OnInsert(query *BunInsertQuery, table *schema.Table, field *schema.Field, model any, value reflect.Value)
 }
 
-// UpdateColumnHandler is an interface for handlers that manage columns during both insert and update operations.
-// It extends InsertHandler to also handle update scenarios with additional context.
+// UpdateColumnHandler manages columns during both insert and update operations.
 type UpdateColumnHandler interface {
 	InsertColumnHandler
-	// OnUpdate is called when an existing record is being updated.
 	OnUpdate(query *BunUpdateQuery, table *schema.Table, field *schema.Field, model any, value reflect.Value)
 }
 

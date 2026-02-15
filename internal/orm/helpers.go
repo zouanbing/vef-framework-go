@@ -1,6 +1,7 @@
 package orm
 
 import (
+	"cmp"
 	"reflect"
 
 	"github.com/uptrace/bun"
@@ -56,41 +57,23 @@ func applyRelationSpec(spec *RelationSpec, query SelectQuery) {
 	}
 
 	pk := table.PKs[0].Name
-	alias := spec.Alias
-	joinType := spec.JoinType
-	foreignColumn := spec.ForeignColumn
-	referencedColumn := spec.ReferencedColumn
+	alias := cmp.Or(spec.Alias, table.Alias)
+	joinType := cmp.Or(spec.JoinType, JoinLeft)
+	foreignColumn := cmp.Or(spec.ForeignColumn, table.ModelName+"_"+pk)
+	referencedColumn := cmp.Or(spec.ReferencedColumn, pk)
 
-	if alias == "" {
-		alias = table.Alias
-	}
+	for _, ci := range spec.SelectedColumns {
+		column := dbx.ColumnWithAlias(ci.Name, alias)
 
-	if joinType == JoinDefault {
-		joinType = JoinLeft
-	}
+		columnAlias := ci.Alias
+		if ci.AutoAlias {
+			columnAlias = table.ModelName + "_" + ci.Name
+		}
 
-	if foreignColumn == "" {
-		foreignColumn = table.ModelName + "_" + pk
-	}
-
-	if referencedColumn == "" {
-		referencedColumn = pk
-	}
-
-	if len(spec.SelectedColumns) > 0 {
-		for _, ci := range spec.SelectedColumns {
-			column := dbx.ColumnWithAlias(ci.Name, alias)
-
-			columnAlias := ci.Alias
-			if ci.AutoAlias {
-				columnAlias = table.ModelName + "_" + ci.Name
-			}
-
-			if columnAlias != "" {
-				query.SelectAs(column, columnAlias)
-			} else {
-				query.Select(column)
-			}
+		if columnAlias != "" {
+			query.SelectAs(column, columnAlias)
+		} else {
+			query.Select(column)
 		}
 	}
 

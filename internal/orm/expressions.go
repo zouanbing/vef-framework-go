@@ -28,34 +28,29 @@ func (e *Expressions) AppendQuery(gen schema.QueryGen, b []byte) ([]byte, error)
 
 		for i := range sliceLen {
 			if i > 0 {
-				switch sep := e.sep.(type) {
-				case string:
-					b = append(b, sep...)
-				case schema.QueryAppender:
-					if b, err = sep.AppendQuery(gen, b); err != nil {
-						return
-					}
-				default:
-					b = gen.AppendValue(b, reflect.ValueOf(sep))
-				}
-			}
-
-			expr := slice.Index(i)
-			if expr.Type().Implements(queryAppenderType) {
-				appender := expr.Interface().(schema.QueryAppender)
-				if b, err = appender.AppendQuery(gen, b); err != nil {
+				if b, err = e.appendSep(gen, b); err != nil {
 					return
 				}
 			}
 
-			if expr.Kind() == reflect.Slice && expr.Type() != bytesType {
+			expr := slice.Index(i)
+
+			switch {
+			case expr.Type().Implements(queryAppenderType):
+				appender := expr.Interface().(schema.QueryAppender)
+				if b, err = appender.AppendQuery(gen, b); err != nil {
+					return
+				}
+
+			case expr.Kind() == reflect.Slice && expr.Type() != bytesType:
 				b = append(b, '(')
 				if b, err = appendExprs(b, expr); err != nil {
 					return
 				}
 
 				b = append(b, ')')
-			} else {
+
+			default:
 				b = gen.AppendValue(b, expr)
 			}
 		}
@@ -64,6 +59,18 @@ func (e *Expressions) AppendQuery(gen schema.QueryGen, b []byte) ([]byte, error)
 	}
 
 	return appendExprs(b, reflect.ValueOf(e.exprs))
+}
+
+// appendSep appends the separator between expression elements.
+func (e *Expressions) appendSep(gen schema.QueryGen, b []byte) ([]byte, error) {
+	switch sep := e.sep.(type) {
+	case string:
+		return append(b, sep...), nil
+	case schema.QueryAppender:
+		return sep.AppendQuery(gen, b)
+	default:
+		return gen.AppendValue(b, reflect.ValueOf(sep)), nil
+	}
 }
 
 func newExpressions(sep any, exprs ...any) *Expressions {

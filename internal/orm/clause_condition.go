@@ -12,18 +12,16 @@ type ClauseConditionBuilder struct {
 }
 
 func newConditionBuilder(qb QueryBuilder) *ClauseConditionBuilder {
-	cb := &CriteriaBuilder{
-		qb:    qb,
-		eb:    qb.ExprBuilder(),
-		and:   func(string, ...any) {},
-		or:    func(string, ...any) {},
-		group: func(string, func(ConditionBuilder)) {},
+	builder := &ClauseConditionBuilder{
+		CriteriaBuilder: &CriteriaBuilder{
+			qb: qb,
+			eb: qb.ExprBuilder(),
+		},
 	}
 
-	builder := &ClauseConditionBuilder{CriteriaBuilder: cb}
-	cb.and = builder.And
-	cb.or = builder.Or
-	cb.group = builder.BuildGroup
+	builder.and = builder.And
+	builder.or = builder.Or
+	builder.group = builder.BuildGroup
 
 	return builder
 }

@@ -46,7 +46,6 @@ type BunSelectQuery struct {
 	hasSelectAll          bool
 	hasSelectModelColumns bool
 	hasSelectModelPKs     bool
-	hasExplicitSelect     bool
 	explicitSelects       []func()
 	exprSelects           []func()
 	selectStateApplied    bool
@@ -88,7 +87,6 @@ func (q *BunSelectQuery) SelectAll() SelectQuery {
 
 func (q *BunSelectQuery) Select(columns ...string) SelectQuery {
 	q.hasSelectAll = false
-	q.hasExplicitSelect = true
 
 	for _, column := range columns {
 		q.explicitSelects = append(q.explicitSelects, func() {
@@ -101,7 +99,6 @@ func (q *BunSelectQuery) Select(columns ...string) SelectQuery {
 
 func (q *BunSelectQuery) SelectAs(column, alias string) SelectQuery {
 	q.hasSelectAll = false
-	q.hasExplicitSelect = true
 
 	q.explicitSelects = append(q.explicitSelects, func() {
 		q.query.ColumnExpr("? AS ?", q.eb.Column(column), bun.Name(alias))
@@ -111,17 +108,11 @@ func (q *BunSelectQuery) SelectAs(column, alias string) SelectQuery {
 }
 
 func (q *BunSelectQuery) SelectExpr(builder func(ExprBuilder) any, alias ...string) SelectQuery {
-	var (
-		expr       = builder(q.eb)
-		aliasToUse string
-	)
-	if len(alias) > 0 && alias[0] != "" {
-		aliasToUse = alias[0]
-	}
+	expr := builder(q.eb)
 
 	q.exprSelects = append(q.exprSelects, func() {
-		if aliasToUse != "" {
-			q.query.ColumnExpr("? AS ?", expr, bun.Name(aliasToUse))
+		if len(alias) > 0 && alias[0] != "" {
+			q.query.ColumnExpr("? AS ?", expr, bun.Name(alias[0]))
 		} else {
 			q.query.ColumnExpr("?", expr)
 		}
@@ -542,20 +533,22 @@ func (q *BunSelectQuery) ForUpdateSkipLocked(tables ...string) SelectQuery {
 
 // forLock builds a FOR lock clause with the given lock mode, optional suffix, and optional table names.
 func (q *BunSelectQuery) forLock(mode, suffix string, tables ...string) SelectQuery {
-	clause := mode
-	if len(tables) > 0 {
-		clause += " OF ?"
+	if len(tables) == 0 {
+		if suffix != "" {
+			q.query.For(mode + " " + suffix)
+		} else {
+			q.query.For(mode)
+		}
+
+		return q
 	}
 
+	clause := mode + " OF ?"
 	if suffix != "" {
 		clause += " " + suffix
 	}
 
-	if len(tables) > 0 {
-		q.query.For(clause, Names(tables...))
-	} else {
-		q.query.For(clause)
-	}
+	q.query.For(clause, Names(tables...))
 
 	return q
 }
@@ -620,7 +613,6 @@ func (q *BunSelectQuery) clearSelectState() {
 	q.hasSelectAll = false
 	q.hasSelectModelColumns = false
 	q.hasSelectModelPKs = false
-	q.hasExplicitSelect = false
 	q.explicitSelects = nil
 }
 
@@ -639,10 +631,8 @@ func (q *BunSelectQuery) applySelectState() {
 			q.query.ColumnExpr(ExprTablePKs)
 		}
 
-		if q.hasExplicitSelect {
-			for _, selectFn := range q.explicitSelects {
-				selectFn()
-			}
+		for _, selectFn := range q.explicitSelects {
+			selectFn()
 		}
 	}
 

@@ -76,23 +76,17 @@ func (d *BunDB) NewDropColumn() DropColumnQuery {
 }
 
 func (d *BunDB) RunInTX(ctx context.Context, fn func(context.Context, DB) error) error {
-	return d.db.RunInTx(
-		ctx,
-		txOptions,
-		func(ctx context.Context, tx bun.Tx) error {
-			return fn(ctx, &BunDB{db: tx})
-		},
-	)
+	return d.runInTx(ctx, txOptions, fn)
 }
 
 func (d *BunDB) RunInReadOnlyTX(ctx context.Context, fn func(context.Context, DB) error) error {
-	return d.db.RunInTx(
-		ctx,
-		readOnlyTxOptions,
-		func(ctx context.Context, tx bun.Tx) error {
-			return fn(ctx, &BunDB{db: tx})
-		},
-	)
+	return d.runInTx(ctx, readOnlyTxOptions, fn)
+}
+
+func (d *BunDB) runInTx(ctx context.Context, opts *sql.TxOptions, fn func(context.Context, DB) error) error {
+	return d.db.RunInTx(ctx, opts, func(ctx context.Context, tx bun.Tx) error {
+		return fn(ctx, &BunDB{db: tx})
+	})
 }
 
 func (d *BunDB) BeginTx(ctx context.Context, opts *sql.TxOptions) (Tx, error) {
@@ -101,7 +95,7 @@ func (d *BunDB) BeginTx(ctx context.Context, opts *sql.TxOptions) (Tx, error) {
 		return nil, err
 	}
 
-	return &BunTx{BunDB: BunDB{db: tx}}, nil
+	return &BunTx{BunDB{db: tx}}, nil
 }
 
 func (d *BunDB) Conn(ctx context.Context) (*sql.Conn, error) {
@@ -135,30 +129,30 @@ func (d *BunDB) WithNamedArg(name string, value any) DB {
 }
 
 func (d *BunDB) ModelPKs(model any) (map[string]any, error) {
-	pks := d.ModelPKFields(model)
-	pkValues := make(map[string]any, len(pks))
+	fields := d.ModelPKFields(model)
+	values := make(map[string]any, len(fields))
 
-	for _, pk := range pks {
-		value, err := pk.Value(model)
+	for _, pk := range fields {
+		v, err := pk.Value(model)
 		if err != nil {
 			return nil, err
 		}
 
-		pkValues[pk.Name] = value
+		values[pk.Name] = v
 	}
 
-	return pkValues, nil
+	return values, nil
 }
 
 func (d *BunDB) ModelPKFields(model any) []*PKField {
 	table := getTableSchema(model, d.getBunDB())
-	pks := make([]*PKField, len(table.PKs))
+	fields := make([]*PKField, len(table.PKs))
 
 	for i, pk := range table.PKs {
-		pks[i] = NewPKField(pk)
+		fields[i] = NewPKField(pk)
 	}
 
-	return pks
+	return fields
 }
 
 func (d *BunDB) TableOf(model any) *schema.Table {

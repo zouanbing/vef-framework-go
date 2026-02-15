@@ -17,9 +17,7 @@ func init() {
 	})
 }
 
-// DeleteTestSuite tests DELETE operations including CTE, table sources, filtering,
-// ordering, limiting, returning, force delete, conditional application, and execution methods
-// across all databases (PostgreSQL, MySQL, SQLite).
+// DeleteTestSuite tests DELETE operations across all databases.
 type DeleteTestSuite struct {
 	*BaseTestSuite
 }
@@ -479,7 +477,7 @@ func (suite *DeleteTestSuite) TestSoftDelete() {
 
 	err := suite.db.ResetModel(suite.ctx, (*SoftDeleteArticle)(nil))
 
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, "Should reset soft delete table")
 	defer func() {
 		_, _ = suite.db.NewDropTable().Model((*SoftDeleteArticle)(nil)).IfExists().Exec(suite.ctx)
 	}()
@@ -491,7 +489,7 @@ func (suite *DeleteTestSuite) TestSoftDelete() {
 	}
 
 	_, err = suite.db.NewInsert().Model(&records).Exec(suite.ctx)
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, "Should insert soft delete test records")
 
 	// Soft delete the first record
 	_, err = suite.db.NewDelete().
@@ -500,7 +498,7 @@ func (suite *DeleteTestSuite) TestSoftDelete() {
 			cb.Equals("id", records[0].ID)
 		}).
 		Exec(suite.ctx)
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, "Should soft delete first record")
 
 	suite.Run("WhereDeleted", func() {
 		// Delete (force) among soft-deleted records only
@@ -523,7 +521,7 @@ func (suite *DeleteTestSuite) TestSoftDelete() {
 		newRecord := &SoftDeleteArticle{Title: "Article D", Status: "draft"}
 
 		_, err := suite.db.NewInsert().Model(newRecord).Exec(suite.ctx)
-		suite.Require().NoError(err)
+		suite.Require().NoError(err, "Should insert new record for sub-test")
 
 		_, err = suite.db.NewDelete().
 			Model((*SoftDeleteArticle)(nil)).
@@ -531,7 +529,7 @@ func (suite *DeleteTestSuite) TestSoftDelete() {
 				cb.Equals("id", newRecord.ID)
 			}).
 			Exec(suite.ctx)
-		suite.Require().NoError(err)
+		suite.Require().NoError(err, "Should soft delete new record")
 
 		// IncludeDeleted should see all records
 		result, err := suite.db.NewDelete().
@@ -549,8 +547,7 @@ func (suite *DeleteTestSuite) TestSoftDelete() {
 	})
 }
 
-// TestOrdering tests ordering methods (OrderBy, OrderByDesc, OrderByExpr) combined with Limit.
-// Note: PostgreSQL and SQLite (without SQLITE_ENABLE_UPDATE_DELETE_LIMIT) don't support DELETE with ORDER BY/LIMIT directly.
+// TestOrdering tests ordering methods combined with Limit (MySQL only).
 func (suite *DeleteTestSuite) TestOrdering() {
 	suite.T().Logf("Testing ordering methods for %s", suite.ds.Kind)
 
@@ -702,8 +699,7 @@ func (suite *DeleteTestSuite) TestOrdering() {
 	})
 }
 
-// TestLimit tests the Limit method.
-// Note: PostgreSQL and SQLite (without SQLITE_ENABLE_UPDATE_DELETE_LIMIT) don't support DELETE with LIMIT directly.
+// TestLimit tests the Limit method (MySQL only).
 func (suite *DeleteTestSuite) TestLimit() {
 	suite.T().Logf("Testing Limit method for %s", suite.ds.Kind)
 
@@ -836,8 +832,7 @@ func (suite *DeleteTestSuite) TestLimit() {
 	})
 }
 
-// TestReturning tests Returning methods (Returning, ReturningAll, ReturningNone).
-// Note: MySQL doesn't support RETURNING clause.
+// TestReturning tests Returning methods (PostgreSQL/SQLite only).
 func (suite *DeleteTestSuite) TestReturning() {
 	suite.T().Logf("Testing Returning methods for %s", suite.ds.Kind)
 
@@ -1318,191 +1313,87 @@ func (suite *DeleteTestSuite) TestExecution() {
 	})
 }
 
-// TestDeleteDB tests DB() method on DeleteQuery.
+// TestDeleteDB tests DB() method returns the underlying database.
 func (suite *DeleteTestSuite) TestDeleteDB() {
 	suite.T().Logf("Testing Delete DB for %s", suite.ds.Kind)
 
 	query := suite.db.NewDelete().Model((*Tag)(nil))
-	db := query.DB()
-
-	suite.NotNil(db, "DB() should return non-nil")
+	suite.NotNil(query.DB(), "Should return underlying database")
 }
 
-// TestDeleteTableExpr tests TableExpr method covers the code path.
-func (suite *DeleteTestSuite) TestDeleteTableExpr() {
-	suite.T().Logf("Testing Delete TableExpr for %s", suite.ds.Kind)
+// TestTableSpecMethods tests table specification methods with and without aliases.
+func (suite *DeleteTestSuite) TestTableSpecMethods() {
+	suite.T().Logf("Testing table specification methods for %s", suite.ds.Kind)
 
-	// Insert a test record to delete
-	tag := &Tag{Name: "DeleteTableExprTest"}
-	tag.ID = "test-del-tableexpr"
+	nonexistentWhere := func(cb orm.ConditionBuilder) {
+		cb.Equals("id", "nonexistent")
+	}
 
-	_, err := suite.db.NewInsert().Model(tag).Exec(suite.ctx)
-	suite.NoError(err)
+	suite.Run("ModelTableWithAlias", func() {
+		query := suite.db.NewDelete().
+			ModelTable("test_tag", "t").
+			Where(nonexistentWhere)
+		suite.NotNil(query, "Should build query with ModelTable alias")
+	})
 
-	// Delete using model-based approach to clean up
-	_, err = suite.db.NewDelete().
-		Model((*Tag)(nil)).
-		Where(func(cb orm.ConditionBuilder) {
-			cb.Equals("id", "test-del-tableexpr")
-		}).
-		Exec(suite.ctx)
+	suite.Run("ModelTableNoAlias", func() {
+		query := suite.db.NewDelete().
+			ModelTable("test_tag").
+			Where(nonexistentWhere)
+		suite.NotNil(query, "Should build query with ModelTable")
+	})
 
-	suite.NoError(err, "Delete should work")
+	suite.Run("TableWithAlias", func() {
+		query := suite.db.NewDelete().
+			Table("test_tag", "t").
+			Where(nonexistentWhere)
+		suite.NotNil(query, "Should build query with Table alias")
+	})
 
-	// Cover TableExpr code path (may produce dialect-specific SQL)
-	query := suite.db.NewDelete().
-		TableExpr(func(eb orm.ExprBuilder) any {
-			return eb.SubQuery(func(sq orm.SelectQuery) {
-				sq.Model((*Tag)(nil)).Select("id", "name")
-			})
-		}).
-		Where(func(cb orm.ConditionBuilder) {
-			cb.Equals("id", "nonexistent")
-		})
-	suite.NotNil(query, "TableExpr should return non-nil query")
-}
+	suite.Run("TableNoAlias", func() {
+		query := suite.db.NewDelete().
+			Table("test_tag").
+			Where(nonexistentWhere)
+		suite.NotNil(query, "Should build query with Table")
+	})
 
-// TestDeleteTableSubQuery tests TableSubQuery method.
-func (suite *DeleteTestSuite) TestDeleteTableSubQuery() {
-	suite.T().Logf("Testing Delete TableSubQuery for %s", suite.ds.Kind)
-
-	// Insert test records
-	tag := &Tag{Name: "DeleteSubQueryTest"}
-	tag.ID = "test-del-subquery"
-
-	_, err := suite.db.NewInsert().Model(tag).Exec(suite.ctx)
-	suite.NoError(err)
-
-	// Delete using TableSubQuery
-	_, err = suite.db.NewDelete().
-		TableSubQuery(func(sq orm.SelectQuery) {
-			sq.Model((*Tag)(nil)).
-				Select("id").
-				Where(func(cb orm.ConditionBuilder) {
-					cb.Equals("id", "test-del-subquery")
+	suite.Run("TableExprWithAlias", func() {
+		query := suite.db.NewDelete().
+			TableExpr(func(eb orm.ExprBuilder) any {
+				return eb.SubQuery(func(sq orm.SelectQuery) {
+					sq.Model((*Tag)(nil)).Select("id", "name")
 				})
-		}, "t").
-		Where(func(cb orm.ConditionBuilder) {
-			cb.Equals("id", "test-del-subquery")
-		}).
-		Exec(suite.ctx)
+			}, "t").
+			Where(nonexistentWhere)
+		suite.NotNil(query, "Should build query with TableExpr alias")
+	})
 
-	// This may fail on some DBs; the main goal is to cover the code path
-	suite.T().Logf("Delete TableSubQuery err: %v", err)
-}
+	suite.Run("TableExprNoAlias", func() {
+		query := suite.db.NewDelete().
+			TableExpr(func(eb orm.ExprBuilder) any {
+				return eb.SubQuery(func(sq orm.SelectQuery) {
+					sq.Model((*Tag)(nil)).Select("id", "name")
+				})
+			}).
+			Where(nonexistentWhere)
+		suite.NotNil(query, "Should build query with TableExpr")
+	})
 
-// TestDeleteModelTableWithAlias tests Delete ModelTable with alias.
-func (suite *DeleteTestSuite) TestDeleteModelTableWithAlias() {
-	suite.T().Logf("Testing Delete ModelTable with alias for %s", suite.ds.Kind)
-
-	query := suite.db.NewDelete().
-		ModelTable("test_tag", "t").
-		Where(func(cb orm.ConditionBuilder) {
-			cb.Equals("id", "nonexistent")
-		})
-
-	suite.NotNil(query, "Delete ModelTable with alias should return non-nil")
-}
-
-// TestDeleteTableWithAlias tests Delete Table with alias.
-func (suite *DeleteTestSuite) TestDeleteTableWithAlias() {
-	suite.T().Logf("Testing Delete Table with alias for %s", suite.ds.Kind)
-
-	query := suite.db.NewDelete().
-		Table("test_tag", "t").
-		Where(func(cb orm.ConditionBuilder) {
-			cb.Equals("id", "nonexistent")
-		})
-
-	suite.NotNil(query, "Delete Table with alias should return non-nil")
-}
-
-// TestDeleteTableExprWithAlias tests Delete TableExpr with alias.
-func (suite *DeleteTestSuite) TestDeleteTableExprWithAlias() {
-	suite.T().Logf("Testing Delete TableExpr with alias for %s", suite.ds.Kind)
-
-	query := suite.db.NewDelete().
-		TableExpr(func(eb orm.ExprBuilder) any {
-			return eb.SubQuery(func(sq orm.SelectQuery) {
+	suite.Run("TableSubQueryWithAlias", func() {
+		query := suite.db.NewDelete().
+			TableSubQuery(func(sq orm.SelectQuery) {
 				sq.Model((*Tag)(nil)).Select("id", "name")
-			})
-		}, "t").
-		Where(func(cb orm.ConditionBuilder) {
-			cb.Equals("id", "nonexistent")
-		})
+			}, "t").
+			Where(nonexistentWhere)
+		suite.NotNil(query, "Should build query with TableSubQuery alias")
+	})
 
-	suite.NotNil(query, "Delete TableExpr with alias should return non-nil")
-}
-
-// TestDeleteTableSubQueryWithAlias tests Delete TableSubQuery with alias.
-func (suite *DeleteTestSuite) TestDeleteTableSubQueryWithAlias() {
-	suite.T().Logf("Testing Delete TableSubQuery with alias for %s", suite.ds.Kind)
-
-	query := suite.db.NewDelete().
-		TableSubQuery(func(sq orm.SelectQuery) {
-			sq.Model((*Tag)(nil)).Select("id", "name")
-		}, "t").
-		Where(func(cb orm.ConditionBuilder) {
-			cb.Equals("id", "nonexistent")
-		})
-
-	suite.NotNil(query, "Delete TableSubQuery with alias should return non-nil")
-}
-
-// TestDeleteModelTableNoAlias tests Delete ModelTable without alias.
-func (suite *DeleteTestSuite) TestDeleteModelTableNoAlias() {
-	suite.T().Logf("Testing Delete ModelTable without alias for %s", suite.ds.Kind)
-
-	query := suite.db.NewDelete().
-		ModelTable("test_tag").
-		Where(func(cb orm.ConditionBuilder) {
-			cb.Equals("id", "nonexistent")
-		})
-
-	suite.NotNil(query, "Delete ModelTable no alias should return non-nil")
-}
-
-// TestDeleteTableNoAlias tests Delete Table without alias.
-func (suite *DeleteTestSuite) TestDeleteTableNoAlias() {
-	suite.T().Logf("Testing Delete Table without alias for %s", suite.ds.Kind)
-
-	query := suite.db.NewDelete().
-		Table("test_tag").
-		Where(func(cb orm.ConditionBuilder) {
-			cb.Equals("id", "nonexistent")
-		})
-
-	suite.NotNil(query, "Delete Table no alias should return non-nil")
-}
-
-// TestDeleteTableSubQueryNoAlias tests Delete TableSubQuery without alias.
-func (suite *DeleteTestSuite) TestDeleteTableSubQueryNoAlias() {
-	suite.T().Logf("Testing Delete TableSubQuery without alias for %s", suite.ds.Kind)
-
-	query := suite.db.NewDelete().
-		TableSubQuery(func(sq orm.SelectQuery) {
-			sq.Model((*Tag)(nil)).Select("id")
-		}).
-		Where(func(cb orm.ConditionBuilder) {
-			cb.Equals("id", "nonexistent")
-		})
-
-	suite.NotNil(query, "Delete TableSubQuery no alias should return non-nil")
-}
-
-// TestDeleteTableExprNoAlias tests Delete TableExpr without alias.
-func (suite *DeleteTestSuite) TestDeleteTableExprNoAlias() {
-	suite.T().Logf("Testing Delete TableExpr without alias for %s", suite.ds.Kind)
-
-	query := suite.db.NewDelete().
-		TableExpr(func(eb orm.ExprBuilder) any {
-			return eb.SubQuery(func(sq orm.SelectQuery) {
-				sq.Model((*Tag)(nil)).Select("id", "name")
-			})
-		}).
-		Where(func(cb orm.ConditionBuilder) {
-			cb.Equals("id", "nonexistent")
-		})
-
-	suite.NotNil(query, "Delete TableExpr no alias should return non-nil")
+	suite.Run("TableSubQueryNoAlias", func() {
+		query := suite.db.NewDelete().
+			TableSubQuery(func(sq orm.SelectQuery) {
+				sq.Model((*Tag)(nil)).Select("id")
+			}).
+			Where(nonexistentWhere)
+		suite.NotNil(query, "Should build query with TableSubQuery")
+	})
 }

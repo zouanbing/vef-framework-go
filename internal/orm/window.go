@@ -640,44 +640,14 @@ func (b *baseWindowNullHandlingBuilder[T]) RespectNulls() T {
 	return b.self
 }
 
-type rowNumberExpr struct {
+// simpleWindowExpr is a shared implementation for parameterless window functions
+// (ROW_NUMBER, RANK, DENSE_RANK, PERCENT_RANK, CUME_DIST).
+type simpleWindowExpr struct {
 	*baseWindowExpr
 }
 
-func (rn *rowNumberExpr) Over() WindowFrameablePartitionBuilder {
-	return rn.over()
-}
-
-type rankExpr struct {
-	*baseWindowExpr
-}
-
-func (rn *rankExpr) Over() WindowFrameablePartitionBuilder {
-	return rn.over()
-}
-
-type denseRankExpr struct {
-	*baseWindowExpr
-}
-
-func (rn *denseRankExpr) Over() WindowFrameablePartitionBuilder {
-	return rn.over()
-}
-
-type percentRankExpr struct {
-	*baseWindowExpr
-}
-
-func (rn *percentRankExpr) Over() WindowFrameablePartitionBuilder {
-	return rn.over()
-}
-
-type cumeDistExpr struct {
-	*baseWindowExpr
-}
-
-func (rn *cumeDistExpr) Over() WindowFrameablePartitionBuilder {
-	return rn.over()
+func (s *simpleWindowExpr) Over() WindowFrameablePartitionBuilder {
+	return s.over()
 }
 
 type nTileExpr struct {
@@ -881,7 +851,7 @@ func (wc *windowCountExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte,
 }
 
 type windowSumExpr struct {
-	*sumExpr[WindowSumBuilder]
+	*distinctableAggExpr[WindowSumBuilder]
 	*baseWindowExpr
 }
 
@@ -890,13 +860,13 @@ func (ws *windowSumExpr) Over() WindowFrameablePartitionBuilder {
 }
 
 func (ws *windowSumExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
-	ws.funcExpr = ws.sumExpr
+	ws.funcExpr = ws.distinctableAggExpr
 
 	return ws.baseWindowExpr.AppendQuery(gen, b)
 }
 
 type windowAvgExpr struct {
-	*avgExpr[WindowAvgBuilder]
+	*distinctableAggExpr[WindowAvgBuilder]
 	*baseWindowExpr
 }
 
@@ -905,13 +875,13 @@ func (wa *windowAvgExpr) Over() WindowFrameablePartitionBuilder {
 }
 
 func (wa *windowAvgExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
-	wa.funcExpr = wa.avgExpr
+	wa.funcExpr = wa.distinctableAggExpr
 
 	return wa.baseWindowExpr.AppendQuery(gen, b)
 }
 
 type windowMinExpr struct {
-	*minExpr[WindowMinBuilder]
+	*simpleAggExpr[WindowMinBuilder]
 	*baseWindowExpr
 }
 
@@ -920,13 +890,13 @@ func (wm *windowMinExpr) Over() WindowFrameablePartitionBuilder {
 }
 
 func (wm *windowMinExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
-	wm.funcExpr = wm.minExpr
+	wm.funcExpr = wm.simpleAggExpr
 
 	return wm.baseWindowExpr.AppendQuery(gen, b)
 }
 
 type windowMaxExpr struct {
-	*maxExpr[WindowMaxBuilder]
+	*simpleAggExpr[WindowMaxBuilder]
 	*baseWindowExpr
 }
 
@@ -935,7 +905,7 @@ func (wm *windowMaxExpr) Over() WindowFrameablePartitionBuilder {
 }
 
 func (wm *windowMaxExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
-	wm.funcExpr = wm.maxExpr
+	wm.funcExpr = wm.simpleAggExpr
 
 	return wm.baseWindowExpr.AppendQuery(gen, b)
 }
@@ -1031,7 +1001,7 @@ func (wj *windowJSONArrayAggExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ 
 }
 
 type windowBitOrExpr struct {
-	*bitOrExpr[WindowBitOrBuilder]
+	*dialectAggExpr[WindowBitOrBuilder]
 	*baseWindowExpr
 }
 
@@ -1040,13 +1010,13 @@ func (wb *windowBitOrExpr) Over() WindowFrameablePartitionBuilder {
 }
 
 func (wb *windowBitOrExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
-	wb.funcExpr = wb.bitOrExpr
+	wb.funcExpr = wb.dialectAggExpr
 
 	return wb.baseWindowExpr.AppendQuery(gen, b)
 }
 
 type windowBitAndExpr struct {
-	*bitAndExpr[WindowBitAndBuilder]
+	*dialectAggExpr[WindowBitAndBuilder]
 	*baseWindowExpr
 }
 
@@ -1055,13 +1025,13 @@ func (wb *windowBitAndExpr) Over() WindowFrameablePartitionBuilder {
 }
 
 func (wb *windowBitAndExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
-	wb.funcExpr = wb.bitAndExpr
+	wb.funcExpr = wb.dialectAggExpr
 
 	return wb.baseWindowExpr.AppendQuery(gen, b)
 }
 
 type windowBoolOrExpr struct {
-	*boolOrExpr[WindowBoolOrBuilder]
+	*dialectAggExpr[WindowBoolOrBuilder]
 	*baseWindowExpr
 }
 
@@ -1070,13 +1040,13 @@ func (wb *windowBoolOrExpr) Over() WindowFrameablePartitionBuilder {
 }
 
 func (wb *windowBoolOrExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
-	wb.funcExpr = wb.boolOrExpr
+	wb.funcExpr = wb.dialectAggExpr
 
 	return wb.baseWindowExpr.AppendQuery(gen, b)
 }
 
 type windowBoolAndExpr struct {
-	*boolAndExpr[WindowBoolAndBuilder]
+	*dialectAggExpr[WindowBoolAndBuilder]
 	*baseWindowExpr
 }
 
@@ -1085,54 +1055,38 @@ func (wb *windowBoolAndExpr) Over() WindowFrameablePartitionBuilder {
 }
 
 func (wb *windowBoolAndExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
-	wb.funcExpr = wb.boolAndExpr
+	wb.funcExpr = wb.dialectAggExpr
 
 	return wb.baseWindowExpr.AppendQuery(gen, b)
 }
 
-func newRowNumberExpr(eb ExprBuilder) *rowNumberExpr {
-	return &rowNumberExpr{
+func newSimpleWindowExpr(eb ExprBuilder, funcName string) *simpleWindowExpr {
+	return &simpleWindowExpr{
 		baseWindowExpr: &baseWindowExpr{
 			eb:       eb,
-			funcName: "ROW_NUMBER",
+			funcName: funcName,
 		},
 	}
 }
 
-func newRankExpr(eb ExprBuilder) *rankExpr {
-	return &rankExpr{
-		baseWindowExpr: &baseWindowExpr{
-			eb:       eb,
-			funcName: "RANK",
-		},
-	}
+func newRowNumberExpr(eb ExprBuilder) *simpleWindowExpr {
+	return newSimpleWindowExpr(eb, "ROW_NUMBER")
 }
 
-func newDenseRankExpr(eb ExprBuilder) *denseRankExpr {
-	return &denseRankExpr{
-		baseWindowExpr: &baseWindowExpr{
-			eb:       eb,
-			funcName: "DENSE_RANK",
-		},
-	}
+func newRankExpr(eb ExprBuilder) *simpleWindowExpr {
+	return newSimpleWindowExpr(eb, "RANK")
 }
 
-func newPercentRankExpr(eb ExprBuilder) *percentRankExpr {
-	return &percentRankExpr{
-		baseWindowExpr: &baseWindowExpr{
-			eb:       eb,
-			funcName: "PERCENT_RANK",
-		},
-	}
+func newDenseRankExpr(eb ExprBuilder) *simpleWindowExpr {
+	return newSimpleWindowExpr(eb, "DENSE_RANK")
 }
 
-func newCumeDistExpr(eb ExprBuilder) *cumeDistExpr {
-	return &cumeDistExpr{
-		baseWindowExpr: &baseWindowExpr{
-			eb:       eb,
-			funcName: "CUME_DIST",
-		},
-	}
+func newPercentRankExpr(eb ExprBuilder) *simpleWindowExpr {
+	return newSimpleWindowExpr(eb, "PERCENT_RANK")
+}
+
+func newCumeDistExpr(eb ExprBuilder) *simpleWindowExpr {
+	return newSimpleWindowExpr(eb, "CUME_DIST")
 }
 
 func newNTileExpr(eb ExprBuilder) *nTileExpr {
@@ -1247,7 +1201,7 @@ func newWindowSumExpr(qb QueryBuilder) *windowSumExpr {
 		},
 	}
 
-	expr.sumExpr = newGenericSumExpr[WindowSumBuilder](expr, qb)
+	expr.distinctableAggExpr = newGenericDistinctableAggExpr[WindowSumBuilder](expr, qb, "SUM")
 
 	return expr
 }
@@ -1259,7 +1213,7 @@ func newWindowAvgExpr(qb QueryBuilder) *windowAvgExpr {
 		},
 	}
 
-	expr.avgExpr = newGenericAvgExpr[WindowAvgBuilder](expr, qb)
+	expr.distinctableAggExpr = newGenericDistinctableAggExpr[WindowAvgBuilder](expr, qb, "AVG")
 
 	return expr
 }
@@ -1271,7 +1225,7 @@ func newWindowMinExpr(qb QueryBuilder) *windowMinExpr {
 		},
 	}
 
-	expr.minExpr = newGenericMinExpr[WindowMinBuilder](expr, qb)
+	expr.simpleAggExpr = newGenericSimpleAggExpr[WindowMinBuilder](expr, qb, "MIN")
 
 	return expr
 }
@@ -1283,7 +1237,7 @@ func newWindowMaxExpr(qb QueryBuilder) *windowMaxExpr {
 		},
 	}
 
-	expr.maxExpr = newGenericMaxExpr[WindowMaxBuilder](expr, qb)
+	expr.simpleAggExpr = newGenericSimpleAggExpr[WindowMaxBuilder](expr, qb, "MAX")
 
 	return expr
 }
@@ -1367,7 +1321,7 @@ func newWindowBitOrExpr(qb QueryBuilder) *windowBitOrExpr {
 		},
 	}
 
-	expr.bitOrExpr = newGenericBitOrExpr[WindowBitOrBuilder](expr, qb)
+	expr.dialectAggExpr = newGenericDialectAggExpr[WindowBitOrBuilder](expr, qb, bitOrStrategy)
 
 	return expr
 }
@@ -1379,7 +1333,7 @@ func newWindowBitAndExpr(qb QueryBuilder) *windowBitAndExpr {
 		},
 	}
 
-	expr.bitAndExpr = newGenericBitAndExpr[WindowBitAndBuilder](expr, qb)
+	expr.dialectAggExpr = newGenericDialectAggExpr[WindowBitAndBuilder](expr, qb, bitAndStrategy)
 
 	return expr
 }
@@ -1391,7 +1345,7 @@ func newWindowBoolOrExpr(qb QueryBuilder) *windowBoolOrExpr {
 		},
 	}
 
-	expr.boolOrExpr = newGenericBoolOrExpr[WindowBoolOrBuilder](expr, qb)
+	expr.dialectAggExpr = newGenericDialectAggExpr[WindowBoolOrBuilder](expr, qb, boolOrStrategy)
 
 	return expr
 }
@@ -1403,7 +1357,7 @@ func newWindowBoolAndExpr(qb QueryBuilder) *windowBoolAndExpr {
 		},
 	}
 
-	expr.boolAndExpr = newGenericBoolAndExpr[WindowBoolAndBuilder](expr, qb)
+	expr.dialectAggExpr = newGenericDialectAggExpr[WindowBoolAndBuilder](expr, qb, boolAndStrategy)
 
 	return expr
 }

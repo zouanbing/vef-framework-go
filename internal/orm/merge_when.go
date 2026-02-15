@@ -63,17 +63,17 @@ type mergeWhenBuilder struct {
 }
 
 func newMergeWhenBuilder(query *BunMergeQuery, srcAlias, when string, builder ...func(ConditionBuilder)) *mergeWhenBuilder {
-	wb := &mergeWhenBuilder{
-		srcAlias: srcAlias,
-		parent:   query,
-		when:     when,
-	}
-
+	var cb func(ConditionBuilder)
 	if len(builder) > 0 {
-		wb.cb = builder[0]
+		cb = builder[0]
 	}
 
-	return wb
+	return &mergeWhenBuilder{
+		parent:   query,
+		srcAlias: srcAlias,
+		when:     when,
+		cb:       cb,
+	}
 }
 
 // buildWhenExpr constructs the WHEN condition expression for the MERGE statement.
@@ -156,8 +156,7 @@ func (b *mergeUpdateBuilder) Set(column string, value any) MergeUpdateBuilder {
 }
 
 func (b *mergeUpdateBuilder) SetExpr(column string, builder func(ExprBuilder) any) MergeUpdateBuilder {
-	expr := builder(b.eb)
-	setExpr := b.eb.Expr("? = ?", bun.Name(column), expr)
+	setExpr := b.eb.Expr("? = ?", bun.Name(column), builder(b.eb))
 	b.setExprs = append(b.setExprs, setExpr)
 
 	return b
@@ -231,10 +230,9 @@ func (b *mergeInsertBuilder) Value(column string, value any) MergeInsertBuilder 
 }
 
 func (b *mergeInsertBuilder) ValueExpr(column string, builder func(ExprBuilder) any) MergeInsertBuilder {
-	valueExpr := builder(b.eb)
 	b.values = append(b.values, columnValuePair{
 		column: column,
-		value:  valueExpr,
+		value:  builder(b.eb),
 	})
 
 	return b

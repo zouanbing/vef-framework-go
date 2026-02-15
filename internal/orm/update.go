@@ -198,6 +198,19 @@ func (q *BunUpdateQuery) ColumnExpr(name string, builder func(ExprBuilder) any) 
 }
 
 func (q *BunUpdateQuery) Set(name string, value any) UpdateQuery {
+	q.setColumn(name, value)
+
+	return q
+}
+
+func (q *BunUpdateQuery) SetExpr(name string, builder func(ExprBuilder) any) UpdateQuery {
+	q.setColumn(name, builder(q.eb))
+
+	return q
+}
+
+// setColumn applies a SET clause using qualified or simple column names based on dialect support.
+func (q *BunUpdateQuery) setColumn(name string, value any) {
 	if q.query.DB().HasFeature(feature.UpdateMultiTable) {
 		q.query.Set("? = ?", q.eb.Column(name), value)
 	} else {
@@ -205,20 +218,6 @@ func (q *BunUpdateQuery) Set(name string, value any) UpdateQuery {
 	}
 
 	q.hasSet = true
-
-	return q
-}
-
-func (q *BunUpdateQuery) SetExpr(name string, builder func(ExprBuilder) any) UpdateQuery {
-	if q.query.DB().HasFeature(feature.UpdateMultiTable) {
-		q.query.Set("? = ?", q.eb.Column(name), builder(q.eb))
-	} else {
-		q.query.Set("? = ?", bun.Name(name), builder(q.eb))
-	}
-
-	q.hasSet = true
-
-	return q
 }
 
 func (q *BunUpdateQuery) OmitZero() UpdateQuery {

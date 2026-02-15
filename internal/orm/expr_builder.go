@@ -133,16 +133,16 @@ func (b *QueryExprBuilder) Multiply(left, right any) schema.QueryAppender {
 }
 
 // Divide creates a division expression (left / right).
-// Note: To ensure consistent float results across all databases, we cast to REAL/DOUBLE/NUMERIC.
+// To ensure consistent float results across all databases, we cast to REAL/DOUBLE/NUMERIC.
 // This prevents integer division behavior in SQLite and PostgreSQL.
 func (b *QueryExprBuilder) Divide(left, right any) schema.QueryAppender {
-	castDivide := func() schema.QueryAppender {
+	decimalDivide := func() schema.QueryAppender {
 		return b.Expr("? / ?", b.ToDecimal(left), b.ToDecimal(right))
 	}
 
 	return b.ExprByDialect(DialectExprs{
-		SQLite:   castDivide,
-		Postgres: castDivide,
+		SQLite:   decimalDivide,
+		Postgres: decimalDivide,
 		Default: func() schema.QueryAppender {
 			return b.Expr("? / ?", left, right)
 		},
@@ -762,21 +762,17 @@ func (b *QueryExprBuilder) ConcatWithSep(separator any, args ...any) schema.Quer
 }
 
 func (b *QueryExprBuilder) SubString(expr, start any, length ...any) schema.QueryAppender {
+	substringFn := func(fnName string) schema.QueryAppender {
+		if len(length) > 0 {
+			return b.Expr(fnName+"(?, ?, ?)", expr, start, length[0])
+		}
+
+		return b.Expr(fnName+"(?, ?)", expr, start)
+	}
+
 	return b.ExprByDialect(DialectExprs{
-		SQLite: func() schema.QueryAppender {
-			if len(length) > 0 {
-				return b.Expr("SUBSTR(?, ?, ?)", expr, start, length[0])
-			}
-
-			return b.Expr("SUBSTR(?, ?)", expr, start)
-		},
-		Default: func() schema.QueryAppender {
-			if len(length) > 0 {
-				return b.Expr("SUBSTRING(?, ?, ?)", expr, start, length[0])
-			}
-
-			return b.Expr("SUBSTRING(?, ?)", expr, start)
-		},
+		SQLite:  func() schema.QueryAppender { return substringFn("SUBSTR") },
+		Default: func() schema.QueryAppender { return substringFn("SUBSTRING") },
 	})
 }
 
@@ -991,69 +987,40 @@ func (b *QueryExprBuilder) sqliteLocalTS(expr any) schema.QueryAppender {
 	return b.Expr("SUBSTR(?, 1, 19)", expr)
 }
 
-func (b *QueryExprBuilder) ExtractYear(expr any) schema.QueryAppender {
+// extractPart builds a dialect-aware EXTRACT expression.
+// For SQLite, it uses STRFTIME with the given format code and casts the result to INTEGER.
+// For other databases, it uses EXTRACT(part FROM expr).
+func (b *QueryExprBuilder) extractPart(sqlPart, sqliteFormat string, expr any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		SQLite: func() schema.QueryAppender {
 			return b.ToInteger(
-				b.Expr("STRFTIME(?, ?)", "%Y", b.sqliteLocalTS(expr)),
+				b.Expr("STRFTIME(?, ?)", sqliteFormat, b.sqliteLocalTS(expr)),
 			)
 		},
 		Default: func() schema.QueryAppender {
-			return b.Expr("EXTRACT(YEAR FROM ?)", expr)
+			return b.Expr("EXTRACT("+sqlPart+" FROM ?)", expr)
 		},
 	})
+}
+
+func (b *QueryExprBuilder) ExtractYear(expr any) schema.QueryAppender {
+	return b.extractPart("YEAR", "%Y", expr)
 }
 
 func (b *QueryExprBuilder) ExtractMonth(expr any) schema.QueryAppender {
-	return b.ExprByDialect(DialectExprs{
-		SQLite: func() schema.QueryAppender {
-			return b.ToInteger(
-				b.Expr("STRFTIME(?, ?)", "%m", b.sqliteLocalTS(expr)),
-			)
-		},
-		Default: func() schema.QueryAppender {
-			return b.Expr("EXTRACT(MONTH FROM ?)", expr)
-		},
-	})
+	return b.extractPart("MONTH", "%m", expr)
 }
 
 func (b *QueryExprBuilder) ExtractDay(expr any) schema.QueryAppender {
-	return b.ExprByDialect(DialectExprs{
-		SQLite: func() schema.QueryAppender {
-			return b.ToInteger(
-				b.Expr("STRFTIME(?, ?)", "%d", b.sqliteLocalTS(expr)),
-			)
-		},
-		Default: func() schema.QueryAppender {
-			return b.Expr("EXTRACT(DAY FROM ?)", expr)
-		},
-	})
+	return b.extractPart("DAY", "%d", expr)
 }
 
 func (b *QueryExprBuilder) ExtractHour(expr any) schema.QueryAppender {
-	return b.ExprByDialect(DialectExprs{
-		SQLite: func() schema.QueryAppender {
-			return b.ToInteger(
-				b.Expr("STRFTIME(?, ?)", "%H", b.sqliteLocalTS(expr)),
-			)
-		},
-		Default: func() schema.QueryAppender {
-			return b.Expr("EXTRACT(HOUR FROM ?)", expr)
-		},
-	})
+	return b.extractPart("HOUR", "%H", expr)
 }
 
 func (b *QueryExprBuilder) ExtractMinute(expr any) schema.QueryAppender {
-	return b.ExprByDialect(DialectExprs{
-		SQLite: func() schema.QueryAppender {
-			return b.ToInteger(
-				b.Expr("STRFTIME(?, ?)", "%M", b.sqliteLocalTS(expr)),
-			)
-		},
-		Default: func() schema.QueryAppender {
-			return b.Expr("EXTRACT(MINUTE FROM ?)", expr)
-		},
-	})
+	return b.extractPart("MINUTE", "%M", expr)
 }
 
 func (b *QueryExprBuilder) ExtractSecond(expr any) schema.QueryAppender {
@@ -1191,49 +1158,27 @@ func (b *QueryExprBuilder) DateDiff(start, end any, unit DateTimeUnit) schema.Qu
 			}
 		},
 		SQLite: func() schema.QueryAppender {
-			nStart := b.sqliteNormalizeTS(start)
+			// Compute julianday difference once; scale by unit-specific factor
+			dayDiff := b.Subtract(
+				b.Expr("JULIANDAY(?)", b.sqliteNormalizeTS(end)),
+				b.Expr("JULIANDAY(?)", b.sqliteNormalizeTS(start)),
+			)
 
-			nEnd := b.sqliteNormalizeTS(end)
 			switch unit {
 			case UnitSecond:
-				// (JULIANDAY difference) * 86400 seconds per day
-				return b.Multiply(
-					b.Paren(b.Subtract(b.Expr("JULIANDAY(?)", nEnd), b.Expr("JULIANDAY(?)", nStart))),
-					86400,
-				)
-
+				return b.Multiply(b.Paren(dayDiff), 86400)
 			case UnitMinute:
-				// (JULIANDAY difference) * 1440 minutes per day
-				return b.Multiply(
-					b.Paren(b.Subtract(b.Expr("JULIANDAY(?)", nEnd), b.Expr("JULIANDAY(?)", nStart))),
-					1440,
-				)
-
+				return b.Multiply(b.Paren(dayDiff), 1440)
 			case UnitHour:
-				// (JULIANDAY difference) * 24 hours per day
-				return b.Multiply(
-					b.Paren(b.Subtract(b.Expr("JULIANDAY(?)", nEnd), b.Expr("JULIANDAY(?)", nStart))),
-					24,
-				)
-
+				return b.Multiply(b.Paren(dayDiff), 24)
 			case UnitMonth:
-				// Approximate: (JULIANDAY difference) / 30.44 days per month
-				return b.Divide(
-					b.Paren(b.Subtract(b.Expr("JULIANDAY(?)", nEnd), b.Expr("JULIANDAY(?)", nStart))),
-					30.44,
-				)
-
+				return b.Divide(b.Paren(dayDiff), 30.44)
 			case UnitYear:
-				// Approximate: (JULIANDAY difference) / 365.25 days per year
-				return b.Divide(
-					b.Paren(b.Subtract(b.Expr("JULIANDAY(?)", nEnd), b.Expr("JULIANDAY(?)", nStart))),
-					365.25,
-				)
-
+				return b.Divide(b.Paren(dayDiff), 365.25)
 			case UnitDay:
 				fallthrough
 			default:
-				return b.Subtract(b.Expr("JULIANDAY(?)", nEnd), b.Expr("JULIANDAY(?)", nStart))
+				return dayDiff
 			}
 		},
 		Default: func() schema.QueryAppender {
@@ -1355,23 +1300,25 @@ func (b *QueryExprBuilder) Round(expr any, precision ...any) schema.QueryAppende
 }
 
 func (b *QueryExprBuilder) Trunc(expr any, precision ...any) schema.QueryAppender {
+	hasPrecision := len(precision) > 0
+
 	return b.ExprByDialect(DialectExprs{
 		SQLite: func() schema.QueryAppender {
-			if len(precision) > 0 {
+			if hasPrecision {
 				return b.Round(expr, precision[0])
 			}
 
 			return b.ToInteger(expr)
 		},
 		MySQL: func() schema.QueryAppender {
-			if len(precision) > 0 {
+			if hasPrecision {
 				return b.Expr("TRUNCATE(?, ?)", expr, precision[0])
 			}
 
 			return b.Expr("TRUNCATE(?, 0)", expr)
 		},
 		Default: func() schema.QueryAppender {
-			if len(precision) > 0 {
+			if hasPrecision {
 				return b.Expr("TRUNC(?, ?)", expr, precision[0])
 			}
 
@@ -1552,9 +1499,6 @@ func (b *QueryExprBuilder) ToInteger(expr any) schema.QueryAppender {
 		MySQL: func() schema.QueryAppender {
 			return b.Expr("CAST(? AS SIGNED INTEGER)", expr)
 		},
-		SQLite: func() schema.QueryAppender {
-			return b.Expr("CAST(? AS INTEGER)", expr)
-		},
 		Default: func() schema.QueryAppender {
 			return b.Expr("CAST(? AS INTEGER)", expr)
 		},
@@ -1564,34 +1508,27 @@ func (b *QueryExprBuilder) ToInteger(expr any) schema.QueryAppender {
 func (b *QueryExprBuilder) ToDecimal(expr any, precision ...any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
-			if len(precision) >= 2 {
-				return b.Expr("?::NUMERIC(?, ?)", b.Paren(expr), precision[0], precision[1])
-			} else if len(precision) == 1 {
+			switch len(precision) {
+			case 0:
+				return b.Expr("?::NUMERIC", b.Paren(expr))
+			case 1:
 				return b.Expr("?::NUMERIC(?)", b.Paren(expr), precision[0])
+			default:
+				return b.Expr("?::NUMERIC(?, ?)", b.Paren(expr), precision[0], precision[1])
 			}
-
-			return b.Expr("?::NUMERIC", b.Paren(expr))
-		},
-		MySQL: func() schema.QueryAppender {
-			if len(precision) >= 2 {
-				return b.Expr("CAST(? AS DECIMAL(?, ?))", expr, precision[0], precision[1])
-			} else if len(precision) == 1 {
-				return b.Expr("CAST(? AS DECIMAL(?))", expr, precision[0])
-			}
-
-			return b.Expr("CAST(? AS DECIMAL)", expr)
 		},
 		SQLite: func() schema.QueryAppender {
 			return b.Expr("CAST(? AS REAL)", expr)
 		},
 		Default: func() schema.QueryAppender {
-			if len(precision) >= 2 {
-				return b.Expr("CAST(? AS DECIMAL(?, ?))", expr, precision[0], precision[1])
-			} else if len(precision) == 1 {
+			switch len(precision) {
+			case 0:
+				return b.Expr("CAST(? AS DECIMAL)", expr)
+			case 1:
 				return b.Expr("CAST(? AS DECIMAL(?))", expr, precision[0])
+			default:
+				return b.Expr("CAST(? AS DECIMAL(?, ?))", expr, precision[0], precision[1])
 			}
-
-			return b.Expr("CAST(? AS DECIMAL)", expr)
 		},
 	})
 }
@@ -1600,9 +1537,6 @@ func (b *QueryExprBuilder) ToFloat(expr any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
 			return b.Expr("?::DOUBLE PRECISION", b.Paren(expr))
-		},
-		MySQL: func() schema.QueryAppender {
-			return b.Expr("CAST(? AS DOUBLE)", expr)
 		},
 		SQLite: func() schema.QueryAppender {
 			return b.Expr("CAST(? AS REAL)", expr)
@@ -1796,15 +1730,14 @@ func (b *QueryExprBuilder) JSONExtract(json, path any) schema.QueryAppender {
 }
 
 func (b *QueryExprBuilder) JSONUnquote(expr any) schema.QueryAppender {
-	passThrough := func() schema.QueryAppender {
-		return b.Expr("?", expr)
-	}
-
+	// PostgreSQL #>> already returns unquoted text; SQLite JSON_EXTRACT returns unquoted scalars.
+	// Only MySQL requires explicit JSON_UNQUOTE.
 	return b.ExprByDialect(DialectExprs{
-		Postgres: passThrough,
-		SQLite:   passThrough,
-		Default: func() schema.QueryAppender {
+		MySQL: func() schema.QueryAppender {
 			return b.Expr("JSON_UNQUOTE(?)", expr)
+		},
+		Default: func() schema.QueryAppender {
+			return b.Expr("?", expr)
 		},
 	})
 }
@@ -2086,16 +2019,14 @@ func (b *QueryExprBuilder) Decode(args ...any) schema.QueryAppender {
 		return b.Null()
 	}
 
-	convertToCase := func() schema.QueryAppender {
-		return b.convertDecodeToCase(args...)
-	}
-
+	// Most databases don't support DECODE natively; Oracle does.
+	// For PostgreSQL, MySQL, SQLite: convert to CASE WHEN expression.
 	return b.ExprByDialect(DialectExprs{
-		Postgres: convertToCase,
-		MySQL:    convertToCase,
-		SQLite:   convertToCase,
-		Default: func() schema.QueryAppender {
+		Oracle: func() schema.QueryAppender {
 			return b.Expr("DECODE(?)", newExpressions(", ", args...))
+		},
+		Default: func() schema.QueryAppender {
+			return b.convertDecodeToCase(args...)
 		},
 	})
 }

@@ -81,27 +81,17 @@ func (p *PKField) Set(model, value any) error {
 }
 
 func (*PKField) validateModel(model any) (reflect.Value, error) {
-	if value, ok := model.(reflect.Value); ok {
-		if value.Kind() == reflect.Pointer {
-			value = value.Elem()
-			if value.Kind() != reflect.Struct {
-				return reflect.Value{}, ErrModelMustBePointerToStruct
-			}
-		} else {
-			if value.Kind() != reflect.Struct || !value.CanAddr() {
-				return reflect.Value{}, ErrModelMustBePointerToStruct
-			}
-		}
-
-		return value, nil
+	value, ok := model.(reflect.Value)
+	if !ok {
+		value = reflect.ValueOf(model)
 	}
 
-	value := reflect.ValueOf(model)
-	if value.Kind() != reflect.Pointer {
+	if value.Kind() == reflect.Pointer {
+		value = value.Elem()
+	} else if !value.CanAddr() {
 		return reflect.Value{}, ErrModelMustBePointerToStruct
 	}
 
-	value = value.Elem()
 	if value.Kind() != reflect.Struct {
 		return reflect.Value{}, ErrModelMustBePointerToStruct
 	}
@@ -147,9 +137,9 @@ func parsePKColumnsAndValues(method string, table *schema.Table, pk any, alias .
 		aliasToUse = bun.Safe(alias[0])
 	}
 
-	columns := make([]bun.Safe, 0, len(pks))
-	for _, p := range pks {
-		columns = append(columns, p.SQLName)
+	columns := make([]bun.Safe, len(pks))
+	for i, p := range pks {
+		columns[i] = p.SQLName
 	}
 
 	var values []any

@@ -171,8 +171,7 @@ func (q *BunInsertQuery) Column(name string, value any) InsertQuery {
 }
 
 func (q *BunInsertQuery) ColumnExpr(name string, builder func(ExprBuilder) any) InsertQuery {
-	expr := builder(q.eb)
-	q.query.Value(name, "?", expr)
+	q.query.Value(name, "?", builder(q.eb))
 
 	return q
 }

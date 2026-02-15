@@ -43,18 +43,14 @@ func (b *BaseQueryBuilder) ExprBuilder() ExprBuilder {
 
 // CreateSubQuery creates a new subquery from the given bun.SelectQuery.
 func (b *BaseQueryBuilder) CreateSubQuery(subQuery *bun.SelectQuery) SelectQuery {
-	eb := &QueryExprBuilder{
-		qb: b,
-	}
-	queryBuilder := newQueryBuilder(b.db, b.dialect, subQuery, eb)
+	eb := &QueryExprBuilder{}
 	query := &BunSelectQuery{
-		QueryBuilder: queryBuilder,
-
-		db:         b.db,
-		dialect:    b.dialect,
-		query:      subQuery,
-		eb:         eb,
-		isSubQuery: true,
+		QueryBuilder: newQueryBuilder(b.db, b.dialect, subQuery, eb),
+		db:           b.db,
+		dialect:      b.dialect,
+		query:        subQuery,
+		eb:           eb,
+		isSubQuery:   true,
 	}
 	eb.qb = query
 
@@ -64,14 +60,11 @@ func (b *BaseQueryBuilder) CreateSubQuery(subQuery *bun.SelectQuery) SelectQuery
 // BuildSubQuery constructs a subquery using a builder function.
 func (b *BaseQueryBuilder) BuildSubQuery(builder func(query SelectQuery)) *bun.SelectQuery {
 	subQuery := b.query.NewSelect()
-	wrappedQuery := b.CreateSubQuery(subQuery)
-	builder(wrappedQuery)
+	sq := b.CreateSubQuery(subQuery)
+	builder(sq)
 
 	// Apply deferred select state before returning the subquery
-	// This ensures that select operations in the subquery are properly applied
-	if sq, ok := wrappedQuery.(*BunSelectQuery); ok {
-		sq.applySelectState()
-	}
+	sq.(*BunSelectQuery).applySelectState()
 
 	return subQuery
 }
@@ -104,6 +97,37 @@ func newQueryBuilder(db *BunDB, dialect schema.Dialect, query interface {
 		db:      db,
 		dialect: dialect,
 		query:   query,
+		eb:      eb,
+	}
+}
+
+// ddlQueryAdapter wraps a DDL query that does not implement fmt.Stringer
+// so it can be used with BaseQueryBuilder.
+type ddlQueryAdapter struct {
+	bun.Query
+
+	newSelectFn func() *bun.SelectQuery
+}
+
+func (*ddlQueryAdapter) String() string                { return "" }
+func (d *ddlQueryAdapter) NewSelect() *bun.SelectQuery { return d.newSelectFn() }
+
+// newDDLQueryBuilder creates a BaseQueryBuilder for DDL queries that lack fmt.Stringer.
+func newDDLQueryBuilder(db *BunDB, dialect schema.Dialect, query interface {
+	bun.Query
+
+	NewSelect() *bun.SelectQuery
+}, eb ExprBuilder,
+) *BaseQueryBuilder {
+	adapter := &ddlQueryAdapter{
+		Query:       query,
+		newSelectFn: query.NewSelect,
+	}
+
+	return &BaseQueryBuilder{
+		db:      db,
+		dialect: dialect,
+		query:   adapter,
 		eb:      eb,
 	}
 }
