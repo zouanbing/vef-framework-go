@@ -7,14 +7,24 @@ import (
 	"github.com/uptrace/bun"
 )
 
+// BunAddColumnQuery implements the AddColumnQuery interface with type-safe DDL operations.
 type BunAddColumnQuery struct {
+	*BaseQueryBuilder
+
 	query *bun.AddColumnQuery
 }
 
+// NewAddColumnQuery creates a new AddColumnQuery with BaseQueryBuilder for expression support.
 func NewAddColumnQuery(db *BunDB) *BunAddColumnQuery {
-	return &BunAddColumnQuery{
-		query: db.db.NewAddColumn(),
+	eb := &QueryExprBuilder{}
+	bunQuery := db.db.NewAddColumn()
+	q := &BunAddColumnQuery{
+		query: bunQuery,
 	}
+	q.BaseQueryBuilder = newDDLQueryBuilder(db, db.db.Dialect(), bunQuery, eb)
+	eb.qb = q
+
+	return q
 }
 
 func (q *BunAddColumnQuery) Model(model any) AddColumnQuery {
@@ -29,8 +39,9 @@ func (q *BunAddColumnQuery) Table(tables ...string) AddColumnQuery {
 	return q
 }
 
-func (q *BunAddColumnQuery) ColumnExpr(query string, args ...any) AddColumnQuery {
-	q.query.ColumnExpr(query, args...)
+func (q *BunAddColumnQuery) Column(name string, dataType DataTypeDef, constraints ...ColumnConstraint) AddColumnQuery {
+	queryStr, args := renderColumnDef(q.Dialect(), name, dataType, constraints, q)
+	q.query.ColumnExpr(queryStr, args...)
 
 	return q
 }

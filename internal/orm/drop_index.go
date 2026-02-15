@@ -7,18 +7,20 @@ import (
 	"github.com/uptrace/bun"
 )
 
+// BunDropIndexQuery implements the DropIndexQuery interface.
 type BunDropIndexQuery struct {
 	query *bun.DropIndexQuery
 }
 
+// NewDropIndexQuery creates a new DropIndexQuery.
 func NewDropIndexQuery(db *BunDB) *BunDropIndexQuery {
 	return &BunDropIndexQuery{
 		query: db.db.NewDropIndex(),
 	}
 }
 
-func (q *BunDropIndexQuery) Index(name string, args ...any) DropIndexQuery {
-	q.query.Index(name, args...)
+func (q *BunDropIndexQuery) Index(name string) DropIndexQuery {
+	q.query.Index(name)
 
 	return q
 }

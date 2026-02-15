@@ -14,8 +14,8 @@ const (
 
 func (j JoinType) String() string {
 	switch j {
-	case JoinLeft, JoinDefault:
-		return "LEFT JOIN"
+	case JoinInner:
+		return "JOIN"
 	case JoinRight:
 		return "RIGHT JOIN"
 	case JoinFull:
@@ -23,7 +23,7 @@ func (j JoinType) String() string {
 	case JoinCross:
 		return "CROSS JOIN"
 	default:
-		return "JOIN"
+		return "LEFT JOIN"
 	}
 }
 
@@ -209,9 +209,11 @@ func (u DateTimeUnit) String() string {
 }
 
 // ForPostgres returns the PostgreSQL interval unit string.
+// Currently identical to String(); kept as a named accessor for dialect-specific extensibility.
 func (u DateTimeUnit) ForPostgres() string { return u.String() }
 
 // ForMySQL returns the MySQL interval unit string.
+// Currently identical to String(); kept as a named accessor for dialect-specific extensibility.
 func (u DateTimeUnit) ForMySQL() string { return u.String() }
 
 // ForSQLite returns the SQLite datetime modifier string (years, months, days, etc.).
@@ -247,5 +249,80 @@ func (u DateTimeUnit) ForDateTrunc() string {
 		return "second"
 	default:
 		return "day"
+	}
+}
+
+// ReferenceAction specifies the referential action for foreign key constraints.
+type ReferenceAction int
+
+const (
+	ReferenceCascade    ReferenceAction = iota // CASCADE
+	ReferenceRestrict                          // RESTRICT
+	ReferenceSetNull                           // SET NULL
+	ReferenceSetDefault                        // SET DEFAULT
+	ReferenceNoAction                          // NO ACTION
+)
+
+func (r ReferenceAction) String() string {
+	switch r {
+	case ReferenceCascade:
+		return "CASCADE"
+	case ReferenceRestrict:
+		return "RESTRICT"
+	case ReferenceSetNull:
+		return "SET NULL"
+	case ReferenceSetDefault:
+		return "SET DEFAULT"
+	default:
+		return "NO ACTION"
+	}
+}
+
+// IndexMethod specifies the index access method.
+type IndexMethod int
+
+const (
+	IndexBTree  IndexMethod = iota // All databases
+	IndexHash                      // PostgreSQL, MySQL
+	IndexGIN                       // PostgreSQL
+	IndexGiST                      // PostgreSQL
+	IndexSPGiST                    // PostgreSQL
+	IndexBRIN                      // PostgreSQL
+)
+
+func (m IndexMethod) String() string {
+	switch m {
+	case IndexHash:
+		return "HASH"
+	case IndexGIN:
+		return "GIN"
+	case IndexGiST:
+		return "GiST"
+	case IndexSPGiST:
+		return "SPGiST"
+	case IndexBRIN:
+		return "BRIN"
+	default:
+		return "BTREE"
+	}
+}
+
+// PartitionStrategy specifies the table partitioning strategy.
+type PartitionStrategy int
+
+const (
+	PartitionRange PartitionStrategy = iota // SQL:2011
+	PartitionList                           // SQL:2011
+	PartitionHash                           // SQL:2011
+)
+
+func (p PartitionStrategy) String() string {
+	switch p {
+	case PartitionList:
+		return "LIST"
+	case PartitionHash:
+		return "HASH"
+	default:
+		return "RANGE"
 	}
 }

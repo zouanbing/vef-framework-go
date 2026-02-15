@@ -7,10 +7,12 @@ import (
 	"github.com/uptrace/bun"
 )
 
+// BunTruncateTableQuery implements the TruncateTableQuery interface.
 type BunTruncateTableQuery struct {
 	query *bun.TruncateTableQuery
 }
 
+// NewTruncateTableQuery creates a new TruncateTableQuery.
 func NewTruncateTableQuery(db *BunDB) *BunTruncateTableQuery {
 	return &BunTruncateTableQuery{
 		query: db.db.NewTruncateTable(),

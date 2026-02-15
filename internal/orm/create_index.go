@@ -7,14 +7,24 @@ import (
 	"github.com/uptrace/bun"
 )
 
+// BunCreateIndexQuery implements the CreateIndexQuery interface with type-safe DDL operations.
 type BunCreateIndexQuery struct {
+	*BaseQueryBuilder
+
 	query *bun.CreateIndexQuery
 }
 
+// NewCreateIndexQuery creates a new CreateIndexQuery with BaseQueryBuilder for expression support.
 func NewCreateIndexQuery(db *BunDB) *BunCreateIndexQuery {
-	return &BunCreateIndexQuery{
-		query: db.db.NewCreateIndex(),
+	eb := &QueryExprBuilder{}
+	bunQuery := db.db.NewCreateIndex()
+	q := &BunCreateIndexQuery{
+		query: bunQuery,
 	}
+	q.BaseQueryBuilder = newDDLQueryBuilder(db, db.db.Dialect(), bunQuery, eb)
+	eb.qb = q
+
+	return q
 }
 
 func (q *BunCreateIndexQuery) Model(model any) CreateIndexQuery {
@@ -41,8 +51,9 @@ func (q *BunCreateIndexQuery) Column(columns ...string) CreateIndexQuery {
 	return q
 }
 
-func (q *BunCreateIndexQuery) ColumnExpr(query string, args ...any) CreateIndexQuery {
-	q.query.ColumnExpr(query, args...)
+func (q *BunCreateIndexQuery) ColumnExpr(builder func(ExprBuilder) any) CreateIndexQuery {
+	expr := builder(q.eb)
+	q.query.ColumnExpr("?", expr)
 
 	return q
 }
@@ -77,26 +88,15 @@ func (q *BunCreateIndexQuery) Include(columns ...string) CreateIndexQuery {
 	return q
 }
 
-func (q *BunCreateIndexQuery) IncludeExpr(query string, args ...any) CreateIndexQuery {
-	q.query.IncludeExpr(query, args...)
+func (q *BunCreateIndexQuery) Using(method IndexMethod) CreateIndexQuery {
+	q.query.Using(method.String())
 
 	return q
 }
 
-func (q *BunCreateIndexQuery) Using(query string, args ...any) CreateIndexQuery {
-	q.query.Using(query, args...)
-
-	return q
-}
-
-func (q *BunCreateIndexQuery) Where(query string, args ...any) CreateIndexQuery {
-	q.query.Where(query, args...)
-
-	return q
-}
-
-func (q *BunCreateIndexQuery) WhereOr(query string, args ...any) CreateIndexQuery {
-	q.query.WhereOr(query, args...)
+func (q *BunCreateIndexQuery) Where(builder func(ConditionBuilder)) CreateIndexQuery {
+	condition := q.BuildCondition(builder)
+	q.query.Where("?", condition)
 
 	return q
 }

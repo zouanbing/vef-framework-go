@@ -7,10 +7,12 @@ import (
 	"github.com/uptrace/bun"
 )
 
+// BunDropTableQuery implements the DropTableQuery interface.
 type BunDropTableQuery struct {
 	query *bun.DropTableQuery
 }
 
+// NewDropTableQuery creates a new DropTableQuery.
 func NewDropTableQuery(db *BunDB) *BunDropTableQuery {
 	return &BunDropTableQuery{
 		query: db.db.NewDropTable(),

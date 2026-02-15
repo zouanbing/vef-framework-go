@@ -90,6 +90,17 @@ type (
 	FirstValueBuilder           = orm.FirstValueBuilder
 	LastValueBuilder            = orm.LastValueBuilder
 	NthValueBuilder             = orm.NthValueBuilder
+
+	// DDL type-safe types.
+	DataTypeDef       = orm.DataTypeDef
+	ColumnConstraint  = orm.ColumnConstraint
+	PrimaryKeyBuilder = orm.PrimaryKeyBuilder
+	UniqueBuilder     = orm.UniqueBuilder
+	CheckBuilder      = orm.CheckBuilder
+	ForeignKeyBuilder = orm.ForeignKeyBuilder
+	ReferenceAction   = orm.ReferenceAction
+	IndexMethod       = orm.IndexMethod
+	PartitionStrategy = orm.PartitionStrategy
 )
 
 const (
@@ -181,6 +192,43 @@ const (
 	FieldUpdatedBy     = orm.FieldUpdatedBy
 	FieldCreatedByName = orm.FieldCreatedByName
 	FieldUpdatedByName = orm.FieldUpdatedByName
+
+	// ReferenceAction constants.
+	ReferenceCascade    = orm.ReferenceCascade
+	ReferenceRestrict   = orm.ReferenceRestrict
+	ReferenceSetNull    = orm.ReferenceSetNull
+	ReferenceSetDefault = orm.ReferenceSetDefault
+	ReferenceNoAction   = orm.ReferenceNoAction
+
+	// IndexMethod constants.
+	IndexBTree  = orm.IndexBTree
+	IndexHash   = orm.IndexHash
+	IndexGIN    = orm.IndexGIN
+	IndexGiST   = orm.IndexGiST
+	IndexSPGiST = orm.IndexSPGiST
+	IndexBRIN   = orm.IndexBRIN
+
+	// PartitionStrategy constants.
+	PartitionRange = orm.PartitionRange
+	PartitionList  = orm.PartitionList
+	PartitionHash  = orm.PartitionHash
 )
 
-var ApplySort = orm.ApplySort
+var (
+	ApplySort = orm.ApplySort
+
+	// DataType is the factory for creating type-safe SQL data type definitions.
+	DataType = orm.DataType
+)
+
+// DDL constraint constructors.
+var (
+	NotNull       = orm.NotNull
+	Nullable      = orm.Nullable
+	Default       = orm.Default
+	PrimaryKey    = orm.PrimaryKey
+	Unique        = orm.Unique
+	AutoIncrement = orm.AutoIncrement
+	Check         = orm.Check
+	References    = orm.References
+)
