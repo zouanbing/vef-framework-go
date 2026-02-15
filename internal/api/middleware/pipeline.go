@@ -3,8 +3,6 @@ package middleware
 import (
 	"slices"
 
-	"github.com/ilxqx/go-streams"
-
 	"github.com/ilxqx/vef-framework-go/api"
 )
 
@@ -17,14 +15,12 @@ type Chain struct {
 // The returned handlers maintain the execution order (sorted by Order ascending),
 // ensuring that middlewares with lower Order() values execute first.
 func (c *Chain) Handlers() []any {
-	return streams.
-		MapTo(
-			streams.FromSlice(c.middlewares),
-			func(mid api.Middleware) any {
-				return mid.Process
-			},
-		).
-		Collect()
+	handlers := make([]any, len(c.middlewares))
+	for i, mid := range c.middlewares {
+		handlers[i] = mid.Process
+	}
+
+	return handlers
 }
 
 // NewChain creates a new middleware chain with the given middlewares.

@@ -2,6 +2,7 @@ package resolver
 
 import (
 	"fmt"
+	"math"
 	"reflect"
 	"strings"
 
@@ -70,24 +71,23 @@ func findHandlerMethod(target reflect.Value, name string) (reflect.Value, error)
 }
 
 // selectClosestMatch finds the closest match from candidates using Levenshtein distance.
+// Returns empty string if candidates is empty or multiple candidates share the same minimum distance.
 func selectClosestMatch(target string, candidates []string) string {
-	if len(candidates) == 0 {
-		return ""
-	}
-
 	var (
 		bestMatch   string
-		minDistance = -1
+		minDistance = math.MaxInt
 		ambiguous   bool
 	)
 
 	for _, candidate := range candidates {
 		distance := edlib.LevenshteinDistance(target, candidate)
-		if minDistance < 0 || distance < minDistance {
+
+		switch {
+		case distance < minDistance:
 			minDistance = distance
 			bestMatch = candidate
 			ambiguous = false
-		} else if distance == minDistance {
+		case distance == minDistance:
 			ambiguous = true
 		}
 	}
@@ -100,23 +100,21 @@ func selectClosestMatch(target string, candidates []string) string {
 }
 
 func validateHandlerSignature(method reflect.Type) error {
-	numOut := method.NumOut()
-
-	if numOut == 0 {
+	switch method.NumOut() {
+	case 0:
 		return nil
-	}
-
-	if numOut == 1 {
+	case 1:
 		if method.Out(0) == errorType {
 			return nil
 		}
 
 		return fmt.Errorf("%w: %q -> %q",
 			shared.ErrHandlerInvalidReturnType, method.String(), method.Out(0).String())
-	}
 
-	return fmt.Errorf("%w: %q has %d returns",
-		shared.ErrHandlerTooManyReturns, method.String(), numOut)
+	default:
+		return fmt.Errorf("%w: %q has %d returns",
+			shared.ErrHandlerTooManyReturns, method.String(), method.NumOut())
+	}
 }
 
 // isHandlerFactory checks for factory signatures that return handler closures.

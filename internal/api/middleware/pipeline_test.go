@@ -15,138 +15,87 @@ type mockMiddleware struct {
 	order int
 }
 
-func (m *mockMiddleware) Name() string {
-	return m.name
-}
+func (m *mockMiddleware) Name() string              { return m.name }
+func (m *mockMiddleware) Order() int                { return m.order }
+func (*mockMiddleware) Process(ctx fiber.Ctx) error { return ctx.Next() }
 
-func (m *mockMiddleware) Order() int {
-	return m.order
-}
-
-func (*mockMiddleware) Process(ctx fiber.Ctx) error {
-	return ctx.Next()
-}
+var _ api.Middleware = (*mockMiddleware)(nil)
 
 func TestNewChain(t *testing.T) {
-	t.Log("Testing NewChain constructor")
-
-	t.Run("EmptyChain", func(t *testing.T) {
+	t.Run("Empty", func(t *testing.T) {
 		chain := NewChain()
-		assert.NotNil(t, chain, "NewChain should return a non-nil chain")
+		assert.NotNil(t, chain)
+		assert.Empty(t, chain.Handlers())
 	})
 
-	t.Run("SingleMiddleware", func(t *testing.T) {
-		mid := &mockMiddleware{name: "test", order: 1}
-		chain := NewChain(mid)
-		assert.NotNil(t, chain, "Chain should not be nil")
-	})
-
-	t.Run("MultipleMiddlewares", func(t *testing.T) {
-		mid1 := &mockMiddleware{name: "first", order: 1}
-		mid2 := &mockMiddleware{name: "second", order: 2}
-		mid3 := &mockMiddleware{name: "third", order: 3}
-
-		chain := NewChain(mid1, mid2, mid3)
-		assert.NotNil(t, chain, "Chain should not be nil")
-	})
-
-	t.Run("SortsMiddlewaresByOrder", func(t *testing.T) {
-		mid1 := &mockMiddleware{name: "high", order: 100}
-		mid2 := &mockMiddleware{name: "low", order: -100}
-		mid3 := &mockMiddleware{name: "medium", order: 0}
-
-		chain := NewChain(mid1, mid2, mid3)
+	t.Run("Single", func(t *testing.T) {
+		chain := NewChain(&mockMiddleware{name: "test", order: 1})
 		handlers := chain.Handlers()
 
-		assert.Len(t, handlers, 3, "Should have 3 handlers")
+		assert.Len(t, handlers, 1)
+		assert.NotNil(t, handlers[0])
 	})
 
-	t.Run("NegativeOrderFirst", func(t *testing.T) {
-		mid1 := &mockMiddleware{name: "positive", order: 10}
-		mid2 := &mockMiddleware{name: "negative", order: -10}
+	t.Run("SortsByOrder", func(t *testing.T) {
+		high := &mockMiddleware{name: "high", order: 100}
+		low := &mockMiddleware{name: "low", order: -100}
+		mid := &mockMiddleware{name: "mid", order: 0}
 
-		chain := NewChain(mid1, mid2)
-		handlers := chain.Handlers()
+		chain := NewChain(high, low, mid)
 
-		assert.Len(t, handlers, 2, "Should have 2 handlers")
+		// Verify internal ordering: low(-100) < mid(0) < high(100)
+		assert.Equal(t, "low", chain.middlewares[0].Name())
+		assert.Equal(t, "mid", chain.middlewares[1].Name())
+		assert.Equal(t, "high", chain.middlewares[2].Name())
+	})
+
+	t.Run("DoesNotMutateInput", func(t *testing.T) {
+		mids := []api.Middleware{
+			&mockMiddleware{name: "b", order: 2},
+			&mockMiddleware{name: "a", order: 1},
+		}
+
+		NewChain(mids...)
+
+		// Original slice should be unmodified
+		assert.Equal(t, "b", mids[0].Name())
+		assert.Equal(t, "a", mids[1].Name())
 	})
 }
 
 func TestChainHandlers(t *testing.T) {
-	t.Log("Testing Chain.Handlers method")
+	t.Run("ReturnsCorrectCount", func(t *testing.T) {
+		chain := NewChain(
+			&mockMiddleware{name: "a", order: 1},
+			&mockMiddleware{name: "b", order: 2},
+		)
 
-	t.Run("EmptyChainReturnsEmptySlice", func(t *testing.T) {
-		chain := NewChain()
-		handlers := chain.Handlers()
-
-		assert.Empty(t, handlers, "Empty chain should return empty handlers")
+		assert.Len(t, chain.Handlers(), 2)
 	})
 
-	t.Run("ReturnsCorrectNumberOfHandlers", func(t *testing.T) {
-		mid1 := &mockMiddleware{name: "first", order: 1}
-		mid2 := &mockMiddleware{name: "second", order: 2}
+	t.Run("HandlerTypesAreFiberHandler", func(t *testing.T) {
+		chain := NewChain(&mockMiddleware{name: "test", order: 1})
 
-		chain := NewChain(mid1, mid2)
-		handlers := chain.Handlers()
-
-		assert.Len(t, handlers, 2, "Should return 2 handlers")
-	})
-
-	t.Run("HandlersAreNotNil", func(t *testing.T) {
-		mid := &mockMiddleware{name: "test", order: 1}
-		chain := NewChain(mid)
-		handlers := chain.Handlers()
-
-		for i, h := range handlers {
-			assert.NotNil(t, h, "Handler %d should not be nil", i)
-		}
-	})
-
-	t.Run("HandlersAreFunctions", func(t *testing.T) {
-		mid := &mockMiddleware{name: "test", order: 1}
-		chain := NewChain(mid)
-		handlers := chain.Handlers()
-
-		for i, h := range handlers {
+		for i, h := range chain.Handlers() {
 			_, ok := h.(func(fiber.Ctx) error)
-			assert.True(t, ok, "Handler %d should be a function", i)
+			assert.True(t, ok, "Handler %d should be func(fiber.Ctx) error", i)
 		}
-	})
-}
-
-func TestChainOrdering(t *testing.T) {
-	t.Log("Testing Chain middleware ordering")
-
-	t.Run("PreservesOrderWithSameValue", func(t *testing.T) {
-		mid1 := &mockMiddleware{name: "first", order: 0}
-		mid2 := &mockMiddleware{name: "second", order: 0}
-
-		chain := NewChain(mid1, mid2)
-		handlers := chain.Handlers()
-
-		assert.Len(t, handlers, 2, "Should have 2 handlers")
 	})
 
 	t.Run("TypicalMiddlewareOrdering", func(t *testing.T) {
-		// Simulate typical middleware ordering
 		auth := &mockMiddleware{name: "auth", order: -100}
 		contextual := &mockMiddleware{name: "contextual", order: -90}
-		rateLimit := &mockMiddleware{name: "ratelimit", order: -80}
-		audit := &mockMiddleware{name: "audit", order: -70}
+		dataPermission := &mockMiddleware{name: "data_permission", order: -80}
+		rateLimit := &mockMiddleware{name: "ratelimit", order: -70}
+		audit := &mockMiddleware{name: "audit", order: -60}
 
-		chain := NewChain(audit, auth, rateLimit, contextual)
-		handlers := chain.Handlers()
+		// Pass in shuffled order
+		chain := NewChain(audit, auth, rateLimit, contextual, dataPermission)
 
-		assert.Len(t, handlers, 4, "Should have 4 handlers")
-	})
-}
-
-func TestChainImplementsInterface(t *testing.T) {
-	t.Log("Testing Chain interface compliance")
-
-	t.Run("MiddlewareImplementsApiMiddleware", func(t *testing.T) {
-		var _ api.Middleware = (*mockMiddleware)(nil)
-
-		assert.True(t, true, "mockMiddleware should implement api.Middleware")
+		assert.Equal(t, "auth", chain.middlewares[0].Name())
+		assert.Equal(t, "contextual", chain.middlewares[1].Name())
+		assert.Equal(t, "data_permission", chain.middlewares[2].Name())
+		assert.Equal(t, "ratelimit", chain.middlewares[3].Name())
+		assert.Equal(t, "audit", chain.middlewares[4].Name())
 	})
 }

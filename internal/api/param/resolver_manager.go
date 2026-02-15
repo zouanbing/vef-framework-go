@@ -58,34 +58,24 @@ func (m *HandlerParamResolverManager) Resolve(target reflect.Value, paramType re
 	return nil, fmt.Errorf("%w: %s", ErrResolveHandlerParamType, paramType.String())
 }
 
+type decodable interface {
+	Decode(out any) error
+}
+
 func buildParamsResolver(paramType reflect.Type) HandlerParamResolverFunc {
-	t := reflectx.Indirect(paramType)
-
-	return func(ctx fiber.Ctx) (reflect.Value, error) {
-		req := shared.Request(ctx)
-		if req == nil {
-			return reflect.Value{}, fmt.Errorf("%w: %w", ErrResolveHandlerParamType, ErrRequestNotFound)
-		}
-
-		paramValue := reflect.New(t)
-		if err := req.Params.Decode(paramValue.Interface()); err != nil {
-			return reflect.Value{}, err
-		}
-
-		if err := validator.Validate(paramValue.Interface()); err != nil {
-			return reflect.Value{}, err
-		}
-
-		if paramType.Kind() == reflect.Pointer {
-			return paramValue, nil
-		}
-
-		return paramValue.Elem(), nil
-	}
+	return buildRequestFieldResolver(paramType, func(req *api.Request) decodable { return req.Params })
 }
 
 func buildMetaResolver(metaType reflect.Type) HandlerParamResolverFunc {
-	t := reflectx.Indirect(metaType)
+	return buildRequestFieldResolver(metaType, func(req *api.Request) decodable { return req.Meta })
+}
+
+func buildRequestFieldResolver(
+	targetType reflect.Type,
+	fieldAccessor func(*api.Request) decodable,
+) HandlerParamResolverFunc {
+	elemType := reflectx.Indirect(targetType)
+	isPtr := targetType.Kind() == reflect.Pointer
 
 	return func(ctx fiber.Ctx) (reflect.Value, error) {
 		req := shared.Request(ctx)
@@ -93,20 +83,20 @@ func buildMetaResolver(metaType reflect.Type) HandlerParamResolverFunc {
 			return reflect.Value{}, fmt.Errorf("%w: %w", ErrResolveHandlerParamType, ErrRequestNotFound)
 		}
 
-		metaValue := reflect.New(t)
-		if err := req.Meta.Decode(metaValue.Interface()); err != nil {
+		value := reflect.New(elemType)
+		if err := fieldAccessor(req).Decode(value.Interface()); err != nil {
 			return reflect.Value{}, err
 		}
 
-		if err := validator.Validate(metaValue.Interface()); err != nil {
+		if err := validator.Validate(value.Interface()); err != nil {
 			return reflect.Value{}, err
 		}
 
-		if metaType.Kind() == reflect.Pointer {
-			return metaValue, nil
+		if isPtr {
+			return value, nil
 		}
 
-		return metaValue.Elem(), nil
+		return value.Elem(), nil
 	}
 }
 

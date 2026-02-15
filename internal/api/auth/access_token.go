@@ -7,8 +7,14 @@ import (
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
+// AccessTokenAuthenticator delegates token authentication to the security.AuthManager.
 type AccessTokenAuthenticator struct {
 	manager security.AuthManager
+}
+
+// NewAccessTokenAuthenticator creates a new access token authenticator.
+func NewAccessTokenAuthenticator(manager security.AuthManager) TokenAuthenticator {
+	return &AccessTokenAuthenticator{manager: manager}
 }
 
 func (a *AccessTokenAuthenticator) Authenticate(ctx context.Context, token string) (*security.Principal, error) {
@@ -16,10 +22,4 @@ func (a *AccessTokenAuthenticator) Authenticate(ctx context.Context, token strin
 		Kind:      isecurity.AuthKindToken,
 		Principal: token,
 	})
-}
-
-func NewAccessTokenAuthenticator(manager security.AuthManager) TokenAuthenticator {
-	return &AccessTokenAuthenticator{
-		manager: manager,
-	}
 }

@@ -89,8 +89,8 @@ func (a *FuncHandler) createHandler(factory, target reflect.Value) (reflect.Valu
 	}
 }
 
-func (a *FuncHandler) buildHandler(handler, target reflect.Value) (fiber.Handler, error) {
-	hType := handler.Type()
+func (a *FuncHandler) buildHandler(h, target reflect.Value) (fiber.Handler, error) {
+	hType := h.Type()
 	numIn := hType.NumIn()
 	resolvers := make([]param.HandlerParamResolverFunc, numIn)
 
@@ -104,15 +104,17 @@ func (a *FuncHandler) buildHandler(handler, target reflect.Value) (fiber.Handler
 	}
 
 	return func(ctx fiber.Ctx) error {
-		params := make([]reflect.Value, numIn)
-		for i, resolverFn := range resolvers {
-			var err error
-			if params[i], err = resolverFn(ctx); err != nil {
+		args := make([]reflect.Value, numIn)
+		for i, resolve := range resolvers {
+			val, err := resolve(ctx)
+			if err != nil {
 				return err
 			}
+
+			args[i] = val
 		}
 
-		results := handler.Call(params)
+		results := h.Call(args)
 		if len(results) == 0 || results[0].IsNil() {
 			return nil
 		}

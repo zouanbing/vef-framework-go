@@ -1,7 +1,6 @@
 package api
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"time"
@@ -18,10 +17,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-var (
-	ErrNoHandlerAdapter = errors.New("no handler adapter found")
-	logger              = log.Named("api")
-)
+var logger = log.Named("api")
 
 type EngineOption func(*engine)
 
@@ -130,6 +126,7 @@ func (e *engine) Register(resources ...api.Resource) error {
 // Mount attaches the engine to a Fiber router.
 func (e *engine) Mount(router fiber.Router) error {
 	e.router = router
+
 	for rs := range e.routerOperations.SeqKeys() {
 		if err := rs.Setup(router); err != nil {
 			return fmt.Errorf("failed to setup router %s: %w", rs.Name(), err)
@@ -138,18 +135,9 @@ func (e *engine) Mount(router fiber.Router) error {
 
 	for rs, ops := range e.routerOperations.Seq() {
 		for identifier := range ops.Seq() {
-			op, ok := e.operations.Get(identifier)
-			if !ok {
-				return fmt.Errorf("%w: %s", shared.ErrOperationNotFound, identifier)
+			if err := e.mountOperation(rs, identifier); err != nil {
+				return err
 			}
-
-			handler, err := e.adaptHandler(op)
-			if err != nil {
-				return fmt.Errorf("failed to adapt handler for %s: %w", identifier, err)
-			}
-
-			wh := e.wrapHandlerIfNecessary(handler, op)
-			rs.Route(wh, op)
 		}
 	}
 
@@ -169,15 +157,12 @@ func (e *engine) registerResource(res api.Resource) error {
 		return shared.ErrResourceNil
 	}
 
-	resourceName := res.Name()
-	if resourceName == "" {
+	if res.Name() == "" {
 		return shared.ErrResourceNameEmpty
 	}
 
 	for _, collector := range e.collectors {
-		specs := collector.Collect(res)
-
-		for _, spec := range specs {
+		for _, spec := range collector.Collect(res) {
 			if err := e.registerOperation(res, spec); err != nil {
 				return err
 			}
@@ -192,18 +177,6 @@ func (e *engine) registerOperation(res api.Resource, spec api.OperationSpec) err
 		return fmt.Errorf("%w for resource %s", shared.ErrOperationActionEmpty, res.Name())
 	}
 
-	resName := res.Name()
-	resVersion := lo.CoalesceOrEmpty(res.Version(), e.defaultVersion, api.VersionV1)
-
-	ac := e.resolveAuthConfig(res, spec)
-	if spec.PermToken != "" {
-		if ac.Options == nil {
-			ac.Options = make(map[string]any)
-		}
-
-		ac.Options[shared.AuthOptionPermToken] = spec.PermToken
-	}
-
 	rs := e.findRouterStrategy(res.Kind())
 	if rs == nil {
 		return fmt.Errorf("%w: %s", shared.ErrNoRouterForKind, res.Kind())
@@ -211,31 +184,15 @@ func (e *engine) registerOperation(res api.Resource, spec api.OperationSpec) err
 
 	h, err := e.resolveHandler(spec, res)
 	if err != nil {
-		return fmt.Errorf("failed to resolve handler for %s:%s: %w", resName, spec.Action, err)
+		return fmt.Errorf("failed to resolve handler for %s:%s: %w", res.Name(), spec.Action, err)
 	}
 
-	op := &api.Operation{
-		Identifier: api.Identifier{
-			Resource: resName,
-			Action:   spec.Action,
-			Version:  resVersion,
-		},
-		Auth:        ac,
-		Timeout:     e.resolveTimeout(spec.Timeout),
-		RateLimit:   e.resolveRateLimit(spec.RateLimit),
-		EnableAudit: spec.EnableAudit,
-		Meta: map[string]any{
-			shared.MetaKeyResource: res,
-		},
-		Handler: h,
-	}
+	op := e.buildOperation(res, spec, h)
 
 	if existing, inserted := e.operations.PutIfAbsent(op.Identifier, op); !inserted {
 		return &shared.DuplicateError{
-			BaseError: shared.BaseError{
-				Identifier: &op.Identifier,
-			},
-			Existing: existing,
+			BaseError: shared.BaseError{Identifier: &op.Identifier},
+			Existing:  existing,
 		}
 	}
 
@@ -247,18 +204,60 @@ func (e *engine) registerOperation(res api.Resource, spec api.OperationSpec) err
 	operations.AddIfAbsent(op.Identifier)
 
 	if e.router != nil {
-		handler, err := e.adaptHandler(op)
-		if err != nil {
-			return fmt.Errorf("failed to adapt handler for %s: %w", op.Identifier, err)
+		if err := e.mountOperation(rs, op.Identifier); err != nil {
+			return err
 		}
-
-		rs.Route(e.wrapHandlerIfNecessary(handler, op), op)
 	}
 
 	logger.Infof("Registered %s operation: resource=%s, action=%s, version=%s, type=%s, auth=%s, audit=%v",
 		rs.Name(),
 		op.Resource, op.Action, op.Version,
 		reflect.TypeOf(res).String(), op.Auth.Strategy, op.EnableAudit)
+
+	return nil
+}
+
+// buildOperation constructs an api.Operation from a resource and spec.
+func (e *engine) buildOperation(res api.Resource, spec api.OperationSpec, handler any) *api.Operation {
+	ac := e.resolveAuthConfig(res, spec)
+	if spec.PermToken != "" {
+		if ac.Options == nil {
+			ac.Options = make(map[string]any)
+		}
+
+		ac.Options[shared.AuthOptionPermToken] = spec.PermToken
+	}
+
+	return &api.Operation{
+		Identifier: api.Identifier{
+			Resource: res.Name(),
+			Action:   spec.Action,
+			Version:  lo.CoalesceOrEmpty(res.Version(), e.defaultVersion, api.VersionV1),
+		},
+		Auth:        ac,
+		Timeout:     e.resolveTimeout(spec.Timeout),
+		RateLimit:   e.resolveRateLimit(spec.RateLimit),
+		EnableAudit: spec.EnableAudit,
+		Meta: map[string]any{
+			shared.MetaKeyResource: res,
+		},
+		Handler: handler,
+	}
+}
+
+// mountOperation adapts and routes a single operation.
+func (e *engine) mountOperation(rs api.RouterStrategy, identifier api.Identifier) error {
+	op, ok := e.operations.Get(identifier)
+	if !ok {
+		return fmt.Errorf("%w: %s", shared.ErrOperationNotFound, identifier)
+	}
+
+	handler, err := e.adaptHandler(op)
+	if err != nil {
+		return fmt.Errorf("failed to adapt handler for %s: %w", identifier, err)
+	}
+
+	rs.Route(e.wrapHandlerIfNecessary(handler, op), op)
 
 	return nil
 }
@@ -333,7 +332,7 @@ func (e *engine) adaptHandler(op *api.Operation) (fiber.Handler, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("%w: %T", ErrNoHandlerAdapter, op.Handler)
+	return nil, fmt.Errorf("%w: %T", shared.ErrNoHandlerAdapterFound, op.Handler)
 }
 
 func (*engine) wrapHandlerIfNecessary(handler fiber.Handler, op *api.Operation) fiber.Handler {

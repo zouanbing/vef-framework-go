@@ -1,9 +1,6 @@
 package api_test
 
 import (
-	"context"
-	"io"
-	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -16,48 +13,12 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/i18n"
-	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/internal/apptest"
 	"github.com/ilxqx/vef-framework-go/password"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
 )
-
-// RESTMockUserLoader is a mock implementation of security.UserLoader for REST testing.
-type RESTMockUserLoader struct {
-	mock.Mock
-}
-
-func (m *RESTMockUserLoader) LoadByUsername(ctx context.Context, username string) (*security.Principal, string, error) {
-	args := m.Called(ctx, username)
-	if args.Get(0) == nil {
-		return nil, args.String(1), args.Error(2)
-	}
-
-	return args.Get(0).(*security.Principal), args.String(1), args.Error(2)
-}
-
-func (m *RESTMockUserLoader) LoadByID(ctx context.Context, id string) (*security.Principal, error) {
-	args := m.Called(ctx, id)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-
-	return args.Get(0).(*security.Principal), args.Error(1)
-}
-
-// RESTMockPermissionChecker is a mock implementation of security.PermissionChecker.
-type RESTMockPermissionChecker struct {
-	mock.Mock
-}
-
-func (m *RESTMockPermissionChecker) HasPermission(ctx context.Context, principal *security.Principal, permToken string) (bool, error) {
-	args := m.Called(ctx, principal, permToken)
-
-	return args.Bool(0), args.Error(1)
-}
 
 // TestRESTResource is a test resource for REST API testing.
 type TestRESTResource struct {
@@ -262,13 +223,10 @@ func (*TestRESTResource) Panic(_ fiber.Ctx) error {
 
 // RESTEngineTestSuite tests REST API engine functionality.
 type RESTEngineTestSuite struct {
-	suite.Suite
+	apptest.Suite
 
-	ctx               context.Context
-	app               *app.App
-	stop              func()
-	userLoader        *RESTMockUserLoader
-	permissionChecker *RESTMockPermissionChecker
+	userLoader        *MockUserLoader
+	permissionChecker *MockPermissionChecker
 	jwtSecret         string
 	testUser          *security.Principal
 	adminUser         *security.Principal
@@ -278,7 +236,6 @@ type RESTEngineTestSuite struct {
 func (suite *RESTEngineTestSuite) SetupSuite() {
 	suite.T().Log("Setting up RESTEngineTestSuite")
 
-	suite.ctx = context.Background()
 	suite.jwtSecret = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 
 	suite.testUser = security.NewUser("user001", "Test User", "admin", "user")
@@ -297,8 +254,8 @@ func (suite *RESTEngineTestSuite) SetupSuite() {
 	suite.hashedPassword, err = password.NewBcryptEncoder().Encode("password123")
 	suite.Require().NoError(err)
 
-	suite.userLoader = new(RESTMockUserLoader)
-	suite.permissionChecker = new(RESTMockPermissionChecker)
+	suite.userLoader = new(MockUserLoader)
+	suite.permissionChecker = new(MockPermissionChecker)
 
 	suite.setupTestApp()
 
@@ -307,11 +264,7 @@ func (suite *RESTEngineTestSuite) SetupSuite() {
 
 func (suite *RESTEngineTestSuite) TearDownSuite() {
 	suite.T().Log("Tearing down RESTEngineTestSuite")
-
-	if suite.stop != nil {
-		suite.stop()
-	}
-
+	suite.TearDownApp()
 	suite.T().Log("RESTEngineTestSuite teardown complete")
 }
 
@@ -352,8 +305,7 @@ func (suite *RESTEngineTestSuite) setupTestApp() {
 		Return(true, nil).
 		Maybe()
 
-	suite.app, suite.stop = apptest.NewTestApp(
-		suite.T(),
+	suite.SetupApp(
 		fx.Supply(
 			fx.Annotate(
 				suite.userLoader,
@@ -382,62 +334,8 @@ func (suite *RESTEngineTestSuite) setupTestApp() {
 	)
 }
 
-func (suite *RESTEngineTestSuite) makeRESTRequest(method, path, body string) *http.Response {
-	var req *http.Request
-	if body != "" {
-		req = httptest.NewRequest(method, path, strings.NewReader(body))
-		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-	} else {
-		req = httptest.NewRequest(method, path, nil)
-	}
-
-	resp, err := suite.app.Test(req, 30*time.Second)
-	suite.Require().NoError(err)
-
-	return resp
-}
-
-func (suite *RESTEngineTestSuite) makeRESTRequestWithToken(method, path, body, token string) *http.Response {
-	var req *http.Request
-	if body != "" {
-		req = httptest.NewRequest(method, path, strings.NewReader(body))
-		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-	} else {
-		req = httptest.NewRequest(method, path, nil)
-	}
-
-	req.Header.Set(fiber.HeaderAuthorization, security.AuthSchemeBearer+" "+token)
-
-	resp, err := suite.app.Test(req, 30*time.Second)
-	suite.Require().NoError(err)
-
-	return resp
-}
-
-func (suite *RESTEngineTestSuite) readBody(resp *http.Response) result.Result {
-	body, err := io.ReadAll(resp.Body)
-	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			suite.T().Errorf("failed to close response body: %v", closeErr)
-		}
-	}()
-
-	suite.Require().NoError(err)
-	res, err := encoding.FromJSON[result.Result](string(body))
-	suite.Require().NoError(err)
-
-	return *res
-}
-
-func (suite *RESTEngineTestSuite) readDataAsMap(data any) map[string]any {
-	m, ok := data.(map[string]any)
-	suite.Require().True(ok, "Data should be a map")
-
-	return m
-}
-
 func (suite *RESTEngineTestSuite) login() string {
-	jsonBody, err := encoding.ToJSON(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "login",
@@ -449,24 +347,17 @@ func (suite *RESTEngineTestSuite) login() string {
 			"credentials": "password123",
 		},
 	})
-	suite.Require().NoError(err)
 
-	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
-	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-
-	resp, err := suite.app.Test(req, 30*time.Second)
-	suite.Require().NoError(err)
-
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Login should succeed")
 
-	tokens := suite.readDataAsMap(body.Data)
+	tokens := suite.ReadDataAsMap(body.Data)
 
 	return tokens["accessToken"].(string)
 }
 
 func (suite *RESTEngineTestSuite) loginAsAdmin() string {
-	jsonBody, err := encoding.ToJSON(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "login",
@@ -478,18 +369,11 @@ func (suite *RESTEngineTestSuite) loginAsAdmin() string {
 			"credentials": "password123",
 		},
 	})
-	suite.Require().NoError(err)
 
-	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
-	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-
-	resp, err := suite.app.Test(req, 30*time.Second)
-	suite.Require().NoError(err)
-
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Admin login should succeed")
 
-	tokens := suite.readDataAsMap(body.Data)
+	tokens := suite.ReadDataAsMap(body.Data)
 
 	return tokens["accessToken"].(string)
 }
@@ -497,14 +381,14 @@ func (suite *RESTEngineTestSuite) loginAsAdmin() string {
 func (suite *RESTEngineTestSuite) TestGetList() {
 	suite.T().Log("Testing GET list endpoint")
 
-	resp := suite.makeRESTRequest(fiber.MethodGet, "/api/items", "")
+	resp := suite.MakeRESTRequest(fiber.MethodGet, "/api/items", "")
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "GET list should succeed")
 
-	data := suite.readDataAsMap(body.Data)
+	data := suite.ReadDataAsMap(body.Data)
 	suite.NotNil(data["items"], "Should have items")
 	suite.Equal("1", data["page"], "Default page should be 1")
 	suite.Equal("10", data["size"], "Default size should be 10")
@@ -513,14 +397,14 @@ func (suite *RESTEngineTestSuite) TestGetList() {
 func (suite *RESTEngineTestSuite) TestGetListWithQueryParams() {
 	suite.T().Log("Testing GET list with query parameters")
 
-	resp := suite.makeRESTRequest(fiber.MethodGet, "/api/items?keyword=test&page=2&size=20", "")
+	resp := suite.MakeRESTRequest(fiber.MethodGet, "/api/items?keyword=test&page=2&size=20", "")
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "GET list should succeed")
 
-	data := suite.readDataAsMap(body.Data)
+	data := suite.ReadDataAsMap(body.Data)
 	suite.Equal("test", data["keyword"], "Keyword should match")
 	suite.Equal("2", data["page"], "Page should match")
 	suite.Equal("20", data["size"], "Size should match")
@@ -529,14 +413,14 @@ func (suite *RESTEngineTestSuite) TestGetListWithQueryParams() {
 func (suite *RESTEngineTestSuite) TestGetByID() {
 	suite.T().Log("Testing GET by ID endpoint")
 
-	resp := suite.makeRESTRequest(fiber.MethodGet, "/api/items?id=123", "")
+	resp := suite.MakeRESTRequest(fiber.MethodGet, "/api/items?id=123", "")
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "GET by ID should succeed")
 
-	data := suite.readDataAsMap(body.Data)
+	data := suite.ReadDataAsMap(body.Data)
 	suite.Equal("123", data["id"], "ID should match")
 	suite.Equal("Item 123", data["name"], "Name should match")
 }
@@ -544,11 +428,11 @@ func (suite *RESTEngineTestSuite) TestGetByID() {
 func (suite *RESTEngineTestSuite) TestGetByIDNotFound() {
 	suite.T().Log("Testing GET by ID not found")
 
-	resp := suite.makeRESTRequest(fiber.MethodGet, "/api/items?id=notfound", "")
+	resp := suite.MakeRESTRequest(fiber.MethodGet, "/api/items?id=notfound", "")
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "GET by ID should fail for not found")
 	suite.Equal(result.ErrCodeRecordNotFound, body.Code, "Should return record not found error")
 }
@@ -556,14 +440,14 @@ func (suite *RESTEngineTestSuite) TestGetByIDNotFound() {
 func (suite *RESTEngineTestSuite) TestPostCreate() {
 	suite.T().Log("Testing POST create endpoint")
 
-	resp := suite.makeRESTRequest(fiber.MethodPost, "/api/items", `{"name":"New Item","price":100}`)
+	resp := suite.MakeRESTRequest(fiber.MethodPost, "/api/items", `{"name":"New Item","price":100}`)
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "POST create should succeed")
 
-	data := suite.readDataAsMap(body.Data)
+	data := suite.ReadDataAsMap(body.Data)
 	suite.Equal("new-id", data["id"], "Should have generated ID")
 	suite.Equal("New Item", data["name"], "Name should match")
 	suite.Equal(float64(100), data["price"], "Price should match")
@@ -572,11 +456,11 @@ func (suite *RESTEngineTestSuite) TestPostCreate() {
 func (suite *RESTEngineTestSuite) TestPostCreateInvalidBody() {
 	suite.T().Log("Testing POST create with invalid body")
 
-	resp := suite.makeRESTRequest(fiber.MethodPost, "/api/items", "{invalid json}")
+	resp := suite.MakeRESTRequest(fiber.MethodPost, "/api/items", "{invalid json}")
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "POST create should fail with invalid body")
 	suite.Equal(result.ErrCodeBadRequest, body.Code, "Should return bad request error")
 }
@@ -584,7 +468,7 @@ func (suite *RESTEngineTestSuite) TestPostCreateInvalidBody() {
 func (suite *RESTEngineTestSuite) TestPutUpdateWithoutToken() {
 	suite.T().Log("Testing PUT update without token")
 
-	resp := suite.makeRESTRequest(fiber.MethodPut, "/api/items", `{"id":"123","name":"Updated Item"}`)
+	resp := suite.MakeRESTRequest(fiber.MethodPut, "/api/items", `{"id":"123","name":"Updated Item"}`)
 
 	suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 }
@@ -594,14 +478,14 @@ func (suite *RESTEngineTestSuite) TestPutUpdateWithToken() {
 
 	token := suite.login()
 
-	resp := suite.makeRESTRequestWithToken(fiber.MethodPut, "/api/items", `{"id":"123","name":"Updated Item"}`, token)
+	resp := suite.MakeRESTRequestWithToken(fiber.MethodPut, "/api/items", `{"id":"123","name":"Updated Item"}`, token)
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "PUT update should succeed")
 
-	data := suite.readDataAsMap(body.Data)
+	data := suite.ReadDataAsMap(body.Data)
 	suite.Equal("123", data["id"], "ID should match")
 	suite.Equal("Updated Item", data["name"], "Name should match")
 	suite.Equal("user001", data["updatedBy"], "UpdatedBy should match principal ID")
@@ -610,7 +494,7 @@ func (suite *RESTEngineTestSuite) TestPutUpdateWithToken() {
 func (suite *RESTEngineTestSuite) TestDeleteWithoutToken() {
 	suite.T().Log("Testing DELETE without token")
 
-	resp := suite.makeRESTRequest(fiber.MethodDelete, "/api/items?id=123", "")
+	resp := suite.MakeRESTRequest(fiber.MethodDelete, "/api/items?id=123", "")
 
 	suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 }
@@ -620,14 +504,14 @@ func (suite *RESTEngineTestSuite) TestDeleteWithToken() {
 
 	token := suite.login()
 
-	resp := suite.makeRESTRequestWithToken(fiber.MethodDelete, "/api/items?id=123", "", token)
+	resp := suite.MakeRESTRequestWithToken(fiber.MethodDelete, "/api/items?id=123", "", token)
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "DELETE should succeed")
 
-	data := suite.readDataAsMap(body.Data)
+	data := suite.ReadDataAsMap(body.Data)
 	suite.Equal("123", data["id"], "ID should match")
 	suite.Equal("user001", data["deletedBy"], "DeletedBy should match principal ID")
 }
@@ -637,14 +521,14 @@ func (suite *RESTEngineTestSuite) TestPatchWithPermission() {
 
 	token := suite.login()
 
-	resp := suite.makeRESTRequestWithToken(fiber.MethodPatch, "/api/items", `{"id":"123","status":"active"}`, token)
+	resp := suite.MakeRESTRequestWithToken(fiber.MethodPatch, "/api/items", `{"id":"123","status":"active"}`, token)
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "PATCH should succeed with permission")
 
-	data := suite.readDataAsMap(body.Data)
+	data := suite.ReadDataAsMap(body.Data)
 	suite.Equal("123", data["id"], "ID should match")
 	suite.Equal("active", data["status"], "Status should match")
 	suite.Equal(true, data["patched"], "Patched flag should be true")
@@ -653,7 +537,7 @@ func (suite *RESTEngineTestSuite) TestPatchWithPermission() {
 func (suite *RESTEngineTestSuite) TestRouteNotFound() {
 	suite.T().Log("Testing route not found")
 
-	resp := suite.makeRESTRequest(fiber.MethodGet, "/api/nonexistent", "")
+	resp := suite.MakeRESTRequest(fiber.MethodGet, "/api/nonexistent", "")
 
 	// REST router returns 404 for unmatched routes since each route has its own middleware
 	suite.Equal(404, resp.StatusCode, "Should return 404 Not Found for unmatched route")
@@ -662,7 +546,7 @@ func (suite *RESTEngineTestSuite) TestRouteNotFound() {
 func (suite *RESTEngineTestSuite) TestMethodNotAllowed() {
 	suite.T().Log("Testing method not allowed")
 
-	resp := suite.makeRESTRequest(fiber.MethodOptions, "/api/items", "")
+	resp := suite.MakeRESTRequest(fiber.MethodOptions, "/api/items", "")
 
 	// REST router returns 405 Method Not Allowed for unregistered methods on existing paths
 	suite.Equal(405, resp.StatusCode, "Should return 405 Method Not Allowed for unregistered method")
@@ -671,11 +555,11 @@ func (suite *RESTEngineTestSuite) TestMethodNotAllowed() {
 func (suite *RESTEngineTestSuite) TestInvalidToken() {
 	suite.T().Log("Testing invalid token")
 
-	resp := suite.makeRESTRequestWithToken(fiber.MethodPut, "/api/items", `{"id":"123","name":"Test"}`, "invalid.token.here")
+	resp := suite.MakeRESTRequestWithToken(fiber.MethodPut, "/api/items", `{"id":"123","name":"Test"}`, "invalid.token.here")
 
 	suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should fail with invalid token")
 	suite.Equal(result.ErrCodeTokenInvalid, body.Code, "Should return token invalid error")
 }
@@ -683,11 +567,11 @@ func (suite *RESTEngineTestSuite) TestInvalidToken() {
 func (suite *RESTEngineTestSuite) TestI18nErrorMessages() {
 	suite.T().Log("Testing i18n error messages")
 
-	resp := suite.makeRESTRequest(fiber.MethodPut, "/api/items", `{"id":"123","name":"Test"}`)
+	resp := suite.MakeRESTRequest(fiber.MethodPut, "/api/items", `{"id":"123","name":"Test"}`)
 
 	suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should fail without token")
 	suite.Equal(i18n.T(result.ErrMessageUnauthenticated), body.Message, "Should return i18n translated message")
 }
@@ -698,12 +582,12 @@ func (suite *RESTEngineTestSuite) TestEmptyRequestBody() {
 	req := httptest.NewRequest(fiber.MethodPost, "/api/items", strings.NewReader(""))
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
-	resp, err := suite.app.Test(req, 30*time.Second)
+	resp, err := suite.App.Test(req, 30*time.Second)
 	suite.Require().NoError(err)
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	// Empty body is allowed for REST POST - handler receives empty params
 	suite.True(body.IsOk(), "Should succeed with empty body")
 }
@@ -716,26 +600,26 @@ func (suite *RESTEngineTestSuite) TestTokenInQueryParam() {
 	req := httptest.NewRequest(fiber.MethodPut, "/api/items?"+security.QueryKeyAccessToken+"="+token, strings.NewReader(`{"id":"123","name":"Test"}`))
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
-	resp, err := suite.app.Test(req, 30*time.Second)
+	resp, err := suite.App.Test(req, 30*time.Second)
 	suite.Require().NoError(err)
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "PUT should succeed with token in query param")
 }
 
 func (suite *RESTEngineTestSuite) TestComplexQueryParams() {
 	suite.T().Log("Testing complex query parameters")
 
-	resp := suite.makeRESTRequest(fiber.MethodGet, "/api/items?keyword=test%20item&page=1&size=10", "")
+	resp := suite.MakeRESTRequest(fiber.MethodGet, "/api/items?keyword=test%20item&page=1&size=10", "")
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "GET should succeed")
 
-	data := suite.readDataAsMap(body.Data)
+	data := suite.ReadDataAsMap(body.Data)
 	suite.Equal("test item", data["keyword"], "URL-encoded keyword should be decoded")
 }
 
@@ -744,11 +628,11 @@ func (suite *RESTEngineTestSuite) TestPermissionDenied() {
 
 	token := suite.login()
 
-	resp := suite.makeRESTRequestWithToken(fiber.MethodPost, "/api/items/admin", `{}`, token)
+	resp := suite.MakeRESTRequestWithToken(fiber.MethodPost, "/api/items/admin", `{}`, token)
 
 	suite.Equal(403, resp.StatusCode, "Should return 403 Forbidden")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should fail with permission denied")
 	suite.Equal(result.ErrCodeAccessDenied, body.Code, "Should return access denied error code")
 }
@@ -758,14 +642,14 @@ func (suite *RESTEngineTestSuite) TestAdminWithPermission() {
 
 	token := suite.loginAsAdmin()
 
-	resp := suite.makeRESTRequestWithToken(fiber.MethodPost, "/api/items/admin", `{}`, token)
+	resp := suite.MakeRESTRequestWithToken(fiber.MethodPost, "/api/items/admin", `{}`, token)
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Admin action should succeed with permission")
 
-	data := suite.readDataAsMap(body.Data)
+	data := suite.ReadDataAsMap(body.Data)
 	suite.Equal("admin", data["action"], "Action should be admin")
 	suite.Equal(true, data["admin"], "Admin flag should be true")
 }
@@ -776,11 +660,11 @@ func (suite *RESTEngineTestSuite) TestPutMissingRequiredID() {
 	token := suite.login()
 
 	// PUT without id in body
-	resp := suite.makeRESTRequestWithToken(fiber.MethodPut, "/api/items", `{"name":"Test"}`, token)
+	resp := suite.MakeRESTRequestWithToken(fiber.MethodPut, "/api/items", `{"name":"Test"}`, token)
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should fail with validation error")
 	suite.Equal(result.ErrCodeBadRequest, body.Code, "Should return bad request error code")
 }
@@ -791,11 +675,11 @@ func (suite *RESTEngineTestSuite) TestDeleteMissingRequiredID() {
 	token := suite.login()
 
 	// DELETE without id - send empty JSON body
-	resp := suite.makeRESTRequestWithToken(fiber.MethodDelete, "/api/items", `{}`, token)
+	resp := suite.MakeRESTRequestWithToken(fiber.MethodDelete, "/api/items", `{}`, token)
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should fail with validation error")
 	suite.Equal(result.ErrCodeBadRequest, body.Code, "Should return bad request error code")
 }
@@ -806,11 +690,11 @@ func (suite *RESTEngineTestSuite) TestPatchMissingRequiredID() {
 	token := suite.login()
 
 	// PATCH without id in body
-	resp := suite.makeRESTRequestWithToken(fiber.MethodPatch, "/api/items", `{"status":"active"}`, token)
+	resp := suite.MakeRESTRequestWithToken(fiber.MethodPatch, "/api/items", `{"status":"active"}`, token)
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should fail with validation error")
 	suite.Equal(result.ErrCodeBadRequest, body.Code, "Should return bad request error code")
 }
@@ -818,7 +702,7 @@ func (suite *RESTEngineTestSuite) TestPatchMissingRequiredID() {
 func (suite *RESTEngineTestSuite) TestHandlerPanic() {
 	suite.T().Log("Testing handler panic returns 500")
 
-	resp := suite.makeRESTRequest(fiber.MethodGet, "/api/items/panic", "")
+	resp := suite.MakeRESTRequest(fiber.MethodGet, "/api/items/panic", "")
 
 	suite.Equal(500, resp.StatusCode, "Should return 500 Internal Server Error")
 }
@@ -829,7 +713,7 @@ func (suite *RESTEngineTestSuite) TestContentTypeValidation() {
 	req := httptest.NewRequest(fiber.MethodPost, "/api/items", strings.NewReader(`{"name":"Test"}`))
 	req.Header.Set(fiber.HeaderContentType, "text/plain")
 
-	resp, err := suite.app.Test(req, 30*time.Second)
+	resp, err := suite.App.Test(req, 30*time.Second)
 	suite.Require().NoError(err)
 
 	suite.Equal(415, resp.StatusCode, "Should return 415 Unsupported Media Type")
@@ -840,11 +724,11 @@ func (suite *RESTEngineTestSuite) TestPutInvalidJSON() {
 
 	token := suite.login()
 
-	resp := suite.makeRESTRequestWithToken(fiber.MethodPut, "/api/items", "{invalid json}", token)
+	resp := suite.MakeRESTRequestWithToken(fiber.MethodPut, "/api/items", "{invalid json}", token)
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should fail with invalid JSON")
 	suite.Equal(result.ErrCodeBadRequest, body.Code, "Should return bad request error code")
 }
@@ -854,11 +738,11 @@ func (suite *RESTEngineTestSuite) TestPatchInvalidJSON() {
 
 	token := suite.login()
 
-	resp := suite.makeRESTRequestWithToken(fiber.MethodPatch, "/api/items", "{invalid json}", token)
+	resp := suite.MakeRESTRequestWithToken(fiber.MethodPatch, "/api/items", "{invalid json}", token)
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should fail with invalid JSON")
 	suite.Equal(result.ErrCodeBadRequest, body.Code, "Should return bad request error code")
 }
@@ -868,11 +752,11 @@ func (suite *RESTEngineTestSuite) TestDeleteInvalidJSON() {
 
 	token := suite.login()
 
-	resp := suite.makeRESTRequestWithToken(fiber.MethodDelete, "/api/items", "{invalid json}", token)
+	resp := suite.MakeRESTRequestWithToken(fiber.MethodDelete, "/api/items", "{invalid json}", token)
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should fail with invalid JSON")
 	suite.Equal(result.ErrCodeBadRequest, body.Code, "Should return bad request error code")
 }
@@ -892,7 +776,7 @@ func (suite *RESTEngineTestSuite) TestPermissionCheckerCalledOnPatch() {
 
 	suite.permissionChecker.Calls = nil
 
-	_ = suite.makeRESTRequestWithToken(fiber.MethodPatch, "/api/items", `{"id":"123","status":"active"}`, token)
+	_ = suite.MakeRESTRequestWithToken(fiber.MethodPatch, "/api/items", `{"id":"123","status":"active"}`, token)
 
 	suite.permissionChecker.AssertCalled(suite.T(), "HasPermission", mock.Anything, mock.Anything, "items:patch")
 }
@@ -904,7 +788,7 @@ func (suite *RESTEngineTestSuite) TestPermissionCheckerCalledOnAdmin() {
 
 	suite.permissionChecker.Calls = nil
 
-	_ = suite.makeRESTRequestWithToken(fiber.MethodPost, "/api/items/admin", `{}`, token)
+	_ = suite.MakeRESTRequestWithToken(fiber.MethodPost, "/api/items/admin", `{}`, token)
 
 	suite.permissionChecker.AssertCalled(suite.T(), "HasPermission", mock.Anything, mock.Anything, "items:admin")
 }

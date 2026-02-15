@@ -36,7 +36,7 @@ func (*Auth) Order() int {
 	return -100
 }
 
-// Process handles the authentication.
+// Process handles authentication and permission checking.
 func (m *Auth) Process(ctx fiber.Ctx) error {
 	op := shared.Operation(ctx)
 	if op == nil {
@@ -45,18 +45,14 @@ func (m *Auth) Process(ctx fiber.Ctx) error {
 		return fiber.ErrUnauthorized
 	}
 
-	return m.authenticate(ctx, op)
-}
-
-func (m *Auth) authenticate(ctx fiber.Ctx, op *api.Operation) error {
-	as, found := m.registry.Get(op.Auth.Strategy)
+	strategy, found := m.registry.Get(op.Auth.Strategy)
 	if !found {
 		contextx.Logger(ctx).Errorf("Authentication failed: %v, strategy=%s", ErrAuthStrategyNotFound, op.Auth.Strategy)
 
 		return fiber.ErrUnauthorized
 	}
 
-	principal, err := as.Authenticate(ctx, op.Auth.Options)
+	principal, err := strategy.Authenticate(ctx, op.Auth.Options)
 	if err != nil {
 		return err
 	}
@@ -72,7 +68,7 @@ func (m *Auth) checkPermission(ctx fiber.Ctx, op *api.Operation, principal *secu
 		return ctx.Next()
 	}
 
-	if permToken, ok := op.Auth.Options[shared.AuthOptionPermToken].(string); ok && permToken != "" {
+	if permToken := permTokenFromOperation(op); permToken != "" {
 		if err := m.doCheck(ctx.Context(), principal, permToken); err != nil {
 			return err
 		}
@@ -105,4 +101,13 @@ func (m *Auth) doCheck(ctx context.Context, principal *security.Principal, permT
 	}
 
 	return nil
+}
+
+// permTokenFromOperation extracts the permission token from an operation's auth options.
+func permTokenFromOperation(op *api.Operation) string {
+	if token, ok := op.Auth.Options[shared.AuthOptionPermToken].(string); ok {
+		return token
+	}
+
+	return ""
 }

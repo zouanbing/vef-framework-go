@@ -1,8 +1,6 @@
 package middleware
 
 import (
-	"strings"
-
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
@@ -53,8 +51,8 @@ func (m *Contextual) Process(ctx fiber.Ctx) error {
 	lgr := contextx.Logger(ctx)
 	if req != nil && lgr != nil {
 		scopedLogger := lgr.
-			Named(buildRequestLoggerName(req.Resource, req.Action, req.Version)).
-			Named(buildPrincipalLoggerName(principal))
+			Named(buildLoggerName(req.Resource, req.Action, req.Version)).
+			Named(buildLoggerName(string(principal.Type), principal.ID, principal.Name))
 		contextx.SetLogger(ctx, scopedLogger)
 		ctx.SetContext(contextx.SetLogger(ctx.Context(), scopedLogger))
 	}
@@ -62,30 +60,7 @@ func (m *Contextual) Process(ctx fiber.Ctx) error {
 	return ctx.Next()
 }
 
-// buildRequestLoggerName creates a logger name from request info.
-// Format: resource:action@version.
-func buildRequestLoggerName(resource, action, version string) string {
-	var sb strings.Builder
-
-	sb.WriteString(resource)
-	sb.WriteByte(':')
-	sb.WriteString(action)
-	sb.WriteByte('@')
-	sb.WriteString(version)
-
-	return sb.String()
-}
-
-// buildPrincipalLoggerName creates a logger name from principal info.
-// Format: type:id@name.
-func buildPrincipalLoggerName(principal *security.Principal) string {
-	var sb strings.Builder
-
-	sb.WriteString(string(principal.Type))
-	sb.WriteByte(':')
-	sb.WriteString(principal.ID)
-	sb.WriteByte('@')
-	sb.WriteString(principal.Name)
-
-	return sb.String()
+// buildLoggerName joins three parts into "a:b@c" format.
+func buildLoggerName(a, b, c string) string {
+	return a + ":" + b + "@" + c
 }

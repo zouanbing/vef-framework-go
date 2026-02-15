@@ -61,19 +61,7 @@ func (*BearerStrategy) Name() string {
 func (s *BearerStrategy) Authenticate(ctx fiber.Ctx, _ map[string]any) (*security.Principal, error) {
 	token, err := s.extractor.Extract(ctx)
 	if err != nil {
-		extractErr := err
-		if errors.Is(err, extractors.ErrNotFound) {
-			extractErr = fiber.ErrUnauthorized
-		}
-
-		if op := shared.Operation(ctx); op != nil {
-			return nil, &shared.BaseError{
-				Identifier: &op.Identifier,
-				Err:        extractErr,
-			}
-		}
-
-		return nil, extractErr
+		return nil, s.wrapExtractError(ctx, err)
 	}
 
 	for _, auth := range s.authenticators {
@@ -88,4 +76,16 @@ func (s *BearerStrategy) Authenticate(ctx fiber.Ctx, _ map[string]any) (*securit
 	}
 
 	return nil, ErrInvalidToken
+}
+
+func (*BearerStrategy) wrapExtractError(ctx fiber.Ctx, err error) error {
+	if errors.Is(err, extractors.ErrNotFound) {
+		err = fiber.ErrUnauthorized
+	}
+
+	if op := shared.Operation(ctx); op != nil {
+		return &shared.BaseError{Identifier: &op.Identifier, Err: err}
+	}
+
+	return err
 }

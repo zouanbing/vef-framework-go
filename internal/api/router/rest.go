@@ -60,7 +60,7 @@ func (r *REST) Route(handler fiber.Handler, op *api.Operation) {
 	fullPath := r.buildPath(op.Resource, subPath)
 
 	resolver := r.createResolver(op)
-	handlers := append(slices.Clone(r.chain.Handlers()), handler)
+	handlers := slices.Concat(r.chain.Handlers(), []any{handler})
 
 	r.group.Add([]string{method}, fullPath, resolver, handlers...)
 
@@ -86,15 +86,11 @@ func (r *REST) createResolver(op *api.Operation) fiber.Handler {
 // parseAction extracts HTTP method and sub-path from action string.
 // Format: "METHOD [/path]" (e.g., "GET", "POST /items", "DELETE /:id").
 func (*REST) parseAction(action string) (method, subPath string) {
-	parts := strings.SplitN(action, " ", 2)
-	method = strings.ToUpper(parts[0])
+	method, subPath, _ = strings.Cut(action, " ")
+	method = strings.ToUpper(method)
+	subPath = strings.TrimSpace(subPath)
 
-	if len(parts) < 2 {
-		return method, subPath
-	}
-
-	subPath = strings.TrimSpace(parts[1])
-	if !strings.HasPrefix(subPath, "/") {
+	if subPath != "" && !strings.HasPrefix(subPath, "/") {
 		subPath = "/" + subPath
 	}
 
@@ -118,7 +114,7 @@ func (r *REST) parseRequest(ctx fiber.Ctx, op *api.Operation) (*api.Request, err
 	r.extractPathParams(ctx, req)
 	r.extractQueryParams(ctx, req)
 
-	if err := r.parseBodyIfNeeded(ctx, req); err != nil {
+	if err := r.parseBody(ctx, req); err != nil {
 		return nil, err
 	}
 
@@ -148,18 +144,14 @@ func (*REST) extractQueryParams(ctx fiber.Ctx, req *api.Request) {
 	}
 }
 
-// parseBodyIfNeeded parses request body for POST/PUT/PATCH methods.
-func (r *REST) parseBodyIfNeeded(ctx fiber.Ctx, req *api.Request) error {
-	method := ctx.Method()
-	if method != fiber.MethodPost && method != fiber.MethodPut && method != fiber.MethodPatch {
+// parseBody parses request body for POST/PUT/PATCH methods based on content type.
+func (r *REST) parseBody(ctx fiber.Ctx, req *api.Request) error {
+	switch ctx.Method() {
+	case fiber.MethodPost, fiber.MethodPut, fiber.MethodPatch:
+	default:
 		return nil
 	}
 
-	return r.parseBody(ctx, req)
-}
-
-// parseBody parses request body based on content type.
-func (r *REST) parseBody(ctx fiber.Ctx, req *api.Request) error {
 	if httpx.IsJSON(ctx) {
 		return r.parseJSONBody(ctx, req)
 	}

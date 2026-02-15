@@ -66,17 +66,13 @@ func (s *SignatureStrategy) Authenticate(ctx fiber.Ctx, _ map[string]any) (*secu
 		return nil, result.ErrTimestampInvalid
 	}
 
-	credentials := &security.SignatureCredentials{
-		Timestamp: timestamp,
-		Nonce:     nonce,
-		Signature: signature,
-	}
-
-	authentication := security.Authentication{
-		Kind:        isecurity.AuthKindSignature,
-		Principal:   appID,
-		Credentials: credentials,
-	}
-
-	return s.authManager.Authenticate(ctx.Context(), authentication)
+	return s.authManager.Authenticate(ctx.Context(), security.Authentication{
+		Kind:      isecurity.AuthKindSignature,
+		Principal: appID,
+		Credentials: &security.SignatureCredentials{
+			Timestamp: timestamp,
+			Nonce:     nonce,
+			Signature: signature,
+		},
+	})
 }

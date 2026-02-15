@@ -16,6 +16,7 @@ var (
 	ErrNoRouterForKind          = errors.New("no router can handle operation type")
 	ErrNoRouterFound            = errors.New("no router found")
 	ErrNoHandlerResolverFound   = errors.New("no handler resolver found")
+	ErrNoHandlerAdapterFound    = errors.New("no handler adapter found")
 	ErrHandlerRequired          = errors.New("handler is required for REST operations")
 	ErrMethodNotFound           = errors.New("api action method not found")
 	ErrMethodAmbiguous          = errors.New("api action method matches multiple methods")
@@ -25,6 +26,11 @@ var (
 	ErrHandlerNil               = errors.New("provided handler function cannot be nil")
 )
 
+// formatIdentifier returns a formatted string for an api.Identifier.
+func formatIdentifier(id *api.Identifier) string {
+	return fmt.Sprintf("resource=%q action=%q version=%q", id.Resource, id.Action, id.Version)
+}
+
 type BaseError struct {
 	Identifier *api.Identifier
 	Err        error
@@ -32,13 +38,7 @@ type BaseError struct {
 
 func (e *BaseError) Error() string {
 	if e.Identifier != nil {
-		return fmt.Sprintf(
-			"resource=%q action=%q version=%q - %v",
-			e.Identifier.Resource,
-			e.Identifier.Action,
-			e.Identifier.Version,
-			e.Err,
-		)
+		return fmt.Sprintf("%s - %v", formatIdentifier(e.Identifier), e.Err)
 	}
 
 	return e.Err.Error()
@@ -57,12 +57,7 @@ type DuplicateError struct {
 
 func (e *DuplicateError) Error() string {
 	if e.Identifier != nil {
-		return fmt.Sprintf(
-			"duplicate api definition: resource=%q, action=%q, version=%q (attempting to override existing api)",
-			e.Identifier.Resource,
-			e.Identifier.Action,
-			e.Identifier.Version,
-		)
+		return fmt.Sprintf("duplicate api definition: %s (attempting to override existing api)", formatIdentifier(e.Identifier))
 	}
 
 	return "duplicate api definition"
@@ -79,20 +74,10 @@ func (e *NotFoundError) Error() string {
 		return "api not found"
 	}
 
-	msg := fmt.Sprintf(
-		"api not found: resource=%q, action=%q, version=%q",
-		e.Identifier.Resource,
-		e.Identifier.Action,
-		e.Identifier.Version,
-	)
+	msg := "api not found: " + formatIdentifier(e.Identifier)
 
 	if e.Suggestion != nil {
-		msg += fmt.Sprintf(
-			" - did you mean: resource=%q, action=%q, version=%q ?",
-			e.Suggestion.Resource,
-			e.Suggestion.Action,
-			e.Suggestion.Version,
-		)
+		msg += " - did you mean: " + formatIdentifier(e.Suggestion) + " ?"
 	}
 
 	return msg

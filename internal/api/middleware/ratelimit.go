@@ -38,9 +38,7 @@ func NewRateLimit() api.Middleware {
 
 				return defaultRateLimitMax
 			},
-			Expiration:             defaultRateLimitExpiration,
-			SkipFailedRequests:     false,
-			SkipSuccessfulRequests: false,
+			Expiration: defaultRateLimitExpiration,
 			KeyGenerator: func(ctx fiber.Ctx) string {
 				var sb strings.Builder
 				if req := shared.Request(ctx); req != nil {

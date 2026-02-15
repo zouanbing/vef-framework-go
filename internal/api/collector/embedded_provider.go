@@ -32,18 +32,17 @@ func (*EmbeddedProviderCollector) Collect(resource api.Resource) []api.Operation
 				return reflectx.Continue
 			}
 
-			if !isProviderImplementation(fieldValue) {
+			provider, ok := asProvider(fieldValue)
+			if !ok {
 				return reflectx.Continue
 			}
 
-			if provider, ok := fieldValue.Interface().(api.OperationsProvider); ok {
-				ops := provider.Provide()
+			ops := provider.Provide()
+			specs = append(specs, ops...)
 
-				specs = append(specs, ops...)
-				if len(ops) > 0 {
-					logger.Infof("Collected %d API operations from embedded provider: %s",
-						len(ops), field.Type.String())
-				}
+			if len(ops) > 0 {
+				logger.Infof("Collected %d API operations from embedded provider: %s",
+					len(ops), field.Type.String())
 			}
 
 			return reflectx.Continue
@@ -55,16 +54,22 @@ func (*EmbeddedProviderCollector) Collect(resource api.Resource) []api.Operation
 	return specs
 }
 
-func isProviderImplementation(value reflect.Value) bool {
+// asProvider attempts to extract an OperationsProvider from a reflect.Value.
+func asProvider(value reflect.Value) (api.OperationsProvider, bool) {
 	if value.Kind() == reflect.Interface {
 		if value.IsNil() {
-			return false
+			return nil, false
 		}
 
 		value = value.Elem()
 	}
 
 	t := value.Type()
+	if !t.Implements(providerType) && !reflect.PointerTo(t).Implements(providerType) {
+		return nil, false
+	}
 
-	return t.Implements(providerType) || reflect.PointerTo(t).Implements(providerType)
+	provider, ok := value.Interface().(api.OperationsProvider)
+
+	return provider, ok
 }

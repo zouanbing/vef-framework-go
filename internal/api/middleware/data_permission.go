@@ -11,33 +11,33 @@ import (
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
-// DataPermissionMiddleware handles data permission resolution.
+// DataPermission handles data permission resolution.
 // It resolves data scope for the current principal and permission token,
 // then injects a RequestScopedDataPermApplier into the context.
-type DataPermissionMiddleware struct {
+type DataPermission struct {
 	resolver security.DataPermissionResolver
 }
 
 // NewDataPermission creates a new data permission middleware.
 func NewDataPermission(resolver security.DataPermissionResolver) api.Middleware {
-	return &DataPermissionMiddleware{
+	return &DataPermission{
 		resolver: resolver,
 	}
 }
 
 // Name returns the middleware name.
-func (*DataPermissionMiddleware) Name() string {
+func (*DataPermission) Name() string {
 	return "data_permission"
 }
 
 // Order returns the middleware order.
 // Runs after authentication (-100) but before rate limiting (-80).
-func (*DataPermissionMiddleware) Order() int {
+func (*DataPermission) Order() int {
 	return -80
 }
 
 // Process handles the data permission resolution.
-func (m *DataPermissionMiddleware) Process(ctx fiber.Ctx) error {
+func (m *DataPermission) Process(ctx fiber.Ctx) error {
 	op := shared.Operation(ctx)
 	if op == nil {
 		contextx.Logger(ctx).Errorf("Data permission check failed: %v", ErrOperationNotFound)
@@ -52,24 +52,18 @@ func (m *DataPermissionMiddleware) Process(ctx fiber.Ctx) error {
 		return fiber.ErrUnauthorized
 	}
 
-	return m.checkPermission(ctx, op, principal)
-}
-
-func (m *DataPermissionMiddleware) checkPermission(ctx fiber.Ctx, op *api.Operation, principal *security.Principal) error {
-	if principal.Type == security.PrincipalTypeSystem {
-		return ctx.Next()
-	}
-
-	if permToken, ok := op.Auth.Options[shared.AuthOptionPermToken].(string); ok && permToken != "" {
-		if err := m.doCheck(ctx, principal, permToken); err != nil {
-			return err
+	if principal.Type != security.PrincipalTypeSystem {
+		if permToken := permTokenFromOperation(op); permToken != "" {
+			if err := m.resolveDataScope(ctx, principal, permToken); err != nil {
+				return err
+			}
 		}
 	}
 
 	return ctx.Next()
 }
 
-func (m *DataPermissionMiddleware) doCheck(ctx fiber.Ctx, principal *security.Principal, permToken string) error {
+func (m *DataPermission) resolveDataScope(ctx fiber.Ctx, principal *security.Principal, permToken string) error {
 	if m.resolver == nil {
 		return fmt.Errorf(
 			"%w: %w",

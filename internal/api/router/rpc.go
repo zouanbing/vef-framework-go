@@ -3,11 +3,12 @@ package router
 import (
 	"encoding/json"
 	"fmt"
+	"math"
+	"slices"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/hbollon/go-edlib"
 	"github.com/ilxqx/go-collections"
-	"github.com/ilxqx/go-streams"
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/contextx"
@@ -43,13 +44,11 @@ func NewRPC(path string, chain *middleware.Chain) api.RouterStrategy {
 		path = DefaultRPCEndpoint
 	}
 
-	rs := &RPC{
+	return &RPC{
 		path:       path,
 		chain:      chain,
 		operations: collections.NewConcurrentHashMap[api.Identifier, *routeEntry](),
 	}
-
-	return rs
 }
 
 func (*RPC) Name() string {
@@ -61,10 +60,7 @@ func (*RPC) CanHandle(kind api.Kind) bool {
 }
 
 func (r *RPC) Setup(router fiber.Router) error {
-	handlers := streams.Concat(
-		streams.FromSlice(r.chain.Handlers()),
-		streams.FromSlice([]any{r.dispatch}),
-	).Collect()
+	handlers := slices.Concat(r.chain.Handlers(), []any{r.dispatch})
 
 	group := router.Group(r.path)
 	group.Post("", r.resolve, handlers...)
@@ -104,18 +100,7 @@ func (r *RPC) Route(handler fiber.Handler, op *api.Operation) {
 }
 
 func (r *RPC) dispatch(ctx fiber.Ctx) error {
-	req := shared.Request(ctx)
-
-	entry, ok := r.operations.Get(req.Identifier)
-	if !ok {
-		return &shared.NotFoundError{
-			BaseError: shared.BaseError{
-				Identifier: &req.Identifier,
-				Err:        fiber.ErrNotFound,
-			},
-			Suggestion: r.findClosestAPI(req.Identifier),
-		}
-	}
+	entry, _ := r.operations.Get(shared.Request(ctx).Identifier)
 
 	return entry.handler(ctx)
 }
@@ -140,21 +125,17 @@ func (*RPC) parseRequest(ctx fiber.Ctx) (*api.Request, error) {
 }
 
 func (r *RPC) findClosestAPI(requested api.Identifier) *api.Identifier {
-	if r.operations.IsEmpty() {
-		return nil
-	}
-
 	requestedStr := identifierToString(requested)
 
 	var (
 		closest     *api.Identifier
-		minDistance = -1
+		minDistance = math.MaxInt
 	)
 
 	for id := range r.operations.SeqKeys() {
-		distance := edlib.LevenshteinDistance(requestedStr, identifierToString(id))
-		if minDistance < 0 || distance < minDistance {
+		if distance := edlib.LevenshteinDistance(requestedStr, identifierToString(id)); distance < minDistance {
 			minDistance = distance
+			id := id
 			closest = &id
 		}
 	}

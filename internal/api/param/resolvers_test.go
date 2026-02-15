@@ -61,104 +61,104 @@ func (suite *ParamResolversTestSuite) TearDownSuite() {
 func (suite *ParamResolversTestSuite) TestCtxResolver() {
 	suite.Run("InjectFiberCtx", func() {
 		resp := suite.makeAPIRequest("verify_ctx", "{}")
-		suite.Equal(200, resp.StatusCode)
-		suite.Contains(suite.readBody(resp), `"injected":true`)
+		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Contains(suite.readBody(resp), `"injected":true`, "Response should contain injected:true")
 	})
 }
 
 func (suite *ParamResolversTestSuite) TestDBResolver() {
 	suite.Run("InjectOrmDB", func() {
 		resp := suite.makeAPIRequest("verify_db", "{}")
-		suite.Equal(200, resp.StatusCode)
-		suite.Contains(suite.readBody(resp), `"injected":true`)
+		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Contains(suite.readBody(resp), `"injected":true`, "Response should contain injected:true")
 	})
 }
 
 func (suite *ParamResolversTestSuite) TestLoggerResolver() {
 	suite.Run("InjectLogger", func() {
 		resp := suite.makeAPIRequest("verify_logger", "{}")
-		suite.Equal(200, resp.StatusCode)
-		suite.Contains(suite.readBody(resp), `"injected":true`)
+		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Contains(suite.readBody(resp), `"injected":true`, "Response should contain injected:true")
 	})
 }
 
 func (suite *ParamResolversTestSuite) TestPrincipalResolver() {
 	suite.Run("InjectPrincipal", func() {
 		resp := suite.makeAPIRequest("verify_principal", "{}")
-		suite.Equal(200, resp.StatusCode)
-		suite.Contains(suite.readBody(resp), `"injected":true`)
+		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Contains(suite.readBody(resp), `"injected":true`, "Response should contain injected:true")
 	})
 }
 
 func (suite *ParamResolversTestSuite) TestDBFactoryResolver() {
 	suite.Run("InjectDBToFactory", func() {
 		resp := suite.makeAPIRequest("verify_db_factory", "{}")
-		suite.Equal(200, resp.StatusCode)
-		suite.Contains(suite.readBody(resp), `"factory_injected":true`)
+		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Contains(suite.readBody(resp), `"factory_injected":true`, "Response should contain factory_injected:true")
 	})
 }
 
 func (suite *ParamResolversTestSuite) TestStorageResolver() {
 	suite.Run("InjectStorageService", func() {
 		resp := suite.makeAPIRequest("verify_storage", "{}")
-		suite.Equal(200, resp.StatusCode)
-		suite.Contains(suite.readBody(resp), `"injected":true`)
+		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Contains(suite.readBody(resp), `"injected":true`, "Response should contain injected:true")
 	})
 }
 
 func (suite *ParamResolversTestSuite) TestStorageFactoryResolver() {
 	suite.Run("InjectStorageToFactory", func() {
 		resp := suite.makeAPIRequest("verify_storage_factory", "{}")
-		suite.Equal(200, resp.StatusCode)
-		suite.Contains(suite.readBody(resp), `"factory_injected":true`)
+		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Contains(suite.readBody(resp), `"factory_injected":true`, "Response should contain factory_injected:true")
 	})
 }
 
 func (suite *ParamResolversTestSuite) TestMoldResolver() {
 	suite.Run("InjectMoldTransformer", func() {
 		resp := suite.makeAPIRequest("verify_mold", "{}")
-		suite.Equal(200, resp.StatusCode)
-		suite.Contains(suite.readBody(resp), `"injected":true`)
+		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Contains(suite.readBody(resp), `"injected":true`, "Response should contain injected:true")
 	})
 }
 
 func (suite *ParamResolversTestSuite) TestMoldFactoryResolver() {
 	suite.Run("InjectMoldToFactory", func() {
 		resp := suite.makeAPIRequest("verify_mold_factory", "{}")
-		suite.Equal(200, resp.StatusCode)
-		suite.Contains(suite.readBody(resp), `"factory_injected":true`)
+		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Contains(suite.readBody(resp), `"factory_injected":true`, "Response should contain factory_injected:true")
 	})
 }
 
 func (suite *ParamResolversTestSuite) TestEventResolver() {
 	suite.Run("InjectEventPublisher", func() {
 		resp := suite.makeAPIRequest("verify_event", "{}")
-		suite.Equal(200, resp.StatusCode)
-		suite.Contains(suite.readBody(resp), `"injected":true`)
+		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Contains(suite.readBody(resp), `"injected":true`, "Response should contain injected:true")
 	})
 }
 
 func (suite *ParamResolversTestSuite) TestEventFactoryResolver() {
 	suite.Run("InjectEventToFactory", func() {
 		resp := suite.makeAPIRequest("verify_event_factory", "{}")
-		suite.Equal(200, resp.StatusCode)
-		suite.Contains(suite.readBody(resp), `"factory_injected":true`)
+		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Contains(suite.readBody(resp), `"factory_injected":true`, "Response should contain factory_injected:true")
 	})
 }
 
 func (suite *ParamResolversTestSuite) TestCronResolver() {
 	suite.Run("InjectCronScheduler", func() {
 		resp := suite.makeAPIRequest("verify_cron", "{}")
-		suite.Equal(200, resp.StatusCode)
-		suite.Contains(suite.readBody(resp), `"injected":true`)
+		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Contains(suite.readBody(resp), `"injected":true`, "Response should contain injected:true")
 	})
 }
 
 func (suite *ParamResolversTestSuite) TestCronFactoryResolver() {
 	suite.Run("InjectCronToFactory", func() {
 		resp := suite.makeAPIRequest("verify_cron_factory", "{}")
-		suite.Equal(200, resp.StatusCode)
-		suite.Contains(suite.readBody(resp), `"factory_injected":true`)
+		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Contains(suite.readBody(resp), `"factory_injected":true`, "Response should contain factory_injected:true")
 	})
 }
 

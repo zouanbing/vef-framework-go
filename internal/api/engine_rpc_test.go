@@ -2,8 +2,6 @@ package api_test
 
 import (
 	"context"
-	"io"
-	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -18,7 +16,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/i18n"
-	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/internal/apptest"
 	"github.com/ilxqx/vef-framework-go/password"
 	"github.com/ilxqx/vef-framework-go/result"
@@ -205,11 +202,8 @@ func (*TestRPCResource) Panic(_ fiber.Ctx) error {
 
 // RPCEngineTestSuite tests RPC API engine functionality.
 type RPCEngineTestSuite struct {
-	suite.Suite
+	apptest.Suite
 
-	ctx               context.Context
-	app               *app.App
-	stop              func()
 	userLoader        *MockUserLoader
 	permissionChecker *MockPermissionChecker
 	jwtSecret         string
@@ -220,7 +214,6 @@ type RPCEngineTestSuite struct {
 func (suite *RPCEngineTestSuite) SetupSuite() {
 	suite.T().Log("Setting up RPCEngineTestSuite")
 
-	suite.ctx = context.Background()
 	suite.jwtSecret = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 
 	suite.testUser = security.NewUser("user001", "Test User", "admin", "user")
@@ -243,11 +236,7 @@ func (suite *RPCEngineTestSuite) SetupSuite() {
 
 func (suite *RPCEngineTestSuite) TearDownSuite() {
 	suite.T().Log("Tearing down RPCEngineTestSuite")
-
-	if suite.stop != nil {
-		suite.stop()
-	}
-
+	suite.TearDownApp()
 	suite.T().Log("RPCEngineTestSuite teardown complete")
 }
 
@@ -278,8 +267,7 @@ func (suite *RPCEngineTestSuite) setupTestApp() {
 		Return(false, nil).
 		Maybe()
 
-	suite.app, suite.stop = apptest.NewTestApp(
-		suite.T(),
+	suite.SetupApp(
 		fx.Supply(
 			fx.Annotate(
 				suite.userLoader,
@@ -308,57 +296,8 @@ func (suite *RPCEngineTestSuite) setupTestApp() {
 	)
 }
 
-func (suite *RPCEngineTestSuite) makeAPIRequest(body api.Request) *http.Response {
-	jsonBody, err := encoding.ToJSON(body)
-	suite.Require().NoError(err)
-
-	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
-	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-
-	resp, err := suite.app.Test(req, 30*time.Second)
-	suite.Require().NoError(err)
-
-	return resp
-}
-
-func (suite *RPCEngineTestSuite) makeAPIRequestWithToken(body api.Request, token string) *http.Response {
-	jsonBody, err := encoding.ToJSON(body)
-	suite.Require().NoError(err)
-
-	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
-	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-	req.Header.Set(fiber.HeaderAuthorization, security.AuthSchemeBearer+" "+token)
-
-	resp, err := suite.app.Test(req, 30*time.Second)
-	suite.Require().NoError(err)
-
-	return resp
-}
-
-func (suite *RPCEngineTestSuite) readBody(resp *http.Response) result.Result {
-	body, err := io.ReadAll(resp.Body)
-	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			suite.T().Errorf("failed to close response body: %v", closeErr)
-		}
-	}()
-
-	suite.Require().NoError(err)
-	res, err := encoding.FromJSON[result.Result](string(body))
-	suite.Require().NoError(err)
-
-	return *res
-}
-
-func (suite *RPCEngineTestSuite) readDataAsMap(data any) map[string]any {
-	m, ok := data.(map[string]any)
-	suite.Require().True(ok, "Data should be a map")
-
-	return m
-}
-
 func (suite *RPCEngineTestSuite) login() string {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "login",
@@ -371,10 +310,10 @@ func (suite *RPCEngineTestSuite) login() string {
 		},
 	})
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Login should succeed")
 
-	tokens := suite.readDataAsMap(body.Data)
+	tokens := suite.ReadDataAsMap(body.Data)
 
 	return tokens["accessToken"].(string)
 }
@@ -382,7 +321,7 @@ func (suite *RPCEngineTestSuite) login() string {
 func (suite *RPCEngineTestSuite) TestPublicApiPing() {
 	suite.T().Log("Testing public API ping endpoint")
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "ping",
@@ -392,7 +331,7 @@ func (suite *RPCEngineTestSuite) TestPublicApiPing() {
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Ping should succeed")
 	suite.Equal("pong", body.Data, "Should return pong")
 }
@@ -400,7 +339,7 @@ func (suite *RPCEngineTestSuite) TestPublicApiPing() {
 func (suite *RPCEngineTestSuite) TestPublicApiEcho() {
 	suite.T().Log("Testing public API echo endpoint with params")
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "echo",
@@ -414,10 +353,10 @@ func (suite *RPCEngineTestSuite) TestPublicApiEcho() {
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Echo should succeed")
 
-	data := suite.readDataAsMap(body.Data)
+	data := suite.ReadDataAsMap(body.Data)
 	suite.Equal("hello world", data["message"], "Message should match")
 	suite.Equal(float64(42), data["count"], "Count should match")
 }
@@ -425,7 +364,7 @@ func (suite *RPCEngineTestSuite) TestPublicApiEcho() {
 func (suite *RPCEngineTestSuite) TestProtectedApiWithoutToken() {
 	suite.T().Log("Testing protected API without token")
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "protected",
@@ -441,7 +380,7 @@ func (suite *RPCEngineTestSuite) TestProtectedApiWithValidToken() {
 
 	token := suite.login()
 
-	resp := suite.makeAPIRequestWithToken(api.Request{
+	resp := suite.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "protected",
@@ -451,10 +390,10 @@ func (suite *RPCEngineTestSuite) TestProtectedApiWithValidToken() {
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Protected API should succeed with valid token")
 
-	data := suite.readDataAsMap(body.Data)
+	data := suite.ReadDataAsMap(body.Data)
 	suite.Equal("user001", data["id"], "User ID should match")
 	suite.Equal("Test User", data["name"], "User name should match")
 }
@@ -462,7 +401,7 @@ func (suite *RPCEngineTestSuite) TestProtectedApiWithValidToken() {
 func (suite *RPCEngineTestSuite) TestProtectedApiWithInvalidToken() {
 	suite.T().Log("Testing protected API with invalid token")
 
-	resp := suite.makeAPIRequestWithToken(api.Request{
+	resp := suite.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "protected",
@@ -472,7 +411,7 @@ func (suite *RPCEngineTestSuite) TestProtectedApiWithInvalidToken() {
 
 	suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should fail with invalid token")
 	suite.Equal(result.ErrCodeTokenInvalid, body.Code, "Should return token invalid error")
 }
@@ -480,7 +419,7 @@ func (suite *RPCEngineTestSuite) TestProtectedApiWithInvalidToken() {
 func (suite *RPCEngineTestSuite) TestOperationNotFound() {
 	suite.T().Log("Testing operation not found")
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "nonexistent",
@@ -490,14 +429,14 @@ func (suite *RPCEngineTestSuite) TestOperationNotFound() {
 
 	suite.Equal(404, resp.StatusCode, "Should return 404 Not Found")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should fail for non-existent operation")
 }
 
 func (suite *RPCEngineTestSuite) TestResourceNotFound() {
 	suite.T().Log("Testing resource not found")
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "nonexistent",
 			Action:   "ping",
@@ -507,14 +446,14 @@ func (suite *RPCEngineTestSuite) TestResourceNotFound() {
 
 	suite.Equal(404, resp.StatusCode, "Should return 404 Not Found")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should fail for non-existent resource")
 }
 
 func (suite *RPCEngineTestSuite) TestVersionMismatch() {
 	suite.T().Log("Testing version mismatch")
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "ping",
@@ -524,7 +463,7 @@ func (suite *RPCEngineTestSuite) TestVersionMismatch() {
 
 	suite.Equal(404, resp.StatusCode, "Should return 404 Not Found")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should fail for version mismatch")
 }
 
@@ -534,12 +473,12 @@ func (suite *RPCEngineTestSuite) TestInvalidJsonRequest() {
 	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader("{invalid json}"))
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
-	resp, err := suite.app.Test(req, 30*time.Second)
+	resp, err := suite.App.Test(req, 30*time.Second)
 	suite.Require().NoError(err)
 
 	suite.Equal(500, resp.StatusCode, "Should return 500 Internal Server Error for invalid JSON")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should fail for invalid JSON")
 }
 
@@ -549,12 +488,12 @@ func (suite *RPCEngineTestSuite) TestEmptyRequestBody() {
 	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(""))
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
-	resp, err := suite.app.Test(req, 30*time.Second)
+	resp, err := suite.App.Test(req, 30*time.Second)
 	suite.Require().NoError(err)
 
 	suite.Equal(500, resp.StatusCode, "Should return 500 Internal Server Error for empty body")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should fail for empty request body")
 }
 
@@ -562,7 +501,7 @@ func (suite *RPCEngineTestSuite) TestMissingRequiredFields() {
 	suite.T().Log("Testing missing required fields")
 
 	suite.Run("MissingResource", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "",
 				Action:   "ping",
@@ -570,12 +509,12 @@ func (suite *RPCEngineTestSuite) TestMissingRequiredFields() {
 			},
 		})
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail for missing resource")
 	})
 
 	suite.Run("MissingAction", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test",
 				Action:   "",
@@ -583,12 +522,12 @@ func (suite *RPCEngineTestSuite) TestMissingRequiredFields() {
 			},
 		})
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail for missing action")
 	})
 
 	suite.Run("MissingVersion", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test",
 				Action:   "ping",
@@ -596,7 +535,7 @@ func (suite *RPCEngineTestSuite) TestMissingRequiredFields() {
 			},
 		})
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail for missing version")
 	})
 }
@@ -604,7 +543,7 @@ func (suite *RPCEngineTestSuite) TestMissingRequiredFields() {
 func (suite *RPCEngineTestSuite) TestAuditedEndpoint() {
 	suite.T().Log("Testing audited endpoint")
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "audited",
@@ -614,7 +553,7 @@ func (suite *RPCEngineTestSuite) TestAuditedEndpoint() {
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Audited endpoint should succeed")
 	suite.Equal("audited action", body.Data, "Should return audited action")
 }
@@ -622,7 +561,7 @@ func (suite *RPCEngineTestSuite) TestAuditedEndpoint() {
 func (suite *RPCEngineTestSuite) TestErrorResponse() {
 	suite.T().Log("Testing error response")
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "error",
@@ -632,7 +571,7 @@ func (suite *RPCEngineTestSuite) TestErrorResponse() {
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should return error")
 	suite.Equal(result.ErrCodeDefault, body.Code, "Should return default error code")
 	suite.Equal("intentional error", body.Message, "Should return error message")
@@ -641,7 +580,7 @@ func (suite *RPCEngineTestSuite) TestErrorResponse() {
 func (suite *RPCEngineTestSuite) TestRequestWithMeta() {
 	suite.T().Log("Testing request with meta")
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "echo_data",
@@ -658,14 +597,14 @@ func (suite *RPCEngineTestSuite) TestRequestWithMeta() {
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Echo should succeed")
 }
 
 func (suite *RPCEngineTestSuite) TestI18nErrorMessages() {
 	suite.T().Log("Testing i18n error messages")
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "protected",
@@ -675,7 +614,7 @@ func (suite *RPCEngineTestSuite) TestI18nErrorMessages() {
 
 	suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should fail without token")
 	suite.Equal(i18n.T(result.ErrMessageUnauthenticated), body.Message, "Should return i18n translated message")
 }
@@ -695,7 +634,7 @@ func (suite *RPCEngineTestSuite) TestContentTypeValidation() {
 	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
 	req.Header.Set(fiber.HeaderContentType, "text/plain")
 
-	resp, err := suite.app.Test(req, 30*time.Second)
+	resp, err := suite.App.Test(req, 30*time.Second)
 	suite.Require().NoError(err)
 
 	suite.Equal(415, resp.StatusCode, "Should return 415 Unsupported Media Type")
@@ -704,7 +643,7 @@ func (suite *RPCEngineTestSuite) TestContentTypeValidation() {
 func (suite *RPCEngineTestSuite) TestComplexParams() {
 	suite.T().Log("Testing complex params")
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "echo_complex",
@@ -725,10 +664,10 @@ func (suite *RPCEngineTestSuite) TestComplexParams() {
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Echo should succeed")
 
-	data := suite.readDataAsMap(body.Data)
+	data := suite.ReadDataAsMap(body.Data)
 	suite.Equal("hello", data["string"], "String should match")
 	suite.Equal(float64(123), data["number"], "Number should match")
 	suite.Equal(3.14, data["float"], "Float should match")
@@ -755,12 +694,12 @@ func (suite *RPCEngineTestSuite) TestTokenInQueryParam() {
 	req := httptest.NewRequest(fiber.MethodPost, "/api?"+security.QueryKeyAccessToken+"="+token, strings.NewReader(jsonBody))
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
-	resp, err := suite.app.Test(req, 30*time.Second)
+	resp, err := suite.App.Test(req, 30*time.Second)
 	suite.Require().NoError(err)
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Protected API should succeed with token in query param")
 }
 
@@ -769,7 +708,7 @@ func (suite *RPCEngineTestSuite) TestPermissionDenied() {
 
 	token := suite.login()
 
-	resp := suite.makeAPIRequestWithToken(api.Request{
+	resp := suite.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "restricted",
@@ -779,7 +718,7 @@ func (suite *RPCEngineTestSuite) TestPermissionDenied() {
 
 	suite.Equal(403, resp.StatusCode, "Should return 403 Forbidden")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should fail with permission denied")
 	suite.Equal(result.ErrCodeAccessDenied, body.Code, "Should return access denied error code")
 }
@@ -787,7 +726,7 @@ func (suite *RPCEngineTestSuite) TestPermissionDenied() {
 func (suite *RPCEngineTestSuite) TestSlowOperationTimeout() {
 	suite.T().Log("Testing slow operation timeout")
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "slow",
@@ -798,7 +737,7 @@ func (suite *RPCEngineTestSuite) TestSlowOperationTimeout() {
 	// The slow handler sleeps for 100ms but timeout is 50ms
 	suite.Equal(408, resp.StatusCode, "Should return 408 Request Timeout")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should fail with timeout")
 	suite.Equal(result.ErrCodeRequestTimeout, body.Code, "Should return request timeout error code")
 }
@@ -806,7 +745,7 @@ func (suite *RPCEngineTestSuite) TestSlowOperationTimeout() {
 func (suite *RPCEngineTestSuite) TestNonexistentUserLogin() {
 	suite.T().Log("Testing login with nonexistent user")
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "login",
@@ -821,7 +760,7 @@ func (suite *RPCEngineTestSuite) TestNonexistentUserLogin() {
 
 	suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should fail for nonexistent user")
 }
 
@@ -830,7 +769,7 @@ func (suite *RPCEngineTestSuite) TestAdminWithPermission() {
 
 	token := suite.login()
 
-	resp := suite.makeAPIRequestWithToken(api.Request{
+	resp := suite.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "admin",
@@ -840,10 +779,10 @@ func (suite *RPCEngineTestSuite) TestAdminWithPermission() {
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Admin action should succeed with permission")
 
-	data := suite.readDataAsMap(body.Data)
+	data := suite.ReadDataAsMap(body.Data)
 	suite.Equal("admin", data["action"], "Action should be admin")
 	suite.Equal("user001", data["userId"], "User ID should match")
 }
@@ -851,7 +790,7 @@ func (suite *RPCEngineTestSuite) TestAdminWithPermission() {
 func (suite *RPCEngineTestSuite) TestHandlerPanic() {
 	suite.T().Log("Testing handler panic returns 500")
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "panic",
@@ -877,7 +816,7 @@ func (suite *RPCEngineTestSuite) TestPermissionCheckerCalledOnAdmin() {
 
 	suite.permissionChecker.Calls = nil
 
-	_ = suite.makeAPIRequestWithToken(api.Request{
+	_ = suite.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "admin",
@@ -895,7 +834,7 @@ func (suite *RPCEngineTestSuite) TestPermissionCheckerCalledOnRestricted() {
 
 	suite.permissionChecker.Calls = nil
 
-	_ = suite.makeAPIRequestWithToken(api.Request{
+	_ = suite.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "restricted",

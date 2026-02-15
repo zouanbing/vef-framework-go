@@ -12,12 +12,12 @@ import (
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/event"
+	"github.com/ilxqx/vef-framework-go/httpx"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
-	"github.com/ilxqx/vef-framework-go/httpx"
 )
 
 // Audit handles audit logging.
@@ -89,10 +89,6 @@ func buildAuditEvent(ctx fiber.Ctx, elapsed int64, err error) (*api.AuditEvent, 
 	}
 
 	var (
-		userID     = principal.ID
-		requestID  = contextx.RequestID(ctx)
-		requestIP  = httpx.GetIP(ctx)
-		userAgent  = utils.CopyString(ctx.Get(fiber.HeaderUserAgent))
 		resultCode int
 		resultMsg  string
 		resultData any
@@ -115,10 +111,10 @@ func buildAuditEvent(ctx fiber.Ctx, elapsed int64, err error) (*api.AuditEvent, 
 		Resource:      req.Resource,
 		Action:        req.Action,
 		Version:       req.Version,
-		UserID:        userID,
-		UserAgent:     userAgent,
-		RequestID:     requestID,
-		RequestIP:     requestIP,
+		UserID:        principal.ID,
+		UserAgent:     utils.CopyString(ctx.Get(fiber.HeaderUserAgent)),
+		RequestID:     contextx.RequestID(ctx),
+		RequestIP:     httpx.GetIP(ctx),
 		RequestParams: req.Params,
 		RequestMeta:   req.Meta,
 		ResultCode:    resultCode,

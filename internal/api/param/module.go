@@ -1,8 +1,96 @@
 package param
 
 import (
+	"github.com/gofiber/fiber/v3"
 	"go.uber.org/fx"
+
+	"github.com/ilxqx/vef-framework-go/api"
+	"github.com/ilxqx/vef-framework-go/contextx"
+	"github.com/ilxqx/vef-framework-go/cron"
+	"github.com/ilxqx/vef-framework-go/event"
+	"github.com/ilxqx/vef-framework-go/internal/api/shared"
+	"github.com/ilxqx/vef-framework-go/log"
+	"github.com/ilxqx/vef-framework-go/mold"
+	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/ilxqx/vef-framework-go/security"
+	"github.com/ilxqx/vef-framework-go/storage"
 )
+
+// Handler param resolver constructors
+
+func NewCtxResolver() api.HandlerParamResolver {
+	return newContextResolver(func(ctx fiber.Ctx) fiber.Ctx { return ctx })
+}
+
+func NewDBResolver() api.HandlerParamResolver {
+	return newContextResolver(func(ctx fiber.Ctx) orm.DB { return contextx.DB(ctx) })
+}
+
+func NewLoggerResolver() api.HandlerParamResolver {
+	return newContextResolver(func(ctx fiber.Ctx) log.Logger { return contextx.Logger(ctx) })
+}
+
+func NewPrincipalResolver() api.HandlerParamResolver {
+	return newContextResolver(func(ctx fiber.Ctx) *security.Principal { return contextx.Principal(ctx) })
+}
+
+func NewSchedulerResolver(scheduler cron.Scheduler) api.HandlerParamResolver {
+	return newHandlerValueResolver(scheduler)
+}
+
+func NewPublisherResolver(publisher event.Publisher) api.HandlerParamResolver {
+	return newHandlerValueResolver(publisher)
+}
+
+func NewTransformerResolver(transformer mold.Transformer) api.HandlerParamResolver {
+	return newHandlerValueResolver(transformer)
+}
+
+func NewStorageResolver(service storage.Service) api.HandlerParamResolver {
+	return newHandlerValueResolver(service)
+}
+
+func NewParamsResolver() api.HandlerParamResolver {
+	return newContextResolver(func(ctx fiber.Ctx) api.Params {
+		if req := shared.Request(ctx); req != nil && req.Params != nil {
+			return req.Params
+		}
+
+		return api.Params{}
+	})
+}
+
+func NewMetaResolver() api.HandlerParamResolver {
+	return newContextResolver(func(ctx fiber.Ctx) api.Meta {
+		if req := shared.Request(ctx); req != nil && req.Meta != nil {
+			return req.Meta
+		}
+
+		return api.Meta{}
+	})
+}
+
+// Factory param resolver constructors
+
+func NewDBFactoryResolver(db orm.DB) api.FactoryParamResolver {
+	return newFactoryValueResolver(db)
+}
+
+func NewSchedulerFactoryResolver(scheduler cron.Scheduler) api.FactoryParamResolver {
+	return newFactoryValueResolver(scheduler)
+}
+
+func NewPublisherFactoryResolver(publisher event.Publisher) api.FactoryParamResolver {
+	return newFactoryValueResolver(publisher)
+}
+
+func NewTransformerFactoryResolver(transformer mold.Transformer) api.FactoryParamResolver {
+	return newFactoryValueResolver(transformer)
+}
+
+func NewStorageFactoryResolver(service storage.Service) api.FactoryParamResolver {
+	return newFactoryValueResolver(service)
+}
 
 var Module = fx.Module(
 	"vef:api:param",
