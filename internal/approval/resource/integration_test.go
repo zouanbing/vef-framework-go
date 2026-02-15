@@ -2,29 +2,21 @@ package resource_test
 
 import (
 	"context"
-	"io"
-	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/gofiber/fiber/v3"
 	"github.com/stretchr/testify/suite"
 	"github.com/uptrace/bun"
 	"go.uber.org/fx"
 
 	"github.com/ilxqx/vef-framework-go/api"
 	approvalPkg "github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/encoding"
-	"github.com/ilxqx/vef-framework-go/internal/app"
 	approval "github.com/ilxqx/vef-framework-go/internal/approval"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
 	"github.com/ilxqx/vef-framework-go/internal/apptest"
 	"github.com/ilxqx/vef-framework-go/internal/database"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/internal/testx"
-	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
@@ -59,60 +51,13 @@ func (s *stubSerialNoGenerator) Generate(_ context.Context, flowCode string) (st
 // ApprovalSuite — base
 // ---------------------------------------------------------------------------
 
-const testJWTSecret = "af6675678bd81ad7c93c4a51d122ef61e9750fe5d42ceac1c33b293f36bc14c2"
-
 type ApprovalSuite struct {
-	suite.Suite
+	apptest.Suite
 
 	ctx       context.Context
 	pgc       *testx.PostgresContainer
-	app       *app.App
-	stop      func()
 	authToken string
 	bunDB     *bun.DB
-}
-
-func (s *ApprovalSuite) makeAPIRequest(body api.Request) *http.Response {
-	jsonBody, err := encoding.ToJSON(body)
-	s.Require().NoError(err)
-
-	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
-	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-	req.Header.Set(fiber.HeaderAuthorization, security.AuthSchemeBearer+" "+s.authToken)
-
-	resp, err := s.app.Test(req)
-	s.Require().NoError(err)
-
-	return resp
-}
-
-func (s *ApprovalSuite) readBody(resp *http.Response) result.Result {
-	body, err := io.ReadAll(resp.Body)
-	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			s.T().Errorf("failed to close response body: %v", closeErr)
-		}
-	}()
-
-	s.Require().NoError(err)
-	res, err := encoding.FromJSON[result.Result](string(body))
-	s.Require().NoError(err)
-
-	return *res
-}
-
-func (s *ApprovalSuite) readDataAsMap(data any) map[string]any {
-	m, ok := data.(map[string]any)
-	s.Require().True(ok, "Expected data to be a map")
-
-	return m
-}
-
-func (s *ApprovalSuite) readDataAsSlice(data any) []any {
-	sl, ok := data.([]any)
-	s.Require().True(ok, "Expected data to be a slice")
-
-	return sl
 }
 
 // ---------------------------------------------------------------------------
@@ -462,21 +407,13 @@ func (s *ApprovalSuite) SetupSuite() {
 
 	// Audience must match lo.SnakeCase(appName) = "test_app"
 	jwtCfg := &security.JWTConfig{
-		Secret:   testJWTSecret,
+		Secret:   security.DefaultJWTSecret,
 		Audience: "test_app",
 	}
-	jwtInstance, err := security.NewJWT(jwtCfg)
-	s.Require().NoError(err)
 
-	claims := security.NewJWTClaimsBuilder().
-		WithSubject(testUser.ID + "@" + testUser.Name).
-		WithRoles(testUser.Roles).
-		WithType("access")
-	s.authToken, err = jwtInstance.Generate(claims, 1*time.Hour, 0)
-	s.Require().NoError(err)
+	s.authToken = s.GenerateToken(testUser)
 
-	s.app, s.stop = apptest.NewTestAppWithDB(
-		s.T(),
+	s.SetupAppWithDB(
 		bunDB,
 		fx.Replace(
 			dsConfig,
@@ -494,9 +431,7 @@ func (s *ApprovalSuite) SetupSuite() {
 }
 
 func (s *ApprovalSuite) TearDownSuite() {
-	if s.stop != nil {
-		s.stop()
-	}
+	s.TearDownApp()
 }
 
 // ---------------------------------------------------------------------------
@@ -504,7 +439,7 @@ func (s *ApprovalSuite) TearDownSuite() {
 // ---------------------------------------------------------------------------
 
 func (s *ApprovalSuite) TestCategoryCreate() {
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "create",
@@ -516,18 +451,18 @@ func (s *ApprovalSuite) TestCategoryCreate() {
 			"sortOrder": 1,
 			"isActive":  true,
 		},
-	})
+	}, s.authToken)
 
 	s.Equal(200, resp.StatusCode)
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "create should succeed, got: %v", body)
 
-	data := s.readDataAsMap(body.Data)
+	data := s.ReadDataAsMap(body.Data)
 	s.NotEmpty(data["id"], "should return created category id")
 }
 
 func (s *ApprovalSuite) TestCategoryCreateValidation() {
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "create",
@@ -537,15 +472,15 @@ func (s *ApprovalSuite) TestCategoryCreateValidation() {
 			"code": "cat-missing-name",
 			// name is required but missing
 		},
-	})
+	}, s.authToken)
 
 	s.Equal(200, resp.StatusCode)
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.False(body.IsOk(), "should fail validation when name is missing")
 }
 
 func (s *ApprovalSuite) TestCategoryFindAll() {
-	s.makeAPIRequest(api.Request{
+	s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "create",
@@ -556,27 +491,27 @@ func (s *ApprovalSuite) TestCategoryFindAll() {
 			"name":     "查找全部",
 			"isActive": true,
 		},
-	})
+	}, s.authToken)
 
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "find_all",
 			Version:  "v1",
 		},
-	})
+	}, s.authToken)
 
 	s.Equal(200, resp.StatusCode)
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "find_all should succeed")
 	s.NotNil(body.Data, "should return data")
 
-	list := s.readDataAsSlice(body.Data)
+	list := s.ReadDataAsSlice(body.Data)
 	s.NotEmpty(list, "should return at least one category")
 }
 
 func (s *ApprovalSuite) TestCategoryFindPage() {
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "find_page",
@@ -587,20 +522,20 @@ func (s *ApprovalSuite) TestCategoryFindPage() {
 			"page": 1,
 			"size": 10,
 		},
-	})
+	}, s.authToken)
 
 	s.Equal(200, resp.StatusCode)
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "find_page should succeed")
 	s.NotNil(body.Data, "should return page data")
 
-	data := s.readDataAsMap(body.Data)
+	data := s.ReadDataAsMap(body.Data)
 	s.Contains(data, "items", "page result should contain items")
 	s.Contains(data, "total", "page result should contain total")
 }
 
 func (s *ApprovalSuite) TestCategoryUpdate() {
-	createResp := s.makeAPIRequest(api.Request{
+	createResp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "create",
@@ -611,12 +546,12 @@ func (s *ApprovalSuite) TestCategoryUpdate() {
 			"name":     "更新前",
 			"isActive": true,
 		},
-	})
-	createBody := s.readBody(createResp)
+	}, s.authToken)
+	createBody := s.ReadResult(createResp)
 	s.Require().True(createBody.IsOk())
-	id := s.readDataAsMap(createBody.Data)["id"]
+	id := s.ReadDataAsMap(createBody.Data)["id"]
 
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "update",
@@ -628,15 +563,15 @@ func (s *ApprovalSuite) TestCategoryUpdate() {
 			"name":     "更新后",
 			"isActive": true,
 		},
-	})
+	}, s.authToken)
 
 	s.Equal(200, resp.StatusCode)
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "update should succeed")
 }
 
 func (s *ApprovalSuite) TestCategoryDelete() {
-	createResp := s.makeAPIRequest(api.Request{
+	createResp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "create",
@@ -647,12 +582,12 @@ func (s *ApprovalSuite) TestCategoryDelete() {
 			"name":     "待删除",
 			"isActive": false,
 		},
-	})
-	createBody := s.readBody(createResp)
+	}, s.authToken)
+	createBody := s.ReadResult(createResp)
 	s.Require().True(createBody.IsOk())
-	id := s.readDataAsMap(createBody.Data)["id"]
+	id := s.ReadDataAsMap(createBody.Data)["id"]
 
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "delete",
@@ -661,10 +596,10 @@ func (s *ApprovalSuite) TestCategoryDelete() {
 		Params: map[string]any{
 			"id": id,
 		},
-	})
+	}, s.authToken)
 
 	s.Equal(200, resp.StatusCode)
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "delete should succeed")
 }
 
@@ -673,7 +608,7 @@ func (s *ApprovalSuite) TestCategoryDelete() {
 // ---------------------------------------------------------------------------
 
 func (s *ApprovalSuite) TestDelegationCreate() {
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/delegation",
 			Action:   "create",
@@ -684,18 +619,18 @@ func (s *ApprovalSuite) TestDelegationCreate() {
 			"delegateeId": "user-002",
 			"isActive":    true,
 		},
-	})
+	}, s.authToken)
 
 	s.Equal(200, resp.StatusCode)
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "create should succeed, got: %v", body)
 
-	data := s.readDataAsMap(body.Data)
+	data := s.ReadDataAsMap(body.Data)
 	s.NotEmpty(data["id"], "should return created delegation id")
 }
 
 func (s *ApprovalSuite) TestDelegationCreateValidation() {
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/delegation",
 			Action:   "create",
@@ -705,15 +640,15 @@ func (s *ApprovalSuite) TestDelegationCreateValidation() {
 			"delegatorId": "user-001",
 			// delegateeId is required but missing
 		},
-	})
+	}, s.authToken)
 
 	s.Equal(200, resp.StatusCode)
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.False(body.IsOk(), "should fail validation when delegateeId is missing")
 }
 
 func (s *ApprovalSuite) TestDelegationFindAll() {
-	createResp := s.makeAPIRequest(api.Request{
+	createResp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/delegation",
 			Action:   "create",
@@ -724,14 +659,14 @@ func (s *ApprovalSuite) TestDelegationFindAll() {
 			"delegateeId": "user-fa-002",
 			"isActive":    true,
 		},
-	})
-	createBody := s.readBody(createResp)
+	}, s.authToken)
+	createBody := s.ReadResult(createResp)
 	s.Require().True(createBody.IsOk())
 
 	// DelegationSearch embeds api.M (via apis.Sortable), so search params
 	// are decoded from Meta, not Params. String fields with search:"eq" apply
 	// even when empty, so we must pass specific values.
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/delegation",
 			Action:   "find_all",
@@ -741,18 +676,18 @@ func (s *ApprovalSuite) TestDelegationFindAll() {
 			"delegatorId": "user-fa-001",
 			"delegateeId": "user-fa-002",
 		},
-	})
+	}, s.authToken)
 
 	s.Equal(200, resp.StatusCode)
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "find_all should succeed")
 
-	list := s.readDataAsSlice(body.Data)
+	list := s.ReadDataAsSlice(body.Data)
 	s.NotEmpty(list, "should return at least one delegation")
 }
 
 func (s *ApprovalSuite) TestDelegationFindPage() {
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/delegation",
 			Action:   "find_page",
@@ -763,19 +698,19 @@ func (s *ApprovalSuite) TestDelegationFindPage() {
 			"page": 1,
 			"size": 10,
 		},
-	})
+	}, s.authToken)
 
 	s.Equal(200, resp.StatusCode)
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "find_page should succeed")
 
-	data := s.readDataAsMap(body.Data)
+	data := s.ReadDataAsMap(body.Data)
 	s.Contains(data, "items", "page result should contain items")
 	s.Contains(data, "total", "page result should contain total")
 }
 
 func (s *ApprovalSuite) TestDelegationUpdate() {
-	createResp := s.makeAPIRequest(api.Request{
+	createResp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/delegation",
 			Action:   "create",
@@ -786,12 +721,12 @@ func (s *ApprovalSuite) TestDelegationUpdate() {
 			"delegateeId": "user-upd-002",
 			"isActive":    true,
 		},
-	})
-	createBody := s.readBody(createResp)
+	}, s.authToken)
+	createBody := s.ReadResult(createResp)
 	s.Require().True(createBody.IsOk())
-	id := s.readDataAsMap(createBody.Data)["id"]
+	id := s.ReadDataAsMap(createBody.Data)["id"]
 
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/delegation",
 			Action:   "update",
@@ -804,15 +739,15 @@ func (s *ApprovalSuite) TestDelegationUpdate() {
 			"isActive":    false,
 			"reason":      "test update",
 		},
-	})
+	}, s.authToken)
 
 	s.Equal(200, resp.StatusCode)
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "update should succeed")
 }
 
 func (s *ApprovalSuite) TestDelegationDelete() {
-	createResp := s.makeAPIRequest(api.Request{
+	createResp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/delegation",
 			Action:   "create",
@@ -823,12 +758,12 @@ func (s *ApprovalSuite) TestDelegationDelete() {
 			"delegateeId": "user-del-002",
 			"isActive":    false,
 		},
-	})
-	createBody := s.readBody(createResp)
+	}, s.authToken)
+	createBody := s.ReadResult(createResp)
 	s.Require().True(createBody.IsOk())
-	id := s.readDataAsMap(createBody.Data)["id"]
+	id := s.ReadDataAsMap(createBody.Data)["id"]
 
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/delegation",
 			Action:   "delete",
@@ -837,10 +772,10 @@ func (s *ApprovalSuite) TestDelegationDelete() {
 		Params: map[string]any{
 			"id": id,
 		},
-	})
+	}, s.authToken)
 
 	s.Equal(200, resp.StatusCode)
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "delete should succeed")
 }
 
@@ -849,7 +784,7 @@ func (s *ApprovalSuite) TestDelegationDelete() {
 // ---------------------------------------------------------------------------
 
 func (s *ApprovalSuite) TestFlowDeploy() {
-	catResp := s.makeAPIRequest(api.Request{
+	catResp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "create",
@@ -860,10 +795,10 @@ func (s *ApprovalSuite) TestFlowDeploy() {
 			"name":     "流程部署分类",
 			"isActive": true,
 		},
-	})
-	catBody := s.readBody(catResp)
+	}, s.authToken)
+	catBody := s.ReadResult(catResp)
 	s.Require().True(catBody.IsOk(), "category create should succeed")
-	categoryID := s.readDataAsMap(catBody.Data)["id"].(string)
+	categoryID := s.ReadDataAsMap(catBody.Data)["id"].(string)
 
 	definition := `{
 		"nodes": [
@@ -875,7 +810,7 @@ func (s *ApprovalSuite) TestFlowDeploy() {
 		]
 	}`
 
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/flow",
 			Action:   "deploy",
@@ -888,16 +823,16 @@ func (s *ApprovalSuite) TestFlowDeploy() {
 			"definition": definition,
 			"operatorId": "admin-001",
 		},
-	})
+	}, s.authToken)
 
 	s.Equal(200, resp.StatusCode)
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "deploy should succeed, got: %v", body)
 	s.NotNil(body.Data, "should return flow data")
 }
 
 func (s *ApprovalSuite) TestFlowPublishVersionAndGetGraph() {
-	catResp := s.makeAPIRequest(api.Request{
+	catResp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "create",
@@ -908,10 +843,10 @@ func (s *ApprovalSuite) TestFlowPublishVersionAndGetGraph() {
 			"name":     "发布版本分类",
 			"isActive": true,
 		},
-	})
-	catBody := s.readBody(catResp)
+	}, s.authToken)
+	catBody := s.ReadResult(catResp)
 	s.Require().True(catBody.IsOk())
-	categoryID := s.readDataAsMap(catBody.Data)["id"].(string)
+	categoryID := s.ReadDataAsMap(catBody.Data)["id"].(string)
 
 	definition := `{
 		"nodes": [
@@ -922,7 +857,7 @@ func (s *ApprovalSuite) TestFlowPublishVersionAndGetGraph() {
 			{"source": "start", "target": "end"}
 		]
 	}`
-	deployResp := s.makeAPIRequest(api.Request{
+	deployResp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/flow",
 			Action:   "deploy",
@@ -935,14 +870,14 @@ func (s *ApprovalSuite) TestFlowPublishVersionAndGetGraph() {
 			"definition": definition,
 			"operatorId": "admin-001",
 		},
-	})
-	deployBody := s.readBody(deployResp)
+	}, s.authToken)
+	deployBody := s.ReadResult(deployResp)
 	s.Require().True(deployBody.IsOk(), "deploy should succeed")
-	flowData := s.readDataAsMap(deployBody.Data)
+	flowData := s.ReadDataAsMap(deployBody.Data)
 	flowID := flowData["id"].(string)
 
 	// Test publish_version with invalid version ID (error path)
-	pubResp := s.makeAPIRequest(api.Request{
+	pubResp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/flow",
 			Action:   "publish_version",
@@ -952,11 +887,11 @@ func (s *ApprovalSuite) TestFlowPublishVersionAndGetGraph() {
 			"versionId":  "nonexistent-version",
 			"operatorId": "admin-001",
 		},
-	})
-	pubBody := s.readBody(pubResp)
+	}, s.authToken)
+	pubBody := s.ReadResult(pubResp)
 	s.False(pubBody.IsOk(), "publish with nonexistent version should fail")
 
-	graphResp := s.makeAPIRequest(api.Request{
+	graphResp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/flow",
 			Action:   "get_graph",
@@ -965,11 +900,11 @@ func (s *ApprovalSuite) TestFlowPublishVersionAndGetGraph() {
 		Params: map[string]any{
 			"flowId": flowID,
 		},
-	})
-	graphBody := s.readBody(graphResp)
+	}, s.authToken)
+	graphBody := s.ReadResult(graphResp)
 	s.False(graphBody.IsOk(), "get_graph should fail when no published version")
 
-	graph2Resp := s.makeAPIRequest(api.Request{
+	graph2Resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/flow",
 			Action:   "get_graph",
@@ -978,13 +913,13 @@ func (s *ApprovalSuite) TestFlowPublishVersionAndGetGraph() {
 		Params: map[string]any{
 			"flowId": "nonexistent-flow",
 		},
-	})
-	graph2Body := s.readBody(graph2Resp)
+	}, s.authToken)
+	graph2Body := s.ReadResult(graph2Resp)
 	s.False(graph2Body.IsOk(), "get_graph should fail for nonexistent flow")
 }
 
 func (s *ApprovalSuite) TestFlowDeployValidation() {
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/flow",
 			Action:   "deploy",
@@ -994,14 +929,14 @@ func (s *ApprovalSuite) TestFlowDeployValidation() {
 			"flowCode": "missing-fields",
 			// flowName and categoryId are required but missing
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.False(body.IsOk(), "deploy should fail with missing required fields")
 }
 
 func (s *ApprovalSuite) TestFlowDeployInvalidDefinition() {
-	catResp := s.makeAPIRequest(api.Request{
+	catResp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "create",
@@ -1012,12 +947,12 @@ func (s *ApprovalSuite) TestFlowDeployInvalidDefinition() {
 			"name":     "无效定义分类",
 			"isActive": true,
 		},
-	})
-	catBody := s.readBody(catResp)
+	}, s.authToken)
+	catBody := s.ReadResult(catResp)
 	s.Require().True(catBody.IsOk())
-	categoryID := s.readDataAsMap(catBody.Data)["id"].(string)
+	categoryID := s.ReadDataAsMap(catBody.Data)["id"].(string)
 
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/flow",
 			Action:   "deploy",
@@ -1030,9 +965,9 @@ func (s *ApprovalSuite) TestFlowDeployInvalidDefinition() {
 			"definition": `{"nodes": []}`,
 			"operatorId": "admin-001",
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.False(body.IsOk(), "deploy should fail with empty nodes")
 }
 
@@ -1041,7 +976,7 @@ func (s *ApprovalSuite) TestFlowDeployInvalidDefinition() {
 // ---------------------------------------------------------------------------
 
 func (s *ApprovalSuite) TestInstanceStart() {
-	catResp := s.makeAPIRequest(api.Request{
+	catResp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "create",
@@ -1052,10 +987,10 @@ func (s *ApprovalSuite) TestInstanceStart() {
 			"name":     "实例启动分类",
 			"isActive": true,
 		},
-	})
-	catBody := s.readBody(catResp)
+	}, s.authToken)
+	catBody := s.ReadResult(catResp)
 	s.Require().True(catBody.IsOk())
-	categoryID := s.readDataAsMap(catBody.Data)["id"].(string)
+	categoryID := s.ReadDataAsMap(catBody.Data)["id"].(string)
 
 	definition := `{
 		"nodes": [
@@ -1068,7 +1003,7 @@ func (s *ApprovalSuite) TestInstanceStart() {
 			{"source": "approval1", "target": "end"}
 		]
 	}`
-	deployResp := s.makeAPIRequest(api.Request{
+	deployResp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/flow",
 			Action:   "deploy",
@@ -1081,11 +1016,11 @@ func (s *ApprovalSuite) TestInstanceStart() {
 			"definition": definition,
 			"operatorId": "admin-001",
 		},
-	})
-	deployBody := s.readBody(deployResp)
+	}, s.authToken)
+	deployBody := s.ReadResult(deployResp)
 	s.Require().True(deployBody.IsOk(), "deploy should succeed, got: %v", deployBody)
 
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "start",
@@ -1096,14 +1031,14 @@ func (s *ApprovalSuite) TestInstanceStart() {
 			"title":       "测试请假申请",
 			"applicantId": "user-001",
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.False(body.IsOk(), "start should fail when no published version")
 }
 
 func (s *ApprovalSuite) TestInstanceStartValidation() {
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "start",
@@ -1113,14 +1048,14 @@ func (s *ApprovalSuite) TestInstanceStartValidation() {
 			"flowCode": "some-flow",
 			// title and applicantId are required but missing
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.False(body.IsOk(), "start should fail validation when required fields missing")
 }
 
 func (s *ApprovalSuite) TestInstanceWithdrawValidation() {
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "withdraw",
@@ -1129,14 +1064,14 @@ func (s *ApprovalSuite) TestInstanceWithdrawValidation() {
 		Params: map[string]any{
 			// instanceId and operatorId are required but missing
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.False(body.IsOk(), "withdraw should fail validation")
 }
 
 func (s *ApprovalSuite) TestInstanceProcessTaskValidation() {
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "process_task",
@@ -1146,14 +1081,14 @@ func (s *ApprovalSuite) TestInstanceProcessTaskValidation() {
 			"instanceId": "some-instance",
 			// other required fields missing
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.False(body.IsOk(), "process_task should fail validation")
 }
 
 func (s *ApprovalSuite) TestInstanceAddCcValidation() {
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "add_cc",
@@ -1162,14 +1097,14 @@ func (s *ApprovalSuite) TestInstanceAddCcValidation() {
 		Params: map[string]any{
 			// required fields missing
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.False(body.IsOk(), "add_cc should fail validation")
 }
 
 func (s *ApprovalSuite) TestInstanceAddAssigneeValidation() {
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "add_assignee",
@@ -1178,14 +1113,14 @@ func (s *ApprovalSuite) TestInstanceAddAssigneeValidation() {
 		Params: map[string]any{
 			// required fields missing
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.False(body.IsOk(), "add_assignee should fail validation")
 }
 
 func (s *ApprovalSuite) TestInstanceRemoveAssigneeValidation() {
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "remove_assignee",
@@ -1194,14 +1129,14 @@ func (s *ApprovalSuite) TestInstanceRemoveAssigneeValidation() {
 		Params: map[string]any{
 			// required fields missing
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.False(body.IsOk(), "remove_assignee should fail validation")
 }
 
 func (s *ApprovalSuite) TestInstanceGetDetailValidation() {
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "get_detail",
@@ -1210,14 +1145,14 @@ func (s *ApprovalSuite) TestInstanceGetDetailValidation() {
 		Params: map[string]any{
 			// instanceId is required but missing
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.False(body.IsOk(), "get_detail should fail validation")
 }
 
 func (s *ApprovalSuite) TestInstanceGetActionLogsValidation() {
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "get_action_logs",
@@ -1226,9 +1161,9 @@ func (s *ApprovalSuite) TestInstanceGetActionLogsValidation() {
 		Params: map[string]any{
 			// instanceId is required but missing
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.False(body.IsOk(), "get_action_logs should fail validation")
 }
 
@@ -1237,7 +1172,7 @@ func (s *ApprovalSuite) TestInstanceGetActionLogsValidation() {
 // ---------------------------------------------------------------------------
 
 func (s *ApprovalSuite) TestInstanceFindInstances() {
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "find_instances",
@@ -1247,19 +1182,19 @@ func (s *ApprovalSuite) TestInstanceFindInstances() {
 			"page":     1,
 			"pageSize": 10,
 		},
-	})
+	}, s.authToken)
 
 	s.Equal(200, resp.StatusCode)
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "find_instances should succeed, got: %v", body)
 
-	data := s.readDataAsMap(body.Data)
+	data := s.ReadDataAsMap(body.Data)
 	s.Contains(data, "list", "should contain list")
 	s.Contains(data, "total", "should contain total")
 }
 
 func (s *ApprovalSuite) TestInstanceFindTasks() {
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "find_tasks",
@@ -1269,13 +1204,13 @@ func (s *ApprovalSuite) TestInstanceFindTasks() {
 			"page":     1,
 			"pageSize": 10,
 		},
-	})
+	}, s.authToken)
 
 	s.Equal(200, resp.StatusCode)
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "find_tasks should succeed, got: %v", body)
 
-	data := s.readDataAsMap(body.Data)
+	data := s.ReadDataAsMap(body.Data)
 	s.Contains(data, "list", "should contain list")
 	s.Contains(data, "total", "should contain total")
 }
@@ -1290,7 +1225,7 @@ func (s *ApprovalSuite) TestInstanceFindTasks() {
 func (s *ApprovalSuite) deployAndPublishFlow(flowCode, categoryCode string) (string, string) {
 	s.T().Helper()
 
-	catResp := s.makeAPIRequest(api.Request{
+	catResp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/category",
 			Action:   "create",
@@ -1301,10 +1236,10 @@ func (s *ApprovalSuite) deployAndPublishFlow(flowCode, categoryCode string) (str
 			"name":     "E2E测试分类-" + categoryCode,
 			"isActive": true,
 		},
-	})
-	catBody := s.readBody(catResp)
+	}, s.authToken)
+	catBody := s.ReadResult(catResp)
 	s.Require().True(catBody.IsOk(), "category create should succeed: %v", catBody)
-	categoryID := s.readDataAsMap(catBody.Data)["id"].(string)
+	categoryID := s.ReadDataAsMap(catBody.Data)["id"].(string)
 
 	definition := `{
 		"nodes": [
@@ -1328,7 +1263,7 @@ func (s *ApprovalSuite) deployAndPublishFlow(flowCode, categoryCode string) (str
 		]
 	}`
 
-	deployResp := s.makeAPIRequest(api.Request{
+	deployResp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/flow",
 			Action:   "deploy",
@@ -1341,10 +1276,10 @@ func (s *ApprovalSuite) deployAndPublishFlow(flowCode, categoryCode string) (str
 			"definition": definition,
 			"operatorId": "admin-001",
 		},
-	})
-	deployBody := s.readBody(deployResp)
+	}, s.authToken)
+	deployBody := s.ReadResult(deployResp)
 	s.Require().True(deployBody.IsOk(), "deploy should succeed: %v", deployBody)
-	flowData := s.readDataAsMap(deployBody.Data)
+	flowData := s.ReadDataAsMap(deployBody.Data)
 	flowID := flowData["id"].(string)
 
 	var versionID string
@@ -1359,7 +1294,7 @@ func (s *ApprovalSuite) deployAndPublishFlow(flowCode, categoryCode string) (str
 	s.Require().NoError(err, "should find draft version in DB")
 	s.Require().NotEmpty(versionID, "version ID should not be empty")
 
-	pubResp := s.makeAPIRequest(api.Request{
+	pubResp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/flow",
 			Action:   "publish_version",
@@ -1369,8 +1304,8 @@ func (s *ApprovalSuite) deployAndPublishFlow(flowCode, categoryCode string) (str
 			"versionId":  versionID,
 			"operatorId": "admin-001",
 		},
-	})
-	pubBody := s.readBody(pubResp)
+	}, s.authToken)
+	pubBody := s.ReadResult(pubResp)
 	s.Require().True(pubBody.IsOk(), "publish_version should succeed: %v", pubBody)
 
 	return flowID, categoryID
@@ -1380,7 +1315,7 @@ func (s *ApprovalSuite) deployAndPublishFlow(flowCode, categoryCode string) (str
 func (s *ApprovalSuite) startInstance(flowCode, applicantID string) string {
 	s.T().Helper()
 
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "start",
@@ -1391,10 +1326,10 @@ func (s *ApprovalSuite) startInstance(flowCode, applicantID string) string {
 			"title":       "E2E测试申请-" + flowCode,
 			"applicantId": applicantID,
 		},
-	})
-	body := s.readBody(resp)
+	}, s.authToken)
+	body := s.ReadResult(resp)
 	s.Require().True(body.IsOk(), "start instance should succeed: %v", body)
-	data := s.readDataAsMap(body.Data)
+	data := s.ReadDataAsMap(body.Data)
 	instanceID := data["id"].(string)
 	s.Require().NotEmpty(instanceID, "instance ID should not be empty")
 
@@ -1442,7 +1377,7 @@ func (s *ApprovalSuite) TestInstanceGetDetailSuccess() {
 	s.deployAndPublishFlow("e2e-detail-flow", "cat-e2e-detail")
 	instanceID := s.startInstance("e2e-detail-flow", "user-e2e-002")
 
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "get_detail",
@@ -1451,30 +1386,30 @@ func (s *ApprovalSuite) TestInstanceGetDetailSuccess() {
 		Params: map[string]any{
 			"instanceId": instanceID,
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "get_detail should succeed: %v", body)
-	data := s.readDataAsMap(body.Data)
+	data := s.ReadDataAsMap(body.Data)
 
 	s.Contains(data, "instance", "detail should contain instance")
 	s.Contains(data, "tasks", "detail should contain tasks")
 	s.Contains(data, "actionLogs", "detail should contain actionLogs")
 	s.Contains(data, "flowNodes", "detail should contain flowNodes")
 
-	instance := s.readDataAsMap(data["instance"])
+	instance := s.ReadDataAsMap(data["instance"])
 	s.Equal(instanceID, instance["id"], "instance ID should match")
 	s.Equal("running", instance["status"], "instance should be running")
 
-	tasks := s.readDataAsSlice(data["tasks"])
+	tasks := s.ReadDataAsSlice(data["tasks"])
 	s.NotEmpty(tasks, "should have at least one task")
 
-	actionLogs := s.readDataAsSlice(data["actionLogs"])
+	actionLogs := s.ReadDataAsSlice(data["actionLogs"])
 	s.NotEmpty(actionLogs, "should have at least one action log")
 }
 
 func (s *ApprovalSuite) TestInstanceGetDetailNotFound() {
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "get_detail",
@@ -1483,9 +1418,9 @@ func (s *ApprovalSuite) TestInstanceGetDetailNotFound() {
 		Params: map[string]any{
 			"instanceId": "nonexistent-instance-id",
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.False(body.IsOk(), "get_detail should fail for nonexistent instance")
 }
 
@@ -1493,7 +1428,7 @@ func (s *ApprovalSuite) TestInstanceGetActionLogsSuccess() {
 	s.deployAndPublishFlow("e2e-logs-flow", "cat-e2e-logs")
 	instanceID := s.startInstance("e2e-logs-flow", "user-e2e-003")
 
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "get_action_logs",
@@ -1502,21 +1437,21 @@ func (s *ApprovalSuite) TestInstanceGetActionLogsSuccess() {
 		Params: map[string]any{
 			"instanceId": instanceID,
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "get_action_logs should succeed: %v", body)
 	s.NotNil(body.Data, "should return action logs data")
 
-	logs := s.readDataAsSlice(body.Data)
+	logs := s.ReadDataAsSlice(body.Data)
 	s.NotEmpty(logs, "should have at least the submit action log")
 
-	firstLog := s.readDataAsMap(logs[0])
+	firstLog := s.ReadDataAsMap(logs[0])
 	s.Equal("submit", firstLog["action"], "first log should be submit action")
 }
 
 func (s *ApprovalSuite) TestInstanceGetActionLogsEmpty() {
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "get_action_logs",
@@ -1525,9 +1460,9 @@ func (s *ApprovalSuite) TestInstanceGetActionLogsEmpty() {
 		Params: map[string]any{
 			"instanceId": "nonexistent-instance-id",
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "get_action_logs should succeed even with no data: %v", body)
 }
 
@@ -1537,7 +1472,7 @@ func (s *ApprovalSuite) TestInstanceProcessTaskApprove() {
 
 	taskID, _ := s.findPendingTask(instanceID, "approver-001")
 
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "process_task",
@@ -1550,9 +1485,9 @@ func (s *ApprovalSuite) TestInstanceProcessTaskApprove() {
 			"operatorId": "approver-001",
 			"opinion":    "同意",
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "process_task (approve) should succeed: %v", body)
 
 	var status string
@@ -1566,7 +1501,7 @@ func (s *ApprovalSuite) TestInstanceProcessTaskApprove() {
 }
 
 func (s *ApprovalSuite) TestInstanceProcessTaskNotFound() {
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "process_task",
@@ -1578,9 +1513,9 @@ func (s *ApprovalSuite) TestInstanceProcessTaskNotFound() {
 			"action":     "approve",
 			"operatorId": "approver-001",
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.False(body.IsOk(), "process_task should fail for nonexistent instance")
 }
 
@@ -1590,7 +1525,7 @@ func (s *ApprovalSuite) TestInstanceProcessTaskReject() {
 
 	taskID, _ := s.findPendingTask(instanceID, "approver-001")
 
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "process_task",
@@ -1603,9 +1538,9 @@ func (s *ApprovalSuite) TestInstanceProcessTaskReject() {
 			"operatorId": "approver-001",
 			"opinion":    "拒绝",
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "process_task (reject) should succeed: %v", body)
 
 	var status string
@@ -1622,7 +1557,7 @@ func (s *ApprovalSuite) TestInstanceWithdrawSuccess() {
 	s.deployAndPublishFlow("e2e-withdraw-flow", "cat-e2e-withdraw")
 	instanceID := s.startInstance("e2e-withdraw-flow", "user-e2e-006")
 
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "withdraw",
@@ -1633,9 +1568,9 @@ func (s *ApprovalSuite) TestInstanceWithdrawSuccess() {
 			"operatorId": "user-e2e-006",
 			"reason":     "申请人撤回",
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "withdraw should succeed: %v", body)
 
 	var status string
@@ -1652,7 +1587,7 @@ func (s *ApprovalSuite) TestInstanceWithdrawNotApplicant() {
 	s.deployAndPublishFlow("e2e-withdraw-na-flow", "cat-e2e-withdraw-na")
 	instanceID := s.startInstance("e2e-withdraw-na-flow", "user-e2e-007")
 
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "withdraw",
@@ -1662,9 +1597,9 @@ func (s *ApprovalSuite) TestInstanceWithdrawNotApplicant() {
 			"instanceId": instanceID,
 			"operatorId": "other-user",
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.False(body.IsOk(), "withdraw should fail when operator is not applicant")
 }
 
@@ -1672,7 +1607,7 @@ func (s *ApprovalSuite) TestInstanceAddCcSuccess() {
 	s.deployAndPublishFlow("e2e-cc-flow", "cat-e2e-cc")
 	instanceID := s.startInstance("e2e-cc-flow", "user-e2e-008")
 
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "add_cc",
@@ -1683,9 +1618,9 @@ func (s *ApprovalSuite) TestInstanceAddCcSuccess() {
 			"ccUserIds":  []string{"cc-user-001", "cc-user-002"},
 			"operatorId": "user-e2e-008",
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "add_cc should succeed: %v", body)
 
 	count, err := s.bunDB.NewSelect().
@@ -1697,7 +1632,7 @@ func (s *ApprovalSuite) TestInstanceAddCcSuccess() {
 }
 
 func (s *ApprovalSuite) TestInstanceAddCcNotFound() {
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "add_cc",
@@ -1708,9 +1643,9 @@ func (s *ApprovalSuite) TestInstanceAddCcNotFound() {
 			"ccUserIds":  []string{"cc-user-001"},
 			"operatorId": "someone",
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.False(body.IsOk(), "add_cc should fail for nonexistent instance")
 }
 
@@ -1720,7 +1655,7 @@ func (s *ApprovalSuite) TestInstanceAddAssigneeSuccess() {
 
 	taskID, _ := s.findPendingTask(instanceID, "approver-001")
 
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "add_assignee",
@@ -1733,9 +1668,9 @@ func (s *ApprovalSuite) TestInstanceAddAssigneeSuccess() {
 			"addType":    "parallel",
 			"operatorId": "approver-001",
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "add_assignee should succeed: %v", body)
 
 	count, err := s.bunDB.NewSelect().
@@ -1748,7 +1683,7 @@ func (s *ApprovalSuite) TestInstanceAddAssigneeSuccess() {
 }
 
 func (s *ApprovalSuite) TestInstanceAddAssigneeNotFound() {
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "add_assignee",
@@ -1761,9 +1696,9 @@ func (s *ApprovalSuite) TestInstanceAddAssigneeNotFound() {
 			"addType":    "parallel",
 			"operatorId": "someone",
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.False(body.IsOk(), "add_assignee should fail for nonexistent instance")
 }
 
@@ -1773,7 +1708,7 @@ func (s *ApprovalSuite) TestInstanceRemoveAssigneeSuccess() {
 
 	taskID, _ := s.findPendingTask(instanceID, "approver-001")
 
-	addResp := s.makeAPIRequest(api.Request{
+	addResp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "add_assignee",
@@ -1786,13 +1721,13 @@ func (s *ApprovalSuite) TestInstanceRemoveAssigneeSuccess() {
 			"addType":    "parallel",
 			"operatorId": "approver-001",
 		},
-	})
-	addBody := s.readBody(addResp)
+	}, s.authToken)
+	addBody := s.ReadResult(addResp)
 	s.Require().True(addBody.IsOk(), "add_assignee should succeed first: %v", addBody)
 
 	extraTaskID, _ := s.findPendingTask(instanceID, "extra-approver-001")
 
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "remove_assignee",
@@ -1802,9 +1737,9 @@ func (s *ApprovalSuite) TestInstanceRemoveAssigneeSuccess() {
 			"taskId":     extraTaskID,
 			"operatorId": "approver-001",
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "remove_assignee should succeed: %v", body)
 
 	var taskStatus string
@@ -1818,7 +1753,7 @@ func (s *ApprovalSuite) TestInstanceRemoveAssigneeSuccess() {
 }
 
 func (s *ApprovalSuite) TestInstanceRemoveAssigneeNotFound() {
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "remove_assignee",
@@ -1828,16 +1763,16 @@ func (s *ApprovalSuite) TestInstanceRemoveAssigneeNotFound() {
 			"taskId":     "nonexistent-task",
 			"operatorId": "someone",
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.False(body.IsOk(), "remove_assignee should fail for nonexistent task")
 }
 
 func (s *ApprovalSuite) TestFlowPublishVersionAndGetGraphSuccess() {
 	flowID, _ := s.deployAndPublishFlow("e2e-graph-flow", "cat-e2e-graph")
 
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/flow",
 			Action:   "get_graph",
@@ -1846,21 +1781,21 @@ func (s *ApprovalSuite) TestFlowPublishVersionAndGetGraphSuccess() {
 		Params: map[string]any{
 			"flowId": flowID,
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "get_graph should succeed after publish: %v", body)
-	data := s.readDataAsMap(body.Data)
+	data := s.ReadDataAsMap(body.Data)
 
 	s.Contains(data, "flow", "graph should contain flow")
 	s.Contains(data, "version", "graph should contain version")
 	s.Contains(data, "nodes", "graph should contain nodes")
 	s.Contains(data, "edges", "graph should contain edges")
 
-	nodes := s.readDataAsSlice(data["nodes"])
+	nodes := s.ReadDataAsSlice(data["nodes"])
 	s.NotEmpty(nodes, "should have nodes in the graph")
 
-	edges := s.readDataAsSlice(data["edges"])
+	edges := s.ReadDataAsSlice(data["edges"])
 	s.NotEmpty(edges, "should have edges in the graph")
 }
 
@@ -1868,7 +1803,7 @@ func (s *ApprovalSuite) TestInstanceFindInstancesWithFilter() {
 	s.deployAndPublishFlow("e2e-find-inst-flow", "cat-e2e-find-inst")
 	s.startInstance("e2e-find-inst-flow", "user-e2e-find")
 
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "find_instances",
@@ -1880,13 +1815,13 @@ func (s *ApprovalSuite) TestInstanceFindInstancesWithFilter() {
 			"page":        1,
 			"pageSize":    10,
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "find_instances with filter should succeed: %v", body)
 
-	data := s.readDataAsMap(body.Data)
-	list := s.readDataAsSlice(data["list"])
+	data := s.ReadDataAsMap(body.Data)
+	list := s.ReadDataAsSlice(data["list"])
 	s.NotEmpty(list, "should find at least one instance for the applicant")
 }
 
@@ -1894,7 +1829,7 @@ func (s *ApprovalSuite) TestInstanceFindTasksWithFilter() {
 	s.deployAndPublishFlow("e2e-find-task-flow", "cat-e2e-find-task")
 	instanceID := s.startInstance("e2e-find-task-flow", "user-e2e-find-task")
 
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "find_tasks",
@@ -1907,13 +1842,13 @@ func (s *ApprovalSuite) TestInstanceFindTasksWithFilter() {
 			"page":       1,
 			"pageSize":   10,
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "find_tasks with filter should succeed: %v", body)
 
-	data := s.readDataAsMap(body.Data)
-	list := s.readDataAsSlice(data["list"])
+	data := s.ReadDataAsMap(body.Data)
+	list := s.ReadDataAsSlice(data["list"])
 	s.NotEmpty(list, "should find at least one task for the assignee")
 }
 
@@ -1923,7 +1858,7 @@ func (s *ApprovalSuite) TestInstanceProcessTaskTransfer() {
 
 	taskID, _ := s.findPendingTask(instanceID, "approver-001")
 
-	resp := s.makeAPIRequest(api.Request{
+	resp := s.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "approval/instance",
 			Action:   "process_task",
@@ -1937,9 +1872,9 @@ func (s *ApprovalSuite) TestInstanceProcessTaskTransfer() {
 			"opinion":      "转交给其他人",
 			"transferToId": "approver-002",
 		},
-	})
+	}, s.authToken)
 
-	body := s.readBody(resp)
+	body := s.ReadResult(resp)
 	s.True(body.IsOk(), "process_task (transfer) should succeed: %v", body)
 
 	var origStatus string

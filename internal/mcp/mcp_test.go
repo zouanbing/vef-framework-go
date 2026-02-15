@@ -14,12 +14,8 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/fx"
 
-	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/encoding"
-	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/internal/apptest"
-	isecurity "github.com/ilxqx/vef-framework-go/internal/security"
 	"github.com/ilxqx/vef-framework-go/password"
 	"github.com/ilxqx/vef-framework-go/security"
 )
@@ -49,13 +45,10 @@ func (m *MockUserLoader) LoadByID(ctx context.Context, id string) (*security.Pri
 
 // MCPTestSuite tests the MCP endpoint functionality with authentication.
 type MCPTestSuite struct {
-	suite.Suite
+	apptest.Suite
 
 	ctx        context.Context
-	app        *app.App
-	stop       func()
 	userLoader *MockUserLoader
-	jwtSecret  string
 	testUser   *security.Principal
 }
 
@@ -64,7 +57,6 @@ func (suite *MCPTestSuite) SetupSuite() {
 	suite.T().Log("Setting up MCPTestSuite - initializing test app with MCP")
 
 	suite.ctx = context.Background()
-	suite.jwtSecret = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 
 	suite.testUser = security.NewUser("user001", "Test User", "admin", "user")
 	suite.testUser.Details = map[string]any{
@@ -81,11 +73,7 @@ func (suite *MCPTestSuite) SetupSuite() {
 // TearDownSuite runs once after all tests in the suite.
 func (suite *MCPTestSuite) TearDownSuite() {
 	suite.T().Log("Tearing down MCPTestSuite")
-
-	if suite.stop != nil {
-		suite.stop()
-	}
-
+	suite.TearDownApp()
 	suite.T().Log("MCPTestSuite teardown complete")
 }
 
@@ -98,8 +86,7 @@ func (suite *MCPTestSuite) setupTestApp() {
 	hashedPassword, err := password.NewBcryptEncoder().Encode("password123")
 	suite.Require().NoError(err)
 
-	suite.app, suite.stop = apptest.NewTestApp(
-		suite.T(),
+	suite.SetupApp(
 		fx.Supply(
 			fx.Annotate(
 				suite.userLoader,
@@ -118,8 +105,8 @@ func (suite *MCPTestSuite) setupTestApp() {
 				TokenExpires: 24 * time.Hour,
 			},
 			&security.JWTConfig{
-				Secret:   suite.jwtSecret,
-				Audience: "test-app",
+				Secret:   security.DefaultJWTSecret,
+				Audience: "test_app",
 			},
 		),
 		fx.Invoke(func() {
@@ -141,7 +128,7 @@ func (suite *MCPTestSuite) makeMCPRequest(body string) *http.Response {
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 	req.Header.Set("Accept", "application/json, text/event-stream")
 
-	resp, err := suite.app.Test(req, 30*time.Second)
+	resp, err := suite.App.Test(req, 30*time.Second)
 	suite.Require().NoError(err, "MCP request should not fail")
 
 	return resp
@@ -153,60 +140,10 @@ func (suite *MCPTestSuite) makeMCPRequestWithToken(body, token string) *http.Res
 	req.Header.Set("Accept", "application/json, text/event-stream")
 	req.Header.Set(fiber.HeaderAuthorization, security.AuthSchemeBearer+" "+token)
 
-	resp, err := suite.app.Test(req, 30*time.Second)
+	resp, err := suite.App.Test(req, 30*time.Second)
 	suite.Require().NoError(err, "MCP request should not fail")
 
 	return resp
-}
-
-func (suite *MCPTestSuite) getAccessToken() string {
-	hashedPassword, _ := password.NewBcryptEncoder().Encode("password123")
-
-	suite.userLoader.On("LoadByUsername", mock.Anything, "testuser").
-		Return(suite.testUser, hashedPassword, nil).
-		Maybe()
-
-	// Login to get access token using proper API request format
-	loginRequest := api.Request{
-		Identifier: api.Identifier{
-			Resource: "security/auth",
-			Action:   "login",
-			Version:  "v1",
-		},
-		Params: map[string]any{
-			"kind":        isecurity.AuthKindPassword,
-			"principal":   "testuser",
-			"credentials": "password123",
-		},
-	}
-
-	jsonBody, err := encoding.ToJSON(loginRequest)
-	suite.Require().NoError(err, "Should encode login request to JSON")
-
-	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
-	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-
-	resp, err := suite.app.Test(req, 30*time.Second)
-	suite.Require().NoError(err)
-	suite.Require().Equal(200, resp.StatusCode)
-
-	body, err := io.ReadAll(resp.Body)
-	suite.Require().NoError(err)
-
-	defer resp.Body.Close()
-
-	// Extract accessToken from response
-	bodyStr := string(body)
-
-	startIdx := strings.Index(bodyStr, `"accessToken":"`) + len(`"accessToken":"`)
-	if startIdx < len(`"accessToken":"`) {
-		suite.T().Logf("Login response: %s", bodyStr)
-		suite.FailNow("Failed to get accessToken from login response")
-	}
-
-	endIdx := strings.Index(bodyStr[startIdx:], `"`) + startIdx
-
-	return bodyStr[startIdx:endIdx]
 }
 
 func (suite *MCPTestSuite) readBody(resp *http.Response) string {
@@ -263,7 +200,7 @@ func (suite *MCPTestSuite) TestMCPEndpointWithValidToken() {
 
 	// Test 1: Initialize with valid JWT token
 	suite.Run("InitializeWithValidToken", func() {
-		token := suite.getAccessToken()
+		token := suite.GenerateToken(suite.testUser)
 		suite.NotEmpty(token, "Should get valid access token")
 		suite.T().Logf("Got access token: %s...", token[:20])
 
@@ -290,7 +227,7 @@ func (suite *MCPTestSuite) TestMCPEndpointWithValidToken() {
 func (suite *MCPTestSuite) TestMCPEndpointMethods() {
 	suite.T().Log("Testing MCP endpoint methods")
 
-	token := suite.getAccessToken()
+	token := suite.GenerateToken(suite.testUser)
 	suite.NotEmpty(token, "Should get valid access token")
 
 	suite.Run("ListTools", func() {
@@ -350,7 +287,7 @@ func (suite *MCPTestSuite) TestMCPEndpointTokenExpiration() {
 func (suite *MCPTestSuite) TestMCPEndpointAuthorizationHeader() {
 	suite.T().Log("Testing MCP endpoint Authorization header formats")
 
-	token := suite.getAccessToken()
+	token := suite.GenerateToken(suite.testUser)
 	suite.NotEmpty(token, "Should get valid access token")
 
 	suite.Run("BearerPrefix", func() {
@@ -361,7 +298,7 @@ func (suite *MCPTestSuite) TestMCPEndpointAuthorizationHeader() {
 		req.Header.Set("Accept", "application/json, text/event-stream")
 		req.Header.Set(fiber.HeaderAuthorization, "Bearer "+token)
 
-		resp, err := suite.app.Test(req, 30*time.Second)
+		resp, err := suite.App.Test(req, 30*time.Second)
 		suite.Require().NoError(err)
 
 		suite.NotEqual(401, resp.StatusCode, "Should accept Bearer prefix")
@@ -375,7 +312,7 @@ func (suite *MCPTestSuite) TestMCPEndpointAuthorizationHeader() {
 		req.Header.Set("Accept", "application/json, text/event-stream")
 		req.Header.Set(fiber.HeaderAuthorization, "bearer "+token)
 
-		resp, err := suite.app.Test(req, 30*time.Second)
+		resp, err := suite.App.Test(req, 30*time.Second)
 		suite.Require().NoError(err)
 
 		// SDK accepts lowercase bearer
@@ -390,7 +327,7 @@ func (suite *MCPTestSuite) TestMCPEndpointAuthorizationHeader() {
 		req.Header.Set("Accept", "application/json, text/event-stream")
 		req.Header.Set(fiber.HeaderAuthorization, token) // No "Bearer " prefix
 
-		resp, err := suite.app.Test(req, 30*time.Second)
+		resp, err := suite.App.Test(req, 30*time.Second)
 		suite.Require().NoError(err)
 
 		suite.Equal(401, resp.StatusCode, "Should reject token without Bearer prefix")
