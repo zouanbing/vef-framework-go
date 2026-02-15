@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestToHex tests to hex functionality.
 func TestToHex(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -52,6 +53,7 @@ func TestToHex(t *testing.T) {
 	}
 }
 
+// TestFromHex tests from hex functionality.
 func TestFromHex(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -122,6 +124,7 @@ func TestFromHex(t *testing.T) {
 	}
 }
 
+// TestHexRoundTrip tests hex round trip functionality.
 func TestHexRoundTrip(t *testing.T) {
 	data := make([]byte, 256)
 	_, err := rand.Read(data)
@@ -136,6 +139,7 @@ func TestHexRoundTrip(t *testing.T) {
 	assert.Equal(t, data, decoded, "Round-trip encoding/decoding should preserve original data")
 }
 
+// TestHexCaseInsensitive tests hex case insensitive functionality.
 func TestHexCaseInsensitive(t *testing.T) {
 	data := []byte{0xab, 0xcd, 0xef}
 

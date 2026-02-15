@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestRandomIDGenerator tests random i d generator functionality.
 func TestRandomIDGenerator(t *testing.T) {
 	t.Run("CreateWithCustomAlphabetAndLength", func(t *testing.T) {
 		alphabet := "0123456789ABCDEF"

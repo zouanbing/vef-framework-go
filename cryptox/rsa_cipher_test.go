@@ -300,6 +300,7 @@ func TestRsaCipher_KeySizes(t *testing.T) {
 	}
 }
 
+// TestRsaCipher_SignVerifyPss tests Rsa Cipher sign verify pss scenarios.
 func TestRsaCipher_SignVerifyPss(t *testing.T) {
 	privateKey, err := generateRSAKeyPair(2048)
 	require.NoError(t, err, "Should not return error")
@@ -333,6 +334,7 @@ func TestRsaCipher_SignVerifyPss(t *testing.T) {
 	}
 }
 
+// TestRsaCipher_SignVerifyPkcs1v15 tests Rsa Cipher sign verify pkcs1v15 scenarios.
 func TestRsaCipher_SignVerifyPkcs1v15(t *testing.T) {
 	privateKey, err := generateRSAKeyPair(2048)
 	require.NoError(t, err, "Should not return error")
@@ -349,6 +351,7 @@ func TestRsaCipher_SignVerifyPkcs1v15(t *testing.T) {
 	assert.True(t, valid, "Should be valid")
 }
 
+// TestRsaCipher_SignWithoutPrivateKey tests Rsa Cipher sign without private key scenarios.
 func TestRsaCipher_SignWithoutPrivateKey(t *testing.T) {
 	privateKey, err := generateRSAKeyPair(2048)
 	require.NoError(t, err, "Should not return error")
@@ -362,6 +365,7 @@ func TestRsaCipher_SignWithoutPrivateKey(t *testing.T) {
 	assert.ErrorIs(t, err, ErrPrivateKeyRequiredForSign, "Error should be ErrPrivateKeyRequiredForSign")
 }
 
+// TestRsaCipher_VerifyWithoutPublicKey tests Rsa Cipher verify without public key scenarios.
 func TestRsaCipher_VerifyWithoutPublicKey(t *testing.T) {
 	privateKey, err := generateRSAKeyPair(2048)
 	require.NoError(t, err, "Should not return error")
@@ -381,6 +385,7 @@ func TestRsaCipher_VerifyWithoutPublicKey(t *testing.T) {
 	assert.True(t, valid, "Should be valid")
 }
 
+// TestRsaCipher_InvalidSignature tests Rsa Cipher invalid signature scenarios.
 func TestRsaCipher_InvalidSignature(t *testing.T) {
 	privateKey, err := generateRSAKeyPair(2048)
 	require.NoError(t, err, "Should not return error")
@@ -394,6 +399,7 @@ func TestRsaCipher_InvalidSignature(t *testing.T) {
 	assert.Error(t, err, "Should return error")
 }
 
+// TestRsaCipher_DifferentSignModes tests Rsa Cipher different sign modes scenarios.
 func TestRsaCipher_DifferentSignModes(t *testing.T) {
 	privateKey, err := generateRSAKeyPair(2048)
 	require.NoError(t, err, "Should not return error")

@@ -9,12 +9,14 @@ import (
 	"github.com/ilxqx/vef-framework-go/js"
 )
 
+// TestNew tests new functionality.
 func TestNew(t *testing.T) {
 	vm, err := js.New()
 	require.NoError(t, err, "New() should create runtime successfully")
 	require.NotNil(t, vm, "Runtime should not be nil")
 }
 
+// TestDayJs tests day js functionality.
 func TestDayJs(t *testing.T) {
 	vm, err := js.New()
 	require.NoError(t, err, "Should not return error")
@@ -64,6 +66,7 @@ func TestDayJs(t *testing.T) {
 	}
 }
 
+// TestBigJs tests big js functionality.
 func TestBigJs(t *testing.T) {
 	vm, err := js.New()
 	require.NoError(t, err, "Should not return error")
@@ -109,6 +112,7 @@ func TestBigJs(t *testing.T) {
 	}
 }
 
+// TestRadashUtils tests radash utils functionality.
 func TestRadashUtils(t *testing.T) {
 	vm, err := js.New()
 	require.NoError(t, err, "Should not return error")
@@ -190,6 +194,7 @@ func TestRadashUtils(t *testing.T) {
 	}
 }
 
+// TestValidatorJs tests validator js functionality.
 func TestValidatorJs(t *testing.T) {
 	vm, err := js.New()
 	require.NoError(t, err, "Should not return error")
@@ -260,6 +265,7 @@ func TestValidatorJs(t *testing.T) {
 	}
 }
 
+// TestCombinedLibraries tests combined libraries functionality.
 func TestCombinedLibraries(t *testing.T) {
 	t.Run("DateFormattingAndValidation", func(t *testing.T) {
 		vm, err := js.New()
@@ -320,6 +326,7 @@ func TestCombinedLibraries(t *testing.T) {
 	})
 }
 
+// TestGoJavaScriptInterop tests go java script interop functionality.
 func TestGoJavaScriptInterop(t *testing.T) {
 	vm, err := js.New()
 	require.NoError(t, err, "Should not return error")
@@ -395,6 +402,7 @@ func TestGoJavaScriptInterop(t *testing.T) {
 	})
 }
 
+// TestParse tests parse functionality.
 func TestParse(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -452,6 +460,7 @@ func TestParse(t *testing.T) {
 	}
 }
 
+// TestTypeCheckers tests type checkers functionality.
 func TestTypeCheckers(t *testing.T) {
 	vm, err := js.New()
 	require.NoError(t, err, "Should not return error")
@@ -518,6 +527,7 @@ func TestTypeCheckers(t *testing.T) {
 	}
 }
 
+// TestErrorHandling tests error handling functionality.
 func TestErrorHandling(t *testing.T) {
 	vm, err := js.New()
 	require.NoError(t, err, "Should not return error")

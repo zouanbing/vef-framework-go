@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestAddAssigneeType_IsValid tests Add Assignee Type is valid scenarios.
 func TestAddAssigneeType_IsValid(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -26,6 +27,7 @@ func TestAddAssigneeType_IsValid(t *testing.T) {
 	}
 }
 
+// TestInstanceStatus_String tests Instance Status string scenarios.
 func TestInstanceStatus_String(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -46,6 +48,7 @@ func TestInstanceStatus_String(t *testing.T) {
 	}
 }
 
+// TestInstanceStatus_IsFinal tests Instance Status is final scenarios.
 func TestInstanceStatus_IsFinal(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -66,6 +69,7 @@ func TestInstanceStatus_IsFinal(t *testing.T) {
 	}
 }
 
+// TestTaskStatus_String tests Task Status string scenarios.
 func TestTaskStatus_String(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -91,6 +95,7 @@ func TestTaskStatus_String(t *testing.T) {
 	}
 }
 
+// TestTaskStatus_IsFinal tests Task Status is final scenarios.
 func TestTaskStatus_IsFinal(t *testing.T) {
 	tests := []struct {
 		name     string

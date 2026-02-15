@@ -18,6 +18,7 @@ func parseSQL(t *testing.T, sql string) *ast.AST {
 	return astNode
 }
 
+// TestDropStatementRule tests drop statement rule functionality.
 func TestDropStatementRule(t *testing.T) {
 	rule := new(DropStatementRule)
 
@@ -49,6 +50,7 @@ func TestDropStatementRule(t *testing.T) {
 	}
 }
 
+// TestTruncateStatementRule tests truncate statement rule functionality.
 func TestTruncateStatementRule(t *testing.T) {
 	rule := new(TruncateStatementRule)
 
@@ -78,6 +80,7 @@ func TestTruncateStatementRule(t *testing.T) {
 	}
 }
 
+// TestDeleteWithoutWhereRule tests delete without where rule functionality.
 func TestDeleteWithoutWhereRule(t *testing.T) {
 	rule := new(DeleteWithoutWhereRule)
 
@@ -109,6 +112,7 @@ func TestDeleteWithoutWhereRule(t *testing.T) {
 	}
 }
 
+// TestDefaultRules tests default rules functionality.
 func TestDefaultRules(t *testing.T) {
 	rules := DefaultRules()
 

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestNewBaseEvent tests new base event functionality.
 func TestNewBaseEvent(t *testing.T) {
 	t.Run("MinimalCreationWithJustType", func(t *testing.T) {
 		event := NewBaseEvent("test.event")
@@ -73,6 +74,7 @@ func TestNewBaseEvent(t *testing.T) {
 	})
 }
 
+// TestBaseEvent_Metadata tests Base Event metadata scenarios.
 func TestBaseEvent_Metadata(t *testing.T) {
 	t.Run("MetaReturnsAllMetadata", func(t *testing.T) {
 		event := NewBaseEvent("test.event",
@@ -101,6 +103,7 @@ func TestBaseEvent_Metadata(t *testing.T) {
 	})
 }
 
+// TestBaseEvent_JSONSerialization tests Base Event j s o n serialization scenarios.
 func TestBaseEvent_JSONSerialization(t *testing.T) {
 	t.Run("MarshalMinimalEvent", func(t *testing.T) {
 		event := NewBaseEvent("test.event")
@@ -246,6 +249,7 @@ func TestBaseEvent_JSONSerialization(t *testing.T) {
 	})
 }
 
+// TestBaseEvent_Immutability tests Base Event immutability scenarios.
 func TestBaseEvent_Immutability(t *testing.T) {
 	t.Run("CoreFieldsAreImmutableAfterCreation", func(t *testing.T) {
 		event := NewBaseEvent("test.event", WithSource("test-source"))

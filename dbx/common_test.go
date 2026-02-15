@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestColumnWithAlias tests column with alias functionality.
 func TestColumnWithAlias(t *testing.T) {
 	tests := []struct {
 		name     string

@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestDateOf tests date of functionality.
 func TestDateOf(t *testing.T) {
 	now := testTime(2023, 12, 25, 14, 30, 45)
 	date := DateOf(now)
@@ -22,6 +23,7 @@ func TestDateOf(t *testing.T) {
 	assert.Equal(t, 0, unwrapped.Nanosecond(), "Nanosecond should be zeroed")
 }
 
+// TestNowDate tests now date functionality.
 func TestNowDate(t *testing.T) {
 	before := time.Now()
 	date := NowDate()
@@ -35,6 +37,7 @@ func TestNowDate(t *testing.T) {
 	assert.Equal(t, 0, unwrapped.Second(), "Second should be zero")
 }
 
+// TestParseDate tests parse date functionality.
 func TestParseDate(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -88,12 +91,14 @@ func TestParseDate(t *testing.T) {
 	}
 }
 
+// TestDateString tests date string functionality.
 func TestDateString(t *testing.T) {
 	date := Date(testTime(2023, 12, 25, 0, 0, 0))
 	expected := "2023-12-25"
 	assert.Equal(t, expected, date.String(), "String representation should match format")
 }
 
+// TestDateEqual tests date equal functionality.
 func TestDateEqual(t *testing.T) {
 	date1 := Date(testTime(2023, 12, 25, 0, 0, 0))
 	date2 := Date(testTime(2023, 12, 25, 0, 0, 0))
@@ -103,6 +108,7 @@ func TestDateEqual(t *testing.T) {
 	assert.False(t, date1.Equal(date3), "Different dates should not be equal")
 }
 
+// TestDateBefore tests date before functionality.
 func TestDateBefore(t *testing.T) {
 	date1 := Date(testTime(2023, 12, 25, 0, 0, 0))
 	date2 := Date(testTime(2023, 12, 26, 0, 0, 0))
@@ -111,6 +117,7 @@ func TestDateBefore(t *testing.T) {
 	assert.False(t, date2.Before(date1), "Later date should not be before earlier")
 }
 
+// TestDateAfter tests date after functionality.
 func TestDateAfter(t *testing.T) {
 	date1 := Date(testTime(2023, 12, 25, 0, 0, 0))
 	date2 := Date(testTime(2023, 12, 26, 0, 0, 0))
@@ -119,6 +126,7 @@ func TestDateAfter(t *testing.T) {
 	assert.True(t, date2.After(date1), "Later date should be after earlier")
 }
 
+// TestDateBetween tests date between functionality.
 func TestDateBetween(t *testing.T) {
 	start := Date(testTime(2023, 12, 25, 0, 0, 0))
 	middle := Date(testTime(2023, 12, 26, 0, 0, 0))
@@ -128,6 +136,7 @@ func TestDateBetween(t *testing.T) {
 	assert.False(t, start.Between(middle, end), "Start date should not be between middle and end")
 }
 
+// TestDateAddDays tests date add days functionality.
 func TestDateAddDays(t *testing.T) {
 	date := Date(testTime(2023, 12, 25, 0, 0, 0))
 	result := date.AddDays(5)
@@ -136,6 +145,7 @@ func TestDateAddDays(t *testing.T) {
 	assert.True(t, expected.Equal(result.Unwrap()), "AddDays should add days correctly")
 }
 
+// TestDateAddMonths tests date add months functionality.
 func TestDateAddMonths(t *testing.T) {
 	date := Date(testTime(2023, 12, 25, 0, 0, 0))
 	result := date.AddMonths(2)
@@ -144,6 +154,7 @@ func TestDateAddMonths(t *testing.T) {
 	assert.True(t, expected.Equal(result.Unwrap()), "AddMonths should add months correctly")
 }
 
+// TestDateAddYears tests date add years functionality.
 func TestDateAddYears(t *testing.T) {
 	date := Date(testTime(2023, 12, 25, 0, 0, 0))
 	result := date.AddYears(1)
@@ -152,6 +163,7 @@ func TestDateAddYears(t *testing.T) {
 	assert.True(t, expected.Equal(result.Unwrap()), "AddYears should add years correctly")
 }
 
+// TestDateComponents tests date components functionality.
 func TestDateComponents(t *testing.T) {
 	date := Date(testTime(2023, 12, 25, 0, 0, 0))
 
@@ -162,6 +174,7 @@ func TestDateComponents(t *testing.T) {
 	assert.Equal(t, 359, date.YearDay(), "YearDay should match")
 }
 
+// TestDateIsZero tests date is zero functionality.
 func TestDateIsZero(t *testing.T) {
 	zeroDate := Date{}
 	nonZeroDate := Date(testTime(2023, 12, 25, 0, 0, 0))
@@ -170,6 +183,7 @@ func TestDateIsZero(t *testing.T) {
 	assert.False(t, nonZeroDate.IsZero(), "Non-zero date should not be zero")
 }
 
+// TestDateBeginOfMethods tests date begin of methods functionality.
 func TestDateBeginOfMethods(t *testing.T) {
 	date := Date(testTime(2023, 12, 25, 0, 0, 0))
 
@@ -203,6 +217,7 @@ func TestDateBeginOfMethods(t *testing.T) {
 	})
 }
 
+// TestDateEndOfMethods tests date end of methods functionality.
 func TestDateEndOfMethods(t *testing.T) {
 	date := Date(testTime(2023, 12, 25, 0, 0, 0))
 
@@ -236,6 +251,7 @@ func TestDateEndOfMethods(t *testing.T) {
 	})
 }
 
+// TestDateWeekdayMethods tests date weekday methods functionality.
 func TestDateWeekdayMethods(t *testing.T) {
 	date := Date(testTime(2023, 12, 25, 0, 0, 0))
 
@@ -264,6 +280,7 @@ func TestDateWeekdayMethods(t *testing.T) {
 	})
 }
 
+// TestDateMarshalJSON tests date marshal j s o n functionality.
 func TestDateMarshalJSON(t *testing.T) {
 	date := Date(testTime(2023, 12, 25, 0, 0, 0))
 	data, err := date.MarshalJSON()
@@ -273,6 +290,7 @@ func TestDateMarshalJSON(t *testing.T) {
 	assert.Equal(t, expected, string(data), "JSON should match expected format")
 }
 
+// TestDateUnmarshalJSON tests date unmarshal j s o n functionality.
 func TestDateUnmarshalJSON(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -300,6 +318,7 @@ func TestDateUnmarshalJSON(t *testing.T) {
 	}
 }
 
+// TestDateValue tests date value functionality.
 func TestDateValue(t *testing.T) {
 	date := Date(testTime(2023, 12, 25, 0, 0, 0))
 	value, err := date.Value()
@@ -311,6 +330,7 @@ func TestDateValue(t *testing.T) {
 	assert.Equal(t, expected, str, "Value should match expected format")
 }
 
+// TestDateScan tests date scan functionality.
 func TestDateScan(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -339,6 +359,7 @@ func TestDateScan(t *testing.T) {
 	}
 }
 
+// TestDateJSONRoundTrip tests date j s o n round trip functionality.
 func TestDateJSONRoundTrip(t *testing.T) {
 	original := Date(testTime(2023, 12, 25, 0, 0, 0))
 

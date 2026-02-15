@@ -175,6 +175,7 @@ func (suite *RedisTestSuite) TestHealthCheck() {
 	})
 }
 
+// TestBuildRedisAddr tests build redis addr functionality.
 func TestBuildRedisAddr(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -223,6 +224,7 @@ func TestBuildRedisAddr(t *testing.T) {
 	}
 }
 
+// TestGetPoolSize tests get pool size functionality.
 func TestGetPoolSize(t *testing.T) {
 	poolSize := getPoolSize()
 
@@ -232,6 +234,7 @@ func TestGetPoolSize(t *testing.T) {
 	t.Logf("Calculated pool size: %d", poolSize)
 }
 
+// TestGetConnectionConfig tests get connection config functionality.
 func TestGetConnectionConfig(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -261,6 +264,7 @@ func TestGetConnectionConfig(t *testing.T) {
 	}
 }
 
+// TestRedisTestSuite tests redis test suite functionality.
 func TestRedisTestSuite(t *testing.T) {
 	suite.Run(t, new(RedisTestSuite))
 }

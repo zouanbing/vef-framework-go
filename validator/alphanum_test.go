@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestAlphanumUs tests alphanum us functionality.
 func TestAlphanumUs(t *testing.T) {
 	type testStruct struct {
 		Value string `validate:"alphanum_us"`
@@ -50,6 +51,7 @@ func TestAlphanumUs(t *testing.T) {
 	}
 }
 
+// TestAlphanumUsSlash tests alphanum us slash functionality.
 func TestAlphanumUsSlash(t *testing.T) {
 	type testStruct struct {
 		Value string `validate:"alphanum_us_slash"`
@@ -94,6 +96,7 @@ func TestAlphanumUsSlash(t *testing.T) {
 	}
 }
 
+// TestAlphanumUsDot tests alphanum us dot functionality.
 func TestAlphanumUsDot(t *testing.T) {
 	type testStruct struct {
 		Value string `validate:"alphanum_us_dot"`
@@ -139,6 +142,7 @@ func TestAlphanumUsDot(t *testing.T) {
 	}
 }
 
+// TestAlphanumRulesCombined tests alphanum rules combined functionality.
 func TestAlphanumRulesCombined(t *testing.T) {
 	type testStruct struct {
 		Action   string `validate:"alphanum_us" label:"操作"`

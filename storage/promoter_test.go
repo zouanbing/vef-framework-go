@@ -151,6 +151,7 @@ func findField(fields []metaField, index []int) *metaField {
 	return nil
 }
 
+// TestParseMetaFields tests parse meta fields functionality.
 func TestParseMetaFields(t *testing.T) {
 	t.Run("BasicParsing", func(t *testing.T) {
 		fields := parseMetaFields(testModelType())
@@ -277,6 +278,7 @@ func TestParseMetaFields(t *testing.T) {
 	})
 }
 
+// TestPromote tests promote functionality.
 func TestPromote(t *testing.T) {
 	t.Run("Create_UploadedFile", func(t *testing.T) {
 		t.Log("Testing file promotion for uploaded_file fields")
@@ -613,6 +615,7 @@ func TestPromote(t *testing.T) {
 	})
 }
 
+// TestPromoterTypes tests promoter types functionality.
 func TestPromoterTypes(t *testing.T) {
 	t.Run("PointerTypes_Create", func(t *testing.T) {
 		t.Log("Testing file promotion with pointer field types")
@@ -760,6 +763,7 @@ func TestPromoterTypes(t *testing.T) {
 	})
 }
 
+// TestPromoterEvents tests promoter events functionality.
 func TestPromoterEvents(t *testing.T) {
 	t.Run("WithEventPublisher", func(t *testing.T) {
 		t.Log("Testing event publishing during promotion")

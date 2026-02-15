@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestSnowflakeEdgeCases tests snowflake edge cases functionality.
 func TestSnowflakeEdgeCases(t *testing.T) {
 	t.Run("MaximumNodeID", func(t *testing.T) {
 		generator, err := NewSnowflakeIDGenerator(63)
@@ -47,6 +48,7 @@ func TestSnowflakeEdgeCases(t *testing.T) {
 	})
 }
 
+// TestRandomIdGeneratorEdgeCases tests random id generator edge cases functionality.
 func TestRandomIdGeneratorEdgeCases(t *testing.T) {
 	t.Run("EmptyAlphabet", func(t *testing.T) {
 		generator := NewRandomIDGenerator(WithAlphabet(""), WithLength(10))
@@ -94,6 +96,7 @@ func TestRandomIdGeneratorEdgeCases(t *testing.T) {
 	})
 }
 
+// TestUUIDEdgeCases tests u u i d edge cases functionality.
 func TestUUIDEdgeCases(t *testing.T) {
 	t.Run("RapidGenerationWithoutCollision", func(t *testing.T) {
 		generator := NewUUIDGenerator()
@@ -123,6 +126,7 @@ func TestUUIDEdgeCases(t *testing.T) {
 	})
 }
 
+// TestXidEdgeCases tests xid edge cases functionality.
 func TestXidEdgeCases(t *testing.T) {
 	t.Run("ConcurrentGenerationFromMultipleGenerators", func(t *testing.T) {
 		const (
@@ -168,6 +172,7 @@ func TestXidEdgeCases(t *testing.T) {
 	})
 }
 
+// TestEnvironmentVariables tests environment variables functionality.
 func TestEnvironmentVariables(t *testing.T) {
 	t.Run("InvalidNodeIDEnvironmentVariable", func(t *testing.T) {
 		originalNodeID := os.Getenv("NODE_ID")
@@ -184,6 +189,7 @@ func TestEnvironmentVariables(t *testing.T) {
 	})
 }
 
+// TestInterfaceCompliance tests interface compliance functionality.
 func TestInterfaceCompliance(t *testing.T) {
 	t.Run("AllGeneratorsImplementInterface", func(t *testing.T) {
 		generators := []IDGenerator{
@@ -212,6 +218,7 @@ func TestInterfaceCompliance(t *testing.T) {
 	})
 }
 
+// TestMemoryUsage tests memory usage functionality.
 func TestMemoryUsage(t *testing.T) {
 	t.Run("GeneratorsShouldNotLeakMemory", func(t *testing.T) {
 		for i := range 1000 {
@@ -230,6 +237,7 @@ func TestMemoryUsage(t *testing.T) {
 	})
 }
 
+// TestStringManipulation tests string manipulation functionality.
 func TestStringManipulation(t *testing.T) {
 	t.Run("IdsSafeForCommonStringOperations", func(t *testing.T) {
 		generators := []IDGenerator{

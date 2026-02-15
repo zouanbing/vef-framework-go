@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestNewStartChunk tests new start chunk functionality.
 func TestNewStartChunk(t *testing.T) {
 	chunk := NewStartChunk("msg_123")
 
@@ -13,6 +14,7 @@ func TestNewStartChunk(t *testing.T) {
 	assert.Equal(t, "msg_123", chunk["messageID"], "Should equal expected value")
 }
 
+// TestNewFinishChunk tests new finish chunk functionality.
 func TestNewFinishChunk(t *testing.T) {
 	chunk := NewFinishChunk()
 
@@ -20,6 +22,7 @@ func TestNewFinishChunk(t *testing.T) {
 	assert.Len(t, chunk, 1, "Length should be 1")
 }
 
+// TestNewStartStepChunk tests new start step chunk functionality.
 func TestNewStartStepChunk(t *testing.T) {
 	chunk := NewStartStepChunk()
 
@@ -27,6 +30,7 @@ func TestNewStartStepChunk(t *testing.T) {
 	assert.Len(t, chunk, 1, "Length should be 1")
 }
 
+// TestNewFinishStepChunk tests new finish step chunk functionality.
 func TestNewFinishStepChunk(t *testing.T) {
 	chunk := NewFinishStepChunk()
 
@@ -34,6 +38,7 @@ func TestNewFinishStepChunk(t *testing.T) {
 	assert.Len(t, chunk, 1, "Length should be 1")
 }
 
+// TestNewErrorChunk tests new error chunk functionality.
 func TestNewErrorChunk(t *testing.T) {
 	chunk := NewErrorChunk("something went wrong")
 
@@ -41,6 +46,7 @@ func TestNewErrorChunk(t *testing.T) {
 	assert.Equal(t, "something went wrong", chunk["errorText"], "Should equal expected value")
 }
 
+// TestTextChunks tests text chunks functionality.
 func TestTextChunks(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -82,6 +88,7 @@ func TestTextChunks(t *testing.T) {
 	}
 }
 
+// TestReasoningChunks tests reasoning chunks functionality.
 func TestReasoningChunks(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -123,6 +130,7 @@ func TestReasoningChunks(t *testing.T) {
 	}
 }
 
+// TestToolChunks tests tool chunks functionality.
 func TestToolChunks(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -180,6 +188,7 @@ func TestToolChunks(t *testing.T) {
 	}
 }
 
+// TestSourceChunks tests source chunks functionality.
 func TestSourceChunks(t *testing.T) {
 	t.Run("SourceURLWithTitle", func(t *testing.T) {
 		chunk := NewSourceURLChunk("src_1", "https://example.com", "Example Site")
@@ -218,6 +227,7 @@ func TestSourceChunks(t *testing.T) {
 	})
 }
 
+// TestNewFileChunk tests new file chunk functionality.
 func TestNewFileChunk(t *testing.T) {
 	chunk := NewFileChunk("file_1", "image/png", "https://cdn.example.com/image.png")
 
@@ -227,6 +237,7 @@ func TestNewFileChunk(t *testing.T) {
 	assert.Equal(t, "https://cdn.example.com/image.png", chunk["url"], "Should equal expected value")
 }
 
+// TestNewDataChunk tests new data chunk functionality.
 func TestNewDataChunk(t *testing.T) {
 	tests := []struct {
 		name     string

@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestParseStruct tests parse struct functionality.
 func TestParseStruct(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -219,6 +220,7 @@ func TestParseStruct(t *testing.T) {
 	}
 }
 
+// TestParseStruct_NonStructTypes tests Parse Struct non struct types scenarios.
 func TestParseStruct_NonStructTypes(t *testing.T) {
 	tests := []struct {
 		name string
@@ -239,6 +241,7 @@ func TestParseStruct_NonStructTypes(t *testing.T) {
 	}
 }
 
+// TestNewSchema tests new schema functionality.
 func TestNewSchema(t *testing.T) {
 	type TestStruct struct {
 		Field3 string `tabular:"字段3,order=2"`
@@ -256,6 +259,7 @@ func TestNewSchema(t *testing.T) {
 	assert.Equal(t, "字段3", columns[2].Name, "Should equal expected value")
 }
 
+// TestNewSchemaFor tests new schema for functionality.
 func TestNewSchemaFor(t *testing.T) {
 	type TestStruct struct {
 		Name  string `tabular:"姓名"`
@@ -268,6 +272,7 @@ func TestNewSchemaFor(t *testing.T) {
 	assert.Equal(t, []string{"姓名", "邮箱"}, schema.ColumnNames(), "Should equal expected value")
 }
 
+// TestSchema_ColumnNames tests Schema column names scenarios.
 func TestSchema_ColumnNames(t *testing.T) {
 	type TestStruct struct {
 		Name  string `tabular:"用户名"`
@@ -281,6 +286,7 @@ func TestSchema_ColumnNames(t *testing.T) {
 	assert.Equal(t, []string{"用户名", "电子邮箱", "年龄"}, names, "Should equal expected value")
 }
 
+// TestBuildColumn tests build column functionality.
 func TestBuildColumn(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -412,6 +418,7 @@ func TestBuildColumn(t *testing.T) {
 	}
 }
 
+// TestSchema_ColumnOrderingSorting tests Schema column ordering sorting scenarios.
 func TestSchema_ColumnOrderingSorting(t *testing.T) {
 	type UnorderedStruct struct {
 		Field5 string `tabular:"字段5,order=4"`
@@ -432,6 +439,7 @@ func TestSchema_ColumnOrderingSorting(t *testing.T) {
 	assert.Equal(t, []int{0, 1, 2, 3, 4}, orders, "Should equal expected value")
 }
 
+// TestSchema_EmptySchema tests Schema empty schema scenarios.
 func TestSchema_EmptySchema(t *testing.T) {
 	type EmptyStruct struct{}
 

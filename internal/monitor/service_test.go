@@ -263,6 +263,7 @@ func (suite *MonitorServiceTestSuite) TestBuildInfo() {
 	})
 }
 
+// TestMonitorServiceTestSuite tests monitor service test suite functionality.
 func TestMonitorServiceTestSuite(t *testing.T) {
 	suite.Run(t, new(MonitorServiceTestSuite))
 }

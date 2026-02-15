@@ -181,6 +181,7 @@ func TestSm2Cipher_MultipleEncryptions(t *testing.T) {
 	assert.Equal(t, plaintext, decrypted2, "Second decrypted text should match original plaintext")
 }
 
+// TestSm2Cipher_SignVerify tests Sm2 Cipher sign verify scenarios.
 func TestSm2Cipher_SignVerify(t *testing.T) {
 	privateKey, err := generateSM2KeyPair()
 	require.NoError(t, err, "Should not return error")
@@ -215,6 +216,7 @@ func TestSm2Cipher_SignVerify(t *testing.T) {
 	}
 }
 
+// TestSm2Cipher_SignWithoutPrivateKey tests Sm2 Cipher sign without private key scenarios.
 func TestSm2Cipher_SignWithoutPrivateKey(t *testing.T) {
 	privateKey, err := generateSM2KeyPair()
 	require.NoError(t, err, "Should not return error")
@@ -228,6 +230,7 @@ func TestSm2Cipher_SignWithoutPrivateKey(t *testing.T) {
 	assert.ErrorIs(t, err, ErrPrivateKeyRequiredForSign, "Error should be ErrPrivateKeyRequiredForSign")
 }
 
+// TestSm2Cipher_VerifyWithoutPublicKey tests Sm2 Cipher verify without public key scenarios.
 func TestSm2Cipher_VerifyWithoutPublicKey(t *testing.T) {
 	privateKey, err := generateSM2KeyPair()
 	require.NoError(t, err, "Should not return error")
@@ -247,6 +250,7 @@ func TestSm2Cipher_VerifyWithoutPublicKey(t *testing.T) {
 	assert.True(t, valid, "Should be valid")
 }
 
+// TestSm2Cipher_InvalidSignature tests Sm2 Cipher invalid signature scenarios.
 func TestSm2Cipher_InvalidSignature(t *testing.T) {
 	privateKey, err := generateSM2KeyPair()
 	require.NoError(t, err, "Should not return error")
@@ -260,6 +264,7 @@ func TestSm2Cipher_InvalidSignature(t *testing.T) {
 	assert.Error(t, err, "Should return error")
 }
 
+// TestSm2Cipher_DifferentSignatures tests Sm2 Cipher different signatures scenarios.
 func TestSm2Cipher_DifferentSignatures(t *testing.T) {
 	privateKey, err := generateSM2KeyPair()
 	require.NoError(t, err, "Should not return error")

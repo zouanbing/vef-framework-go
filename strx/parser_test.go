@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestParseTag_CommaSeparated tests Parse Tag comma separated scenarios.
 func TestParseTag_CommaSeparated(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -147,6 +148,7 @@ func TestParseTag_CommaSeparated(t *testing.T) {
 	}
 }
 
+// TestParseTag_SpaceSeparated tests Parse Tag space separated scenarios.
 func TestParseTag_SpaceSeparated(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -260,6 +262,7 @@ func TestParseTag_SpaceSeparated(t *testing.T) {
 	}
 }
 
+// TestParseTag_CustomDelimiters tests Parse Tag custom delimiters scenarios.
 func TestParseTag_CustomDelimiters(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -337,6 +340,7 @@ func TestParseTag_CustomDelimiters(t *testing.T) {
 	}
 }
 
+// TestParseTag_BareValueMode tests Parse Tag bare value mode scenarios.
 func TestParseTag_BareValueMode(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -454,6 +458,7 @@ func TestParseTag_BareValueMode(t *testing.T) {
 	}
 }
 
+// TestParseTag_EdgeCases tests Parse Tag edge cases scenarios.
 func TestParseTag_EdgeCases(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -543,6 +548,7 @@ func TestParseTag_EdgeCases(t *testing.T) {
 	}
 }
 
+// TestParseTag_OptionsOrdering tests Parse Tag options ordering scenarios.
 func TestParseTag_OptionsOrdering(t *testing.T) {
 	t.Run("MultipleOptionsAppliedInOrder", func(t *testing.T) {
 		input := "a:1 b:2"

@@ -90,6 +90,7 @@ func findCategoryByID(categories []TestCategory, id string) *TestCategory {
 	return nil
 }
 
+// TestBuild tests build functionality.
 func TestBuild(t *testing.T) {
 	adapter := createTestNodeAdapter()
 
@@ -248,6 +249,7 @@ func TestBuild(t *testing.T) {
 	})
 }
 
+// TestFindNode tests find node functionality.
 func TestFindNode(t *testing.T) {
 	adapter := createTestNodeAdapter()
 
@@ -373,6 +375,7 @@ func TestFindNode(t *testing.T) {
 	})
 }
 
+// TestFindNodePath tests find node path functionality.
 func TestFindNodePath(t *testing.T) {
 	adapter := createTestNodeAdapter()
 
@@ -542,6 +545,7 @@ func TestFindNodePath(t *testing.T) {
 	})
 }
 
+// TestAdapter_EdgeCases tests Adapter edge cases scenarios.
 func TestAdapter_EdgeCases(t *testing.T) {
 	t.Run("Adapter with nil functions panics", func(t *testing.T) {
 		nodes := []TestNode{
@@ -676,6 +680,7 @@ func TestAdapter_EdgeCases(t *testing.T) {
 	})
 }
 
+// TestAdapter_BenchmarkScenarios tests Adapter benchmark scenarios scenarios.
 func TestAdapter_BenchmarkScenarios(t *testing.T) {
 	t.Run("Balanced tree structure", func(t *testing.T) {
 		const nodeCount = 100

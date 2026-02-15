@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestSnowflakeGenerator tests snowflake generator functionality.
 func TestSnowflakeGenerator(t *testing.T) {
 	t.Run("CreateGenerator", func(t *testing.T) {
 		generator, err := NewSnowflakeIDGenerator(1)
@@ -70,6 +71,7 @@ func TestSnowflakeGenerator(t *testing.T) {
 	})
 }
 
+// TestSnowflakeEnvironmentVariables tests snowflake environment variables functionality.
 func TestSnowflakeEnvironmentVariables(t *testing.T) {
 	t.Run("UseNodeIDEnvironmentVariable", func(t *testing.T) {
 		assert.NotNil(t, DefaultSnowflakeIDGenerator, "Default generator should be initialized")
@@ -109,6 +111,7 @@ func TestSnowflakeEnvironmentVariables(t *testing.T) {
 	})
 }
 
+// TestSnowflakeConfiguration tests snowflake configuration functionality.
 func TestSnowflakeConfiguration(t *testing.T) {
 	t.Run("CustomEpochConfiguration", func(t *testing.T) {
 		generator, err := NewSnowflakeIDGenerator(0)

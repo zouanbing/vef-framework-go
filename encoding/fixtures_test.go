@@ -240,6 +240,7 @@ func assertEqualWithContext(t *testing.T, expected, actual any, fieldName string
 
 // Test functions for fixtures
 
+// TestGenerateLargeData tests generate large data functionality.
 func TestGenerateLargeData(t *testing.T) {
 	tests := []struct {
 		name string
@@ -259,6 +260,7 @@ func TestGenerateLargeData(t *testing.T) {
 	}
 }
 
+// TestGenerateRandomString tests generate random string functionality.
 func TestGenerateRandomString(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -283,6 +285,7 @@ func TestGenerateRandomString(t *testing.T) {
 	}
 }
 
+// TestGenerateSimpleStruct tests generate simple struct functionality.
 func TestGenerateSimpleStruct(t *testing.T) {
 	s := generateSimpleStruct()
 	assert.NotEmpty(t, s.Name, "Name field should not be empty")
@@ -290,6 +293,7 @@ func TestGenerateSimpleStruct(t *testing.T) {
 	assert.LessOrEqual(t, s.Age, 100, "Age field should be less than or equal to 100")
 }
 
+// TestGenerateMediumStruct tests generate medium struct functionality.
 func TestGenerateMediumStruct(t *testing.T) {
 	itemCount := 5
 	s := generateMediumStruct(itemCount)
@@ -305,6 +309,7 @@ func TestGenerateMediumStruct(t *testing.T) {
 	}
 }
 
+// TestGenerateComplexStruct tests generate complex struct functionality.
 func TestGenerateComplexStruct(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -337,6 +342,7 @@ func TestGenerateComplexStruct(t *testing.T) {
 	}
 }
 
+// TestGenerateNestedStruct tests generate nested struct functionality.
 func TestGenerateNestedStruct(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -363,6 +369,7 @@ func TestGenerateNestedStruct(t *testing.T) {
 	}
 }
 
+// TestGenerateLargeStruct tests generate large struct functionality.
 func TestGenerateLargeStruct(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -385,6 +392,7 @@ func TestGenerateLargeStruct(t *testing.T) {
 	}
 }
 
+// TestGenerateUnicodeString tests generate unicode string functionality.
 func TestGenerateUnicodeString(t *testing.T) {
 	str := generateUnicodeString()
 	assert.NotEmpty(t, str, "Unicode string should not be empty")
@@ -394,6 +402,7 @@ func TestGenerateUnicodeString(t *testing.T) {
 	assert.Contains(t, str, "مرحبا", "should contain Arabic characters")
 }
 
+// TestGenerateSpecialCharString tests generate special char string functionality.
 func TestGenerateSpecialCharString(t *testing.T) {
 	str := generateSpecialCharString()
 	assert.NotEmpty(t, str, "special char string should not be empty")
@@ -405,6 +414,7 @@ func TestGenerateSpecialCharString(t *testing.T) {
 	assert.Contains(t, str, `&`, "should contain ampersand")
 }
 
+// TestGenerateControlCharString tests generate control char string functionality.
 func TestGenerateControlCharString(t *testing.T) {
 	str := generateControlCharString()
 	assert.NotEmpty(t, str, "control char string should not be empty")
@@ -423,6 +433,7 @@ func TestGenerateControlCharString(t *testing.T) {
 	assert.True(t, hasControlChar, "should contain control characters")
 }
 
+// TestAssertStructEqual tests assert struct equal functionality.
 func TestAssertStructEqual(t *testing.T) {
 	s1 := SimpleStruct{Name: "Test", Age: 30, Active: true}
 	s2 := SimpleStruct{Name: "Test", Age: 30, Active: true}
@@ -431,6 +442,7 @@ func TestAssertStructEqual(t *testing.T) {
 	_ = assertStructEqual(t, s1, s2, "equal structs should be equal")
 }
 
+// TestAssertErrorContains tests assert error contains functionality.
 func TestAssertErrorContains(t *testing.T) {
 	err := errors.New("this is a test error with keyword")
 
@@ -438,6 +450,7 @@ func TestAssertErrorContains(t *testing.T) {
 	_ = assertErrorContains(t, err, "keyword", "error should contain keyword")
 }
 
+// TestAssertHelpers tests assert helpers functionality.
 func TestAssertHelpers(t *testing.T) {
 	t.Run("AssertNoErrorWithContext", func(t *testing.T) {
 		// Just verify the function works without panicking

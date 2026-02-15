@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestIsJSON tests is j s o n functionality.
 func TestIsJSON(t *testing.T) {
 	t.Run("ApplicationJson", func(t *testing.T) {
 		app := fiber.New()
@@ -82,6 +83,7 @@ func TestIsJSON(t *testing.T) {
 	})
 }
 
+// TestIsMultipart tests is multipart functionality.
 func TestIsMultipart(t *testing.T) {
 	t.Run("MultipartFormData", func(t *testing.T) {
 		app := fiber.New()

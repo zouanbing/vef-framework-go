@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestToBase64 tests to base64 functionality.
 func TestToBase64(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -44,6 +45,7 @@ func TestToBase64(t *testing.T) {
 	}
 }
 
+// TestFromBase64 tests from base64 functionality.
 func TestFromBase64(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -96,6 +98,7 @@ func TestFromBase64(t *testing.T) {
 	}
 }
 
+// TestBase64RoundTrip tests base64 round trip functionality.
 func TestBase64RoundTrip(t *testing.T) {
 	data := make([]byte, 256)
 	_, err := rand.Read(data)
@@ -109,6 +112,7 @@ func TestBase64RoundTrip(t *testing.T) {
 	assert.Equal(t, data, decoded, "Round-trip encoding/decoding should preserve original data")
 }
 
+// TestToBase64URL tests to base64 u r l functionality.
 func TestToBase64URL(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -140,6 +144,7 @@ func TestToBase64URL(t *testing.T) {
 	}
 }
 
+// TestFromBase64URL tests from base64 u r l functionality.
 func TestFromBase64URL(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -180,6 +185,7 @@ func TestFromBase64URL(t *testing.T) {
 	}
 }
 
+// TestBase64UrlRoundTrip tests base64 url round trip functionality.
 func TestBase64UrlRoundTrip(t *testing.T) {
 	data := make([]byte, 256)
 	_, err := rand.Read(data)

@@ -375,6 +375,7 @@ func (suite *MonitorResourceTestSuite) TestGetBuildInfo() {
 	})
 }
 
+// TestMonitorResourceTestSuite tests monitor resource test suite functionality.
 func TestMonitorResourceTestSuite(t *testing.T) {
 	suite.Run(t, new(MonitorResourceTestSuite))
 }

@@ -28,6 +28,7 @@ type TestUser struct {
 	Password  string      `tabular:"-"` // Ignored field
 }
 
+// TestExporterExportToFile tests exporter export to file functionality.
 func TestExporterExportToFile(t *testing.T) {
 	now := time.Now()
 	users := []TestUser{
@@ -72,6 +73,7 @@ func TestExporterExportToFile(t *testing.T) {
 	assert.NoError(t, err, "Should not return error")
 }
 
+// TestImporterImportFromFile tests importer import from file functionality.
 func TestImporterImportFromFile(t *testing.T) {
 	now := time.Now()
 	users := []TestUser{
@@ -132,6 +134,7 @@ func TestImporterImportFromFile(t *testing.T) {
 	assert.False(t, imported[1].Remark.Valid, "Should not be valid")
 }
 
+// TestSchemaParseTags tests schema parse tags functionality.
 func TestSchemaParseTags(t *testing.T) {
 	schema := tabular.NewSchemaFor[TestUser]()
 
@@ -163,6 +166,7 @@ func TestSchemaParseTags(t *testing.T) {
 	assert.Nil(t, passwordCol, "Should be nil")
 }
 
+// TestImporterValidationErrors tests importer validation errors functionality.
 func TestImporterValidationErrors(t *testing.T) {
 	invalidUsers := []TestUser{
 		{
@@ -202,6 +206,7 @@ type TestNoTagStruct struct {
 	Age  int
 }
 
+// TestSchemaNoTags tests schema no tags functionality.
 func TestSchemaNoTags(t *testing.T) {
 	schema := tabular.NewSchemaFor[TestNoTagStruct]()
 
@@ -213,6 +218,7 @@ func TestSchemaNoTags(t *testing.T) {
 	assert.Equal(t, "Age", columns[2].Name, "Should equal expected value")
 }
 
+// TestExportImportNoTags tests export import no tags functionality.
 func TestExportImportNoTags(t *testing.T) {
 	data := []TestNoTagStruct{
 		{ID: "1", Name: "Alice", Age: 30},
@@ -257,6 +263,7 @@ func (f *prefixFormatter) Format(value any) (string, error) {
 	return f.prefix + " " + fmt.Sprint(value), nil
 }
 
+// TestExportCustomFormatter tests export custom formatter functionality.
 func TestExportCustomFormatter(t *testing.T) {
 	users := []TestUser{
 		{
@@ -289,6 +296,7 @@ func TestExportCustomFormatter(t *testing.T) {
 	assert.NoError(t, err, "Should not return error")
 }
 
+// TestExportToBuffer tests export to buffer functionality.
 func TestExportToBuffer(t *testing.T) {
 	users := []TestUser{
 		{
@@ -311,6 +319,7 @@ func TestExportToBuffer(t *testing.T) {
 	assert.Greater(t, buf.Len(), 0, "Should be greater")
 }
 
+// TestExportEmptyData tests export empty data functionality.
 func TestExportEmptyData(t *testing.T) {
 	var emptyUsers []TestUser
 
@@ -330,6 +339,7 @@ func TestExportEmptyData(t *testing.T) {
 	assert.NoError(t, err, "Should not return error")
 }
 
+// TestExportWithOptions tests export with options functionality.
 func TestExportWithOptions(t *testing.T) {
 	users := []TestUser{
 		{
@@ -373,6 +383,7 @@ func (*prefixParser) Parse(cellValue string, _ reflect.Type) (any, error) {
 	return cellValue, nil
 }
 
+// TestImportCustomParser tests import custom parser functionality.
 func TestImportCustomParser(t *testing.T) {
 	now := time.Now()
 	users := []TestUser{
@@ -412,6 +423,7 @@ func TestImportCustomParser(t *testing.T) {
 	assert.Len(t, imported, 1, "Length should be 1")
 }
 
+// TestImportFromReader tests import from reader functionality.
 func TestImportFromReader(t *testing.T) {
 	now := time.Now()
 	users := []TestUser{
@@ -442,6 +454,7 @@ func TestImportFromReader(t *testing.T) {
 	assert.Equal(t, "张三", imported[0].Name, "Should equal expected value")
 }
 
+// TestImportWithOptions tests import with options functionality.
 func TestImportWithOptions(t *testing.T) {
 	users := []TestUser{
 		{
@@ -477,6 +490,7 @@ func TestImportWithOptions(t *testing.T) {
 	assert.Len(t, imported, 1, "Length should be 1")
 }
 
+// TestImportEmptyRows tests import empty rows functionality.
 func TestImportEmptyRows(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "test_empty_rows_*.xlsx")
 	require.NoError(t, err, "Should not return error")
@@ -514,6 +528,7 @@ func TestImportEmptyRows(t *testing.T) {
 	assert.Len(t, imported, 2, "Length should be 2")
 }
 
+// TestImportMissingColumns tests import missing columns functionality.
 func TestImportMissingColumns(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "test_missing_columns_*.xlsx")
 	require.NoError(t, err, "Should not return error")
@@ -556,6 +571,7 @@ func TestImportMissingColumns(t *testing.T) {
 	assert.False(t, imported[0].Remark.Valid, "Should not be valid")
 }
 
+// TestImportInvalidData tests import invalid data functionality.
 func TestImportInvalidData(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "test_invalid_data_*.xlsx")
 	require.NoError(t, err, "Should not return error")
@@ -591,6 +607,7 @@ func TestImportInvalidData(t *testing.T) {
 	assert.NotEmpty(t, importErrors, "Should not be empty")
 }
 
+// TestImportLargeFile tests import large file functionality.
 func TestImportLargeFile(t *testing.T) {
 	count := 1000
 	users := make([]TestUser, count)
@@ -634,6 +651,7 @@ func TestImportLargeFile(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%d", count), imported[count-1].ID, "Should equal expected value")
 }
 
+// TestExportNullValues tests export null values functionality.
 func TestExportNullValues(t *testing.T) {
 	users := []TestUser{
 		{
@@ -684,6 +702,7 @@ func TestExportNullValues(t *testing.T) {
 	assert.Equal(t, "有备注", imported[1].Remark.ValueOrZero(), "Should equal expected value")
 }
 
+// TestRoundTrip tests round trip functionality.
 func TestRoundTrip(t *testing.T) {
 	now := time.Date(2024, 1, 1, 12, 0, 0, 0, time.Local)
 	original := []TestUser{

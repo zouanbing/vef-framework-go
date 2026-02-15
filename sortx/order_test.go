@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestOrderDirectionString tests order direction string functionality.
 func TestOrderDirectionString(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -25,6 +26,7 @@ func TestOrderDirectionString(t *testing.T) {
 	}
 }
 
+// TestOrderDirectionMarshalText tests order direction marshal text functionality.
 func TestOrderDirectionMarshalText(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -44,6 +46,7 @@ func TestOrderDirectionMarshalText(t *testing.T) {
 	}
 }
 
+// TestOrderDirectionUnmarshalText tests order direction unmarshal text functionality.
 func TestOrderDirectionUnmarshalText(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -80,6 +83,7 @@ func TestOrderDirectionUnmarshalText(t *testing.T) {
 	}
 }
 
+// TestOrderDirectionMarshalJSON tests order direction marshal j s o n functionality.
 func TestOrderDirectionMarshalJSON(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -99,6 +103,7 @@ func TestOrderDirectionMarshalJSON(t *testing.T) {
 	}
 }
 
+// TestOrderDirectionUnmarshalJSON tests order direction unmarshal j s o n functionality.
 func TestOrderDirectionUnmarshalJSON(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -135,6 +140,7 @@ func TestOrderDirectionUnmarshalJSON(t *testing.T) {
 	}
 }
 
+// TestOrderDirectionJSONRoundTrip tests order direction j s o n round trip functionality.
 func TestOrderDirectionJSONRoundTrip(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -159,6 +165,7 @@ func TestOrderDirectionJSONRoundTrip(t *testing.T) {
 	}
 }
 
+// TestOrderDirectionInStruct tests order direction in struct functionality.
 func TestOrderDirectionInStruct(t *testing.T) {
 	type testStruct struct {
 		Direction OrderDirection `json:"direction"`
@@ -189,6 +196,7 @@ func TestOrderDirectionInStruct(t *testing.T) {
 	}
 }
 
+// TestNullsOrderString tests nulls order string functionality.
 func TestNullsOrderString(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -207,6 +215,7 @@ func TestNullsOrderString(t *testing.T) {
 	}
 }
 
+// TestOrderSpecIsValid tests order spec is valid functionality.
 func TestOrderSpecIsValid(t *testing.T) {
 	tests := []struct {
 		name     string

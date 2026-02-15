@@ -28,6 +28,7 @@ func setupTestService(t *testing.T) (storage.Service, func()) {
 	return service, cleanup
 }
 
+// TestFilesystemService tests filesystem service functionality.
 func TestFilesystemService(t *testing.T) {
 	ctx := context.Background()
 
@@ -282,6 +283,7 @@ func TestFilesystemService(t *testing.T) {
 	})
 }
 
+// TestCleanupEmptyDirs tests cleanup empty dirs functionality.
 func TestCleanupEmptyDirs(t *testing.T) {
 	tempDir := t.TempDir()
 	service := &Service{root: tempDir}
@@ -298,6 +300,7 @@ func TestCleanupEmptyDirs(t *testing.T) {
 	assert.True(t, os.IsNotExist(err))
 }
 
+// TestEdgeCases tests edge cases functionality.
 func TestEdgeCases(t *testing.T) {
 	ctx := context.Background()
 
@@ -635,6 +638,7 @@ func TestEdgeCases(t *testing.T) {
 	})
 }
 
+// TestConcurrency tests concurrency functionality.
 func TestConcurrency(t *testing.T) {
 	ctx := context.Background()
 
@@ -745,6 +749,7 @@ func TestConcurrency(t *testing.T) {
 	})
 }
 
+// TestLargeFile tests large file functionality.
 func TestLargeFile(t *testing.T) {
 	ctx := context.Background()
 

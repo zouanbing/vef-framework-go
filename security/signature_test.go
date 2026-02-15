@@ -11,6 +11,7 @@ import (
 
 const testSignatureSecret = DefaultJWTSecret
 
+// TestNewSignature tests new signature functionality.
 func TestNewSignature(t *testing.T) {
 	t.Run("ValidSecret", func(t *testing.T) {
 		sig, err := NewSignature(testSignatureSecret)
@@ -83,6 +84,7 @@ func TestNewSignature(t *testing.T) {
 	})
 }
 
+// TestSignature_Sign tests Signature sign scenarios.
 func TestSignature_Sign(t *testing.T) {
 	sig, err := NewSignature(testSignatureSecret)
 	require.NoError(t, err, "Should create signature without error")
@@ -139,6 +141,7 @@ func TestSignature_Sign(t *testing.T) {
 	})
 }
 
+// TestSignature_Verify tests Signature verify scenarios.
 func TestSignature_Verify(t *testing.T) {
 	ctx := context.Background()
 
@@ -313,6 +316,7 @@ func TestSignature_Verify(t *testing.T) {
 	})
 }
 
+// TestSignature_VerifyWithSecret tests Signature verify with secret scenarios.
 func TestSignature_VerifyWithSecret(t *testing.T) {
 	ctx := context.Background()
 	differentSecret := "bf7786789ce92be8d04d5b62e233ff72fa861ff6e53dfbc2d44c3a4a47cd25d3"
@@ -362,6 +366,7 @@ func TestSignature_VerifyWithSecret(t *testing.T) {
 	})
 }
 
+// TestSignature_Algorithms tests Signature algorithms scenarios.
 func TestSignature_Algorithms(t *testing.T) {
 	ctx := context.Background()
 
@@ -420,6 +425,7 @@ func TestSignature_Algorithms(t *testing.T) {
 	})
 }
 
+// TestSignatureResult tests signature result functionality.
 func TestSignatureResult(t *testing.T) {
 	t.Run("ContainsAllFields", func(t *testing.T) {
 		sig, err := NewSignature(testSignatureSecret)
@@ -445,6 +451,7 @@ func TestSignatureResult(t *testing.T) {
 	})
 }
 
+// TestSignatureCredentials tests signature credentials functionality.
 func TestSignatureCredentials(t *testing.T) {
 	t.Run("StructFields", func(t *testing.T) {
 		creds := SignatureCredentials{

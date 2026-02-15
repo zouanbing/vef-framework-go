@@ -11,6 +11,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/mcp"
 )
 
+// TestDataDictPrompt tests data dict prompt functionality.
 func TestDataDictPrompt(t *testing.T) {
 	provider := NewDataDictPrompt()
 	require.NotNil(t, provider, "Should not be nil")
@@ -33,6 +34,7 @@ func TestDataDictPrompt(t *testing.T) {
 	assert.False(t, def.Prompt.Arguments[1].Required, "dict_item_table should be optional")
 }
 
+// TestDataDictPromptHandler tests data dict prompt handler functionality.
 func TestDataDictPromptHandler(t *testing.T) {
 	provider := NewDataDictPrompt()
 	def := provider.Prompts()[0]
@@ -121,6 +123,7 @@ func TestDataDictPromptHandler(t *testing.T) {
 	}
 }
 
+// TestDataDictPromptContent tests data dict prompt content functionality.
 func TestDataDictPromptContent(t *testing.T) {
 	assert.NotEmpty(t, dataDictPromptContent, "Embedded data-dict-prompt.md content should not be empty")
 
@@ -128,6 +131,7 @@ func TestDataDictPromptContent(t *testing.T) {
 	assert.Contains(t, dataDictPromptContent, "{{DICT_ITEM_TABLE}}", "Content should contain item table placeholder")
 }
 
+// TestDataDictPromptPlaceholderReplacement tests data dict prompt placeholder replacement functionality.
 func TestDataDictPromptPlaceholderReplacement(t *testing.T) {
 	provider := NewDataDictPrompt()
 	def := provider.Prompts()[0]

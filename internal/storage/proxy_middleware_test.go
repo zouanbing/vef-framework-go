@@ -73,6 +73,7 @@ func (*MockStorageService) PromoteObject(_ context.Context, _ string) (*storage.
 	return nil, nil
 }
 
+// TestProxyMiddleware tests proxy middleware functionality.
 func TestProxyMiddleware(t *testing.T) {
 	// Helper function to create a configured Fiber app with error handler
 	createApp := func() *fiber.App {

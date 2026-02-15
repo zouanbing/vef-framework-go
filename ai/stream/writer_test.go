@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestSSEWriter_WriteChunk tests S S E Writer write chunk scenarios.
 func TestSSEWriter_WriteChunk(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -47,6 +48,7 @@ func TestSSEWriter_WriteChunk(t *testing.T) {
 	}
 }
 
+// TestSSEWriter_WriteDone tests S S E Writer write done scenarios.
 func TestSSEWriter_WriteDone(t *testing.T) {
 	var buf bytes.Buffer
 
@@ -58,6 +60,7 @@ func TestSSEWriter_WriteDone(t *testing.T) {
 	assert.Equal(t, "data: [DONE]\n\n", buf.String(), "Should equal expected value")
 }
 
+// TestSSEWriter_Flush tests S S E Writer flush scenarios.
 func TestSSEWriter_Flush(t *testing.T) {
 	var buf bytes.Buffer
 
@@ -71,6 +74,7 @@ func TestSSEWriter_Flush(t *testing.T) {
 	assert.Equal(t, "pending data", buf.String(), "Should equal expected value")
 }
 
+// TestSSEHeaders tests s s e headers functionality.
 func TestSSEHeaders(t *testing.T) {
 	assert.Equal(t, "text/event-stream", SseHeaders["Content-Type"], "Should equal expected value")
 	assert.Equal(t, "no-cache", SseHeaders["Cache-Control"], "Should equal expected value")
@@ -80,6 +84,7 @@ func TestSSEHeaders(t *testing.T) {
 	assert.Equal(t, "no", SseHeaders["X-Accel-Buffering"], "Should equal expected value")
 }
 
+// TestDefaultIDGenerator_Format tests Default I D Generator format scenarios.
 func TestDefaultIDGenerator_Format(t *testing.T) {
 	prefixes := []string{"message", "text", "reasoning", "call"}
 
@@ -96,6 +101,7 @@ func TestDefaultIDGenerator_Format(t *testing.T) {
 	}
 }
 
+// TestDefaultIDGenerator_Uniqueness tests Default I D Generator uniqueness scenarios.
 func TestDefaultIDGenerator_Uniqueness(t *testing.T) {
 	ids := make(map[string]bool)
 

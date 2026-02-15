@@ -334,6 +334,7 @@ func (suite *MCPTestSuite) TestMCPEndpointAuthorizationHeader() {
 	})
 }
 
+// TestMCPTestSuite tests m c p test suite functionality.
 func TestMCPTestSuite(t *testing.T) {
 	suite.Run(t, new(MCPTestSuite))
 }

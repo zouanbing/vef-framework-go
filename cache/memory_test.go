@@ -21,6 +21,7 @@ func newTestCache[T any](maxSize int64, defaultTTL time.Duration, evictionPolicy
 	)
 }
 
+// TestNewMemoryOptions tests new memory options functionality.
 func TestNewMemoryOptions(t *testing.T) {
 	t.Run("Defaults", func(t *testing.T) {
 		cache := NewMemory[string]()
@@ -54,6 +55,7 @@ func TestNewMemoryOptions(t *testing.T) {
 	})
 }
 
+// TestMemoryCacheBasicOperations tests memory cache basic operations functionality.
 func TestMemoryCacheBasicOperations(t *testing.T) {
 	ctx := context.Background()
 
@@ -156,6 +158,7 @@ func TestMemoryCacheBasicOperations(t *testing.T) {
 	})
 }
 
+// TestMemoryCacheExpiration tests memory cache expiration functionality.
 func TestMemoryCacheExpiration(t *testing.T) {
 	ctx := context.Background()
 
@@ -223,6 +226,7 @@ func TestMemoryCacheExpiration(t *testing.T) {
 	})
 }
 
+// TestMemoryCacheSize tests memory cache size functionality.
 func TestMemoryCacheSize(t *testing.T) {
 	ctx := context.Background()
 
@@ -289,6 +293,7 @@ func TestMemoryCacheSize(t *testing.T) {
 	})
 }
 
+// TestMemoryCacheEvictionPolicies tests memory cache eviction policies functionality.
 func TestMemoryCacheEvictionPolicies(t *testing.T) {
 	ctx := context.Background()
 
@@ -410,6 +415,7 @@ func TestMemoryCacheEvictionPolicies(t *testing.T) {
 	})
 }
 
+// TestMemoryCacheKeys tests memory cache keys functionality.
 func TestMemoryCacheKeys(t *testing.T) {
 	ctx := context.Background()
 
@@ -481,6 +487,7 @@ func TestMemoryCacheKeys(t *testing.T) {
 	})
 }
 
+// TestMemoryCacheForEach tests memory cache for each functionality.
 func TestMemoryCacheForEach(t *testing.T) {
 	ctx := context.Background()
 
@@ -576,6 +583,7 @@ func TestMemoryCacheForEach(t *testing.T) {
 	})
 }
 
+// TestMemoryCacheClear tests memory cache clear functionality.
 func TestMemoryCacheClear(t *testing.T) {
 	ctx := context.Background()
 
@@ -620,6 +628,7 @@ func TestMemoryCacheClear(t *testing.T) {
 	})
 }
 
+// TestMemoryCacheClose tests memory cache close functionality.
 func TestMemoryCacheClose(t *testing.T) {
 	ctx := context.Background()
 
@@ -679,6 +688,7 @@ func TestMemoryCacheClose(t *testing.T) {
 	})
 }
 
+// TestMemoryCacheGC tests memory cache g c functionality.
 func TestMemoryCacheGC(t *testing.T) {
 	ctx := context.Background()
 
@@ -711,6 +721,7 @@ func TestMemoryCacheGC(t *testing.T) {
 	})
 }
 
+// TestMemoryCacheConcurrency tests memory cache concurrency functionality.
 func TestMemoryCacheConcurrency(t *testing.T) {
 	ctx := context.Background()
 
@@ -804,6 +815,7 @@ func TestMemoryCacheConcurrency(t *testing.T) {
 	})
 }
 
+// TestMemoryCacheEdgeCases tests memory cache edge cases functionality.
 func TestMemoryCacheEdgeCases(t *testing.T) {
 	ctx := context.Background()
 

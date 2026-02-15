@@ -86,6 +86,7 @@ type ShorthandSearch struct {
 	Name7 string `search:"operator=endsWith,column=suffix"`
 }
 
+// TestNew tests new functionality.
 func TestNew(t *testing.T) {
 	search := NewFor[SimpleSearch]()
 
@@ -93,6 +94,7 @@ func TestNew(t *testing.T) {
 	assert.Len(t, search.conditions, 4, "Should have all fields including no-tag field")
 }
 
+// TestNewFromType tests new from type functionality.
 func TestNewFromType(t *testing.T) {
 	search := New(reflect.TypeFor[SimpleSearch]())
 
@@ -100,6 +102,7 @@ func TestNewFromType(t *testing.T) {
 	assert.Len(t, search.conditions, 4, "Should have all fields including no-tag field")
 }
 
+// TestSimpleSearch tests simple search functionality.
 func TestSimpleSearch(t *testing.T) {
 	search := NewFor[SimpleSearch]()
 
@@ -154,6 +157,7 @@ func TestSimpleSearch(t *testing.T) {
 	}
 }
 
+// TestComplexSearch tests complex search functionality.
 func TestComplexSearch(t *testing.T) {
 	search := NewFor[ComplexSearch]()
 
@@ -199,6 +203,7 @@ func TestComplexSearch(t *testing.T) {
 	})
 }
 
+// TestNestedSearch tests nested search functionality.
 func TestNestedSearch(t *testing.T) {
 	search := NewFor[NestedSearch]()
 
@@ -227,6 +232,7 @@ func TestNestedSearch(t *testing.T) {
 	}
 }
 
+// TestEdgeCases tests edge cases functionality.
 func TestEdgeCases(t *testing.T) {
 	search := NewFor[EdgeCaseSearch]()
 
@@ -272,6 +278,7 @@ func TestEdgeCases(t *testing.T) {
 	})
 }
 
+// TestOperatorShorthand tests operator shorthand functionality.
 func TestOperatorShorthand(t *testing.T) {
 	search := NewFor[ShorthandSearch]()
 
@@ -344,6 +351,7 @@ func TestOperatorShorthand(t *testing.T) {
 	}
 }
 
+// TestNewFromTypeWithNonStruct tests new from type with non struct functionality.
 func TestNewFromTypeWithNonStruct(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -362,6 +370,7 @@ func TestNewFromTypeWithNonStruct(t *testing.T) {
 	}
 }
 
+// TestEmptyStruct tests empty struct functionality.
 func TestEmptyStruct(t *testing.T) {
 	type EmptyStruct struct{}
 
@@ -369,6 +378,7 @@ func TestEmptyStruct(t *testing.T) {
 	assert.Empty(t, search.conditions, "Empty struct should have no conditions")
 }
 
+// TestStructWithoutSearchTags tests struct without search tags functionality.
 func TestStructWithoutSearchTags(t *testing.T) {
 	type NoSearchTags struct {
 		Name   string
@@ -385,6 +395,7 @@ func TestStructWithoutSearchTags(t *testing.T) {
 	}
 }
 
+// TestDeepNestedStruct tests deep nested struct functionality.
 func TestDeepNestedStruct(t *testing.T) {
 	type Level3 struct {
 		Value string `search:"column=level3_value"`
@@ -422,6 +433,7 @@ func TestDeepNestedStruct(t *testing.T) {
 	}
 }
 
+// TestNoTagStruct tests no tag struct functionality.
 func TestNoTagStruct(t *testing.T) {
 	type TestNoTagStruct struct {
 		Name   string

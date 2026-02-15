@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestPhoneNumberValidation tests phone number validation functionality.
 func TestPhoneNumberValidation(t *testing.T) {
 	type testStruct struct {
 		PhoneNumber string `validate:"phone_number" label:"手机号"`

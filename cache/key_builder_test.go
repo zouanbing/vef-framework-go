@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestPrefixKeyBuilder tests prefix key builder functionality.
 func TestPrefixKeyBuilder(t *testing.T) {
 	t.Run("BuildWithoutPrefix", func(t *testing.T) {
 		builder := NewPrefixKeyBuilder("")

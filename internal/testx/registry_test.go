@@ -20,6 +20,7 @@ func (s *MockFeatureTestSuite) TestPlaceholder() {
 	s.Equal("test", s.base.value)
 }
 
+// TestRegistryAdd tests registry add functionality.
 func TestRegistryAdd(t *testing.T) {
 	r := NewRegistry[mockBase]()
 
@@ -30,6 +31,7 @@ func TestRegistryAdd(t *testing.T) {
 	assert.Equal(t, 1, r.Len(), "Registry should have 1 factory")
 }
 
+// TestRegistryAddNamed tests registry add named functionality.
 func TestRegistryAddNamed(t *testing.T) {
 	r := NewRegistry[mockBase]()
 
@@ -40,6 +42,7 @@ func TestRegistryAddNamed(t *testing.T) {
 	assert.Equal(t, 1, r.Len(), "Registry should have 1 factory")
 }
 
+// TestRegistryNameExtraction tests registry name extraction functionality.
 func TestRegistryNameExtraction(t *testing.T) {
 	r := NewRegistry[mockBase]()
 

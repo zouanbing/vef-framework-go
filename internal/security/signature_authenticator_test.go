@@ -62,6 +62,7 @@ func generateValidCredentials(t *testing.T, appID, secret string) *security.Sign
 	}
 }
 
+// TestNewSignatureAuthenticator tests new signature authenticator functionality.
 func TestNewSignatureAuthenticator(t *testing.T) {
 	t.Run("WithLoader", func(t *testing.T) {
 		loader := new(MockExternalAppLoader)
@@ -85,6 +86,7 @@ func TestNewSignatureAuthenticator(t *testing.T) {
 	})
 }
 
+// TestSignatureAuthenticator_Supports tests Signature Authenticator supports scenarios.
 func TestSignatureAuthenticator_Supports(t *testing.T) {
 	loader := new(MockExternalAppLoader)
 	auth := NewSignatureAuthenticator(loader, nil)
@@ -104,6 +106,7 @@ func TestSignatureAuthenticator_Supports(t *testing.T) {
 	})
 }
 
+// TestSignatureAuthenticator_Authenticate tests Signature Authenticator authenticate scenarios.
 func TestSignatureAuthenticator_Authenticate(t *testing.T) {
 	ctx := context.Background()
 
@@ -214,6 +217,7 @@ func TestSignatureAuthenticator_Authenticate(t *testing.T) {
 	})
 }
 
+// TestSignatureAuthenticator_TimestampValidation tests Signature Authenticator timestamp validation scenarios.
 func TestSignatureAuthenticator_TimestampValidation(t *testing.T) {
 	ctx := context.Background()
 
@@ -289,6 +293,7 @@ func TestSignatureAuthenticator_TimestampValidation(t *testing.T) {
 	})
 }
 
+// TestSignatureAuthenticator_SignatureValidation tests Signature Authenticator signature validation scenarios.
 func TestSignatureAuthenticator_SignatureValidation(t *testing.T) {
 	ctx := context.Background()
 
@@ -364,6 +369,7 @@ func TestSignatureAuthenticator_SignatureValidation(t *testing.T) {
 	})
 }
 
+// TestSignatureAuthenticator_NonceValidation tests Signature Authenticator nonce validation scenarios.
 func TestSignatureAuthenticator_NonceValidation(t *testing.T) {
 	ctx := context.Background()
 
@@ -438,6 +444,7 @@ func TestSignatureAuthenticator_NonceValidation(t *testing.T) {
 	})
 }
 
+// TestSignatureAuthenticator_IPWhitelist tests Signature Authenticator i p whitelist scenarios.
 func TestSignatureAuthenticator_IPWhitelist(t *testing.T) {
 	ctx := context.Background()
 
@@ -521,6 +528,7 @@ func TestSignatureAuthenticator_IPWhitelist(t *testing.T) {
 	})
 }
 
+// TestSignatureAuthenticator_SuccessfulAuthentication tests Signature Authenticator successful authentication scenarios.
 func TestSignatureAuthenticator_SuccessfulAuthentication(t *testing.T) {
 	ctx := context.Background()
 

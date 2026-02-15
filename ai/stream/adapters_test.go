@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestChannelSource tests channel source functionality.
 func TestChannelSource(t *testing.T) {
 	t.Run("ReceivesMessagesUntilChannelClosed", func(t *testing.T) {
 		ch := make(chan Message, 3)
@@ -64,6 +65,7 @@ func TestChannelSource(t *testing.T) {
 	})
 }
 
+// TestCallbackSource tests callback source functionality.
 func TestCallbackSource(t *testing.T) {
 	t.Run("ReceivesTextMessages", func(t *testing.T) {
 		source := NewCallbackSource(func(w CallbackWriter) error {
@@ -184,6 +186,7 @@ func TestCallbackSource(t *testing.T) {
 	})
 }
 
+// TestFromChannel tests from channel functionality.
 func TestFromChannel(t *testing.T) {
 	ch := make(chan Message, 1)
 	ch <- Message{Role: RoleUser, Content: "test"}
@@ -195,6 +198,7 @@ func TestFromChannel(t *testing.T) {
 	assert.NotNil(t, builder.source, "Should not be nil")
 }
 
+// TestFromCallback tests from callback functionality.
 func TestFromCallback(t *testing.T) {
 	builder := FromCallback(func(w CallbackWriter) error {
 		w.WriteText("test")

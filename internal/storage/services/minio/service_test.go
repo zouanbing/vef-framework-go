@@ -458,6 +458,7 @@ func (suite *MinIOServiceTestSuite) uploadObject(key string, data []byte) {
 	suite.Require().NoError(err, "PutObject should succeed for "+key)
 }
 
+// TestMinIOServiceTestSuite tests min i o service test suite functionality.
 func TestMinIOServiceTestSuite(t *testing.T) {
 	suite.Run(t, new(MinIOServiceTestSuite))
 }

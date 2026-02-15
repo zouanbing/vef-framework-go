@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestDecimalMinValidation tests decimal min validation functionality.
 func TestDecimalMinValidation(t *testing.T) {
 	type testStruct struct {
 		Value decimal.Decimal `validate:"dec_min=10.5" label:"最小值"`
@@ -40,6 +41,7 @@ func TestDecimalMinValidation(t *testing.T) {
 	}
 }
 
+// TestDecimalMaxValidation tests decimal max validation functionality.
 func TestDecimalMaxValidation(t *testing.T) {
 	type testStruct struct {
 		Value decimal.Decimal `validate:"dec_max=100" label:"最大值"`
@@ -73,6 +75,7 @@ func TestDecimalMaxValidation(t *testing.T) {
 	}
 }
 
+// TestDecimalRangeValidation tests decimal range validation functionality.
 func TestDecimalRangeValidation(t *testing.T) {
 	type testStruct struct {
 		Value decimal.Decimal `validate:"dec_min=1,dec_max=50" label:"范围值"`

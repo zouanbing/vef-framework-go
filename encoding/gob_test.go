@@ -12,6 +12,7 @@ type GOBTestSuite struct {
 	suite.Suite
 }
 
+// TestGOBTestSuite tests g o b test suite functionality.
 func TestGOBTestSuite(t *testing.T) {
 	suite.Run(t, new(GOBTestSuite))
 }

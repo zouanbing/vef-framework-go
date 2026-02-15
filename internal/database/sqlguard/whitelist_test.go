@@ -9,6 +9,7 @@ import (
 
 type testContextKey string
 
+// TestWhitelist tests whitelist functionality.
 func TestWhitelist(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -47,6 +48,7 @@ func TestWhitelist(t *testing.T) {
 	}
 }
 
+// TestWhitelistDoesNotAffectOriginalContext tests whitelist does not affect original context functionality.
 func TestWhitelistDoesNotAffectOriginalContext(t *testing.T) {
 	originalCtx := context.Background()
 	whitelistedCtx := WithWhitelist(originalCtx)

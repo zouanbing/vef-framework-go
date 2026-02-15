@@ -631,6 +631,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheKeyStrippingEdgeCases() {
 	})
 }
 
+// TestRedisCacheTestSuite tests redis cache test suite functionality.
 func TestRedisCacheTestSuite(t *testing.T) {
 	suite.Run(t, new(RedisCacheTestSuite))
 }

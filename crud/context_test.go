@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestQueryError tests query error functionality.
 func TestQueryError(t *testing.T) {
 	t.Run("ReturnsNilWhenNoErrorStored", func(t *testing.T) {
 		app := fiber.New()

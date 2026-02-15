@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestBuilderConfiguration tests builder configuration functionality.
 func TestBuilderConfiguration(t *testing.T) {
 	t.Run("NewReturnsBuilderWithDefaults", func(t *testing.T) {
 		b := New()
@@ -119,6 +120,7 @@ func TestBuilderConfiguration(t *testing.T) {
 	})
 }
 
+// TestBuilderStreamToWriter tests builder stream to writer functionality.
 func TestBuilderStreamToWriter(t *testing.T) {
 	t.Run("StreamsTextContent", func(t *testing.T) {
 		ch := make(chan Message, 2)

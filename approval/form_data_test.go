@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestNewFormData tests new form data functionality.
 func TestNewFormData(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -27,6 +28,7 @@ func TestNewFormData(t *testing.T) {
 	}
 }
 
+// TestFormDataGet tests form data get functionality.
 func TestFormDataGet(t *testing.T) {
 	fd := NewFormData(map[string]any{"name": "alice", "age": 30})
 
@@ -46,18 +48,21 @@ func TestFormDataGet(t *testing.T) {
 	}
 }
 
+// TestFormDataSet tests form data set functionality.
 func TestFormDataSet(t *testing.T) {
 	fd := NewFormData(nil)
 	fd.Set("key", "value")
 	assert.Equal(t, "value", fd.Get("key"), "Should store and retrieve the value")
 }
 
+// TestFormDataToMap tests form data to map functionality.
 func TestFormDataToMap(t *testing.T) {
 	original := map[string]any{"a": 1, "b": "two"}
 	fd := NewFormData(original)
 	assert.Equal(t, original, fd.ToMap(), "Should return the underlying map")
 }
 
+// TestFormDataClone tests form data clone functionality.
 func TestFormDataClone(t *testing.T) {
 	t.Run("DeepCopy", func(t *testing.T) {
 		fd := NewFormData(map[string]any{

@@ -10,6 +10,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/mcp"
 )
 
+// TestNamingMasterPrompt tests naming master prompt functionality.
 func TestNamingMasterPrompt(t *testing.T) {
 	provider := NewNamingMasterPrompt()
 	require.NotNil(t, provider, "Should not be nil")
@@ -52,6 +53,7 @@ func TestNamingMasterPrompt(t *testing.T) {
 	assert.Contains(t, content, "Self-Check Checklist", "Should contain expected value")
 }
 
+// TestNamingMasterPromptContent tests naming master prompt content functionality.
 func TestNamingMasterPromptContent(t *testing.T) {
 	assert.NotEmpty(t, namingMasterPromptContent, "Embedded naming-master.md content should not be empty")
 

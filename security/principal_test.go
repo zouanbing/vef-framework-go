@@ -22,6 +22,7 @@ type TestExternalAppDetails struct {
 	Scopes    []string `json:"scopes"`
 }
 
+// TestNewUser tests new user functionality.
 func TestNewUser(t *testing.T) {
 	t.Run("Create user without roles", func(t *testing.T) {
 		user := NewUser("user123", "John Doe")
@@ -41,6 +42,7 @@ func TestNewUser(t *testing.T) {
 	})
 }
 
+// TestNewExternalApp tests new external app functionality.
 func TestNewExternalApp(t *testing.T) {
 	t.Run("Create external app without roles", func(t *testing.T) {
 		app := NewExternalApp("app123", "Payment Service")
@@ -60,6 +62,7 @@ func TestNewExternalApp(t *testing.T) {
 	})
 }
 
+// TestPrincipalWithRoles tests principal with roles functionality.
 func TestPrincipalWithRoles(t *testing.T) {
 	t.Run("Add roles to principal", func(t *testing.T) {
 		user := NewUser("user123", "Test User")
@@ -74,6 +77,7 @@ func TestPrincipalWithRoles(t *testing.T) {
 	})
 }
 
+// TestPrincipalSystem tests principal system functionality.
 func TestPrincipalSystem(t *testing.T) {
 	t.Run("System principal has correct values", func(t *testing.T) {
 		assert.Equal(t, PrincipalTypeSystem, PrincipalSystem.Type, "Should equal expected value")
@@ -82,6 +86,7 @@ func TestPrincipalSystem(t *testing.T) {
 	})
 }
 
+// TestPrincipalAnonymous tests principal anonymous functionality.
 func TestPrincipalAnonymous(t *testing.T) {
 	t.Run("Anonymous principal has correct values", func(t *testing.T) {
 		assert.Equal(t, PrincipalTypeUser, PrincipalAnonymous.Type, "Should equal expected value")
@@ -90,6 +95,7 @@ func TestPrincipalAnonymous(t *testing.T) {
 	})
 }
 
+// TestPrincipalJSONMarshal tests principal j s o n marshal functionality.
 func TestPrincipalJSONMarshal(t *testing.T) {
 	t.Run("Marshal user with map details", func(t *testing.T) {
 		user := NewUser("user123", "Test User", "admin")
@@ -128,6 +134,7 @@ func TestPrincipalJSONMarshal(t *testing.T) {
 	})
 }
 
+// TestPrincipalJSONUnmarshal tests principal j s o n unmarshal functionality.
 func TestPrincipalJSONUnmarshal(t *testing.T) {
 	t.Run("Unmarshal user with map details", func(t *testing.T) {
 		jsonData := `{
@@ -247,6 +254,7 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 	})
 }
 
+// TestAttemptUnmarshalDetails tests attempt unmarshal details functionality.
 func TestAttemptUnmarshalDetails(t *testing.T) {
 	t.Run("Unmarshal user details from map", func(t *testing.T) {
 		originalType := userDetailsType
@@ -341,6 +349,7 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 	})
 }
 
+// TestSetUserDetailsType tests set user details type functionality.
 func TestSetUserDetailsType(t *testing.T) {
 	t.Run("Set valid struct type", func(t *testing.T) {
 		originalType := userDetailsType
@@ -357,6 +366,7 @@ func TestSetUserDetailsType(t *testing.T) {
 	})
 }
 
+// TestSetExternalAppDetailsType tests set external app details type functionality.
 func TestSetExternalAppDetailsType(t *testing.T) {
 	t.Run("Set valid struct type", func(t *testing.T) {
 		originalType := externalAppDetailsType
@@ -373,6 +383,7 @@ func TestSetExternalAppDetailsType(t *testing.T) {
 	})
 }
 
+// TestPrincipalRoundTrip tests principal round trip functionality.
 func TestPrincipalRoundTrip(t *testing.T) {
 	t.Run("Marshal and unmarshal user", func(t *testing.T) {
 		original := NewUser("user123", "Test User", "admin", "editor")

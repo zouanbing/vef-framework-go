@@ -12,6 +12,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/event"
 )
 
+// TestMemoryEventBus_BasicPublishSubscribe tests Memory Event Bus basic publish subscribe scenarios.
 func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 	t.Run("SingleSubscriberReceivesEvent", func(t *testing.T) {
 		bus := createTestEventBus(t)
@@ -184,6 +185,7 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 	})
 }
 
+// TestMemoryEventBus_Unsubscribe tests Memory Event Bus unsubscribe scenarios.
 func TestMemoryEventBus_Unsubscribe(t *testing.T) {
 	t.Run("UnsubscribePreventsFurtherEventDelivery", func(t *testing.T) {
 		bus := createTestEventBus(t)
@@ -335,6 +337,7 @@ func TestMemoryEventBus_Unsubscribe(t *testing.T) {
 	})
 }
 
+// TestMemoryEventBus_Lifecycle tests Memory Event Bus lifecycle scenarios.
 func TestMemoryEventBus_Lifecycle(t *testing.T) {
 	t.Run("StartAndShutdown", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
@@ -424,6 +427,7 @@ func TestMemoryEventBus_Lifecycle(t *testing.T) {
 	})
 }
 
+// TestMemoryEventBus_Middleware tests Memory Event Bus middleware scenarios.
 func TestMemoryEventBus_Middleware(t *testing.T) {
 	t.Run("MiddlewareProcessesEvents", func(t *testing.T) {
 		var (
@@ -554,6 +558,7 @@ func TestMemoryEventBus_Middleware(t *testing.T) {
 	})
 }
 
+// TestMemoryEventBus_Concurrency tests Memory Event Bus concurrency scenarios.
 func TestMemoryEventBus_Concurrency(t *testing.T) {
 	t.Run("ConcurrentPublishAndSubscribe", func(t *testing.T) {
 		bus := createTestEventBus(t)

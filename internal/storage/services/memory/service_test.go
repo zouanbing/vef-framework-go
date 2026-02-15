@@ -12,6 +12,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 
+// TestMemoryService tests memory service functionality.
 func TestMemoryService(t *testing.T) {
 	ctx := context.Background()
 	service := New()

@@ -10,6 +10,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
+// TestNewJWT tests new j w t functionality.
 func TestNewJWT(t *testing.T) {
 	t.Run("Valid hex secret", func(t *testing.T) {
 		config := &JWTConfig{
@@ -53,6 +54,7 @@ func TestNewJWT(t *testing.T) {
 	})
 }
 
+// TestJWTGenerate tests j w t generate functionality.
 func TestJWTGenerate(t *testing.T) {
 	config := &JWTConfig{
 		Secret:   DefaultJWTSecret,
@@ -108,6 +110,7 @@ func TestJWTGenerate(t *testing.T) {
 	})
 }
 
+// TestJWTParse tests j w t parse functionality.
 func TestJWTParse(t *testing.T) {
 	config := &JWTConfig{
 		Secret:   DefaultJWTSecret,
@@ -184,6 +187,7 @@ func TestJWTParse(t *testing.T) {
 	})
 }
 
+// TestJWTErrorMapping tests j w t error mapping functionality.
 func TestJWTErrorMapping(t *testing.T) {
 	config := &JWTConfig{
 		Secret:   DefaultJWTSecret,
@@ -228,6 +232,7 @@ func TestJWTErrorMapping(t *testing.T) {
 	}
 }
 
+// TestJWTClaimsBuilder tests j w t claims builder functionality.
 func TestJWTClaimsBuilder(t *testing.T) {
 	t.Run("Build claims with various types", func(t *testing.T) {
 		builder := NewJWTClaimsBuilder().

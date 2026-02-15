@@ -10,6 +10,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/log"
 )
 
+// TestGuardCheck tests guard check functionality.
 func TestGuardCheck(t *testing.T) {
 	logger := log.Named("test")
 	guard := NewGuard(logger)
@@ -47,6 +48,7 @@ func TestGuardCheck(t *testing.T) {
 	}
 }
 
+// TestGuardCustomRules tests guard custom rules functionality.
 func TestGuardCustomRules(t *testing.T) {
 	logger := log.Named("test")
 	guard := NewGuard(logger, new(DropStatementRule))
@@ -64,6 +66,7 @@ func TestGuardCustomRules(t *testing.T) {
 	assert.NoError(t, err, "Should allow TRUNCATE when rule not included")
 }
 
+// TestGuardEmptyRulesUsesDefaults tests guard empty rules uses defaults functionality.
 func TestGuardEmptyRulesUsesDefaults(t *testing.T) {
 	logger := log.Named("test")
 	guard := NewGuard(logger)
@@ -71,6 +74,7 @@ func TestGuardEmptyRulesUsesDefaults(t *testing.T) {
 	assert.Len(t, guard.rules, 3, "Should use 3 default rules when none provided")
 }
 
+// TestGuardError tests guard error functionality.
 func TestGuardError(t *testing.T) {
 	t.Run("WithViolation", func(t *testing.T) {
 		err := &GuardError{

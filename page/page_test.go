@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestPageableNormalize tests pageable normalize functionality.
 func TestPageableNormalize(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -62,6 +63,7 @@ func TestPageableNormalize(t *testing.T) {
 	}
 }
 
+// TestPageableOffset tests pageable offset functionality.
 func TestPageableOffset(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -84,6 +86,7 @@ func TestPageableOffset(t *testing.T) {
 	}
 }
 
+// TestNewPage tests new page functionality.
 func TestNewPage(t *testing.T) {
 	pageable := Pageable{Page: 2, Size: 10}
 	items := []string{"item1", "item2", "item3"}
@@ -100,6 +103,7 @@ func TestNewPage(t *testing.T) {
 		page.Page, page.Size, page.Total, len(page.Items))
 }
 
+// TestNewPageWithNilItems tests new page with nil items functionality.
 func TestNewPageWithNilItems(t *testing.T) {
 	pageable := Pageable{Page: 1, Size: 10}
 	total := int64(0)
@@ -111,6 +115,7 @@ func TestNewPageWithNilItems(t *testing.T) {
 	t.Log("✓ Page created with nil items - Items initialized as empty slice")
 }
 
+// TestPageTotalPages tests page total pages functionality.
 func TestPageTotalPages(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -158,6 +163,7 @@ func TestPageTotalPages(t *testing.T) {
 	}
 }
 
+// TestPageHasNext tests page has next functionality.
 func TestPageHasNext(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -201,6 +207,7 @@ func TestPageHasNext(t *testing.T) {
 	}
 }
 
+// TestPageHasPrevious tests page has previous functionality.
 func TestPageHasPrevious(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -238,6 +245,7 @@ func TestPageHasPrevious(t *testing.T) {
 	}
 }
 
+// TestPageableJSONMarshaling tests pageable j s o n marshaling functionality.
 func TestPageableJSONMarshaling(t *testing.T) {
 	pageable := Pageable{
 		Page: 2,
@@ -260,6 +268,7 @@ func TestPageableJSONMarshaling(t *testing.T) {
 	t.Logf("✓ JSON marshaling - Original: %+v, Result: %+v", pageable, result)
 }
 
+// TestPageJSONMarshaling tests page j s o n marshaling functionality.
 func TestPageJSONMarshaling(t *testing.T) {
 	items := []string{"item1", "item2", "item3"}
 	page := Page[string]{
@@ -293,6 +302,7 @@ func TestPageJSONMarshaling(t *testing.T) {
 		result.Page, result.Total, len(result.Items))
 }
 
+// TestPageWithDifferentTypes tests page with different types functionality.
 func TestPageWithDifferentTypes(t *testing.T) {
 	t.Run("WithStructType", func(t *testing.T) {
 		type User struct {
@@ -324,6 +334,7 @@ func TestPageWithDifferentTypes(t *testing.T) {
 	})
 }
 
+// TestPaginationScenarios tests pagination scenarios functionality.
 func TestPaginationScenarios(t *testing.T) {
 	t.Run("ApiPaginationWorkflow", func(t *testing.T) {
 		// Client sends request for page 2, size 10

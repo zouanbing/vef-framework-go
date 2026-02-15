@@ -46,6 +46,7 @@ type VisitorTestNested struct {
 	NestedValue bool
 }
 
+// TestVisit_DepthFirst tests Visit depth first scenarios.
 func TestVisit_DepthFirst(t *testing.T) {
 	// Create test structure
 	testStruct := VisitorTestNested{
@@ -100,6 +101,7 @@ func TestVisit_DepthFirst(t *testing.T) {
 	assert.Contains(t, visitedMethods, "EmbeddedMethod", "Should visit EmbeddedMethod")
 }
 
+// TestVisit_BreadthFirst tests Visit breadth first scenarios.
 func TestVisit_BreadthFirst(t *testing.T) {
 	testStruct := VisitorTestNested{
 		VisitorTestEmbedded: VisitorTestEmbedded{
@@ -146,6 +148,7 @@ func TestVisit_BreadthFirst(t *testing.T) {
 	assert.Contains(t, depth1Structs, "VisitorTestEmbedded", "Embedded struct should be at depth 1")
 }
 
+// TestVisit_MaxDepth tests Visit max depth scenarios.
 func TestVisit_MaxDepth(t *testing.T) {
 	testStruct := VisitorTestNested{
 		VisitorTestEmbedded: VisitorTestEmbedded{
@@ -171,6 +174,7 @@ func TestVisit_MaxDepth(t *testing.T) {
 	assert.NotContains(t, visitedStructs, "VisitorTestLogger", "Should not visit deeper structures due to MaxDepth")
 }
 
+// TestVisit_StopAction tests Visit stop action scenarios.
 func TestVisit_StopAction(t *testing.T) {
 	testStruct := VisitorTestEmbedded{
 		VisitorTestBase: VisitorTestBase{BaseValue: "test"},
@@ -214,6 +218,7 @@ func TestVisit_StopAction(t *testing.T) {
 	assert.False(t, laterFieldFound, "Should not visit fields after Stop action")
 }
 
+// TestVisit_SkipChildrenAction tests Visit skip children action scenarios.
 func TestVisit_SkipChildrenAction(t *testing.T) {
 	testStruct := VisitorTestEmbedded{
 		VisitorTestBase: VisitorTestBase{BaseValue: "test"},
@@ -246,6 +251,7 @@ func TestVisit_SkipChildrenAction(t *testing.T) {
 	assert.NotContains(t, visitedStructs, "VisitorTestLogger")
 }
 
+// TestVisit_TaggedFields tests Visit tagged fields scenarios.
 func TestVisit_TaggedFields(t *testing.T) {
 	testStruct := VisitorTestEmbedded{
 		Services: &VisitorTestServices{
@@ -272,6 +278,7 @@ func TestVisit_TaggedFields(t *testing.T) {
 	assert.Contains(t, visitedStructs, "VisitorTestCache", "Should contain expected value")
 }
 
+// TestVisit_NoRecursion tests Visit no recursion scenarios.
 func TestVisit_NoRecursion(t *testing.T) {
 	testStruct := VisitorTestNested{
 		VisitorTestEmbedded: VisitorTestEmbedded{
@@ -295,6 +302,7 @@ func TestVisit_NoRecursion(t *testing.T) {
 	assert.Equal(t, []string{"VisitorTestNested"}, visitedStructs, "Should equal expected value")
 }
 
+// TestVisit_NilPointer tests Visit nil pointer scenarios.
 func TestVisit_NilPointer(t *testing.T) {
 	var nilStruct *VisitorTestBase
 
@@ -314,6 +322,7 @@ func TestVisit_NilPointer(t *testing.T) {
 	assert.Empty(t, visitedStructs, "Should be empty")
 }
 
+// TestVisit_NonStruct tests Visit non struct scenarios.
 func TestVisit_NonStruct(t *testing.T) {
 	testValue := "not a struct"
 
@@ -335,6 +344,7 @@ func TestVisit_NonStruct(t *testing.T) {
 
 // Tests for type-only visitor API
 
+// TestVisitType_DepthFirst tests Visit Type depth first scenarios.
 func TestVisitType_DepthFirst(t *testing.T) {
 	var (
 		visitedTypes   []string
@@ -379,6 +389,7 @@ func TestVisitType_DepthFirst(t *testing.T) {
 	assert.Contains(t, visitedMethods, "EmbeddedMethod", "Should contain expected value")
 }
 
+// TestVisitType_BreadthFirst tests Visit Type breadth first scenarios.
 func TestVisitType_BreadthFirst(t *testing.T) {
 	var (
 		visitedTypes []string
@@ -415,6 +426,7 @@ func TestVisitType_BreadthFirst(t *testing.T) {
 	assert.Contains(t, depth1Types, "VisitorTestEmbedded", "Should contain expected value")
 }
 
+// TestVisitType_MaxDepth tests Visit Type max depth scenarios.
 func TestVisitType_MaxDepth(t *testing.T) {
 	var visitedTypes []string
 
@@ -432,6 +444,7 @@ func TestVisitType_MaxDepth(t *testing.T) {
 	assert.NotContains(t, visitedTypes, "VisitorTestLogger")
 }
 
+// TestVisitType_StopAction tests Visit Type stop action scenarios.
 func TestVisitType_StopAction(t *testing.T) {
 	var visitedTypes []string
 
@@ -453,6 +466,7 @@ func TestVisitType_StopAction(t *testing.T) {
 	assert.NotContains(t, visitedTypes, "VisitorTestBase")
 }
 
+// TestVisitType_SkipChildrenAction tests Visit Type skip children action scenarios.
 func TestVisitType_SkipChildrenAction(t *testing.T) {
 	var visitedTypes []string
 
@@ -478,6 +492,7 @@ func TestVisitType_SkipChildrenAction(t *testing.T) {
 	assert.NotContains(t, visitedTypes, "VisitorTestLogger")
 }
 
+// TestVisitType_NonStruct tests Visit Type non struct scenarios.
 func TestVisitType_NonStruct(t *testing.T) {
 	var visitedTypes []string
 
@@ -495,6 +510,7 @@ func TestVisitType_NonStruct(t *testing.T) {
 	assert.Empty(t, visitedTypes, "Should be empty")
 }
 
+// TestVisitType_PointerToStruct tests Visit Type pointer to struct scenarios.
 func TestVisitType_PointerToStruct(t *testing.T) {
 	var visitedTypes []string
 
@@ -512,6 +528,7 @@ func TestVisitType_PointerToStruct(t *testing.T) {
 	assert.Contains(t, visitedTypes, "VisitorTestBase", "Should contain expected value")
 }
 
+// TestMethodVisitor_CallableMethodValue tests Method Visitor callable method value scenarios.
 func TestMethodVisitor_CallableMethodValue(t *testing.T) {
 	testStruct := VisitorTestEmbedded{
 		VisitorTestBase: VisitorTestBase{BaseValue: "test_value"},
@@ -548,6 +565,7 @@ func TestMethodVisitor_CallableMethodValue(t *testing.T) {
 	assert.Equal(t, "base", methodResults[0], "Should equal expected value")
 }
 
+// TestVisitor_NilCheckBehavior tests Visitor nil check behavior scenarios.
 func TestVisitor_NilCheckBehavior(t *testing.T) {
 	testStruct := VisitorTestEmbedded{
 		VisitorTestBase: VisitorTestBase{BaseValue: "test"},
@@ -608,6 +626,7 @@ func TestVisitor_NilCheckBehavior(t *testing.T) {
 	assert.Contains(t, visitedMethods, "BaseMethod", "Should contain expected value")
 }
 
+// TestVisitFor_Generic tests Visit For generic scenarios.
 func TestVisitFor_Generic(t *testing.T) {
 	var visitedTypes []string
 
@@ -628,6 +647,7 @@ func TestVisitFor_Generic(t *testing.T) {
 	assert.Contains(t, visitedTypes, "VisitorTestBase", "Should contain expected value")
 }
 
+// TestVisitOf_Convenience tests Visit Of convenience scenarios.
 func TestVisitOf_Convenience(t *testing.T) {
 	testStruct := VisitorTestEmbedded{
 		VisitorTestBase: VisitorTestBase{BaseValue: "test"},
@@ -664,6 +684,7 @@ func TestVisitOf_Convenience(t *testing.T) {
 
 // Test edge cases and boundary conditions
 
+// TestVisit_EmptyStruct tests Visit empty struct scenarios.
 func TestVisit_EmptyStruct(t *testing.T) {
 	type EmptyStruct struct{}
 
@@ -700,6 +721,7 @@ func TestVisit_EmptyStruct(t *testing.T) {
 	assert.Empty(t, visitedMethods, "Should be empty")
 }
 
+// TestVisit_UnexportedFields tests Visit unexported fields scenarios.
 func TestVisit_UnexportedFields(t *testing.T) {
 	type StructWithUnexportedFields struct {
 		PublicField  string
@@ -726,6 +748,7 @@ func TestVisit_UnexportedFields(t *testing.T) {
 	assert.Equal(t, []string{"PublicField"}, visitedFields, "Should equal expected value")
 }
 
+// TestVisit_MultiplePointerLevels tests Visit multiple pointer levels scenarios.
 func TestVisit_MultiplePointerLevels(t *testing.T) {
 	testStruct := VisitorTestBase{BaseValue: "test"}
 	ptrToStruct := &testStruct
@@ -747,6 +770,7 @@ func TestVisit_MultiplePointerLevels(t *testing.T) {
 	assert.Equal(t, "VisitorTestBase", visitedStructs[0], "Should equal expected value")
 }
 
+// TestVisit_InvalidValue tests Visit invalid value scenarios.
 func TestVisit_InvalidValue(t *testing.T) {
 	var visitedStructs []string
 
@@ -765,6 +789,7 @@ func TestVisit_InvalidValue(t *testing.T) {
 	assert.Empty(t, visitedStructs, "Should be empty")
 }
 
+// TestVisit_CyclicReference tests Visit cyclic reference scenarios.
 func TestVisit_CyclicReference(t *testing.T) {
 	// Use struct with pointer to itself to test cycle detection
 	type SelfReferencing struct {
@@ -796,6 +821,7 @@ func TestVisit_CyclicReference(t *testing.T) {
 	assert.True(t, len(visitedStructs) < 10, "Should not visit too many instances due to cycle detection")
 }
 
+// TestVisit_MethodsOnNonAddressableValue tests Visit methods on non addressable value scenarios.
 func TestVisit_MethodsOnNonAddressableValue(t *testing.T) {
 	// Create non-addressable value (result of function call)
 	getValue := func() VisitorTestBase {
@@ -819,6 +845,7 @@ func TestVisit_MethodsOnNonAddressableValue(t *testing.T) {
 	assert.Contains(t, visitedMethods, "BaseMethod", "Should contain expected value")
 }
 
+// TestVisit_MaxDepthZero tests Visit max depth zero scenarios.
 func TestVisit_MaxDepthZero(t *testing.T) {
 	testStruct := VisitorTestNested{
 		VisitorTestEmbedded: VisitorTestEmbedded{
@@ -850,6 +877,7 @@ func TestVisit_MaxDepthZero(t *testing.T) {
 	assert.Contains(t, visitedStructs, "VisitorTestBase", "Should contain expected value")
 }
 
+// TestVisitType_WithNilVisitors tests Visit Type with nil visitors scenarios.
 func TestVisitType_WithNilVisitors(t *testing.T) {
 	var visitedStructs []string
 
@@ -869,6 +897,7 @@ func TestVisitType_WithNilVisitors(t *testing.T) {
 
 // Tests for field index path tracking in embedded structures
 
+// TestVisit_FieldIndexPath_AnonymousEmbedded tests Visit field index path_ anonymous embedded scenarios.
 func TestVisit_FieldIndexPath_AnonymousEmbedded(t *testing.T) {
 	// Test that anonymous embedded fields have correct index paths
 	testStruct := VisitorTestNested{
@@ -905,6 +934,7 @@ func TestVisit_FieldIndexPath_AnonymousEmbedded(t *testing.T) {
 	assert.Equal(t, []int{1}, fieldIndexMap["NestedValue"], "NestedValue should have path [1]")
 }
 
+// TestVisitType_FieldIndexPath_TaggedDive tests Visit Type field index path_ tagged dive scenarios.
 func TestVisitType_FieldIndexPath_TaggedDive(t *testing.T) {
 	// Test that non-anonymous fields with dive tag have correct index paths
 	fieldIndexMap := make(map[string][]int)
@@ -940,6 +970,7 @@ func TestVisitType_FieldIndexPath_TaggedDive(t *testing.T) {
 	assert.Equal(t, []int{2, 1, 0}, fieldIndexMap["Size"], "Size should have path [2,1,0]")
 }
 
+// TestVisit_FieldIndexPath_CanAccessValues tests Visit field index path_ can access values scenarios.
 func TestVisit_FieldIndexPath_CanAccessValues(t *testing.T) {
 	// Test that index paths can be used to access actual field values
 	testStruct := VisitorTestEmbedded{
@@ -1001,6 +1032,7 @@ func TestVisit_FieldIndexPath_CanAccessValues(t *testing.T) {
 	assert.Equal(t, int64(1024), actualValue.Int(), "Should equal expected value")
 }
 
+// TestVisitType_FieldIndexPath_AllTraversalModes tests Visit Type field index path_ all traversal modes scenarios.
 func TestVisitType_FieldIndexPath_AllTraversalModes(t *testing.T) {
 	// Test that all four traversal modes produce correct index paths
 	testCases := []struct {
@@ -1071,6 +1103,7 @@ func TestVisitType_FieldIndexPath_AllTraversalModes(t *testing.T) {
 	}
 }
 
+// TestVisit_FieldIndexPath_DeepNesting tests Visit field index path_ deep nesting scenarios.
 func TestVisit_FieldIndexPath_DeepNesting(t *testing.T) {
 	// Test deeply nested structures (4+ levels)
 	type Level4 struct {
@@ -1114,6 +1147,7 @@ func TestVisit_FieldIndexPath_DeepNesting(t *testing.T) {
 	assert.Equal(t, []int{1}, fieldIndexMap["L1Value"], "L1Value at level 1 should have 1-element path")
 }
 
+// TestVisit_FieldIndexPath_MixedEmbedding tests Visit field index path_ mixed embedding scenarios.
 func TestVisit_FieldIndexPath_MixedEmbedding(t *testing.T) {
 	// Test mixed anonymous and tagged dive embedding
 	type Inner struct {
@@ -1160,6 +1194,7 @@ func TestVisit_FieldIndexPath_MixedEmbedding(t *testing.T) {
 	assert.Equal(t, []int{1}, fieldIndexMap["OuterField"], "OuterField should have path [1]")
 }
 
+// TestVisit_FieldIndexPath_PointerFields tests Visit field index path_ pointer fields scenarios.
 func TestVisit_FieldIndexPath_PointerFields(t *testing.T) {
 	// Test that index paths work correctly with pointer fields
 	testStruct := VisitorTestEmbedded{
@@ -1203,6 +1238,7 @@ func TestVisit_FieldIndexPath_PointerFields(t *testing.T) {
 	assert.Equal(t, int64(512), sizeValue.Int(), "Should equal expected value")
 }
 
+// TestVisitType_FieldIndexPath_Consistency tests Visit Type field index path_ consistency scenarios.
 func TestVisitType_FieldIndexPath_Consistency(t *testing.T) {
 	// Test that Type traversal and Value traversal produce the same index paths for non-nil fields
 	testValue := VisitorTestNested{

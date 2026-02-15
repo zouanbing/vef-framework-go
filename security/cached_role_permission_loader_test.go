@@ -285,6 +285,7 @@ func (m *MockRolePermissionsLoader) LoadPermissions(ctx context.Context, role st
 	return args.Get(0).(map[string]DataScope), args.Error(1)
 }
 
+// TestCachedRolePermissionsLoaderTestSuite tests cached role permissions loader test suite functionality.
 func TestCachedRolePermissionsLoaderTestSuite(t *testing.T) {
 	suite.Run(t, new(CachedRolePermissionsLoaderTestSuite))
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestNoOpEvictionHandler tests no op eviction handler functionality.
 func TestNoOpEvictionHandler(t *testing.T) {
 	handler := NewNoOpEvictionHandler()
 	require.NotNil(t, handler, "Should not be nil")
@@ -36,6 +37,7 @@ func TestNoOpEvictionHandler(t *testing.T) {
 	})
 }
 
+// TestLRUHandler tests l r u handler functionality.
 func TestLRUHandler(t *testing.T) {
 	t.Run("BasicInsertionAndEviction", func(_ *testing.T) {
 		handler := NewLruHandler()
@@ -176,6 +178,7 @@ func TestLRUHandler(t *testing.T) {
 	})
 }
 
+// TestFIFOHandler tests f i f o handler functionality.
 func TestFIFOHandler(t *testing.T) {
 	t.Run("BasicInsertionAndEviction", func(_ *testing.T) {
 		handler := NewFifoHandler()
@@ -290,6 +293,7 @@ func TestFIFOHandler(t *testing.T) {
 	})
 }
 
+// TestLFUHandler tests l f u handler functionality.
 func TestLFUHandler(t *testing.T) {
 	t.Run("BasicInsertionAndEviction", func(_ *testing.T) {
 		handler := NewLfuHandler()
@@ -482,6 +486,7 @@ func TestLFUHandler(t *testing.T) {
 	})
 }
 
+// TestEvictionHandlerFactory tests eviction handler factory functionality.
 func TestEvictionHandlerFactory(t *testing.T) {
 	factory := &EvictionHandlerFactory{}
 	require.NotNil(t, factory, "Should not be nil")
@@ -515,6 +520,7 @@ func TestEvictionHandlerFactory(t *testing.T) {
 	})
 }
 
+// TestLRUHandlerUpdateBehavior tests l r u handler update behavior functionality.
 func TestLRUHandlerUpdateBehavior(t *testing.T) {
 	t.Run("UpdateMoveKeyToFront", func(_ *testing.T) {
 		handler := NewLruHandler()
@@ -563,6 +569,7 @@ func TestLRUHandlerUpdateBehavior(t *testing.T) {
 	})
 }
 
+// TestLFUHandlerUpdateBehavior tests l f u handler update behavior functionality.
 func TestLFUHandlerUpdateBehavior(t *testing.T) {
 	t.Run("RepeatedUpdatesDoNotCauseDuplicates", func(_ *testing.T) {
 		handler := NewLfuHandler()
@@ -623,6 +630,7 @@ func TestLFUHandlerUpdateBehavior(t *testing.T) {
 	})
 }
 
+// TestFIFOHandlerUpdateBehavior tests f i f o handler update behavior functionality.
 func TestFIFOHandlerUpdateBehavior(t *testing.T) {
 	t.Run("RepeatedUpdatesDoNotCauseDuplicates", func(_ *testing.T) {
 		handler := NewFifoHandler()
@@ -653,6 +661,7 @@ func TestFIFOHandlerUpdateBehavior(t *testing.T) {
 	})
 }
 
+// TestEvictionHandlerInternalConsistency tests eviction handler internal consistency functionality.
 func TestEvictionHandlerInternalConsistency(t *testing.T) {
 	t.Run("LRUHandlerConsistency", func(_ *testing.T) {
 		handler := NewLruHandler()
@@ -697,6 +706,7 @@ func TestEvictionHandlerInternalConsistency(t *testing.T) {
 	})
 }
 
+// TestEvictionHandlerEdgeCases tests eviction handler edge cases functionality.
 func TestEvictionHandlerEdgeCases(t *testing.T) {
 	t.Run("LRUHandlerEvictAndReinsert", func(_ *testing.T) {
 		handler := NewLruHandler()
@@ -752,6 +762,7 @@ func TestEvictionHandlerEdgeCases(t *testing.T) {
 	})
 }
 
+// TestEvictionHandlerLargeScale tests eviction handler large scale functionality.
 func TestEvictionHandlerLargeScale(t *testing.T) {
 	t.Run("LRUHandlerLargeScale", func(_ *testing.T) {
 		handler := NewLruHandler()

@@ -44,6 +44,7 @@ type GenericStruct[T any] struct {
 	Data T
 }
 
+// TestIndirect tests indirect functionality.
 func TestIndirect(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -85,6 +86,7 @@ func TestIndirect(t *testing.T) {
 	}
 }
 
+// TestIsPointerToStruct tests is pointer to struct functionality.
 func TestIsPointerToStruct(t *testing.T) {
 	t.Run("PointerToStruct", func(t *testing.T) {
 		structType := reflect.TypeFor[TestStruct]()
@@ -125,6 +127,7 @@ func TestIsPointerToStruct(t *testing.T) {
 	})
 }
 
+// TestIsSimilarType tests is similar type functionality.
 func TestIsSimilarType(t *testing.T) {
 	t.Run("IdenticalTypes", func(t *testing.T) {
 		t1 := reflect.TypeFor[int]()
@@ -157,6 +160,7 @@ func TestIsSimilarType(t *testing.T) {
 	})
 }
 
+// TestApplyIfString tests apply if string functionality.
 func TestApplyIfString(t *testing.T) {
 	t.Run("StringValue", func(t *testing.T) {
 		result := ApplyIfString("hello", func(s string) int {
@@ -205,6 +209,7 @@ func TestApplyIfString(t *testing.T) {
 	})
 }
 
+// TestFindMethod tests find method functionality.
 func TestFindMethod(t *testing.T) {
 	t.Run("DirectMethodOnValue", func(t *testing.T) {
 		base := BaseStruct{Value: "test"}
@@ -362,6 +367,7 @@ func BenchmarkFindMethod(b *testing.B) {
 	}
 }
 
+// TestCollectMethods tests collect methods functionality.
 func TestCollectMethods(t *testing.T) {
 	t.Run("CollectsAllMethods", func(t *testing.T) {
 		nested := NestedStruct{
@@ -494,6 +500,7 @@ type AnotherStruct struct {
 	Data int
 }
 
+// TestIsTypeCompatible tests is type compatible functionality.
 func TestIsTypeCompatible(t *testing.T) {
 	t.Run("ExactTypeMatch", func(t *testing.T) {
 		stringType := reflect.TypeFor[string]()
@@ -553,6 +560,7 @@ func TestIsTypeCompatible(t *testing.T) {
 	})
 }
 
+// TestConvertValue tests convert value functionality.
 func TestConvertValue(t *testing.T) {
 	t.Run("SameTypesNoConversionNeeded", func(t *testing.T) {
 		original := reflect.ValueOf("hello")

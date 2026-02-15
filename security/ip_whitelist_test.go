@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestNewIPWhitelistValidator tests new i p whitelist validator functionality.
 func TestNewIPWhitelistValidator(t *testing.T) {
 	t.Run("EmptyWhitelist", func(t *testing.T) {
 		validator := NewIPWhitelistValidator("")
@@ -36,6 +37,7 @@ func TestNewIPWhitelistValidator(t *testing.T) {
 	})
 }
 
+// TestIPWhitelistValidator_IsEmpty tests I P Whitelist Validator is empty scenarios.
 func TestIPWhitelistValidator_IsEmpty(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -60,6 +62,7 @@ func TestIPWhitelistValidator_IsEmpty(t *testing.T) {
 	}
 }
 
+// TestIPWhitelistValidator_IsAllowed_SingleIP tests I P Whitelist Validator is allowed_ single i p scenarios.
 func TestIPWhitelistValidator_IsAllowed_SingleIP(t *testing.T) {
 	validator := NewIPWhitelistValidator("192.168.1.100")
 
@@ -80,6 +83,7 @@ func TestIPWhitelistValidator_IsAllowed_SingleIP(t *testing.T) {
 	}
 }
 
+// TestIPWhitelistValidator_IsAllowed_MultipleIPs tests I P Whitelist Validator is allowed_ multiple i ps scenarios.
 func TestIPWhitelistValidator_IsAllowed_MultipleIPs(t *testing.T) {
 	validator := NewIPWhitelistValidator("192.168.1.100, 192.168.1.101, 10.0.0.1")
 
@@ -101,6 +105,7 @@ func TestIPWhitelistValidator_IsAllowed_MultipleIPs(t *testing.T) {
 	}
 }
 
+// TestIPWhitelistValidator_IsAllowed_CIDR tests I P Whitelist Validator is allowed_ c i d r scenarios.
 func TestIPWhitelistValidator_IsAllowed_CIDR(t *testing.T) {
 	t.Run("ClassCNetwork", func(t *testing.T) {
 		validator := NewIPWhitelistValidator("192.168.1.0/24")
@@ -150,6 +155,7 @@ func TestIPWhitelistValidator_IsAllowed_CIDR(t *testing.T) {
 	})
 }
 
+// TestIPWhitelistValidator_IsAllowed_MixedIPsAndCIDR tests I P Whitelist Validator is allowed_ mixed i ps and c i d r scenarios.
 func TestIPWhitelistValidator_IsAllowed_MixedIPsAndCIDR(t *testing.T) {
 	validator := NewIPWhitelistValidator("192.168.1.0/24, 10.0.0.100, 172.16.0.0/16")
 
@@ -173,6 +179,7 @@ func TestIPWhitelistValidator_IsAllowed_MixedIPsAndCIDR(t *testing.T) {
 	}
 }
 
+// TestIPWhitelistValidator_IsAllowed_IPv6 tests I P Whitelist Validator is allowed_ i pv6 scenarios.
 func TestIPWhitelistValidator_IsAllowed_IPv6(t *testing.T) {
 	t.Run("SingleIPv6AndCIDR", func(t *testing.T) {
 		validator := NewIPWhitelistValidator("::1, 2001:db8::/32")
@@ -217,6 +224,7 @@ func TestIPWhitelistValidator_IsAllowed_IPv6(t *testing.T) {
 	})
 }
 
+// TestIPWhitelistValidator_IsAllowed_InvalidEntries tests I P Whitelist Validator is allowed_ invalid entries scenarios.
 func TestIPWhitelistValidator_IsAllowed_InvalidEntries(t *testing.T) {
 	t.Run("MixedValidAndInvalid", func(t *testing.T) {
 		validator := NewIPWhitelistValidator("invalid, 192.168.1.100, also-invalid")
@@ -248,6 +256,7 @@ func TestIPWhitelistValidator_IsAllowed_InvalidEntries(t *testing.T) {
 	})
 }
 
+// TestIPWhitelistValidator_IsAllowed_WhitespaceHandling tests I P Whitelist Validator is allowed_ whitespace handling scenarios.
 func TestIPWhitelistValidator_IsAllowed_WhitespaceHandling(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -271,6 +280,7 @@ func TestIPWhitelistValidator_IsAllowed_WhitespaceHandling(t *testing.T) {
 	}
 }
 
+// TestIPWhitelistValidator_IsAllowed_InvalidIPInput tests I P Whitelist Validator is allowed_ invalid i p input scenarios.
 func TestIPWhitelistValidator_IsAllowed_InvalidIPInput(t *testing.T) {
 	validator := NewIPWhitelistValidator("192.168.1.100")
 
@@ -297,6 +307,7 @@ func TestIPWhitelistValidator_IsAllowed_InvalidIPInput(t *testing.T) {
 	}
 }
 
+// TestIPWhitelistValidator_IsAllowed_EdgeCases tests I P Whitelist Validator is allowed_ edge cases scenarios.
 func TestIPWhitelistValidator_IsAllowed_EdgeCases(t *testing.T) {
 	t.Run("EmptyEntriesBetweenCommas", func(t *testing.T) {
 		validator := NewIPWhitelistValidator("192.168.1.100,,10.0.0.1")
@@ -354,6 +365,7 @@ func TestIPWhitelistValidator_IsAllowed_EdgeCases(t *testing.T) {
 	})
 }
 
+// TestIPWhitelistValidator_IsAllowed_SpecialAddresses tests I P Whitelist Validator is allowed_ special addresses scenarios.
 func TestIPWhitelistValidator_IsAllowed_SpecialAddresses(t *testing.T) {
 	t.Run("IPv4MappedIPv6", func(t *testing.T) {
 		validator := NewIPWhitelistValidator("::ffff:192.168.1.100")

@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestGenerate tests generate functionality.
 func TestGenerate(t *testing.T) {
 	t.Run("GenerateNonEmptyID", func(t *testing.T) {
 		id := Generate()
@@ -38,6 +39,7 @@ func TestGenerate(t *testing.T) {
 	})
 }
 
+// TestGenerateUUID tests generate u u i d functionality.
 func TestGenerateUUID(t *testing.T) {
 	t.Run("GenerateValidUUIDV7", func(t *testing.T) {
 		uuid := GenerateUUID()
@@ -64,6 +66,7 @@ func TestGenerateUUID(t *testing.T) {
 	})
 }
 
+// TestDefaultGenerators tests default generators functionality.
 func TestDefaultGenerators(t *testing.T) {
 	t.Run("Initialized", func(t *testing.T) {
 		assert.NotNil(t, DefaultXIDGenerator, "DefaultXIDGenerator should be initialized")
@@ -83,6 +86,7 @@ func TestDefaultGenerators(t *testing.T) {
 	})
 }
 
+// TestConcurrentGeneration tests concurrent generation functionality.
 func TestConcurrentGeneration(t *testing.T) {
 	t.Run("ThreadSafe", func(t *testing.T) {
 		const (
