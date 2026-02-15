@@ -13,7 +13,7 @@ import (
 func TestNewJWT(t *testing.T) {
 	t.Run("Valid hex secret", func(t *testing.T) {
 		config := &JWTConfig{
-			Secret:   "af6675678bd81ad7c93c4a51d122ef61e9750fe5d42ceac1c33b293f36bc14c2",
+			Secret:   DefaultJWTSecret,
 			Audience: "test_app",
 		}
 		jwt, err := NewJWT(config)
@@ -44,18 +44,18 @@ func TestNewJWT(t *testing.T) {
 
 	t.Run("Empty audience uses default", func(t *testing.T) {
 		config := &JWTConfig{
-			Secret:   "af6675678bd81ad7c93c4a51d122ef61e9750fe5d42ceac1c33b293f36bc14c2",
+			Secret:   DefaultJWTSecret,
 			Audience: "",
 		}
 		jwt, err := NewJWT(config)
 		require.NoError(t, err)
-		assert.Equal(t, defaultJWTAudience, jwt.config.Audience)
+		assert.Equal(t, DefaultJWTAudience, jwt.config.Audience)
 	})
 }
 
 func TestJWTGenerate(t *testing.T) {
 	config := &JWTConfig{
-		Secret:   "af6675678bd81ad7c93c4a51d122ef61e9750fe5d42ceac1c33b293f36bc14c2",
+		Secret:   DefaultJWTSecret,
 		Audience: "test_app",
 	}
 	jwt, err := NewJWT(config)
@@ -97,7 +97,7 @@ func TestJWTGenerate(t *testing.T) {
 		claims, err := jwt.Parse(token)
 		require.NoError(t, err)
 
-		assert.Equal(t, jwtIssuer, claims.Claim(claimIssuer))
+		assert.Equal(t, JWTIssuer, claims.Claim(claimIssuer))
 		assert.Equal(t, "test_app", claims.Claim(claimAudience))
 		iat, ok := claims.Claim(claimIssuedAt).(float64)
 		require.True(t, ok)
@@ -110,7 +110,7 @@ func TestJWTGenerate(t *testing.T) {
 
 func TestJWTParse(t *testing.T) {
 	config := &JWTConfig{
-		Secret:   "af6675678bd81ad7c93c4a51d122ef61e9750fe5d42ceac1c33b293f36bc14c2",
+		Secret:   DefaultJWTSecret,
 		Audience: "test_app",
 	}
 	jwt, err := NewJWT(config)
@@ -141,7 +141,7 @@ func TestJWTParse(t *testing.T) {
 
 	t.Run("Parse token with wrong audience", func(t *testing.T) {
 		wrongConfig := &JWTConfig{
-			Secret:   "af6675678bd81ad7c93c4a51d122ef61e9750fe5d42ceac1c33b293f36bc14c2",
+			Secret:   DefaultJWTSecret,
 			Audience: "wrong_app",
 		}
 		wrongJwt, err := NewJWT(wrongConfig)
@@ -186,7 +186,7 @@ func TestJWTParse(t *testing.T) {
 
 func TestJWTErrorMapping(t *testing.T) {
 	config := &JWTConfig{
-		Secret:   "af6675678bd81ad7c93c4a51d122ef61e9750fe5d42ceac1c33b293f36bc14c2",
+		Secret:   DefaultJWTSecret,
 		Audience: "test_app",
 	}
 	jwt, err := NewJWT(config)

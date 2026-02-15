@@ -43,7 +43,7 @@ func (m *MockNonceStore) Store(ctx context.Context, appID, nonce string, ttl tim
 	return args.Error(0)
 }
 
-const testSecretHex = "af6675678bd81ad7c93c4a51d122ef61e9750fe5d42ceac1c33b293f36bc14c2"
+const testSecretHex = security.DefaultJWTSecret
 
 // generateValidCredentials creates valid signature credentials for testing.
 func generateValidCredentials(t *testing.T, appID, secret string) *security.SignatureCredentials {

@@ -37,7 +37,7 @@ func (ja *JWTTokenAuthenticator) Authenticate(_ context.Context, authentication 
 		return nil, err
 	}
 
-	if claimsAccessor.Type() != tokenTypeAccess {
+	if claimsAccessor.Type() != TokenTypeAccess {
 		return nil, result.ErrTokenInvalid
 	}
 

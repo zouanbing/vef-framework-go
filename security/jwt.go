@@ -13,14 +13,14 @@ import (
 )
 
 const (
-	jwtIssuer          = "vef"                                                              // Issuer
-	defaultJWTAudience = "vef-app"                                                          // Audience
-	defaultJWTSecret   = "af6675678bd81ad7c93c4a51d122ef61e9750fe5d42ceac1c33b293f36bc14c2" // Secret
+	JWTIssuer          = "vef"                                                              // Issuer
+	DefaultJWTAudience = "vef-app"                                                          // Audience
+	DefaultJWTSecret   = "af6675678bd81ad7c93c4a51d122ef61e9750fe5d42ceac1c33b293f36bc14c2" // Secret
 )
 
 var jwtParseOptions = []jwt.ParserOption{
 	jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Name}),
-	jwt.WithIssuer(jwtIssuer),
+	jwt.WithIssuer(JWTIssuer),
 	jwt.WithLeeway(10 * time.Second),
 	jwt.WithIssuedAt(),
 	jwt.WithExpirationRequired(),
@@ -37,12 +37,12 @@ type JWT struct {
 // Secret expects a hex-encoded string; invalid hex will cause an error.
 // Audience will be defaulted when empty.
 func NewJWT(config *JWTConfig) (*JWT, error) {
-	secret, err := hex.DecodeString(lo.CoalesceOrEmpty(config.Secret, defaultJWTSecret))
+	secret, err := hex.DecodeString(lo.CoalesceOrEmpty(config.Secret, DefaultJWTSecret))
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrDecodeJWTSecretFailed, err)
 	}
 
-	config.Audience = lo.CoalesceOrEmpty(config.Audience, defaultJWTAudience)
+	config.Audience = lo.CoalesceOrEmpty(config.Audience, DefaultJWTAudience)
 
 	return &JWT{
 		config: config,
@@ -56,7 +56,7 @@ func (j *JWT) Generate(claimsBuilder *JWTClaimsBuilder, expires, notBefore time.
 	claims := claimsBuilder.build()
 	// Set standard claims
 	now := time.Now()
-	claims[claimIssuer] = jwtIssuer
+	claims[claimIssuer] = JWTIssuer
 	claims[claimAudience] = j.config.Audience
 	claims[claimIssuedAt] = now.Unix()
 	claims[claimNotBefore] = now.Add(notBefore).Unix()

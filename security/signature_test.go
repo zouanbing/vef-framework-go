@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const testSignatureSecret = "af6675678bd81ad7c93c4a51d122ef61e9750fe5d42ceac1c33b293f36bc14c2"
+const testSignatureSecret = DefaultJWTSecret
 
 func TestNewSignature(t *testing.T) {
 	t.Run("ValidSecret", func(t *testing.T) {
