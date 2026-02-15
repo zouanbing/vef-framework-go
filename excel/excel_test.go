@@ -58,7 +58,7 @@ func TestExporterExportToFile(t *testing.T) {
 	exporter := NewExporterFor[TestUser]()
 
 	tmpFile, err := os.CreateTemp("", "test_users_*.xlsx")
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	filename := tmpFile.Name()
 	_ = tmpFile.Close()
@@ -66,10 +66,10 @@ func TestExporterExportToFile(t *testing.T) {
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(users, filename)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	_, err = os.Stat(filename)
-	assert.NoError(t, err)
+	assert.NoError(t, err, "Should not return error")
 }
 
 func TestImporterImportFromFile(t *testing.T) {
@@ -99,7 +99,7 @@ func TestImporterImportFromFile(t *testing.T) {
 
 	exporter := NewExporterFor[TestUser]()
 	tmpFile, err := os.CreateTemp("", "test_import_users_*.xlsx")
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	filename := tmpFile.Name()
 	_ = tmpFile.Close()
@@ -107,36 +107,36 @@ func TestImporterImportFromFile(t *testing.T) {
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(users, filename)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	importer := NewImporterFor[TestUser]()
 	importedAny, importErrors, err := importer.ImportFromFile(filename)
 	imported, ok := importedAny.([]TestUser)
 	require.True(t, ok, "Type assertion to []TestUser should succeed")
 
-	require.NoError(t, err)
-	assert.Empty(t, importErrors)
-	assert.Len(t, imported, 2)
+	require.NoError(t, err, "Should not return error")
+	assert.Empty(t, importErrors, "Should be empty")
+	assert.Len(t, imported, 2, "Length should be 2")
 
-	assert.Equal(t, "1", imported[0].ID)
-	assert.Equal(t, "张三", imported[0].Name)
-	assert.Equal(t, "zhang@example.com", imported[0].Email)
-	assert.Equal(t, 30, imported[0].Age)
+	assert.Equal(t, "1", imported[0].ID, "Should equal expected value")
+	assert.Equal(t, "张三", imported[0].Name, "Should equal expected value")
+	assert.Equal(t, "zhang@example.com", imported[0].Email, "Should equal expected value")
+	assert.Equal(t, 30, imported[0].Age, "Should equal expected value")
 	assert.InDelta(t, 10000.50, imported[0].Salary, 0.01)
-	assert.Equal(t, 1, imported[0].Status)
-	assert.True(t, imported[0].Remark.Valid)
-	assert.Equal(t, "测试用户1", imported[0].Remark.ValueOrZero())
+	assert.Equal(t, 1, imported[0].Status, "Should equal expected value")
+	assert.True(t, imported[0].Remark.Valid, "Should be valid")
+	assert.Equal(t, "测试用户1", imported[0].Remark.ValueOrZero(), "Should equal expected value")
 
-	assert.Equal(t, "2", imported[1].ID)
-	assert.Equal(t, "李四", imported[1].Name)
-	assert.False(t, imported[1].Remark.Valid)
+	assert.Equal(t, "2", imported[1].ID, "Should equal expected value")
+	assert.Equal(t, "李四", imported[1].Name, "Should equal expected value")
+	assert.False(t, imported[1].Remark.Valid, "Should not be valid")
 }
 
 func TestSchemaParseTags(t *testing.T) {
 	schema := tabular.NewSchemaFor[TestUser]()
 
 	columns := schema.Columns()
-	assert.NotEmpty(t, columns)
+	assert.NotEmpty(t, columns, "Should not be empty")
 
 	var idCol, nameCol, passwordCol *tabular.Column
 
@@ -152,15 +152,15 @@ func TestSchemaParseTags(t *testing.T) {
 		}
 	}
 
-	require.NotNil(t, idCol)
-	assert.Equal(t, "ID", idCol.Name)
-	assert.Equal(t, 15.0, idCol.Width)
+	require.NotNil(t, idCol, "Should not be nil")
+	assert.Equal(t, "ID", idCol.Name, "Should equal expected value")
+	assert.Equal(t, 15.0, idCol.Width, "Should equal expected value")
 
-	require.NotNil(t, nameCol)
-	assert.Equal(t, "姓名", nameCol.Name)
-	assert.Equal(t, 20.0, nameCol.Width)
+	require.NotNil(t, nameCol, "Should not be nil")
+	assert.Equal(t, "姓名", nameCol.Name, "Should equal expected value")
+	assert.Equal(t, 20.0, nameCol.Width, "Should equal expected value")
 
-	assert.Nil(t, passwordCol)
+	assert.Nil(t, passwordCol, "Should be nil")
 }
 
 func TestImporterValidationErrors(t *testing.T) {
@@ -176,7 +176,7 @@ func TestImporterValidationErrors(t *testing.T) {
 
 	exporter := NewExporterFor[TestUser]()
 	tmpFile, err := os.CreateTemp("", "test_invalid_users_*.xlsx")
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	filename := tmpFile.Name()
 	_ = tmpFile.Close()
@@ -184,16 +184,16 @@ func TestImporterValidationErrors(t *testing.T) {
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(invalidUsers, filename)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	importer := NewImporterFor[TestUser]()
 	importedAny, importErrors, err := importer.ImportFromFile(filename)
 	imported, ok := importedAny.([]TestUser)
 	require.True(t, ok, "Type assertion to []TestUser should succeed")
 
-	require.NoError(t, err)
-	assert.Empty(t, imported)
-	assert.NotEmpty(t, importErrors)
+	require.NoError(t, err, "Should not return error")
+	assert.Empty(t, imported, "Should be empty")
+	assert.NotEmpty(t, importErrors, "Should not be empty")
 }
 
 type TestNoTagStruct struct {
@@ -206,11 +206,11 @@ func TestSchemaNoTags(t *testing.T) {
 	schema := tabular.NewSchemaFor[TestNoTagStruct]()
 
 	columns := schema.Columns()
-	assert.Len(t, columns, 3)
+	assert.Len(t, columns, 3, "Length should be 3")
 
-	assert.Equal(t, "ID", columns[0].Name)
-	assert.Equal(t, "Name", columns[1].Name)
-	assert.Equal(t, "Age", columns[2].Name)
+	assert.Equal(t, "ID", columns[0].Name, "Should equal expected value")
+	assert.Equal(t, "Name", columns[1].Name, "Should equal expected value")
+	assert.Equal(t, "Age", columns[2].Name, "Should equal expected value")
 }
 
 func TestExportImportNoTags(t *testing.T) {
@@ -221,7 +221,7 @@ func TestExportImportNoTags(t *testing.T) {
 
 	exporter := NewExporterFor[TestNoTagStruct]()
 	tmpFile, err := os.CreateTemp("", "test_no_tags_*.xlsx")
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	filename := tmpFile.Name()
 	_ = tmpFile.Close()
@@ -229,20 +229,20 @@ func TestExportImportNoTags(t *testing.T) {
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(data, filename)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	importer := NewImporterFor[TestNoTagStruct]()
 	importedAny, importErrors, err := importer.ImportFromFile(filename)
 	imported, ok := importedAny.([]TestNoTagStruct)
 	require.True(t, ok, "Type assertion to []TestNoTagStruct should succeed")
 
-	require.NoError(t, err)
-	assert.Empty(t, importErrors)
-	assert.Len(t, imported, 2)
+	require.NoError(t, err, "Should not return error")
+	assert.Empty(t, importErrors, "Should be empty")
+	assert.Len(t, imported, 2, "Length should be 2")
 
-	assert.Equal(t, "1", imported[0].ID)
-	assert.Equal(t, "Alice", imported[0].Name)
-	assert.Equal(t, 30, imported[0].Age)
+	assert.Equal(t, "1", imported[0].ID, "Should equal expected value")
+	assert.Equal(t, "Alice", imported[0].Name, "Should equal expected value")
+	assert.Equal(t, 30, imported[0].Age, "Should equal expected value")
 }
 
 type prefixFormatter struct {
@@ -275,7 +275,7 @@ func TestExportCustomFormatter(t *testing.T) {
 	exporter.RegisterFormatter("prefix", &prefixFormatter{prefix: "ID:"})
 
 	tmpFile, err := os.CreateTemp("", "test_custom_formatter_*.xlsx")
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	filename := tmpFile.Name()
 	_ = tmpFile.Close()
@@ -283,10 +283,10 @@ func TestExportCustomFormatter(t *testing.T) {
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(users, filename)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	_, err = os.Stat(filename)
-	assert.NoError(t, err)
+	assert.NoError(t, err, "Should not return error")
 }
 
 func TestExportToBuffer(t *testing.T) {
@@ -306,9 +306,9 @@ func TestExportToBuffer(t *testing.T) {
 	exporter := NewExporterFor[TestUser]()
 	buf, err := exporter.Export(users)
 
-	require.NoError(t, err)
-	assert.NotNil(t, buf)
-	assert.Greater(t, buf.Len(), 0)
+	require.NoError(t, err, "Should not return error")
+	assert.NotNil(t, buf, "Should not be nil")
+	assert.Greater(t, buf.Len(), 0, "Should be greater")
 }
 
 func TestExportEmptyData(t *testing.T) {
@@ -316,7 +316,7 @@ func TestExportEmptyData(t *testing.T) {
 
 	exporter := NewExporterFor[TestUser]()
 	tmpFile, err := os.CreateTemp("", "test_empty_*.xlsx")
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	filename := tmpFile.Name()
 	_ = tmpFile.Close()
@@ -324,10 +324,10 @@ func TestExportEmptyData(t *testing.T) {
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(emptyUsers, filename)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	_, err = os.Stat(filename)
-	assert.NoError(t, err)
+	assert.NoError(t, err, "Should not return error")
 }
 
 func TestExportWithOptions(t *testing.T) {
@@ -345,7 +345,7 @@ func TestExportWithOptions(t *testing.T) {
 
 	exporter := NewExporterFor[TestUser](WithSheetName("用户数据"))
 	tmpFile, err := os.CreateTemp("", "test_options_*.xlsx")
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	filename := tmpFile.Name()
 	_ = tmpFile.Close()
@@ -353,10 +353,10 @@ func TestExportWithOptions(t *testing.T) {
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(users, filename)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	_, err = os.Stat(filename)
-	assert.NoError(t, err)
+	assert.NoError(t, err, "Should not return error")
 }
 
 type prefixParser struct{}
@@ -390,7 +390,7 @@ func TestImportCustomParser(t *testing.T) {
 
 	exporter := NewExporterFor[TestUser]()
 	tmpFile, err := os.CreateTemp("", "test_custom_parser_*.xlsx")
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	filename := tmpFile.Name()
 	_ = tmpFile.Close()
@@ -398,7 +398,7 @@ func TestImportCustomParser(t *testing.T) {
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(users, filename)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	importer := NewImporterFor[TestUser]()
 	importer.RegisterParser("prefix_parser", &prefixParser{})
@@ -407,9 +407,9 @@ func TestImportCustomParser(t *testing.T) {
 	imported, ok := importedAny.([]TestUser)
 	require.True(t, ok, "Type assertion to []TestUser should succeed")
 
-	require.NoError(t, err)
-	assert.Empty(t, importErrors)
-	assert.Len(t, imported, 1)
+	require.NoError(t, err, "Should not return error")
+	assert.Empty(t, importErrors, "Should be empty")
+	assert.Len(t, imported, 1, "Length should be 1")
 }
 
 func TestImportFromReader(t *testing.T) {
@@ -428,18 +428,18 @@ func TestImportFromReader(t *testing.T) {
 
 	exporter := NewExporterFor[TestUser]()
 	buf, err := exporter.Export(users)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	importer := NewImporterFor[TestUser]()
 	importedAny, importErrors, err := importer.Import(buf)
 	imported, ok := importedAny.([]TestUser)
 	require.True(t, ok, "Type assertion to []TestUser should succeed")
 
-	require.NoError(t, err)
-	assert.Empty(t, importErrors)
-	assert.Len(t, imported, 1)
-	assert.Equal(t, "1", imported[0].ID)
-	assert.Equal(t, "张三", imported[0].Name)
+	require.NoError(t, err, "Should not return error")
+	assert.Empty(t, importErrors, "Should be empty")
+	assert.Len(t, imported, 1, "Length should be 1")
+	assert.Equal(t, "1", imported[0].ID, "Should equal expected value")
+	assert.Equal(t, "张三", imported[0].Name, "Should equal expected value")
 }
 
 func TestImportWithOptions(t *testing.T) {
@@ -457,7 +457,7 @@ func TestImportWithOptions(t *testing.T) {
 
 	exporter := NewExporterFor[TestUser](WithSheetName("用户数据"))
 	tmpFile, err := os.CreateTemp("", "test_import_options_*.xlsx")
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	filename := tmpFile.Name()
 	_ = tmpFile.Close()
@@ -465,21 +465,21 @@ func TestImportWithOptions(t *testing.T) {
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(users, filename)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	importer := NewImporterFor[TestUser](WithImportSheetName("用户数据"))
 	importedAny, importErrors, err := importer.ImportFromFile(filename)
 	imported, ok := importedAny.([]TestUser)
 	require.True(t, ok, "Type assertion to []TestUser should succeed")
 
-	require.NoError(t, err)
-	assert.Empty(t, importErrors)
-	assert.Len(t, imported, 1)
+	require.NoError(t, err, "Should not return error")
+	assert.Empty(t, importErrors, "Should be empty")
+	assert.Len(t, imported, 1, "Length should be 1")
 }
 
 func TestImportEmptyRows(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "test_empty_rows_*.xlsx")
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	filename := tmpFile.Name()
 	_ = tmpFile.Close()
@@ -502,21 +502,21 @@ func TestImportEmptyRows(t *testing.T) {
 	_ = f.SetCellValue(sheetName, "C4", "li@example.com")
 
 	err = f.SaveAs(filename)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	importer := NewImporterFor[TestUser]()
 	importedAny, importErrors, err := importer.ImportFromFile(filename)
 	imported, ok := importedAny.([]TestUser)
 	require.True(t, ok, "Type assertion to []TestUser should succeed")
 
-	require.NoError(t, err)
-	assert.Empty(t, importErrors)
-	assert.Len(t, imported, 2)
+	require.NoError(t, err, "Should not return error")
+	assert.Empty(t, importErrors, "Should be empty")
+	assert.Len(t, imported, 2, "Length should be 2")
 }
 
 func TestImportMissingColumns(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "test_missing_columns_*.xlsx")
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	filename := tmpFile.Name()
 	_ = tmpFile.Close()
@@ -537,28 +537,28 @@ func TestImportMissingColumns(t *testing.T) {
 	_ = f.SetCellValue(sheetName, "D2", "30")
 
 	err = f.SaveAs(filename)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	importer := NewImporterFor[TestUser]()
 	importedAny, importErrors, err := importer.ImportFromFile(filename)
 	imported, ok := importedAny.([]TestUser)
 	require.True(t, ok, "Type assertion to []TestUser should succeed")
 
-	require.NoError(t, err)
-	assert.Empty(t, importErrors)
-	assert.Len(t, imported, 1)
-	assert.Equal(t, "1", imported[0].ID)
-	assert.Equal(t, "张三", imported[0].Name)
-	assert.Equal(t, "zhang@example.com", imported[0].Email)
-	assert.Equal(t, 30, imported[0].Age)
-	assert.Equal(t, 0.0, imported[0].Salary)
-	assert.Equal(t, 0, imported[0].Status)
-	assert.False(t, imported[0].Remark.Valid)
+	require.NoError(t, err, "Should not return error")
+	assert.Empty(t, importErrors, "Should be empty")
+	assert.Len(t, imported, 1, "Length should be 1")
+	assert.Equal(t, "1", imported[0].ID, "Should equal expected value")
+	assert.Equal(t, "张三", imported[0].Name, "Should equal expected value")
+	assert.Equal(t, "zhang@example.com", imported[0].Email, "Should equal expected value")
+	assert.Equal(t, 30, imported[0].Age, "Should equal expected value")
+	assert.Equal(t, 0.0, imported[0].Salary, "Should equal expected value")
+	assert.Equal(t, 0, imported[0].Status, "Should equal expected value")
+	assert.False(t, imported[0].Remark.Valid, "Should not be valid")
 }
 
 func TestImportInvalidData(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "test_invalid_data_*.xlsx")
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	filename := tmpFile.Name()
 	_ = tmpFile.Close()
@@ -579,16 +579,16 @@ func TestImportInvalidData(t *testing.T) {
 	_ = f.SetCellValue(sheetName, "D2", "not-a-number")
 
 	err = f.SaveAs(filename)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	importer := NewImporterFor[TestUser]()
 	importedAny, importErrors, err := importer.ImportFromFile(filename)
 	imported, ok := importedAny.([]TestUser)
 	require.True(t, ok, "Type assertion to []TestUser should succeed")
 
-	require.NoError(t, err)
-	assert.Empty(t, imported)
-	assert.NotEmpty(t, importErrors)
+	require.NoError(t, err, "Should not return error")
+	assert.Empty(t, imported, "Should be empty")
+	assert.NotEmpty(t, importErrors, "Should not be empty")
 }
 
 func TestImportLargeFile(t *testing.T) {
@@ -610,7 +610,7 @@ func TestImportLargeFile(t *testing.T) {
 
 	exporter := NewExporterFor[TestUser]()
 	tmpFile, err := os.CreateTemp("", "test_large_*.xlsx")
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	filename := tmpFile.Name()
 	_ = tmpFile.Close()
@@ -618,20 +618,20 @@ func TestImportLargeFile(t *testing.T) {
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(users, filename)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	importer := NewImporterFor[TestUser]()
 	importedAny, importErrors, err := importer.ImportFromFile(filename)
 	imported, ok := importedAny.([]TestUser)
 	require.True(t, ok, "Type assertion to []TestUser should succeed")
 
-	require.NoError(t, err)
-	assert.Empty(t, importErrors)
-	assert.Len(t, imported, count)
+	require.NoError(t, err, "Should not return error")
+	assert.Empty(t, importErrors, "Should be empty")
+	assert.Len(t, imported, count, "Length should be count")
 
-	assert.Equal(t, "1", imported[0].ID)
-	assert.Equal(t, "用户1", imported[0].Name)
-	assert.Equal(t, fmt.Sprintf("%d", count), imported[count-1].ID)
+	assert.Equal(t, "1", imported[0].ID, "Should equal expected value")
+	assert.Equal(t, "用户1", imported[0].Name, "Should equal expected value")
+	assert.Equal(t, fmt.Sprintf("%d", count), imported[count-1].ID, "Should equal expected value")
 }
 
 func TestExportNullValues(t *testing.T) {
@@ -660,7 +660,7 @@ func TestExportNullValues(t *testing.T) {
 
 	exporter := NewExporterFor[TestUser]()
 	tmpFile, err := os.CreateTemp("", "test_null_values_*.xlsx")
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	filename := tmpFile.Name()
 	_ = tmpFile.Close()
@@ -668,20 +668,20 @@ func TestExportNullValues(t *testing.T) {
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(users, filename)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	importer := NewImporterFor[TestUser]()
 	importedAny, importErrors, err := importer.ImportFromFile(filename)
 	imported, ok := importedAny.([]TestUser)
 	require.True(t, ok, "Type assertion to []TestUser should succeed")
 
-	require.NoError(t, err)
-	assert.Empty(t, importErrors)
-	assert.Len(t, imported, 2)
+	require.NoError(t, err, "Should not return error")
+	assert.Empty(t, importErrors, "Should be empty")
+	assert.Len(t, imported, 2, "Length should be 2")
 
-	assert.False(t, imported[0].Remark.Valid)
-	assert.True(t, imported[1].Remark.Valid)
-	assert.Equal(t, "有备注", imported[1].Remark.ValueOrZero())
+	assert.False(t, imported[0].Remark.Valid, "Should not be valid")
+	assert.True(t, imported[1].Remark.Valid, "Should be valid")
+	assert.Equal(t, "有备注", imported[1].Remark.ValueOrZero(), "Should equal expected value")
 }
 
 func TestRoundTrip(t *testing.T) {
@@ -711,7 +711,7 @@ func TestRoundTrip(t *testing.T) {
 
 	exporter := NewExporterFor[TestUser]()
 	tmpFile, err := os.CreateTemp("", "test_roundtrip_*.xlsx")
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	filename := tmpFile.Name()
 	_ = tmpFile.Close()
@@ -719,28 +719,28 @@ func TestRoundTrip(t *testing.T) {
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(original, filename)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	importer := NewImporterFor[TestUser]()
 	importedAny, importErrors, err := importer.ImportFromFile(filename)
 	imported, ok := importedAny.([]TestUser)
 	require.True(t, ok, "Type assertion to []TestUser should succeed")
 
-	require.NoError(t, err)
-	assert.Empty(t, importErrors)
-	assert.Len(t, imported, len(original))
+	require.NoError(t, err, "Should not return error")
+	assert.Empty(t, importErrors, "Should be empty")
+	assert.Len(t, imported, len(original), "Length should be len(original)")
 
 	for i := range original {
-		assert.Equal(t, original[i].ID, imported[i].ID)
-		assert.Equal(t, original[i].Name, imported[i].Name)
-		assert.Equal(t, original[i].Email, imported[i].Email)
-		assert.Equal(t, original[i].Age, imported[i].Age)
+		assert.Equal(t, original[i].ID, imported[i].ID, "Should equal expected value")
+		assert.Equal(t, original[i].Name, imported[i].Name, "Should equal expected value")
+		assert.Equal(t, original[i].Email, imported[i].Email, "Should equal expected value")
+		assert.Equal(t, original[i].Age, imported[i].Age, "Should equal expected value")
 		assert.InDelta(t, original[i].Salary, imported[i].Salary, 0.01)
-		assert.Equal(t, original[i].Status, imported[i].Status)
-		assert.Equal(t, original[i].Remark.Valid, imported[i].Remark.Valid)
+		assert.Equal(t, original[i].Status, imported[i].Status, "Should equal expected value")
+		assert.Equal(t, original[i].Remark.Valid, imported[i].Remark.Valid, "Should equal expected value")
 
 		if original[i].Remark.Valid {
-			assert.Equal(t, original[i].Remark.ValueOrZero(), imported[i].Remark.ValueOrZero())
+			assert.Equal(t, original[i].Remark.ValueOrZero(), imported[i].Remark.ValueOrZero(), "Should equal expected value")
 		}
 	}
 }

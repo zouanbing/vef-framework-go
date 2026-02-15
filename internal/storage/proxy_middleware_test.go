@@ -107,12 +107,12 @@ func TestProxyMiddleware(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/storage/files/temp/2025/01/15/test.jpg", nil)
 		resp, err := app.Test(req)
 
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		assert.Equal(t, "image/jpeg", resp.Header.Get("Content-Type"))
+		assert.NoError(t, err, "Should not return error")
+		assert.Equal(t, http.StatusOK, resp.StatusCode, "Should equal expected value")
+		assert.Equal(t, "image/jpeg", resp.Header.Get("Content-Type"), "Should equal expected value")
 
 		body, _ := io.ReadAll(resp.Body)
-		assert.Equal(t, fileContent, body)
+		assert.Equal(t, fileContent, body, "Should equal expected value")
 
 		mockService.AssertExpectations(t)
 	})
@@ -132,8 +132,8 @@ func TestProxyMiddleware(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/storage/files/nonexistent.jpg", nil)
 		resp, err := app.Test(req)
 
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.NoError(t, err, "Should not return error")
+		assert.Equal(t, http.StatusOK, resp.StatusCode, "Should equal expected value")
 
 		mockService.AssertExpectations(t)
 	})
@@ -146,8 +146,8 @@ func TestProxyMiddleware(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/storage/files/", nil)
 		resp, err := app.Test(req)
 
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.NoError(t, err, "Should not return error")
+		assert.Equal(t, http.StatusOK, resp.StatusCode, "Should equal expected value")
 	})
 
 	t.Run("URLEncodedFileKey", func(t *testing.T) {
@@ -173,8 +173,8 @@ func TestProxyMiddleware(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/storage/files/temp/%E6%B5%8B%E8%AF%95%E6%96%87%E4%BB%B6.jpg", nil)
 		resp, err := app.Test(req)
 
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.NoError(t, err, "Should not return error")
+		assert.Equal(t, http.StatusOK, resp.StatusCode, "Should equal expected value")
 
 		mockService.AssertExpectations(t)
 	})
@@ -194,8 +194,8 @@ func TestProxyMiddleware(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/storage/files/error.jpg", nil)
 		resp, err := app.Test(req)
 
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.NoError(t, err, "Should not return error")
+		assert.Equal(t, http.StatusOK, resp.StatusCode, "Should equal expected value")
 
 		mockService.AssertExpectations(t)
 	})
@@ -220,9 +220,9 @@ func TestProxyMiddleware(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/storage/files/test.png", nil)
 		resp, err := app.Test(req)
 
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		assert.Equal(t, "image/png", resp.Header.Get("Content-Type"))
+		assert.NoError(t, err, "Should not return error")
+		assert.Equal(t, http.StatusOK, resp.StatusCode, "Should equal expected value")
+		assert.Equal(t, "image/png", resp.Header.Get("Content-Type"), "Should equal expected value")
 
 		mockService.AssertExpectations(t)
 	})
@@ -250,10 +250,10 @@ func TestProxyMiddleware(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/storage/files/document.pdf", nil)
 		resp, err := app.Test(req)
 
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		assert.Equal(t, "application/pdf", resp.Header.Get("Content-Type"))
-		assert.Equal(t, "etag456", resp.Header.Get("ETag"))
+		assert.NoError(t, err, "Should not return error")
+		assert.Equal(t, http.StatusOK, resp.StatusCode, "Should equal expected value")
+		assert.Equal(t, "application/pdf", resp.Header.Get("Content-Type"), "Should equal expected value")
+		assert.Equal(t, "etag456", resp.Header.Get("ETag"), "Should equal expected value")
 
 		mockService.AssertExpectations(t)
 	})

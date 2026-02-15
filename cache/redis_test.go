@@ -83,8 +83,8 @@ func (suite *RedisCacheTestSuite) TestRedisCacheBasicOperations() {
 		suite.Require().NoError(err)
 
 		result, found := userCache.Get(suite.ctx, "user1")
-		suite.True(found)
-		suite.Equal(user, result)
+		suite.True(found, "Should find cached user")
+		suite.Equal(user, result, "Cached user should match original")
 	})
 
 	suite.Run("Contains", func() {
@@ -93,8 +93,8 @@ func (suite *RedisCacheTestSuite) TestRedisCacheBasicOperations() {
 		err := userCache.Set(suite.ctx, "user2", user)
 		suite.Require().NoError(err)
 
-		suite.True(userCache.Contains(suite.ctx, "user2"))
-		suite.False(userCache.Contains(suite.ctx, "nonexistent"))
+		suite.True(userCache.Contains(suite.ctx, "user2"), "Should contain user2")
+		suite.False(userCache.Contains(suite.ctx, "nonexistent"), "Should not contain nonexistent key")
 	})
 
 	suite.Run("Delete", func() {
@@ -103,14 +103,14 @@ func (suite *RedisCacheTestSuite) TestRedisCacheBasicOperations() {
 		err := userCache.Set(suite.ctx, "user3", user)
 		suite.Require().NoError(err)
 
-		suite.True(userCache.Contains(suite.ctx, "user3"))
+		suite.True(userCache.Contains(suite.ctx, "user3"), "Should contain user3 before delete")
 
 		err = userCache.Delete(suite.ctx, "user3")
 		suite.Require().NoError(err)
 
-		suite.False(userCache.Contains(suite.ctx, "user3"))
+		suite.False(userCache.Contains(suite.ctx, "user3"), "Should not contain user3 after delete")
 		_, found := userCache.Get(suite.ctx, "user3")
-		suite.False(found)
+		suite.False(found, "Should not find deleted user")
 	})
 
 	suite.Run("UpdateExistingKey", func() {
@@ -121,15 +121,15 @@ func (suite *RedisCacheTestSuite) TestRedisCacheBasicOperations() {
 		suite.Require().NoError(err)
 
 		result, found := userCache.Get(suite.ctx, "user4")
-		suite.True(found)
-		suite.Equal(originalUser, result)
+		suite.True(found, "Should find original user")
+		suite.Equal(originalUser, result, "Should return original user")
 
 		err = userCache.Set(suite.ctx, "user4", updatedUser)
 		suite.Require().NoError(err)
 
 		result, found = userCache.Get(suite.ctx, "user4")
-		suite.True(found)
-		suite.Equal(updatedUser, result)
+		suite.True(found, "Should find updated user")
+		suite.Equal(updatedUser, result, "Should return updated user")
 	})
 }
 
@@ -144,13 +144,13 @@ func (suite *RedisCacheTestSuite) TestRedisCacheTtl() {
 		suite.Require().NoError(err)
 
 		result, found := userCache.Get(suite.ctx, "ttl-user")
-		suite.True(found)
-		suite.Equal(user, result)
+		suite.True(found, "Should find user before TTL expiration")
+		suite.Equal(user, result, "Cached user should match")
 
 		time.Sleep(150 * time.Millisecond)
 
 		_, found = userCache.Get(suite.ctx, "ttl-user")
-		suite.False(found)
+		suite.False(found, "Should not find user after TTL expiration")
 	})
 
 	suite.Run("DefaultTtl", func() {
@@ -163,13 +163,13 @@ func (suite *RedisCacheTestSuite) TestRedisCacheTtl() {
 		suite.Require().NoError(err)
 
 		result, found := cacheWithDefaultTTL.Get(suite.ctx, "default-ttl-user")
-		suite.True(found)
-		suite.Equal(user, result)
+		suite.True(found, "Should find user before default TTL expiration")
+		suite.Equal(user, result, "Cached user should match")
 
 		time.Sleep(150 * time.Millisecond)
 
 		_, found = cacheWithDefaultTTL.Get(suite.ctx, "default-ttl-user")
-		suite.False(found)
+		suite.False(found, "Should not find user after default TTL expiration")
 	})
 }
 
@@ -190,14 +190,14 @@ func (suite *RedisCacheTestSuite) TestRedisCacheGetOrLoad() {
 	suite.Run("SingleLoad", func() {
 		result, err := userCache.GetOrLoad(suite.ctx, "user7", loader)
 		suite.Require().NoError(err)
-		suite.Equal(user, result)
-		suite.Equal(int32(1), loadCount.Load())
+		suite.Equal(user, result, "Loaded user should match")
+		suite.Equal(int32(1), loadCount.Load(), "Loader should be called once")
 	})
 
 	suite.Run("CachedValue", func() {
 		result, err := userCache.GetOrLoad(suite.ctx, "user7", loader)
 		suite.Require().NoError(err)
-		suite.Equal(user, result)
+		suite.Equal(user, result, "Cached user should match")
 		suite.Equal(int32(1), loadCount.Load(), "loader should not be invoked again for cached value")
 	})
 
@@ -237,22 +237,22 @@ func (suite *RedisCacheTestSuite) TestRedisCacheKeyPrefixIsolation() {
 	suite.Require().NoError(err)
 
 	result1, found := cache1.Get(suite.ctx, "shared-key")
-	suite.True(found)
-	suite.Equal(user1, result1)
+	suite.True(found, "Should find user in cache1")
+	suite.Equal(user1, result1, "Cache1 should return user1")
 
 	result2, found := cache2.Get(suite.ctx, "shared-key")
-	suite.True(found)
-	suite.Equal(user2, result2)
+	suite.True(found, "Should find user in cache2")
+	suite.Equal(user2, result2, "Cache2 should return user2")
 
 	keys1, err := cache1.Keys(suite.ctx)
 	suite.Require().NoError(err)
-	suite.Contains(keys1, "shared-key")
-	suite.Len(keys1, 1)
+	suite.Contains(keys1, "shared-key", "Should contain expected value")
+	suite.Len(keys1, 1, "Cache1 should have 1 key")
 
 	keys2, err := cache2.Keys(suite.ctx)
 	suite.Require().NoError(err)
-	suite.Contains(keys2, "shared-key")
-	suite.Len(keys2, 1)
+	suite.Contains(keys2, "shared-key", "Should contain expected value")
+	suite.Len(keys2, 1, "Cache2 should have 1 key")
 }
 
 func (suite *RedisCacheTestSuite) TestRedisCacheIteration() {
@@ -285,7 +285,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheIteration() {
 			"user:1",
 			"user:2",
 		}
-		suite.Equal(expectedKeys, keys)
+		suite.Equal(expectedKeys, keys, "Should return all keys sorted")
 	})
 
 	suite.Run("KeysWithPrefix", func() {
@@ -297,7 +297,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheIteration() {
 			"admin:1",
 			"admin:2",
 		}
-		suite.Equal(expectedAdmin, adminKeys)
+		suite.Equal(expectedAdmin, adminKeys, "Should return admin keys only")
 
 		userKeys, err := userCache.Keys(suite.ctx, "user")
 		suite.Require().NoError(err)
@@ -307,7 +307,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheIteration() {
 			"user:1",
 			"user:2",
 		}
-		suite.Equal(expectedUser, userKeys)
+		suite.Equal(expectedUser, userKeys, "Should return user keys only")
 	})
 
 	suite.Run("ForEachWithoutPrefix", func() {
@@ -327,7 +327,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheIteration() {
 			"user:1":  testUsers["user:1"],
 			"user:2":  testUsers["user:2"],
 		}
-		suite.Equal(expected, collected)
+		suite.Equal(expected, collected, "ForEach should collect all users")
 	})
 
 	suite.Run("ForEachWithPrefix", func() {
@@ -344,7 +344,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheIteration() {
 			"admin:1": testUsers["admin:1"],
 			"admin:2": testUsers["admin:2"],
 		}
-		suite.Equal(expected, collected)
+		suite.Equal(expected, collected, "ForEach with prefix should collect admin users only")
 	})
 
 	suite.Run("ForEachEarlyTermination", func() {
@@ -356,13 +356,13 @@ func (suite *RedisCacheTestSuite) TestRedisCacheIteration() {
 			return count < 3
 		})
 		suite.Require().NoError(err)
-		suite.Equal(3, count)
+		suite.Equal(3, count, "ForEach should stop after 3 iterations")
 	})
 
 	suite.Run("Size", func() {
 		size, err := userCache.Size(suite.ctx)
 		suite.Require().NoError(err)
-		suite.Equal(int64(5), size)
+		suite.Equal(int64(5), size, "Cache size should be 5")
 	})
 }
 
@@ -385,26 +385,26 @@ func (suite *RedisCacheTestSuite) TestRedisCacheClear() {
 
 	size1, err := cache1.Size(suite.ctx)
 	suite.Require().NoError(err)
-	suite.Equal(int64(5), size1)
+	suite.Equal(int64(5), size1, "Cache1 should have 5 entries")
 
 	size2, err := cache2.Size(suite.ctx)
 	suite.Require().NoError(err)
-	suite.Equal(int64(1), size2)
+	suite.Equal(int64(1), size2, "Cache2 should have 1 entry")
 
 	err = cache1.Clear(suite.ctx)
 	suite.Require().NoError(err)
 
 	size1, err = cache1.Size(suite.ctx)
 	suite.Require().NoError(err)
-	suite.Equal(int64(0), size1)
+	suite.Equal(int64(0), size1, "Cache1 should be empty after clear")
 
 	retrieved, found := cache2.Get(suite.ctx, "other-user")
-	suite.True(found)
-	suite.Equal(user, retrieved)
+	suite.True(found, "Cache2 should still have its entry after cache1 clear")
+	suite.Equal(user, retrieved, "Cache2 entry should be intact")
 
 	size2, err = cache2.Size(suite.ctx)
 	suite.Require().NoError(err)
-	suite.Equal(int64(1), size2)
+	suite.Equal(int64(1), size2, "Cache2 size should still be 1")
 }
 
 func (suite *RedisCacheTestSuite) TestRedisCacheStringValues() {
@@ -415,17 +415,17 @@ func (suite *RedisCacheTestSuite) TestRedisCacheStringValues() {
 	suite.Require().NoError(err)
 
 	result, found := stringCache.Get(suite.ctx, "greeting")
-	suite.True(found)
-	suite.Equal("Hello, World!", result)
+	suite.True(found, "Should find cached string")
+	suite.Equal("Hello, World!", result, "Cached string should match")
 
 	err = stringCache.Set(suite.ctx, "farewell", "Goodbye!")
 	suite.Require().NoError(err)
 
 	keys, err := stringCache.Keys(suite.ctx)
 	suite.Require().NoError(err)
-	suite.Len(keys, 2)
-	suite.Contains(keys, "greeting")
-	suite.Contains(keys, "farewell")
+	suite.Len(keys, 2, "Should have 2 string keys")
+	suite.Contains(keys, "greeting", "Should contain expected value")
+	suite.Contains(keys, "farewell", "Should contain expected value")
 }
 
 func (suite *RedisCacheTestSuite) TestRedisCacheClose() {
@@ -443,15 +443,15 @@ func (suite *RedisCacheTestSuite) TestRedisCacheClose() {
 	suite.Require().ErrorIs(err, ErrCacheClosed)
 
 	_, found := cache.Get(ctx, "key")
-	suite.False(found)
-	suite.False(cache.Contains(ctx, "key"))
+	suite.False(found, "Get should return not-found on closed cache")
+	suite.False(cache.Contains(ctx, "key"), "Contains should return false on closed cache")
 
 	suite.Require().NoError(cache.Delete(ctx, "key"))
 	suite.Require().NoError(cache.Clear(ctx))
 
 	keys, err := cache.Keys(ctx)
 	suite.Require().NoError(err)
-	suite.Nil(keys)
+	suite.Nil(keys, "Keys should be nil on closed cache")
 
 	called := false
 	err = cache.ForEach(ctx, func(_ string, _ TestUser) bool {
@@ -484,9 +484,9 @@ func (suite *RedisCacheTestSuite) TestRedisCacheKeyStripping() {
 		suite.Require().NoError(err)
 		suite.Require().Len(keys, 3)
 
-		suite.Contains(keys, "user:1")
-		suite.Contains(keys, "user:2")
-		suite.Contains(keys, "admin:100")
+		suite.Contains(keys, "user:1", "Should contain expected value")
+		suite.Contains(keys, "user:2", "Should contain expected value")
+		suite.Contains(keys, "admin:100", "Should contain expected value")
 
 		for _, key := range keys {
 			suite.NotContains(key, "vef:cache:")
@@ -499,8 +499,8 @@ func (suite *RedisCacheTestSuite) TestRedisCacheKeyStripping() {
 		suite.Require().NoError(err)
 		suite.Require().Len(keys, 2)
 
-		suite.Contains(keys, "user:1")
-		suite.Contains(keys, "user:2")
+		suite.Contains(keys, "user:1", "Should contain expected value")
+		suite.Contains(keys, "user:2", "Should contain expected value")
 
 		suite.NotContains(keys, "admin:100")
 
@@ -519,9 +519,9 @@ func (suite *RedisCacheTestSuite) TestRedisCacheKeyStripping() {
 		})
 		suite.Require().NoError(err)
 
-		suite.Contains(collected, "user:1")
-		suite.Contains(collected, "user:2")
-		suite.Contains(collected, "admin:100")
+		suite.Contains(collected, "user:1", "Should contain expected value")
+		suite.Contains(collected, "user:2", "Should contain expected value")
+		suite.Contains(collected, "admin:100", "Should contain expected value")
 
 		for key := range collected {
 			suite.NotContains(key, "vef:cache:")
@@ -540,7 +540,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheKeyStripping() {
 		suite.Require().NoError(err)
 
 		suite.Require().Len(collected, 1)
-		suite.Contains(collected, "admin:100")
+		suite.Contains(collected, "admin:100", "Should contain expected value")
 
 		for key := range collected {
 			suite.NotContains(key, "vef:cache:")
@@ -561,7 +561,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheKeyStrippingEdgeCases() {
 		suite.Require().NoError(err)
 		suite.Require().Len(keys, 1)
 
-		suite.Equal("test-key", keys[0])
+		suite.Equal("test-key", keys[0], "Key should not contain internal prefix")
 		suite.NotContains(keys[0], "vef:cache:")
 		suite.NotContains(keys[0], "simple:")
 	})
@@ -580,7 +580,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheKeyStrippingEdgeCases() {
 		suite.Require().NoError(err)
 		suite.Require().Len(keys, 1)
 
-		suite.Equal(complexKey, keys[0])
+		suite.Equal(complexKey, keys[0], "Complex key should be preserved")
 	})
 
 	suite.Run("KeysWithSpecialCharacters", func() {
@@ -606,7 +606,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheKeyStrippingEdgeCases() {
 		suite.Require().Len(keys, len(specialKeys))
 
 		for _, expectedKey := range specialKeys {
-			suite.Contains(keys, expectedKey)
+			suite.Contains(keys, expectedKey, "Should contain special key: %s", expectedKey)
 		}
 	})
 
@@ -621,13 +621,13 @@ func (suite *RedisCacheTestSuite) TestRedisCacheKeyStrippingEdgeCases() {
 		suite.Require().NoError(err)
 
 		retrieved, found := cache.Get(suite.ctx, userKey)
-		suite.True(found)
-		suite.Equal(user, retrieved)
+		suite.True(found, "Should find user by key")
+		suite.Equal(user, retrieved, "Retrieved user should match")
 
 		keys, err := cache.Keys(suite.ctx)
 		suite.Require().NoError(err)
 		suite.Require().Len(keys, 1)
-		suite.Equal(userKey, keys[0])
+		suite.Equal(userKey, keys[0], "Key should match original user key")
 	})
 }
 

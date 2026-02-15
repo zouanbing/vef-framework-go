@@ -392,7 +392,7 @@ func TestCollectMethods(t *testing.T) {
 		require.True(t, ok, "Should have BaseMethod")
 
 		result := method.Call(nil)
-		assert.Equal(t, "base method", result[0].String())
+		assert.Equal(t, "base method", result[0].String(), "Should equal expected value")
 	})
 
 	t.Run("PointerReceiverMethodsCallable", func(t *testing.T) {
@@ -405,7 +405,7 @@ func TestCollectMethods(t *testing.T) {
 		require.True(t, ok, "Should have BasePointerMethod")
 
 		result := method.Call(nil)
-		assert.Equal(t, "base pointer method", result[0].String())
+		assert.Equal(t, "base pointer method", result[0].String(), "Should equal expected value")
 	})
 
 	t.Run("PointerInput", func(t *testing.T) {
@@ -414,8 +414,8 @@ func TestCollectMethods(t *testing.T) {
 
 		methods := CollectMethods(rv)
 
-		assert.Contains(t, methods, "BaseMethod")
-		assert.Contains(t, methods, "BasePointerMethod")
+		assert.Contains(t, methods, "BaseMethod", "Should contain expected value")
+		assert.Contains(t, methods, "BasePointerMethod", "Should contain expected value")
 	})
 
 	t.Run("NilPointer", func(t *testing.T) {
@@ -446,8 +446,8 @@ func TestCollectMethods(t *testing.T) {
 		methods := CollectMethods(rv)
 
 		// Should still collect all methods including pointer receiver methods
-		assert.Contains(t, methods, "BaseMethod")
-		assert.Contains(t, methods, "BasePointerMethod")
+		assert.Contains(t, methods, "BaseMethod", "Should contain expected value")
+		assert.Contains(t, methods, "BasePointerMethod", "Should contain expected value")
 	})
 }
 

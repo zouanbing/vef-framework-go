@@ -25,38 +25,38 @@ type TestExternalAppDetails struct {
 func TestNewUser(t *testing.T) {
 	t.Run("Create user without roles", func(t *testing.T) {
 		user := NewUser("user123", "John Doe")
-		assert.Equal(t, PrincipalTypeUser, user.Type)
-		assert.Equal(t, "user123", user.ID)
-		assert.Equal(t, "John Doe", user.Name)
-		assert.Empty(t, user.Roles)
-		assert.Nil(t, user.Details)
+		assert.Equal(t, PrincipalTypeUser, user.Type, "Should equal expected value")
+		assert.Equal(t, "user123", user.ID, "Should equal expected value")
+		assert.Equal(t, "John Doe", user.Name, "Should equal expected value")
+		assert.Empty(t, user.Roles, "Should be empty")
+		assert.Nil(t, user.Details, "Should be nil")
 	})
 
 	t.Run("Create user with roles", func(t *testing.T) {
 		user := NewUser("user456", "Jane Smith", "admin", "editor")
-		assert.Equal(t, PrincipalTypeUser, user.Type)
-		assert.Equal(t, "user456", user.ID)
-		assert.Equal(t, "Jane Smith", user.Name)
-		assert.Equal(t, []string{"admin", "editor"}, user.Roles)
+		assert.Equal(t, PrincipalTypeUser, user.Type, "Should equal expected value")
+		assert.Equal(t, "user456", user.ID, "Should equal expected value")
+		assert.Equal(t, "Jane Smith", user.Name, "Should equal expected value")
+		assert.Equal(t, []string{"admin", "editor"}, user.Roles, "Should equal expected value")
 	})
 }
 
 func TestNewExternalApp(t *testing.T) {
 	t.Run("Create external app without roles", func(t *testing.T) {
 		app := NewExternalApp("app123", "Payment Service")
-		assert.Equal(t, PrincipalTypeExternalApp, app.Type)
-		assert.Equal(t, "app123", app.ID)
-		assert.Equal(t, "Payment Service", app.Name)
-		assert.Empty(t, app.Roles)
-		assert.Nil(t, app.Details)
+		assert.Equal(t, PrincipalTypeExternalApp, app.Type, "Should equal expected value")
+		assert.Equal(t, "app123", app.ID, "Should equal expected value")
+		assert.Equal(t, "Payment Service", app.Name, "Should equal expected value")
+		assert.Empty(t, app.Roles, "Should be empty")
+		assert.Nil(t, app.Details, "Should be nil")
 	})
 
 	t.Run("Create external app with roles", func(t *testing.T) {
 		app := NewExternalApp("app456", "Auth Service", "service", "trusted")
-		assert.Equal(t, PrincipalTypeExternalApp, app.Type)
-		assert.Equal(t, "app456", app.ID)
-		assert.Equal(t, "Auth Service", app.Name)
-		assert.Equal(t, []string{"service", "trusted"}, app.Roles)
+		assert.Equal(t, PrincipalTypeExternalApp, app.Type, "Should equal expected value")
+		assert.Equal(t, "app456", app.ID, "Should equal expected value")
+		assert.Equal(t, "Auth Service", app.Name, "Should equal expected value")
+		assert.Equal(t, []string{"service", "trusted"}, app.Roles, "Should equal expected value")
 	})
 }
 
@@ -64,29 +64,29 @@ func TestPrincipalWithRoles(t *testing.T) {
 	t.Run("Add roles to principal", func(t *testing.T) {
 		user := NewUser("user123", "Test User")
 		user.WithRoles("admin", "moderator")
-		assert.Equal(t, []string{"admin", "moderator"}, user.Roles)
+		assert.Equal(t, []string{"admin", "moderator"}, user.Roles, "Should equal expected value")
 	})
 
 	t.Run("Add roles multiple times", func(t *testing.T) {
 		user := NewUser("user123", "Test User", "viewer")
 		user.WithRoles("admin").WithRoles("editor")
-		assert.Equal(t, []string{"viewer", "admin", "editor"}, user.Roles)
+		assert.Equal(t, []string{"viewer", "admin", "editor"}, user.Roles, "Should equal expected value")
 	})
 }
 
 func TestPrincipalSystem(t *testing.T) {
 	t.Run("System principal has correct values", func(t *testing.T) {
-		assert.Equal(t, PrincipalTypeSystem, PrincipalSystem.Type)
-		assert.Equal(t, orm.OperatorSystem, PrincipalSystem.ID)
-		assert.Equal(t, "系统", PrincipalSystem.Name)
+		assert.Equal(t, PrincipalTypeSystem, PrincipalSystem.Type, "Should equal expected value")
+		assert.Equal(t, orm.OperatorSystem, PrincipalSystem.ID, "Should equal expected value")
+		assert.Equal(t, "系统", PrincipalSystem.Name, "Should equal expected value")
 	})
 }
 
 func TestPrincipalAnonymous(t *testing.T) {
 	t.Run("Anonymous principal has correct values", func(t *testing.T) {
-		assert.Equal(t, PrincipalTypeUser, PrincipalAnonymous.Type)
-		assert.Equal(t, orm.OperatorAnonymous, PrincipalAnonymous.ID)
-		assert.Equal(t, "匿名", PrincipalAnonymous.Name)
+		assert.Equal(t, PrincipalTypeUser, PrincipalAnonymous.Type, "Should equal expected value")
+		assert.Equal(t, orm.OperatorAnonymous, PrincipalAnonymous.ID, "Should equal expected value")
+		assert.Equal(t, "匿名", PrincipalAnonymous.Name, "Should equal expected value")
 	})
 }
 
@@ -99,32 +99,32 @@ func TestPrincipalJSONMarshal(t *testing.T) {
 		}
 
 		data, err := json.Marshal(user)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		var result map[string]any
 
 		err = json.Unmarshal(data, &result)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
-		assert.Equal(t, "user", result["type"])
-		assert.Equal(t, "user123", result["id"])
-		assert.Equal(t, "Test User", result["name"])
-		assert.Contains(t, result, "details")
+		assert.Equal(t, "user", result["type"], "Should equal expected value")
+		assert.Equal(t, "user123", result["id"], "Should equal expected value")
+		assert.Equal(t, "Test User", result["name"], "Should equal expected value")
+		assert.Contains(t, result, "details", "Should contain expected value")
 	})
 
 	t.Run("Marshal user without details", func(t *testing.T) {
 		user := NewUser("user123", "Test User")
 
 		data, err := json.Marshal(user)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		var result map[string]any
 
 		err = json.Unmarshal(data, &result)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
-		assert.Equal(t, "user", result["type"])
-		assert.Nil(t, result["details"])
+		assert.Equal(t, "user", result["type"], "Should equal expected value")
+		assert.Nil(t, result["details"], "Should be nil")
 	})
 }
 
@@ -146,17 +146,17 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 		err := json.Unmarshal([]byte(jsonData), &principal)
 		require.NoError(t, err, "Should unmarshal user with map details")
 
-		assert.Equal(t, PrincipalTypeUser, principal.Type)
-		assert.Equal(t, "user123", principal.ID)
-		assert.Equal(t, "Test User", principal.Name)
-		assert.Equal(t, []string{"admin", "editor"}, principal.Roles)
+		assert.Equal(t, PrincipalTypeUser, principal.Type, "Should equal expected value")
+		assert.Equal(t, "user123", principal.ID, "Should equal expected value")
+		assert.Equal(t, "Test User", principal.Name, "Should equal expected value")
+		assert.Equal(t, []string{"admin", "editor"}, principal.Roles, "Should equal expected value")
 
 		detailsPtr, ok := principal.Details.(*map[string]any)
 		require.True(t, ok, "Details should be a map")
 
 		details := *detailsPtr
-		assert.Equal(t, "test@example.com", details["email"])
-		assert.Equal(t, float64(30), details["age"])
+		assert.Equal(t, "test@example.com", details["email"], "Should equal expected value")
+		assert.Equal(t, float64(30), details["age"], "Should equal expected value")
 	})
 
 	t.Run("Unmarshal user with struct details", func(t *testing.T) {
@@ -184,9 +184,9 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 
 		details, ok := principal.Details.(*TestUserDetails)
 		require.True(t, ok, "Details should be TestUserDetails")
-		assert.Equal(t, "jane@example.com", details.Email)
-		assert.Equal(t, "+1234567890", details.PhoneNumber)
-		assert.Equal(t, 25, details.Age)
+		assert.Equal(t, "jane@example.com", details.Email, "Should equal expected value")
+		assert.Equal(t, "+1234567890", details.PhoneNumber, "Should equal expected value")
+		assert.Equal(t, 25, details.Age, "Should equal expected value")
 	})
 
 	t.Run("Unmarshal external app with struct details", func(t *testing.T) {
@@ -214,9 +214,9 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 
 		details, ok := principal.Details.(*TestExternalAppDetails)
 		require.True(t, ok, "Details should be TestExternalAppDetails")
-		assert.Equal(t, "app_123456", details.AppID)
-		assert.Equal(t, "secret_abc", details.AppSecret)
-		assert.Equal(t, []string{"read", "write"}, details.Scopes)
+		assert.Equal(t, "app_123456", details.AppID, "Should equal expected value")
+		assert.Equal(t, "secret_abc", details.AppSecret, "Should equal expected value")
+		assert.Equal(t, []string{"read", "write"}, details.Scopes, "Should equal expected value")
 	})
 
 	t.Run("Unmarshal system principal", func(t *testing.T) {
@@ -230,11 +230,11 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 		var principal Principal
 
 		err := json.Unmarshal([]byte(jsonData), &principal)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
-		assert.Equal(t, PrincipalTypeSystem, principal.Type)
-		assert.Equal(t, orm.OperatorSystem, principal.ID)
-		assert.Nil(t, principal.Details)
+		assert.Equal(t, PrincipalTypeSystem, principal.Type, "Should equal expected value")
+		assert.Equal(t, orm.OperatorSystem, principal.ID, "Should equal expected value")
+		assert.Nil(t, principal.Details, "Should be nil")
 	})
 
 	t.Run("Unmarshal invalid json", func(t *testing.T) {
@@ -243,7 +243,7 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 		var principal Principal
 
 		err := json.Unmarshal([]byte(jsonData), &principal)
-		assert.Error(t, err)
+		assert.Error(t, err, "Should return error")
 	})
 }
 
@@ -264,10 +264,10 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 		user.AttemptUnmarshalDetails(detailsMap)
 
 		details, ok := user.Details.(*TestUserDetails)
-		require.True(t, ok)
-		assert.Equal(t, "test@example.com", details.Email)
-		assert.Equal(t, "+1234567890", details.PhoneNumber)
-		assert.Equal(t, 30, details.Age)
+		require.True(t, ok, "Should be ok")
+		assert.Equal(t, "test@example.com", details.Email, "Should equal expected value")
+		assert.Equal(t, "+1234567890", details.PhoneNumber, "Should equal expected value")
+		assert.Equal(t, 30, details.Age, "Should equal expected value")
 	})
 
 	t.Run("Unmarshal external app details from map", func(t *testing.T) {
@@ -287,8 +287,8 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 
 		details, ok := app.Details.(*TestExternalAppDetails)
 		require.True(t, ok, "Details should be TestExternalAppDetails")
-		assert.Equal(t, "app_123", details.AppID)
-		assert.Equal(t, "secret", details.AppSecret)
+		assert.Equal(t, "app_123", details.AppID, "Should equal expected value")
+		assert.Equal(t, "secret", details.AppSecret, "Should equal expected value")
 	})
 
 	t.Run("Details type is map, keep as is", func(t *testing.T) {
@@ -306,7 +306,7 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 		stringDetails := "string details"
 
 		user.AttemptUnmarshalDetails(stringDetails)
-		assert.Equal(t, stringDetails, user.Details)
+		assert.Equal(t, stringDetails, user.Details, "Should equal expected value")
 	})
 
 	t.Run("System principal keeps details as is", func(t *testing.T) {
@@ -318,7 +318,7 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 
 		details := map[string]any{"key": "value"}
 		principal.AttemptUnmarshalDetails(details)
-		assert.Equal(t, details, principal.Details)
+		assert.Equal(t, details, principal.Details, "Should equal expected value")
 	})
 
 	t.Run("Decode with partial fields creates struct", func(t *testing.T) {
@@ -336,7 +336,7 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 		user.AttemptUnmarshalDetails(partialDetails)
 		details, ok := user.Details.(*TestUserDetails)
 		require.True(t, ok, "Details should be TestUserDetails")
-		assert.Equal(t, "test@example.com", details.Email)
+		assert.Equal(t, "test@example.com", details.Email, "Should equal expected value")
 		assert.Equal(t, "", details.PhoneNumber, "Unset field should have zero value")
 	})
 }
@@ -383,18 +383,18 @@ func TestPrincipalRoundTrip(t *testing.T) {
 
 		// Marshal
 		data, err := json.Marshal(original)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		// Unmarshal
 		var restored Principal
 
 		err = json.Unmarshal(data, &restored)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
-		assert.Equal(t, original.Type, restored.Type)
-		assert.Equal(t, original.ID, restored.ID)
-		assert.Equal(t, original.Name, restored.Name)
-		assert.Equal(t, original.Roles, restored.Roles)
+		assert.Equal(t, original.Type, restored.Type, "Should equal expected value")
+		assert.Equal(t, original.ID, restored.ID, "Should equal expected value")
+		assert.Equal(t, original.Name, restored.Name, "Should equal expected value")
+		assert.Equal(t, original.Roles, restored.Roles, "Should equal expected value")
 	})
 
 	t.Run("Marshal and unmarshal external app", func(t *testing.T) {
@@ -406,17 +406,17 @@ func TestPrincipalRoundTrip(t *testing.T) {
 
 		// Marshal
 		data, err := json.Marshal(original)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		// Unmarshal
 		var restored Principal
 
 		err = json.Unmarshal(data, &restored)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
-		assert.Equal(t, original.Type, restored.Type)
-		assert.Equal(t, original.ID, restored.ID)
-		assert.Equal(t, original.Name, restored.Name)
-		assert.Equal(t, original.Roles, restored.Roles)
+		assert.Equal(t, original.Type, restored.Type, "Should equal expected value")
+		assert.Equal(t, original.ID, restored.ID, "Should equal expected value")
+		assert.Equal(t, original.Name, restored.Name, "Should equal expected value")
+		assert.Equal(t, original.Roles, restored.Roles, "Should equal expected value")
 	})
 }

@@ -40,8 +40,8 @@ func TestDefaultFormatter_Format_BasicTypes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := formatter.Format(tt.input)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.expected, result)
+			assert.NoError(t, err, "Should not return error")
+			assert.Equal(t, tt.expected, result, "Should equal expected value")
 		})
 	}
 }
@@ -50,8 +50,8 @@ func TestDefaultFormatter_Format_NilValue(t *testing.T) {
 	formatter := NewDefaultFormatter("")
 
 	result, err := formatter.Format(nil)
-	assert.NoError(t, err)
-	assert.Equal(t, "", result)
+	assert.NoError(t, err, "Should not return error")
+	assert.Equal(t, "", result, "Should equal expected value")
 }
 
 func TestDefaultFormatter_Format_PointerTypes(t *testing.T) {
@@ -77,8 +77,8 @@ func TestDefaultFormatter_Format_PointerTypes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := formatter.Format(tt.input)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.expected, result)
+			assert.NoError(t, err, "Should not return error")
+			assert.Equal(t, tt.expected, result, "Should equal expected value")
 		})
 	}
 }
@@ -110,8 +110,8 @@ func TestDefaultFormatter_Format_NullTypes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := formatter.Format(tt.input)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.expected, result)
+			assert.NoError(t, err, "Should not return error")
+			assert.Equal(t, tt.expected, result, "Should equal expected value")
 		})
 	}
 }
@@ -138,8 +138,8 @@ func TestDefaultFormatter_Format_TimeTypes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := formatter.Format(tt.input)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.expected, result)
+			assert.NoError(t, err, "Should not return error")
+			assert.Equal(t, tt.expected, result, "Should equal expected value")
 		})
 	}
 }
@@ -164,8 +164,8 @@ func TestDefaultFormatter_Format_TimeTypesWithFormat(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			formatter := NewDefaultFormatter(tt.format)
 			result, err := formatter.Format(tt.input)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.expected, result)
+			assert.NoError(t, err, "Should not return error")
+			assert.Equal(t, tt.expected, result, "Should equal expected value")
 		})
 	}
 }
@@ -189,8 +189,8 @@ func TestDefaultFormatter_Format_FloatWithFormat(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			formatter := NewDefaultFormatter(tt.format)
 			result, err := formatter.Format(tt.input)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.expected, result)
+			assert.NoError(t, err, "Should not return error")
+			assert.Equal(t, tt.expected, result, "Should equal expected value")
 		})
 	}
 }
@@ -213,8 +213,8 @@ func TestDefaultFormatter_Format_DecimalType(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := formatter.Format(tt.input)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.expected, result)
+			assert.NoError(t, err, "Should not return error")
+			assert.Equal(t, tt.expected, result, "Should equal expected value")
 		})
 	}
 }
@@ -227,8 +227,8 @@ func TestDefaultFormatter_Format_PointerToPointer(t *testing.T) {
 	strPtrPtr := &strPtr
 
 	result, err := formatter.Format(strPtrPtr)
-	assert.NoError(t, err)
-	assert.Equal(t, "test", result)
+	assert.NoError(t, err, "Should not return error")
+	assert.Equal(t, "test", result, "Should equal expected value")
 }
 
 func TestDefaultFormatter_Format_EdgeCases(t *testing.T) {
@@ -251,8 +251,8 @@ func TestDefaultFormatter_Format_EdgeCases(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := formatter.Format(tt.input)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.expected, result)
+			assert.NoError(t, err, "Should not return error")
+			assert.Equal(t, tt.expected, result, "Should equal expected value")
 		})
 	}
 }
@@ -274,8 +274,8 @@ func TestDefaultFormatter_Format_UnicodeStrings(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := formatter.Format(tt.input)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.expected, result)
+			assert.NoError(t, err, "Should not return error")
+			assert.Equal(t, tt.expected, result, "Should equal expected value")
 		})
 	}
 }
@@ -286,8 +286,8 @@ func TestDefaultFormatter_Format_TimeZero(t *testing.T) {
 	zeroTime := time.Time{}
 
 	result, err := formatter.Format(zeroTime)
-	assert.NoError(t, err)
-	assert.Equal(t, "0001-01-01 00:00:00", result)
+	assert.NoError(t, err, "Should not return error")
+	assert.Equal(t, "0001-01-01 00:00:00", result, "Should equal expected value")
 }
 
 func TestDefaultFormatter_NewDefaultFormatter(t *testing.T) {
@@ -303,7 +303,7 @@ func TestDefaultFormatter_NewDefaultFormatter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			formatter := NewDefaultFormatter(tt.format)
-			assert.NotNil(t, formatter)
+			assert.NotNil(t, formatter, "Should not be nil")
 		})
 	}
 }

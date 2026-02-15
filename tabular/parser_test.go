@@ -248,12 +248,12 @@ func TestNewSchema(t *testing.T) {
 
 	schema := NewSchema(reflect.TypeFor[TestStruct]())
 
-	assert.Equal(t, 3, schema.ColumnCount())
+	assert.Equal(t, 3, schema.ColumnCount(), "Should equal expected value")
 
 	columns := schema.Columns()
-	assert.Equal(t, "字段1", columns[0].Name)
-	assert.Equal(t, "字段2", columns[1].Name)
-	assert.Equal(t, "字段3", columns[2].Name)
+	assert.Equal(t, "字段1", columns[0].Name, "Should equal expected value")
+	assert.Equal(t, "字段2", columns[1].Name, "Should equal expected value")
+	assert.Equal(t, "字段3", columns[2].Name, "Should equal expected value")
 }
 
 func TestNewSchemaFor(t *testing.T) {
@@ -264,8 +264,8 @@ func TestNewSchemaFor(t *testing.T) {
 
 	schema := NewSchemaFor[TestStruct]()
 
-	assert.Equal(t, 2, schema.ColumnCount())
-	assert.Equal(t, []string{"姓名", "邮箱"}, schema.ColumnNames())
+	assert.Equal(t, 2, schema.ColumnCount(), "Should equal expected value")
+	assert.Equal(t, []string{"姓名", "邮箱"}, schema.ColumnNames(), "Should equal expected value")
 }
 
 func TestSchema_ColumnNames(t *testing.T) {
@@ -278,7 +278,7 @@ func TestSchema_ColumnNames(t *testing.T) {
 	schema := NewSchemaFor[TestStruct]()
 
 	names := schema.ColumnNames()
-	assert.Equal(t, []string{"用户名", "电子邮箱", "年龄"}, names)
+	assert.Equal(t, []string{"用户名", "电子邮箱", "年龄"}, names, "Should equal expected value")
 }
 
 func TestBuildColumn(t *testing.T) {
@@ -400,14 +400,14 @@ func TestBuildColumn(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := buildColumn(tt.field, tt.attrs, tt.order)
-			assert.Equal(t, tt.expected.Index, result.Index)
-			assert.Equal(t, tt.expected.Name, result.Name)
-			assert.Equal(t, tt.expected.Width, result.Width)
-			assert.Equal(t, tt.expected.Order, result.Order)
-			assert.Equal(t, tt.expected.Default, result.Default)
-			assert.Equal(t, tt.expected.Format, result.Format)
-			assert.Equal(t, tt.expected.Formatter, result.Formatter)
-			assert.Equal(t, tt.expected.Parser, result.Parser)
+			assert.Equal(t, tt.expected.Index, result.Index, "Should equal expected value")
+			assert.Equal(t, tt.expected.Name, result.Name, "Should equal expected value")
+			assert.Equal(t, tt.expected.Width, result.Width, "Should equal expected value")
+			assert.Equal(t, tt.expected.Order, result.Order, "Should equal expected value")
+			assert.Equal(t, tt.expected.Default, result.Default, "Should equal expected value")
+			assert.Equal(t, tt.expected.Format, result.Format, "Should equal expected value")
+			assert.Equal(t, tt.expected.Formatter, result.Formatter, "Should equal expected value")
+			assert.Equal(t, tt.expected.Parser, result.Parser, "Should equal expected value")
 		})
 	}
 }
@@ -428,8 +428,8 @@ func TestSchema_ColumnOrderingSorting(t *testing.T) {
 		return col.Order
 	})
 
-	assert.Equal(t, []string{"字段1", "字段2", "字段3", "字段4", "字段5"}, names)
-	assert.Equal(t, []int{0, 1, 2, 3, 4}, orders)
+	assert.Equal(t, []string{"字段1", "字段2", "字段3", "字段4", "字段5"}, names, "Should equal expected value")
+	assert.Equal(t, []int{0, 1, 2, 3, 4}, orders, "Should equal expected value")
 }
 
 func TestSchema_EmptySchema(t *testing.T) {
@@ -437,7 +437,7 @@ func TestSchema_EmptySchema(t *testing.T) {
 
 	schema := NewSchemaFor[EmptyStruct]()
 
-	assert.Equal(t, 0, schema.ColumnCount())
+	assert.Equal(t, 0, schema.ColumnCount(), "Should equal expected value")
 	assert.Empty(t, schema.Columns())
 	assert.Empty(t, schema.ColumnNames())
 }

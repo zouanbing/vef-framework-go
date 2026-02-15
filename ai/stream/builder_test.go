@@ -16,11 +16,11 @@ func TestBuilderConfiguration(t *testing.T) {
 	t.Run("NewReturnsBuilderWithDefaults", func(t *testing.T) {
 		b := New()
 
-		assert.NotNil(t, b)
-		assert.True(t, b.opts.SendReasoning)
-		assert.True(t, b.opts.SendSources)
-		assert.True(t, b.opts.SendStart)
-		assert.True(t, b.opts.SendFinish)
+		assert.NotNil(t, b, "Should not be nil")
+		assert.True(t, b.opts.SendReasoning, "Should be true")
+		assert.True(t, b.opts.SendSources, "Should be true")
+		assert.True(t, b.opts.SendStart, "Should be true")
+		assert.True(t, b.opts.SendFinish, "Should be true")
 	})
 
 	t.Run("WithSourceSetsSource", func(t *testing.T) {
@@ -30,45 +30,45 @@ func TestBuilderConfiguration(t *testing.T) {
 
 		b := New().WithSource(source)
 
-		assert.Equal(t, source, b.source)
+		assert.Equal(t, source, b.source, "Should equal expected value")
 	})
 
 	t.Run("WithMessageIDSetsMessageID", func(t *testing.T) {
 		b := New().WithMessageID("custom_id")
 
-		assert.Equal(t, "custom_id", b.messageID)
+		assert.Equal(t, "custom_id", b.messageID, "Should equal expected value")
 	})
 
 	t.Run("WithReasoningSetsOption", func(t *testing.T) {
 		b := New().WithReasoning(false)
 
-		assert.False(t, b.opts.SendReasoning)
+		assert.False(t, b.opts.SendReasoning, "Should be false")
 	})
 
 	t.Run("WithSourcesSetsOption", func(t *testing.T) {
 		b := New().WithSources(false)
 
-		assert.False(t, b.opts.SendSources)
+		assert.False(t, b.opts.SendSources, "Should be false")
 	})
 
 	t.Run("WithStartSetsOption", func(t *testing.T) {
 		b := New().WithStart(false)
 
-		assert.False(t, b.opts.SendStart)
+		assert.False(t, b.opts.SendStart, "Should be false")
 	})
 
 	t.Run("WithFinishSetsOption", func(t *testing.T) {
 		b := New().WithFinish(false)
 
-		assert.False(t, b.opts.SendFinish)
+		assert.False(t, b.opts.SendFinish, "Should be false")
 	})
 
 	t.Run("OnErrorSetsHandler", func(t *testing.T) {
 		handler := func(err error) string { return "custom: " + err.Error() }
 		b := New().OnError(handler)
 
-		assert.NotNil(t, b.opts.OnError)
-		assert.Equal(t, "custom: test", b.opts.OnError(errors.New("test")))
+		assert.NotNil(t, b.opts.OnError, "Should not be nil")
+		assert.Equal(t, "custom: test", b.opts.OnError(errors.New("test")), "Should equal expected value")
 	})
 
 	t.Run("OnFinishSetsHandler", func(t *testing.T) {
@@ -77,17 +77,17 @@ func TestBuilderConfiguration(t *testing.T) {
 		handler := func(content string) { captured = content }
 		b := New().OnFinish(handler)
 
-		assert.NotNil(t, b.opts.OnFinish)
+		assert.NotNil(t, b.opts.OnFinish, "Should not be nil")
 		b.opts.OnFinish("test content")
-		assert.Equal(t, "test content", captured)
+		assert.Equal(t, "test content", captured, "Should equal expected value")
 	})
 
 	t.Run("WithIDGeneratorSetsGenerator", func(t *testing.T) {
 		gen := func(prefix string) string { return prefix + "_fixed" }
 		b := New().WithIDGenerator(gen)
 
-		assert.NotNil(t, b.opts.GenerateID)
-		assert.Equal(t, "msg_fixed", b.opts.GenerateID("msg"))
+		assert.NotNil(t, b.opts.GenerateID, "Should not be nil")
+		assert.Equal(t, "msg_fixed", b.opts.GenerateID("msg"), "Should equal expected value")
 	})
 
 	t.Run("WithHeaderAddsHeader", func(t *testing.T) {
@@ -95,8 +95,8 @@ func TestBuilderConfiguration(t *testing.T) {
 			WithHeader("X-Custom", "value1").
 			WithHeader("X-Another", "value2")
 
-		assert.Equal(t, "value1", b.headers["X-Custom"])
-		assert.Equal(t, "value2", b.headers["X-Another"])
+		assert.Equal(t, "value1", b.headers["X-Custom"], "Should equal expected value")
+		assert.Equal(t, "value2", b.headers["X-Another"], "Should equal expected value")
 	})
 
 	t.Run("FluentChaining", func(t *testing.T) {
@@ -112,10 +112,10 @@ func TestBuilderConfiguration(t *testing.T) {
 			WithFinish(true).
 			WithHeader("X-Test", "value")
 
-		assert.NotNil(t, b.source)
-		assert.Equal(t, "msg_1", b.messageID)
-		assert.True(t, b.opts.SendReasoning)
-		assert.Equal(t, "value", b.headers["X-Test"])
+		assert.NotNil(t, b.source, "Should not be nil")
+		assert.Equal(t, "msg_1", b.messageID, "Should equal expected value")
+		assert.True(t, b.opts.SendReasoning, "Should be true")
+		assert.Equal(t, "value", b.headers["X-Test"], "Should equal expected value")
 	})
 }
 
@@ -144,8 +144,8 @@ func TestBuilderStreamToWriter(t *testing.T) {
 		require.GreaterOrEqual(t, len(chunks), 4)
 
 		// Verify start chunk
-		assert.Equal(t, "start", chunks[0]["type"])
-		assert.Equal(t, "msg_test", chunks[0]["messageID"])
+		assert.Equal(t, "start", chunks[0]["type"], "Should equal expected value")
+		assert.Equal(t, "msg_test", chunks[0]["messageID"], "Should equal expected value")
 
 		// Verify text chunks exist
 		hasTextStart := false
@@ -161,11 +161,11 @@ func TestBuilderStreamToWriter(t *testing.T) {
 			}
 		}
 
-		assert.True(t, hasTextStart)
-		assert.True(t, hasTextDelta)
+		assert.True(t, hasTextStart, "Should be true")
+		assert.True(t, hasTextDelta, "Should be true")
 
 		// Verify done marker
-		assert.Contains(t, output, "data: [DONE]")
+		assert.Contains(t, output, "data: [DONE]", "Should contain expected value")
 	})
 
 	t.Run("StreamsReasoningContent", func(t *testing.T) {
@@ -198,12 +198,12 @@ func TestBuilderStreamToWriter(t *testing.T) {
 			if c["type"] == "reasoning-delta" {
 				hasReasoningDelta = true
 
-				assert.Equal(t, "Thinking...", c["delta"])
+				assert.Equal(t, "Thinking...", c["delta"], "Should equal expected value")
 			}
 		}
 
-		assert.True(t, hasReasoningStart)
-		assert.True(t, hasReasoningDelta)
+		assert.True(t, hasReasoningStart, "Should be true")
+		assert.True(t, hasReasoningDelta, "Should be true")
 	})
 
 	t.Run("SkipsReasoningWhenDisabled", func(t *testing.T) {
@@ -257,8 +257,8 @@ func TestBuilderStreamToWriter(t *testing.T) {
 			if c["type"] == "tool-input-start" {
 				hasToolInputStart = true
 
-				assert.Equal(t, "call_1", c["toolCallID"])
-				assert.Equal(t, "get_weather", c["toolName"])
+				assert.Equal(t, "call_1", c["toolCallID"], "Should equal expected value")
+				assert.Equal(t, "get_weather", c["toolName"], "Should equal expected value")
 			}
 
 			if c["type"] == "tool-input-available" {
@@ -266,8 +266,8 @@ func TestBuilderStreamToWriter(t *testing.T) {
 			}
 		}
 
-		assert.True(t, hasToolInputStart)
-		assert.True(t, hasToolInputAvailable)
+		assert.True(t, hasToolInputStart, "Should be true")
+		assert.True(t, hasToolInputAvailable, "Should be true")
 	})
 
 	t.Run("StreamsToolResults", func(t *testing.T) {
@@ -296,11 +296,11 @@ func TestBuilderStreamToWriter(t *testing.T) {
 			if c["type"] == "tool-output-available" {
 				hasToolOutput = true
 
-				assert.Equal(t, "call_1", c["toolCallID"])
+				assert.Equal(t, "call_1", c["toolCallID"], "Should equal expected value")
 			}
 		}
 
-		assert.True(t, hasToolOutput)
+		assert.True(t, hasToolOutput, "Should be true")
 	})
 
 	t.Run("StreamsCustomData", func(t *testing.T) {
@@ -321,7 +321,7 @@ func TestBuilderStreamToWriter(t *testing.T) {
 			StreamToWriter(w)
 
 		output := buf.String()
-		assert.Contains(t, output, "data-status")
+		assert.Contains(t, output, "data-status", "Should contain expected value")
 	})
 
 	t.Run("HandlesErrorFromSource", func(t *testing.T) {
@@ -346,11 +346,11 @@ func TestBuilderStreamToWriter(t *testing.T) {
 			if c["type"] == "error" {
 				hasError = true
 
-				assert.Equal(t, "source error", c["errorText"])
+				assert.Equal(t, "source error", c["errorText"], "Should equal expected value")
 			}
 		}
 
-		assert.True(t, hasError)
+		assert.True(t, hasError, "Should be true")
 	})
 
 	t.Run("CallsOnErrorHandler", func(t *testing.T) {
@@ -371,7 +371,7 @@ func TestBuilderStreamToWriter(t *testing.T) {
 			StreamToWriter(w)
 
 		output := buf.String()
-		assert.Contains(t, output, "Custom: test error")
+		assert.Contains(t, output, "Custom: test error", "Should contain expected value")
 	})
 
 	t.Run("CallsOnFinishHandler", func(t *testing.T) {
@@ -396,7 +396,7 @@ func TestBuilderStreamToWriter(t *testing.T) {
 			}).
 			StreamToWriter(w)
 
-		assert.Equal(t, "Hello World", finishedContent)
+		assert.Equal(t, "Hello World", finishedContent, "Should equal expected value")
 	})
 
 	t.Run("SkipsStartFinishWhenDisabled", func(t *testing.T) {
@@ -418,10 +418,10 @@ func TestBuilderStreamToWriter(t *testing.T) {
 		chunks := parseSseChunks(t, output)
 
 		for _, c := range chunks {
-			assert.NotEqual(t, "start", c["type"])
-			assert.NotEqual(t, "start-step", c["type"])
-			assert.NotEqual(t, "finish", c["type"])
-			assert.NotEqual(t, "finish-step", c["type"])
+			assert.NotEqual(t, "start", c["type"], "Should not equal")
+			assert.NotEqual(t, "start-step", c["type"], "Should not equal")
+			assert.NotEqual(t, "finish", c["type"], "Should not equal")
+			assert.NotEqual(t, "finish-step", c["type"], "Should not equal")
 		}
 	})
 }

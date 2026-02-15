@@ -1021,7 +1021,7 @@ func (suite *FindAllTestSuite) TestFindAllDynamicSortNullsFirst() {
 	suite.T().Logf("Testing FindAll API dynamic sort NullsFirst for %s", suite.ds.Kind)
 
 	if suite.ds.Kind == config.MySQL {
-		suite.T().Skip("MySQL does not support NULLS FIRST/LAST syntax")
+		suite.T().Skipf("NULLS FIRST/LAST syntax not supported on %s", suite.ds.Kind)
 	}
 
 	resp := suite.MakeRPCRequest(api.Request{
@@ -1049,7 +1049,7 @@ func (suite *FindAllTestSuite) TestFindAllDynamicSortNullsLast() {
 	suite.T().Logf("Testing FindAll API dynamic sort NullsLast for %s", suite.ds.Kind)
 
 	if suite.ds.Kind == config.MySQL {
-		suite.T().Skip("MySQL does not support NULLS FIRST/LAST syntax")
+		suite.T().Skipf("NULLS FIRST/LAST syntax not supported on %s", suite.ds.Kind)
 	}
 
 	resp := suite.MakeRPCRequest(api.Request{

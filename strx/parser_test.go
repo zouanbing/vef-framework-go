@@ -142,7 +142,7 @@ func TestParseTag_CommaSeparated(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ParseTag(tt.input)
-			assert.Equal(t, tt.expected, result)
+			assert.Equal(t, tt.expected, result, "Should equal expected value")
 		})
 	}
 }
@@ -255,7 +255,7 @@ func TestParseTag_SpaceSeparated(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ParseTag(tt.input, WithSpacePairDelimiter(), WithValueDelimiter(':'))
-			assert.Equal(t, tt.expected, result)
+			assert.Equal(t, tt.expected, result, "Should equal expected value")
 		})
 	}
 }
@@ -332,7 +332,7 @@ func TestParseTag_CustomDelimiters(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ParseTag(tt.input, tt.opts...)
-			assert.Equal(t, tt.expected, result)
+			assert.Equal(t, tt.expected, result, "Should equal expected value")
 		})
 	}
 }
@@ -449,7 +449,7 @@ func TestParseTag_BareValueMode(t *testing.T) {
 			opts = append(opts, WithBareValueMode(tt.mode))
 			opts = append(opts, tt.opts...)
 			result := ParseTag(tt.input, opts...)
-			assert.Equal(t, tt.expected, result)
+			assert.Equal(t, tt.expected, result, "Should equal expected value")
 		})
 	}
 }
@@ -538,7 +538,7 @@ func TestParseTag_EdgeCases(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ParseTag(tt.input, tt.opts...)
-			assert.Equal(t, tt.expected, result)
+			assert.Equal(t, tt.expected, result, "Should equal expected value")
 		})
 	}
 }
@@ -557,7 +557,7 @@ func TestParseTag_OptionsOrdering(t *testing.T) {
 			"a": "1",
 			"b": "2",
 		}
-		assert.Equal(t, expected, result)
+		assert.Equal(t, expected, result, "Should equal expected value")
 	})
 
 	t.Run("OverridingOptions", func(t *testing.T) {
@@ -572,6 +572,6 @@ func TestParseTag_OptionsOrdering(t *testing.T) {
 			"a": "1",
 			"b": "2",
 		}
-		assert.Equal(t, expected, result)
+		assert.Equal(t, expected, result, "Should equal expected value")
 	})
 }

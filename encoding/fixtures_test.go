@@ -398,7 +398,7 @@ func TestGenerateSpecialCharString(t *testing.T) {
 	str := generateSpecialCharString()
 	assert.NotEmpty(t, str, "special char string should not be empty")
 	assert.Contains(t, str, `\n`, "should contain newline escape")
-	assert.Contains(t, str, `"`, "should contain double quote")
+	assert.Contains(t, str, `"`, "should contain double quote", "Should contain expected value")
 	assert.Contains(t, str, `'`, "should contain single quote")
 	assert.Contains(t, str, `<`, "should contain less-than sign")
 	assert.Contains(t, str, `>`, "should contain greater-than sign")

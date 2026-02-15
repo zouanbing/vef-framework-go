@@ -83,9 +83,9 @@ func TestGuardError(t *testing.T) {
 			SQL: "DROP TABLE users",
 		}
 
-		assert.Contains(t, err.Error(), "dangerous sql detected")
-		assert.Contains(t, err.Error(), "no_drop")
-		assert.Contains(t, err.Error(), "DROP")
+		assert.Contains(t, err.Error(), "dangerous sql detected", "Should contain expected value")
+		assert.Contains(t, err.Error(), "no_drop", "Should contain expected value")
+		assert.Contains(t, err.Error(), "DROP", "Should contain expected value")
 		assert.True(t, errors.Is(err, ErrDangerousSQL))
 	})
 
@@ -95,7 +95,7 @@ func TestGuardError(t *testing.T) {
 			SQL: "INVALID SQL",
 		}
 
-		assert.Equal(t, ErrSQLParseFailed.Error(), err.Error())
+		assert.Equal(t, ErrSQLParseFailed.Error(), err.Error(), "Should equal expected value")
 		assert.True(t, errors.Is(err, ErrSQLParseFailed))
 	})
 }

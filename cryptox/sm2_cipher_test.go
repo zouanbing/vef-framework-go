@@ -183,10 +183,10 @@ func TestSm2Cipher_MultipleEncryptions(t *testing.T) {
 
 func TestSm2Cipher_SignVerify(t *testing.T) {
 	privateKey, err := generateSM2KeyPair()
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	cipher, err := NewSM2(privateKey, &privateKey.PublicKey)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	tests := []struct {
 		name string
@@ -202,87 +202,87 @@ func TestSm2Cipher_SignVerify(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			signature, err := cipher.Sign(tt.data)
-			require.NoError(t, err)
+			require.NoError(t, err, "Should not return error")
 
 			valid, err := cipher.Verify(tt.data, signature)
-			require.NoError(t, err)
-			assert.True(t, valid)
+			require.NoError(t, err, "Should not return error")
+			assert.True(t, valid, "Should be valid")
 
 			valid, err = cipher.Verify(tt.data+"tampered", signature)
-			require.NoError(t, err)
-			assert.False(t, valid)
+			require.NoError(t, err, "Should not return error")
+			assert.False(t, valid, "Should not be valid")
 		})
 	}
 }
 
 func TestSm2Cipher_SignWithoutPrivateKey(t *testing.T) {
 	privateKey, err := generateSM2KeyPair()
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	cipher, err := NewSM2(nil, &privateKey.PublicKey)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	data := "Test message"
 	_, err = cipher.Sign(data)
-	assert.Error(t, err)
-	assert.ErrorIs(t, err, ErrPrivateKeyRequiredForSign)
+	assert.Error(t, err, "Should return error")
+	assert.ErrorIs(t, err, ErrPrivateKeyRequiredForSign, "Error should be ErrPrivateKeyRequiredForSign")
 }
 
 func TestSm2Cipher_VerifyWithoutPublicKey(t *testing.T) {
 	privateKey, err := generateSM2KeyPair()
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	signerCipher, err := NewSM2(privateKey, &privateKey.PublicKey)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	data := "Test message"
 	signature, err := signerCipher.Sign(data)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	verifierCipher, err := NewSM2(privateKey, nil)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	valid, err := verifierCipher.Verify(data, signature)
-	require.NoError(t, err)
-	assert.True(t, valid)
+	require.NoError(t, err, "Should not return error")
+	assert.True(t, valid, "Should be valid")
 }
 
 func TestSm2Cipher_InvalidSignature(t *testing.T) {
 	privateKey, err := generateSM2KeyPair()
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	cipher, err := NewSM2(privateKey, &privateKey.PublicKey)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	data := "Test message"
 
 	_, err = cipher.Verify(data, "invalid-base64")
-	assert.Error(t, err)
+	assert.Error(t, err, "Should return error")
 }
 
 func TestSm2Cipher_DifferentSignatures(t *testing.T) {
 	privateKey, err := generateSM2KeyPair()
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	cipher, err := NewSM2(privateKey, &privateKey.PublicKey)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	data := "Test message"
 
 	signature1, err := cipher.Sign(data)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	signature2, err := cipher.Sign(data)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	assert.NotEqual(t, signature1, signature2,
 		"SM2 should produce different signatures due to random component")
 
 	valid1, err := cipher.Verify(data, signature1)
-	require.NoError(t, err)
-	assert.True(t, valid1)
+	require.NoError(t, err, "Should not return error")
+	assert.True(t, valid1, "Should be valid")
 
 	valid2, err := cipher.Verify(data, signature2)
-	require.NoError(t, err)
-	assert.True(t, valid2)
+	require.NoError(t, err, "Should not return error")
+	assert.True(t, valid2, "Should be valid")
 }

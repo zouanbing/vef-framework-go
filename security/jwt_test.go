@@ -17,9 +17,9 @@ func TestNewJWT(t *testing.T) {
 			Audience: "test_app",
 		}
 		jwt, err := NewJWT(config)
-		require.NoError(t, err)
-		assert.NotNil(t, jwt)
-		assert.Equal(t, "test_app", jwt.config.Audience)
+		require.NoError(t, err, "Should not return error")
+		assert.NotNil(t, jwt, "Should not be nil")
+		assert.Equal(t, "test_app", jwt.config.Audience, "Should equal expected value")
 	})
 
 	t.Run("Invalid hex secret", func(t *testing.T) {
@@ -27,9 +27,9 @@ func TestNewJWT(t *testing.T) {
 			Secret: "invalid-hex",
 		}
 		jwt, err := NewJWT(config)
-		assert.Error(t, err)
-		assert.Nil(t, jwt)
-		assert.Contains(t, err.Error(), "failed to decode jwt secret")
+		assert.Error(t, err, "Should return error")
+		assert.Nil(t, jwt, "Should be nil")
+		assert.Contains(t, err.Error(), "failed to decode jwt secret", "Should contain expected value")
 	})
 
 	t.Run("Empty secret uses default", func(t *testing.T) {
@@ -37,8 +37,8 @@ func TestNewJWT(t *testing.T) {
 			Secret: "",
 		}
 		jwt, err := NewJWT(config)
-		require.NoError(t, err)
-		assert.NotNil(t, jwt)
+		require.NoError(t, err, "Should not return error")
+		assert.NotNil(t, jwt, "Should not be nil")
 		assert.Equal(t, 32, len(jwt.secret)) // Default secret is 64 hex chars = 32 bytes
 	})
 
@@ -48,8 +48,8 @@ func TestNewJWT(t *testing.T) {
 			Audience: "",
 		}
 		jwt, err := NewJWT(config)
-		require.NoError(t, err)
-		assert.Equal(t, DefaultJWTAudience, jwt.config.Audience)
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, DefaultJWTAudience, jwt.config.Audience, "Should equal expected value")
 	})
 }
 
@@ -59,7 +59,7 @@ func TestJWTGenerate(t *testing.T) {
 		Audience: "test_app",
 	}
 	jwt, err := NewJWT(config)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	t.Run("Generate valid token", func(t *testing.T) {
 		builder := NewJWTClaimsBuilder().
@@ -67,14 +67,14 @@ func TestJWTGenerate(t *testing.T) {
 			WithClaim("username", "testuser")
 
 		token, err := jwt.Generate(builder, 1*time.Hour, 0)
-		require.NoError(t, err)
-		assert.NotEmpty(t, token)
+		require.NoError(t, err, "Should not return error")
+		assert.NotEmpty(t, token, "Should not be empty")
 
 		// Verify token can be parsed
 		claims, err := jwt.Parse(token)
-		require.NoError(t, err)
-		assert.Equal(t, "123", claims.Claim("user_id"))
-		assert.Equal(t, "testuser", claims.Claim("username"))
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, "123", claims.Claim("user_id"), "Should equal expected value")
+		assert.Equal(t, "testuser", claims.Claim("username"), "Should equal expected value")
 	})
 
 	t.Run("Generate token with not before", func(t *testing.T) {
@@ -82,29 +82,29 @@ func TestJWTGenerate(t *testing.T) {
 
 		// Set nbf to 2 minutes in future (beyond the 1 minute leeway)
 		token, err := jwt.Generate(builder, 1*time.Hour, 2*time.Minute)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		// Token should not be valid yet due to nbf
 		_, err = jwt.Parse(token)
-		assert.ErrorIs(t, err, result.ErrTokenNotValidYet)
+		assert.ErrorIs(t, err, result.ErrTokenNotValidYet, "Error should be result.ErrTokenNotValidYet")
 	})
 
 	t.Run("Standard claims are set correctly", func(t *testing.T) {
 		builder := NewJWTClaimsBuilder()
 		token, err := jwt.Generate(builder, 1*time.Hour, 0)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		claims, err := jwt.Parse(token)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
-		assert.Equal(t, JWTIssuer, claims.Claim(claimIssuer))
-		assert.Equal(t, "test_app", claims.Claim(claimAudience))
+		assert.Equal(t, JWTIssuer, claims.Claim(claimIssuer), "Should equal expected value")
+		assert.Equal(t, "test_app", claims.Claim(claimAudience), "Should equal expected value")
 		iat, ok := claims.Claim(claimIssuedAt).(float64)
-		require.True(t, ok)
+		require.True(t, ok, "Should be ok")
 		exp, ok := claims.Claim(claimExpiresAt).(float64)
-		require.True(t, ok)
-		assert.Greater(t, int64(iat), int64(0))
-		assert.Greater(t, int64(exp), int64(iat))
+		require.True(t, ok, "Should be ok")
+		assert.Greater(t, int64(iat), int64(0), "Should be greater")
+		assert.Greater(t, int64(exp), int64(iat), "Should be greater")
 	})
 }
 
@@ -114,7 +114,7 @@ func TestJWTParse(t *testing.T) {
 		Audience: "test_app",
 	}
 	jwt, err := NewJWT(config)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	t.Run("Parse valid token", func(t *testing.T) {
 		builder := NewJWTClaimsBuilder().
@@ -122,21 +122,21 @@ func TestJWTParse(t *testing.T) {
 			WithClaim("role", "admin")
 
 		token, err := jwt.Generate(builder, 1*time.Hour, 0)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		claims, err := jwt.Parse(token)
-		require.NoError(t, err)
-		assert.Equal(t, "456", claims.Claim("user_id"))
-		assert.Equal(t, "admin", claims.Claim("role"))
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, "456", claims.Claim("user_id"), "Should equal expected value")
+		assert.Equal(t, "admin", claims.Claim("role"), "Should equal expected value")
 	})
 
 	t.Run("Parse expired token", func(t *testing.T) {
 		builder := NewJWTClaimsBuilder().WithClaim("test", "value")
 		token, err := jwt.Generate(builder, -1*time.Hour, 0) // Already expired
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		_, err = jwt.Parse(token)
-		assert.ErrorIs(t, err, result.ErrTokenExpired)
+		assert.ErrorIs(t, err, result.ErrTokenExpired, "Error should be result.ErrTokenExpired")
 	})
 
 	t.Run("Parse token with wrong audience", func(t *testing.T) {
@@ -145,15 +145,15 @@ func TestJWTParse(t *testing.T) {
 			Audience: "wrong_app",
 		}
 		wrongJwt, err := NewJWT(wrongConfig)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		builder := NewJWTClaimsBuilder().WithClaim("test", "value")
 		token, err := wrongJwt.Generate(builder, 1*time.Hour, 0)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		// Try to parse with original JWT (different audience)
 		_, err = jwt.Parse(token)
-		assert.ErrorIs(t, err, result.ErrTokenInvalidAudience)
+		assert.ErrorIs(t, err, result.ErrTokenInvalidAudience, "Error should be result.ErrTokenInvalidAudience")
 	})
 
 	t.Run("Parse token with wrong secret", func(t *testing.T) {
@@ -162,25 +162,25 @@ func TestJWTParse(t *testing.T) {
 			Audience: "test_app",
 		}
 		wrongJwt, err := NewJWT(wrongConfig)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		builder := NewJWTClaimsBuilder().WithClaim("test", "value")
 		token, err := wrongJwt.Generate(builder, 1*time.Hour, 0)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		// Try to parse with original JWT (different secret)
 		_, err = jwt.Parse(token)
-		assert.ErrorIs(t, err, result.ErrTokenInvalid)
+		assert.ErrorIs(t, err, result.ErrTokenInvalid, "Error should be result.ErrTokenInvalid")
 	})
 
 	t.Run("Parse malformed token", func(t *testing.T) {
 		_, err := jwt.Parse("malformed.token.string")
-		assert.ErrorIs(t, err, result.ErrTokenInvalid)
+		assert.ErrorIs(t, err, result.ErrTokenInvalid, "Error should be result.ErrTokenInvalid")
 	})
 
 	t.Run("Parse empty token", func(t *testing.T) {
 		_, err := jwt.Parse("")
-		assert.ErrorIs(t, err, result.ErrTokenInvalid)
+		assert.ErrorIs(t, err, result.ErrTokenInvalid, "Error should be result.ErrTokenInvalid")
 	})
 }
 
@@ -190,7 +190,7 @@ func TestJWTErrorMapping(t *testing.T) {
 		Audience: "test_app",
 	}
 	jwt, err := NewJWT(config)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	testCases := []struct {
 		name          string
@@ -223,7 +223,7 @@ func TestJWTErrorMapping(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			token := tc.tokenGen()
 			_, err := jwt.Parse(token)
-			assert.ErrorIs(t, err, tc.expectedError)
+			assert.ErrorIs(t, err, tc.expectedError, "Error should be tc.expectedError")
 		})
 	}
 }
@@ -238,11 +238,11 @@ func TestJWTClaimsBuilder(t *testing.T) {
 			WithClaim("map_val", map[string]any{"key": "value"})
 
 		claims := builder.build()
-		assert.Equal(t, "test", claims["string_val"])
-		assert.Equal(t, 123, claims["int_val"])
-		assert.Equal(t, true, claims["bool_val"])
-		assert.Equal(t, 3.14, claims["float_val"])
-		assert.Equal(t, map[string]any{"key": "value"}, claims["map_val"])
+		assert.Equal(t, "test", claims["string_val"], "Should equal expected value")
+		assert.Equal(t, 123, claims["int_val"], "Should equal expected value")
+		assert.Equal(t, true, claims["bool_val"], "Should equal expected value")
+		assert.Equal(t, 3.14, claims["float_val"], "Should equal expected value")
+		assert.Equal(t, map[string]any{"key": "value"}, claims["map_val"], "Should equal expected value")
 	})
 
 	t.Run("Overwrite existing claim", func(t *testing.T) {
@@ -251,7 +251,7 @@ func TestJWTClaimsBuilder(t *testing.T) {
 			WithClaim("key", "value2")
 
 		claims := builder.build()
-		assert.Equal(t, "value2", claims["key"])
+		assert.Equal(t, "value2", claims["key"], "Should equal expected value")
 	})
 
 	t.Run("Use specialized claim methods", func(t *testing.T) {
@@ -263,23 +263,23 @@ func TestJWTClaimsBuilder(t *testing.T) {
 			WithDetails(map[string]any{"email": "test@example.com"})
 
 		id, ok := builder.ID()
-		assert.True(t, ok)
-		assert.Equal(t, "jwt123", id)
+		assert.True(t, ok, "Should be ok")
+		assert.Equal(t, "jwt123", id, "Should equal expected value")
 
 		subject, ok := builder.Subject()
-		assert.True(t, ok)
-		assert.Equal(t, "user456", subject)
+		assert.True(t, ok, "Should be ok")
+		assert.Equal(t, "user456", subject, "Should equal expected value")
 
 		typ, ok := builder.Type()
-		assert.True(t, ok)
-		assert.Equal(t, "access", typ)
+		assert.True(t, ok, "Should be ok")
+		assert.Equal(t, "access", typ, "Should equal expected value")
 
 		roles, ok := builder.Roles()
-		assert.True(t, ok)
-		assert.Equal(t, []string{"admin", "user"}, roles)
+		assert.True(t, ok, "Should be ok")
+		assert.Equal(t, []string{"admin", "user"}, roles, "Should equal expected value")
 
 		details, ok := builder.Details()
-		assert.True(t, ok)
-		assert.Equal(t, map[string]any{"email": "test@example.com"}, details)
+		assert.True(t, ok, "Should be ok")
+		assert.Equal(t, map[string]any{"email": "test@example.com"}, details, "Should equal expected value")
 	})
 }

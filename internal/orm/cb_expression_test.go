@@ -72,7 +72,7 @@ func (suite *CBExpressionOperationsTestSuite) TestNotEqualsExpr() {
 		suite.Len(users, 19, "Should find all users except age 30")
 
 		for _, user := range users {
-			suite.NotEqual(int16(30), user.Age)
+			suite.NotEqual(int16(30), user.Age, "User age should not be 30")
 		}
 	})
 

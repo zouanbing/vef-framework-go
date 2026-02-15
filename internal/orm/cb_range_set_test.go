@@ -243,7 +243,7 @@ func (suite *CBRangeSetOperationsTestSuite) TestNotIn() {
 		suite.Len(users, 19, "Should find all users except Charlie")
 
 		for _, user := range users {
-			suite.NotEqual("charlie@example.com", user.Email)
+			suite.NotEqual("charlie@example.com", user.Email, "User email should not be charlie's")
 		}
 	})
 
@@ -314,7 +314,7 @@ func (suite *CBRangeSetOperationsTestSuite) TestNotInExpr() {
 		suite.True(len(users) > 0, "Should find users")
 
 		for _, user := range users {
-			suite.NotEqual(int16(30), user.Age)
+			suite.NotEqual(int16(30), user.Age, "User age should not be 30")
 		}
 	})
 

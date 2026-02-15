@@ -162,7 +162,7 @@ func newTestDB(t *testing.T) orm.DB {
 	t.Helper()
 
 	sqliteDB, err := sql.Open("sqlite3", ":memory:")
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	t.Cleanup(func() { _ = sqliteDB.Close() })
 

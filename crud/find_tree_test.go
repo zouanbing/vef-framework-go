@@ -183,7 +183,7 @@ type FindTreeTestSuite struct {
 // SetupSuite runs once before all tests in the suite.
 func (suite *FindTreeTestSuite) SetupSuite() {
 	if suite.ds.Kind == config.SQLite {
-		suite.T().Skip("Skipping FindTree tests for SQLite due to Bun recursive CTE syntax issue")
+		suite.T().Skipf("Skipping FindTree tests on %s due to Bun recursive CTE syntax issue", suite.ds.Kind)
 	}
 
 	suite.setupBaseSuite(

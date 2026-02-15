@@ -50,10 +50,10 @@ func generateValidCredentials(t *testing.T, appID, secret string) *security.Sign
 	t.Helper()
 
 	sig, err := security.NewSignature(secret, security.WithNonceStore(nil))
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	result, err := sig.Sign(appID)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	return &security.SignatureCredentials{
 		Timestamp: result.Timestamp,
@@ -599,8 +599,8 @@ func TestSignatureAuthenticator_SuccessfulAuthentication(t *testing.T) {
 			Credentials: creds1,
 		})
 		require.NoError(t, err, "Should authenticate app1")
-		assert.Equal(t, "app1", result1.ID)
-		assert.Equal(t, "App One", result1.Name)
+		assert.Equal(t, "app1", result1.ID, "Should equal expected value")
+		assert.Equal(t, "App One", result1.Name, "Should equal expected value")
 
 		// Authenticate app2
 		creds2 := generateValidCredentials(t, "app2", secret2)
@@ -610,8 +610,8 @@ func TestSignatureAuthenticator_SuccessfulAuthentication(t *testing.T) {
 			Credentials: creds2,
 		})
 		require.NoError(t, err, "Should authenticate app2")
-		assert.Equal(t, "app2", result2.ID)
-		assert.Equal(t, "App Two", result2.Name)
+		assert.Equal(t, "app2", result2.ID, "Should equal expected value")
+		assert.Equal(t, "App Two", result2.Name, "Should equal expected value")
 
 		loader.AssertExpectations(t)
 	})

@@ -11,7 +11,7 @@ import (
 
 func TestNoOpEvictionHandler(t *testing.T) {
 	handler := NewNoOpEvictionHandler()
-	require.NotNil(t, handler)
+	require.NotNil(t, handler, "Should not be nil")
 
 	t.Run("AllOperationsNoOp", func(_ *testing.T) {
 		handler.OnAccess("key1")
@@ -22,7 +22,7 @@ func TestNoOpEvictionHandler(t *testing.T) {
 
 	t.Run("AlwaysReturnEmptyCandidate", func(_ *testing.T) {
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "", candidate)
+		assert.Equal(t, "", candidate, "Should equal expected value")
 	})
 
 	t.Run("HandleMultipleOperations", func(_ *testing.T) {
@@ -32,21 +32,21 @@ func TestNoOpEvictionHandler(t *testing.T) {
 		}
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "", candidate)
+		assert.Equal(t, "", candidate, "Should equal expected value")
 	})
 }
 
 func TestLRUHandler(t *testing.T) {
 	t.Run("BasicInsertionAndEviction", func(_ *testing.T) {
 		handler := NewLruHandler()
-		require.NotNil(t, handler)
+		require.NotNil(t, handler, "Should not be nil")
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
 		handler.OnInsert("key3")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key1", candidate)
+		assert.Equal(t, "key1", candidate, "Should equal expected value")
 	})
 
 	t.Run("AccessUpdatesRecency", func(_ *testing.T) {
@@ -59,7 +59,7 @@ func TestLRUHandler(t *testing.T) {
 		handler.OnAccess("key1")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key2", candidate)
+		assert.Equal(t, "key2", candidate, "Should equal expected value")
 	})
 
 	t.Run("EvictionRemovesEntry", func(_ *testing.T) {
@@ -72,7 +72,7 @@ func TestLRUHandler(t *testing.T) {
 		handler.OnEvict("key1")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key2", candidate)
+		assert.Equal(t, "key2", candidate, "Should equal expected value")
 	})
 
 	t.Run("MultipleAccessesMaintainOrder", func(_ *testing.T) {
@@ -87,7 +87,7 @@ func TestLRUHandler(t *testing.T) {
 		handler.OnAccess("key3")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key2", candidate)
+		assert.Equal(t, "key2", candidate, "Should equal expected value")
 	})
 
 	t.Run("ResetClearsAllEntries", func(_ *testing.T) {
@@ -100,14 +100,14 @@ func TestLRUHandler(t *testing.T) {
 		handler.Reset()
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "", candidate)
+		assert.Equal(t, "", candidate, "Should equal expected value")
 	})
 
 	t.Run("EmptyHandlerReturnsEmptyCandidate", func(_ *testing.T) {
 		handler := NewLruHandler()
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "", candidate)
+		assert.Equal(t, "", candidate, "Should equal expected value")
 	})
 
 	t.Run("SingleEntry", func(_ *testing.T) {
@@ -116,7 +116,7 @@ func TestLRUHandler(t *testing.T) {
 		handler.OnInsert("key1")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key1", candidate)
+		assert.Equal(t, "key1", candidate, "Should equal expected value")
 	})
 
 	t.Run("EvictNonExistentKey", func(_ *testing.T) {
@@ -128,7 +128,7 @@ func TestLRUHandler(t *testing.T) {
 		handler.OnEvict("key3")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key1", candidate)
+		assert.Equal(t, "key1", candidate, "Should equal expected value")
 	})
 
 	t.Run("AccessNonExistentKeyCreatesEntry", func(_ *testing.T) {
@@ -138,7 +138,7 @@ func TestLRUHandler(t *testing.T) {
 		handler.OnAccess("key2")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key1", candidate)
+		assert.Equal(t, "key1", candidate, "Should equal expected value")
 	})
 
 	t.Run("ConcurrentOperations", func(_ *testing.T) {
@@ -157,7 +157,7 @@ func TestLRUHandler(t *testing.T) {
 		wg.Wait()
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.NotEqual(t, "", candidate)
+		assert.NotEqual(t, "", candidate, "Should not equal")
 	})
 
 	t.Run("StressTestWithManyEntries", func(_ *testing.T) {
@@ -172,21 +172,21 @@ func TestLRUHandler(t *testing.T) {
 		}
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.NotEqual(t, "", candidate)
+		assert.NotEqual(t, "", candidate, "Should not equal")
 	})
 }
 
 func TestFIFOHandler(t *testing.T) {
 	t.Run("BasicInsertionAndEviction", func(_ *testing.T) {
 		handler := NewFifoHandler()
-		require.NotNil(t, handler)
+		require.NotNil(t, handler, "Should not be nil")
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
 		handler.OnInsert("key3")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key1", candidate)
+		assert.Equal(t, "key1", candidate, "Should equal expected value")
 	})
 
 	t.Run("AccessDoesNotAffectOrder", func(_ *testing.T) {
@@ -201,7 +201,7 @@ func TestFIFOHandler(t *testing.T) {
 		handler.OnAccess("key1")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key1", candidate)
+		assert.Equal(t, "key1", candidate, "Should equal expected value")
 	})
 
 	t.Run("EvictionRemovesEntry", func(_ *testing.T) {
@@ -214,7 +214,7 @@ func TestFIFOHandler(t *testing.T) {
 		handler.OnEvict("key1")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key2", candidate)
+		assert.Equal(t, "key2", candidate, "Should equal expected value")
 	})
 
 	t.Run("ResetClearsAllEntries", func(_ *testing.T) {
@@ -227,14 +227,14 @@ func TestFIFOHandler(t *testing.T) {
 		handler.Reset()
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "", candidate)
+		assert.Equal(t, "", candidate, "Should equal expected value")
 	})
 
 	t.Run("EmptyHandlerReturnsEmptyCandidate", func(_ *testing.T) {
 		handler := NewFifoHandler()
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "", candidate)
+		assert.Equal(t, "", candidate, "Should equal expected value")
 	})
 
 	t.Run("SingleEntry", func(_ *testing.T) {
@@ -243,7 +243,7 @@ func TestFIFOHandler(t *testing.T) {
 		handler.OnInsert("key1")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key1", candidate)
+		assert.Equal(t, "key1", candidate, "Should equal expected value")
 	})
 
 	t.Run("DuplicateInsertIgnored", func(_ *testing.T) {
@@ -254,7 +254,7 @@ func TestFIFOHandler(t *testing.T) {
 		handler.OnInsert("key1")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key1", candidate)
+		assert.Equal(t, "key1", candidate, "Should equal expected value")
 	})
 
 	t.Run("EvictNonExistentKey", func(_ *testing.T) {
@@ -266,7 +266,7 @@ func TestFIFOHandler(t *testing.T) {
 		handler.OnEvict("key3")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key1", candidate)
+		assert.Equal(t, "key1", candidate, "Should equal expected value")
 	})
 
 	t.Run("ConcurrentOperations", func(_ *testing.T) {
@@ -286,21 +286,21 @@ func TestFIFOHandler(t *testing.T) {
 		wg.Wait()
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.NotEqual(t, "", candidate)
+		assert.NotEqual(t, "", candidate, "Should not equal")
 	})
 }
 
 func TestLFUHandler(t *testing.T) {
 	t.Run("BasicInsertionAndEviction", func(_ *testing.T) {
 		handler := NewLfuHandler()
-		require.NotNil(t, handler)
+		require.NotNil(t, handler, "Should not be nil")
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
 		handler.OnInsert("key3")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key1", candidate)
+		assert.Equal(t, "key1", candidate, "Should equal expected value")
 	})
 
 	t.Run("AccessIncreasesFrequency", func(_ *testing.T) {
@@ -315,7 +315,7 @@ func TestLFUHandler(t *testing.T) {
 		handler.OnAccess("key2")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key3", candidate)
+		assert.Equal(t, "key3", candidate, "Should equal expected value")
 	})
 
 	t.Run("EvictionRemovesEntry", func(_ *testing.T) {
@@ -332,7 +332,7 @@ func TestLFUHandler(t *testing.T) {
 		handler.OnEvict("key3")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key2", candidate)
+		assert.Equal(t, "key2", candidate, "Should equal expected value")
 	})
 
 	t.Run("TieBreakingByInsertionOrder", func(_ *testing.T) {
@@ -343,7 +343,7 @@ func TestLFUHandler(t *testing.T) {
 		handler.OnInsert("key3")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key1", candidate)
+		assert.Equal(t, "key1", candidate, "Should equal expected value")
 	})
 
 	t.Run("FrequencyOrderingMaintained", func(_ *testing.T) {
@@ -358,7 +358,7 @@ func TestLFUHandler(t *testing.T) {
 		handler.OnAccess("key3")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key1", candidate)
+		assert.Equal(t, "key1", candidate, "Should equal expected value")
 	})
 
 	t.Run("ResetClearsAllEntries", func(_ *testing.T) {
@@ -371,14 +371,14 @@ func TestLFUHandler(t *testing.T) {
 		handler.Reset()
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "", candidate)
+		assert.Equal(t, "", candidate, "Should equal expected value")
 	})
 
 	t.Run("EmptyHandlerReturnsEmptyCandidate", func(_ *testing.T) {
 		handler := NewLfuHandler()
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "", candidate)
+		assert.Equal(t, "", candidate, "Should equal expected value")
 	})
 
 	t.Run("SingleEntry", func(_ *testing.T) {
@@ -387,7 +387,7 @@ func TestLFUHandler(t *testing.T) {
 		handler.OnInsert("key1")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key1", candidate)
+		assert.Equal(t, "key1", candidate, "Should equal expected value")
 	})
 
 	t.Run("EvictNonExistentKey", func(_ *testing.T) {
@@ -399,7 +399,7 @@ func TestLFUHandler(t *testing.T) {
 		handler.OnEvict("key3")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key1", candidate)
+		assert.Equal(t, "key1", candidate, "Should equal expected value")
 	})
 
 	t.Run("AccessNonExistentKeyCreatesEntry", func(_ *testing.T) {
@@ -411,7 +411,7 @@ func TestLFUHandler(t *testing.T) {
 		handler.OnAccess("key3")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key2", candidate)
+		assert.Equal(t, "key2", candidate, "Should equal expected value")
 	})
 
 	t.Run("ConcurrentOperations", func(_ *testing.T) {
@@ -452,7 +452,7 @@ func TestLFUHandler(t *testing.T) {
 
 		for range 100 {
 			candidate := handler.SelectEvictionCandidate()
-			require.NotEqual(t, "", candidate)
+			require.NotEqual(t, "", candidate, "Should not equal")
 			handler.OnEvict(candidate)
 		}
 	})
@@ -468,23 +468,23 @@ func TestLFUHandler(t *testing.T) {
 		handler.OnAccess("key3")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key1", candidate)
+		assert.Equal(t, "key1", candidate, "Should equal expected value")
 
 		handler.OnEvict("key1")
 
 		candidate = handler.SelectEvictionCandidate()
-		assert.Equal(t, "key2", candidate)
+		assert.Equal(t, "key2", candidate, "Should equal expected value")
 
 		handler.OnEvict("key2")
 
 		candidate = handler.SelectEvictionCandidate()
-		assert.Equal(t, "key3", candidate)
+		assert.Equal(t, "key3", candidate, "Should equal expected value")
 	})
 }
 
 func TestEvictionHandlerFactory(t *testing.T) {
 	factory := &EvictionHandlerFactory{}
-	require.NotNil(t, factory)
+	require.NotNil(t, factory, "Should not be nil")
 
 	testCases := []struct {
 		policy       EvictionPolicy
@@ -499,19 +499,19 @@ func TestEvictionHandlerFactory(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("policy_%d", tc.policy), func(_ *testing.T) {
 			handler := factory.CreateHandler(tc.policy)
-			require.NotNil(t, handler)
+			require.NotNil(t, handler, "Should not be nil")
 
 			typeName := fmt.Sprintf("%T", handler)
-			assert.Equal(t, tc.expectedType, typeName)
+			assert.Equal(t, tc.expectedType, typeName, "Should equal expected value")
 		})
 	}
 
 	t.Run("InvalidPolicyDefaultsToNoOp", func(_ *testing.T) {
 		handler := factory.CreateHandler(EvictionPolicy(999))
-		require.NotNil(t, handler)
+		require.NotNil(t, handler, "Should not be nil")
 
 		typeName := fmt.Sprintf("%T", handler)
-		assert.Equal(t, "*cache.NoOpEvictionHandler", typeName)
+		assert.Equal(t, "*cache.NoOpEvictionHandler", typeName, "Should equal expected value")
 	})
 }
 
@@ -524,12 +524,12 @@ func TestLRUHandlerUpdateBehavior(t *testing.T) {
 		handler.OnInsert("key3")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key1", candidate)
+		assert.Equal(t, "key1", candidate, "Should equal expected value")
 
 		handler.OnAccess("key1")
 
 		candidate = handler.SelectEvictionCandidate()
-		assert.Equal(t, "key2", candidate)
+		assert.Equal(t, "key2", candidate, "Should equal expected value")
 	})
 
 	t.Run("RepeatedUpdatesDoNotCauseDuplicates", func(_ *testing.T) {
@@ -541,8 +541,8 @@ func TestLRUHandlerUpdateBehavior(t *testing.T) {
 			handler.OnAccess("key1")
 		}
 
-		assert.Equal(t, 1, len(handler.accessMap))
-		assert.Equal(t, 1, handler.accessList.Len())
+		assert.Equal(t, 1, len(handler.accessMap), "Should equal expected value")
+		assert.Equal(t, 1, handler.accessList.Len(), "Should equal expected value")
 	})
 
 	t.Run("InterleavedInsertsAndAccesses", func(_ *testing.T) {
@@ -555,11 +555,11 @@ func TestLRUHandlerUpdateBehavior(t *testing.T) {
 		handler.OnInsert("key3")
 		handler.OnAccess("key2")
 
-		assert.Equal(t, 3, len(handler.accessMap))
-		assert.Equal(t, 3, handler.accessList.Len())
+		assert.Equal(t, 3, len(handler.accessMap), "Should equal expected value")
+		assert.Equal(t, 3, handler.accessList.Len(), "Should equal expected value")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key1", candidate)
+		assert.Equal(t, "key1", candidate, "Should equal expected value")
 	})
 }
 
@@ -573,8 +573,8 @@ func TestLFUHandlerUpdateBehavior(t *testing.T) {
 			handler.OnAccess("key1")
 		}
 
-		assert.Equal(t, 1, len(handler.keyToNode))
-		assert.Equal(t, 1, len(handler.keyToBucket))
+		assert.Equal(t, 1, len(handler.keyToNode), "Should equal expected value")
+		assert.Equal(t, 1, len(handler.keyToBucket), "Should equal expected value")
 	})
 
 	t.Run("FrequencyIncrementsCorrectly", func(_ *testing.T) {
@@ -593,12 +593,12 @@ func TestLFUHandlerUpdateBehavior(t *testing.T) {
 		}
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key3", candidate)
+		assert.Equal(t, "key3", candidate, "Should equal expected value")
 
 		handler.OnEvict("key3")
 
 		candidate = handler.SelectEvictionCandidate()
-		assert.Equal(t, "key2", candidate)
+		assert.Equal(t, "key2", candidate, "Should equal expected value")
 	})
 
 	t.Run("FrequencyBucketMovement", func(_ *testing.T) {
@@ -608,18 +608,18 @@ func TestLFUHandlerUpdateBehavior(t *testing.T) {
 		handler.OnInsert("key2")
 		handler.OnInsert("key3")
 
-		assert.Equal(t, int64(1), handler.minFreq)
+		assert.Equal(t, int64(1), handler.minFreq, "Should equal expected value")
 
 		handler.OnAccess("key1")
 
-		assert.Equal(t, int64(1), handler.minFreq)
+		assert.Equal(t, int64(1), handler.minFreq, "Should equal expected value")
 
 		handler.OnEvict("key2")
 		handler.OnEvict("key3")
 
-		assert.Equal(t, int64(2), handler.minFreq)
+		assert.Equal(t, int64(2), handler.minFreq, "Should equal expected value")
 
-		assert.Equal(t, 1, len(handler.keyToNode))
+		assert.Equal(t, 1, len(handler.keyToNode), "Should equal expected value")
 	})
 }
 
@@ -633,8 +633,8 @@ func TestFIFOHandlerUpdateBehavior(t *testing.T) {
 			handler.OnAccess("key1")
 		}
 
-		assert.Equal(t, 1, len(handler.insertMap))
-		assert.Equal(t, 1, handler.insertList.Len())
+		assert.Equal(t, 1, len(handler.insertMap), "Should equal expected value")
+		assert.Equal(t, 1, handler.insertList.Len(), "Should equal expected value")
 	})
 
 	t.Run("AccessDoesNotChangeOrder", func(_ *testing.T) {
@@ -649,7 +649,7 @@ func TestFIFOHandlerUpdateBehavior(t *testing.T) {
 		handler.OnAccess("key2")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key1", candidate)
+		assert.Equal(t, "key1", candidate, "Should equal expected value")
 	})
 }
 
@@ -664,8 +664,8 @@ func TestEvictionHandlerInternalConsistency(t *testing.T) {
 			handler.OnAccess("key2")
 		}
 
-		assert.Equal(t, 2, len(handler.accessMap))
-		assert.Equal(t, 2, handler.accessList.Len())
+		assert.Equal(t, 2, len(handler.accessMap), "Should equal expected value")
+		assert.Equal(t, 2, handler.accessList.Len(), "Should equal expected value")
 	})
 
 	t.Run("LFUHandlerConsistency", func(_ *testing.T) {
@@ -678,8 +678,8 @@ func TestEvictionHandlerInternalConsistency(t *testing.T) {
 			handler.OnAccess("key2")
 		}
 
-		assert.Equal(t, 2, len(handler.keyToNode))
-		assert.Equal(t, 2, len(handler.keyToBucket))
+		assert.Equal(t, 2, len(handler.keyToNode), "Should equal expected value")
+		assert.Equal(t, 2, len(handler.keyToBucket), "Should equal expected value")
 	})
 
 	t.Run("FIFOHandlerConsistency", func(_ *testing.T) {
@@ -692,8 +692,8 @@ func TestEvictionHandlerInternalConsistency(t *testing.T) {
 			handler.OnAccess("key2")
 		}
 
-		assert.Equal(t, 2, len(handler.insertMap))
-		assert.Equal(t, 2, handler.insertList.Len())
+		assert.Equal(t, 2, len(handler.insertMap), "Should equal expected value")
+		assert.Equal(t, 2, handler.insertList.Len(), "Should equal expected value")
 	})
 }
 
@@ -705,13 +705,13 @@ func TestEvictionHandlerEdgeCases(t *testing.T) {
 		handler.OnInsert("key2")
 
 		handler.OnEvict("key1")
-		assert.Equal(t, 1, len(handler.accessMap))
+		assert.Equal(t, 1, len(handler.accessMap), "Should equal expected value")
 
 		handler.OnInsert("key1")
-		assert.Equal(t, 2, len(handler.accessMap))
+		assert.Equal(t, 2, len(handler.accessMap), "Should equal expected value")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key2", candidate)
+		assert.Equal(t, "key2", candidate, "Should equal expected value")
 	})
 
 	t.Run("LFUHandlerEvictAndReinsert", func(_ *testing.T) {
@@ -724,14 +724,14 @@ func TestEvictionHandlerEdgeCases(t *testing.T) {
 		handler.OnInsert("key2")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key2", candidate)
+		assert.Equal(t, "key2", candidate, "Should equal expected value")
 
 		handler.OnEvict("key2")
 
 		handler.OnInsert("key2")
 
 		candidate = handler.SelectEvictionCandidate()
-		assert.Equal(t, "key2", candidate)
+		assert.Equal(t, "key2", candidate, "Should equal expected value")
 	})
 
 	t.Run("FIFOHandlerEvictAndReinsert", func(_ *testing.T) {
@@ -741,14 +741,14 @@ func TestEvictionHandlerEdgeCases(t *testing.T) {
 		handler.OnInsert("key2")
 
 		candidate := handler.SelectEvictionCandidate()
-		assert.Equal(t, "key1", candidate)
+		assert.Equal(t, "key1", candidate, "Should equal expected value")
 
 		handler.OnEvict("key1")
 
 		handler.OnInsert("key1")
 
 		candidate = handler.SelectEvictionCandidate()
-		assert.Equal(t, "key2", candidate)
+		assert.Equal(t, "key2", candidate, "Should equal expected value")
 	})
 }
 
@@ -766,12 +766,12 @@ func TestEvictionHandlerLargeScale(t *testing.T) {
 
 		for range 5000 {
 			candidate := handler.SelectEvictionCandidate()
-			assert.NotEqual(t, "", candidate)
+			assert.NotEqual(t, "", candidate, "Should not equal")
 			handler.OnEvict(candidate)
 		}
 
-		assert.Equal(t, 5000, len(handler.accessMap))
-		assert.Equal(t, 5000, handler.accessList.Len())
+		assert.Equal(t, 5000, len(handler.accessMap), "Should equal expected value")
+		assert.Equal(t, 5000, handler.accessList.Len(), "Should equal expected value")
 	})
 
 	t.Run("LFUHandlerLargeScale", func(_ *testing.T) {
@@ -789,11 +789,11 @@ func TestEvictionHandlerLargeScale(t *testing.T) {
 
 		for range 5000 {
 			candidate := handler.SelectEvictionCandidate()
-			assert.NotEqual(t, "", candidate)
+			assert.NotEqual(t, "", candidate, "Should not equal")
 			handler.OnEvict(candidate)
 		}
 
-		assert.Equal(t, 5000, len(handler.keyToNode))
+		assert.Equal(t, 5000, len(handler.keyToNode), "Should equal expected value")
 	})
 
 	t.Run("FIFOHandlerLargeScale", func(_ *testing.T) {
@@ -805,12 +805,12 @@ func TestEvictionHandlerLargeScale(t *testing.T) {
 
 		for i := range 5000 {
 			candidate := handler.SelectEvictionCandidate()
-			assert.Equal(t, fmt.Sprintf("key%d", i), candidate)
+			assert.Equal(t, fmt.Sprintf("key%d", i), candidate, "Should equal expected value")
 			handler.OnEvict(candidate)
 		}
 
-		assert.Equal(t, 5000, len(handler.insertMap))
-		assert.Equal(t, 5000, handler.insertList.Len())
+		assert.Equal(t, 5000, len(handler.insertMap), "Should equal expected value")
+		assert.Equal(t, 5000, handler.insertList.Len(), "Should equal expected value")
 	})
 }
 

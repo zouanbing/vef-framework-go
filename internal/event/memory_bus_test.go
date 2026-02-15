@@ -691,7 +691,7 @@ func createTestEventBusWithMiddleware(t *testing.T, middlewares []event.Middlewa
 	bus := NewMemoryBus(middlewares)
 
 	err := bus.Start()
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	t.Cleanup(func() {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)

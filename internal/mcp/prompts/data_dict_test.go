@@ -13,23 +13,23 @@ import (
 
 func TestDataDictPrompt(t *testing.T) {
 	provider := NewDataDictPrompt()
-	require.NotNil(t, provider)
+	require.NotNil(t, provider, "Should not be nil")
 
 	prompts := provider.Prompts()
 	require.Len(t, prompts, 1, "Should have exactly one prompt definition")
 
 	def := prompts[0]
-	assert.NotNil(t, def.Prompt)
-	assert.NotNil(t, def.Handler)
+	assert.NotNil(t, def.Prompt, "Should not be nil")
+	assert.NotNil(t, def.Handler, "Should not be nil")
 
-	assert.Equal(t, "data-dict-assistant", def.Prompt.Name)
-	assert.Contains(t, def.Prompt.Description, "Data dictionary")
+	assert.Equal(t, "data-dict-assistant", def.Prompt.Name, "Should equal expected value")
+	assert.Contains(t, def.Prompt.Description, "Data dictionary", "Should contain expected value")
 	assert.Len(t, def.Prompt.Arguments, 2, "Should have two arguments")
 
-	assert.Equal(t, "dict_table", def.Prompt.Arguments[0].Name)
+	assert.Equal(t, "dict_table", def.Prompt.Arguments[0].Name, "Should equal expected value")
 	assert.False(t, def.Prompt.Arguments[0].Required, "dict_table should be optional")
 
-	assert.Equal(t, "dict_item_table", def.Prompt.Arguments[1].Name)
+	assert.Equal(t, "dict_item_table", def.Prompt.Arguments[1].Name, "Should equal expected value")
 	assert.False(t, def.Prompt.Arguments[1].Required, "dict_item_table should be optional")
 }
 
@@ -143,7 +143,7 @@ func TestDataDictPromptPlaceholderReplacement(t *testing.T) {
 	}
 
 	result, err := def.Handler(ctx, req)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	textContent := result.Messages[0].Content.(*mcp.TextContent)
 

@@ -46,7 +46,7 @@ func (suite *EBCaseTestSuite) TestCaseColumn() {
 	suite.Require().NotEmpty(posts, "Should return results")
 
 	for _, p := range posts {
-		suite.Contains([]string{"Published", "Draft", "Other"}, p.Label)
+		suite.Contains([]string{"Published", "Draft", "Other"}, p.Label, "Label should be one of Published, Draft, Other")
 	}
 }
 

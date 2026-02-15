@@ -24,8 +24,8 @@ func TestGetIP(t *testing.T) {
 		req := httptest.NewRequest("GET", "/test", nil)
 		req.Header.Set("X-Forwarded-For", forwardedIP)
 		resp, err := app.Test(req)
-		require.NoError(t, err)
-		require.Equal(t, 200, resp.StatusCode)
+		require.NoError(t, err, "Should not return error")
+		require.Equal(t, 200, resp.StatusCode, "Should equal expected value")
 	})
 
 	t.Run("FallbackToDirectIP", func(t *testing.T) {
@@ -40,8 +40,8 @@ func TestGetIP(t *testing.T) {
 
 		req := httptest.NewRequest("GET", "/test", nil)
 		resp, err := app.Test(req)
-		require.NoError(t, err)
-		require.Equal(t, 200, resp.StatusCode)
+		require.NoError(t, err, "Should not return error")
+		require.Equal(t, 200, resp.StatusCode, "Should equal expected value")
 	})
 
 	t.Run("XForwardedForOverridesDirectIP", func(t *testing.T) {
@@ -58,8 +58,8 @@ func TestGetIP(t *testing.T) {
 		req := httptest.NewRequest("GET", "/test", nil)
 		req.Header.Set("X-Forwarded-For", forwardedIP)
 		resp, err := app.Test(req)
-		require.NoError(t, err)
-		require.Equal(t, 200, resp.StatusCode)
+		require.NoError(t, err, "Should not return error")
+		require.Equal(t, 200, resp.StatusCode, "Should equal expected value")
 	})
 
 	t.Run("EmptyXForwardedForHeader", func(t *testing.T) {
@@ -75,8 +75,8 @@ func TestGetIP(t *testing.T) {
 		req := httptest.NewRequest("GET", "/test", nil)
 		req.Header.Set("X-Forwarded-For", "")
 		resp, err := app.Test(req)
-		require.NoError(t, err)
-		require.Equal(t, 200, resp.StatusCode)
+		require.NoError(t, err, "Should not return error")
+		require.Equal(t, 200, resp.StatusCode, "Should equal expected value")
 	})
 
 	t.Run("MultipleIPsInXForwardedFor", func(t *testing.T) {
@@ -93,7 +93,7 @@ func TestGetIP(t *testing.T) {
 		req := httptest.NewRequest("GET", "/test", nil)
 		req.Header.Set("X-Forwarded-For", forwardedIPs)
 		resp, err := app.Test(req)
-		require.NoError(t, err)
-		require.Equal(t, 200, resp.StatusCode)
+		require.NoError(t, err, "Should not return error")
+		require.Equal(t, 200, resp.StatusCode, "Should equal expected value")
 	})
 }

@@ -13,7 +13,7 @@ func parseSQL(t *testing.T, sql string) *ast.AST {
 	t.Helper()
 
 	astNode, err := gosqlx.Parse(sql)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should not return error")
 
 	return astNode
 }
@@ -40,8 +40,8 @@ func TestDropStatementRule(t *testing.T) {
 
 			if tt.wantBlock {
 				require.NotNil(t, violation, "Should block DROP statement")
-				assert.Equal(t, "no_drop", violation.Rule)
-				assert.Equal(t, "DROP", violation.Statement)
+				assert.Equal(t, "no_drop", violation.Rule, "Should equal expected value")
+				assert.Equal(t, "DROP", violation.Statement, "Should equal expected value")
 			} else {
 				assert.Nil(t, violation, "Should allow non-DROP statement")
 			}
@@ -69,8 +69,8 @@ func TestTruncateStatementRule(t *testing.T) {
 
 			if tt.wantBlock {
 				require.NotNil(t, violation, "Should block TRUNCATE statement")
-				assert.Equal(t, "no_truncate", violation.Rule)
-				assert.Equal(t, "TRUNCATE", violation.Statement)
+				assert.Equal(t, "no_truncate", violation.Rule, "Should equal expected value")
+				assert.Equal(t, "TRUNCATE", violation.Statement, "Should equal expected value")
 			} else {
 				assert.Nil(t, violation, "Should allow non-TRUNCATE statement")
 			}
@@ -100,8 +100,8 @@ func TestDeleteWithoutWhereRule(t *testing.T) {
 
 			if tt.wantBlock {
 				require.NotNil(t, violation, "Should block DELETE without WHERE")
-				assert.Equal(t, "delete_requires_where", violation.Rule)
-				assert.Equal(t, "DELETE", violation.Statement)
+				assert.Equal(t, "delete_requires_where", violation.Rule, "Should equal expected value")
+				assert.Equal(t, "DELETE", violation.Statement, "Should equal expected value")
 			} else {
 				assert.Nil(t, violation, "Should allow statement")
 			}
@@ -119,7 +119,7 @@ func TestDefaultRules(t *testing.T) {
 		ruleNames[i] = rule.Name()
 	}
 
-	assert.Contains(t, ruleNames, "no_drop")
-	assert.Contains(t, ruleNames, "no_truncate")
-	assert.Contains(t, ruleNames, "delete_requires_where")
+	assert.Contains(t, ruleNames, "no_drop", "Should contain expected value")
+	assert.Contains(t, ruleNames, "no_truncate", "Should contain expected value")
+	assert.Contains(t, ruleNames, "delete_requires_where", "Should contain expected value")
 }

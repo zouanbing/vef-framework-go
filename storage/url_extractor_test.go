@@ -79,7 +79,7 @@ func TestExtractHTMLURLs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			urls := extractHtmlURLs(tt.html)
 			if len(tt.expected) == 0 {
-				assert.Empty(t, urls)
+				assert.Empty(t, urls, "Should be empty")
 			} else {
 				assert.ElementsMatch(t, tt.expected, urls)
 			}
@@ -169,7 +169,7 @@ func TestReplaceHTMLURLs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := replaceHTMLURLs(tt.html, tt.replacements)
-			assert.Equal(t, tt.expected, result)
+			assert.Equal(t, tt.expected, result, "Should equal expected value")
 		})
 	}
 }
@@ -247,7 +247,7 @@ func TestExtractMarkdownURLs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			urls := extractMarkdownURLs(tt.markdown)
 			if len(tt.expected) == 0 {
-				assert.Empty(t, urls)
+				assert.Empty(t, urls, "Should be empty")
 			} else {
 				assert.ElementsMatch(t, tt.expected, urls)
 			}
@@ -328,7 +328,7 @@ func TestReplaceMarkdownURLs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := replaceMarkdownURLs(tt.markdown, tt.replacements)
-			assert.Equal(t, tt.expected, result)
+			assert.Equal(t, tt.expected, result, "Should equal expected value")
 		})
 	}
 }
@@ -390,7 +390,7 @@ func TestIsRelativeURL(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := isRelativeURL(tt.url)
-			assert.Equal(t, tt.expected, result)
+			assert.Equal(t, tt.expected, result, "Should equal expected value")
 		})
 	}
 }

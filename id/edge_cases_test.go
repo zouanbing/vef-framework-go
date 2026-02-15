@@ -13,7 +13,7 @@ import (
 func TestSnowflakeEdgeCases(t *testing.T) {
 	t.Run("MaximumNodeID", func(t *testing.T) {
 		generator, err := NewSnowflakeIDGenerator(63)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		id := generator.Generate()
 		assert.NotEmpty(t, id, "Max node ID should generate valid IDs")
@@ -21,19 +21,19 @@ func TestSnowflakeEdgeCases(t *testing.T) {
 
 	t.Run("NodeIDExceedingMaximum", func(t *testing.T) {
 		_, err := NewSnowflakeIDGenerator(64)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to create snowflake node")
+		assert.Error(t, err, "Should return error")
+		assert.Contains(t, err.Error(), "failed to create snowflake node", "Should contain expected value")
 	})
 
 	t.Run("NegativeNodeID", func(t *testing.T) {
 		_, err := NewSnowflakeIDGenerator(-1)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to create snowflake node")
+		assert.Error(t, err, "Should return error")
+		assert.Contains(t, err.Error(), "failed to create snowflake node", "Should contain expected value")
 	})
 
 	t.Run("RapidSequenceGeneration", func(t *testing.T) {
 		generator, err := NewSnowflakeIDGenerator(1)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		ids := make(map[string]bool)
 
@@ -205,7 +205,7 @@ func TestInterfaceCompliance(t *testing.T) {
 
 	t.Run("SnowflakeGeneratorFromConstructor", func(t *testing.T) {
 		generator, err := NewSnowflakeIDGenerator(1)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		id := generator.Generate()
 		assert.NotEmpty(t, id, "Snowflake generator should produce ID")

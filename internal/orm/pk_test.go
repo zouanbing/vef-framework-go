@@ -45,7 +45,7 @@ func newTestBunDB(t *testing.T) *bun.DB {
 	t.Helper()
 
 	sqldb, err := sql.Open(sqliteshim.ShimName, ":memory:")
-	require.NoError(t, err)
+	require.NoError(t, err, "Should open SQLite in-memory database")
 
 	t.Cleanup(func() { sqldb.Close() })
 

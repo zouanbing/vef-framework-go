@@ -42,7 +42,7 @@ func TestWhitelist(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := tt.setupCtx()
 			result := IsWhitelisted(ctx)
-			assert.Equal(t, tt.wantWhitelisted, result)
+			assert.Equal(t, tt.wantWhitelisted, result, "Should equal expected value")
 		})
 	}
 }

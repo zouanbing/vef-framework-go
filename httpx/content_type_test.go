@@ -24,8 +24,8 @@ func TestIsJSON(t *testing.T) {
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 		resp, err := app.Test(req)
-		require.NoError(t, err)
-		require.Equal(t, fiber.StatusOK, resp.StatusCode)
+		require.NoError(t, err, "Should not return error")
+		require.Equal(t, fiber.StatusOK, resp.StatusCode, "Should equal expected value")
 	})
 
 	t.Run("ApplicationJsonWithCharset", func(t *testing.T) {
@@ -42,8 +42,8 @@ func TestIsJSON(t *testing.T) {
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSONCharsetUTF8)
 
 		resp, err := app.Test(req)
-		require.NoError(t, err)
-		require.Equal(t, fiber.StatusOK, resp.StatusCode)
+		require.NoError(t, err, "Should not return error")
+		require.Equal(t, fiber.StatusOK, resp.StatusCode, "Should equal expected value")
 	})
 
 	t.Run("MissingContentType", func(t *testing.T) {
@@ -59,8 +59,8 @@ func TestIsJSON(t *testing.T) {
 		req := httptest.NewRequest("POST", "/json", nil)
 
 		resp, err := app.Test(req)
-		require.NoError(t, err)
-		require.Equal(t, fiber.StatusOK, resp.StatusCode)
+		require.NoError(t, err, "Should not return error")
+		require.Equal(t, fiber.StatusOK, resp.StatusCode, "Should equal expected value")
 	})
 
 	t.Run("NonJsonContentType", func(t *testing.T) {
@@ -77,8 +77,8 @@ func TestIsJSON(t *testing.T) {
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMETextPlain)
 
 		resp, err := app.Test(req)
-		require.NoError(t, err)
-		require.Equal(t, fiber.StatusOK, resp.StatusCode)
+		require.NoError(t, err, "Should not return error")
+		require.Equal(t, fiber.StatusOK, resp.StatusCode, "Should equal expected value")
 	})
 }
 
@@ -97,8 +97,8 @@ func TestIsMultipart(t *testing.T) {
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEMultipartForm+"; boundary=MyBoundary")
 
 		resp, err := app.Test(req)
-		require.NoError(t, err)
-		require.Equal(t, fiber.StatusOK, resp.StatusCode)
+		require.NoError(t, err, "Should not return error")
+		require.Equal(t, fiber.StatusOK, resp.StatusCode, "Should equal expected value")
 	})
 
 	t.Run("NonMultipartContentType", func(t *testing.T) {
@@ -115,8 +115,8 @@ func TestIsMultipart(t *testing.T) {
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 		resp, err := app.Test(req)
-		require.NoError(t, err)
-		require.Equal(t, fiber.StatusOK, resp.StatusCode)
+		require.NoError(t, err, "Should not return error")
+		require.Equal(t, fiber.StatusOK, resp.StatusCode, "Should equal expected value")
 	})
 
 	t.Run("MissingContentType", func(t *testing.T) {
@@ -132,7 +132,7 @@ func TestIsMultipart(t *testing.T) {
 		req := httptest.NewRequest("POST", "/multipart", nil)
 
 		resp, err := app.Test(req)
-		require.NoError(t, err)
-		require.Equal(t, fiber.StatusOK, resp.StatusCode)
+		require.NoError(t, err, "Should not return error")
+		require.Equal(t, fiber.StatusOK, resp.StatusCode, "Should equal expected value")
 	})
 }

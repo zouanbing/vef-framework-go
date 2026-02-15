@@ -686,7 +686,7 @@ func (suite *ImportTestSuite) TestImportUnsupportedFormat() {
 	}
 
 	buf, err := exporter.Export(testUsers)
-	suite.NoError(err)
+	suite.NoError(err, "Should export test users")
 
 	resp := suite.makeMultipartAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -742,7 +742,7 @@ func (suite *ImportTestSuite) TestImportPreHookError() {
 	}
 
 	buf, err := exporter.Export(testUsers)
-	suite.NoError(err)
+	suite.NoError(err, "Should export test users")
 
 	resp := suite.makeMultipartAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -767,7 +767,7 @@ func (suite *ImportTestSuite) TestImportPostHookError() {
 	}
 
 	buf, err := exporter.Export(testUsers)
-	suite.NoError(err)
+	suite.NoError(err, "Should export test users")
 
 	resp := suite.makeMultipartAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -796,7 +796,7 @@ func (suite *ImportTestSuite) makeMultipartAPIRequest(req api.Request, filename 
 	// Add params as JSON string if present
 	if req.Params != nil {
 		paramsJSON, err := encoding.ToJSON(req.Params)
-		suite.NoError(err)
+		suite.NoError(err, "Should marshal params to JSON")
 
 		_ = writer.WriteField("params", paramsJSON)
 	}
@@ -804,19 +804,19 @@ func (suite *ImportTestSuite) makeMultipartAPIRequest(req api.Request, filename 
 	// Add meta as JSON string if present
 	if req.Meta != nil {
 		metaJSON, err := encoding.ToJSON(req.Meta)
-		suite.NoError(err)
+		suite.NoError(err, "Should marshal meta to JSON")
 
 		_ = writer.WriteField("meta", metaJSON)
 	}
 
 	// Add file
 	part, err := writer.CreateFormFile("file", filename)
-	suite.NoError(err)
+	suite.NoError(err, "Should create form file part")
 	_, err = part.Write(fileContent)
-	suite.NoError(err)
+	suite.NoError(err, "Should write file content")
 
 	err = writer.Close()
-	suite.NoError(err)
+	suite.NoError(err, "Should close multipart writer")
 
 	httpReq := httptest.NewRequest(fiber.MethodPost, "/api", &buf)
 	httpReq.Header.Set(fiber.HeaderContentType, writer.FormDataContentType())

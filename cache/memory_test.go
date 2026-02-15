@@ -29,10 +29,10 @@ func TestNewMemoryOptions(t *testing.T) {
 		mc, ok := cache.(*memoryCache[string])
 		require.True(t, ok, "Type assertion to *memoryCache[string] should succeed")
 
-		assert.Zero(t, mc.maxSize)
-		assert.Equal(t, EvictionPolicyNone, mc.evictionPolicy)
-		assert.Zero(t, mc.defaultTTL)
-		assert.Greater(t, mc.gcInterval, time.Duration(0))
+		assert.Zero(t, mc.maxSize, "Should be zero value")
+		assert.Equal(t, EvictionPolicyNone, mc.evictionPolicy, "Should equal expected value")
+		assert.Zero(t, mc.defaultTTL, "Should be zero value")
+		assert.Greater(t, mc.gcInterval, time.Duration(0), "Should be greater")
 	})
 
 	t.Run("WithOptions", func(t *testing.T) {
@@ -47,10 +47,10 @@ func TestNewMemoryOptions(t *testing.T) {
 		mc, ok := cache.(*memoryCache[string])
 		require.True(t, ok, "Type assertion to *memoryCache[string] should succeed")
 
-		assert.Equal(t, int64(128), mc.maxSize)
-		assert.Equal(t, EvictionPolicyLFU, mc.evictionPolicy)
-		assert.Equal(t, 2*time.Minute, mc.defaultTTL)
-		assert.Equal(t, 500*time.Millisecond, mc.gcInterval)
+		assert.Equal(t, int64(128), mc.maxSize, "Should equal expected value")
+		assert.Equal(t, EvictionPolicyLFU, mc.evictionPolicy, "Should equal expected value")
+		assert.Equal(t, 2*time.Minute, mc.defaultTTL, "Should equal expected value")
+		assert.Equal(t, 500*time.Millisecond, mc.gcInterval, "Should equal expected value")
 	})
 }
 
@@ -62,11 +62,11 @@ func TestMemoryCacheBasicOperations(t *testing.T) {
 		defer cache.Close()
 
 		err := cache.Set(ctx, "key1", "value1")
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		value, found := cache.Get(ctx, "key1")
-		assert.True(t, found)
-		assert.Equal(t, "value1", value)
+		assert.True(t, found, "Should be found")
+		assert.Equal(t, "value1", value, "Should equal expected value")
 	})
 
 	t.Run("GetNonExistentKey", func(t *testing.T) {
@@ -74,8 +74,8 @@ func TestMemoryCacheBasicOperations(t *testing.T) {
 		defer cache.Close()
 
 		value, found := cache.Get(ctx, "nonexistent")
-		assert.False(t, found)
-		assert.Equal(t, "", value)
+		assert.False(t, found, "Should not be found")
+		assert.Equal(t, "", value, "Should equal expected value")
 	})
 
 	t.Run("ContainsExistingKey", func(t *testing.T) {
@@ -99,7 +99,7 @@ func TestMemoryCacheBasicOperations(t *testing.T) {
 
 		_ = cache.Set(ctx, "key1", "value1")
 		err := cache.Delete(ctx, "key1")
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 		assert.False(t, cache.Contains(ctx, "key1"))
 	})
 
@@ -108,7 +108,7 @@ func TestMemoryCacheBasicOperations(t *testing.T) {
 		defer cache.Close()
 
 		err := cache.Delete(ctx, "nonexistent")
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 	})
 
 	t.Run("UpdateExistingKey", func(t *testing.T) {
@@ -119,8 +119,8 @@ func TestMemoryCacheBasicOperations(t *testing.T) {
 		_ = cache.Set(ctx, "key1", "value2")
 
 		value, found := cache.Get(ctx, "key1")
-		assert.True(t, found)
-		assert.Equal(t, "value2", value)
+		assert.True(t, found, "Should be found")
+		assert.Equal(t, "value2", value, "Should equal expected value")
 	})
 
 	t.Run("GetOrLoadUsesLoaderOnce", func(t *testing.T) {
@@ -136,15 +136,15 @@ func TestMemoryCacheBasicOperations(t *testing.T) {
 		}
 
 		value, err := cache.GetOrLoad(ctx, "key1", loader)
-		require.NoError(t, err)
-		assert.Equal(t, "loaded", value)
-		assert.Equal(t, int32(1), loaderCalls.Load())
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, "loaded", value, "Should equal expected value")
+		assert.Equal(t, int32(1), loaderCalls.Load(), "Should equal expected value")
 
 		// Second call should hit cache without invoking loader again.
 		value, err = cache.GetOrLoad(ctx, "key1", loader)
-		require.NoError(t, err)
-		assert.Equal(t, "loaded", value)
-		assert.Equal(t, int32(1), loaderCalls.Load())
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, "loaded", value, "Should equal expected value")
+		assert.Equal(t, int32(1), loaderCalls.Load(), "Should equal expected value")
 	})
 
 	t.Run("GetOrLoadRequiresLoader", func(t *testing.T) {
@@ -152,7 +152,7 @@ func TestMemoryCacheBasicOperations(t *testing.T) {
 		defer cache.Close()
 
 		_, err := cache.GetOrLoad(ctx, "key1", nil)
-		assert.ErrorIs(t, err, ErrLoaderRequired)
+		assert.ErrorIs(t, err, ErrLoaderRequired, "Error should be ErrLoaderRequired")
 	})
 }
 
@@ -164,7 +164,7 @@ func TestMemoryCacheExpiration(t *testing.T) {
 		defer cache.Close()
 
 		err := cache.Set(ctx, "key1", "value1")
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		assert.True(t, cache.Contains(ctx, "key1"))
 
@@ -172,7 +172,7 @@ func TestMemoryCacheExpiration(t *testing.T) {
 
 		assert.False(t, cache.Contains(ctx, "key1"))
 		_, found := cache.Get(ctx, "key1")
-		assert.False(t, found)
+		assert.False(t, found, "Should not be found")
 	})
 
 	t.Run("CustomTtlExpiration", func(t *testing.T) {
@@ -180,7 +180,7 @@ func TestMemoryCacheExpiration(t *testing.T) {
 		defer cache.Close()
 
 		err := cache.Set(ctx, "key1", "value1", 100*time.Millisecond)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		assert.True(t, cache.Contains(ctx, "key1"))
 
@@ -231,18 +231,18 @@ func TestMemoryCacheSize(t *testing.T) {
 		defer cache.Close()
 
 		size, err := cache.Size(ctx)
-		require.NoError(t, err)
-		assert.Equal(t, int64(0), size)
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, int64(0), size, "Should equal expected value")
 
 		_ = cache.Set(ctx, "key1", "value1")
 		size, err = cache.Size(ctx)
-		require.NoError(t, err)
-		assert.Equal(t, int64(1), size)
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, int64(1), size, "Should equal expected value")
 
 		_ = cache.Set(ctx, "key2", "value2")
 		size, err = cache.Size(ctx)
-		require.NoError(t, err)
-		assert.Equal(t, int64(2), size)
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, int64(2), size, "Should equal expected value")
 	})
 
 	t.Run("SizeDecreasesOnDelete", func(t *testing.T) {
@@ -254,8 +254,8 @@ func TestMemoryCacheSize(t *testing.T) {
 
 		cache.Delete(ctx, "key1")
 		size, err := cache.Size(ctx)
-		require.NoError(t, err)
-		assert.Equal(t, int64(1), size)
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, int64(1), size, "Should equal expected value")
 	})
 
 	t.Run("SizeUnchangedOnUpdate", func(t *testing.T) {
@@ -268,7 +268,7 @@ func TestMemoryCacheSize(t *testing.T) {
 		_ = cache.Set(ctx, "key1", "value2")
 		size2, _ := cache.Size(ctx)
 
-		assert.Equal(t, size1, size2)
+		assert.Equal(t, size1, size2, "Should equal expected value")
 	})
 
 	t.Run("SizeExcludesExpiredEntries", func(t *testing.T) {
@@ -284,8 +284,8 @@ func TestMemoryCacheSize(t *testing.T) {
 		cache.Get(ctx, "key2")
 
 		size, err := cache.Size(ctx)
-		require.NoError(t, err)
-		assert.Equal(t, int64(0), size)
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, int64(0), size, "Should equal expected value")
 	})
 }
 
@@ -301,12 +301,12 @@ func TestMemoryCacheEvictionPolicies(t *testing.T) {
 		_ = cache.Set(ctx, "key3", "value3")
 
 		size, _ := cache.Size(ctx)
-		assert.Equal(t, int64(3), size)
+		assert.Equal(t, int64(3), size, "Should equal expected value")
 
 		_ = cache.Set(ctx, "key4", "value4")
 
 		size, _ = cache.Size(ctx)
-		assert.Equal(t, int64(3), size)
+		assert.Equal(t, int64(3), size, "Should equal expected value")
 		assert.False(t, cache.Contains(ctx, "key1"))
 		assert.True(t, cache.Contains(ctx, "key4"))
 	})
@@ -376,10 +376,10 @@ func TestMemoryCacheEvictionPolicies(t *testing.T) {
 		_ = cache.Set(ctx, "key2", "value2")
 
 		err := cache.Set(ctx, "key3", "value3")
-		assert.NoError(t, err)
+		assert.NoError(t, err, "Should not return error")
 
 		size, _ := cache.Size(ctx)
-		assert.Equal(t, int64(2), size)
+		assert.Equal(t, int64(2), size, "Should equal expected value")
 
 		assert.True(t, cache.Contains(ctx, "key3"))
 
@@ -403,10 +403,10 @@ func TestMemoryCacheEvictionPolicies(t *testing.T) {
 		_ = cache.Set(ctx, "key2", "value2")
 
 		err := cache.Set(ctx, "key1", "value1_updated")
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		size, _ := cache.Size(ctx)
-		assert.Equal(t, int64(2), size)
+		assert.Equal(t, int64(2), size, "Should equal expected value")
 	})
 }
 
@@ -423,8 +423,8 @@ func TestMemoryCacheKeys(t *testing.T) {
 		_ = cache.Set(ctx, "post:2", "world")
 
 		keys, err := cache.Keys(ctx)
-		require.NoError(t, err)
-		assert.Len(t, keys, 4)
+		require.NoError(t, err, "Should not return error")
+		assert.Len(t, keys, 4, "Length should be 4")
 	})
 
 	t.Run("ListKeysWithPrefix", func(t *testing.T) {
@@ -437,12 +437,12 @@ func TestMemoryCacheKeys(t *testing.T) {
 		_ = cache.Set(ctx, "post:2", "world")
 
 		userKeys, err := cache.Keys(ctx, "user:")
-		require.NoError(t, err)
-		assert.Len(t, userKeys, 2)
+		require.NoError(t, err, "Should not return error")
+		assert.Len(t, userKeys, 2, "Length should be 2")
 
 		postKeys, err := cache.Keys(ctx, "post:")
-		require.NoError(t, err)
-		assert.Len(t, postKeys, 2)
+		require.NoError(t, err, "Should not return error")
+		assert.Len(t, postKeys, 2, "Length should be 2")
 	})
 
 	t.Run("EmptyCacheReturnsEmptyList", func(t *testing.T) {
@@ -450,8 +450,8 @@ func TestMemoryCacheKeys(t *testing.T) {
 		defer cache.Close()
 
 		keys, err := cache.Keys(ctx)
-		require.NoError(t, err)
-		assert.Empty(t, keys)
+		require.NoError(t, err, "Should not return error")
+		assert.Empty(t, keys, "Should be empty")
 	})
 
 	t.Run("PrefixWithNoMatches", func(t *testing.T) {
@@ -462,8 +462,8 @@ func TestMemoryCacheKeys(t *testing.T) {
 		_ = cache.Set(ctx, "user:2", "bob")
 
 		keys, err := cache.Keys(ctx, "post:")
-		require.NoError(t, err)
-		assert.Empty(t, keys)
+		require.NoError(t, err, "Should not return error")
+		assert.Empty(t, keys, "Should be empty")
 	})
 
 	t.Run("ExcludesExpiredKeys", func(t *testing.T) {
@@ -476,8 +476,8 @@ func TestMemoryCacheKeys(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 
 		keys, err := cache.Keys(ctx)
-		require.NoError(t, err)
-		assert.Empty(t, keys)
+		require.NoError(t, err, "Should not return error")
+		assert.Empty(t, keys, "Should be empty")
 	})
 }
 
@@ -499,8 +499,8 @@ func TestMemoryCacheForEach(t *testing.T) {
 			return true
 		})
 
-		require.NoError(t, err)
-		assert.Equal(t, 6, sum)
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, 6, sum, "Should equal expected value")
 	})
 
 	t.Run("IterateWithPrefixFilter", func(t *testing.T) {
@@ -518,8 +518,8 @@ func TestMemoryCacheForEach(t *testing.T) {
 			return true
 		}, "user:")
 
-		require.NoError(t, err)
-		assert.Equal(t, 30, sum)
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, 30, sum, "Should equal expected value")
 	})
 
 	t.Run("EarlyTermination", func(t *testing.T) {
@@ -537,8 +537,8 @@ func TestMemoryCacheForEach(t *testing.T) {
 			return count < 2
 		})
 
-		require.NoError(t, err)
-		assert.Equal(t, 2, count)
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, 2, count, "Should equal expected value")
 	})
 
 	t.Run("EmptyCache", func(t *testing.T) {
@@ -552,8 +552,8 @@ func TestMemoryCacheForEach(t *testing.T) {
 			return true
 		})
 
-		require.NoError(t, err)
-		assert.False(t, called)
+		require.NoError(t, err, "Should not return error")
+		assert.False(t, called, "Should not be called")
 	})
 
 	t.Run("SkipsExpiredEntries", func(t *testing.T) {
@@ -572,7 +572,7 @@ func TestMemoryCacheForEach(t *testing.T) {
 			return true
 		})
 
-		assert.Equal(t, 0, count)
+		assert.Equal(t, 0, count, "Should equal expected value")
 	})
 }
 
@@ -588,13 +588,13 @@ func TestMemoryCacheClear(t *testing.T) {
 		_ = cache.Set(ctx, "key3", "value3")
 
 		size, _ := cache.Size(ctx)
-		assert.Equal(t, int64(3), size)
+		assert.Equal(t, int64(3), size, "Should equal expected value")
 
 		err := cache.Clear(ctx)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		size, _ = cache.Size(ctx)
-		assert.Equal(t, int64(0), size)
+		assert.Equal(t, int64(0), size, "Should equal expected value")
 	})
 
 	t.Run("ClearOnEmptyCache", func(t *testing.T) {
@@ -602,10 +602,10 @@ func TestMemoryCacheClear(t *testing.T) {
 		defer cache.Close()
 
 		err := cache.Clear(ctx)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		size, _ := cache.Size(ctx)
-		assert.Equal(t, int64(0), size)
+		assert.Equal(t, int64(0), size, "Should equal expected value")
 	})
 
 	t.Run("CanAddEntriesAfterClear", func(t *testing.T) {
@@ -629,7 +629,7 @@ func TestMemoryCacheClose(t *testing.T) {
 		_ = cache.Set(ctx, "key1", "value1")
 
 		err := cache.Close()
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		time.Sleep(200 * time.Millisecond)
 	})
@@ -641,41 +641,41 @@ func TestMemoryCacheClose(t *testing.T) {
 		cache.Close()
 
 		_, found := cache.Get(ctx, "key1")
-		assert.False(t, found)
+		assert.False(t, found, "Should not be found")
 
 		err := cache.Set(ctx, "key2", "value2")
-		assert.ErrorIs(t, err, ErrCacheClosed)
+		assert.ErrorIs(t, err, ErrCacheClosed, "Error should be ErrCacheClosed")
 
 		assert.False(t, cache.Contains(ctx, "key1"))
 
 		err = cache.Delete(ctx, "key1")
-		assert.NoError(t, err)
+		assert.NoError(t, err, "Should not return error")
 
 		err = cache.Clear(ctx)
-		assert.NoError(t, err)
+		assert.NoError(t, err, "Should not return error")
 
 		size, err := cache.Size(ctx)
-		assert.NoError(t, err)
-		assert.Equal(t, int64(0), size)
+		assert.NoError(t, err, "Should not return error")
+		assert.Equal(t, int64(0), size, "Should equal expected value")
 
 		keys, err := cache.Keys(ctx)
-		assert.NoError(t, err)
-		assert.Nil(t, keys)
+		assert.NoError(t, err, "Should not return error")
+		assert.Nil(t, keys, "Should be nil")
 
 		err = cache.ForEach(ctx, func(_, _ string) bool {
 			return true
 		})
-		assert.NoError(t, err)
+		assert.NoError(t, err, "Should not return error")
 	})
 
 	t.Run("DoubleCloseIsSafe", func(t *testing.T) {
 		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 
 		err := cache.Close()
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		err = cache.Close()
-		assert.NoError(t, err)
+		assert.NoError(t, err, "Should not return error")
 	})
 }
 
@@ -691,12 +691,12 @@ func TestMemoryCacheGC(t *testing.T) {
 		}
 
 		size, _ := cache.Size(ctx)
-		assert.Equal(t, int64(10), size)
+		assert.Equal(t, int64(10), size, "Should equal expected value")
 
 		time.Sleep(200 * time.Millisecond)
 
 		size, _ = cache.Size(ctx)
-		assert.Equal(t, int64(0), size)
+		assert.Equal(t, int64(0), size, "Should equal expected value")
 	})
 
 	t.Run("GCDoesNotRemoveNonExpiredEntries", func(t *testing.T) {
@@ -813,11 +813,11 @@ func TestMemoryCacheEdgeCases(t *testing.T) {
 
 		for i := range 1000 {
 			err := cache.Set(ctx, fmt.Sprintf("key%d", i), fmt.Sprintf("value%d", i))
-			require.NoError(t, err)
+			require.NoError(t, err, "Should not return error")
 		}
 
 		size, _ := cache.Size(ctx)
-		assert.Equal(t, int64(1000), size)
+		assert.Equal(t, int64(1000), size, "Should equal expected value")
 	})
 
 	t.Run("UnlimitedSizeForcesNoOpEvictionPolicy", func(t *testing.T) {
@@ -827,18 +827,18 @@ func TestMemoryCacheEdgeCases(t *testing.T) {
 		mc, ok := cache.(*memoryCache[string])
 		require.True(t, ok, "Type assertion to *memoryCache[string] should succeed")
 
-		assert.Equal(t, EvictionPolicyNone, mc.evictionPolicy)
+		assert.Equal(t, EvictionPolicyNone, mc.evictionPolicy, "Should equal expected value")
 
 		_, isNoOp := mc.evictionHandler.(*NoOpEvictionHandler)
 		assert.True(t, isNoOp, "eviction handler should be NoOpEvictionHandler when maxSize is unlimited")
 
 		for i := range 1000 {
 			err := cache.Set(ctx, fmt.Sprintf("key%d", i), fmt.Sprintf("value%d", i))
-			require.NoError(t, err)
+			require.NoError(t, err, "Should not return error")
 		}
 
 		size, _ := cache.Size(ctx)
-		assert.Equal(t, int64(1000), size)
+		assert.Equal(t, int64(1000), size, "Should equal expected value")
 	})
 
 	t.Run("NegativeMaxSizeForcesNoOpEvictionPolicy", func(t *testing.T) {
@@ -848,7 +848,7 @@ func TestMemoryCacheEdgeCases(t *testing.T) {
 		mc, ok := cache.(*memoryCache[string])
 		require.True(t, ok, "Type assertion to *memoryCache[string] should succeed")
 
-		assert.Equal(t, EvictionPolicyNone, mc.evictionPolicy)
+		assert.Equal(t, EvictionPolicyNone, mc.evictionPolicy, "Should equal expected value")
 
 		_, isNoOp := mc.evictionHandler.(*NoOpEvictionHandler)
 		assert.True(t, isNoOp, "eviction handler should be NoOpEvictionHandler when maxSize is negative")
@@ -862,7 +862,7 @@ func TestMemoryCacheEdgeCases(t *testing.T) {
 		_ = cache.Set(ctx, "key2", "value2")
 
 		size, _ := cache.Size(ctx)
-		assert.Equal(t, int64(1), size)
+		assert.Equal(t, int64(1), size, "Should equal expected value")
 		assert.False(t, cache.Contains(ctx, "key1"))
 		assert.True(t, cache.Contains(ctx, "key2"))
 	})
@@ -872,11 +872,11 @@ func TestMemoryCacheEdgeCases(t *testing.T) {
 		defer cache.Close()
 
 		err := cache.Set(ctx, "", "value")
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		value, found := cache.Get(ctx, "")
-		assert.True(t, found)
-		assert.Equal(t, "value", value)
+		assert.True(t, found, "Should be found")
+		assert.Equal(t, "value", value, "Should equal expected value")
 	})
 
 	t.Run("EmptyValue", func(t *testing.T) {
@@ -884,11 +884,11 @@ func TestMemoryCacheEdgeCases(t *testing.T) {
 		defer cache.Close()
 
 		err := cache.Set(ctx, "key", "")
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		value, found := cache.Get(ctx, "key")
-		assert.True(t, found)
-		assert.Equal(t, "", value)
+		assert.True(t, found, "Should be found")
+		assert.Equal(t, "", value, "Should equal expected value")
 	})
 
 	t.Run("DifferentValueTypes", func(t *testing.T) {
@@ -898,8 +898,8 @@ func TestMemoryCacheEdgeCases(t *testing.T) {
 
 			_ = cache.Set(ctx, "key", 42)
 			value, found := cache.Get(ctx, "key")
-			assert.True(t, found)
-			assert.Equal(t, 42, value)
+			assert.True(t, found, "Should be found")
+			assert.Equal(t, 42, value, "Should equal expected value")
 		})
 
 		t.Run("StructCache", func(t *testing.T) {
@@ -915,8 +915,8 @@ func TestMemoryCacheEdgeCases(t *testing.T) {
 			_ = cache.Set(ctx, "user:1", user)
 
 			value, found := cache.Get(ctx, "user:1")
-			assert.True(t, found)
-			assert.Equal(t, user, value)
+			assert.True(t, found, "Should be found")
+			assert.Equal(t, user, value, "Should equal expected value")
 		})
 
 		t.Run("PointerCache", func(t *testing.T) {
@@ -927,8 +927,8 @@ func TestMemoryCacheEdgeCases(t *testing.T) {
 			_ = cache.Set(ctx, "key", &str)
 
 			value, found := cache.Get(ctx, "key")
-			assert.True(t, found)
-			assert.Equal(t, &str, value)
+			assert.True(t, found, "Should be found")
+			assert.Equal(t, &str, value, "Should equal expected value")
 		})
 	})
 }

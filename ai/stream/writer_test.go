@@ -41,8 +41,8 @@ func TestSSEWriter_WriteChunk(t *testing.T) {
 
 			err := w.WriteChunk(tt.chunk)
 
-			require.NoError(t, err)
-			assert.Equal(t, tt.expected, buf.String())
+			require.NoError(t, err, "Should not return error")
+			assert.Equal(t, tt.expected, buf.String(), "Should equal expected value")
 		})
 	}
 }
@@ -54,8 +54,8 @@ func TestSSEWriter_WriteDone(t *testing.T) {
 
 	err := w.writeDone()
 
-	require.NoError(t, err)
-	assert.Equal(t, "data: [DONE]\n\n", buf.String())
+	require.NoError(t, err, "Should not return error")
+	assert.Equal(t, "data: [DONE]\n\n", buf.String(), "Should equal expected value")
 }
 
 func TestSSEWriter_Flush(t *testing.T) {
@@ -67,17 +67,17 @@ func TestSSEWriter_Flush(t *testing.T) {
 	_, _ = bw.WriteString("pending data")
 	err := w.Flush()
 
-	require.NoError(t, err)
-	assert.Equal(t, "pending data", buf.String())
+	require.NoError(t, err, "Should not return error")
+	assert.Equal(t, "pending data", buf.String(), "Should equal expected value")
 }
 
 func TestSSEHeaders(t *testing.T) {
-	assert.Equal(t, "text/event-stream", SseHeaders["Content-Type"])
-	assert.Equal(t, "no-cache", SseHeaders["Cache-Control"])
-	assert.Equal(t, "keep-alive", SseHeaders["Connection"])
-	assert.Equal(t, "chunked", SseHeaders["Transfer-Encoding"])
-	assert.Equal(t, "v1", SseHeaders["X-Vercel-AI-UI-Message-Stream"])
-	assert.Equal(t, "no", SseHeaders["X-Accel-Buffering"])
+	assert.Equal(t, "text/event-stream", SseHeaders["Content-Type"], "Should equal expected value")
+	assert.Equal(t, "no-cache", SseHeaders["Cache-Control"], "Should equal expected value")
+	assert.Equal(t, "keep-alive", SseHeaders["Connection"], "Should equal expected value")
+	assert.Equal(t, "chunked", SseHeaders["Transfer-Encoding"], "Should equal expected value")
+	assert.Equal(t, "v1", SseHeaders["X-Vercel-AI-UI-Message-Stream"], "Should equal expected value")
+	assert.Equal(t, "no", SseHeaders["X-Accel-Buffering"], "Should equal expected value")
 }
 
 func TestDefaultIDGenerator_Format(t *testing.T) {
@@ -90,7 +90,7 @@ func TestDefaultIDGenerator_Format(t *testing.T) {
 			assert.True(t, strings.HasPrefix(id, prefix+"_"))
 			// UUID v7 format: prefix_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 			parts := strings.SplitN(id, "_", 2)
-			require.Len(t, parts, 2)
+			require.Len(t, parts, 2, "Length should be 2")
 			assert.Len(t, parts[1], 36) // UUID length
 		})
 	}

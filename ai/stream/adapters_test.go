@@ -23,21 +23,21 @@ func TestChannelSource(t *testing.T) {
 		defer source.Close()
 
 		msg1, err := source.Recv()
-		require.NoError(t, err)
-		assert.Equal(t, RoleUser, msg1.Role)
-		assert.Equal(t, "Hello", msg1.Content)
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, RoleUser, msg1.Role, "Should equal expected value")
+		assert.Equal(t, "Hello", msg1.Content, "Should equal expected value")
 
 		msg2, err := source.Recv()
-		require.NoError(t, err)
-		assert.Equal(t, RoleAssistant, msg2.Role)
-		assert.Equal(t, "Hi", msg2.Content)
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, RoleAssistant, msg2.Role, "Should equal expected value")
+		assert.Equal(t, "Hi", msg2.Content, "Should equal expected value")
 
 		msg3, err := source.Recv()
-		require.NoError(t, err)
-		assert.Equal(t, "there", msg3.Content)
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, "there", msg3.Content, "Should equal expected value")
 
 		_, err = source.Recv()
-		assert.ErrorIs(t, err, io.EOF)
+		assert.ErrorIs(t, err, io.EOF, "Error should be io.EOF")
 	})
 
 	t.Run("ReturnsEofAfterClose", func(t *testing.T) {
@@ -46,10 +46,10 @@ func TestChannelSource(t *testing.T) {
 
 		source := NewChannelSource(ch)
 		err := source.Close()
-		require.NoError(t, err)
+		require.NoError(t, err, "Should not return error")
 
 		_, err = source.Recv()
-		assert.ErrorIs(t, err, io.EOF)
+		assert.ErrorIs(t, err, io.EOF, "Error should be io.EOF")
 	})
 
 	t.Run("HandlesEmptyChannel", func(t *testing.T) {
@@ -60,7 +60,7 @@ func TestChannelSource(t *testing.T) {
 		defer source.Close()
 
 		_, err := source.Recv()
-		assert.ErrorIs(t, err, io.EOF)
+		assert.ErrorIs(t, err, io.EOF, "Error should be io.EOF")
 	})
 }
 
@@ -75,16 +75,16 @@ func TestCallbackSource(t *testing.T) {
 		defer source.Close()
 
 		msg1, err := source.Recv()
-		require.NoError(t, err)
-		assert.Equal(t, RoleAssistant, msg1.Role)
-		assert.Equal(t, "Hello", msg1.Content)
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, RoleAssistant, msg1.Role, "Should equal expected value")
+		assert.Equal(t, "Hello", msg1.Content, "Should equal expected value")
 
 		msg2, err := source.Recv()
-		require.NoError(t, err)
-		assert.Equal(t, " World", msg2.Content)
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, " World", msg2.Content, "Should equal expected value")
 
 		_, err = source.Recv()
-		assert.ErrorIs(t, err, io.EOF)
+		assert.ErrorIs(t, err, io.EOF, "Error should be io.EOF")
 	})
 
 	t.Run("ReceivesToolCalls", func(t *testing.T) {
@@ -96,12 +96,12 @@ func TestCallbackSource(t *testing.T) {
 		defer source.Close()
 
 		msg, err := source.Recv()
-		require.NoError(t, err)
-		assert.Equal(t, RoleAssistant, msg.Role)
-		require.Len(t, msg.ToolCalls, 1)
-		assert.Equal(t, "call_1", msg.ToolCalls[0].ID)
-		assert.Equal(t, "get_weather", msg.ToolCalls[0].Name)
-		assert.Equal(t, `{"city":"Beijing"}`, msg.ToolCalls[0].Arguments)
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, RoleAssistant, msg.Role, "Should equal expected value")
+		require.Len(t, msg.ToolCalls, 1, "Length should be 1")
+		assert.Equal(t, "call_1", msg.ToolCalls[0].ID, "Should equal expected value")
+		assert.Equal(t, "get_weather", msg.ToolCalls[0].Name, "Should equal expected value")
+		assert.Equal(t, `{"city":"Beijing"}`, msg.ToolCalls[0].Arguments, "Should equal expected value")
 	})
 
 	t.Run("ReceivesToolResults", func(t *testing.T) {
@@ -113,10 +113,10 @@ func TestCallbackSource(t *testing.T) {
 		defer source.Close()
 
 		msg, err := source.Recv()
-		require.NoError(t, err)
-		assert.Equal(t, RoleTool, msg.Role)
-		assert.Equal(t, "call_1", msg.ToolCallID)
-		assert.Equal(t, `{"temp":25}`, msg.Content)
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, RoleTool, msg.Role, "Should equal expected value")
+		assert.Equal(t, "call_1", msg.ToolCallID, "Should equal expected value")
+		assert.Equal(t, `{"temp":25}`, msg.Content, "Should equal expected value")
 	})
 
 	t.Run("ReceivesReasoning", func(t *testing.T) {
@@ -128,9 +128,9 @@ func TestCallbackSource(t *testing.T) {
 		defer source.Close()
 
 		msg, err := source.Recv()
-		require.NoError(t, err)
-		assert.Equal(t, RoleAssistant, msg.Role)
-		assert.Equal(t, "Let me think...", msg.Reasoning)
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, RoleAssistant, msg.Role, "Should equal expected value")
+		assert.Equal(t, "Let me think...", msg.Reasoning, "Should equal expected value")
 	})
 
 	t.Run("ReceivesCustomData", func(t *testing.T) {
@@ -142,9 +142,9 @@ func TestCallbackSource(t *testing.T) {
 		defer source.Close()
 
 		msg, err := source.Recv()
-		require.NoError(t, err)
-		assert.Equal(t, RoleAssistant, msg.Role)
-		assert.Equal(t, map[string]any{"progress": 50}, msg.Data["status"])
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, RoleAssistant, msg.Role, "Should equal expected value")
+		assert.Equal(t, map[string]any{"progress": 50}, msg.Data["status"], "Should equal expected value")
 	})
 
 	t.Run("ReceivesFullMessage", func(t *testing.T) {
@@ -161,8 +161,8 @@ func TestCallbackSource(t *testing.T) {
 		defer source.Close()
 
 		msg, err := source.Recv()
-		require.NoError(t, err)
-		assert.Equal(t, customMsg, msg)
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, customMsg, msg, "Should equal expected value")
 	})
 
 	t.Run("PropagatesError", func(t *testing.T) {
@@ -176,11 +176,11 @@ func TestCallbackSource(t *testing.T) {
 		defer source.Close()
 
 		msg, err := source.Recv()
-		require.NoError(t, err)
-		assert.Equal(t, "partial", msg.Content)
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, "partial", msg.Content, "Should equal expected value")
 
 		_, err = source.Recv()
-		assert.ErrorIs(t, err, expectedErr)
+		assert.ErrorIs(t, err, expectedErr, "Error should be expectedErr")
 	})
 }
 
@@ -191,8 +191,8 @@ func TestFromChannel(t *testing.T) {
 	close(ch)
 
 	builder := FromChannel(ch)
-	assert.NotNil(t, builder)
-	assert.NotNil(t, builder.source)
+	assert.NotNil(t, builder, "Should not be nil")
+	assert.NotNil(t, builder.source, "Should not be nil")
 }
 
 func TestFromCallback(t *testing.T) {
@@ -201,6 +201,6 @@ func TestFromCallback(t *testing.T) {
 
 		return nil
 	})
-	assert.NotNil(t, builder)
-	assert.NotNil(t, builder.source)
+	assert.NotNil(t, builder, "Should not be nil")
+	assert.NotNil(t, builder.source, "Should not be nil")
 }
