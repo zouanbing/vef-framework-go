@@ -206,15 +206,12 @@ type RPCEngineTestSuite struct {
 
 	userLoader        *MockUserLoader
 	permissionChecker *MockPermissionChecker
-	jwtSecret         string
 	testUser          *security.Principal
 	hashedPassword    string
 }
 
 func (suite *RPCEngineTestSuite) SetupSuite() {
 	suite.T().Log("Setting up RPCEngineTestSuite")
-
-	suite.jwtSecret = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 
 	suite.testUser = security.NewUser("user001", "Test User", "admin", "user")
 	suite.testUser.Details = map[string]any{
@@ -282,8 +279,8 @@ func (suite *RPCEngineTestSuite) setupTestApp() {
 				Kind: config.SQLite,
 			},
 			&security.JWTConfig{
-				Secret:   suite.jwtSecret,
-				Audience: "test-app",
+				Secret:   security.DefaultJWTSecret,
+				Audience: "test_app",
 			},
 		),
 		fx.Provide(
@@ -378,7 +375,7 @@ func (suite *RPCEngineTestSuite) TestProtectedApiWithoutToken() {
 func (suite *RPCEngineTestSuite) TestProtectedApiWithValidToken() {
 	suite.T().Log("Testing protected API with valid token")
 
-	token := suite.login()
+	token := suite.GenerateToken(suite.testUser)
 
 	resp := suite.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
@@ -680,7 +677,7 @@ func (suite *RPCEngineTestSuite) TestComplexParams() {
 func (suite *RPCEngineTestSuite) TestTokenInQueryParam() {
 	suite.T().Log("Testing token in query parameter")
 
-	token := suite.login()
+	token := suite.GenerateToken(suite.testUser)
 
 	jsonBody, err := encoding.ToJSON(api.Request{
 		Identifier: api.Identifier{
@@ -706,7 +703,7 @@ func (suite *RPCEngineTestSuite) TestTokenInQueryParam() {
 func (suite *RPCEngineTestSuite) TestPermissionDenied() {
 	suite.T().Log("Testing permission denied (403)")
 
-	token := suite.login()
+	token := suite.GenerateToken(suite.testUser)
 
 	resp := suite.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
@@ -767,7 +764,7 @@ func (suite *RPCEngineTestSuite) TestNonexistentUserLogin() {
 func (suite *RPCEngineTestSuite) TestAdminWithPermission() {
 	suite.T().Log("Testing admin action with permission")
 
-	token := suite.login()
+	token := suite.GenerateToken(suite.testUser)
 
 	resp := suite.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
@@ -812,7 +809,7 @@ func (suite *RPCEngineTestSuite) TestUserLoaderCalledOnLogin() {
 func (suite *RPCEngineTestSuite) TestPermissionCheckerCalledOnAdmin() {
 	suite.T().Log("Testing PermissionChecker is called for admin action")
 
-	token := suite.login()
+	token := suite.GenerateToken(suite.testUser)
 
 	suite.permissionChecker.Calls = nil
 
@@ -830,7 +827,7 @@ func (suite *RPCEngineTestSuite) TestPermissionCheckerCalledOnAdmin() {
 func (suite *RPCEngineTestSuite) TestPermissionCheckerCalledOnRestricted() {
 	suite.T().Log("Testing PermissionChecker is called for restricted action")
 
-	token := suite.login()
+	token := suite.GenerateToken(suite.testUser)
 
 	suite.permissionChecker.Calls = nil
 

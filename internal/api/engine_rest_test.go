@@ -227,7 +227,6 @@ type RESTEngineTestSuite struct {
 
 	userLoader        *MockUserLoader
 	permissionChecker *MockPermissionChecker
-	jwtSecret         string
 	testUser          *security.Principal
 	adminUser         *security.Principal
 	hashedPassword    string
@@ -235,8 +234,6 @@ type RESTEngineTestSuite struct {
 
 func (suite *RESTEngineTestSuite) SetupSuite() {
 	suite.T().Log("Setting up RESTEngineTestSuite")
-
-	suite.jwtSecret = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 
 	suite.testUser = security.NewUser("user001", "Test User", "admin", "user")
 	suite.testUser.Details = map[string]any{
@@ -296,12 +293,16 @@ func (suite *RESTEngineTestSuite) setupTestApp() {
 		Maybe()
 
 	// Permission denied for items:admin for regular user
-	suite.permissionChecker.On("HasPermission", mock.Anything, suite.testUser, "items:admin").
+	suite.permissionChecker.On("HasPermission", mock.Anything, mock.MatchedBy(func(p *security.Principal) bool {
+		return p.ID == suite.testUser.ID
+	}), "items:admin").
 		Return(false, nil).
 		Maybe()
 
 	// Permission allowed for items:admin for admin user
-	suite.permissionChecker.On("HasPermission", mock.Anything, suite.adminUser, "items:admin").
+	suite.permissionChecker.On("HasPermission", mock.Anything, mock.MatchedBy(func(p *security.Principal) bool {
+		return p.ID == suite.adminUser.ID
+	}), "items:admin").
 		Return(true, nil).
 		Maybe()
 
@@ -320,8 +321,8 @@ func (suite *RESTEngineTestSuite) setupTestApp() {
 				Kind: config.SQLite,
 			},
 			&security.JWTConfig{
-				Secret:   suite.jwtSecret,
-				Audience: "test-app",
+				Secret:   security.DefaultJWTSecret,
+				Audience: "test_app",
 			},
 		),
 		fx.Provide(
@@ -350,28 +351,6 @@ func (suite *RESTEngineTestSuite) login() string {
 
 	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Login should succeed")
-
-	tokens := suite.ReadDataAsMap(body.Data)
-
-	return tokens["accessToken"].(string)
-}
-
-func (suite *RESTEngineTestSuite) loginAsAdmin() string {
-	resp := suite.MakeRPCRequest(api.Request{
-		Identifier: api.Identifier{
-			Resource: "security/auth",
-			Action:   "login",
-			Version:  "v1",
-		},
-		Params: map[string]any{
-			"kind":        "password",
-			"principal":   "adminuser",
-			"credentials": "password123",
-		},
-	})
-
-	body := suite.ReadResult(resp)
-	suite.True(body.IsOk(), "Admin login should succeed")
 
 	tokens := suite.ReadDataAsMap(body.Data)
 
@@ -476,7 +455,7 @@ func (suite *RESTEngineTestSuite) TestPutUpdateWithoutToken() {
 func (suite *RESTEngineTestSuite) TestPutUpdateWithToken() {
 	suite.T().Log("Testing PUT update with token")
 
-	token := suite.login()
+	token := suite.GenerateToken(suite.testUser)
 
 	resp := suite.MakeRESTRequestWithToken(fiber.MethodPut, "/api/items", `{"id":"123","name":"Updated Item"}`, token)
 
@@ -502,7 +481,7 @@ func (suite *RESTEngineTestSuite) TestDeleteWithoutToken() {
 func (suite *RESTEngineTestSuite) TestDeleteWithToken() {
 	suite.T().Log("Testing DELETE with token")
 
-	token := suite.login()
+	token := suite.GenerateToken(suite.testUser)
 
 	resp := suite.MakeRESTRequestWithToken(fiber.MethodDelete, "/api/items?id=123", "", token)
 
@@ -519,7 +498,7 @@ func (suite *RESTEngineTestSuite) TestDeleteWithToken() {
 func (suite *RESTEngineTestSuite) TestPatchWithPermission() {
 	suite.T().Log("Testing PATCH with permission")
 
-	token := suite.login()
+	token := suite.GenerateToken(suite.testUser)
 
 	resp := suite.MakeRESTRequestWithToken(fiber.MethodPatch, "/api/items", `{"id":"123","status":"active"}`, token)
 
@@ -595,7 +574,7 @@ func (suite *RESTEngineTestSuite) TestEmptyRequestBody() {
 func (suite *RESTEngineTestSuite) TestTokenInQueryParam() {
 	suite.T().Log("Testing token in query parameter")
 
-	token := suite.login()
+	token := suite.GenerateToken(suite.testUser)
 
 	req := httptest.NewRequest(fiber.MethodPut, "/api/items?"+security.QueryKeyAccessToken+"="+token, strings.NewReader(`{"id":"123","name":"Test"}`))
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
@@ -626,7 +605,7 @@ func (suite *RESTEngineTestSuite) TestComplexQueryParams() {
 func (suite *RESTEngineTestSuite) TestPermissionDenied() {
 	suite.T().Log("Testing permission denied (403)")
 
-	token := suite.login()
+	token := suite.GenerateToken(suite.testUser)
 
 	resp := suite.MakeRESTRequestWithToken(fiber.MethodPost, "/api/items/admin", `{}`, token)
 
@@ -640,7 +619,7 @@ func (suite *RESTEngineTestSuite) TestPermissionDenied() {
 func (suite *RESTEngineTestSuite) TestAdminWithPermission() {
 	suite.T().Log("Testing admin action with permission")
 
-	token := suite.loginAsAdmin()
+	token := suite.GenerateToken(suite.adminUser)
 
 	resp := suite.MakeRESTRequestWithToken(fiber.MethodPost, "/api/items/admin", `{}`, token)
 
@@ -657,7 +636,7 @@ func (suite *RESTEngineTestSuite) TestAdminWithPermission() {
 func (suite *RESTEngineTestSuite) TestPutMissingRequiredID() {
 	suite.T().Log("Testing PUT with missing required ID")
 
-	token := suite.login()
+	token := suite.GenerateToken(suite.testUser)
 
 	// PUT without id in body
 	resp := suite.MakeRESTRequestWithToken(fiber.MethodPut, "/api/items", `{"name":"Test"}`, token)
@@ -672,7 +651,7 @@ func (suite *RESTEngineTestSuite) TestPutMissingRequiredID() {
 func (suite *RESTEngineTestSuite) TestDeleteMissingRequiredID() {
 	suite.T().Log("Testing DELETE with missing required ID")
 
-	token := suite.login()
+	token := suite.GenerateToken(suite.testUser)
 
 	// DELETE without id - send empty JSON body
 	resp := suite.MakeRESTRequestWithToken(fiber.MethodDelete, "/api/items", `{}`, token)
@@ -687,7 +666,7 @@ func (suite *RESTEngineTestSuite) TestDeleteMissingRequiredID() {
 func (suite *RESTEngineTestSuite) TestPatchMissingRequiredID() {
 	suite.T().Log("Testing PATCH with missing required ID")
 
-	token := suite.login()
+	token := suite.GenerateToken(suite.testUser)
 
 	// PATCH without id in body
 	resp := suite.MakeRESTRequestWithToken(fiber.MethodPatch, "/api/items", `{"status":"active"}`, token)
@@ -722,7 +701,7 @@ func (suite *RESTEngineTestSuite) TestContentTypeValidation() {
 func (suite *RESTEngineTestSuite) TestPutInvalidJSON() {
 	suite.T().Log("Testing PUT with invalid JSON")
 
-	token := suite.login()
+	token := suite.GenerateToken(suite.testUser)
 
 	resp := suite.MakeRESTRequestWithToken(fiber.MethodPut, "/api/items", "{invalid json}", token)
 
@@ -736,7 +715,7 @@ func (suite *RESTEngineTestSuite) TestPutInvalidJSON() {
 func (suite *RESTEngineTestSuite) TestPatchInvalidJSON() {
 	suite.T().Log("Testing PATCH with invalid JSON")
 
-	token := suite.login()
+	token := suite.GenerateToken(suite.testUser)
 
 	resp := suite.MakeRESTRequestWithToken(fiber.MethodPatch, "/api/items", "{invalid json}", token)
 
@@ -750,7 +729,7 @@ func (suite *RESTEngineTestSuite) TestPatchInvalidJSON() {
 func (suite *RESTEngineTestSuite) TestDeleteInvalidJSON() {
 	suite.T().Log("Testing DELETE with invalid JSON body")
 
-	token := suite.login()
+	token := suite.GenerateToken(suite.testUser)
 
 	resp := suite.MakeRESTRequestWithToken(fiber.MethodDelete, "/api/items", "{invalid json}", token)
 
@@ -772,7 +751,7 @@ func (suite *RESTEngineTestSuite) TestUserLoaderCalledOnLogin() {
 func (suite *RESTEngineTestSuite) TestPermissionCheckerCalledOnPatch() {
 	suite.T().Log("Testing PermissionChecker is called for PATCH")
 
-	token := suite.login()
+	token := suite.GenerateToken(suite.testUser)
 
 	suite.permissionChecker.Calls = nil
 
@@ -784,7 +763,7 @@ func (suite *RESTEngineTestSuite) TestPermissionCheckerCalledOnPatch() {
 func (suite *RESTEngineTestSuite) TestPermissionCheckerCalledOnAdmin() {
 	suite.T().Log("Testing PermissionChecker is called for admin action")
 
-	token := suite.login()
+	token := suite.GenerateToken(suite.testUser)
 
 	suite.permissionChecker.Calls = nil
 
