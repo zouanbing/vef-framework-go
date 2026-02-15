@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestJoinTypeString verifies JoinType.String() returns correct SQL keywords.
 func TestJoinTypeString(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -27,6 +28,7 @@ func TestJoinTypeString(t *testing.T) {
 	}
 }
 
+// TestFuzzyKindBuildPattern verifies FuzzyKind.BuildPattern() produces correct LIKE patterns.
 func TestFuzzyKindBuildPattern(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -46,6 +48,7 @@ func TestFuzzyKindBuildPattern(t *testing.T) {
 	}
 }
 
+// TestNullsModeString verifies NullsMode.String() returns correct SQL fragments.
 func TestNullsModeString(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -64,6 +67,7 @@ func TestNullsModeString(t *testing.T) {
 	}
 }
 
+// TestFromDirectionString verifies FromDirection.String() returns correct SQL fragments.
 func TestFromDirectionString(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -82,6 +86,7 @@ func TestFromDirectionString(t *testing.T) {
 	}
 }
 
+// TestFrameTypeString verifies FrameType.String() returns correct SQL keywords.
 func TestFrameTypeString(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -101,6 +106,7 @@ func TestFrameTypeString(t *testing.T) {
 	}
 }
 
+// TestFrameBoundKindString verifies FrameBoundKind.String() returns correct SQL fragments.
 func TestFrameBoundKindString(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -122,6 +128,7 @@ func TestFrameBoundKindString(t *testing.T) {
 	}
 }
 
+// TestStatisticalModeString verifies StatisticalMode.String() returns correct suffixes.
 func TestStatisticalModeString(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -140,6 +147,7 @@ func TestStatisticalModeString(t *testing.T) {
 	}
 }
 
+// TestConflictActionString verifies ConflictAction.String() returns correct SQL clauses.
 func TestConflictActionString(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -158,6 +166,7 @@ func TestConflictActionString(t *testing.T) {
 	}
 }
 
+// TestDateTimeUnitString verifies DateTimeUnit.String() returns correct SQL keywords.
 func TestDateTimeUnitString(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -179,6 +188,7 @@ func TestDateTimeUnitString(t *testing.T) {
 	}
 }
 
+// TestDateTimeUnitForSQLite verifies DateTimeUnit.ForSQLite() returns correct modifier strings.
 func TestDateTimeUnitForSQLite(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -200,6 +210,7 @@ func TestDateTimeUnitForSQLite(t *testing.T) {
 	}
 }
 
+// TestDateTimeUnitForDateTrunc verifies DateTimeUnit.ForDateTrunc() returns correct field names.
 func TestDateTimeUnitForDateTrunc(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -221,12 +232,14 @@ func TestDateTimeUnitForDateTrunc(t *testing.T) {
 	}
 }
 
+// TestDateTimeUnitForPostgresAndMySQL verifies ForPostgres and ForMySQL delegate to String.
 func TestDateTimeUnitForPostgresAndMySQL(t *testing.T) {
 	unit := UnitYear
 	assert.Equal(t, unit.String(), unit.ForPostgres(), "ForPostgres should delegate to String")
 	assert.Equal(t, unit.String(), unit.ForMySQL(), "ForMySQL should delegate to String")
 }
 
+// TestIndexMethodString verifies IndexMethod.String() returns correct index type names.
 func TestIndexMethodString(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -248,6 +261,7 @@ func TestIndexMethodString(t *testing.T) {
 	}
 }
 
+// TestPartitionStrategyString verifies PartitionStrategy.String() returns correct SQL keywords.
 func TestPartitionStrategyString(t *testing.T) {
 	tests := []struct {
 		name     string

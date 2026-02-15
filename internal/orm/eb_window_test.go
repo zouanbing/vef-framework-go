@@ -1145,7 +1145,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWindowFrameSpecs() {
 	suite.T().Logf("Testing WindowFrameSpecs for %s", suite.ds.Kind)
 
 	if suite.ds.Kind == config.SQLite {
-		suite.T().Skip("SQLite has limited window frame support")
+		suite.T().Skipf("SQLite has limited window frame support on %s", suite.ds.Kind)
 	}
 
 	suite.Run("RangeFrame", func() {
@@ -1335,7 +1335,7 @@ func (suite *EBWindowFunctionsTestSuite) TestNullHandling() {
 	suite.T().Logf("Testing NullHandling for %s", suite.ds.Kind)
 
 	if suite.ds.Kind != config.Postgres {
-		suite.T().Skip("IGNORE NULLS / RESPECT NULLS not widely supported")
+		suite.T().Skipf("IGNORE NULLS / RESPECT NULLS not supported on %s", suite.ds.Kind)
 	}
 
 	suite.Run("RespectNulls", func() {
@@ -1369,7 +1369,7 @@ func (suite *EBWindowFunctionsTestSuite) TestFirstLastValue() {
 	suite.T().Logf("Testing FirstLastValue for %s", suite.ds.Kind)
 
 	if suite.ds.Kind != config.Postgres {
-		suite.T().Skip("FROM FIRST/FROM LAST not widely supported")
+		suite.T().Skipf("FROM FIRST/FROM LAST not supported on %s", suite.ds.Kind)
 	}
 
 	suite.Run("FromFirst", func() {
@@ -1430,7 +1430,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWindowFrameEndBuilderMethods() {
 	suite.T().Logf("Testing WindowFrameEndBuilderMethods for %s", suite.ds.Kind)
 
 	if suite.ds.Kind == config.SQLite {
-		suite.T().Skip("SQLite has limited window frame support")
+		suite.T().Skipf("SQLite has limited window frame support on %s", suite.ds.Kind)
 	}
 
 	suite.Run("FrameStartFollowing", func() {
@@ -1526,7 +1526,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWindowExprMethods() {
 	suite.T().Logf("Testing WindowExprMethods for %s", suite.ds.Kind)
 
 	if suite.ds.Kind != config.Postgres {
-		suite.T().Skip("Window Expr methods only tested on Postgres")
+		suite.T().Skipf("Window Expr methods not supported on %s", suite.ds.Kind)
 	}
 
 	suite.Run("FirstValueExpr", func() {
@@ -1648,7 +1648,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWindowIgnoreNulls() {
 	suite.T().Logf("Testing WindowIgnoreNulls for %s", suite.ds.Kind)
 
 	if suite.ds.Kind != config.Postgres {
-		suite.T().Skip("IGNORE NULLS only supported on Postgres")
+		suite.T().Skipf("IGNORE NULLS not supported on %s", suite.ds.Kind)
 	}
 
 	type Result struct {
@@ -1678,7 +1678,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWindowFrameEndUnboundedPreceding() 
 	suite.T().Logf("Testing WindowFrameEndUnboundedPreceding for %s", suite.ds.Kind)
 
 	if suite.ds.Kind == config.SQLite {
-		suite.T().Skip("SQLite has limited window frame support")
+		suite.T().Skipf("SQLite has limited window frame support on %s", suite.ds.Kind)
 	}
 
 	type Result struct {

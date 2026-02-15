@@ -110,7 +110,7 @@ func (suite *SelectTestSuite) TestCTE() {
 
 	suite.Run("WithRecursiveCTE", func() {
 		if suite.ds.Kind == config.SQLite {
-			suite.T().Skip("Skipping for SQLite: bun framework bug causes extra parentheses in generated UNION SQL")
+			suite.T().Skipf("Skipping for %s: bun framework bug causes extra parentheses in generated UNION SQL", suite.ds.Kind)
 		}
 
 		type CommentHierarchy struct {
@@ -895,7 +895,7 @@ func (suite *SelectTestSuite) TestDistinct() {
 
 	suite.Run("DistinctOnColumns", func() {
 		// DISTINCT ON is PostgreSQL-specific, not supported by MySQL or SQLite
-		if suite.ds.Kind != "postgres" {
+		if suite.ds.Kind != config.Postgres {
 			suite.T().Skipf("DISTINCT ON test skipped for %s", suite.ds.Kind)
 
 			return
@@ -926,7 +926,7 @@ func (suite *SelectTestSuite) TestDistinct() {
 
 	suite.Run("DistinctOnExpr", func() {
 		// DISTINCT ON is PostgreSQL-specific, not supported by MySQL or SQLite
-		if suite.ds.Kind != "postgres" {
+		if suite.ds.Kind != config.Postgres {
 			suite.T().Skipf("DISTINCT ON test skipped for %s", suite.ds.Kind)
 
 			return
@@ -1209,7 +1209,7 @@ func (suite *SelectTestSuite) TestJoins() {
 
 	suite.Run("FullJoin", func() {
 		if suite.ds.Kind == config.MySQL {
-			suite.T().Skip("Skipping for MySQL: FULL JOIN not supported (use LEFT JOIN UNION RIGHT JOIN instead)")
+			suite.T().Skipf("FULL JOIN not supported on %s (use LEFT JOIN UNION RIGHT JOIN instead)", suite.ds.Kind)
 
 			return
 		}
@@ -1874,7 +1874,7 @@ func (suite *SelectTestSuite) TestLocking() {
 
 	// SQLite doesn't support row-level locking (FOR SHARE/FOR UPDATE)
 	if suite.ds.Kind == config.SQLite {
-		suite.T().Skip("Skipping for SQLite: row-level locking (FOR SHARE/FOR UPDATE) not supported, uses database-level locking instead")
+		suite.T().Skipf("Row-level locking (FOR SHARE/FOR UPDATE) not supported on %s", suite.ds.Kind)
 
 		return
 	}
@@ -1968,7 +1968,7 @@ func (suite *SelectTestSuite) TestSetOperations() {
 	suite.T().Logf("Testing Set Operations for %s", suite.ds.Kind)
 
 	if suite.ds.Kind == config.SQLite {
-		suite.T().Skip("Skipping for SQLite: bun framework bug causes extra parentheses in generated set operation SQL, resulting in syntax errors")
+		suite.T().Skipf("Skipping for %s: bun framework bug causes extra parentheses in generated set operation SQL", suite.ds.Kind)
 
 		return
 	}
@@ -2608,7 +2608,7 @@ func (suite *SelectTestSuite) TestJoinVariants() {
 // TestSetOperationVariants tests IntersectAll and ExceptAll.
 func (suite *SelectTestSuite) TestSetOperationVariants() {
 	if suite.ds.Kind != config.Postgres {
-		suite.T().Skip("INTERSECT ALL/EXCEPT ALL only reliably supported on Postgres")
+		suite.T().Skipf("INTERSECT ALL/EXCEPT ALL not supported on %s", suite.ds.Kind)
 	}
 
 	suite.T().Logf("Testing set operation variants for %s", suite.ds.Kind)
@@ -2669,7 +2669,7 @@ func (suite *SelectTestSuite) TestSetOperationVariants() {
 // TestForShareVariants tests ForShareNoWait and ForShareSkipLocked.
 func (suite *SelectTestSuite) TestForShareVariants() {
 	if suite.ds.Kind == config.SQLite {
-		suite.T().Skip("SQLite does not support FOR SHARE")
+		suite.T().Skipf("FOR SHARE not supported on %s", suite.ds.Kind)
 	}
 
 	suite.T().Logf("Testing ForShare variants for %s", suite.ds.Kind)
@@ -2809,7 +2809,7 @@ func (suite *SelectTestSuite) TestSelectModelTableWithAlias() {
 		Scan(suite.ctx, &results)
 
 	suite.NoError(err, "ModelTable with alias should work")
-	suite.Len(results, 3)
+	suite.Len(results, 3, "Should return 3 results")
 }
 
 // TestSelectTableSubQueryWithAlias tests TableSubQuery with alias.
@@ -2832,7 +2832,7 @@ func (suite *SelectTestSuite) TestSelectTableSubQueryWithAlias() {
 		Scan(suite.ctx, &results)
 
 	suite.NoError(err, "TableSubQuery with alias should work")
-	suite.Len(results, 5)
+	suite.Len(results, 5, "Should return 5 results")
 }
 
 // TestCrossJoinTableWithAlias tests CrossJoinTable with alias.

@@ -119,7 +119,7 @@ func (suite *DeleteTestSuite) TestCTE() {
 
 	suite.Run("WithRecursiveCTE", func() {
 		if suite.ds.Kind == config.SQLite {
-			suite.T().Skip("SQLite recursive CTE with DELETE requires special handling")
+			suite.T().Skipf("SQLite recursive CTE with DELETE requires special handling on %s", suite.ds.Kind)
 
 			return
 		}
@@ -837,7 +837,7 @@ func (suite *DeleteTestSuite) TestReturning() {
 	suite.T().Logf("Testing Returning methods for %s", suite.ds.Kind)
 
 	if suite.ds.Kind == config.MySQL {
-		suite.T().Skip("MySQL doesn't support RETURNING clause")
+		suite.T().Skipf("RETURNING clause not supported on %s", suite.ds.Kind)
 
 		return
 	}
@@ -1204,7 +1204,7 @@ func (suite *DeleteTestSuite) TestExecution() {
 
 	suite.Run("ScanWithReturning", func() {
 		if suite.ds.Kind == config.MySQL {
-			suite.T().Skip("MySQL doesn't support RETURNING with Scan")
+			suite.T().Skipf("RETURNING with Scan not supported on %s", suite.ds.Kind)
 
 			return
 		}

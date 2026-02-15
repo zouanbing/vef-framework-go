@@ -884,7 +884,7 @@ func (suite *UpdateTestSuite) TestReturningClause() {
 	suite.T().Logf("Testing RETURNING clause methods for %s", suite.ds.Kind)
 
 	if suite.ds.Kind == config.MySQL {
-		suite.T().Skip("MySQL doesn't support RETURNING clause")
+		suite.T().Skipf("RETURNING clause not supported on %s", suite.ds.Kind)
 	}
 
 	suite.Run("ReturningSpecificColumns", func() {
@@ -1064,7 +1064,7 @@ func (suite *UpdateTestSuite) TestExecution() {
 
 	suite.Run("ScanWithReturning", func() {
 		if suite.ds.Kind == config.MySQL {
-			suite.T().Skip("MySQL doesn't support RETURNING clause")
+			suite.T().Skipf("RETURNING clause not supported on %s", suite.ds.Kind)
 		}
 
 		type UpdateResult struct {

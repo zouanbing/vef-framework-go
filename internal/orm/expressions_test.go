@@ -14,6 +14,7 @@ func newTestQueryGen() schema.QueryGen {
 	return schema.NewQueryGen(sqlitedialect.New())
 }
 
+// TestExpressionsAppendQuery verifies expressions AppendQuery with various separator and element types.
 func TestExpressionsAppendQuery(t *testing.T) {
 	gen := newTestQueryGen()
 

@@ -48,7 +48,7 @@ func (suite *OrderTestSuite) TestOrderByExpr() {
 // TestOrderByNullsFirst tests OrderBuilder.NullsFirst method.
 func (suite *OrderTestSuite) TestOrderByNullsFirst() {
 	if suite.ds.Kind == config.MySQL {
-		suite.T().Skip("MySQL does not support NULLS FIRST")
+		suite.T().Skipf("NULLS FIRST not supported on %s", suite.ds.Kind)
 	}
 
 	suite.T().Logf("Testing OrderBuilder.NullsFirst for %s", suite.ds.Kind)
@@ -79,7 +79,7 @@ func (suite *OrderTestSuite) TestOrderByNullsFirst() {
 // TestOrderByNullsLast tests OrderBuilder.NullsLast method.
 func (suite *OrderTestSuite) TestOrderByNullsLast() {
 	if suite.ds.Kind == config.MySQL {
-		suite.T().Skip("MySQL does not support NULLS LAST")
+		suite.T().Skipf("NULLS LAST not supported on %s", suite.ds.Kind)
 	}
 
 	suite.T().Logf("Testing OrderBuilder.NullsLast for %s", suite.ds.Kind)

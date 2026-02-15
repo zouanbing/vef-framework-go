@@ -124,6 +124,7 @@ func TestPKFieldValidateModel(t *testing.T) {
 	})
 }
 
+// TestPKFieldSetStringType verifies PKField.Set for string-typed primary keys.
 func TestPKFieldSetStringType(t *testing.T) {
 	db := newTestBunDB(t)
 	pkField := newPKFieldForModel(t, db, (*stringPKModel)(nil))
@@ -150,6 +151,7 @@ func TestPKFieldSetStringType(t *testing.T) {
 	})
 }
 
+// TestPKFieldSetIntTypes verifies PKField.Set for integer-typed primary keys.
 func TestPKFieldSetIntTypes(t *testing.T) {
 	db := newTestBunDB(t)
 
@@ -189,6 +191,7 @@ func TestPKFieldSetIntTypes(t *testing.T) {
 	})
 }
 
+// TestPKFieldSetUnsupportedType verifies PKField.Set rejects unsupported PK types.
 func TestPKFieldSetUnsupportedType(t *testing.T) {
 	db := newTestBunDB(t)
 	pkField := newPKFieldForModel(t, db, (*floatPKModel)(nil))
@@ -198,6 +201,7 @@ func TestPKFieldSetUnsupportedType(t *testing.T) {
 	assert.ErrorIs(t, err, ErrPrimaryKeyUnsupportedType, "Should reject unsupported PK type")
 }
 
+// TestPKFieldValueErrors verifies PKField.Value returns errors for invalid models.
 func TestPKFieldValueErrors(t *testing.T) {
 	db := newTestBunDB(t)
 	pkField := newPKFieldForModel(t, db, (*stringPKModel)(nil))
@@ -215,6 +219,7 @@ func TestPKFieldValueErrors(t *testing.T) {
 	})
 }
 
+// TestNewPKField verifies NewPKField populates Field, Column, and Name correctly.
 func TestNewPKField(t *testing.T) {
 	db := newTestBunDB(t)
 	pkField := newPKFieldForModel(t, db, (*stringPKModel)(nil))

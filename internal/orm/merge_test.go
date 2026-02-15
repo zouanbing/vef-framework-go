@@ -1769,7 +1769,7 @@ func (suite *MergeTestSuite) TestMergeDB() {
 // TestMergeUsingMethods tests Using and UsingExpr source specification methods.
 func (suite *MergeTestSuite) TestMergeUsingMethods() {
 	if suite.ds.Kind != config.Postgres {
-		suite.T().Skip("MERGE only tested on Postgres")
+		suite.T().Skipf("MERGE not supported on %s", suite.ds.Kind)
 	}
 
 	suite.T().Logf("Testing Merge Using methods for %s", suite.ds.Kind)

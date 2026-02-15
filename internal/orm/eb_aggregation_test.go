@@ -1166,7 +1166,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestStringAggOrderByExpr() {
 	suite.T().Logf("Testing StringAggOrderByExpr for %s", suite.ds.Kind)
 
 	if suite.ds.Kind != config.Postgres {
-		suite.T().Skip("StringAgg OrderByExpr only tested on Postgres")
+		suite.T().Skipf("StringAgg OrderByExpr not supported on %s", suite.ds.Kind)
 	}
 
 	type Result struct {
@@ -1194,7 +1194,7 @@ func (suite *EBAggregationFunctionsTestSuite) TestJSONObjectAggKeyExpr() {
 	suite.T().Logf("Testing JSONObjectAggKeyExpr for %s", suite.ds.Kind)
 
 	if suite.ds.Kind != config.Postgres {
-		suite.T().Skip("JSON_OBJECT_AGG only supported on Postgres")
+		suite.T().Skipf("JSON_OBJECT_AGG not supported on %s", suite.ds.Kind)
 	}
 
 	type Result struct {

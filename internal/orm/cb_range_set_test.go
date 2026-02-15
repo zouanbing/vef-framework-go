@@ -209,8 +209,8 @@ func (suite *CBRangeSetOperationsTestSuite) TestIn() {
 		)
 
 		suite.Len(users, 2, "Should find two users")
-		suite.Equal(int16(25), users[0].Age)
-		suite.Equal(int16(35), users[1].Age)
+		suite.Equal(int16(25), users[0].Age, "First user age should be 25")
+		suite.Equal(int16(35), users[1].Age, "Second user age should be 35")
 	})
 
 	suite.Run("OrIn", func() {

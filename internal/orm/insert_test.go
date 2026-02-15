@@ -1048,7 +1048,7 @@ func (suite *InsertTestSuite) getCategoryID() string {
 // TestOnConflictConstraint tests OnConflict with Constraint.
 func (suite *InsertTestSuite) TestOnConflictConstraint() {
 	if suite.ds.Kind == config.MySQL {
-		suite.T().Skip("MySQL does not support ON CONFLICT CONSTRAINT")
+		suite.T().Skipf("ON CONFLICT CONSTRAINT not supported on %s", suite.ds.Kind)
 	}
 
 	suite.T().Logf("Testing OnConflict Constraint for %s", suite.ds.Kind)
@@ -1122,7 +1122,7 @@ func (suite *InsertTestSuite) TestOnConflictSetExpr() {
 // TestOnConflictWithWhere tests OnConflict with Where on target and update.
 func (suite *InsertTestSuite) TestOnConflictWithWhere() {
 	if suite.ds.Kind == config.MySQL {
-		suite.T().Skip("MySQL does not support ON CONFLICT WHERE")
+		suite.T().Skipf("ON CONFLICT WHERE not supported on %s", suite.ds.Kind)
 	}
 
 	suite.T().Logf("Testing OnConflict Where for %s", suite.ds.Kind)
@@ -1289,7 +1289,7 @@ func (suite *InsertTestSuite) TestSelectionMethods() {
 // TestConflictAdvanced tests OnConflict with Constraint, Where, and SetExpr.
 func (suite *InsertTestSuite) TestConflictAdvanced() {
 	if suite.ds.Kind == config.MySQL {
-		suite.T().Skip("MySQL does not support ON CONFLICT CONSTRAINT/WHERE")
+		suite.T().Skipf("ON CONFLICT CONSTRAINT/WHERE not supported on %s", suite.ds.Kind)
 	}
 
 	suite.T().Logf("Testing OnConflict advanced for %s", suite.ds.Kind)

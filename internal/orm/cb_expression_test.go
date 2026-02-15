@@ -34,7 +34,7 @@ func (suite *CBExpressionOperationsTestSuite) TestEqualsExpr() {
 		)
 
 		suite.Len(users, 1, "Should find one user")
-		suite.Equal(int16(30), users[0].Age)
+		suite.Equal(int16(30), users[0].Age, "User age should be 30")
 	})
 
 	suite.Run("OrEqualsExpr", func() {

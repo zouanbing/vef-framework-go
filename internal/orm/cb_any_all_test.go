@@ -23,7 +23,7 @@ type CBAnyAllTestSuite struct {
 // TestEqualsAny tests EqualsAny and OrEqualsAny conditions.
 func (suite *CBAnyAllTestSuite) TestEqualsAny() {
 	if suite.ds.Kind == config.SQLite {
-		suite.T().Skip("ANY/ALL not supported on SQLite")
+		suite.T().Skipf("ANY/ALL not supported on %s", suite.ds.Kind)
 	}
 
 	suite.T().Logf("Testing EqualsAny condition for %s", suite.ds.Kind)
@@ -73,7 +73,7 @@ func (suite *CBAnyAllTestSuite) TestEqualsAny() {
 // TestNotEqualsAny tests NotEqualsAny and OrNotEqualsAny conditions.
 func (suite *CBAnyAllTestSuite) TestNotEqualsAny() {
 	if suite.ds.Kind == config.SQLite {
-		suite.T().Skip("ANY/ALL not supported on SQLite")
+		suite.T().Skipf("ANY/ALL not supported on %s", suite.ds.Kind)
 	}
 
 	suite.T().Logf("Testing NotEqualsAny condition for %s", suite.ds.Kind)
@@ -119,7 +119,7 @@ func (suite *CBAnyAllTestSuite) TestNotEqualsAny() {
 // TestGreaterThanAnyAll tests GreaterThanAny, GreaterThanAll and Or variants.
 func (suite *CBAnyAllTestSuite) TestGreaterThanAnyAll() {
 	if suite.ds.Kind == config.SQLite {
-		suite.T().Skip("ANY/ALL not supported on SQLite")
+		suite.T().Skipf("ANY/ALL not supported on %s", suite.ds.Kind)
 	}
 
 	suite.T().Logf("Testing GreaterThanAny/All for %s", suite.ds.Kind)
@@ -206,7 +206,7 @@ func (suite *CBAnyAllTestSuite) TestGreaterThanAnyAll() {
 // TestGreaterThanOrEqualAnyAll tests GTE Any/All and Or variants.
 func (suite *CBAnyAllTestSuite) TestGreaterThanOrEqualAnyAll() {
 	if suite.ds.Kind == config.SQLite {
-		suite.T().Skip("ANY/ALL not supported on SQLite")
+		suite.T().Skipf("ANY/ALL not supported on %s", suite.ds.Kind)
 	}
 
 	suite.T().Logf("Testing GreaterThanOrEqualAny/All for %s", suite.ds.Kind)
@@ -289,7 +289,7 @@ func (suite *CBAnyAllTestSuite) TestGreaterThanOrEqualAnyAll() {
 // TestLessThanAnyAll tests LT Any/All and Or variants.
 func (suite *CBAnyAllTestSuite) TestLessThanAnyAll() {
 	if suite.ds.Kind == config.SQLite {
-		suite.T().Skip("ANY/ALL not supported on SQLite")
+		suite.T().Skipf("ANY/ALL not supported on %s", suite.ds.Kind)
 	}
 
 	suite.T().Logf("Testing LessThanAny/All for %s", suite.ds.Kind)
@@ -376,7 +376,7 @@ func (suite *CBAnyAllTestSuite) TestLessThanAnyAll() {
 // TestLessThanOrEqualAnyAll tests LTE Any/All and Or variants.
 func (suite *CBAnyAllTestSuite) TestLessThanOrEqualAnyAll() {
 	if suite.ds.Kind == config.SQLite {
-		suite.T().Skip("ANY/ALL not supported on SQLite")
+		suite.T().Skipf("ANY/ALL not supported on %s", suite.ds.Kind)
 	}
 
 	suite.T().Logf("Testing LessThanOrEqualAny/All for %s", suite.ds.Kind)

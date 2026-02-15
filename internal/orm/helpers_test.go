@@ -22,7 +22,7 @@ type HelpersTestSuite struct {
 // TestApplySort tests ApplySort helper function.
 func (suite *HelpersTestSuite) TestApplySort() {
 	if suite.ds.Kind == config.MySQL {
-		suite.T().Skip("MySQL does not support NULLS FIRST/LAST")
+		suite.T().Skipf("NULLS FIRST/LAST not supported on %s", suite.ds.Kind)
 	}
 
 	suite.T().Logf("Testing ApplySort for %s", suite.ds.Kind)

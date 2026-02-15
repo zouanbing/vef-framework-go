@@ -309,7 +309,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestEqualsAll() {
 	suite.T().Logf("Testing EqualsAll condition for %s", suite.ds.Kind)
 
 	if suite.ds.Kind == config.SQLite {
-		suite.T().Skip("ALL operator not supported on SQLite")
+		suite.T().Skipf("ALL operator not supported on %s", suite.ds.Kind)
 	}
 
 	suite.Run("BasicEqualsAll", func() {
@@ -327,7 +327,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestEqualsAll() {
 		)
 
 		suite.Len(users, 1, "Should find one user with age 30")
-		suite.Equal(int16(30), users[0].Age)
+		suite.Equal(int16(30), users[0].Age, "User age should be 30")
 	})
 
 	suite.Run("OrEqualsAll", func() {
@@ -358,7 +358,7 @@ func (suite *CBSubqueryOperationsTestSuite) TestNotEqualsAll() {
 	suite.T().Logf("Testing NotEqualsAll condition for %s", suite.ds.Kind)
 
 	if suite.ds.Kind == config.SQLite {
-		suite.T().Skip("ALL operator not supported on SQLite")
+		suite.T().Skipf("ALL operator not supported on %s", suite.ds.Kind)
 	}
 
 	suite.Run("BasicNotEqualsAll", func() {

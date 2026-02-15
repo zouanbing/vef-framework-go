@@ -65,8 +65,8 @@ func (suite *CBPrimaryKeyConditionsTestSuite) TestPKEquals() {
 		)
 
 		suite.Len(users, 2, "Should find two users")
-		suite.Equal(allUsers[0].ID, users[0].ID)
-		suite.Equal(allUsers[1].ID, users[1].ID)
+		suite.Equal(allUsers[0].ID, users[0].ID, "First user ID should match")
+		suite.Equal(allUsers[1].ID, users[1].ID, "Second user ID should match")
 	})
 }
 
@@ -147,8 +147,8 @@ func (suite *CBPrimaryKeyConditionsTestSuite) TestPKIn() {
 		)
 
 		suite.Len(users, 2, "Should find two users")
-		suite.Equal(allUsers[0].ID, users[0].ID)
-		suite.Equal(allUsers[1].ID, users[1].ID)
+		suite.Equal(allUsers[0].ID, users[0].ID, "First user ID should match")
+		suite.Equal(allUsers[1].ID, users[1].ID, "Second user ID should match")
 	})
 
 	suite.Run("OrPKIn", func() {
