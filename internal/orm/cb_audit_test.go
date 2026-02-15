@@ -18,12 +18,11 @@ func init() {
 }
 
 // CBAuditConditionsTestSuite tests audit field condition methods.
-// Covers: CreatedBy, UpdatedBy, CreatedAt, UpdatedAt series (~158 methods total).
 type CBAuditConditionsTestSuite struct {
 	*ConditionBuilderTestSuite
 }
 
-// TestCreatedByEquals tests the CreatedByEquals and OrCreatedByEquals conditions.
+// TestCreatedByEquals tests CreatedByEquals and OrCreatedByEquals conditions.
 func (suite *CBAuditConditionsTestSuite) TestCreatedByEquals() {
 	suite.T().Logf("Testing CreatedByEquals condition for %s", suite.ds.Kind)
 
@@ -40,8 +39,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByEquals() {
 		for _, user := range users {
 			suite.Equal("system", user.CreatedBy, "CreatedBy should be system")
 		}
-
-		suite.T().Logf("Found %d users created by system", len(users))
 	})
 
 	suite.Run("OrCreatedByEquals", func() {
@@ -54,12 +51,10 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByEquals() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestCreatedByNotEquals tests the CreatedByNotEquals and OrCreatedByNotEquals conditions.
+// TestCreatedByNotEquals tests CreatedByNotEquals and OrCreatedByNotEquals conditions.
 func (suite *CBAuditConditionsTestSuite) TestCreatedByNotEquals() {
 	suite.T().Logf("Testing CreatedByNotEquals condition for %s", suite.ds.Kind)
 
@@ -72,8 +67,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByNotEquals() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrCreatedByNotEquals", func() {
@@ -86,12 +79,10 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByNotEquals() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestCreatedByIn tests the CreatedByIn and OrCreatedByIn conditions.
+// TestCreatedByIn tests CreatedByIn and OrCreatedByIn conditions.
 func (suite *CBAuditConditionsTestSuite) TestCreatedByIn() {
 	suite.T().Logf("Testing CreatedByIn condition for %s", suite.ds.Kind)
 
@@ -104,8 +95,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByIn() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrCreatedByIn", func() {
@@ -118,12 +107,10 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByIn() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestUpdatedByEquals tests the UpdatedByEquals and OrUpdatedByEquals conditions.
+// TestUpdatedByEquals tests UpdatedByEquals and OrUpdatedByEquals conditions.
 func (suite *CBAuditConditionsTestSuite) TestUpdatedByEquals() {
 	suite.T().Logf("Testing UpdatedByEquals condition for %s", suite.ds.Kind)
 
@@ -140,8 +127,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByEquals() {
 		for _, user := range users {
 			suite.Equal("system", user.UpdatedBy, "UpdatedBy should be system")
 		}
-
-		suite.T().Logf("Found %d users updated by system", len(users))
 	})
 
 	suite.Run("OrUpdatedByEquals", func() {
@@ -154,12 +139,10 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByEquals() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestCreatedAtBetween tests the CreatedAtBetween and OrCreatedAtBetween conditions.
+// TestCreatedAtBetween tests CreatedAtBetween and OrCreatedAtBetween conditions.
 func (suite *CBAuditConditionsTestSuite) TestCreatedAtBetween() {
 	suite.T().Logf("Testing CreatedAtBetween condition for %s", suite.ds.Kind)
 
@@ -177,8 +160,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedAtBetween() {
 		)
 
 		suite.True(len(users) > 0, "Should find users created around fixture date")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrCreatedAtBetween", func() {
@@ -196,12 +177,10 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedAtBetween() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestUpdatedAtGreaterThan tests the UpdatedAtGreaterThan and OrUpdatedAtGreaterThan conditions.
+// TestUpdatedAtGreaterThan tests UpdatedAtGreaterThan and OrUpdatedAtGreaterThan conditions.
 func (suite *CBAuditConditionsTestSuite) TestUpdatedAtGreaterThan() {
 	suite.T().Logf("Testing UpdatedAtGreaterThan condition for %s", suite.ds.Kind)
 
@@ -217,8 +196,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedAtGreaterThan() {
 		)
 
 		suite.True(len(users) > 0, "Should find users updated after the reference date")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrUpdatedAtGreaterThan", func() {
@@ -231,8 +208,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedAtGreaterThan() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
@@ -256,8 +231,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedBySubQueryAndAny() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrCreatedByEqualsSubQuery", func() {
@@ -277,8 +250,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedBySubQueryAndAny() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	if suite.ds.Kind == config.Postgres {
@@ -294,8 +265,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedBySubQueryAndAny() {
 			)
 
 			suite.True(len(users) >= 0, "Should execute successfully")
-
-			suite.T().Logf("Found %d users", len(users))
 		})
 
 		suite.Run("OrCreatedByEqualsAny", func() {
@@ -311,8 +280,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedBySubQueryAndAny() {
 			)
 
 			suite.True(len(users) > 0, "Should find users")
-
-			suite.T().Logf("Found %d users", len(users))
 		})
 
 		suite.Run("CreatedByEqualsAll", func() {
@@ -331,8 +298,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedBySubQueryAndAny() {
 			)
 
 			suite.True(len(users) >= 0, "Should execute successfully")
-
-			suite.T().Logf("Found %d users", len(users))
 		})
 
 		suite.Run("OrCreatedByEqualsAll", func() {
@@ -352,8 +317,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedBySubQueryAndAny() {
 			)
 
 			suite.True(len(users) > 0, "Should find users")
-
-			suite.T().Logf("Found %d users", len(users))
 		})
 	}
 }
@@ -371,8 +334,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByCurrentAndNotEqualsExtende
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrCreatedByEqualsCurrent", func() {
@@ -385,8 +346,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByCurrentAndNotEqualsExtende
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("CreatedByNotEqualsCurrent", func() {
@@ -398,8 +357,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByCurrentAndNotEqualsExtende
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrCreatedByNotEqualsCurrent", func() {
@@ -412,8 +369,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByCurrentAndNotEqualsExtende
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("CreatedByNotEqualsSubQuery", func() {
@@ -431,8 +386,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByCurrentAndNotEqualsExtende
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrCreatedByNotEqualsSubQuery", func() {
@@ -451,8 +404,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByCurrentAndNotEqualsExtende
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	if suite.ds.Kind == config.Postgres {
@@ -468,8 +419,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByCurrentAndNotEqualsExtende
 			)
 
 			suite.True(len(users) >= 0, "Should execute successfully")
-
-			suite.T().Logf("Found %d users", len(users))
 		})
 
 		suite.Run("OrCreatedByNotEqualsAny", func() {
@@ -485,8 +434,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByCurrentAndNotEqualsExtende
 			)
 
 			suite.True(len(users) > 0, "Should find users")
-
-			suite.T().Logf("Found %d users", len(users))
 		})
 
 		suite.Run("CreatedByNotEqualsAll", func() {
@@ -504,8 +451,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByCurrentAndNotEqualsExtende
 			)
 
 			suite.True(len(users) >= 0, "Should execute successfully")
-
-			suite.T().Logf("Found %d users", len(users))
 		})
 
 		suite.Run("OrCreatedByNotEqualsAll", func() {
@@ -524,8 +469,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByCurrentAndNotEqualsExtende
 			)
 
 			suite.True(len(users) > 0, "Should find users")
-
-			suite.T().Logf("Found %d users", len(users))
 		})
 	}
 }
@@ -546,8 +489,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByInSubQueryAndNotIn() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrCreatedByInSubQuery", func() {
@@ -563,8 +504,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByInSubQueryAndNotIn() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("CreatedByNotIn", func() {
@@ -576,8 +515,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByInSubQueryAndNotIn() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrCreatedByNotIn", func() {
@@ -590,8 +527,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByInSubQueryAndNotIn() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("CreatedByNotInSubQuery", func() {
@@ -608,8 +543,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByInSubQueryAndNotIn() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrCreatedByNotInSubQuery", func() {
@@ -627,8 +560,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedByInSubQueryAndNotIn() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
@@ -645,8 +576,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrUpdatedByNotEquals", func() {
@@ -659,8 +588,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("UpdatedByIn", func() {
@@ -672,8 +599,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrUpdatedByIn", func() {
@@ -686,8 +611,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("UpdatedByNotIn", func() {
@@ -699,8 +622,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrUpdatedByNotIn", func() {
@@ -713,8 +634,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("UpdatedByEqualsCurrent", func() {
@@ -726,8 +645,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrUpdatedByEqualsCurrent", func() {
@@ -740,8 +657,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("UpdatedByNotEqualsCurrent", func() {
@@ -753,8 +668,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrUpdatedByNotEqualsCurrent", func() {
@@ -767,8 +680,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("UpdatedByEqualsSubQuery", func() {
@@ -787,8 +698,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrUpdatedByEqualsSubQuery", func() {
@@ -808,8 +717,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	if suite.ds.Kind == config.Postgres {
@@ -825,8 +732,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 			)
 
 			suite.True(len(users) >= 0, "Should execute successfully")
-
-			suite.T().Logf("Found %d users", len(users))
 		})
 
 		suite.Run("OrUpdatedByEqualsAny", func() {
@@ -842,8 +747,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 			)
 
 			suite.True(len(users) > 0, "Should find users")
-
-			suite.T().Logf("Found %d users", len(users))
 		})
 
 		suite.Run("UpdatedByEqualsAll", func() {
@@ -862,8 +765,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 			)
 
 			suite.True(len(users) >= 0, "Should execute successfully")
-
-			suite.T().Logf("Found %d users", len(users))
 		})
 
 		suite.Run("OrUpdatedByEqualsAll", func() {
@@ -883,8 +784,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 			)
 
 			suite.True(len(users) > 0, "Should find users")
-
-			suite.T().Logf("Found %d users", len(users))
 		})
 
 		suite.Run("UpdatedByNotEqualsAny", func() {
@@ -899,8 +798,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 			)
 
 			suite.True(len(users) >= 0, "Should execute successfully")
-
-			suite.T().Logf("Found %d users", len(users))
 		})
 
 		suite.Run("OrUpdatedByNotEqualsAny", func() {
@@ -916,8 +813,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 			)
 
 			suite.True(len(users) > 0, "Should find users")
-
-			suite.T().Logf("Found %d users", len(users))
 		})
 
 		suite.Run("UpdatedByNotEqualsAll", func() {
@@ -935,8 +830,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 			)
 
 			suite.True(len(users) >= 0, "Should execute successfully")
-
-			suite.T().Logf("Found %d users", len(users))
 		})
 
 		suite.Run("OrUpdatedByNotEqualsAll", func() {
@@ -955,8 +848,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 			)
 
 			suite.True(len(users) > 0, "Should find users")
-
-			suite.T().Logf("Found %d users", len(users))
 		})
 	}
 
@@ -975,8 +866,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrUpdatedByNotEqualsSubQuery", func() {
@@ -995,8 +884,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("UpdatedByInSubQuery", func() {
@@ -1011,8 +898,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrUpdatedByInSubQuery", func() {
@@ -1028,8 +913,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("UpdatedByNotInSubQuery", func() {
@@ -1046,8 +929,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrUpdatedByNotInSubQuery", func() {
@@ -1065,8 +946,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedByExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
@@ -1087,8 +966,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedAtExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users created after 2025-01-01")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrCreatedAtGreaterThan", func() {
@@ -1101,8 +978,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedAtExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("CreatedAtGreaterThanOrEqual", func() {
@@ -1114,8 +989,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedAtExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrCreatedAtGreaterThanOrEqual", func() {
@@ -1128,8 +1001,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedAtExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("CreatedAtLessThan", func() {
@@ -1141,8 +1012,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedAtExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users created before 2025-12-31")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrCreatedAtLessThan", func() {
@@ -1155,8 +1024,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedAtExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("CreatedAtLessThanOrEqual", func() {
@@ -1168,8 +1035,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedAtExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrCreatedAtLessThanOrEqual", func() {
@@ -1182,8 +1047,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedAtExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("CreatedAtNotBetween", func() {
@@ -1198,8 +1061,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedAtExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users not created in 2024")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrCreatedAtNotBetween", func() {
@@ -1212,8 +1073,6 @@ func (suite *CBAuditConditionsTestSuite) TestCreatedAtExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
@@ -1234,8 +1093,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedAtExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrUpdatedAtGreaterThanOrEqual", func() {
@@ -1248,8 +1105,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedAtExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("UpdatedAtLessThan", func() {
@@ -1261,8 +1116,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedAtExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrUpdatedAtLessThan", func() {
@@ -1275,8 +1128,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedAtExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("UpdatedAtLessThanOrEqual", func() {
@@ -1288,8 +1139,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedAtExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrUpdatedAtLessThanOrEqual", func() {
@@ -1302,8 +1151,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedAtExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("UpdatedAtBetween", func() {
@@ -1315,8 +1162,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedAtExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users updated in 2025")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrUpdatedAtBetween", func() {
@@ -1329,8 +1174,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedAtExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("UpdatedAtNotBetween", func() {
@@ -1345,8 +1188,6 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedAtExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users not updated in 2024")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrUpdatedAtNotBetween", func() {
@@ -1359,7 +1200,5 @@ func (suite *CBAuditConditionsTestSuite) TestUpdatedAtExtended() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }

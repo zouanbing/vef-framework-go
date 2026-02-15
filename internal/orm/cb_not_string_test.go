@@ -14,8 +14,7 @@ func init() {
 	})
 }
 
-// CBNotStringTestSuite tests negated string operation condition methods.
-// Covers: NotContains, NotStartsWith, NotEndsWith and their Any/IgnoreCase/AnyIgnoreCase variants.
+// CBNotStringTestSuite tests negated string conditions and their Any/IgnoreCase variants.
 type CBNotStringTestSuite struct {
 	*ConditionBuilderTestSuite
 }
@@ -36,10 +35,8 @@ func (suite *CBNotStringTestSuite) TestNotContains() {
 		suite.Len(users, 19, "Should find all users except Alice")
 
 		for _, user := range users {
-			suite.NotContains(user.Name, "Alice", "Name should not contain Alice")
+			suite.NotContains(user.Name, "Alice", "Should not contain Alice")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrNotContains", func() {
@@ -52,9 +49,7 @@ func (suite *CBNotStringTestSuite) TestNotContains() {
 				OrderBy("name"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }
 
@@ -71,9 +66,7 @@ func (suite *CBNotStringTestSuite) TestNotContainsAny() {
 				OrderBy("name"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users not containing Alice or Bob")
 	})
 
 	suite.Run("OrNotContainsAny", func() {
@@ -86,9 +79,7 @@ func (suite *CBNotStringTestSuite) TestNotContainsAny() {
 				OrderBy("name"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }
 
@@ -105,9 +96,7 @@ func (suite *CBNotStringTestSuite) TestNotContainsIgnoreCase() {
 				OrderBy("name"),
 		)
 
-		suite.Len(users, 19, "Should find all users except Alice (case-insensitive)")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.Len(users, 19, "Should find all users except Alice case-insensitively")
 	})
 
 	suite.Run("OrNotContainsIgnoreCase", func() {
@@ -120,13 +109,11 @@ func (suite *CBNotStringTestSuite) TestNotContainsIgnoreCase() {
 				OrderBy("name"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }
 
-// TestNotContainsAnyIgnoreCase tests NotContainsAnyIgnoreCase and OrNotContainsAnyIgnoreCase.
+// TestNotContainsAnyIgnoreCase tests NotContainsAnyIgnoreCase and OrNotContainsAnyIgnoreCase conditions.
 func (suite *CBNotStringTestSuite) TestNotContainsAnyIgnoreCase() {
 	suite.T().Logf("Testing NotContainsAnyIgnoreCase condition for %s", suite.ds.Kind)
 
@@ -139,9 +126,7 @@ func (suite *CBNotStringTestSuite) TestNotContainsAnyIgnoreCase() {
 				OrderBy("name"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users not matching any value")
 	})
 
 	suite.Run("OrNotContainsAnyIgnoreCase", func() {
@@ -154,13 +139,11 @@ func (suite *CBNotStringTestSuite) TestNotContainsAnyIgnoreCase() {
 				OrderBy("name"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }
 
-// TestContainsAnyIgnoreCase tests ContainsAnyIgnoreCase and OrContainsAnyIgnoreCase.
+// TestContainsAnyIgnoreCase tests ContainsAnyIgnoreCase and OrContainsAnyIgnoreCase conditions.
 func (suite *CBNotStringTestSuite) TestContainsAnyIgnoreCase() {
 	suite.T().Logf("Testing ContainsAnyIgnoreCase condition for %s", suite.ds.Kind)
 
@@ -173,9 +156,7 @@ func (suite *CBNotStringTestSuite) TestContainsAnyIgnoreCase() {
 				OrderBy("name"),
 		)
 
-		suite.Len(users, 2, "Should find Alice and Bob (case-insensitive)")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.Len(users, 2, "Should find Alice and Bob case-insensitively")
 	})
 
 	suite.Run("OrContainsAnyIgnoreCase", func() {
@@ -188,9 +169,7 @@ func (suite *CBNotStringTestSuite) TestContainsAnyIgnoreCase() {
 				OrderBy("name"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }
 
@@ -208,8 +187,6 @@ func (suite *CBNotStringTestSuite) TestNotStartsWith() {
 		)
 
 		suite.Len(users, 19, "Should find all users except Alice")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrNotStartsWith", func() {
@@ -222,9 +199,7 @@ func (suite *CBNotStringTestSuite) TestNotStartsWith() {
 				OrderBy("name"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }
 
@@ -241,9 +216,7 @@ func (suite *CBNotStringTestSuite) TestNotStartsWithAny() {
 				OrderBy("name"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users not starting with Alice or Bob")
 	})
 
 	suite.Run("OrNotStartsWithAny", func() {
@@ -256,17 +229,15 @@ func (suite *CBNotStringTestSuite) TestNotStartsWithAny() {
 				OrderBy("name"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }
 
-// TestNotStartsWithIgnoreCase tests NotStartsWithIgnoreCase and OrNotStartsWithIgnoreCase.
+// TestNotStartsWithIgnoreCase tests NotStartsWithIgnoreCase and OrNotStartsWithIgnoreCase conditions.
 func (suite *CBNotStringTestSuite) TestNotStartsWithIgnoreCase() {
 	suite.T().Logf("Testing NotStartsWithIgnoreCase condition for %s", suite.ds.Kind)
 
-	suite.Run("BasicNotStartsWithIgnoreCase", func() {
+	suite.Run("BasicNotStartsWithIC", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
@@ -276,11 +247,9 @@ func (suite *CBNotStringTestSuite) TestNotStartsWithIgnoreCase() {
 		)
 
 		suite.Len(users, 19, "Should find all users except Alice")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
-	suite.Run("OrNotStartsWithIgnoreCase", func() {
+	suite.Run("OrNotStartsWithIC", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
@@ -290,17 +259,15 @@ func (suite *CBNotStringTestSuite) TestNotStartsWithIgnoreCase() {
 				OrderBy("name"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }
 
-// TestNotStartsWithAnyIgnoreCase tests the full chain.
+// TestNotStartsWithAnyIgnoreCase tests NotStartsWithAnyIgnoreCase and OrNotStartsWithAnyIgnoreCase conditions.
 func (suite *CBNotStringTestSuite) TestNotStartsWithAnyIgnoreCase() {
 	suite.T().Logf("Testing NotStartsWithAnyIgnoreCase for %s", suite.ds.Kind)
 
-	suite.Run("BasicNotStartsWithAnyIgnoreCase", func() {
+	suite.Run("BasicNotStartsWithAnyIC", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
@@ -309,12 +276,10 @@ func (suite *CBNotStringTestSuite) TestNotStartsWithAnyIgnoreCase() {
 				OrderBy("name"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users not matching any prefix")
 	})
 
-	suite.Run("OrNotStartsWithAnyIgnoreCase", func() {
+	suite.Run("OrNotStartsWithAnyIC", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
@@ -324,17 +289,15 @@ func (suite *CBNotStringTestSuite) TestNotStartsWithAnyIgnoreCase() {
 				OrderBy("name"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }
 
-// TestStartsWithAnyIgnoreCase tests StartsWithAnyIgnoreCase and OrStartsWithAnyIgnoreCase.
+// TestStartsWithAnyIgnoreCase tests StartsWithAnyIgnoreCase and OrStartsWithAnyIgnoreCase conditions.
 func (suite *CBNotStringTestSuite) TestStartsWithAnyIgnoreCase() {
 	suite.T().Logf("Testing StartsWithAnyIgnoreCase for %s", suite.ds.Kind)
 
-	suite.Run("BasicStartsWithAnyIgnoreCase", func() {
+	suite.Run("BasicStartsWithAnyIC", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
@@ -344,11 +307,9 @@ func (suite *CBNotStringTestSuite) TestStartsWithAnyIgnoreCase() {
 		)
 
 		suite.Len(users, 2, "Should find Alice and Bob")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
-	suite.Run("OrStartsWithAnyIgnoreCase", func() {
+	suite.Run("OrStartsWithAnyIC", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
@@ -358,9 +319,7 @@ func (suite *CBNotStringTestSuite) TestStartsWithAnyIgnoreCase() {
 				OrderBy("name"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }
 
@@ -378,8 +337,6 @@ func (suite *CBNotStringTestSuite) TestNotEndsWith() {
 		)
 
 		suite.Len(users, 19, "Should find all users except Johnson")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrNotEndsWith", func() {
@@ -392,9 +349,7 @@ func (suite *CBNotStringTestSuite) TestNotEndsWith() {
 				OrderBy("name"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }
 
@@ -411,9 +366,7 @@ func (suite *CBNotStringTestSuite) TestNotEndsWithAny() {
 				OrderBy("name"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users not ending with Johnson or Smith")
 	})
 
 	suite.Run("OrNotEndsWithAny", func() {
@@ -426,17 +379,15 @@ func (suite *CBNotStringTestSuite) TestNotEndsWithAny() {
 				OrderBy("name"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }
 
-// TestNotEndsWithIgnoreCase tests NotEndsWithIgnoreCase and OrNotEndsWithIgnoreCase.
+// TestNotEndsWithIgnoreCase tests NotEndsWithIgnoreCase and OrNotEndsWithIgnoreCase conditions.
 func (suite *CBNotStringTestSuite) TestNotEndsWithIgnoreCase() {
 	suite.T().Logf("Testing NotEndsWithIgnoreCase for %s", suite.ds.Kind)
 
-	suite.Run("BasicNotEndsWithIgnoreCase", func() {
+	suite.Run("BasicNotEndsWithIC", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
@@ -446,11 +397,9 @@ func (suite *CBNotStringTestSuite) TestNotEndsWithIgnoreCase() {
 		)
 
 		suite.Len(users, 19, "Should find all users except Johnson")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
-	suite.Run("OrNotEndsWithIgnoreCase", func() {
+	suite.Run("OrNotEndsWithIC", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
@@ -460,17 +409,15 @@ func (suite *CBNotStringTestSuite) TestNotEndsWithIgnoreCase() {
 				OrderBy("name"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }
 
-// TestNotEndsWithAnyIgnoreCase tests full chain.
+// TestNotEndsWithAnyIgnoreCase tests NotEndsWithAnyIgnoreCase and OrNotEndsWithAnyIgnoreCase conditions.
 func (suite *CBNotStringTestSuite) TestNotEndsWithAnyIgnoreCase() {
 	suite.T().Logf("Testing NotEndsWithAnyIgnoreCase for %s", suite.ds.Kind)
 
-	suite.Run("BasicNotEndsWithAnyIgnoreCase", func() {
+	suite.Run("BasicNotEndsWithAnyIC", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
@@ -479,12 +426,10 @@ func (suite *CBNotStringTestSuite) TestNotEndsWithAnyIgnoreCase() {
 				OrderBy("name"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users not matching any suffix")
 	})
 
-	suite.Run("OrNotEndsWithAnyIgnoreCase", func() {
+	suite.Run("OrNotEndsWithAnyIC", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
@@ -494,17 +439,15 @@ func (suite *CBNotStringTestSuite) TestNotEndsWithAnyIgnoreCase() {
 				OrderBy("name"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }
 
-// TestEndsWithAnyIgnoreCase tests EndsWithAnyIgnoreCase and OrEndsWithAnyIgnoreCase.
+// TestEndsWithAnyIgnoreCase tests EndsWithAnyIgnoreCase and OrEndsWithAnyIgnoreCase conditions.
 func (suite *CBNotStringTestSuite) TestEndsWithAnyIgnoreCase() {
 	suite.T().Logf("Testing EndsWithAnyIgnoreCase for %s", suite.ds.Kind)
 
-	suite.Run("BasicEndsWithAnyIgnoreCase", func() {
+	suite.Run("BasicEndsWithAnyIC", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
@@ -514,11 +457,9 @@ func (suite *CBNotStringTestSuite) TestEndsWithAnyIgnoreCase() {
 		)
 
 		suite.Len(users, 2, "Should find Johnson and Smith")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
-	suite.Run("OrEndsWithAnyIgnoreCase", func() {
+	suite.Run("OrEndsWithAnyIC", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
@@ -528,8 +469,6 @@ func (suite *CBNotStringTestSuite) TestEndsWithAnyIgnoreCase() {
 				OrderBy("name"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }

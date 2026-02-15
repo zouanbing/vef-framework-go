@@ -10,8 +10,7 @@ func init() {
 	})
 }
 
-// RawQueryTestSuite tests RawQuery methods.
-// Covers: RawQuery.Scan, RawQuery.Exec.
+// RawQueryTestSuite tests RawQuery methods across all databases.
 type RawQueryTestSuite struct {
 	*BaseTestSuite
 }
@@ -30,7 +29,7 @@ func (suite *RawQueryTestSuite) TestRawQueryScan() {
 		Scan(suite.ctx, &result)
 
 	suite.NoError(err, "RawQuery Scan should work")
-	suite.Equal(int64(20), result.Count)
+	suite.Equal(int64(20), result.Count, "Should count all fixture users")
 }
 
 // TestRawQueryExec tests RawQuery Exec method.
@@ -45,6 +44,6 @@ func (suite *RawQueryTestSuite) TestRawQueryExec() {
 	suite.NotNil(res, "Result should not be nil")
 
 	affected, err := res.RowsAffected()
-	suite.NoError(err)
-	suite.Equal(int64(0), affected)
+	suite.NoError(err, "Should get rows affected count")
+	suite.Equal(int64(0), affected, "Should affect zero rows with false condition")
 }

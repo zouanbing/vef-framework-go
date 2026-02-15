@@ -38,8 +38,8 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonObject() {
 			OrderBy("name").
 			Scan(suite.ctx, &jsonObjectResults)
 
-		suite.NoError(err, "JsonObject should work")
-		suite.True(len(jsonObjectResults) > 0, "Should have JSON object results")
+		suite.Require().NoError(err, "JsonObject should work")
+		suite.Require().NotEmpty(jsonObjectResults, "Should have JSON object results")
 
 		for _, result := range jsonObjectResults {
 			suite.NotEmpty(result.UserObject, "User object should not be empty")
@@ -71,8 +71,8 @@ func (suite *EBJSONFunctionsTestSuite) TestJSONArray() {
 			Limit(3).
 			Scan(suite.ctx, &jsonArrayResults)
 
-		suite.NoError(err, "JSONArray should work")
-		suite.True(len(jsonArrayResults) > 0, "Should have JSON array results")
+		suite.Require().NoError(err, "JSONArray should work")
+		suite.Require().NotEmpty(jsonArrayResults, "Should have JSON array results")
 
 		for _, result := range jsonArrayResults {
 			suite.NotEmpty(result.JSONArray, "JSON array should not be empty")
@@ -106,8 +106,8 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonExtract() {
 			Limit(3).
 			Scan(suite.ctx, &jsonExtractResults)
 
-		suite.NoError(err, "JsonExtract should work")
-		suite.True(len(jsonExtractResults) > 0, "Should have JSON extract results")
+		suite.Require().NoError(err, "JsonExtract should work")
+		suite.Require().NotEmpty(jsonExtractResults, "Should have JSON extract results")
 
 		for _, result := range jsonExtractResults {
 			suite.NotEmpty(result.MetaJSON, "Meta JSON should not be empty")
@@ -142,8 +142,8 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonValid() {
 			Limit(2).
 			Scan(suite.ctx, &jsonValidResults)
 
-		suite.NoError(err, "JsonValid should work")
-		suite.True(len(jsonValidResults) > 0, "Should have JSON validation results")
+		suite.Require().NoError(err, "JsonValid should work")
+		suite.Require().NotEmpty(jsonValidResults, "Should have JSON validation results")
 
 		for _, result := range jsonValidResults {
 			suite.NotEmpty(result.JSONData, "JSON data should not be empty")
@@ -178,8 +178,8 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonInsert() {
 			Limit(2).
 			Scan(suite.ctx, &jsonModifyResults)
 
-		suite.NoError(err, "JsonInsert should work")
-		suite.True(len(jsonModifyResults) > 0, "Should have JSON modify results")
+		suite.Require().NoError(err, "JsonInsert should work")
+		suite.Require().NotEmpty(jsonModifyResults, "Should have JSON modify results")
 
 		for _, result := range jsonModifyResults {
 			suite.NotEmpty(result.Original, "Original JSON should not be empty")
@@ -216,8 +216,8 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonReplace() {
 			Limit(2).
 			Scan(suite.ctx, &jsonModifyResults)
 
-		suite.NoError(err, "JsonReplace should work")
-		suite.True(len(jsonModifyResults) > 0, "Should have JSON modify results")
+		suite.Require().NoError(err, "JsonReplace should work")
+		suite.Require().NotEmpty(jsonModifyResults, "Should have JSON modify results")
 
 		for _, result := range jsonModifyResults {
 			suite.NotEmpty(result.Original, "Original JSON should not be empty")
@@ -249,8 +249,8 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonLength() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonLength should work for all databases")
-		suite.True(len(results) > 0, "Should have JsonLength results")
+		suite.Require().NoError(err, "JsonLength should work for all databases")
+		suite.Require().NotEmpty(results, "Should have JsonLength results")
 
 		for _, result := range results {
 			suite.True(result.MetaLength >= 0, "JsonLength should be non-negative")
@@ -280,8 +280,8 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonLength() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonLength should work for arrays")
-		suite.True(len(results) > 0, "Should have JsonLength array results")
+		suite.Require().NoError(err, "JsonLength should work for arrays")
+		suite.Require().NotEmpty(results, "Should have JsonLength array results")
 
 		for _, result := range results {
 			suite.Equal(int64(3), result.ArrayLength, "Array should have exactly 3 elements")
@@ -311,8 +311,8 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonType() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonType should work for %s", suite.ds.Kind)
-		suite.True(len(results) > 0, "Should have JsonType results")
+		suite.Require().NoError(err, "JsonType should work for %s", suite.ds.Kind)
+		suite.Require().NotEmpty(results, "Should have JsonType results")
 
 		for _, result := range results {
 			suite.True(result.MetaType != "", "JsonType should not be empty")
@@ -340,8 +340,8 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonType() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonType should detect different types")
-		suite.True(len(results) > 0, "Should have JsonType results for different types")
+		suite.Require().NoError(err, "JsonType should detect different types")
+		suite.Require().NotEmpty(results, "Should have JsonType results for different types")
 
 		for _, result := range results {
 			suite.NotEmpty(result.ArrayType, "Array type should not be empty")
@@ -373,8 +373,8 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonKeys() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonKeys should work for %s", suite.ds.Kind)
-		suite.True(len(results) > 0, "Should have JsonKeys results")
+		suite.Require().NoError(err, "JsonKeys should work for %s", suite.ds.Kind)
+		suite.Require().NotEmpty(results, "Should have JsonKeys results")
 
 		for _, result := range results {
 			suite.T().Logf("ID: %s, Meta: %s, Keys: %s", result.ID, result.Meta, result.MetaKeys)
@@ -403,8 +403,8 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonKeys() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonKeys with constructed object should work for %s", suite.ds.Kind)
-		suite.True(len(results) > 0, "Should have JsonKeys with path results")
+		suite.Require().NoError(err, "JsonKeys with constructed object should work for %s", suite.ds.Kind)
+		suite.Require().NotEmpty(results, "Should have JsonKeys with path results")
 
 		for _, result := range results {
 			suite.NotEmpty(result.AttrKeys, "Attribute keys should not be empty")
@@ -434,8 +434,8 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonContains() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonContains should work for %s", suite.ds.Kind)
-		suite.True(len(results) > 0, "Should have JsonContains results")
+		suite.Require().NoError(err, "JsonContains should work for %s", suite.ds.Kind)
+		suite.Require().NotEmpty(results, "Should have JsonContains results")
 
 		for _, result := range results {
 			suite.T().Logf("ID: %s, Meta: %s, Contains: %v", result.ID, result.Meta, result.ContainsTest)
@@ -464,8 +464,8 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonContainsPath() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonContainsPath should work for %s", suite.ds.Kind)
-		suite.True(len(results) > 0, "Should have JsonContainsPath results")
+		suite.Require().NoError(err, "JsonContainsPath should work for %s", suite.ds.Kind)
+		suite.Require().NotEmpty(results, "Should have JsonContainsPath results")
 
 		for _, result := range results {
 			suite.T().Logf("ID: %s, Meta: %s, PathExists: %v", result.ID, result.Meta, result.PathExists)
@@ -494,7 +494,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonUnquote() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonUnquote should work for %s", suite.ds.Kind)
+		suite.Require().NoError(err, "JsonUnquote should work for %s", suite.ds.Kind)
 
 		for _, result := range results {
 			suite.T().Logf("ID: %s, Meta: %s, Unquoted: %s", result.ID, result.Meta, result.Unquoted)
@@ -523,8 +523,8 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonSet() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonSet should work for %s", suite.ds.Kind)
-		suite.True(len(results) > 0, "Should have JsonSet results")
+		suite.Require().NoError(err, "JsonSet should work for %s", suite.ds.Kind)
+		suite.Require().NotEmpty(results, "Should have JsonSet results")
 
 		for _, result := range results {
 			suite.T().Logf("ID: %s, Original: %s, Updated: %s", result.ID, result.Meta, result.UpdatedMeta)
@@ -555,7 +555,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJSONArrayAppend() {
 		if err != nil {
 			suite.T().Logf("JSONArrayAppend test completed (may have errors if no array fields): %v", err)
 		} else {
-			suite.True(len(results) >= 0, "JSONArrayAppend should execute for %s", suite.ds.Kind)
+			suite.T().Logf("JSONArrayAppend executed successfully for %s", suite.ds.Kind)
 
 			for _, result := range results {
 				suite.T().Logf("ID: %s, Original: %s, Updated: %s", result.ID, result.Meta, result.UpdatedMeta)
@@ -592,8 +592,8 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonEdgeCases() {
 			Limit(1).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Empty JSON object should work")
-		suite.True(len(results) > 0, "Should have empty object results")
+		suite.Require().NoError(err, "Empty JSON object should work")
+		suite.Require().NotEmpty(results, "Should have empty object results")
 
 		for _, result := range results {
 			suite.NotEmpty(result.EmptyObject, "Empty object should not be nil")
@@ -627,8 +627,8 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonEdgeCases() {
 			Limit(1).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Empty JSON array should work")
-		suite.True(len(results) > 0, "Should have empty array results")
+		suite.Require().NoError(err, "Empty JSON array should work")
+		suite.Require().NotEmpty(results, "Should have empty array results")
 
 		for _, result := range results {
 			suite.NotEmpty(result.EmptyArray, "Empty array should not be nil")
@@ -664,7 +664,7 @@ func (suite *EBJSONFunctionsTestSuite) TestJsonEdgeCases() {
 		if err != nil {
 			suite.T().Logf("JsonValid edge cases test completed (expected for invalid JSON): %v", err)
 		} else {
-			suite.True(len(results) >= 0, "JsonValid edge cases should execute")
+			suite.T().Logf("JsonValid edge cases executed successfully")
 
 			for _, result := range results {
 				suite.T().Logf("ID: %s, Valid Object: %t, Valid Array: %t, Invalid: %t",

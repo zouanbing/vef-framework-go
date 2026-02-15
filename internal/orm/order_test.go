@@ -13,8 +13,7 @@ func init() {
 	})
 }
 
-// OrderTestSuite tests extended order builder methods.
-// Covers: OrderBuilder.Expr, OrderBuilder.NullsFirst, OrderBuilder.NullsLast.
+// OrderTestSuite tests extended order builder methods across all databases.
 type OrderTestSuite struct {
 	*BaseTestSuite
 }

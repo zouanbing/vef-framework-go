@@ -17,9 +17,7 @@ func init() {
 	})
 }
 
-// InsertTestSuite tests INSERT operations following orm.InsertQuery interface method order.
-// Tests cover all orm.InsertQuery methods including CTE, table specification, column selection,
-// column values, conflict handling, RETURNING clause, Apply functions, bulk operations, and error handling.
+// InsertTestSuite tests INSERT operations across all databases.
 type InsertTestSuite struct {
 	*BaseTestSuite
 }
@@ -51,8 +49,8 @@ func (suite *InsertTestSuite) TestBasicInsert() {
 			}).
 			Scan(suite.ctx)
 		suite.NoError(err, "Should retrieve inserted user")
-		suite.Equal("John Doe", retrieved.Name)
-		suite.Equal("john@example.com", retrieved.Email)
+		suite.Equal("John Doe", retrieved.Name, "Should preserve inserted name")
+		suite.Equal("john@example.com", retrieved.Email, "Should preserve inserted email")
 
 		suite.T().Logf("Inserted user: Id=%s, Name=%s", retrieved.ID, retrieved.Name)
 
@@ -62,7 +60,7 @@ func (suite *InsertTestSuite) TestBasicInsert() {
 				cb.Equals("email", "john@example.com")
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should cleanup test user")
 	})
 
 	suite.Run("InsertMultipleRecords", func() {
@@ -97,12 +95,11 @@ func (suite *InsertTestSuite) TestBasicInsert() {
 				cb.In("email", []any{"jane@example.com", "mike@example.com"})
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should cleanup test users")
 	})
 }
 
-// TestCTE tests With, WithValues, and WithRecursive methods.
-// MySQL does not support CTE in INSERT statements, so these tests are skipped for MySQL.
+// TestCTE tests With, WithValues, and WithRecursive methods (PostgreSQL/SQLite only).
 func (suite *InsertTestSuite) TestCTE() {
 	suite.T().Logf("Testing CTE methods for %s", suite.ds.Kind)
 
@@ -129,9 +126,7 @@ func (suite *InsertTestSuite) TestCTE() {
 			Model(category).
 			Exec(suite.ctx)
 		suite.NoError(err, "Should insert with CTE")
-		suite.NotEmpty(category.ID)
-
-		suite.T().Logf("Inserted via CTE: ID=%s, Name=%s", category.ID, category.Name)
+		suite.NotEmpty(category.ID, "Should set category ID after insert")
 
 		_, err = suite.db.NewDelete().
 			Model((*Category)(nil)).
@@ -139,7 +134,7 @@ func (suite *InsertTestSuite) TestCTE() {
 				cb.PKEquals(category.ID)
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should succeed without error")
 	})
 
 	suite.Run("InsertWithValuesCTE", func() {
@@ -164,9 +159,7 @@ func (suite *InsertTestSuite) TestCTE() {
 			Model(user).
 			Exec(suite.ctx)
 		suite.NoError(err, "Should insert with VALUES CTE")
-		suite.NotEmpty(user.ID)
-
-		suite.T().Logf("Inserted with VALUES CTE: ID=%s", user.ID)
+		suite.NotEmpty(user.ID, "Should set user ID after insert")
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
@@ -174,7 +167,7 @@ func (suite *InsertTestSuite) TestCTE() {
 				cb.Equals("email", "cte@example.com")
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should succeed without error")
 	})
 
 	suite.Run("InsertWithRecursiveCTE", func() {
@@ -197,9 +190,7 @@ func (suite *InsertTestSuite) TestCTE() {
 			Model(user).
 			Exec(suite.ctx)
 		suite.NoError(err, "Should insert with recursive CTE")
-		suite.NotEmpty(user.ID)
-
-		suite.T().Logf("Inserted with recursive CTE: ID=%s", user.ID)
+		suite.NotEmpty(user.ID, "Should set user ID after insert")
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
@@ -207,13 +198,11 @@ func (suite *InsertTestSuite) TestCTE() {
 				cb.Equals("email", "recursive@example.com")
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should succeed without error")
 	})
 }
 
-// TestTableSpecification tests table specification methods.
-// Note: Table/ModelTable/TableFrom/TableExpr/TableSubQuery are primarily for INSERT...SELECT queries.
-// Model() is the standard method for inserting from struct values.
+// TestTableSpecification tests table specification methods for INSERT...SELECT queries.
 func (suite *InsertTestSuite) TestTableSpecification() {
 	suite.T().Logf("Testing table specification methods for %s", suite.ds.Kind)
 
@@ -229,7 +218,7 @@ func (suite *InsertTestSuite) TestTableSpecification() {
 			Model(user).
 			Exec(suite.ctx)
 		suite.NoError(err, "Should insert using Model (standard approach)")
-		suite.NotEmpty(user.ID)
+		suite.NotEmpty(user.ID, "Should set ID after insert")
 
 		suite.T().Logf("Inserted with Model: ID=%s", user.ID)
 
@@ -239,12 +228,11 @@ func (suite *InsertTestSuite) TestTableSpecification() {
 				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should succeed without error")
 	})
 }
 
 // TestColumnSelection tests Select and Exclude methods.
-// Note: SelectAll and ExcludeAll are less commonly used with Model-based inserts.
 func (suite *InsertTestSuite) TestColumnSelection() {
 	suite.T().Logf("Testing column selection methods for %s", suite.ds.Kind)
 
@@ -261,7 +249,7 @@ func (suite *InsertTestSuite) TestColumnSelection() {
 			Exclude("meta").
 			Exec(suite.ctx)
 		suite.NoError(err, "Should insert excluding specific columns")
-		suite.NotEmpty(user.ID)
+		suite.NotEmpty(user.ID, "Should set ID after insert")
 
 		var retrieved User
 
@@ -271,9 +259,9 @@ func (suite *InsertTestSuite) TestColumnSelection() {
 				cb.PKEquals(user.ID)
 			}).
 			Scan(suite.ctx)
-		suite.NoError(err)
-		suite.Equal("Exclude User", retrieved.Name)
-		suite.Equal("exclude@example.com", retrieved.Email)
+		suite.NoError(err, "Should retrieve inserted record")
+		suite.Equal("Exclude User", retrieved.Name, "Should preserve name value")
+		suite.Equal("exclude@example.com", retrieved.Email, "Should preserve email value")
 
 		suite.T().Logf("Inserted with Exclude: ID=%s, Name=%s", retrieved.ID, retrieved.Name)
 
@@ -283,7 +271,7 @@ func (suite *InsertTestSuite) TestColumnSelection() {
 				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should succeed without error")
 	})
 }
 
@@ -304,7 +292,7 @@ func (suite *InsertTestSuite) TestColumnValues() {
 			Column("name", "Overridden Name").
 			Exec(suite.ctx)
 		suite.NoError(err, "Should insert with column override")
-		suite.NotEmpty(user.ID)
+		suite.NotEmpty(user.ID, "Should set ID after insert")
 
 		var retrieved User
 
@@ -314,7 +302,7 @@ func (suite *InsertTestSuite) TestColumnValues() {
 				cb.Equals("email", "column@example.com")
 			}).
 			Scan(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should retrieve inserted record")
 		suite.Equal("Overridden Name", retrieved.Name, "Name should be overridden")
 		suite.Equal(int16(25), retrieved.Age, "Age should keep model value")
 
@@ -326,7 +314,7 @@ func (suite *InsertTestSuite) TestColumnValues() {
 				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should succeed without error")
 	})
 
 	suite.Run("ColumnExprWithFunction", func() {
@@ -344,7 +332,7 @@ func (suite *InsertTestSuite) TestColumnValues() {
 			}).
 			Exec(suite.ctx)
 		suite.NoError(err, "Should insert with column expression")
-		suite.NotEmpty(user.ID)
+		suite.NotEmpty(user.ID, "Should set ID after insert")
 
 		var retrieved User
 
@@ -354,7 +342,7 @@ func (suite *InsertTestSuite) TestColumnValues() {
 				cb.Equals("email", "expr@example.com")
 			}).
 			Scan(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should retrieve inserted record")
 		suite.Equal("EXPR USER", retrieved.Name, "Name should be uppercased by expression")
 
 		suite.T().Logf("ColumnExpr result: Name=%s", retrieved.Name)
@@ -365,7 +353,7 @@ func (suite *InsertTestSuite) TestColumnValues() {
 				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should succeed without error")
 	})
 
 	suite.Run("MultipleColumnOverrides", func() {
@@ -383,7 +371,7 @@ func (suite *InsertTestSuite) TestColumnValues() {
 			Column("is_active", true).
 			Exec(suite.ctx)
 		suite.NoError(err, "Should insert with multiple column overrides")
-		suite.NotEmpty(user.ID)
+		suite.NotEmpty(user.ID, "Should set ID after insert")
 
 		var retrieved User
 
@@ -393,10 +381,10 @@ func (suite *InsertTestSuite) TestColumnValues() {
 				cb.Equals("email", "multi@example.com")
 			}).
 			Scan(suite.ctx)
-		suite.NoError(err)
-		suite.Equal("Multiple Override", retrieved.Name)
-		suite.Equal(int16(35), retrieved.Age)
-		suite.True(retrieved.IsActive)
+		suite.NoError(err, "Should retrieve inserted record")
+		suite.Equal("Multiple Override", retrieved.Name, "Should preserve name value")
+		suite.Equal(int16(35), retrieved.Age, "Should preserve age value")
+		suite.True(retrieved.IsActive, "Should have correct isactive value")
 
 		suite.T().Logf("Multiple overrides: Name=%s, Age=%d, IsActive=%v",
 			retrieved.Name, retrieved.Age, retrieved.IsActive)
@@ -407,7 +395,7 @@ func (suite *InsertTestSuite) TestColumnValues() {
 				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should succeed without error")
 	})
 }
 
@@ -451,7 +439,7 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 				cb.Equals("email", "conflict@example.com")
 			}).
 			Scan(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should retrieve inserted record")
 		suite.Equal("Conflict User", retrieved.Name, "Original name should be unchanged")
 		suite.Equal(int16(30), retrieved.Age, "Original age should be unchanged")
 
@@ -463,7 +451,7 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 				cb.Equals("email", "conflict@example.com")
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should succeed without error")
 	})
 
 	suite.Run("OnConflictDoUpdate", func() {
@@ -505,7 +493,7 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 				cb.Equals("email", "update-conflict@example.com")
 			}).
 			Scan(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should retrieve inserted record")
 		suite.Equal("Update Modified", retrieved.Name, "Name should be updated")
 		suite.Equal(int16(35), retrieved.Age, "Age should be updated")
 		suite.False(retrieved.IsActive, "IsActive should be updated")
@@ -519,7 +507,7 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 				cb.Equals("email", "update-conflict@example.com")
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should succeed without error")
 	})
 
 	suite.Run("OnConflictWithCondition", func() {
@@ -533,7 +521,7 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 		_, err := suite.db.NewInsert().
 			Model(original).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should insert record")
 
 		update := &User{
 			Name:     "Conditional Update",
@@ -562,7 +550,7 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 				cb.Equals("email", "conditional@example.com")
 			}).
 			Scan(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should retrieve inserted record")
 		suite.Equal(int16(45), retrieved.Age, "Age should be updated based on condition")
 
 		suite.T().Logf("Conditional UPDATE: Age=%d", retrieved.Age)
@@ -573,12 +561,11 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 				cb.Equals("email", "conditional@example.com")
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should succeed without error")
 	})
 }
 
-// TestReturning tests Returning, ReturningAll, and ReturningNone.
-// RETURNING clause is only supported on PostgreSQL and SQLite.
+// TestReturning tests Returning, ReturningAll, and ReturningNone (PostgreSQL/SQLite only).
 func (suite *InsertTestSuite) TestReturning() {
 	suite.T().Logf("Testing RETURNING clause for %s", suite.ds.Kind)
 
@@ -614,7 +601,7 @@ func (suite *InsertTestSuite) TestReturning() {
 				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should succeed without error")
 	})
 
 	suite.Run("ReturningAllColumns", func() {
@@ -630,10 +617,10 @@ func (suite *InsertTestSuite) TestReturning() {
 			ReturningAll().
 			Scan(suite.ctx, user)
 		suite.NoError(err, "Should insert with RETURNING all columns")
-		suite.NotEmpty(user.ID)
-		suite.Equal("Return All User", user.Name)
-		suite.Equal(int16(32), user.Age)
-		suite.True(user.IsActive)
+		suite.NotEmpty(user.ID, "Should set ID after insert")
+		suite.Equal("Return All User", user.Name, "Should preserve name value")
+		suite.Equal(int16(32), user.Age, "Should preserve age value")
+		suite.True(user.IsActive, "Should have correct isactive value")
 
 		suite.T().Logf("RETURNING all: ID=%s, Name=%s, Age=%d",
 			user.ID, user.Name, user.Age)
@@ -644,7 +631,7 @@ func (suite *InsertTestSuite) TestReturning() {
 				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should succeed without error")
 	})
 
 	suite.Run("ReturningNoColumns", func() {
@@ -670,7 +657,7 @@ func (suite *InsertTestSuite) TestReturning() {
 				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should succeed without error")
 	})
 }
 
@@ -695,7 +682,7 @@ func (suite *InsertTestSuite) TestApply() {
 			Apply(applyFunc).
 			Exec(suite.ctx)
 		suite.NoError(err, "Should apply function unconditionally")
-		suite.NotEmpty(user.ID)
+		suite.NotEmpty(user.ID, "Should set ID after insert")
 
 		var retrieved User
 
@@ -705,7 +692,7 @@ func (suite *InsertTestSuite) TestApply() {
 				cb.Equals("email", "apply@example.com")
 			}).
 			Scan(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should retrieve inserted record")
 		suite.Equal("Applied Name", retrieved.Name, "Name should be modified by Apply")
 
 		suite.T().Logf("Apply result: Name=%s", retrieved.Name)
@@ -716,7 +703,7 @@ func (suite *InsertTestSuite) TestApply() {
 				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should succeed without error")
 	})
 
 	suite.Run("ApplyConditional", func() {
@@ -735,8 +722,8 @@ func (suite *InsertTestSuite) TestApply() {
 			Model(user1).
 			ApplyIf(true, applyFunc).
 			Exec(suite.ctx)
-		suite.NoError(err)
-		suite.NotEmpty(user1.ID)
+		suite.NoError(err, "Should insert record")
+		suite.NotEmpty(user1.ID, "Should set ID after insert")
 
 		var retrieved1 User
 
@@ -746,7 +733,7 @@ func (suite *InsertTestSuite) TestApply() {
 				cb.Equals("email", "cond1@example.com")
 			}).
 			Scan(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should retrieve inserted record")
 		suite.Equal("Modified Name", retrieved1.Name, "ApplyIf(true) should apply function")
 
 		user2 := &User{
@@ -760,8 +747,8 @@ func (suite *InsertTestSuite) TestApply() {
 			Model(user2).
 			ApplyIf(false, applyFunc).
 			Exec(suite.ctx)
-		suite.NoError(err)
-		suite.NotEmpty(user2.ID)
+		suite.NoError(err, "Should insert record")
+		suite.NotEmpty(user2.ID, "Should set ID after insert")
 
 		var retrieved2 User
 
@@ -771,7 +758,7 @@ func (suite *InsertTestSuite) TestApply() {
 				cb.Equals("email", "cond2@example.com")
 			}).
 			Scan(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should retrieve inserted record")
 		suite.Equal("Conditional User 2", retrieved2.Name, "ApplyIf(false) should not apply function")
 
 		suite.T().Logf("ApplyIf: true=%s, false=%s", retrieved1.Name, retrieved2.Name)
@@ -782,7 +769,7 @@ func (suite *InsertTestSuite) TestApply() {
 				cb.In("email", []any{"cond1@example.com", "cond2@example.com"})
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should succeed without error")
 	})
 
 	suite.Run("ApplyMultipleFunctions", func() {
@@ -808,7 +795,7 @@ func (suite *InsertTestSuite) TestApply() {
 			Apply(fn1, fn2, fn3).
 			Exec(suite.ctx)
 		suite.NoError(err, "Should apply multiple functions")
-		suite.NotEmpty(user.ID)
+		suite.NotEmpty(user.ID, "Should set ID after insert")
 
 		var retrieved User
 
@@ -818,10 +805,10 @@ func (suite *InsertTestSuite) TestApply() {
 				cb.Equals("email", "multi-apply@example.com")
 			}).
 			Scan(suite.ctx)
-		suite.NoError(err)
-		suite.Equal("Step 1", retrieved.Name)
-		suite.Equal(int16(25), retrieved.Age)
-		suite.True(retrieved.IsActive)
+		suite.NoError(err, "Should retrieve inserted record")
+		suite.Equal("Step 1", retrieved.Name, "Should preserve name value")
+		suite.Equal(int16(25), retrieved.Age, "Should preserve age value")
+		suite.True(retrieved.IsActive, "Should have correct isactive value")
 
 		suite.T().Logf("Multiple Apply: Name=%s, Age=%d, IsActive=%v",
 			retrieved.Name, retrieved.Age, retrieved.IsActive)
@@ -832,7 +819,7 @@ func (suite *InsertTestSuite) TestApply() {
 				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should succeed without error")
 	})
 
 	suite.Run("ApplyWithNilFunction", func() {
@@ -848,7 +835,7 @@ func (suite *InsertTestSuite) TestApply() {
 			Apply(nil).
 			Exec(suite.ctx)
 		suite.NoError(err, "Should handle nil function safely")
-		suite.NotEmpty(user.ID)
+		suite.NotEmpty(user.ID, "Should set ID after insert")
 
 		suite.T().Logf("Nil function handled: ID=%s", user.ID)
 
@@ -858,7 +845,7 @@ func (suite *InsertTestSuite) TestApply() {
 				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should succeed without error")
 	})
 }
 
@@ -900,7 +887,7 @@ func (suite *InsertTestSuite) TestBulkInsert() {
 				cb.StartsWith("email", "batch")
 			}).
 			Scan(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should retrieve inserted record")
 		suite.Len(retrieved, batchSize, "Should have inserted all batch users")
 
 		_, err = suite.db.NewDelete().
@@ -909,7 +896,7 @@ func (suite *InsertTestSuite) TestBulkInsert() {
 				cb.StartsWith("email", "batch")
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should succeed without error")
 	})
 
 	suite.Run("BulkInsertWithRelatedData", func() {
@@ -949,7 +936,7 @@ func (suite *InsertTestSuite) TestBulkInsert() {
 		suite.NoError(err, "Should insert related posts")
 
 		for _, post := range posts {
-			suite.NotEmpty(post.ID)
+			suite.NotEmpty(post.ID, "Should set ID after insert")
 			suite.T().Logf("Bulk post: ID=%s, Title=%s, UserID=%s", post.ID, post.Title, post.UserID)
 		}
 
@@ -959,7 +946,7 @@ func (suite *InsertTestSuite) TestBulkInsert() {
 				cb.StartsWith("title", "Bulk Post")
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should succeed without error")
 
 		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
@@ -967,7 +954,7 @@ func (suite *InsertTestSuite) TestBulkInsert() {
 				cb.In("email", []any{"author1@bulk.com", "author2@bulk.com"})
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should succeed without error")
 	})
 }
 
@@ -1008,7 +995,7 @@ func (suite *InsertTestSuite) TestErrorHandling() {
 				cb.Equals("email", "unique@example.com")
 			}).
 			Exec(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should succeed without error")
 	})
 
 	suite.Run("NullConstraintViolation", func() {
@@ -1126,7 +1113,7 @@ func (suite *InsertTestSuite) TestOnConflictSetExpr() {
 		}).
 		Scan(suite.ctx)
 	suite.NoError(err, "Should find updated tag")
-	suite.Equal("UpdatedViaSetExpr", result.Name)
+	suite.Equal("UpdatedViaSetExpr", result.Name, "Should preserve name value")
 
 	// Clean up
 	_, _ = suite.db.NewDelete().Model(tag).WherePK().Exec(suite.ctx)
@@ -1167,306 +1154,244 @@ func (suite *InsertTestSuite) TestOnConflictWithWhere() {
 	_, _ = suite.db.NewDelete().Model(tag).WherePK().Exec(suite.ctx)
 }
 
-// TestInsertDB tests DB() method on InsertQuery.
+// TestInsertDB tests DB() method returns the underlying database.
 func (suite *InsertTestSuite) TestInsertDB() {
 	suite.T().Logf("Testing Insert DB for %s", suite.ds.Kind)
 
 	query := suite.db.NewInsert().Model(&Tag{})
 	db := query.DB()
 
-	suite.NotNil(db, "DB() should return non-nil")
+	suite.NotNil(db, "Should return underlying database")
 }
 
-// TestInsertModelTable tests ModelTable method.
-func (suite *InsertTestSuite) TestInsertModelTable() {
-	suite.T().Logf("Testing Insert ModelTable for %s", suite.ds.Kind)
+// TestTableSpecMethods tests table specification methods with and without aliases.
+func (suite *InsertTestSuite) TestTableSpecMethods() {
+	suite.T().Logf("Testing table specification methods for %s", suite.ds.Kind)
 
-	tag := &Tag{Name: "InsertModelTable"}
-	tag.ID = "test-ins-modeltable"
+	suite.Run("ModelTableWithAlias", func() {
+		query := suite.db.NewInsert().
+			ModelTable("test_tag", "t").
+			Column("id", "test-alias-mt").
+			Column("name", "AliasModelTable")
+		suite.NotNil(query, "Should build query with ModelTable alias")
+	})
 
-	query := suite.db.NewInsert().
-		ModelTable("test_tag").
-		Model(tag)
+	suite.Run("ModelTableNoAlias", func() {
+		query := suite.db.NewInsert().
+			ModelTable("test_tag").
+			Column("id", "test-no-alias").
+			Column("name", "NoAliasTest")
+		suite.NotNil(query, "Should build query with ModelTable")
+	})
 
-	suite.NotNil(query, "ModelTable should return non-nil")
+	suite.Run("TableWithAlias", func() {
+		query := suite.db.NewInsert().
+			Table("test_tag", "t").
+			Column("id", "test-alias-t").
+			Column("name", "AliasTable")
+		suite.NotNil(query, "Should build query with Table alias")
+	})
 
-	// Clean up if inserted
-	_, _ = suite.db.NewDelete().Model((*Tag)(nil)).Where(func(cb orm.ConditionBuilder) {
-		cb.Equals("id", "test-ins-modeltable")
-	}).Exec(suite.ctx)
-}
+	suite.Run("TableNoAlias", func() {
+		query := suite.db.NewInsert().
+			Table("test_tag").
+			Column("id", "test-no-alias-t").
+			Column("name", "NoAliasTableTest")
+		suite.NotNil(query, "Should build query with Table")
+	})
 
-// TestInsertTable tests Table method.
-func (suite *InsertTestSuite) TestInsertTable() {
-	suite.T().Logf("Testing Insert Table for %s", suite.ds.Kind)
+	suite.Run("TableFromWithAlias", func() {
+		query := suite.db.NewInsert().
+			TableFrom((*Tag)(nil), "t").
+			Column("id", "test-alias-tf").
+			Column("name", "AliasTableFrom")
+		suite.NotNil(query, "Should build query with TableFrom alias")
+	})
 
-	query := suite.db.NewInsert().
-		Table("test_tag").
-		Column("id", "test-ins-table").
-		Column("name", "InsertTable")
+	suite.Run("TableFromNoAlias", func() {
+		query := suite.db.NewInsert().
+			TableFrom((*Tag)(nil)).
+			Column("id", "test-ins-tablefrom").
+			Column("name", "InsertTableFrom")
+		suite.NotNil(query, "Should build query with TableFrom")
+	})
 
-	suite.NotNil(query, "Table should return non-nil")
-}
+	suite.Run("TableExprWithAlias", func() {
+		query := suite.db.NewInsert().
+			TableExpr(func(eb orm.ExprBuilder) any {
+				return eb.SubQuery(func(sq orm.SelectQuery) {
+					sq.Model((*Tag)(nil)).Select("id", "name")
+				})
+			}, "t").
+			Column("id", "test-alias-te").
+			Column("name", "AliasTableExpr")
+		suite.NotNil(query, "Should build query with TableExpr alias")
+	})
 
-// TestInsertTableFrom tests TableFrom method.
-func (suite *InsertTestSuite) TestInsertTableFrom() {
-	suite.T().Logf("Testing Insert TableFrom for %s", suite.ds.Kind)
+	suite.Run("TableExprNoAlias", func() {
+		query := suite.db.NewInsert().
+			TableExpr(func(eb orm.ExprBuilder) any {
+				return eb.SubQuery(func(sq orm.SelectQuery) {
+					sq.Model((*Tag)(nil)).Select("id", "name")
+				})
+			}).
+			Column("id", "test-no-alias-te").
+			Column("name", "NoAliasTableExprTest")
+		suite.NotNil(query, "Should build query with TableExpr")
+	})
 
-	query := suite.db.NewInsert().
-		TableFrom((*Tag)(nil)).
-		Column("id", "test-ins-tablefrom").
-		Column("name", "InsertTableFrom")
+	suite.Run("TableSubQueryWithAlias", func() {
+		query := suite.db.NewInsert().
+			TableSubQuery(func(sq orm.SelectQuery) {
+				sq.Model((*Tag)(nil)).Select("id", "name")
+			}, "t")
+		suite.NotNil(query, "Should build query with TableSubQuery alias")
+	})
 
-	suite.NotNil(query, "TableFrom should return non-nil")
-}
-
-// TestInsertTableExpr tests TableExpr method.
-func (suite *InsertTestSuite) TestInsertTableExpr() {
-	suite.T().Logf("Testing Insert TableExpr for %s", suite.ds.Kind)
-
-	query := suite.db.NewInsert().
-		TableExpr(func(eb orm.ExprBuilder) any {
-			return eb.SubQuery(func(sq orm.SelectQuery) {
+	suite.Run("TableSubQueryNoAlias", func() {
+		query := suite.db.NewInsert().
+			TableSubQuery(func(sq orm.SelectQuery) {
 				sq.Model((*Tag)(nil)).Select("id", "name")
 			})
-		}).
-		Column("id", "test-ins-tableexpr").
-		Column("name", "InsertTableExpr")
-
-	suite.NotNil(query, "TableExpr should return non-nil")
+		suite.NotNil(query, "Should build query with TableSubQuery")
+	})
 }
 
-// TestInsertTableSubQuery tests TableSubQuery method.
-func (suite *InsertTestSuite) TestInsertTableSubQuery() {
-	suite.T().Logf("Testing Insert TableSubQuery for %s", suite.ds.Kind)
-
-	query := suite.db.NewInsert().
-		TableSubQuery(func(sq orm.SelectQuery) {
-			sq.Model((*Tag)(nil)).Select("id", "name")
-		}, "t")
-
-	suite.NotNil(query, "TableSubQuery should return non-nil")
-}
-
-// TestInsertSelectAllAndExcludeAll tests SelectAll, Select, and ExcludeAll methods.
-func (suite *InsertTestSuite) TestInsertSelectAllAndExcludeAll() {
-	suite.T().Logf("Testing Insert SelectAll/Select/ExcludeAll for %s", suite.ds.Kind)
+// TestSelectionMethods tests SelectAll, Select, and ExcludeAll methods.
+func (suite *InsertTestSuite) TestSelectionMethods() {
+	suite.T().Logf("Testing selection methods for %s", suite.ds.Kind)
 
 	suite.Run("SelectAll", func() {
 		tag := &Tag{Name: "SelectAllTest"}
 		tag.ID = "test-ins-selectall"
 
-		query := suite.db.NewInsert().
-			Model(tag).
-			SelectAll()
-
-		suite.NotNil(query, "SelectAll should return non-nil")
+		query := suite.db.NewInsert().Model(tag).SelectAll()
+		suite.NotNil(query, "Should build query with SelectAll")
 	})
 
-	suite.Run("Select", func() {
+	suite.Run("SelectSpecificColumns", func() {
 		tag := &Tag{Name: "SelectTest"}
 		tag.ID = "test-ins-select"
 
-		query := suite.db.NewInsert().
-			Model(tag).
-			Select("id", "name")
-
-		suite.NotNil(query, "Select should return non-nil")
+		query := suite.db.NewInsert().Model(tag).Select("id", "name")
+		suite.NotNil(query, "Should build query with Select")
 	})
 
 	suite.Run("ExcludeAll", func() {
 		tag := &Tag{Name: "ExcludeAllTest"}
 		tag.ID = "test-ins-excludeall"
 
-		query := suite.db.NewInsert().
-			Model(tag).
-			ExcludeAll()
-
-		suite.NotNil(query, "ExcludeAll should return non-nil")
+		query := suite.db.NewInsert().Model(tag).ExcludeAll()
+		suite.NotNil(query, "Should build query with ExcludeAll")
 	})
 }
 
-// TestConflictConstraintAndWhere tests OnConflict with Constraint and Where.
-func (suite *InsertTestSuite) TestConflictConstraintAndWhere() {
+// TestConflictAdvanced tests OnConflict with Constraint, Where, and SetExpr.
+func (suite *InsertTestSuite) TestConflictAdvanced() {
 	if suite.ds.Kind == config.MySQL {
-		suite.T().Skip("MySQL does not support ON CONFLICT CONSTRAINT")
+		suite.T().Skip("MySQL does not support ON CONFLICT CONSTRAINT/WHERE")
 	}
 
-	suite.T().Logf("Testing OnConflict Constraint/Where for %s", suite.ds.Kind)
+	suite.T().Logf("Testing OnConflict advanced for %s", suite.ds.Kind)
 
-	tag := &Tag{Name: "ConstraintTest"}
-	tag.ID = "test-conflict-cstr"
+	suite.Run("ConstraintWithWhere", func() {
+		tag := &Tag{Name: "ConstraintTest"}
+		tag.ID = "test-conflict-cstr"
 
-	// First insert
-	_, err := suite.db.NewInsert().Model(tag).Exec(suite.ctx)
-	suite.NoError(err)
+		_, err := suite.db.NewInsert().Model(tag).Exec(suite.ctx)
+		suite.Require().NoError(err, "Should insert initial tag")
 
-	// Insert with Constraint + Where on target
-	_, err = suite.db.NewInsert().
-		Model(tag).
-		OnConflict(func(cb orm.ConflictBuilder) {
-			cb.Columns("id").
-				Where(func(cond orm.ConditionBuilder) {
-					cond.IsNotNull("id")
-				}).
-				DoUpdate().
-				Set("name", "UpdatedConstraint")
-		}).
-		Exec(suite.ctx)
+		_, err = suite.db.NewInsert().
+			Model(tag).
+			OnConflict(func(cb orm.ConflictBuilder) {
+				cb.Columns("id").
+					Where(func(cond orm.ConditionBuilder) {
+						cond.IsNotNull("id")
+					}).
+					DoUpdate().
+					Set("name", "UpdatedConstraint")
+			}).
+			Exec(suite.ctx)
+		suite.NoError(err, "Should handle conflict with Where clause")
 
-	suite.NoError(err, "OnConflict with Where should work")
+		_, _ = suite.db.NewDelete().Model((*Tag)(nil)).Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("id", "test-conflict-cstr")
+		}).Exec(suite.ctx)
+	})
 
-	// Clean up
-	_, _ = suite.db.NewDelete().Model((*Tag)(nil)).Where(func(cb orm.ConditionBuilder) {
-		cb.Equals("id", "test-conflict-cstr")
-	}).Exec(suite.ctx)
-}
+	suite.Run("ConstraintByName", func() {
+		tag := &Tag{Name: "ConstraintTest2"}
+		tag.ID = "test-cstr-2"
 
-// TestConflictConstraint tests OnConflict with Constraint method.
-func (suite *InsertTestSuite) TestConflictConstraint() {
-	if suite.ds.Kind == config.MySQL {
-		suite.T().Skip("MySQL does not support ON CONFLICT CONSTRAINT")
-	}
+		_, err := suite.db.NewInsert().Model(tag).Exec(suite.ctx)
+		suite.Require().NoError(err, "Should insert initial tag")
 
-	suite.T().Logf("Testing OnConflict Constraint for %s", suite.ds.Kind)
-
-	tag := &Tag{Name: "ConstraintTest2"}
-	tag.ID = "test-cstr-2"
-
-	_, err := suite.db.NewInsert().Model(tag).Exec(suite.ctx)
-	suite.NoError(err)
-
-	// Use Constraint method (covers the code path even if constraint doesn't exist)
-	query := suite.db.NewInsert().
-		Model(tag).
-		OnConflict(func(cb orm.ConflictBuilder) {
-			cb.Constraint("test_tag_pkey").
-				DoNothing()
-		})
-
-	suite.NotNil(query, "OnConflict Constraint should return non-nil")
-
-	// Try executing - may fail if constraint name is wrong, but code path is covered
-	_, _ = query.Exec(suite.ctx)
-
-	// Clean up
-	_, _ = suite.db.NewDelete().Model((*Tag)(nil)).Where(func(cb orm.ConditionBuilder) {
-		cb.Equals("id", "test-cstr-2")
-	}).Exec(suite.ctx)
-}
-
-// TestInsertModelTableWithAlias tests Insert ModelTable with alias.
-func (suite *InsertTestSuite) TestInsertModelTableWithAlias() {
-	suite.T().Logf("Testing Insert ModelTable with alias for %s", suite.ds.Kind)
-
-	query := suite.db.NewInsert().
-		ModelTable("test_tag", "t").
-		Column("id", "test-alias-mt").
-		Column("name", "AliasModelTable")
-
-	suite.NotNil(query, "Insert ModelTable with alias should return non-nil")
-}
-
-// TestInsertTableWithAlias tests Insert Table with alias.
-func (suite *InsertTestSuite) TestInsertTableWithAlias() {
-	suite.T().Logf("Testing Insert Table with alias for %s", suite.ds.Kind)
-
-	query := suite.db.NewInsert().
-		Table("test_tag", "t").
-		Column("id", "test-alias-t").
-		Column("name", "AliasTable")
-
-	suite.NotNil(query, "Insert Table with alias should return non-nil")
-}
-
-// TestInsertTableExprWithAlias tests Insert TableExpr with alias.
-func (suite *InsertTestSuite) TestInsertTableExprWithAlias() {
-	suite.T().Logf("Testing Insert TableExpr with alias for %s", suite.ds.Kind)
-
-	query := suite.db.NewInsert().
-		TableExpr(func(eb orm.ExprBuilder) any {
-			return eb.SubQuery(func(sq orm.SelectQuery) {
-				sq.Model((*Tag)(nil)).Select("id", "name")
+		// Covers the Constraint method code path
+		query := suite.db.NewInsert().
+			Model(tag).
+			OnConflict(func(cb orm.ConflictBuilder) {
+				cb.Constraint("test_tag_pkey").DoNothing()
 			})
-		}, "t").
-		Column("id", "test-alias-te").
-		Column("name", "AliasTableExpr")
+		suite.NotNil(query, "Should build query with named constraint")
 
-	suite.NotNil(query, "Insert TableExpr with alias should return non-nil")
-}
+		_, _ = query.Exec(suite.ctx)
+		_, _ = suite.db.NewDelete().Model((*Tag)(nil)).Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("id", "test-cstr-2")
+		}).Exec(suite.ctx)
+	})
 
-// TestInsertTableSubQueryWithAlias tests Insert TableSubQuery with alias.
-func (suite *InsertTestSuite) TestInsertTableSubQueryWithAlias() {
-	suite.T().Logf("Testing Insert TableSubQuery with alias for %s", suite.ds.Kind)
+	suite.Run("SetExprOnConflict", func() {
+		tag := &Tag{Name: "ConflictSetExpr"}
+		tag.ID = "test-conflict-setexpr"
 
-	query := suite.db.NewInsert().
-		TableSubQuery(func(sq orm.SelectQuery) {
-			sq.Model((*Tag)(nil)).Select("id", "name")
-		}, "t")
+		_, err := suite.db.NewInsert().Model(tag).Exec(suite.ctx)
+		suite.Require().NoError(err, "Should insert initial tag")
 
-	suite.NotNil(query, "Insert TableSubQuery with alias should return non-nil")
-}
+		_, err = suite.db.NewInsert().
+			Model(tag).
+			OnConflict(func(cb orm.ConflictBuilder) {
+				cb.Columns("id").
+					DoUpdate().
+					SetExpr("name", func(eb orm.ExprBuilder) any {
+						return eb.Literal("UpdatedViaSetExpr")
+					})
+			}).
+			Exec(suite.ctx)
+		suite.NoError(err, "Should handle conflict with SetExpr")
 
-// TestInsertTableFromWithAlias tests InsertQuery TableFrom with alias.
-func (suite *InsertTestSuite) TestInsertTableFromWithAlias() {
-	suite.T().Logf("Testing Insert TableFrom with alias for %s", suite.ds.Kind)
+		var result Tag
+		err = suite.db.NewSelect().
+			Model(&result).
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Equals("id", "test-conflict-setexpr")
+			}).
+			Scan(suite.ctx)
+		suite.NoError(err, "Should find updated tag")
+		suite.Equal("UpdatedViaSetExpr", result.Name, "Should update name via SetExpr")
 
-	query := suite.db.NewInsert().
-		TableFrom((*Tag)(nil), "t").
-		Column("id", "test-alias-tf").
-		Column("name", "AliasTableFrom")
+		_, _ = suite.db.NewDelete().Model(tag).WherePK().Exec(suite.ctx)
+	})
 
-	suite.NotNil(query, "Insert TableFrom with alias should return non-nil")
-}
+	suite.Run("WhereOnDoUpdate", func() {
+		tag := &Tag{Name: "WhereConflict"}
+		tag.ID = "test-conflict-where"
 
-// TestInsertModelTableNoAlias tests Insert ModelTable without alias.
-func (suite *InsertTestSuite) TestInsertModelTableNoAlias() {
-	suite.T().Logf("Testing Insert ModelTable without alias for %s", suite.ds.Kind)
+		_, err := suite.db.NewInsert().Model(tag).Exec(suite.ctx)
+		suite.Require().NoError(err, "Should insert initial tag")
 
-	query := suite.db.NewInsert().
-		ModelTable("test_tag").
-		Column("id", "test-no-alias").
-		Column("name", "NoAliasTest")
+		_, err = suite.db.NewInsert().
+			Model(tag).
+			OnConflict(func(cb orm.ConflictBuilder) {
+				cb.Columns("id").
+					DoUpdate().
+					Set("name", "UpdatedWhere").
+					Where(func(cb orm.ConditionBuilder) {
+						cb.NotEquals("name", "AlreadyUpdated")
+					})
+			}).
+			Exec(suite.ctx)
+		suite.NoError(err, "Should handle conflict with conditional update")
 
-	suite.NotNil(query, "Insert ModelTable no alias should return non-nil")
-}
-
-// TestInsertTableNoAlias tests Insert Table without alias.
-func (suite *InsertTestSuite) TestInsertTableNoAlias() {
-	suite.T().Logf("Testing Insert Table without alias for %s", suite.ds.Kind)
-
-	query := suite.db.NewInsert().
-		Table("test_tag").
-		Column("id", "test-no-alias-t").
-		Column("name", "NoAliasTableTest")
-
-	suite.NotNil(query, "Insert Table no alias should return non-nil")
-}
-
-// TestInsertTableSubQueryNoAlias tests Insert TableSubQuery without alias.
-func (suite *InsertTestSuite) TestInsertTableSubQueryNoAlias() {
-	suite.T().Logf("Testing Insert TableSubQuery without alias for %s", suite.ds.Kind)
-
-	query := suite.db.NewInsert().
-		TableSubQuery(func(sq orm.SelectQuery) {
-			sq.Model((*Tag)(nil)).Select("id", "name")
-		})
-
-	suite.NotNil(query, "Insert TableSubQuery no alias should return non-nil")
-}
-
-// TestInsertTableExprNoAlias tests Insert TableExpr without alias.
-func (suite *InsertTestSuite) TestInsertTableExprNoAlias() {
-	suite.T().Logf("Testing Insert TableExpr without alias for %s", suite.ds.Kind)
-
-	query := suite.db.NewInsert().
-		TableExpr(func(eb orm.ExprBuilder) any {
-			return eb.SubQuery(func(sq orm.SelectQuery) {
-				sq.Model((*Tag)(nil)).Select("id", "name")
-			})
-		}).
-		Column("id", "test-no-alias-te").
-		Column("name", "NoAliasTableExprTest")
-
-	suite.NotNil(query, "Insert TableExpr no alias should return non-nil")
+		_, _ = suite.db.NewDelete().Model(tag).WherePK().Exec(suite.ctx)
+	})
 }

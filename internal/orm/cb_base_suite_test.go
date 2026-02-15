@@ -2,30 +2,27 @@ package orm_test
 
 import "github.com/ilxqx/vef-framework-go/internal/orm"
 
-// ConditionBuilderTestSuite is the base test suite for all condition builder tests.
-// It provides common helper methods and test utilities for condition testing.
+// ConditionBuilderTestSuite provides common helpers for all condition builder tests.
 type ConditionBuilderTestSuite struct {
 	*BaseTestSuite
 }
 
-// assertQueryReturnsUsers executes a query and returns the users for further assertions.
-// Automatically applies fixtureScope to filter out test-inserted data.
+// assertQueryReturnsUsers executes a query and returns users, scoped to fixture data.
 func (suite *ConditionBuilderTestSuite) assertQueryReturnsUsers(query orm.SelectQuery) []User {
 	var users []User
 
 	err := query.Where(fixtureScope).Scan(suite.ctx, &users)
-	suite.NoError(err, "Query should execute successfully")
+	suite.NoError(err, "Should execute query successfully")
 
 	return users
 }
 
-// assertQueryReturnsPosts executes a query and returns the posts for further assertions.
-// Automatically applies fixtureScope to filter out test-inserted data.
+// assertQueryReturnsPosts executes a query and returns posts, scoped to fixture data.
 func (suite *ConditionBuilderTestSuite) assertQueryReturnsPosts(query orm.SelectQuery) []Post {
 	var posts []Post
 
 	err := query.Where(fixtureScope).Scan(suite.ctx, &posts)
-	suite.NoError(err, "Query should execute successfully")
+	suite.NoError(err, "Should execute query successfully")
 
 	return posts
 }

@@ -17,13 +17,15 @@ func init() {
 	})
 }
 
-// EBBasicExpressionsTestSuite tests basic expression methods of orm.ExprBuilder
-// including Column, TableColumns, AllColumns, Null, IsNull, IsNotNull, Literal, Order, Case, Expr, Exprs, ExprsWithSep.
+// EBBasicExpressionsTestSuite tests basic expression methods of orm.ExprBuilder.
 type EBBasicExpressionsTestSuite struct {
 	*BaseTestSuite
 }
 
+// TestColumn tests the Column expression method.
 func (suite *EBBasicExpressionsTestSuite) TestColumn() {
+	suite.T().Logf("Testing Column for %s", suite.ds.Kind)
+
 	suite.Run("SimpleColumnReference", func() {
 		type Result struct {
 			ID    string `bun:"id"`
@@ -43,12 +45,12 @@ func (suite *EBBasicExpressionsTestSuite) TestColumn() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute column select query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.ID)
-			suite.NotEmpty(result.Title)
+			suite.NotEmpty(result.ID, "Should have non-empty ID")
+			suite.NotEmpty(result.Title, "Should have non-empty title")
 		}
 	})
 
@@ -72,13 +74,13 @@ func (suite *EBBasicExpressionsTestSuite) TestColumn() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute join query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.PostID)
-			suite.NotEmpty(result.PostTitle)
-			suite.NotEmpty(result.UserName)
+			suite.NotEmpty(result.PostID, "Should have non-empty post ID")
+			suite.NotEmpty(result.PostTitle, "Should have non-empty post title")
+			suite.NotEmpty(result.UserName, "Should have non-empty user name")
 		}
 	})
 
@@ -101,12 +103,12 @@ func (suite *EBBasicExpressionsTestSuite) TestColumn() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query with table alias true")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.ID)
-			suite.NotEmpty(result.Title)
+			suite.NotEmpty(result.ID, "Should have non-empty ID")
+			suite.NotEmpty(result.Title, "Should have non-empty title")
 		}
 	})
 
@@ -129,17 +131,20 @@ func (suite *EBBasicExpressionsTestSuite) TestColumn() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query with table alias false")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.ID)
-			suite.NotEmpty(result.Title)
+			suite.NotEmpty(result.ID, "Should have non-empty ID")
+			suite.NotEmpty(result.Title, "Should have non-empty title")
 		}
 	})
 }
 
+// TestTableColumns tests the TableColumns expression method.
 func (suite *EBBasicExpressionsTestSuite) TestTableColumns() {
+	suite.T().Logf("Testing TableColumns for %s", suite.ds.Kind)
+
 	suite.Run("TableColumnsWithDefaultAlias", func() {
 		type Result struct {
 			ID        string `bun:"id"`
@@ -159,14 +164,14 @@ func (suite *EBBasicExpressionsTestSuite) TestTableColumns() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.ID)
-			suite.NotEmpty(result.Title)
-			suite.NotEmpty(result.Status)
-			suite.NotEmpty(result.UserID)
+			suite.NotEmpty(result.ID, "Should have non-empty ID")
+			suite.NotEmpty(result.Title, "Should have non-empty Title")
+			suite.NotEmpty(result.Status, "Should have non-empty Status")
+			suite.NotEmpty(result.UserID, "Should have non-empty UserID")
 		}
 	})
 
@@ -188,13 +193,13 @@ func (suite *EBBasicExpressionsTestSuite) TestTableColumns() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.ID)
-			suite.NotEmpty(result.Title)
-			suite.NotEmpty(result.Status)
+			suite.NotEmpty(result.ID, "Should have non-empty ID")
+			suite.NotEmpty(result.Title, "Should have non-empty Title")
+			suite.NotEmpty(result.Status, "Should have non-empty Status")
 		}
 	})
 
@@ -216,18 +221,21 @@ func (suite *EBBasicExpressionsTestSuite) TestTableColumns() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.ID)
-			suite.NotEmpty(result.Title)
-			suite.NotEmpty(result.Status)
+			suite.NotEmpty(result.ID, "Should have non-empty ID")
+			suite.NotEmpty(result.Title, "Should have non-empty Title")
+			suite.NotEmpty(result.Status, "Should have non-empty Status")
 		}
 	})
 }
 
+// TestAllColumns tests the AllColumns expression method.
 func (suite *EBBasicExpressionsTestSuite) TestAllColumns() {
+	suite.T().Logf("Testing AllColumns for %s", suite.ds.Kind)
+
 	suite.Run("AllColumnsWithDefaultBehavior", func() {
 		type Result struct {
 			ID        string `bun:"id"`
@@ -247,14 +255,14 @@ func (suite *EBBasicExpressionsTestSuite) TestAllColumns() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.ID)
-			suite.NotEmpty(result.Title)
-			suite.NotEmpty(result.Status)
-			suite.NotEmpty(result.UserID)
+			suite.NotEmpty(result.ID, "Should have non-empty ID")
+			suite.NotEmpty(result.Title, "Should have non-empty Title")
+			suite.NotEmpty(result.Status, "Should have non-empty Status")
+			suite.NotEmpty(result.UserID, "Should have non-empty UserID")
 		}
 	})
 
@@ -276,13 +284,13 @@ func (suite *EBBasicExpressionsTestSuite) TestAllColumns() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.ID)
-			suite.NotEmpty(result.Title)
-			suite.NotEmpty(result.Status)
+			suite.NotEmpty(result.ID, "Should have non-empty ID")
+			suite.NotEmpty(result.Title, "Should have non-empty Title")
+			suite.NotEmpty(result.Status, "Should have non-empty Status")
 		}
 	})
 
@@ -304,13 +312,13 @@ func (suite *EBBasicExpressionsTestSuite) TestAllColumns() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.ID)
-			suite.NotEmpty(result.Title)
-			suite.NotEmpty(result.Status)
+			suite.NotEmpty(result.ID, "Should have non-empty ID")
+			suite.NotEmpty(result.Title, "Should have non-empty Title")
+			suite.NotEmpty(result.Status, "Should have non-empty Status")
 		}
 	})
 
@@ -337,20 +345,23 @@ func (suite *EBBasicExpressionsTestSuite) TestAllColumns() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.ID)
-			suite.NotEmpty(result.Title)
-			suite.NotEmpty(result.Status)
-			suite.NotEmpty(result.UserID)
-			suite.Equal(result.ViewCount*2, result.DoubleViews)
+			suite.NotEmpty(result.ID, "Should have non-empty ID")
+			suite.NotEmpty(result.Title, "Should have non-empty Title")
+			suite.NotEmpty(result.Status, "Should have non-empty Status")
+			suite.NotEmpty(result.UserID, "Should have non-empty UserID")
+			suite.Equal(result.ViewCount*2, result.DoubleViews, "Should equal double view count")
 		}
 	})
 }
 
+// TestNull tests the Null expression method.
 func (suite *EBBasicExpressionsTestSuite) TestNull() {
+	suite.T().Logf("Testing Null for %s", suite.ds.Kind)
+
 	suite.Run("NullValueInSelect", func() {
 		type Result struct {
 			ID        string  `bun:"id"`
@@ -369,18 +380,21 @@ func (suite *EBBasicExpressionsTestSuite) TestNull() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.ID)
-			suite.NotEmpty(result.Title)
-			suite.Nil(result.NullValue)
+			suite.NotEmpty(result.ID, "Should have non-empty ID")
+			suite.NotEmpty(result.Title, "Should have non-empty Title")
+			suite.Nil(result.NullValue, "Should be nil")
 		}
 	})
 }
 
+// TestIsNull tests the IsNull expression method.
 func (suite *EBBasicExpressionsTestSuite) TestIsNull() {
+	suite.T().Logf("Testing IsNull for %s", suite.ds.Kind)
+
 	suite.Run("CheckNullValues", func() {
 		type Result struct {
 			ID     string `bun:"id"`
@@ -400,8 +414,8 @@ func (suite *EBBasicExpressionsTestSuite) TestIsNull() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 	})
 
 	suite.Run("IsNullWithCoalesce", func() {
@@ -426,8 +440,8 @@ func (suite *EBBasicExpressionsTestSuite) TestIsNull() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.NotEmpty(result.SafeValue, "Safe value should never be empty due to Coalesce")
@@ -435,7 +449,10 @@ func (suite *EBBasicExpressionsTestSuite) TestIsNull() {
 	})
 }
 
+// TestIsNotNull tests the IsNotNull expression method.
 func (suite *EBBasicExpressionsTestSuite) TestIsNotNull() {
+	suite.T().Logf("Testing IsNotNull for %s", suite.ds.Kind)
+
 	suite.Run("CheckNotNullValues", func() {
 		type Result struct {
 			ID        string `bun:"id"`
@@ -454,8 +471,8 @@ func (suite *EBBasicExpressionsTestSuite) TestIsNotNull() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.IsNotNull, "Title should not be NULL for existing posts")
@@ -485,19 +502,22 @@ func (suite *EBBasicExpressionsTestSuite) TestIsNotNull() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.Title)
-			suite.NotEmpty(result.Status)
-			suite.True(result.HasTitle)
-			suite.True(result.HasStatus)
+			suite.NotEmpty(result.Title, "Should have non-empty Title")
+			suite.NotEmpty(result.Status, "Should have non-empty Status")
+			suite.True(result.HasTitle, "Should be true")
+			suite.True(result.HasStatus, "Should be true")
 		}
 	})
 }
 
+// TestLiteral tests the Literal expression method.
 func (suite *EBBasicExpressionsTestSuite) TestLiteral() {
+	suite.T().Logf("Testing Literal for %s", suite.ds.Kind)
+
 	suite.Run("LiteralValuesInExpressions", func() {
 		type Result struct {
 			ID         string `bun:"id"`
@@ -516,16 +536,19 @@ func (suite *EBBasicExpressionsTestSuite) TestLiteral() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.Equal("test_literal", result.LiteralVal)
+			suite.Equal("test_literal", result.LiteralVal, "Should return literal value")
 		}
 	})
 }
 
+// TestOrder tests the Order expression method.
 func (suite *EBBasicExpressionsTestSuite) TestOrder() {
+	suite.T().Logf("Testing Order for %s", suite.ds.Kind)
+
 	suite.Run("SimpleOrderBy", func() {
 		type Result struct {
 			ID   string `bun:"id"`
@@ -545,8 +568,8 @@ func (suite *EBBasicExpressionsTestSuite) TestOrder() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for i := 1; i < len(results); i++ {
 			suite.True(results[i].Age <= results[i-1].Age,
@@ -578,12 +601,15 @@ func (suite *EBBasicExpressionsTestSuite) TestOrder() {
 			Limit(10).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 	})
 }
 
+// TestCase tests the Case expression method.
 func (suite *EBBasicExpressionsTestSuite) TestCase() {
+	suite.T().Logf("Testing Case for %s", suite.ds.Kind)
+
 	suite.Run("SimpleCaseExpression", func() {
 		type Result struct {
 			Title     string `bun:"title"`
@@ -613,11 +639,11 @@ func (suite *EBBasicExpressionsTestSuite) TestCase() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.Category)
+			suite.NotEmpty(result.Category, "Should have non-empty Category")
 		}
 	})
 
@@ -642,11 +668,11 @@ func (suite *EBBasicExpressionsTestSuite) TestCase() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.DisplayStatus)
+			suite.NotEmpty(result.DisplayStatus, "Should have non-empty DisplayStatus")
 		}
 	})
 
@@ -686,16 +712,19 @@ func (suite *EBBasicExpressionsTestSuite) TestCase() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.ViewCategory)
+			suite.NotEmpty(result.ViewCategory, "Should have non-empty ViewCategory")
 		}
 	})
 }
 
+// TestSubQuery tests the SubQuery expression method.
 func (suite *EBBasicExpressionsTestSuite) TestSubQuery() {
+	suite.T().Logf("Testing SubQuery for %s", suite.ds.Kind)
+
 	suite.Run("SimpleSubQueryInSelect", func() {
 		type Result struct {
 			ID        string  `bun:"id"`
@@ -720,12 +749,12 @@ func (suite *EBBasicExpressionsTestSuite) TestSubQuery() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.ID)
-			suite.NotEmpty(result.Title)
+			suite.NotEmpty(result.ID, "Should have non-empty ID")
+			suite.NotEmpty(result.Title, "Should have non-empty Title")
 			suite.True(result.AvgViews > 0, "Average views should be positive")
 		}
 	})
@@ -755,12 +784,12 @@ func (suite *EBBasicExpressionsTestSuite) TestSubQuery() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.ID)
-			suite.NotEmpty(result.Title)
+			suite.NotEmpty(result.ID, "Should have non-empty ID")
+			suite.NotEmpty(result.Title, "Should have non-empty Title")
 		}
 	})
 
@@ -790,12 +819,12 @@ func (suite *EBBasicExpressionsTestSuite) TestSubQuery() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.ID)
-			suite.NotEmpty(result.Name)
+			suite.NotEmpty(result.ID, "Should have non-empty ID")
+			suite.NotEmpty(result.Name, "Should have non-empty Name")
 			suite.True(result.PostCount >= 0, "Post count should be non-negative")
 		}
 	})
@@ -841,13 +870,13 @@ func (suite *EBBasicExpressionsTestSuite) TestSubQuery() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		var foundTopView bool
 		for _, result := range results {
-			suite.NotEmpty(result.ID)
-			suite.NotEmpty(result.Title)
+			suite.NotEmpty(result.ID, "Should have non-empty ID")
+			suite.NotEmpty(result.Title, "Should have non-empty Title")
 			suite.True(result.MaxViews > 0, "Max views should be positive")
 			suite.True(result.ViewCount <= result.MaxViews,
 				"View count should not exceed max views")
@@ -866,6 +895,8 @@ func (suite *EBBasicExpressionsTestSuite) TestSubQuery() {
 
 // TestExists tests the Exists expression.
 func (suite *EBBasicExpressionsTestSuite) TestExists() {
+	suite.T().Logf("Testing Exists for %s", suite.ds.Kind)
+
 	suite.Run("ExistsInWhereClause", func() {
 		type Result struct {
 			ID    string `bun:"id"`
@@ -892,12 +923,12 @@ func (suite *EBBasicExpressionsTestSuite) TestExists() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.ID)
-			suite.NotEmpty(result.Name)
+			suite.NotEmpty(result.ID, "Should have non-empty ID")
+			suite.NotEmpty(result.Name, "Should have non-empty Name")
 		}
 	})
 
@@ -926,11 +957,11 @@ func (suite *EBBasicExpressionsTestSuite) TestExists() {
 			OrderBy("name").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
+		suite.Require().NoError(err, "Should execute query")
 
 		for _, result := range results {
-			suite.NotEmpty(result.ID)
-			suite.NotEmpty(result.Name)
+			suite.NotEmpty(result.ID, "Should have non-empty ID")
+			suite.NotEmpty(result.Name, "Should have non-empty Name")
 		}
 	})
 
@@ -961,16 +992,18 @@ func (suite *EBBasicExpressionsTestSuite) TestExists() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
+		suite.Require().NoError(err, "Should execute query")
 
 		for _, result := range results {
-			suite.NotEmpty(result.ID)
+			suite.NotEmpty(result.ID, "Should have non-empty ID")
 		}
 	})
 }
 
 // TestNotExists tests the NotExists expression.
 func (suite *EBBasicExpressionsTestSuite) TestNotExists() {
+	suite.T().Logf("Testing NotExists for %s", suite.ds.Kind)
+
 	suite.Run("NotExistsInWhereClause", func() {
 		type Result struct {
 			ID    string `bun:"id"`
@@ -997,11 +1030,11 @@ func (suite *EBBasicExpressionsTestSuite) TestNotExists() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
+		suite.Require().NoError(err, "Should execute query")
 
 		for _, result := range results {
-			suite.NotEmpty(result.ID)
-			suite.NotEmpty(result.Name)
+			suite.NotEmpty(result.ID, "Should have non-empty ID")
+			suite.NotEmpty(result.Name, "Should have non-empty Name")
 		}
 	})
 
@@ -1030,11 +1063,11 @@ func (suite *EBBasicExpressionsTestSuite) TestNotExists() {
 			OrderBy("name").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
+		suite.Require().NoError(err, "Should execute query")
 
 		for _, result := range results {
-			suite.NotEmpty(result.ID)
-			suite.NotEmpty(result.Name)
+			suite.NotEmpty(result.ID, "Should have non-empty ID")
+			suite.NotEmpty(result.Name, "Should have non-empty Name")
 		}
 	})
 
@@ -1073,17 +1106,19 @@ func (suite *EBBasicExpressionsTestSuite) TestNotExists() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
+		suite.Require().NoError(err, "Should execute query")
 
 		for _, result := range results {
-			suite.NotEmpty(result.ID)
-			suite.NotEmpty(result.Name)
+			suite.NotEmpty(result.ID, "Should have non-empty ID")
+			suite.NotEmpty(result.Name, "Should have non-empty Name")
 		}
 	})
 }
 
 // TestNot tests the Not method for negating boolean expressions.
 func (suite *EBBasicExpressionsTestSuite) TestNot() {
+	suite.T().Logf("Testing Not for %s", suite.ds.Kind)
+
 	suite.Run("NotWithEqualityCondition", func() {
 		type Result struct {
 			ID     string `bun:"id"`
@@ -1104,8 +1139,8 @@ func (suite *EBBasicExpressionsTestSuite) TestNot() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.NotEqual("published", result.Status, "Status should not be 'published'")
@@ -1132,8 +1167,8 @@ func (suite *EBBasicExpressionsTestSuite) TestNot() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.ViewCount <= 50, "ViewCount should be <= 50")
@@ -1160,11 +1195,11 @@ func (suite *EBBasicExpressionsTestSuite) TestNot() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.Description)
+			suite.NotEmpty(result.Description, "Should have non-empty Description")
 		}
 	})
 
@@ -1186,8 +1221,8 @@ func (suite *EBBasicExpressionsTestSuite) TestNot() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			expected := result.Status != "draft"
@@ -1197,9 +1232,9 @@ func (suite *EBBasicExpressionsTestSuite) TestNot() {
 }
 
 // TestAny tests the Any expression method.
-// Note: SQLite does not support ANY/ALL operators natively and simulation is not trivial.
-// MySQL supports ANY/ALL but does not allow LIMIT in ANY/ALL subqueries (Error 1235).
 func (suite *EBBasicExpressionsTestSuite) TestAny() {
+	suite.T().Logf("Testing Any for %s", suite.ds.Kind)
+
 	if suite.ds.Kind == config.SQLite {
 		suite.T().Skipf("Test skipped for %s (ANY operator not supported)", suite.ds.Kind)
 	}
@@ -1237,12 +1272,12 @@ func (suite *EBBasicExpressionsTestSuite) TestAny() {
 			OrderBy("name").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.ID)
-			suite.NotEmpty(result.Name)
+			suite.NotEmpty(result.ID, "Should have non-empty ID")
+			suite.NotEmpty(result.Name, "Should have non-empty Name")
 		}
 	})
 
@@ -1278,8 +1313,8 @@ func (suite *EBBasicExpressionsTestSuite) TestAny() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.ViewCount > 50, "ViewCount should be > 50")
@@ -1288,9 +1323,9 @@ func (suite *EBBasicExpressionsTestSuite) TestAny() {
 }
 
 // TestAll tests the All expression method.
-// Note: SQLite does not support ANY/ALL operators natively and simulation is not trivial.
-// MySQL supports ANY/ALL but does not allow LIMIT in ANY/ALL subqueries (Error 1235).
 func (suite *EBBasicExpressionsTestSuite) TestAll() {
+	suite.T().Logf("Testing All for %s", suite.ds.Kind)
+
 	if suite.ds.Kind == config.SQLite {
 		suite.T().Skipf("Test skipped for %s (ALL operator not supported)", suite.ds.Kind)
 	}
@@ -1331,8 +1366,8 @@ func (suite *EBBasicExpressionsTestSuite) TestAll() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.ViewCount >= 10, "ViewCount should be >= 10")
@@ -1371,8 +1406,8 @@ func (suite *EBBasicExpressionsTestSuite) TestAll() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.ViewCount < 200, "ViewCount should be < 200")
@@ -1380,8 +1415,10 @@ func (suite *EBBasicExpressionsTestSuite) TestAll() {
 	})
 }
 
-// TestArithmeticOperators tests the Add, Subtract, Multiply, Divide, and Paren methods.
+// TestArithmeticOperators tests Add, Subtract, Multiply, Divide, and Paren methods.
 func (suite *EBBasicExpressionsTestSuite) TestArithmeticOperators() {
+	suite.T().Logf("Testing ArithmeticOperators for %s", suite.ds.Kind)
+
 	suite.Run("BasicArithmeticOperations", func() {
 		type Result struct {
 			ID         string  `bun:"id"`
@@ -1422,22 +1459,25 @@ func (suite *EBBasicExpressionsTestSuite) TestArithmeticOperators() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.Equal(result.ViewCount+10, result.Added)
-			suite.Equal(result.ViewCount-5, result.Subtracted)
-			suite.Equal(result.ViewCount*2, result.Multiplied)
-			suite.InDelta(float64(result.ViewCount)/2.0, result.Divided, 0.01)
+			suite.Equal(result.ViewCount+10, result.Added, "Should add correctly")
+			suite.Equal(result.ViewCount-5, result.Subtracted, "Should subtract correctly")
+			suite.Equal(result.ViewCount*2, result.Multiplied, "Should multiply correctly")
+			suite.InDelta(float64(result.ViewCount)/2.0, result.Divided, 0.01, "Should divide correctly")
 
 			expected := (result.ViewCount+10)*2 - 5
-			suite.Equal(expected, result.Complex)
+			suite.Equal(expected, result.Complex, "Should compute complex expression correctly")
 		}
 	})
 }
 
+// TestExpr tests the Expr expression method.
 func (suite *EBBasicExpressionsTestSuite) TestExpr() {
+	suite.T().Logf("Testing Expr for %s", suite.ds.Kind)
+
 	suite.Run("SimpleArithmeticExpression", func() {
 		type Result struct {
 			ID         string  `bun:"id"`
@@ -1464,8 +1504,8 @@ func (suite *EBBasicExpressionsTestSuite) TestExpr() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.Equal(result.ViewCount*2, result.Doubled, "Doubled should equal view_count * 2")
@@ -1494,8 +1534,8 @@ func (suite *EBBasicExpressionsTestSuite) TestExpr() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.Contains(result.TitleWithStatus, result.Title,
@@ -1521,7 +1561,7 @@ func (suite *EBBasicExpressionsTestSuite) TestExpr() {
 				return eb.AvgColumn("view_count")
 			}).
 			Scan(suite.ctx, &avgViewCount)
-		suite.NoError(err)
+		suite.Require().NoError(err, "Should execute query")
 
 		err = suite.selectPosts().
 			Select("id", "view_count").
@@ -1535,8 +1575,8 @@ func (suite *EBBasicExpressionsTestSuite) TestExpr() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.AbsDifference >= 0, "Absolute difference should be non-negative")
@@ -1545,7 +1585,10 @@ func (suite *EBBasicExpressionsTestSuite) TestExpr() {
 	})
 }
 
+// TestExprs tests the Exprs expression method.
 func (suite *EBBasicExpressionsTestSuite) TestExprs() {
+	suite.T().Logf("Testing Exprs for %s", suite.ds.Kind)
+
 	suite.Run("CombineMultipleExpressions", func() {
 		type Result struct {
 			ID       string `bun:"id"`
@@ -1568,12 +1611,15 @@ func (suite *EBBasicExpressionsTestSuite) TestExprs() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 	})
 }
 
+// TestExprsWithSep tests the ExprsWithSep expression method.
 func (suite *EBBasicExpressionsTestSuite) TestExprsWithSep() {
+	suite.T().Logf("Testing ExprsWithSep for %s", suite.ds.Kind)
+
 	suite.Run("CombineConditionsWithOR", func() {
 		type Result struct {
 			ID        string `bun:"id"`
@@ -1599,8 +1645,8 @@ func (suite *EBBasicExpressionsTestSuite) TestExprsWithSep() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			// Verify: should be true if age > 28 OR is_active = false
@@ -1634,8 +1680,8 @@ func (suite *EBBasicExpressionsTestSuite) TestExprsWithSep() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			// Verify: total should be age + 10 + 5
@@ -1645,11 +1691,12 @@ func (suite *EBBasicExpressionsTestSuite) TestExprsWithSep() {
 	})
 }
 
+// TestExprByDialect tests the ExprByDialect expression method.
 func (suite *EBBasicExpressionsTestSuite) TestExprByDialect() {
-	// Test: Cross-database string concatenation
+	suite.T().Logf("Testing ExprByDialect for %s", suite.ds.Kind)
+
 	// Different databases use different syntax for string concatenation:
-	// - SQLite: uses || operator
-	// - PostgreSQL/MySQL: use CONCAT function
+	// SQLite uses || operator, PostgreSQL/MySQL use CONCAT function.
 	suite.Run("CrossDatabaseStringConcatenation", func() {
 		type Result struct {
 			ID       string `bun:"id"`
@@ -1683,11 +1730,11 @@ func (suite *EBBasicExpressionsTestSuite) TestExprByDialect() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.FullInfo)
+			suite.NotEmpty(result.FullInfo, "Should have non-empty FullInfo")
 			suite.Contains(result.FullInfo, result.Name, "Full info should contain name")
 			suite.Contains(result.FullInfo, result.Email, "Full info should contain email")
 			suite.Contains(result.FullInfo, "<", "Full info should contain opening bracket")
@@ -1730,11 +1777,11 @@ func (suite *EBBasicExpressionsTestSuite) TestExprByDialect() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.Category)
+			suite.NotEmpty(result.Category, "Should have non-empty Category")
 			suite.Contains([]string{"High", "Medium", "Low"}, result.Category,
 				"Category should be one of: High, Medium, Low")
 		}
@@ -1742,6 +1789,8 @@ func (suite *EBBasicExpressionsTestSuite) TestExprByDialect() {
 }
 
 func (suite *EBBasicExpressionsTestSuite) TestExecByDialect() {
+	suite.T().Logf("Testing ExecByDialect for %s", suite.ds.Kind)
+
 	suite.Run("DatabaseSpecificSideEffects", func() {
 		// Track which database callback was executed
 		var executed string
@@ -1796,6 +1845,8 @@ func (suite *EBBasicExpressionsTestSuite) TestExecByDialect() {
 }
 
 func (suite *EBBasicExpressionsTestSuite) TestExecByDialectWithErr() {
+	suite.T().Logf("Testing ExecByDialectWithErr for %s", suite.ds.Kind)
+
 	suite.Run("DatabaseSpecificWithError", func() {
 		var executed string
 
@@ -1822,7 +1873,7 @@ func (suite *EBBasicExpressionsTestSuite) TestExecByDialectWithErr() {
 			},
 		})
 
-		suite.NoError(err)
+		suite.Require().NoError(err, "Should execute query")
 
 		// Verify the correct callback was executed
 		switch suite.ds.Kind {
@@ -1868,7 +1919,7 @@ func (suite *EBBasicExpressionsTestSuite) TestExecByDialectWithErr() {
 				return nil
 			},
 		})
-		suite.NoError(err)
+		suite.Require().NoError(err, "Should execute query")
 
 		// Test default callback returning error
 		testErr := errors.New("default callback error")
@@ -1883,6 +1934,8 @@ func (suite *EBBasicExpressionsTestSuite) TestExecByDialectWithErr() {
 }
 
 func (suite *EBBasicExpressionsTestSuite) TestFragmentByDialect() {
+	suite.T().Logf("Testing FragmentByDialect for %s", suite.ds.Kind)
+
 	suite.Run("DatabaseSpecificFragments", func() {
 		// Create a simple query to test with
 		query := suite.db.NewSelect().Model((*Post)(nil)).Limit(1)
@@ -1901,8 +1954,8 @@ func (suite *EBBasicExpressionsTestSuite) TestFragmentByDialect() {
 			},
 		})
 
-		suite.NoError(err)
-		suite.NotNil(fragment)
+		suite.Require().NoError(err, "Should execute query")
+		suite.NotNil(fragment, "Should not be nil")
 
 		// Verify the correct fragment was generated
 		fragmentStr := string(fragment)
@@ -1936,7 +1989,7 @@ func (suite *EBBasicExpressionsTestSuite) TestFragmentByDialect() {
 
 		suite.Error(err, "FragmentByDialect should return error when callback fails")
 		suite.Equal(testErr, err, "Should return the exact error from callback")
-		suite.Nil(fragment)
+		suite.Nil(fragment, "Should be nil")
 	})
 
 	suite.Run("DefaultFragmentCallback", func() {
@@ -1951,7 +2004,7 @@ func (suite *EBBasicExpressionsTestSuite) TestFragmentByDialect() {
 			},
 		})
 
-		suite.NoError(err)
+		suite.Require().NoError(err, "Should execute query")
 		suite.Equal(defaultFragment, fragment, "Should return default fragment")
 	})
 
@@ -1966,7 +2019,7 @@ func (suite *EBBasicExpressionsTestSuite) TestFragmentByDialect() {
 			},
 		})
 
-		suite.NoError(err)
-		suite.Nil(fragment)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Nil(fragment, "Should be nil")
 	})
 }

@@ -14,8 +14,7 @@ func init() {
 	})
 }
 
-// DBTestSuite tests DB utility methods.
-// Covers: RunInTX, RunInReadOnlyTX, BeginTx, Conn, ModelPKs, ModelPKFields.
+// DBTestSuite tests DB utility methods across all databases.
 type DBTestSuite struct {
 	*BaseTestSuite
 }
@@ -29,8 +28,8 @@ func (suite *DBTestSuite) TestRunInTX() {
 			Model((*User)(nil)).
 			Count(ctx)
 
-		suite.NoError(err)
-		suite.Equal(int64(20), count)
+		suite.NoError(err, "Should count users in transaction")
+		suite.Equal(int64(20), count, "Should count all fixture users")
 
 		return nil
 	})
@@ -47,8 +46,8 @@ func (suite *DBTestSuite) TestRunInReadOnlyTX() {
 			Model((*User)(nil)).
 			Count(ctx)
 
-		suite.NoError(err)
-		suite.Equal(int64(20), count)
+		suite.NoError(err, "Should count users in read-only transaction")
+		suite.Equal(int64(20), count, "Should count all fixture users")
 
 		return nil
 	})
@@ -64,15 +63,13 @@ func (suite *DBTestSuite) TestBeginTx() {
 	suite.NoError(err, "BeginTx should work")
 	suite.NotNil(tx, "Transaction should not be nil")
 
-	// Use the transaction
 	count, err := tx.NewSelect().
 		Model((*User)(nil)).
 		Count(suite.ctx)
 
-	suite.NoError(err)
-	suite.Equal(int64(20), count)
+	suite.NoError(err, "Should count users in transaction")
+	suite.Equal(int64(20), count, "Should count all fixture users")
 
-	// Rollback
 	err = tx.Rollback()
 	suite.NoError(err, "Rollback should work")
 }
@@ -125,19 +122,18 @@ func (suite *DBTestSuite) TestTxCommit() {
 			return err
 		}
 
-		suite.Equal(int64(20), count)
+		suite.Equal(int64(20), count, "Should count all fixture users")
 
 		return nil
 	})
 
 	suite.NoError(err, "Commit should work")
 
-	// Also test BeginTx + explicit Commit
 	tx, err := suite.db.BeginTx(suite.ctx, nil)
-	suite.NoError(err)
+	suite.NoError(err, "Should begin transaction")
 
 	_, err = tx.NewSelect().Model((*User)(nil)).Count(suite.ctx)
-	suite.NoError(err)
+	suite.NoError(err, "Should count users in transaction")
 
 	err = tx.Commit()
 	suite.NoError(err, "Explicit Commit should work")
@@ -189,7 +185,7 @@ func (suite *DBTestSuite) TestScanRowsAndScanRow() {
 		suite.True(rows.Next(), "Should have at least one row")
 		err = suite.db.ScanRow(suite.ctx, rows, &result)
 		suite.NoError(err, "ScanRow should work")
-		suite.Equal(int64(20), result.Count)
+		suite.Equal(int64(20), result.Count, "Should count all fixture users")
 	})
 }
 
@@ -207,8 +203,8 @@ func (suite *DBTestSuite) TestPKFieldSet() {
 	suite.NoError(err, "PKField.Set should work")
 
 	pks, err := suite.db.ModelPKs(user)
-	suite.NoError(err)
-	suite.Equal("new-pk-value", pks[pkField.Name])
+	suite.NoError(err, "Should get model PKs")
+	suite.Equal("new-pk-value", pks[pkField.Name], "Should reflect the set PK value")
 }
 
 // TestEnumStrings tests uncovered enum String() methods.

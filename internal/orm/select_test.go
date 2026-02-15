@@ -17,9 +17,7 @@ func init() {
 	})
 }
 
-// SelectTestSuite tests SELECT operations including basic queries, column selection,
-// joins, subqueries, ordering, pagination, locking, set operations, and execution methods
-// across all databases (PostgreSQL, MySQL, SQLite).
+// SelectTestSuite tests SELECT operations across all databases.
 type SelectTestSuite struct {
 	*BaseTestSuite
 }
@@ -2718,7 +2716,7 @@ func (suite *SelectTestSuite) TestWhereDeleted() {
 
 	err := suite.db.ResetModel(suite.ctx, (*SoftDeleteArticle)(nil))
 
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, "Should reset soft delete table")
 	defer func() {
 		_, _ = suite.db.NewDropTable().Model((*SoftDeleteArticle)(nil)).IfExists().Exec(suite.ctx)
 	}()
@@ -2729,7 +2727,7 @@ func (suite *SelectTestSuite) TestWhereDeleted() {
 	}
 
 	_, err = suite.db.NewInsert().Model(&records).Exec(suite.ctx)
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, "Should insert soft delete test records")
 
 	// Soft delete the first record
 	_, err = suite.db.NewDelete().
@@ -2738,7 +2736,7 @@ func (suite *SelectTestSuite) TestWhereDeleted() {
 			cb.Equals("id", records[0].ID)
 		}).
 		Exec(suite.ctx)
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, "Should soft delete first record")
 
 	suite.Run("DefaultExcludesDeleted", func() {
 		var articles []SoftDeleteArticle
@@ -2747,9 +2745,9 @@ func (suite *SelectTestSuite) TestWhereDeleted() {
 			Model(&articles).
 			OrderBy("title").
 			Scan(suite.ctx)
-		suite.Require().NoError(err)
+		suite.Require().NoError(err, "Should scan default query results")
 		suite.Len(articles, 1, "Default query should exclude soft-deleted records")
-		suite.Equal("Active article", articles[0].Title)
+		suite.Equal("Active article", articles[0].Title, "Should return the non-deleted article")
 	})
 
 	suite.Run("WhereDeleted", func() {
@@ -2759,9 +2757,9 @@ func (suite *SelectTestSuite) TestWhereDeleted() {
 			Model(&articles).
 			WhereDeleted().
 			Scan(suite.ctx)
-		suite.Require().NoError(err)
+		suite.Require().NoError(err, "Should scan WhereDeleted query results")
 		suite.Len(articles, 1, "WhereDeleted should return only soft-deleted records")
-		suite.Equal("To be deleted", articles[0].Title)
+		suite.Equal("To be deleted", articles[0].Title, "Should return the soft-deleted article")
 	})
 
 	suite.Run("IncludeDeleted", func() {
@@ -2772,7 +2770,7 @@ func (suite *SelectTestSuite) TestWhereDeleted() {
 			IncludeDeleted().
 			OrderBy("title").
 			Scan(suite.ctx)
-		suite.Require().NoError(err)
+		suite.Require().NoError(err, "Should scan IncludeDeleted query results")
 		suite.Len(articles, 2, "IncludeDeleted should return all records")
 	})
 }

@@ -13,29 +13,32 @@ import (
 )
 
 // Test models with different PK types for PKField testing.
-
 type stringPKModel struct {
 	bun.BaseModel `bun:"table:test_string_pk"`
-	ID            string `bun:"id,pk"`
-	Name          string `bun:"name"`
+
+	ID   string `bun:"id,pk"`
+	Name string `bun:"name"`
 }
 
 type intPKModel struct {
 	bun.BaseModel `bun:"table:test_int_pk"`
-	ID            int64  `bun:"id,pk"`
-	Name          string `bun:"name"`
+
+	ID   int64  `bun:"id,pk"`
+	Name string `bun:"name"`
 }
 
 type int32PKModel struct {
 	bun.BaseModel `bun:"table:test_int32_pk"`
-	ID            int32  `bun:"id,pk"`
-	Name          string `bun:"name"`
+
+	ID   int32  `bun:"id,pk"`
+	Name string `bun:"name"`
 }
 
 type floatPKModel struct {
 	bun.BaseModel `bun:"table:test_float_pk"`
-	ID            float64 `bun:"id,pk"`
-	Name          string  `bun:"name"`
+
+	ID   float64 `bun:"id,pk"`
+	Name string  `bun:"name"`
 }
 
 func newTestBunDB(t *testing.T) *bun.DB {
@@ -71,42 +74,42 @@ func TestPKFieldValidateModel(t *testing.T) {
 		model := &stringPKModel{ID: "test-id"}
 
 		val, err := pkField.Value(model)
-		assert.NoError(t, err)
-		assert.Equal(t, "test-id", val)
+		assert.NoError(t, err, "Should extract value from valid pointer model")
+		assert.Equal(t, "test-id", val, "Should return correct PK value")
 	})
 
 	t.Run("NonPointerModel", func(t *testing.T) {
 		_, err := pkField.Value(stringPKModel{ID: "test"})
-		assert.ErrorIs(t, err, ErrModelMustBePointerToStruct)
+		assert.ErrorIs(t, err, ErrModelMustBePointerToStruct, "Should reject non-pointer model")
 	})
 
 	t.Run("PointerToNonStruct", func(t *testing.T) {
 		s := "not-a-struct"
 
 		_, err := pkField.Value(&s)
-		assert.ErrorIs(t, err, ErrModelMustBePointerToStruct)
+		assert.ErrorIs(t, err, ErrModelMustBePointerToStruct, "Should reject pointer to non-struct")
 	})
 
 	t.Run("ReflectValuePointerToStruct", func(t *testing.T) {
 		model := &stringPKModel{ID: "reflect-test"}
 
 		val, err := pkField.Value(reflect.ValueOf(model))
-		assert.NoError(t, err)
-		assert.Equal(t, "reflect-test", val)
+		assert.NoError(t, err, "Should accept reflect.Value pointer to struct")
+		assert.Equal(t, "reflect-test", val, "Should return correct PK value")
 	})
 
 	t.Run("ReflectValueNonPointerNonAddressable", func(t *testing.T) {
 		model := stringPKModel{ID: "test"}
 
 		_, err := pkField.Value(reflect.ValueOf(model))
-		assert.ErrorIs(t, err, ErrModelMustBePointerToStruct)
+		assert.ErrorIs(t, err, ErrModelMustBePointerToStruct, "Should reject non-addressable reflect.Value")
 	})
 
 	t.Run("ReflectValuePointerToNonStruct", func(t *testing.T) {
 		s := "not-a-struct"
 
 		_, err := pkField.Value(reflect.ValueOf(&s))
-		assert.ErrorIs(t, err, ErrModelMustBePointerToStruct)
+		assert.ErrorIs(t, err, ErrModelMustBePointerToStruct, "Should reject reflect.Value pointer to non-struct")
 	})
 
 	t.Run("ReflectValueAddressableStruct", func(t *testing.T) {
@@ -116,8 +119,8 @@ func TestPKFieldValidateModel(t *testing.T) {
 		rv.Set(reflect.ValueOf(model))
 
 		val, err := pkField.Value(rv)
-		assert.NoError(t, err)
-		assert.Equal(t, "addressable-test", val)
+		assert.NoError(t, err, "Should accept addressable reflect.Value struct")
+		assert.Equal(t, "addressable-test", val, "Should return correct PK value")
 	})
 }
 
@@ -129,21 +132,21 @@ func TestPKFieldSetStringType(t *testing.T) {
 		model := &stringPKModel{}
 
 		err := pkField.Set(model, "new-id")
-		assert.NoError(t, err)
-		assert.Equal(t, "new-id", model.ID)
+		assert.NoError(t, err, "Should set string PK value")
+		assert.Equal(t, "new-id", model.ID, "Should update model ID field")
 	})
 
 	t.Run("SetIntAsString", func(t *testing.T) {
 		model := &stringPKModel{}
 
 		err := pkField.Set(model, 42)
-		assert.NoError(t, err)
-		assert.Equal(t, "42", model.ID)
+		assert.NoError(t, err, "Should convert int to string for string PK")
+		assert.Equal(t, "42", model.ID, "Should store converted string value")
 	})
 
 	t.Run("InvalidModel", func(t *testing.T) {
 		err := pkField.Set(stringPKModel{}, "value")
-		assert.ErrorIs(t, err, ErrModelMustBePointerToStruct)
+		assert.ErrorIs(t, err, ErrModelMustBePointerToStruct, "Should reject non-pointer model")
 	})
 }
 
@@ -155,8 +158,8 @@ func TestPKFieldSetIntTypes(t *testing.T) {
 		model := &intPKModel{}
 
 		err := pkField.Set(model, 42)
-		assert.NoError(t, err)
-		assert.Equal(t, int64(42), model.ID)
+		assert.NoError(t, err, "Should set int64 PK value")
+		assert.Equal(t, int64(42), model.ID, "Should store correct int64 value")
 	})
 
 	t.Run("Int64PKFromString", func(t *testing.T) {
@@ -164,8 +167,8 @@ func TestPKFieldSetIntTypes(t *testing.T) {
 		model := &intPKModel{}
 
 		err := pkField.Set(model, "123")
-		assert.NoError(t, err)
-		assert.Equal(t, int64(123), model.ID)
+		assert.NoError(t, err, "Should parse string to int64 PK")
+		assert.Equal(t, int64(123), model.ID, "Should store parsed int64 value")
 	})
 
 	t.Run("Int32PK", func(t *testing.T) {
@@ -173,8 +176,8 @@ func TestPKFieldSetIntTypes(t *testing.T) {
 		model := &int32PKModel{}
 
 		err := pkField.Set(model, 99)
-		assert.NoError(t, err)
-		assert.Equal(t, int32(99), model.ID)
+		assert.NoError(t, err, "Should set int32 PK value")
+		assert.Equal(t, int32(99), model.ID, "Should store correct int32 value")
 	})
 
 	t.Run("Int64PKInvalidValue", func(t *testing.T) {
@@ -182,7 +185,7 @@ func TestPKFieldSetIntTypes(t *testing.T) {
 		model := &intPKModel{}
 
 		err := pkField.Set(model, "not-a-number")
-		assert.Error(t, err)
+		assert.Error(t, err, "Should reject non-numeric string for int PK")
 	})
 }
 
@@ -192,7 +195,7 @@ func TestPKFieldSetUnsupportedType(t *testing.T) {
 	model := &floatPKModel{}
 
 	err := pkField.Set(model, 3.14)
-	assert.ErrorIs(t, err, ErrPrimaryKeyUnsupportedType)
+	assert.ErrorIs(t, err, ErrPrimaryKeyUnsupportedType, "Should reject unsupported PK type")
 }
 
 func TestPKFieldValueErrors(t *testing.T) {
@@ -201,14 +204,14 @@ func TestPKFieldValueErrors(t *testing.T) {
 
 	t.Run("NonPointerModel", func(t *testing.T) {
 		_, err := pkField.Value(stringPKModel{})
-		assert.ErrorIs(t, err, ErrModelMustBePointerToStruct)
+		assert.ErrorIs(t, err, ErrModelMustBePointerToStruct, "Should reject non-pointer model")
 	})
 
 	t.Run("PointerToNonStruct", func(t *testing.T) {
 		n := 42
 
 		_, err := pkField.Value(&n)
-		assert.ErrorIs(t, err, ErrModelMustBePointerToStruct)
+		assert.ErrorIs(t, err, ErrModelMustBePointerToStruct, "Should reject pointer to non-struct")
 	})
 }
 
@@ -216,7 +219,7 @@ func TestNewPKField(t *testing.T) {
 	db := newTestBunDB(t)
 	pkField := newPKFieldForModel(t, db, (*stringPKModel)(nil))
 
-	assert.Equal(t, "ID", pkField.Field)
-	assert.Equal(t, "id", pkField.Column)
-	assert.Equal(t, "id", pkField.Name)
+	assert.Equal(t, "ID", pkField.Field, "Should use struct field name")
+	assert.Equal(t, "id", pkField.Column, "Should use bun column tag")
+	assert.Equal(t, "id", pkField.Name, "Should use column name as display name")
 }

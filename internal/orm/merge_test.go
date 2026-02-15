@@ -14,11 +14,6 @@ func init() {
 }
 
 // MergeTestSuite tests MERGE operations (PostgreSQL 15+).
-// PostgreSQL 15+ supports the SQL standard MERGE statement (ISO/IEC 9075-2:2016).
-// This suite covers all interface methods from orm.MergeQuery, orm.MergeWhenBuilder, orm.MergeUpdateBuilder, and orm.MergeInsertBuilder.
-//
-// SetupTest inserts fresh test data before each test method; TearDownTest cleans it up.
-// This ensures merge operations never modify fixture data.
 type MergeTestSuite struct {
 	*BaseTestSuite
 
@@ -1031,17 +1026,17 @@ func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
 			}).
 			OrderBy("id").
 			Scan(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should query merged users")
 
 		// wnmbs1 should be updated from source
-		suite.Equal("User to Keep Updated", users[0].Name)
-		suite.Equal("keep_updated@example.com", users[0].Email)
-		suite.True(users[0].IsActive)
+		suite.Equal("User to Keep Updated", users[0].Name, "Should update name from source")
+		suite.Equal("keep_updated@example.com", users[0].Email, "Should update email from source")
+		suite.True(users[0].IsActive, "Should remain active when matched")
 
 		// wnmbs2 should be marked as inactive (not in source)
-		suite.Equal("User to Update", users[1].Name)
-		suite.Equal("update@example.com", users[1].Email)
-		suite.False(users[1].IsActive)
+		suite.Equal("User to Update", users[1].Name, "Should keep original name when not in source")
+		suite.Equal("update@example.com", users[1].Email, "Should keep original email when not in source")
+		suite.False(users[1].IsActive, "Should deactivate when not matched by source")
 	})
 
 	suite.Run("ConditionalWhenNotMatchedBySource", func() {
@@ -1121,20 +1116,20 @@ func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
 			}).
 			OrderBy("id").
 			Scan(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should query merged users")
 
 		// wnmbsc1 should be updated from source and remain active
-		suite.Equal("Active User 1 Updated", users[0].Name)
-		suite.Equal("active1_updated@example.com", users[0].Email)
-		suite.True(users[0].IsActive)
+		suite.Equal("Active User 1 Updated", users[0].Name, "Should update name from source")
+		suite.Equal("active1_updated@example.com", users[0].Email, "Should update email from source")
+		suite.True(users[0].IsActive, "Should remain active when matched")
 
 		// wnmbsc2 should be deactivated (was active, not in source)
-		suite.Equal("Active User 2", users[1].Name)
-		suite.False(users[1].IsActive)
+		suite.Equal("Active User 2", users[1].Name, "Should keep original name when not in source")
+		suite.False(users[1].IsActive, "Should deactivate active user not in source")
 
 		// wnmbsc3 should remain inactive (was already inactive, condition not met)
-		suite.Equal("Inactive User", users[2].Name)
-		suite.False(users[2].IsActive)
+		suite.Equal("Inactive User", users[2].Name, "Should keep original name for inactive user")
+		suite.False(users[2].IsActive, "Should remain inactive when condition not met")
 	})
 }
 
@@ -1763,81 +1758,70 @@ func (suite *MergeTestSuite) TestMergeWithConditions() {
 	}
 }
 
-// TestMergeDB tests DB() method on MergeQuery.
+// TestMergeDB tests DB() method returns the underlying database.
 func (suite *MergeTestSuite) TestMergeDB() {
 	suite.T().Logf("Testing Merge DB for %s", suite.ds.Kind)
 
 	query := suite.db.NewMerge().Model((*Tag)(nil))
-	db := query.DB()
-
-	suite.NotNil(db, "DB() should return non-nil")
+	suite.NotNil(query.DB(), "Should return underlying database")
 }
 
-// TestMergeUsing tests Using method with model.
-func (suite *MergeTestSuite) TestMergeUsing() {
+// TestMergeUsingMethods tests Using and UsingExpr source specification methods.
+func (suite *MergeTestSuite) TestMergeUsingMethods() {
 	if suite.ds.Kind != config.Postgres {
 		suite.T().Skip("MERGE only tested on Postgres")
 	}
 
-	suite.T().Logf("Testing Merge Using for %s", suite.ds.Kind)
+	suite.T().Logf("Testing Merge Using methods for %s", suite.ds.Kind)
 
-	// Build query without executing to cover code paths
-	query := suite.db.NewMerge().
-		Model((*Tag)(nil)).
-		Using((*Tag)(nil), "src").
-		On(func(cb orm.ConditionBuilder) {
-			cb.EqualsColumn("tag.id", "src.id")
+	suite.Run("UsingModel", func() {
+		query := suite.db.NewMerge().
+			Model((*Tag)(nil)).
+			Using((*Tag)(nil), "src").
+			On(func(cb orm.ConditionBuilder) {
+				cb.EqualsColumn("tag.id", "src.id")
+			}).
+			WhenMatched().ThenUpdate(func(ub orm.MergeUpdateBuilder) {
+			ub.Set("name", "src")
 		}).
-		WhenMatched().ThenUpdate(func(ub orm.MergeUpdateBuilder) {
-		ub.Set("name", "src")
-	}).
-		WhenNotMatched().ThenInsert(func(ib orm.MergeInsertBuilder) {
-		ib.Value("id", "src").Value("name", "src")
+			WhenNotMatched().ThenInsert(func(ib orm.MergeInsertBuilder) {
+			ib.Value("id", "src").Value("name", "src")
+		})
+		suite.NotNil(query, "Should build query with Using model")
 	})
 
-	suite.NotNil(query, "Merge Using should return non-nil")
+	suite.Run("UsingExpr", func() {
+		query := suite.db.NewMerge().
+			Model((*Tag)(nil)).
+			UsingExpr(func(eb orm.ExprBuilder) any {
+				return eb.SubQuery(func(sq orm.SelectQuery) {
+					sq.SelectExpr(func(eb orm.ExprBuilder) any {
+						return eb.Literal("test-id")
+					}, "id").
+						SelectExpr(func(eb orm.ExprBuilder) any {
+							return eb.Literal("TestName")
+						}, "name")
+				})
+			}, "src").
+			On(func(cb orm.ConditionBuilder) {
+				cb.EqualsColumn("tag.id", "src.id")
+			}).
+			WhenMatched().ThenDelete()
+		suite.NotNil(query, "Should build query with UsingExpr")
+	})
 }
 
-// TestMergeUsingExpr tests UsingExpr method.
-func (suite *MergeTestSuite) TestMergeUsingExpr() {
-	if suite.ds.Kind != config.Postgres {
-		suite.T().Skip("MERGE only tested on Postgres")
-	}
+// TestMergeApplyMethods tests Apply and ApplyIf conditional query building.
+func (suite *MergeTestSuite) TestMergeApplyMethods() {
+	suite.T().Logf("Testing Merge Apply methods for %s", suite.ds.Kind)
 
-	suite.T().Logf("Testing Merge UsingExpr for %s", suite.ds.Kind)
-
-	query := suite.db.NewMerge().
-		Model((*Tag)(nil)).
-		UsingExpr(func(eb orm.ExprBuilder) any {
-			return eb.SubQuery(func(sq orm.SelectQuery) {
-				sq.SelectExpr(func(eb orm.ExprBuilder) any {
-					return eb.Literal("test-id")
-				}, "id").
-					SelectExpr(func(eb orm.ExprBuilder) any {
-						return eb.Literal("TestName")
-					}, "name")
-			})
-		}, "src").
-		On(func(cb orm.ConditionBuilder) {
-			cb.EqualsColumn("tag.id", "src.id")
-		}).
-		WhenMatched().ThenDelete()
-
-	suite.NotNil(query, "Merge UsingExpr should return non-nil")
-}
-
-// TestMergeApplyAndApplyIf tests Apply and ApplyIf methods.
-func (suite *MergeTestSuite) TestMergeApplyAndApplyIf() {
-	suite.T().Logf("Testing Merge Apply/ApplyIf for %s", suite.ds.Kind)
-
-	suite.Run("Apply", func() {
+	suite.Run("ApplyUnconditional", func() {
 		query := suite.db.NewMerge().
 			Model((*Tag)(nil)).
 			Apply(func(q orm.MergeQuery) {
 				q.UsingTable("test_tag", "src")
 			})
-
-		suite.NotNil(query, "Merge Apply should return non-nil")
+		suite.NotNil(query, "Should apply function unconditionally")
 	})
 
 	suite.Run("ApplyIfTrue", func() {
@@ -1846,8 +1830,7 @@ func (suite *MergeTestSuite) TestMergeApplyAndApplyIf() {
 			ApplyIf(true, func(q orm.MergeQuery) {
 				q.UsingTable("test_tag", "src")
 			})
-
-		suite.NotNil(query, "Merge ApplyIf(true) should return non-nil")
+		suite.NotNil(query, "Should apply function when condition is true")
 	})
 
 	suite.Run("ApplyIfFalse", func() {
@@ -1856,14 +1839,13 @@ func (suite *MergeTestSuite) TestMergeApplyAndApplyIf() {
 			ApplyIf(false, func(q orm.MergeQuery) {
 				q.UsingTable("test_tag", "src")
 			})
-
-		suite.NotNil(query, "Merge ApplyIf(false) should return non-nil")
+		suite.NotNil(query, "Should skip function when condition is false")
 	})
 }
 
-// TestMergeWithRecursiveAndTableFrom tests Merge WithRecursive and TableFrom.
-func (suite *MergeTestSuite) TestMergeWithRecursiveAndTableFrom() {
-	suite.T().Logf("Testing Merge WithRecursive/TableFrom for %s", suite.ds.Kind)
+// TestMergeTableSpecMethods tests table specification methods with and without aliases.
+func (suite *MergeTestSuite) TestMergeTableSpecMethods() {
+	suite.T().Logf("Testing Merge table specification methods for %s", suite.ds.Kind)
 
 	suite.Run("WithRecursive", func() {
 		query := suite.db.NewMerge().
@@ -1872,43 +1854,33 @@ func (suite *MergeTestSuite) TestMergeWithRecursiveAndTableFrom() {
 			}).
 			Model((*Tag)(nil)).
 			UsingTable("test_tag", "src")
-
-		suite.NotNil(query, "Merge WithRecursive should return non-nil")
+		suite.NotNil(query, "Should build query with WithRecursive")
 	})
 
 	suite.Run("TableFrom", func() {
 		query := suite.db.NewMerge().
 			TableFrom((*Tag)(nil)).
 			UsingTable("test_tag", "src")
-
-		suite.NotNil(query, "Merge TableFrom should return non-nil")
+		suite.NotNil(query, "Should build query with TableFrom")
 	})
-}
 
-// TestMergeTableExprNoAlias tests Merge TableExpr without alias.
-func (suite *MergeTestSuite) TestMergeTableExprNoAlias() {
-	suite.T().Logf("Testing Merge TableExpr without alias for %s", suite.ds.Kind)
+	suite.Run("TableExprNoAlias", func() {
+		query := suite.db.NewMerge().
+			TableExpr(func(eb orm.ExprBuilder) any {
+				return eb.SubQuery(func(sq orm.SelectQuery) {
+					sq.Model((*Tag)(nil)).Select("id", "name")
+				})
+			}).
+			UsingTable("test_tag", "src")
+		suite.NotNil(query, "Should build query with TableExpr")
+	})
 
-	query := suite.db.NewMerge().
-		TableExpr(func(eb orm.ExprBuilder) any {
-			return eb.SubQuery(func(sq orm.SelectQuery) {
+	suite.Run("TableSubQueryNoAlias", func() {
+		query := suite.db.NewMerge().
+			TableSubQuery(func(sq orm.SelectQuery) {
 				sq.Model((*Tag)(nil)).Select("id", "name")
-			})
-		}).
-		UsingTable("test_tag", "src")
-
-	suite.NotNil(query, "Merge TableExpr no alias should return non-nil")
-}
-
-// TestMergeTableSubQueryNoAlias tests Merge TableSubQuery without alias.
-func (suite *MergeTestSuite) TestMergeTableSubQueryNoAlias() {
-	suite.T().Logf("Testing Merge TableSubQuery without alias for %s", suite.ds.Kind)
-
-	query := suite.db.NewMerge().
-		TableSubQuery(func(sq orm.SelectQuery) {
-			sq.Model((*Tag)(nil)).Select("id", "name")
-		}).
-		UsingTable("test_tag", "src")
-
-	suite.NotNil(query, "Merge TableSubQuery no alias should return non-nil")
+			}).
+			UsingTable("test_tag", "src")
+		suite.NotNil(query, "Should build query with TableSubQuery")
+	})
 }

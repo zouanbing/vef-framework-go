@@ -12,15 +12,15 @@ func init() {
 	})
 }
 
-// EBMathFunctionsTestSuite tests mathematical function methods of orm.ExprBuilder
-// including basic math operations, power/root functions, logarithmic functions,
-// trigonometric functions, constants, and comparison functions.
+// EBMathFunctionsTestSuite tests mathematical function methods of orm.ExprBuilder.
 type EBMathFunctionsTestSuite struct {
 	*BaseTestSuite
 }
 
 // TestAbs tests the Abs function.
 func (suite *EBMathFunctionsTestSuite) TestAbs() {
+	suite.T().Logf("Testing Abs for %s", suite.ds.Kind)
+
 	suite.Run("AbsoluteValue", func() {
 		// First get average view count
 		var avgViewCount float64
@@ -30,7 +30,7 @@ func (suite *EBMathFunctionsTestSuite) TestAbs() {
 				return eb.AvgColumn("view_count")
 			}).
 			Scan(suite.ctx, &avgViewCount)
-		suite.NoError(err)
+		suite.Require().NoError(err, "Should execute query")
 
 		type Result struct {
 			Title      string `bun:"title"`
@@ -53,8 +53,8 @@ func (suite *EBMathFunctionsTestSuite) TestAbs() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.AbsDiff >= 0, "Absolute value should always be non-negative")
@@ -71,6 +71,8 @@ func (suite *EBMathFunctionsTestSuite) TestAbs() {
 
 // TestCeil tests the Ceil function.
 func (suite *EBMathFunctionsTestSuite) TestCeil() {
+	suite.T().Logf("Testing Ceil for %s", suite.ds.Kind)
+
 	suite.Run("CeilDecimalValues", func() {
 		type Result struct {
 			ViewCount    int64   `bun:"view_count"`
@@ -92,8 +94,8 @@ func (suite *EBMathFunctionsTestSuite) TestCeil() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.CeiledValue >= result.DecimalValue, "Ceil should be >= original value")
@@ -103,6 +105,8 @@ func (suite *EBMathFunctionsTestSuite) TestCeil() {
 
 // TestFloor tests the Floor function.
 func (suite *EBMathFunctionsTestSuite) TestFloor() {
+	suite.T().Logf("Testing Floor for %s", suite.ds.Kind)
+
 	suite.Run("FloorDecimalValues", func() {
 		type Result struct {
 			ViewCount    int64   `bun:"view_count"`
@@ -124,8 +128,8 @@ func (suite *EBMathFunctionsTestSuite) TestFloor() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.FlooredValue <= result.DecimalValue, "Floor should be <= original value")
@@ -135,6 +139,8 @@ func (suite *EBMathFunctionsTestSuite) TestFloor() {
 
 // TestRound tests the Round function.
 func (suite *EBMathFunctionsTestSuite) TestRound() {
+	suite.T().Logf("Testing Round for %s", suite.ds.Kind)
+
 	suite.Run("RoundWithDifferentPrecisions", func() {
 		type Result struct {
 			ViewCount     int64   `bun:"view_count"`
@@ -160,8 +166,8 @@ func (suite *EBMathFunctionsTestSuite) TestRound() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.RoundedNoPrec >= 0, "Rounded value should be non-negative")
@@ -173,6 +179,8 @@ func (suite *EBMathFunctionsTestSuite) TestRound() {
 
 // TestTrunc tests the Trunc function.
 func (suite *EBMathFunctionsTestSuite) TestTrunc() {
+	suite.T().Logf("Testing Trunc for %s", suite.ds.Kind)
+
 	suite.Run("TruncateDecimalValues", func() {
 		type Result struct {
 			ViewCount  int64   `bun:"view_count"`
@@ -194,8 +202,8 @@ func (suite *EBMathFunctionsTestSuite) TestTrunc() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.TruncValue >= 0, "Truncated value should be non-negative")
@@ -205,6 +213,8 @@ func (suite *EBMathFunctionsTestSuite) TestTrunc() {
 
 // TestPower tests the Power function.
 func (suite *EBMathFunctionsTestSuite) TestPower() {
+	suite.T().Logf("Testing Power for %s", suite.ds.Kind)
+
 	suite.Run("PowerOfNumbers", func() {
 		type Result struct {
 			ViewCount int64   `bun:"view_count"`
@@ -226,8 +236,8 @@ func (suite *EBMathFunctionsTestSuite) TestPower() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.Squared >= 0, "Squared value should be non-negative")
@@ -238,6 +248,8 @@ func (suite *EBMathFunctionsTestSuite) TestPower() {
 
 // TestSqrt tests the Sqrt function.
 func (suite *EBMathFunctionsTestSuite) TestSqrt() {
+	suite.T().Logf("Testing Sqrt for %s", suite.ds.Kind)
+
 	suite.Run("SquareRootOfNumbers", func() {
 		type Result struct {
 			ViewCount int64   `bun:"view_count"`
@@ -255,8 +267,8 @@ func (suite *EBMathFunctionsTestSuite) TestSqrt() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.SqrtValue >= 0, "Square root should be non-negative")
@@ -266,6 +278,8 @@ func (suite *EBMathFunctionsTestSuite) TestSqrt() {
 
 // TestExp tests the Exp function.
 func (suite *EBMathFunctionsTestSuite) TestExp() {
+	suite.T().Logf("Testing Exp for %s", suite.ds.Kind)
+
 	suite.Run("ExponentialFunction", func() {
 		type Result struct {
 			ViewCount int64   `bun:"view_count"`
@@ -283,8 +297,8 @@ func (suite *EBMathFunctionsTestSuite) TestExp() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.ExpValue > 0, "Exponential should always be positive")
@@ -294,6 +308,8 @@ func (suite *EBMathFunctionsTestSuite) TestExp() {
 
 // TestLn tests the Ln function.
 func (suite *EBMathFunctionsTestSuite) TestLn() {
+	suite.T().Logf("Testing Ln for %s", suite.ds.Kind)
+
 	suite.Run("NaturalLogarithm", func() {
 		type Result struct {
 			ViewCount int64   `bun:"view_count"`
@@ -314,8 +330,8 @@ func (suite *EBMathFunctionsTestSuite) TestLn() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.LnValue > 0, "Natural log should be positive for view_count > 1")
@@ -325,6 +341,8 @@ func (suite *EBMathFunctionsTestSuite) TestLn() {
 
 // TestLog tests the Log function.
 func (suite *EBMathFunctionsTestSuite) TestLog() {
+	suite.T().Logf("Testing Log for %s", suite.ds.Kind)
+
 	suite.Run("LogarithmBaseTen", func() {
 		type Result struct {
 			ViewCount int64   `bun:"view_count"`
@@ -345,8 +363,8 @@ func (suite *EBMathFunctionsTestSuite) TestLog() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.LogValue > 0, "Log base 10 should be positive for view_count > 1")
@@ -356,6 +374,8 @@ func (suite *EBMathFunctionsTestSuite) TestLog() {
 
 // TestSin tests the Sin function.
 func (suite *EBMathFunctionsTestSuite) TestSin() {
+	suite.T().Logf("Testing Sin for %s", suite.ds.Kind)
+
 	suite.Run("SineTrigonometric", func() {
 		type Result struct {
 			ViewCount int64   `bun:"view_count"`
@@ -373,8 +393,8 @@ func (suite *EBMathFunctionsTestSuite) TestSin() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.SinValue >= -1.0 && result.SinValue <= 1.0, "Sin value should be between -1 and 1")
@@ -384,6 +404,8 @@ func (suite *EBMathFunctionsTestSuite) TestSin() {
 
 // TestCos tests the Cos function.
 func (suite *EBMathFunctionsTestSuite) TestCos() {
+	suite.T().Logf("Testing Cos for %s", suite.ds.Kind)
+
 	suite.Run("CosineTrigonometric", func() {
 		type Result struct {
 			ViewCount int64   `bun:"view_count"`
@@ -401,8 +423,8 @@ func (suite *EBMathFunctionsTestSuite) TestCos() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.CosValue >= -1.0 && result.CosValue <= 1.0, "Cos value should be between -1 and 1")
@@ -412,6 +434,8 @@ func (suite *EBMathFunctionsTestSuite) TestCos() {
 
 // TestTan tests the Tan function.
 func (suite *EBMathFunctionsTestSuite) TestTan() {
+	suite.T().Logf("Testing Tan for %s", suite.ds.Kind)
+
 	suite.Run("TangentTrigonometric", func() {
 		type Result struct {
 			ViewCount int64   `bun:"view_count"`
@@ -429,13 +453,15 @@ func (suite *EBMathFunctionsTestSuite) TestTan() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 	})
 }
 
 // TestAsin tests the Asin function.
 func (suite *EBMathFunctionsTestSuite) TestAsin() {
+	suite.T().Logf("Testing Asin for %s", suite.ds.Kind)
+
 	suite.Run("ArcsineInverse", func() {
 		type Result struct {
 			Value     float64 `bun:"value"`
@@ -455,8 +481,8 @@ func (suite *EBMathFunctionsTestSuite) TestAsin() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.Value >= -1.0 && result.Value <= 1.0, "Value should be in valid range for asin")
@@ -466,6 +492,8 @@ func (suite *EBMathFunctionsTestSuite) TestAsin() {
 
 // TestAcos tests the Acos function.
 func (suite *EBMathFunctionsTestSuite) TestAcos() {
+	suite.T().Logf("Testing Acos for %s", suite.ds.Kind)
+
 	suite.Run("ArccosineInverse", func() {
 		type Result struct {
 			Value     float64 `bun:"value"`
@@ -485,8 +513,8 @@ func (suite *EBMathFunctionsTestSuite) TestAcos() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.Value >= -1.0 && result.Value <= 1.0, "Value should be in valid range for acos")
@@ -496,6 +524,8 @@ func (suite *EBMathFunctionsTestSuite) TestAcos() {
 
 // TestAtan tests the Atan function.
 func (suite *EBMathFunctionsTestSuite) TestAtan() {
+	suite.T().Logf("Testing Atan for %s", suite.ds.Kind)
+
 	suite.Run("ArctangentInverse", func() {
 		type Result struct {
 			Value     float64 `bun:"value"`
@@ -515,13 +545,15 @@ func (suite *EBMathFunctionsTestSuite) TestAtan() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 	})
 }
 
 // TestPi tests the Pi function.
 func (suite *EBMathFunctionsTestSuite) TestPi() {
+	suite.T().Logf("Testing Pi for %s", suite.ds.Kind)
+
 	suite.Run("PiConstant", func() {
 		type Result struct {
 			PiValue       float64 `bun:"pi_value"`
@@ -550,8 +582,8 @@ func (suite *EBMathFunctionsTestSuite) TestPi() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.InDelta(3.14159, result.PiValue, 0.001, "Pi value should be approximately 3.14159")
@@ -563,6 +595,8 @@ func (suite *EBMathFunctionsTestSuite) TestPi() {
 
 // TestRandom tests the Random function.
 func (suite *EBMathFunctionsTestSuite) TestRandom() {
+	suite.T().Logf("Testing Random for %s", suite.ds.Kind)
+
 	suite.Run("RandomNumberGeneration", func() {
 		type Result struct {
 			ID        string  `bun:"id"`
@@ -580,8 +614,8 @@ func (suite *EBMathFunctionsTestSuite) TestRandom() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.RandomVal >= 0 && result.RandomVal < 1, "Random should be in [0, 1)")
@@ -591,6 +625,8 @@ func (suite *EBMathFunctionsTestSuite) TestRandom() {
 
 // TestSign tests the Sign function.
 func (suite *EBMathFunctionsTestSuite) TestSign() {
+	suite.T().Logf("Testing Sign for %s", suite.ds.Kind)
+
 	suite.Run("SignFunction", func() {
 		type Result struct {
 			ViewCount int64   `bun:"view_count"`
@@ -608,8 +644,8 @@ func (suite *EBMathFunctionsTestSuite) TestSign() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.Contains([]float64{-1.0, 0.0, 1.0}, result.SignValue, "Sign should be -1, 0, or 1")
@@ -619,6 +655,8 @@ func (suite *EBMathFunctionsTestSuite) TestSign() {
 
 // TestMod tests the Mod function.
 func (suite *EBMathFunctionsTestSuite) TestMod() {
+	suite.T().Logf("Testing Mod for %s", suite.ds.Kind)
+
 	suite.Run("ModuloOperation", func() {
 		type Result struct {
 			ViewCount int64 `bun:"view_count"`
@@ -640,8 +678,8 @@ func (suite *EBMathFunctionsTestSuite) TestMod() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.Mod5 >= 0 && result.Mod5 < 5, "Mod 5 should be between 0 and 4")
@@ -652,6 +690,8 @@ func (suite *EBMathFunctionsTestSuite) TestMod() {
 
 // TestGreatest tests the Greatest function.
 func (suite *EBMathFunctionsTestSuite) TestGreatest() {
+	suite.T().Logf("Testing Greatest for %s", suite.ds.Kind)
+
 	suite.Run("GreatestValue", func() {
 		type Result struct {
 			ViewCount int64 `bun:"view_count"`
@@ -669,8 +709,8 @@ func (suite *EBMathFunctionsTestSuite) TestGreatest() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.Greatest >= result.ViewCount, "Greatest should be >= view_count")
@@ -680,6 +720,8 @@ func (suite *EBMathFunctionsTestSuite) TestGreatest() {
 
 // TestLeast tests the Least function.
 func (suite *EBMathFunctionsTestSuite) TestLeast() {
+	suite.T().Logf("Testing Least for %s", suite.ds.Kind)
+
 	suite.Run("LeastValue", func() {
 		type Result struct {
 			ViewCount int64 `bun:"view_count"`
@@ -697,8 +739,8 @@ func (suite *EBMathFunctionsTestSuite) TestLeast() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.Least <= result.ViewCount, "Least should be <= view_count")
@@ -708,6 +750,8 @@ func (suite *EBMathFunctionsTestSuite) TestLeast() {
 
 // TestCombinedMathFunctions tests multiple math functions working together.
 func (suite *EBMathFunctionsTestSuite) TestCombinedMathFunctions() {
+	suite.T().Logf("Testing CombinedMathFunctions for %s", suite.ds.Kind)
+
 	suite.Run("BasicMathCombination", func() {
 		type Result struct {
 			Title        string  `bun:"title"`
@@ -738,8 +782,8 @@ func (suite *EBMathFunctionsTestSuite) TestCombinedMathFunctions() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.AbsViewCount >= 0, "Abs should be non-negative")
@@ -780,8 +824,8 @@ func (suite *EBMathFunctionsTestSuite) TestCombinedMathFunctions() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.PowerResult >= 0, "Power result should be non-negative")
@@ -819,8 +863,8 @@ func (suite *EBMathFunctionsTestSuite) TestCombinedMathFunctions() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.SinValue >= -1.0 && result.SinValue <= 1.0, "Sin value should be between -1 and 1")
@@ -856,8 +900,8 @@ func (suite *EBMathFunctionsTestSuite) TestCombinedMathFunctions() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.SinLn >= -1.0 && result.SinLn <= 1.0, "Sin(Ln) should be between -1 and 1")

@@ -12,15 +12,15 @@ func init() {
 	})
 }
 
-// EBComparisonExpressionsTestSuite tests comparison expression methods of orm.ExprBuilder
-// including Equals, NotEquals, GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual,
-// Between, NotBetween, In, and NotIn.
+// EBComparisonExpressionsTestSuite tests comparison expression methods of orm.ExprBuilder.
 type EBComparisonExpressionsTestSuite struct {
 	*BaseTestSuite
 }
 
 // TestEquals tests the Equals comparison operator.
 func (suite *EBComparisonExpressionsTestSuite) TestEquals() {
+	suite.T().Logf("Testing Equals for %s", suite.ds.Kind)
+
 	suite.Run("SimpleStringEquals", func() {
 		type Result struct {
 			ID     string `bun:"id"`
@@ -41,8 +41,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestEquals() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.Equal("published", result.Status, "Status should be 'published'")
@@ -68,7 +68,7 @@ func (suite *EBComparisonExpressionsTestSuite) TestEquals() {
 			OrderBy("id").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
+		suite.Require().NoError(err, "Should execute query")
 
 		for _, result := range results {
 			suite.Equal(int64(42), result.ViewCount, "ViewCount should be 42")
@@ -93,8 +93,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestEquals() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			if result.Status == "published" {
@@ -108,6 +108,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestEquals() {
 
 // TestNotEquals tests the NotEquals comparison operator.
 func (suite *EBComparisonExpressionsTestSuite) TestNotEquals() {
+	suite.T().Logf("Testing NotEquals for %s", suite.ds.Kind)
+
 	suite.Run("SimpleStringNotEquals", func() {
 		type Result struct {
 			ID     string `bun:"id"`
@@ -128,8 +130,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestNotEquals() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.NotEqual("draft", result.Status, "Status should not be 'draft'")
@@ -155,8 +157,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestNotEquals() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.NotEqual(int64(0), result.ViewCount, "ViewCount should not be 0")
@@ -181,8 +183,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestNotEquals() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			if result.Status != "draft" {
@@ -196,6 +198,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestNotEquals() {
 
 // TestGreaterThan tests the GreaterThan comparison operator.
 func (suite *EBComparisonExpressionsTestSuite) TestGreaterThan() {
+	suite.T().Logf("Testing GreaterThan for %s", suite.ds.Kind)
+
 	suite.Run("SimpleGreaterThan", func() {
 		type Result struct {
 			ID        string `bun:"id"`
@@ -216,8 +220,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestGreaterThan() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.ViewCount > 50, "ViewCount should be > 50")
@@ -242,8 +246,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestGreaterThan() {
 			Limit(10).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			if result.ViewCount > 80 {
@@ -257,6 +261,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestGreaterThan() {
 
 // TestGreaterThanOrEqual tests the GreaterThanOrEqual comparison operator.
 func (suite *EBComparisonExpressionsTestSuite) TestGreaterThanOrEqual() {
+	suite.T().Logf("Testing GreaterThanOrEqual for %s", suite.ds.Kind)
+
 	suite.Run("SimpleGreaterThanOrEqual", func() {
 		type Result struct {
 			ID        string `bun:"id"`
@@ -277,8 +283,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestGreaterThanOrEqual() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.ViewCount >= 30, "ViewCount should be >= 30")
@@ -303,7 +309,7 @@ func (suite *EBComparisonExpressionsTestSuite) TestGreaterThanOrEqual() {
 			OrderBy("view_count").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
+		suite.Require().NoError(err, "Should execute query")
 
 		for _, result := range results {
 			suite.True(result.ViewCount >= 42, "ViewCount should be >= 42")
@@ -313,6 +319,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestGreaterThanOrEqual() {
 
 // TestLessThan tests the LessThan comparison operator.
 func (suite *EBComparisonExpressionsTestSuite) TestLessThan() {
+	suite.T().Logf("Testing LessThan for %s", suite.ds.Kind)
+
 	suite.Run("SimpleLessThan", func() {
 		type Result struct {
 			ID        string `bun:"id"`
@@ -333,8 +341,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestLessThan() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.ViewCount < 70, "ViewCount should be < 70")
@@ -359,8 +367,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestLessThan() {
 			Limit(10).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			if result.ViewCount < 30 {
@@ -374,6 +382,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestLessThan() {
 
 // TestLessThanOrEqual tests the LessThanOrEqual comparison operator.
 func (suite *EBComparisonExpressionsTestSuite) TestLessThanOrEqual() {
+	suite.T().Logf("Testing LessThanOrEqual for %s", suite.ds.Kind)
+
 	suite.Run("SimpleLessThanOrEqual", func() {
 		type Result struct {
 			ID        string `bun:"id"`
@@ -394,8 +404,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestLessThanOrEqual() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.ViewCount <= 50, "ViewCount should be <= 50")
@@ -420,7 +430,7 @@ func (suite *EBComparisonExpressionsTestSuite) TestLessThanOrEqual() {
 			OrderByDesc("view_count").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
+		suite.Require().NoError(err, "Should execute query")
 
 		for _, result := range results {
 			suite.True(result.ViewCount <= 42, "ViewCount should be <= 42")
@@ -430,6 +440,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestLessThanOrEqual() {
 
 // TestBetween tests the Between comparison operator.
 func (suite *EBComparisonExpressionsTestSuite) TestBetween() {
+	suite.T().Logf("Testing Between for %s", suite.ds.Kind)
+
 	suite.Run("SimpleBetweenIntegers", func() {
 		type Result struct {
 			ID        string `bun:"id"`
@@ -449,8 +461,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestBetween() {
 			OrderBy("view_count").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.ViewCount >= 30 && result.ViewCount <= 70, "ViewCount should be between 30 and 70")
@@ -474,7 +486,7 @@ func (suite *EBComparisonExpressionsTestSuite) TestBetween() {
 			}).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
+		suite.Require().NoError(err, "Should execute query")
 
 		for _, result := range results {
 			suite.Equal(int64(42), result.ViewCount, "ViewCount should be exactly 42")
@@ -499,8 +511,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestBetween() {
 			Limit(10).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			if result.ViewCount >= 30 && result.ViewCount <= 80 {
@@ -514,6 +526,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestBetween() {
 
 // TestNotBetween tests the NotBetween comparison operator.
 func (suite *EBComparisonExpressionsTestSuite) TestNotBetween() {
+	suite.T().Logf("Testing NotBetween for %s", suite.ds.Kind)
+
 	suite.Run("SimpleNotBetween", func() {
 		type Result struct {
 			ID        string `bun:"id"`
@@ -533,8 +547,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestNotBetween() {
 			OrderBy("view_count").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.ViewCount < 30 || result.ViewCount > 70, "ViewCount should be outside 30-70 range")
@@ -559,8 +573,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestNotBetween() {
 			Limit(10).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			if result.ViewCount < 30 || result.ViewCount > 80 {
@@ -574,6 +588,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestNotBetween() {
 
 // TestIn tests the In comparison operator.
 func (suite *EBComparisonExpressionsTestSuite) TestIn() {
+	suite.T().Logf("Testing In for %s", suite.ds.Kind)
+
 	suite.Run("SimpleInStrings", func() {
 		type Result struct {
 			ID     string `bun:"id"`
@@ -593,8 +609,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestIn() {
 			OrderBy("id").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.Status == "published" || result.Status == "review", "Status should be in allowed list")
@@ -619,7 +635,7 @@ func (suite *EBComparisonExpressionsTestSuite) TestIn() {
 			OrderBy("view_count").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
+		suite.Require().NoError(err, "Should execute query")
 
 		for _, result := range results {
 			suite.True(
@@ -647,7 +663,7 @@ func (suite *EBComparisonExpressionsTestSuite) TestIn() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
+		suite.Require().NoError(err, "Should execute query")
 
 		for _, result := range results {
 			suite.Equal("draft", result.Status, "Status should be 'draft'")
@@ -672,8 +688,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestIn() {
 			Limit(10).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			if result.Status == "published" || result.Status == "review" {
@@ -687,6 +703,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestIn() {
 
 // TestNotIn tests the NotIn comparison operator.
 func (suite *EBComparisonExpressionsTestSuite) TestNotIn() {
+	suite.T().Logf("Testing NotIn for %s", suite.ds.Kind)
+
 	suite.Run("SimpleNotInStrings", func() {
 		type Result struct {
 			ID     string `bun:"id"`
@@ -706,8 +724,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestNotIn() {
 			OrderBy("id").
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.Status != "draft" && result.Status != "archived", "Status should not be in excluded list")
@@ -733,7 +751,7 @@ func (suite *EBComparisonExpressionsTestSuite) TestNotIn() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
+		suite.Require().NoError(err, "Should execute query")
 
 		for _, result := range results {
 			suite.True(
@@ -760,8 +778,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestNotIn() {
 			Limit(10).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			if result.Status != "draft" && result.Status != "archived" {
@@ -775,6 +793,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestNotIn() {
 
 // TestCombinedComparisons tests using multiple comparison operators together.
 func (suite *EBComparisonExpressionsTestSuite) TestCombinedComparisons() {
+	suite.T().Logf("Testing CombinedComparisons for %s", suite.ds.Kind)
+
 	suite.Run("CombinedComparisonsInSelect", func() {
 		type Result struct {
 			ID           string `bun:"id"`
@@ -801,8 +821,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestCombinedComparisons() {
 			Limit(10).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			// Verify categorization logic
@@ -825,6 +845,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestCombinedComparisons() {
 
 // TestIsTrue tests the IsTrue comparison operator for boolean expressions.
 func (suite *EBComparisonExpressionsTestSuite) TestIsTrue() {
+	suite.T().Logf("Testing IsTrue for %s", suite.ds.Kind)
+
 	suite.Run("IsTrueOnBooleanColumn", func() {
 		type Result struct {
 			ID       string `bun:"id"`
@@ -845,8 +867,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestIsTrue() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.IsActive, "IsActive should be true")
@@ -877,8 +899,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestIsTrue() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.True(result.ViewCount > 50, "ViewCount should be > 50")
@@ -888,6 +910,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestIsTrue() {
 
 // TestIsFalse tests the IsFalse comparison operator for boolean expressions.
 func (suite *EBComparisonExpressionsTestSuite) TestIsFalse() {
+	suite.T().Logf("Testing IsFalse for %s", suite.ds.Kind)
+
 	suite.Run("IsFalseOnBooleanColumn", func() {
 		type Result struct {
 			ID       string `bun:"id"`
@@ -908,8 +932,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestIsFalse() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.False(result.IsActive, "IsActive should be false")
@@ -940,8 +964,8 @@ func (suite *EBComparisonExpressionsTestSuite) TestIsFalse() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err)
-		suite.NotEmpty(results)
+		suite.Require().NoError(err, "Should execute query")
+		suite.Require().NotEmpty(results, "Should return results")
 
 		for _, result := range results {
 			suite.False(result.ViewCount > 50, "ViewCount should be <= 50")

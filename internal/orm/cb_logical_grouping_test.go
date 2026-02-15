@@ -15,12 +15,11 @@ func init() {
 }
 
 // CBLogicalGroupingTestSuite tests logical grouping condition methods.
-// Covers: Group, OrGroup (4 methods total including nested scenarios).
 type CBLogicalGroupingTestSuite struct {
 	*ConditionBuilderTestSuite
 }
 
-// TestGroup tests the Group condition for AND grouping.
+// TestGroup tests Group condition for AND grouping.
 func (suite *CBLogicalGroupingTestSuite) TestGroup() {
 	suite.T().Logf("Testing Group condition for %s", suite.ds.Kind)
 
@@ -42,8 +41,6 @@ func (suite *CBLogicalGroupingTestSuite) TestGroup() {
 			suite.True(user.IsActive, "User should be active")
 			suite.True(user.Age > 25, "Age should be greater than 25")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("MultipleGroups", func() {
@@ -60,8 +57,6 @@ func (suite *CBLogicalGroupingTestSuite) TestGroup() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("NestedGroups", func() {
@@ -85,12 +80,10 @@ func (suite *CBLogicalGroupingTestSuite) TestGroup() {
 			suite.True(user.IsActive, "User should be active")
 			suite.True(user.Age > 20 && user.Age < 40, "Age should be between 20 and 40")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestOrGroup tests the OrGroup condition for OR grouping.
+// TestOrGroup tests OrGroup condition for OR grouping.
 func (suite *CBLogicalGroupingTestSuite) TestOrGroup() {
 	suite.T().Logf("Testing OrGroup condition for %s", suite.ds.Kind)
 
@@ -110,8 +103,6 @@ func (suite *CBLogicalGroupingTestSuite) TestOrGroup() {
 		suite.Len(users, 2, "Should find two users")
 		suite.True(users[0].Age == 25 || users[0].Age == 35, "Age should be 25 or 35")
 		suite.True(users[1].Age == 25 || users[1].Age == 35, "Age should be 25 or 35")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("MixedGroupAndOrGroup", func() {
@@ -129,8 +120,6 @@ func (suite *CBLogicalGroupingTestSuite) TestOrGroup() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("ComplexNestedGrouping", func() {
@@ -150,8 +139,6 @@ func (suite *CBLogicalGroupingTestSuite) TestOrGroup() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("DeeplyNestedGrouping", func() {
@@ -172,8 +159,6 @@ func (suite *CBLogicalGroupingTestSuite) TestOrGroup() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
@@ -200,8 +185,6 @@ func (suite *CBLogicalGroupingTestSuite) TestComplexLogicalCombinations() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("MultipleOrGroupsWithAnd", func() {
@@ -221,7 +204,5 @@ func (suite *CBLogicalGroupingTestSuite) TestComplexLogicalCombinations() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }

@@ -15,15 +15,7 @@ func init() {
 	})
 }
 
-// EBWindowFunctionsTestSuite tests window function methods of orm.ExprBuilder including
-// ranking functions (RowNumber, Rank, DenseRank, PercentRank, CumeDist, NTile),
-// offset functions (Lag, Lead), value functions (FirstValue, LastValue, NthValue),
-// and aggregate window functions (WinCount, WinSum, WinAvg, WinMin, WinMax, WinStringAgg,
-// WinArrayAgg, WinStdDev, WinVariance, WinJSONObjectAgg, WinJSONArrayAgg, WinBitOr,
-// WinBitAnd, WinBoolOr, WinBoolAnd).
-//
-// This suite verifies cross-database compatibility for window functions across
-// PostgreSQL, MySQL, and SQLite, handling database-specific features appropriately.
+// EBWindowFunctionsTestSuite tests window function methods of orm.ExprBuilder.
 type EBWindowFunctionsTestSuite struct {
 	*BaseTestSuite
 }
@@ -52,7 +44,7 @@ func (suite *EBWindowFunctionsTestSuite) TestRowNumber() {
 			OrderBy("age").
 			Scan(suite.ctx, &usersWithRowNum)
 
-		suite.NoError(err, "ROW_NUMBER should work correctly")
+		suite.Require().NoError(err, "ROW_NUMBER should work correctly")
 		suite.Len(usersWithRowNum, 20, "Should have 20 users")
 
 		// Verify ROW_NUMBER sequence
@@ -90,8 +82,8 @@ func (suite *EBWindowFunctionsTestSuite) TestRank() {
 			OrderByDesc("view_count").
 			Scan(suite.ctx, &postsWithRank)
 
-		suite.NoError(err, "RANK should work with partitioning")
-		suite.True(len(postsWithRank) > 0, "Should have posts with rank")
+		suite.Require().NoError(err, "RANK should work with partitioning")
+		suite.Require().NotEmpty(postsWithRank, "Should have posts with rank")
 
 		// Verify ranking within partitions
 		statusGroups := make(map[string][]PostWithRank)
@@ -141,8 +133,8 @@ func (suite *EBWindowFunctionsTestSuite) TestDenseRank() {
 			OrderByDesc("view_count").
 			Scan(suite.ctx, &postsWithRank)
 
-		suite.NoError(err, "DENSE_RANK should work with partitioning")
-		suite.True(len(postsWithRank) > 0, "Should have posts with dense rank")
+		suite.Require().NoError(err, "DENSE_RANK should work with partitioning")
+		suite.Require().NotEmpty(postsWithRank, "Should have posts with dense rank")
 
 		// Verify ranking within partitions
 		statusGroups := make(map[string][]PostWithDenseRank)
@@ -192,8 +184,8 @@ func (suite *EBWindowFunctionsTestSuite) TestPercentRank() {
 			OrderByDesc("view_count").
 			Scan(suite.ctx, &postAnalytics)
 
-		suite.NoError(err, "PERCENT_RANK should work correctly")
-		suite.True(len(postAnalytics) > 0, "Should have post analytics")
+		suite.Require().NoError(err, "PERCENT_RANK should work correctly")
+		suite.Require().NotEmpty(postAnalytics, "Should have post analytics")
 
 		// Verify percent rank is within valid range
 		for _, post := range postAnalytics {
@@ -229,8 +221,8 @@ func (suite *EBWindowFunctionsTestSuite) TestCumeDist() {
 			Limit(5).
 			Scan(suite.ctx, &cumeDistResults)
 
-		suite.NoError(err, "CUME_DIST should work correctly")
-		suite.True(len(cumeDistResults) > 0, "Should have cume_dist results")
+		suite.Require().NoError(err, "CUME_DIST should work correctly")
+		suite.Require().NotEmpty(cumeDistResults, "Should have cume_dist results")
 
 		for _, result := range cumeDistResults {
 			suite.True(result.CumeDist > 0 && result.CumeDist <= 1, "CumeDist should be in (0, 1]")
@@ -263,7 +255,7 @@ func (suite *EBWindowFunctionsTestSuite) TestNtile() {
 			OrderBy("age").
 			Scan(suite.ctx, &usersWithQuartile)
 
-		suite.NoError(err, "NTILE should work for quartile distribution")
+		suite.Require().NoError(err, "NTILE should work for quartile distribution")
 		suite.Len(usersWithQuartile, 20, "Should have 20 users")
 
 		// Verify quartile assignment
@@ -298,8 +290,8 @@ func (suite *EBWindowFunctionsTestSuite) TestLag() {
 			OrderBy("view_count").
 			Scan(suite.ctx, &postsWithLag)
 
-		suite.NoError(err, "LAG should work with default offset")
-		suite.True(len(postsWithLag) > 0, "Should have posts with lag")
+		suite.Require().NoError(err, "LAG should work with default offset")
+		suite.Require().NotEmpty(postsWithLag, "Should have posts with lag")
 
 		// First row should have null prev_view_count
 		if len(postsWithLag) > 0 {
@@ -328,8 +320,8 @@ func (suite *EBWindowFunctionsTestSuite) TestLag() {
 			OrderBy("view_count").
 			Scan(suite.ctx, &advLag)
 
-		suite.NoError(err, "LAG should work with custom offset")
-		suite.True(len(advLag) > 0, "Should have posts for advanced lag")
+		suite.Require().NoError(err, "LAG should work with custom offset")
+		suite.Require().NotEmpty(advLag, "Should have posts for advanced lag")
 
 		if len(advLag) >= 3 {
 			// The third row's Prev2 should equal the first row's view_count
@@ -365,8 +357,8 @@ func (suite *EBWindowFunctionsTestSuite) TestLead() {
 			OrderBy("view_count").
 			Scan(suite.ctx, &postsWithLead)
 
-		suite.NoError(err, "LEAD should work with default offset")
-		suite.True(len(postsWithLead) > 0, "Should have posts with lead")
+		suite.Require().NoError(err, "LEAD should work with default offset")
+		suite.Require().NotEmpty(postsWithLead, "Should have posts with lead")
 
 		// Last row should have null next_view_count
 		if len(postsWithLead) > 0 {
@@ -402,8 +394,8 @@ func (suite *EBWindowFunctionsTestSuite) TestLead() {
 			OrderBy("view_count").
 			Scan(suite.ctx, &advLead)
 
-		suite.NoError(err, "LEAD should work with custom offset and default value")
-		suite.True(len(advLead) > 0, "Should have posts for advanced lead")
+		suite.Require().NoError(err, "LEAD should work with custom offset and default value")
+		suite.Require().NotEmpty(advLead, "Should have posts for advanced lead")
 
 		// Default value should apply on the last rows where LEAD overflows
 		if len(advLead) >= 1 {
@@ -439,8 +431,8 @@ func (suite *EBWindowFunctionsTestSuite) TestFirstValue() {
 			OrderBy("status", "view_count").
 			Scan(suite.ctx, &postsWithFirst)
 
-		suite.NoError(err, "FIRST_VALUE should work with partitioning")
-		suite.True(len(postsWithFirst) > 0, "Should have posts with first value")
+		suite.Require().NoError(err, "FIRST_VALUE should work with partitioning")
+		suite.Require().NotEmpty(postsWithFirst, "Should have posts with first value")
 
 		// Verify FIRST_VALUE behavior
 		statusFirstValues := make(map[string][]PostWithFirstValue)
@@ -486,8 +478,8 @@ func (suite *EBWindowFunctionsTestSuite) TestLastValue() {
 			OrderBy("status", "view_count").
 			Scan(suite.ctx, &postsWithLast)
 
-		suite.NoError(err, "LAST_VALUE should work with partitioning")
-		suite.True(len(postsWithLast) > 0, "Should have posts with last value")
+		suite.Require().NoError(err, "LAST_VALUE should work with partitioning")
+		suite.Require().NotEmpty(postsWithLast, "Should have posts with last value")
 
 		// Verify LAST_VALUE behavior
 		statusLastValues := make(map[string][]PostWithLastValue)
@@ -532,8 +524,8 @@ func (suite *EBWindowFunctionsTestSuite) TestNthValue() {
 			OrderBy("status", "view_count").
 			Scan(suite.ctx, &nthVals)
 
-		suite.NoError(err, "NTH_VALUE should work with full frame")
-		suite.True(len(nthVals) > 0, "Should compute NTH_VALUE")
+		suite.Require().NoError(err, "NTH_VALUE should work with full frame")
+		suite.Require().NotEmpty(nthVals, "Should compute NTH_VALUE")
 
 		suite.T().Logf("Verified NTH_VALUE for %d posts", len(nthVals))
 	})
@@ -562,7 +554,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinCount() {
 			OrderBy("age").
 			Scan(suite.ctx, &usersWithCount)
 
-		suite.NoError(err, "WinCount should work for running count")
+		suite.Require().NoError(err, "WinCount should work for running count")
 		suite.Len(usersWithCount, 20, "Should have 20 users")
 
 		// Verify running counts
@@ -597,7 +589,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinSum() {
 			OrderBy("age").
 			Scan(suite.ctx, &usersWithSum)
 
-		suite.NoError(err, "WinSum should work for running total")
+		suite.Require().NoError(err, "WinSum should work for running total")
 		suite.Len(usersWithSum, 20, "Should have 20 users")
 
 		// Verify running totals
@@ -629,8 +621,8 @@ func (suite *EBWindowFunctionsTestSuite) TestWinSum() {
 			OrderByDesc("view_count").
 			Scan(suite.ctx, &postsWithCumulative)
 
-		suite.NoError(err, "WinSum should work with partitioning")
-		suite.True(len(postsWithCumulative) > 0, "Should have posts with cumulative views")
+		suite.Require().NoError(err, "WinSum should work with partitioning")
+		suite.Require().NotEmpty(postsWithCumulative, "Should have posts with cumulative views")
 
 		for _, post := range postsWithCumulative {
 			suite.True(post.CumulativeViews >= post.ViewCount, "Cumulative views should be at least equal to current view count")
@@ -663,7 +655,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWinAvg() {
 			OrderBy("age").
 			Scan(suite.ctx, &usersWithAvg)
 
-		suite.NoError(err, "WinAvg should work for moving average")
+		suite.Require().NoError(err, "WinAvg should work for moving average")
 		suite.Len(usersWithAvg, 20, "Should have 20 users")
 
 		// Verify moving averages
@@ -693,8 +685,8 @@ func (suite *EBWindowFunctionsTestSuite) TestWinAvg() {
 			OrderBy("view_count").
 			Scan(suite.ctx, &movingAvgRows)
 
-		suite.NoError(err, "WinAvg should work with ROWS BETWEEN 2 PRECEDING AND CURRENT ROW")
-		suite.True(len(movingAvgRows) > 0, "Should have moving average values")
+		suite.Require().NoError(err, "WinAvg should work with ROWS BETWEEN 2 PRECEDING AND CURRENT ROW")
+		suite.Require().NotEmpty(movingAvgRows, "Should have moving average values")
 
 		suite.T().Logf("Verified 3-row moving average for %d posts", len(movingAvgRows))
 	})
@@ -725,8 +717,8 @@ func (suite *EBWindowFunctionsTestSuite) TestWinMin() {
 			Limit(8).
 			Scan(suite.ctx, &windowMinResults)
 
-		suite.NoError(err, "WinMin should work correctly")
-		suite.True(len(windowMinResults) > 0, "Should have window min results")
+		suite.Require().NoError(err, "WinMin should work correctly")
+		suite.Require().NotEmpty(windowMinResults, "Should have window min results")
 
 		for _, result := range windowMinResults {
 			suite.True(result.MinInStatus <= result.ViewCount, "Min should be <= current view count")
@@ -761,8 +753,8 @@ func (suite *EBWindowFunctionsTestSuite) TestWinMax() {
 			Limit(8).
 			Scan(suite.ctx, &windowMaxResults)
 
-		suite.NoError(err, "WinMax should work correctly")
-		suite.True(len(windowMaxResults) > 0, "Should have window max results")
+		suite.Require().NoError(err, "WinMax should work correctly")
+		suite.Require().NotEmpty(windowMaxResults, "Should have window max results")
 
 		for _, result := range windowMaxResults {
 			suite.True(result.MaxInStatus >= result.ViewCount, "Max should be >= current view count")
@@ -773,7 +765,6 @@ func (suite *EBWindowFunctionsTestSuite) TestWinMax() {
 }
 
 // TestWinStringAgg tests the STRING_AGG window function.
-// Note: MySQL does not support GROUP_CONCAT as a window function.
 func (suite *EBWindowFunctionsTestSuite) TestWinStringAgg() {
 	suite.T().Logf("Testing WinStringAgg function for %s", suite.ds.Kind)
 
@@ -803,11 +794,11 @@ func (suite *EBWindowFunctionsTestSuite) TestWinStringAgg() {
 			Limit(5).
 			Scan(suite.ctx, &windowStringAggResults)
 
-		suite.NoError(err, "WinStringAgg should work correctly")
-		suite.True(len(windowStringAggResults) > 0, "Should have window string agg results")
+		suite.Require().NoError(err, "WinStringAgg should work correctly")
+		suite.Require().NotEmpty(windowStringAggResults, "Should have window string agg results")
 
 		for _, result := range windowStringAggResults {
-			suite.True(len(result.TitleAgg) > 0, "Aggregated titles should not be empty")
+			suite.NotEmpty(result.TitleAgg, "Should have non-empty aggregated titles")
 			suite.T().Logf("ID: %s, Status: %s, TitleAgg: %s",
 				result.ID, result.Status, result.TitleAgg)
 		}
@@ -842,11 +833,11 @@ func (suite *EBWindowFunctionsTestSuite) TestWinArrayAgg() {
 			Limit(5).
 			Scan(suite.ctx, &windowArrayAggResults)
 
-		suite.NoError(err, "WinArrayAgg should work correctly")
-		suite.True(len(windowArrayAggResults) > 0, "Should have window array agg results")
+		suite.Require().NoError(err, "WinArrayAgg should work correctly")
+		suite.Require().NotEmpty(windowArrayAggResults, "Should have window array agg results")
 
 		for _, result := range windowArrayAggResults {
-			suite.True(len(result.ViewCounts) > 0, "Array should not be empty")
+			suite.NotEmpty(result.ViewCounts, "Should have non-empty view counts array")
 			suite.T().Logf("ID: %s, Status: %s, ViewCounts: %v",
 				result.ID, result.Status, result.ViewCounts)
 		}
@@ -854,7 +845,6 @@ func (suite *EBWindowFunctionsTestSuite) TestWinArrayAgg() {
 }
 
 // TestWinStdDev tests the STDDEV window function.
-// Note: SQLite does not support statistical functions.
 func (suite *EBWindowFunctionsTestSuite) TestWinStdDev() {
 	suite.T().Logf("Testing WinStdDev function for %s", suite.ds.Kind)
 
@@ -885,8 +875,8 @@ func (suite *EBWindowFunctionsTestSuite) TestWinStdDev() {
 			Limit(8).
 			Scan(suite.ctx, &windowStdDevResults)
 
-		suite.NoError(err, "WinStdDev should work correctly")
-		suite.True(len(windowStdDevResults) > 0, "Should have window stddev results")
+		suite.Require().NoError(err, "WinStdDev should work correctly")
+		suite.Require().NotEmpty(windowStdDevResults, "Should have window stddev results")
 
 		for _, result := range windowStdDevResults {
 			suite.True(result.StdDevInStatus >= 0, "StdDev should be non-negative")
@@ -897,7 +887,6 @@ func (suite *EBWindowFunctionsTestSuite) TestWinStdDev() {
 }
 
 // TestWinVariance tests the VARIANCE window function.
-// Note: SQLite does not support statistical functions.
 func (suite *EBWindowFunctionsTestSuite) TestWinVariance() {
 	suite.T().Logf("Testing WinVariance function for %s", suite.ds.Kind)
 
@@ -928,8 +917,8 @@ func (suite *EBWindowFunctionsTestSuite) TestWinVariance() {
 			Limit(8).
 			Scan(suite.ctx, &windowVarianceResults)
 
-		suite.NoError(err, "WinVariance should work correctly")
-		suite.True(len(windowVarianceResults) > 0, "Should have window variance results")
+		suite.Require().NoError(err, "WinVariance should work correctly")
+		suite.Require().NotEmpty(windowVarianceResults, "Should have window variance results")
 
 		for _, result := range windowVarianceResults {
 			suite.True(result.VarianceInStatus >= 0, "Variance should be non-negative")
@@ -963,11 +952,11 @@ func (suite *EBWindowFunctionsTestSuite) TestWinJSONObjectAgg() {
 			Limit(5).
 			Scan(suite.ctx, &windowJSONObjectResults)
 
-		suite.NoError(err, "WinJSONObjectAgg should work correctly")
-		suite.True(len(windowJSONObjectResults) > 0, "Should have window JSON object agg results")
+		suite.Require().NoError(err, "WinJSONObjectAgg should work correctly")
+		suite.Require().NotEmpty(windowJSONObjectResults, "Should have window JSON object agg results")
 
 		for _, result := range windowJSONObjectResults {
-			suite.True(len(result.JSONObjectAgg) > 0, "JSON object should not be empty")
+			suite.NotEmpty(result.JSONObjectAgg, "Should have non-empty JSON object")
 			suite.True(strings.HasPrefix(result.JSONObjectAgg, "{"), "Should be a JSON object")
 			suite.T().Logf("ID: %s, Status: %s, JSONObjectAgg: %s",
 				result.ID, result.Status, result.JSONObjectAgg)
@@ -999,11 +988,11 @@ func (suite *EBWindowFunctionsTestSuite) TestWinJSONArrayAgg() {
 			Limit(5).
 			Scan(suite.ctx, &windowJSONResults)
 
-		suite.NoError(err, "WinJSONArrayAgg should work correctly")
-		suite.True(len(windowJSONResults) > 0, "Should have window JSON array agg results")
+		suite.Require().NoError(err, "WinJSONArrayAgg should work correctly")
+		suite.Require().NotEmpty(windowJSONResults, "Should have window JSON array agg results")
 
 		for _, result := range windowJSONResults {
-			suite.True(len(result.JSONArrayAgg) > 0, "JSON array should not be empty")
+			suite.NotEmpty(result.JSONArrayAgg, "Should have non-empty JSON array")
 			suite.True(strings.HasPrefix(result.JSONArrayAgg, "["), "Should be a JSON array")
 			suite.T().Logf("ID: %s, Status: %s, JSONArrayAgg: %s",
 				result.ID, result.Status, result.JSONArrayAgg)
@@ -1012,9 +1001,6 @@ func (suite *EBWindowFunctionsTestSuite) TestWinJSONArrayAgg() {
 }
 
 // TestWinBitOr tests the BIT_OR window function.
-// WinBitOr performs bitwise OR within a window frame.
-// Note: PostgreSQL and MySQL support native BIT_OR.
-// SQLite simulates it using MAX with CASE for boolean-like operations.
 func (suite *EBWindowFunctionsTestSuite) TestWinBitOr() {
 	suite.T().Logf("Testing WinBitOr function for %s", suite.ds.Kind)
 
@@ -1039,8 +1025,8 @@ func (suite *EBWindowFunctionsTestSuite) TestWinBitOr() {
 			Limit(5).
 			Scan(suite.ctx, &windowBitResults)
 
-		suite.NoError(err, "WinBitOr should work correctly")
-		suite.True(len(windowBitResults) > 0, "Should have window bit OR results")
+		suite.Require().NoError(err, "WinBitOr should work correctly")
+		suite.Require().NotEmpty(windowBitResults, "Should have window bit OR results")
 
 		for _, result := range windowBitResults {
 			suite.True(result.BitOrResult >= 0, "BitOr should be non-negative")
@@ -1051,9 +1037,6 @@ func (suite *EBWindowFunctionsTestSuite) TestWinBitOr() {
 }
 
 // TestWinBitAnd tests the BIT_AND window function.
-// WinBitAnd performs bitwise AND within a window frame.
-// Note: PostgreSQL and MySQL support native BIT_AND.
-// SQLite simulates it using MIN with CASE for boolean-like operations.
 func (suite *EBWindowFunctionsTestSuite) TestWinBitAnd() {
 	suite.T().Logf("Testing WinBitAnd function for %s", suite.ds.Kind)
 
@@ -1078,8 +1061,8 @@ func (suite *EBWindowFunctionsTestSuite) TestWinBitAnd() {
 			Limit(5).
 			Scan(suite.ctx, &windowBitResults)
 
-		suite.NoError(err, "WinBitAnd should work correctly")
-		suite.True(len(windowBitResults) > 0, "Should have window bit AND results")
+		suite.Require().NoError(err, "WinBitAnd should work correctly")
+		suite.Require().NotEmpty(windowBitResults, "Should have window bit AND results")
 
 		for _, result := range windowBitResults {
 			suite.True(result.BitAndResult >= 0, "BitAnd should be non-negative")
@@ -1090,8 +1073,6 @@ func (suite *EBWindowFunctionsTestSuite) TestWinBitAnd() {
 }
 
 // TestWinBoolOr tests the BOOL_OR window function.
-// WinBoolOr performs boolean OR within a window frame.
-// Framework uses BOOL_OR (PostgreSQL), MAX+CASE simulation (MySQL/SQLite).
 func (suite *EBWindowFunctionsTestSuite) TestWinBoolOr() {
 	suite.T().Logf("Testing WinBoolOr function for %s", suite.ds.Kind)
 
@@ -1115,8 +1096,8 @@ func (suite *EBWindowFunctionsTestSuite) TestWinBoolOr() {
 			Limit(5).
 			Scan(suite.ctx, &windowBoolResults)
 
-		suite.NoError(err, "WinBoolOr should work correctly")
-		suite.True(len(windowBoolResults) > 0, "Should have window bool OR results")
+		suite.Require().NoError(err, "WinBoolOr should work correctly")
+		suite.Require().NotEmpty(windowBoolResults, "Should have window bool OR results")
 
 		for _, result := range windowBoolResults {
 			suite.T().Logf("ID: %s, Status: %s, BoolOr: %v",
@@ -1126,8 +1107,6 @@ func (suite *EBWindowFunctionsTestSuite) TestWinBoolOr() {
 }
 
 // TestWinBoolAnd tests the BOOL_AND window function.
-// WinBoolAnd performs boolean AND within a window frame.
-// Framework uses BOOL_AND (PostgreSQL), MIN+CASE simulation (MySQL/SQLite).
 func (suite *EBWindowFunctionsTestSuite) TestWinBoolAnd() {
 	suite.T().Logf("Testing WinBoolAnd function for %s", suite.ds.Kind)
 
@@ -1151,8 +1130,8 @@ func (suite *EBWindowFunctionsTestSuite) TestWinBoolAnd() {
 			Limit(5).
 			Scan(suite.ctx, &windowBoolResults)
 
-		suite.NoError(err, "WinBoolAnd should work correctly")
-		suite.True(len(windowBoolResults) > 0, "Should have window bool AND results")
+		suite.Require().NoError(err, "WinBoolAnd should work correctly")
+		suite.Require().NotEmpty(windowBoolResults, "Should have window bool AND results")
 
 		for _, result := range windowBoolResults {
 			suite.T().Logf("ID: %s, Status: %s, BoolAnd: %v",
@@ -1163,11 +1142,11 @@ func (suite *EBWindowFunctionsTestSuite) TestWinBoolAnd() {
 
 // TestWindowFrameSpecs tests window frame specification methods.
 func (suite *EBWindowFunctionsTestSuite) TestWindowFrameSpecs() {
+	suite.T().Logf("Testing WindowFrameSpecs for %s", suite.ds.Kind)
+
 	if suite.ds.Kind == config.SQLite {
 		suite.T().Skip("SQLite has limited window frame support")
 	}
-
-	suite.T().Logf("Testing window frame specs for %s", suite.ds.Kind)
 
 	suite.Run("RangeFrame", func() {
 		type UserWithSum struct {
@@ -1193,8 +1172,8 @@ func (suite *EBWindowFunctionsTestSuite) TestWindowFrameSpecs() {
 			OrderBy("age").
 			Scan(suite.ctx, &users)
 
-		suite.NoError(err, "Range frame should work")
-		suite.True(len(users) > 0, "Should have results")
+		suite.Require().NoError(err, "Range frame should work")
+		suite.Require().NotEmpty(users, "Should have results")
 
 		suite.T().Logf("Found %d users with range frame", len(users))
 	})
@@ -1222,8 +1201,8 @@ func (suite *EBWindowFunctionsTestSuite) TestWindowFrameSpecs() {
 			OrderBy("age").
 			Scan(suite.ctx, &users)
 
-		suite.NoError(err, "Rows frame with preceding should work")
-		suite.True(len(users) > 0, "Should have results")
+		suite.Require().NoError(err, "Rows frame with preceding should work")
+		suite.Require().NotEmpty(users, "Should have results")
 
 		suite.T().Logf("Found %d users with rows frame", len(users))
 	})
@@ -1253,8 +1232,8 @@ func (suite *EBWindowFunctionsTestSuite) TestWindowFrameSpecs() {
 			OrderBy("age").
 			Scan(suite.ctx, &users)
 
-		suite.NoError(err, "Rows frame with following should work")
-		suite.True(len(users) > 0, "Should have results")
+		suite.Require().NoError(err, "Rows frame with following should work")
+		suite.Require().NotEmpty(users, "Should have results")
 
 		suite.T().Logf("Found %d users with rows+following", len(users))
 	})
@@ -1285,8 +1264,8 @@ func (suite *EBWindowFunctionsTestSuite) TestWindowFrameSpecs() {
 				OrderBy("age").
 				Scan(suite.ctx, &users)
 
-			suite.NoError(err, "Groups frame should work")
-			suite.True(len(users) > 0, "Should have results")
+			suite.Require().NoError(err, "Groups frame should work")
+			suite.Require().NotEmpty(users, "Should have results")
 
 			suite.T().Logf("Found %d users with groups frame", len(users))
 		})
@@ -1318,7 +1297,7 @@ func (suite *EBWindowFunctionsTestSuite) TestPartitionByExprAndOrderByExpr() {
 			OrderBy("age").
 			Scan(suite.ctx, &users)
 
-		suite.NoError(err, "PartitionByExpr should work")
+		suite.Require().NoError(err, "PartitionByExpr should work")
 		suite.Len(users, 20, "Should return all users")
 
 		suite.T().Logf("Found %d users with partition by expr", len(users))
@@ -1344,7 +1323,7 @@ func (suite *EBWindowFunctionsTestSuite) TestPartitionByExprAndOrderByExpr() {
 			OrderBy("age").
 			Scan(suite.ctx, &users)
 
-		suite.NoError(err, "OrderByExpr should work")
+		suite.Require().NoError(err, "OrderByExpr should work")
 		suite.Len(users, 20, "Should return all users")
 
 		suite.T().Logf("Found %d users with order by expr", len(users))
@@ -1353,11 +1332,11 @@ func (suite *EBWindowFunctionsTestSuite) TestPartitionByExprAndOrderByExpr() {
 
 // TestNullHandling tests IgnoreNulls and RespectNulls.
 func (suite *EBWindowFunctionsTestSuite) TestNullHandling() {
+	suite.T().Logf("Testing NullHandling for %s", suite.ds.Kind)
+
 	if suite.ds.Kind != config.Postgres {
 		suite.T().Skip("IGNORE NULLS / RESPECT NULLS not widely supported")
 	}
-
-	suite.T().Logf("Testing IgnoreNulls/RespectNulls for %s", suite.ds.Kind)
 
 	suite.Run("RespectNulls", func() {
 		type Result struct {
@@ -1379,7 +1358,7 @@ func (suite *EBWindowFunctionsTestSuite) TestNullHandling() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "RespectNulls should work")
+		suite.Require().NoError(err, "RespectNulls should work")
 
 		suite.T().Logf("Found %d results with RespectNulls", len(results))
 	})
@@ -1387,11 +1366,11 @@ func (suite *EBWindowFunctionsTestSuite) TestNullHandling() {
 
 // TestFirstLastValue tests FromFirst and FromLast with NthValue.
 func (suite *EBWindowFunctionsTestSuite) TestFirstLastValue() {
+	suite.T().Logf("Testing FirstLastValue for %s", suite.ds.Kind)
+
 	if suite.ds.Kind != config.Postgres {
 		suite.T().Skip("FROM FIRST/FROM LAST not widely supported")
 	}
-
-	suite.T().Logf("Testing FromFirst/FromLast for %s", suite.ds.Kind)
 
 	suite.Run("FromFirst", func() {
 		type Result struct {
@@ -1414,7 +1393,7 @@ func (suite *EBWindowFunctionsTestSuite) TestFirstLastValue() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "FromFirst should work")
+		suite.Require().NoError(err, "FromFirst should work")
 
 		suite.T().Logf("Found %d results with FromFirst", len(results))
 	})
@@ -1440,7 +1419,7 @@ func (suite *EBWindowFunctionsTestSuite) TestFirstLastValue() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "FromLast should work")
+		suite.Require().NoError(err, "FromLast should work")
 
 		suite.T().Logf("Found %d results with FromLast", len(results))
 	})
@@ -1448,11 +1427,11 @@ func (suite *EBWindowFunctionsTestSuite) TestFirstLastValue() {
 
 // TestWindowFrameEndBuilderMethods tests uncovered WindowFrameEndBuilder methods.
 func (suite *EBWindowFunctionsTestSuite) TestWindowFrameEndBuilderMethods() {
+	suite.T().Logf("Testing WindowFrameEndBuilderMethods for %s", suite.ds.Kind)
+
 	if suite.ds.Kind == config.SQLite {
 		suite.T().Skip("SQLite has limited window frame support")
 	}
-
-	suite.T().Logf("Testing WindowFrameEndBuilder methods for %s", suite.ds.Kind)
 
 	suite.Run("FrameStartFollowing", func() {
 		type Result struct {
@@ -1480,7 +1459,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWindowFrameEndBuilderMethods() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Frame start Following should work")
+		suite.Require().NoError(err, "Frame start Following should work")
 	})
 
 	suite.Run("EndUnboundedPreceding", func() {
@@ -1509,7 +1488,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWindowFrameEndBuilderMethods() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "End CurrentRow should work")
+		suite.Require().NoError(err, "End CurrentRow should work")
 	})
 
 	suite.Run("EndPreceding", func() {
@@ -1538,17 +1517,17 @@ func (suite *EBWindowFunctionsTestSuite) TestWindowFrameEndBuilderMethods() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "End Preceding should work")
+		suite.Require().NoError(err, "End Preceding should work")
 	})
 }
 
 // TestWindowExprMethods tests Expr methods on FirstValue, LastValue, NthValue, Lag, Lead.
 func (suite *EBWindowFunctionsTestSuite) TestWindowExprMethods() {
+	suite.T().Logf("Testing WindowExprMethods for %s", suite.ds.Kind)
+
 	if suite.ds.Kind != config.Postgres {
 		suite.T().Skip("Window Expr methods only tested on Postgres")
 	}
-
-	suite.T().Logf("Testing window Expr methods for %s", suite.ds.Kind)
 
 	suite.Run("FirstValueExpr", func() {
 		type Result struct {
@@ -1569,7 +1548,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWindowExprMethods() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "FirstValue.Expr should work")
+		suite.Require().NoError(err, "FirstValue.Expr should work")
 	})
 
 	suite.Run("LastValueExpr", func() {
@@ -1591,7 +1570,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWindowExprMethods() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "LastValue.Expr should work")
+		suite.Require().NoError(err, "LastValue.Expr should work")
 	})
 
 	suite.Run("NthValueExpr", func() {
@@ -1614,7 +1593,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWindowExprMethods() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "NthValue.Expr should work")
+		suite.Require().NoError(err, "NthValue.Expr should work")
 	})
 
 	suite.Run("LagExpr", func() {
@@ -1637,7 +1616,7 @@ func (suite *EBWindowFunctionsTestSuite) TestWindowExprMethods() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Lag.Expr should work")
+		suite.Require().NoError(err, "Lag.Expr should work")
 	})
 
 	suite.Run("LeadExpr", func() {
@@ -1660,17 +1639,17 @@ func (suite *EBWindowFunctionsTestSuite) TestWindowExprMethods() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Lead.Expr should work")
+		suite.Require().NoError(err, "Lead.Expr should work")
 	})
 }
 
 // TestWindowIgnoreNulls tests IgnoreNulls on window functions.
 func (suite *EBWindowFunctionsTestSuite) TestWindowIgnoreNulls() {
+	suite.T().Logf("Testing WindowIgnoreNulls for %s", suite.ds.Kind)
+
 	if suite.ds.Kind != config.Postgres {
 		suite.T().Skip("IGNORE NULLS only supported on Postgres")
 	}
-
-	suite.T().Logf("Testing window IgnoreNulls for %s", suite.ds.Kind)
 
 	type Result struct {
 		Title    string  `bun:"title"`
@@ -1691,16 +1670,16 @@ func (suite *EBWindowFunctionsTestSuite) TestWindowIgnoreNulls() {
 		Limit(5).
 		Scan(suite.ctx, &results)
 
-	suite.NoError(err, "IgnoreNulls should work")
+	suite.Require().NoError(err, "IgnoreNulls should work")
 }
 
 // TestWindowFrameEndUnboundedPreceding tests WindowFrameEndBuilder.UnboundedPreceding.
 func (suite *EBWindowFunctionsTestSuite) TestWindowFrameEndUnboundedPreceding() {
+	suite.T().Logf("Testing WindowFrameEndUnboundedPreceding for %s", suite.ds.Kind)
+
 	if suite.ds.Kind == config.SQLite {
 		suite.T().Skip("SQLite has limited window frame support")
 	}
-
-	suite.T().Logf("Testing WindowFrameEnd UnboundedPreceding for %s", suite.ds.Kind)
 
 	type Result struct {
 		Name   string `bun:"name"`

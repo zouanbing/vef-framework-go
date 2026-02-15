@@ -14,9 +14,7 @@ func init() {
 	})
 }
 
-// CBNullBoolExprTestSuite tests IS NULL/IS NOT NULL/IS TRUE/IS FALSE with Expr and SubQuery variants.
-// Also covers: GreaterThanOrEqualSubQuery, LessThanOrEqualSubQuery, OrGreaterThanOrEqualExpr,
-// LessThanOrEqualExpr, OrLessThanOrEqualExpr.
+// CBNullBoolExprTestSuite tests NULL/boolean Expr and SubQuery variants plus extended comparison methods.
 type CBNullBoolExprTestSuite struct {
 	*ConditionBuilderTestSuite
 }
@@ -36,8 +34,6 @@ func (suite *CBNullBoolExprTestSuite) TestIsNullExpr() {
 		)
 
 		suite.True(len(posts) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d posts with null description expr", len(posts))
 	})
 
 	suite.Run("OrIsNullExpr", func() {
@@ -51,9 +47,7 @@ func (suite *CBNullBoolExprTestSuite) TestIsNullExpr() {
 				}),
 		)
 
-		suite.True(len(posts) > 0, "Should find posts")
-
-		suite.T().Logf("Found %d posts", len(posts))
+		suite.True(len(posts) > 0, "Should find posts matching either condition")
 	})
 }
 
@@ -75,9 +69,7 @@ func (suite *CBNullBoolExprTestSuite) TestIsNullSubQuery() {
 				}),
 		)
 
-		suite.Len(users, 20, "All users should match when subquery is NULL")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.Len(users, 20, "Should match all users when subquery is NULL")
 	})
 
 	suite.Run("OrIsNullSubQuery", func() {
@@ -95,9 +87,7 @@ func (suite *CBNullBoolExprTestSuite) TestIsNullSubQuery() {
 				}),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }
 
@@ -115,9 +105,7 @@ func (suite *CBNullBoolExprTestSuite) TestIsNotNullExpr() {
 				}),
 		)
 
-		suite.Len(users, 20, "All users should have non-null names")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.Len(users, 20, "Should find all users with non-null names")
 	})
 
 	suite.Run("OrIsNotNullExpr", func() {
@@ -131,9 +119,7 @@ func (suite *CBNullBoolExprTestSuite) TestIsNotNullExpr() {
 				}),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }
 
@@ -155,9 +141,7 @@ func (suite *CBNullBoolExprTestSuite) TestIsNotNullSubQuery() {
 				}),
 		)
 
-		suite.Len(users, 20, "All users should match when subquery is NOT NULL")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.Len(users, 20, "Should match all users when subquery is NOT NULL")
 	})
 
 	suite.Run("OrIsNotNullSubQuery", func() {
@@ -175,9 +159,7 @@ func (suite *CBNullBoolExprTestSuite) TestIsNotNullSubQuery() {
 				}),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }
 
@@ -198,10 +180,8 @@ func (suite *CBNullBoolExprTestSuite) TestIsTrueExpr() {
 		suite.True(len(users) > 0, "Should find active users")
 
 		for _, user := range users {
-			suite.True(user.IsActive, "User should be active")
+			suite.True(user.IsActive, "Should be active")
 		}
-
-		suite.T().Logf("Found %d active users", len(users))
 	})
 
 	suite.Run("OrIsTrueExpr", func() {
@@ -215,9 +195,7 @@ func (suite *CBNullBoolExprTestSuite) TestIsTrueExpr() {
 				}),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }
 
@@ -239,9 +217,7 @@ func (suite *CBNullBoolExprTestSuite) TestIsTrueSubQuery() {
 				}),
 		)
 
-		suite.Len(users, 20, "All users should match when subquery is TRUE")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.Len(users, 20, "Should match all users when subquery is TRUE")
 	})
 
 	suite.Run("OrIsTrueSubQuery", func() {
@@ -259,9 +235,7 @@ func (suite *CBNullBoolExprTestSuite) TestIsTrueSubQuery() {
 				}),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }
 
@@ -282,10 +256,8 @@ func (suite *CBNullBoolExprTestSuite) TestIsFalseExpr() {
 		suite.True(len(users) > 0, "Should find inactive users")
 
 		for _, user := range users {
-			suite.False(user.IsActive, "User should be inactive")
+			suite.False(user.IsActive, "Should be inactive")
 		}
-
-		suite.T().Logf("Found %d inactive users", len(users))
 	})
 
 	suite.Run("OrIsFalseExpr", func() {
@@ -299,9 +271,7 @@ func (suite *CBNullBoolExprTestSuite) TestIsFalseExpr() {
 				}),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }
 
@@ -323,9 +293,7 @@ func (suite *CBNullBoolExprTestSuite) TestIsFalseSubQuery() {
 				}),
 		)
 
-		suite.Len(users, 20, "All users should match when subquery is FALSE")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.Len(users, 20, "Should match all users when subquery is FALSE")
 	})
 
 	suite.Run("OrIsFalseSubQuery", func() {
@@ -343,17 +311,15 @@ func (suite *CBNullBoolExprTestSuite) TestIsFalseSubQuery() {
 				}),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }
 
-// TestComparisonSubQueryAndExprExtended tests GTE/LTE SubQuery and Expr variants not yet covered.
+// TestComparisonSubQueryAndExprExtended tests GTE/LTE SubQuery and Expr variants.
 func (suite *CBNullBoolExprTestSuite) TestComparisonSubQueryAndExprExtended() {
 	suite.T().Logf("Testing extended comparison SubQuery/Expr for %s", suite.ds.Kind)
 
-	suite.Run("GreaterThanOrEqualSubQuery", func() {
+	suite.Run("GteSubQuery", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
@@ -371,13 +337,11 @@ func (suite *CBNullBoolExprTestSuite) TestComparisonSubQueryAndExprExtended() {
 		suite.True(len(users) > 0, "Should find users with age >= 30")
 
 		for _, user := range users {
-			suite.True(user.Age >= 30, "Age should be >= 30")
+			suite.True(user.Age >= 30, "Should have age >= 30")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
-	suite.Run("OrGreaterThanOrEqualSubQuery", func() {
+	suite.Run("OrGteSubQuery", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
@@ -393,12 +357,10 @@ func (suite *CBNullBoolExprTestSuite) TestComparisonSubQueryAndExprExtended() {
 				OrderBy("age"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 
-	suite.Run("OrGreaterThanOrEqualExpr", func() {
+	suite.Run("OrGteExpr", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
@@ -410,12 +372,10 @@ func (suite *CBNullBoolExprTestSuite) TestComparisonSubQueryAndExprExtended() {
 				OrderBy("age"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 
-	suite.Run("LessThanOrEqualSubQuery", func() {
+	suite.Run("LteSubQuery", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
@@ -433,13 +393,11 @@ func (suite *CBNullBoolExprTestSuite) TestComparisonSubQueryAndExprExtended() {
 		suite.True(len(users) > 0, "Should find users with age <= 30")
 
 		for _, user := range users {
-			suite.True(user.Age <= 30, "Age should be <= 30")
+			suite.True(user.Age <= 30, "Should have age <= 30")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
-	suite.Run("OrLessThanOrEqualSubQuery", func() {
+	suite.Run("OrLteSubQuery", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
@@ -455,12 +413,10 @@ func (suite *CBNullBoolExprTestSuite) TestComparisonSubQueryAndExprExtended() {
 				OrderBy("age"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 
-	suite.Run("LessThanOrEqualExpr", func() {
+	suite.Run("LteExpr", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
@@ -472,11 +428,9 @@ func (suite *CBNullBoolExprTestSuite) TestComparisonSubQueryAndExprExtended() {
 		)
 
 		suite.Len(users, 10, "Should find users with age <= 30")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
-	suite.Run("OrLessThanOrEqualExpr", func() {
+	suite.Run("OrLteExpr", func() {
 		users := suite.assertQueryReturnsUsers(
 			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
@@ -488,8 +442,6 @@ func (suite *CBNullBoolExprTestSuite) TestComparisonSubQueryAndExprExtended() {
 				OrderBy("age"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }

@@ -14,8 +14,7 @@ func init() {
 	})
 }
 
-// HelpersTestSuite tests helper functions.
-// Covers: ApplySort.
+// HelpersTestSuite tests helper functions across all databases.
 type HelpersTestSuite struct {
 	*BaseTestSuite
 }

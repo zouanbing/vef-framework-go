@@ -12,9 +12,7 @@ func init() {
 	})
 }
 
-// EBConditionalFunctionsTestSuite tests conditional function methods of orm.ExprBuilder
-// including Coalesce (returns first non-null value), NullIf (returns NULL when equal),
-// and IfNull (returns default when NULL).
+// EBConditionalFunctionsTestSuite tests conditional function methods of orm.ExprBuilder.
 type EBConditionalFunctionsTestSuite struct {
 	*BaseTestSuite
 }
@@ -50,8 +48,8 @@ func (suite *EBConditionalFunctionsTestSuite) TestCoalesce() {
 			Limit(5).
 			Scan(suite.ctx, &coalesceResults)
 
-		suite.NoError(err, "Coalesce should work correctly")
-		suite.True(len(coalesceResults) > 0, "Should have coalesce results")
+		suite.Require().NoError(err, "Coalesce should work correctly")
+		suite.Require().NotEmpty(coalesceResults, "Should have coalesce results")
 
 		for _, result := range coalesceResults {
 			suite.NotEmpty(result.SafeDesc, "Coalesce should provide default value")
@@ -99,8 +97,8 @@ func (suite *EBConditionalFunctionsTestSuite) TestNullIf() {
 			Limit(5).
 			Scan(suite.ctx, &nullIfResults)
 
-		suite.NoError(err, "NullIf should work correctly")
-		suite.True(len(nullIfResults) > 0, "Should have NullIf results")
+		suite.Require().NoError(err, "NullIf should work correctly")
+		suite.Require().NotEmpty(nullIfResults, "Should have NullIf results")
 
 		for _, result := range nullIfResults {
 			suite.NotEqual("draft", result.Status, "Should not have draft posts")
@@ -138,8 +136,8 @@ func (suite *EBConditionalFunctionsTestSuite) TestIfNull() {
 			Limit(5).
 			Scan(suite.ctx, &ifNullResults)
 
-		suite.NoError(err, "IfNull should work correctly")
-		suite.True(len(ifNullResults) > 0, "Should have IfNull results")
+		suite.Require().NoError(err, "IfNull should work correctly")
+		suite.Require().NotEmpty(ifNullResults, "Should have IfNull results")
 
 		for _, result := range ifNullResults {
 			suite.NotEmpty(result.Description, "IfNull should provide default when NULL")
@@ -199,8 +197,8 @@ func (suite *EBConditionalFunctionsTestSuite) TestCombinedConditionalFunctions()
 			Limit(5).
 			Scan(suite.ctx, &combinedResults)
 
-		suite.NoError(err, "Combined conditional functions should work")
-		suite.True(len(combinedResults) > 0, "Should have combined results")
+		suite.Require().NoError(err, "Combined conditional functions should work")
+		suite.Require().NotEmpty(combinedResults, "Should have combined results")
 
 		for _, result := range combinedResults {
 			suite.NotEmpty(result.SafeStatus, "SafeStatus should not be empty")
@@ -236,8 +234,8 @@ func (suite *EBConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Coalesce with minimal arguments should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "Coalesce with minimal arguments should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Equal(result.Title, result.SingleValue, "Should return the title value")
@@ -263,8 +261,8 @@ func (suite *EBConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Coalesce with all NULL arguments should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "Coalesce with all NULL arguments should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Nil(result.AllNullVal, "All NULL arguments should return NULL")
@@ -296,8 +294,8 @@ func (suite *EBConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Coalesce with many arguments should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "Coalesce with many arguments should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Equal(result.Title, result.FinalValue, "Should return first non-NULL value (title)")
@@ -328,8 +326,8 @@ func (suite *EBConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "NullIf with NULL as first argument should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "NullIf with NULL as first argument should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Nil(result.Result, "NullIf(NULL, value) should return NULL")
@@ -355,8 +353,8 @@ func (suite *EBConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "NullIf with NULL as second argument should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "NullIf with NULL as second argument should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.NotNil(result.Result, "NullIf(value, NULL) should return first argument (never equal)")
@@ -382,8 +380,8 @@ func (suite *EBConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "NullIf with both NULL arguments should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "NullIf with both NULL arguments should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Nil(result.Result, "NullIf(NULL, NULL) should return NULL (considered equal)")
@@ -414,8 +412,8 @@ func (suite *EBConditionalFunctionsTestSuite) TestIfNullWithNullArguments() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "IfNull with NULL default value should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "IfNull with NULL default value should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Nil(result.Result, "IfNull(NULL, NULL) should return NULL")
@@ -445,8 +443,8 @@ func (suite *EBConditionalFunctionsTestSuite) TestIfNullWithNullArguments() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "IfNull with value and NULL default should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "IfNull with value and NULL default should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.NotNil(result.Result, "IfNull(value, NULL) should return value when not NULL")
@@ -490,8 +488,8 @@ func (suite *EBConditionalFunctionsTestSuite) TestConditionalFunctionsSpecialVal
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Special value test should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "Special value test should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Equal("", result.EmptyNotNull, "Empty string should not be NULL")
@@ -534,8 +532,8 @@ func (suite *EBConditionalFunctionsTestSuite) TestConditionalFunctionsSpecialVal
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Zero vs NULL test should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "Zero vs NULL test should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Equal(int64(0), result.ZeroNotNull, "Zero should not be NULL")

@@ -14,14 +14,12 @@ func init() {
 	})
 }
 
-// CBStringOperationsTestSuite tests string operation condition methods.
-// Covers: Contains, StartsWith, EndsWith, ContainsAny, StartsWithAny, EndsWithAny
-// and their case-insensitive variants (ContainsIgnoreCase, StartsWithIgnoreCase, etc.)
+// CBStringOperationsTestSuite tests string operation conditions and their case-insensitive variants.
 type CBStringOperationsTestSuite struct {
 	*ConditionBuilderTestSuite
 }
 
-// TestContains tests the Contains and OrContains conditions.
+// TestContains tests Contains and OrContains conditions.
 func (suite *CBStringOperationsTestSuite) TestContains() {
 	suite.T().Logf("Testing Contains condition for %s", suite.ds.Kind)
 
@@ -34,9 +32,7 @@ func (suite *CBStringOperationsTestSuite) TestContains() {
 		)
 
 		suite.Len(users, 1, "Should find one user")
-		suite.Contains(users[0].Name, "Alice", "Name should contain Alice")
-
-		suite.T().Logf("Found user: %s", users[0].Name)
+		suite.Contains(users[0].Name, "Alice", "Should contain Alice in name")
 	})
 
 	suite.Run("OrContains", func() {
@@ -50,12 +46,10 @@ func (suite *CBStringOperationsTestSuite) TestContains() {
 		)
 
 		suite.Len(users, 2, "Should find two users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestStartsWith tests the StartsWith and OrStartsWith conditions.
+// TestStartsWith tests StartsWith and OrStartsWith conditions.
 func (suite *CBStringOperationsTestSuite) TestStartsWith() {
 	suite.T().Logf("Testing StartsWith condition for %s", suite.ds.Kind)
 
@@ -69,9 +63,7 @@ func (suite *CBStringOperationsTestSuite) TestStartsWith() {
 
 		suite.Len(users, 1, "Should find one user")
 		suite.True(len(users[0].Name) >= 5 && users[0].Name[:5] == "Alice",
-			"Name should start with Alice")
-
-		suite.T().Logf("Found user: %s", users[0].Name)
+			"Should start with Alice")
 	})
 
 	suite.Run("OrStartsWith", func() {
@@ -85,12 +77,10 @@ func (suite *CBStringOperationsTestSuite) TestStartsWith() {
 		)
 
 		suite.Len(users, 2, "Should find two users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestEndsWith tests the EndsWith and OrEndsWith conditions.
+// TestEndsWith tests EndsWith and OrEndsWith conditions.
 func (suite *CBStringOperationsTestSuite) TestEndsWith() {
 	suite.T().Logf("Testing EndsWith condition for %s", suite.ds.Kind)
 
@@ -104,9 +94,7 @@ func (suite *CBStringOperationsTestSuite) TestEndsWith() {
 
 		suite.Len(users, 1, "Should find one user")
 		suite.True(len(users[0].Name) >= 7 && users[0].Name[len(users[0].Name)-7:] == "Johnson",
-			"Name should end with Johnson")
-
-		suite.T().Logf("Found user: %s", users[0].Name)
+			"Should end with Johnson")
 	})
 
 	suite.Run("OrEndsWith", func() {
@@ -120,12 +108,10 @@ func (suite *CBStringOperationsTestSuite) TestEndsWith() {
 		)
 
 		suite.Len(users, 2, "Should find two users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestContainsIgnoreCase tests the ContainsIgnoreCase and OrContainsIgnoreCase conditions (case-insensitive).
+// TestContainsIgnoreCase tests ContainsIgnoreCase and OrContainsIgnoreCase conditions.
 func (suite *CBStringOperationsTestSuite) TestContainsIgnoreCase() {
 	suite.T().Logf("Testing ContainsIgnoreCase condition for %s", suite.ds.Kind)
 
@@ -137,9 +123,7 @@ func (suite *CBStringOperationsTestSuite) TestContainsIgnoreCase() {
 				}),
 		)
 
-		suite.Len(users, 1, "Should find one user (case-insensitive)")
-
-		suite.T().Logf("Found user: %s", users[0].Name)
+		suite.Len(users, 1, "Should find one user case-insensitively")
 	})
 
 	suite.Run("OrIContains", func() {
@@ -152,13 +136,11 @@ func (suite *CBStringOperationsTestSuite) TestContainsIgnoreCase() {
 				OrderBy("name"),
 		)
 
-		suite.Len(users, 2, "Should find two users (case-insensitive)")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.Len(users, 2, "Should find two users case-insensitively")
 	})
 }
 
-// TestStartsWithIgnoreCase tests the StartsWithIgnoreCase and OrStartsWithIgnoreCase conditions (case-insensitive).
+// TestStartsWithIgnoreCase tests StartsWithIgnoreCase and OrStartsWithIgnoreCase conditions.
 func (suite *CBStringOperationsTestSuite) TestStartsWithIgnoreCase() {
 	suite.T().Logf("Testing StartsWithIgnoreCase condition for %s", suite.ds.Kind)
 
@@ -170,9 +152,7 @@ func (suite *CBStringOperationsTestSuite) TestStartsWithIgnoreCase() {
 				}),
 		)
 
-		suite.Len(users, 1, "Should find one user (case-insensitive)")
-
-		suite.T().Logf("Found user: %s", users[0].Name)
+		suite.Len(users, 1, "Should find one user case-insensitively")
 	})
 
 	suite.Run("OrIStartsWith", func() {
@@ -185,13 +165,11 @@ func (suite *CBStringOperationsTestSuite) TestStartsWithIgnoreCase() {
 				OrderBy("name"),
 		)
 
-		suite.Len(users, 2, "Should find two users (case-insensitive)")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.Len(users, 2, "Should find two users case-insensitively")
 	})
 }
 
-// TestEndsWithIgnoreCase tests the EndsWithIgnoreCase and OrEndsWithIgnoreCase conditions (case-insensitive).
+// TestEndsWithIgnoreCase tests EndsWithIgnoreCase and OrEndsWithIgnoreCase conditions.
 func (suite *CBStringOperationsTestSuite) TestEndsWithIgnoreCase() {
 	suite.T().Logf("Testing EndsWithIgnoreCase condition for %s", suite.ds.Kind)
 
@@ -203,9 +181,7 @@ func (suite *CBStringOperationsTestSuite) TestEndsWithIgnoreCase() {
 				}),
 		)
 
-		suite.Len(users, 1, "Should find one user (case-insensitive)")
-
-		suite.T().Logf("Found user: %s", users[0].Name)
+		suite.Len(users, 1, "Should find one user case-insensitively")
 	})
 
 	suite.Run("OrIEndsWith", func() {
@@ -218,13 +194,11 @@ func (suite *CBStringOperationsTestSuite) TestEndsWithIgnoreCase() {
 				OrderBy("name"),
 		)
 
-		suite.Len(users, 2, "Should find two users (case-insensitive)")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.Len(users, 2, "Should find two users case-insensitively")
 	})
 }
 
-// TestContainsAny tests the ContainsAny and OrContainsAny conditions.
+// TestContainsAny tests ContainsAny and OrContainsAny conditions.
 func (suite *CBStringOperationsTestSuite) TestContainsAny() {
 	suite.T().Logf("Testing ContainsAny condition for %s", suite.ds.Kind)
 
@@ -238,8 +212,6 @@ func (suite *CBStringOperationsTestSuite) TestContainsAny() {
 		)
 
 		suite.Len(users, 2, "Should find two users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrContainsAny", func() {
@@ -253,12 +225,10 @@ func (suite *CBStringOperationsTestSuite) TestContainsAny() {
 		)
 
 		suite.Len(users, 2, "Should find two users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestStartsWithAny tests the StartsWithAny and OrStartsWithAny conditions.
+// TestStartsWithAny tests StartsWithAny and OrStartsWithAny conditions.
 func (suite *CBStringOperationsTestSuite) TestStartsWithAny() {
 	suite.T().Logf("Testing StartsWithAny condition for %s", suite.ds.Kind)
 
@@ -272,8 +242,6 @@ func (suite *CBStringOperationsTestSuite) TestStartsWithAny() {
 		)
 
 		suite.Len(users, 2, "Should find two users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrStartsWithAny", func() {
@@ -287,12 +255,10 @@ func (suite *CBStringOperationsTestSuite) TestStartsWithAny() {
 		)
 
 		suite.Len(users, 2, "Should find two users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestEndsWithAny tests the EndsWithAny and OrEndsWithAny conditions.
+// TestEndsWithAny tests EndsWithAny and OrEndsWithAny conditions.
 func (suite *CBStringOperationsTestSuite) TestEndsWithAny() {
 	suite.T().Logf("Testing EndsWithAny condition for %s", suite.ds.Kind)
 
@@ -306,8 +272,6 @@ func (suite *CBStringOperationsTestSuite) TestEndsWithAny() {
 		)
 
 		suite.Len(users, 2, "Should find two users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrEndsWithAny", func() {
@@ -321,7 +285,5 @@ func (suite *CBStringOperationsTestSuite) TestEndsWithAny() {
 		)
 
 		suite.Len(users, 2, "Should find two users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }

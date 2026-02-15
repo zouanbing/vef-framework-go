@@ -14,80 +14,104 @@ func newTestQueryGen() schema.QueryGen {
 	return schema.NewQueryGen(sqlitedialect.New())
 }
 
-func TestExpressionsAppendQueryStringSeparator(t *testing.T) {
+func TestExpressionsAppendQuery(t *testing.T) {
 	gen := newTestQueryGen()
 
-	expr := newExpressions(", ", "hello", "world")
+	t.Run("StringSeparator", func(t *testing.T) {
+		expr := newExpressions(", ", "hello", "world")
 
-	b, err := expr.AppendQuery(gen, nil)
-	assert.NoError(t, err)
+		b, err := expr.AppendQuery(gen, nil)
+		assert.NoError(t, err, "Should append expressions with string separator")
 
-	result := string(b)
-	assert.Contains(t, result, "hello")
-	assert.Contains(t, result, "world")
-	assert.Contains(t, result, ", ")
-}
+		result := string(b)
+		assert.Contains(t, result, "hello", "Should contain first expression")
+		assert.Contains(t, result, "world", "Should contain second expression")
+		assert.Contains(t, result, ", ", "Should contain separator between expressions")
+	})
 
-func TestExpressionsAppendQueryEmptyExpressions(t *testing.T) {
-	gen := newTestQueryGen()
+	t.Run("EmptyExpressions", func(t *testing.T) {
+		expr := newExpressions(", ")
 
-	expr := newExpressions(", ")
+		b, err := expr.AppendQuery(gen, nil)
+		assert.NoError(t, err, "Should handle empty expression list")
+		assert.Equal(t, "NULL", string(b), "Should return NULL for empty expressions")
+	})
 
-	b, err := expr.AppendQuery(gen, nil)
-	assert.NoError(t, err)
-	assert.Equal(t, "NULL", string(b))
-}
+	t.Run("QueryAppenderSeparator", func(t *testing.T) {
+		sep := bun.Safe(" AND ")
+		expr := newExpressions(sep, "a", "b")
 
-func TestExpressionsAppendQueryQueryAppenderSeparator(t *testing.T) {
-	gen := newTestQueryGen()
+		b, err := expr.AppendQuery(gen, nil)
+		assert.NoError(t, err, "Should append with QueryAppender separator")
 
-	sep := bun.Safe(" AND ")
-	expr := newExpressions(sep, "a", "b")
+		result := string(b)
+		assert.Contains(t, result, " AND ", "Should use QueryAppender as separator")
+	})
 
-	b, err := expr.AppendQuery(gen, nil)
-	assert.NoError(t, err)
+	t.Run("DefaultSeparator", func(t *testing.T) {
+		// Use an int as separator -- falls through to default branch
+		expr := newExpressions(42, "x", "y")
 
-	result := string(b)
-	assert.Contains(t, result, " AND ")
-}
+		b, err := expr.AppendQuery(gen, nil)
+		assert.NoError(t, err, "Should handle non-standard separator type")
+		assert.NotEmpty(t, b, "Should produce non-empty output")
+	})
 
-func TestExpressionsAppendQueryDefaultSeparator(t *testing.T) {
-	gen := newTestQueryGen()
+	t.Run("SliceElement", func(t *testing.T) {
+		inner := []any{"a", "b"}
+		expr := newExpressions(", ", inner)
 
-	// Use an int as separator — falls through to default branch
-	expr := newExpressions(42, "x", "y")
+		b, err := expr.AppendQuery(gen, nil)
+		assert.NoError(t, err, "Should handle slice element")
 
-	b, err := expr.AppendQuery(gen, nil)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, b)
-}
+		result := string(b)
+		assert.Contains(t, result, "a", "Should contain first slice element")
+		assert.Contains(t, result, "b", "Should contain second slice element")
+	})
 
-func TestExpressionsAppendQuerySliceElement(t *testing.T) {
-	gen := newTestQueryGen()
+	t.Run("QueryAppenderElement", func(t *testing.T) {
+		appender := bun.Safe("NOW()")
+		expr := newExpressions(", ", appender)
 
-	inner := []any{"a", "b"}
-	expr := newExpressions(", ", inner)
+		b, err := expr.AppendQuery(gen, nil)
+		assert.NoError(t, err, "Should handle QueryAppender element")
 
-	b, err := expr.AppendQuery(gen, nil)
-	assert.NoError(t, err)
+		result := string(b)
+		assert.Contains(t, result, "NOW()", "Should contain appended SQL expression")
+	})
 
-	result := string(b)
-	// Slice element is rendered by gen.AppendValue as JSON array
-	assert.Contains(t, result, "a")
-	assert.Contains(t, result, "b")
-}
+	t.Run("SeparatorError", func(t *testing.T) {
+		sep := errorAppender{}
+		expr := newExpressions(sep, "a", "b")
 
-func TestExpressionsAppendQueryQueryAppenderElement(t *testing.T) {
-	gen := newTestQueryGen()
+		_, err := expr.AppendQuery(gen, nil)
+		assert.Error(t, err, "Should propagate separator AppendQuery error")
+	})
 
-	appender := bun.Safe("NOW()")
-	expr := newExpressions(", ", appender)
+	t.Run("MultipleElements", func(t *testing.T) {
+		expr := newExpressions(", ", bun.Safe("a"), bun.Safe("b"), bun.Safe("c"))
 
-	b, err := expr.AppendQuery(gen, nil)
-	assert.NoError(t, err)
+		b, err := expr.AppendQuery(gen, nil)
+		assert.NoError(t, err, "Should append multiple elements")
 
-	result := string(b)
-	assert.Contains(t, result, "NOW()")
+		result := string(b)
+		assert.Contains(t, result, "a", "Should contain first element")
+		assert.Contains(t, result, "b", "Should contain second element")
+		assert.Contains(t, result, "c", "Should contain third element")
+		assert.Contains(t, result, ", ", "Should separate elements with comma")
+	})
+
+	t.Run("BytesSliceNotNested", func(t *testing.T) {
+		// []byte should NOT be treated as a nested slice
+		data := []byte("hello")
+		expr := newExpressions(", ", data)
+
+		b, err := expr.AppendQuery(gen, nil)
+		assert.NoError(t, err, "Should handle []byte element")
+
+		result := string(b)
+		assert.NotContains(t, result, "(", "Should not wrap []byte in parentheses")
+	})
 }
 
 // errorAppender is a QueryAppender that always returns an error.
@@ -95,44 +119,4 @@ type errorAppender struct{}
 
 func (e errorAppender) AppendQuery(_ schema.QueryGen, _ []byte) ([]byte, error) {
 	return nil, errors.New("test error")
-}
-
-func TestExpressionsAppendQuerySeparatorError(t *testing.T) {
-	gen := newTestQueryGen()
-
-	sep := errorAppender{}
-	expr := newExpressions(sep, "a", "b")
-
-	_, err := expr.AppendQuery(gen, nil)
-	assert.Error(t, err, "Should propagate separator AppendQuery error")
-}
-
-func TestExpressionsAppendQueryMultipleElements(t *testing.T) {
-	gen := newTestQueryGen()
-
-	expr := newExpressions(", ", bun.Safe("a"), bun.Safe("b"), bun.Safe("c"))
-
-	b, err := expr.AppendQuery(gen, nil)
-	assert.NoError(t, err)
-
-	result := string(b)
-	assert.Contains(t, result, "a")
-	assert.Contains(t, result, "b")
-	assert.Contains(t, result, "c")
-	assert.Contains(t, result, ", ")
-}
-
-func TestExpressionsAppendQueryBytesSliceNotNested(t *testing.T) {
-	gen := newTestQueryGen()
-
-	// []byte should NOT be treated as a nested slice
-	data := []byte("hello")
-	expr := newExpressions(", ", data)
-
-	b, err := expr.AppendQuery(gen, nil)
-	assert.NoError(t, err)
-
-	result := string(b)
-	// []byte should be appended as a value, not wrapped in parentheses as a sub-slice
-	assert.NotContains(t, result, "(")
 }

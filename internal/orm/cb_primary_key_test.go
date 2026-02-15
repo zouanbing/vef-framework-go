@@ -15,12 +15,11 @@ func init() {
 }
 
 // CBPrimaryKeyConditionsTestSuite tests primary key condition methods.
-// Covers: PKEquals, PKNotEquals, PKIn, PKNotIn and their Or variants (8 methods total).
 type CBPrimaryKeyConditionsTestSuite struct {
 	*ConditionBuilderTestSuite
 }
 
-// TestPKEquals tests the PKEquals and OrPKEquals conditions.
+// TestPKEquals tests PKEquals and OrPKEquals conditions.
 func (suite *CBPrimaryKeyConditionsTestSuite) TestPKEquals() {
 	suite.T().Logf("Testing PKEquals condition for %s", suite.ds.Kind)
 
@@ -43,8 +42,6 @@ func (suite *CBPrimaryKeyConditionsTestSuite) TestPKEquals() {
 
 		suite.Len(users, 1, "Should find exactly one user")
 		suite.Equal(firstUser.ID, users[0].ID, "Should find the correct user")
-
-		suite.T().Logf("Found user: %s (ID: %s)", users[0].Name, users[0].ID)
 	})
 
 	suite.Run("OrPKEquals", func() {
@@ -70,12 +67,10 @@ func (suite *CBPrimaryKeyConditionsTestSuite) TestPKEquals() {
 		suite.Len(users, 2, "Should find two users")
 		suite.Equal(allUsers[0].ID, users[0].ID)
 		suite.Equal(allUsers[1].ID, users[1].ID)
-
-		suite.T().Logf("Found users: %s, %s", users[0].Name, users[1].Name)
 	})
 }
 
-// TestPKNotEquals tests the PKNotEquals and OrPKNotEquals conditions.
+// TestPKNotEquals tests PKNotEquals and OrPKNotEquals conditions.
 func (suite *CBPrimaryKeyConditionsTestSuite) TestPKNotEquals() {
 	suite.T().Logf("Testing PKNotEquals condition for %s", suite.ds.Kind)
 
@@ -102,8 +97,6 @@ func (suite *CBPrimaryKeyConditionsTestSuite) TestPKNotEquals() {
 		for _, user := range users {
 			suite.NotEqual(firstUser.ID, user.ID, "Should not be the excluded user")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrPKNotEquals", func() {
@@ -125,12 +118,10 @@ func (suite *CBPrimaryKeyConditionsTestSuite) TestPKNotEquals() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestPKIn tests the PKIn and OrPKIn conditions.
+// TestPKIn tests PKIn and OrPKIn conditions.
 func (suite *CBPrimaryKeyConditionsTestSuite) TestPKIn() {
 	suite.T().Logf("Testing PKIn condition for %s", suite.ds.Kind)
 
@@ -158,8 +149,6 @@ func (suite *CBPrimaryKeyConditionsTestSuite) TestPKIn() {
 		suite.Len(users, 2, "Should find two users")
 		suite.Equal(allUsers[0].ID, users[0].ID)
 		suite.Equal(allUsers[1].ID, users[1].ID)
-
-		suite.T().Logf("Found users: %s, %s", users[0].Name, users[1].Name)
 	})
 
 	suite.Run("OrPKIn", func() {
@@ -181,12 +170,10 @@ func (suite *CBPrimaryKeyConditionsTestSuite) TestPKIn() {
 		)
 
 		suite.Len(users, 2, "Should find two users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestPKNotIn tests the PKNotIn and OrPKNotIn conditions.
+// TestPKNotIn tests PKNotIn and OrPKNotIn conditions.
 func (suite *CBPrimaryKeyConditionsTestSuite) TestPKNotIn() {
 	suite.T().Logf("Testing PKNotIn condition for %s", suite.ds.Kind)
 
@@ -213,8 +200,6 @@ func (suite *CBPrimaryKeyConditionsTestSuite) TestPKNotIn() {
 		for _, user := range users {
 			suite.NotEqual(firstUser.ID, user.ID, "Should not be the excluded user")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrPKNotIn", func() {
@@ -236,7 +221,5 @@ func (suite *CBPrimaryKeyConditionsTestSuite) TestPKNotIn() {
 		)
 
 		suite.True(len(users) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }

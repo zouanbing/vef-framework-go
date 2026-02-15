@@ -16,13 +16,11 @@ func init() {
 }
 
 // CBSubqueryOperationsTestSuite tests subquery operation condition methods.
-// Covers: InSubQuery, NotInSubQuery, EqualsSubQuery, NotEqualsSubQuery, GreaterThanSubQuery, etc.
-// Also covers: Any, All, Exists, NotExists variants.
 type CBSubqueryOperationsTestSuite struct {
 	*ConditionBuilderTestSuite
 }
 
-// TestInSubQuery tests the InSubQuery and OrInSubQuery conditions.
+// TestInSubQuery tests InSubQuery and OrInSubQuery conditions.
 func (suite *CBSubqueryOperationsTestSuite) TestInSubQuery() {
 	suite.T().Logf("Testing InSubQuery condition for %s", suite.ds.Kind)
 
@@ -41,8 +39,6 @@ func (suite *CBSubqueryOperationsTestSuite) TestInSubQuery() {
 		)
 
 		suite.True(len(posts) > 0, "Should find posts from active users")
-
-		suite.T().Logf("Found %d posts", len(posts))
 	})
 
 	suite.Run("OrInSubQuery", func() {
@@ -66,12 +62,10 @@ func (suite *CBSubqueryOperationsTestSuite) TestInSubQuery() {
 		)
 
 		suite.True(len(posts) > 0, "Should find posts")
-
-		suite.T().Logf("Found %d posts", len(posts))
 	})
 }
 
-// TestNotInSubQuery tests the NotInSubQuery and OrNotInSubQuery conditions.
+// TestNotInSubQuery tests NotInSubQuery and OrNotInSubQuery conditions.
 func (suite *CBSubqueryOperationsTestSuite) TestNotInSubQuery() {
 	suite.T().Logf("Testing NotInSubQuery condition for %s", suite.ds.Kind)
 
@@ -90,8 +84,6 @@ func (suite *CBSubqueryOperationsTestSuite) TestNotInSubQuery() {
 		)
 
 		suite.True(len(posts) > 0, "Should find posts not from inactive users")
-
-		suite.T().Logf("Found %d posts", len(posts))
 	})
 
 	suite.Run("OrNotInSubQuery", func() {
@@ -115,12 +107,10 @@ func (suite *CBSubqueryOperationsTestSuite) TestNotInSubQuery() {
 		)
 
 		suite.True(len(posts) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d posts", len(posts))
 	})
 }
 
-// TestEqualsSubQuery tests the EqualsSubQuery and OrEqualsSubQuery conditions.
+// TestEqualsSubQuery tests EqualsSubQuery and OrEqualsSubQuery conditions.
 func (suite *CBSubqueryOperationsTestSuite) TestEqualsSubQuery() {
 	suite.T().Logf("Testing EqualsSubQuery condition for %s", suite.ds.Kind)
 
@@ -140,8 +130,6 @@ func (suite *CBSubqueryOperationsTestSuite) TestEqualsSubQuery() {
 		)
 
 		suite.True(len(posts) > 0, "Should find posts by Alice")
-
-		suite.T().Logf("Found %d posts", len(posts))
 	})
 
 	suite.Run("OrEqualsSubQuery", func() {
@@ -167,12 +155,10 @@ func (suite *CBSubqueryOperationsTestSuite) TestEqualsSubQuery() {
 		)
 
 		suite.True(len(posts) > 0, "Should find posts")
-
-		suite.T().Logf("Found %d posts", len(posts))
 	})
 }
 
-// TestNotEqualsSubQuery tests the NotEqualsSubQuery and OrNotEqualsSubQuery conditions.
+// TestNotEqualsSubQuery tests NotEqualsSubQuery and OrNotEqualsSubQuery conditions.
 func (suite *CBSubqueryOperationsTestSuite) TestNotEqualsSubQuery() {
 	suite.T().Logf("Testing NotEqualsSubQuery condition for %s", suite.ds.Kind)
 
@@ -192,8 +178,6 @@ func (suite *CBSubqueryOperationsTestSuite) TestNotEqualsSubQuery() {
 		)
 
 		suite.True(len(posts) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d posts", len(posts))
 	})
 
 	suite.Run("OrNotEqualsSubQuery", func() {
@@ -219,12 +203,10 @@ func (suite *CBSubqueryOperationsTestSuite) TestNotEqualsSubQuery() {
 		)
 
 		suite.True(len(posts) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d posts", len(posts))
 	})
 }
 
-// TestGreaterThanSubQuery tests the GreaterThanSubQuery and OrGreaterThanSubQuery conditions.
+// TestGreaterThanSubQuery tests GreaterThanSubQuery and OrGreaterThanSubQuery conditions.
 func (suite *CBSubqueryOperationsTestSuite) TestGreaterThanSubQuery() {
 	suite.T().Logf("Testing GreaterThanSubQuery condition for %s", suite.ds.Kind)
 
@@ -247,8 +229,6 @@ func (suite *CBSubqueryOperationsTestSuite) TestGreaterThanSubQuery() {
 		for _, user := range users {
 			suite.True(user.Age > 25, "Age should be greater than 25")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrGreaterThanSubQuery", func() {
@@ -272,12 +252,10 @@ func (suite *CBSubqueryOperationsTestSuite) TestGreaterThanSubQuery() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestLessThanSubQuery tests the LessThanSubQuery and OrLessThanSubQuery conditions.
+// TestLessThanSubQuery tests LessThanSubQuery and OrLessThanSubQuery conditions.
 func (suite *CBSubqueryOperationsTestSuite) TestLessThanSubQuery() {
 	suite.T().Logf("Testing LessThanSubQuery condition for %s", suite.ds.Kind)
 
@@ -300,8 +278,6 @@ func (suite *CBSubqueryOperationsTestSuite) TestLessThanSubQuery() {
 		for _, user := range users {
 			suite.True(user.Age < 30, "Age should be less than 30")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrLessThanSubQuery", func() {
@@ -325,13 +301,10 @@ func (suite *CBSubqueryOperationsTestSuite) TestLessThanSubQuery() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestEqualsAll tests the EqualsAll and OrEqualsAll conditions.
-// Note: SQLite does not support the ALL operator in subqueries (SQL standard feature).
+// TestEqualsAll tests EqualsAll and OrEqualsAll conditions (not supported on SQLite).
 func (suite *CBSubqueryOperationsTestSuite) TestEqualsAll() {
 	suite.T().Logf("Testing EqualsAll condition for %s", suite.ds.Kind)
 
@@ -355,8 +328,6 @@ func (suite *CBSubqueryOperationsTestSuite) TestEqualsAll() {
 
 		suite.Len(users, 1, "Should find one user with age 30")
 		suite.Equal(int16(30), users[0].Age)
-
-		suite.T().Logf("Found user: %s (age: %d)", users[0].Name, users[0].Age)
 	})
 
 	suite.Run("OrEqualsAll", func() {
@@ -379,13 +350,10 @@ func (suite *CBSubqueryOperationsTestSuite) TestEqualsAll() {
 		)
 
 		suite.Len(users, 2, "Should find two users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestNotEqualsAll tests the NotEqualsAll and OrNotEqualsAll conditions.
-// Note: SQLite does not support the ALL operator in subqueries (SQL standard feature).
+// TestNotEqualsAll tests NotEqualsAll and OrNotEqualsAll conditions (not supported on SQLite).
 func (suite *CBSubqueryOperationsTestSuite) TestNotEqualsAll() {
 	suite.T().Logf("Testing NotEqualsAll condition for %s", suite.ds.Kind)
 
@@ -413,8 +381,6 @@ func (suite *CBSubqueryOperationsTestSuite) TestNotEqualsAll() {
 		for _, user := range users {
 			suite.NotEqual(int16(30), user.Age, "Age should not be 30")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrNotEqualsAll", func() {
@@ -437,12 +403,10 @@ func (suite *CBSubqueryOperationsTestSuite) TestNotEqualsAll() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestExists tests the Exists and OrExists conditions using Expr with orm.ExprBuilder.
+// TestExists tests Exists and OrExists conditions using Expr with orm.ExprBuilder.
 func (suite *CBSubqueryOperationsTestSuite) TestExists() {
 	suite.T().Logf("Testing Exists condition for %s", suite.ds.Kind)
 
@@ -464,8 +428,6 @@ func (suite *CBSubqueryOperationsTestSuite) TestExists() {
 		)
 
 		suite.True(len(posts) > 0, "Should find posts with active authors")
-
-		suite.T().Logf("Found %d posts", len(posts))
 	})
 
 	suite.Run("OrExists", func() {
@@ -493,12 +455,10 @@ func (suite *CBSubqueryOperationsTestSuite) TestExists() {
 		)
 
 		suite.True(len(posts) > 0, "Should find posts")
-
-		suite.T().Logf("Found %d posts", len(posts))
 	})
 }
 
-// TestNotExists tests the NotExists and OrNotExists conditions using Expr with orm.ExprBuilder.
+// TestNotExists tests NotExists and OrNotExists conditions using Expr with orm.ExprBuilder.
 func (suite *CBSubqueryOperationsTestSuite) TestNotExists() {
 	suite.T().Logf("Testing NotExists condition for %s", suite.ds.Kind)
 
@@ -520,8 +480,6 @@ func (suite *CBSubqueryOperationsTestSuite) TestNotExists() {
 		)
 
 		suite.True(len(posts) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d posts", len(posts))
 	})
 
 	suite.Run("OrNotExists", func() {
@@ -549,7 +507,5 @@ func (suite *CBSubqueryOperationsTestSuite) TestNotExists() {
 		)
 
 		suite.True(len(posts) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d posts", len(posts))
 	})
 }

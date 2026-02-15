@@ -15,12 +15,11 @@ func init() {
 }
 
 // CBRangeSetOperationsTestSuite tests range and set operation condition methods.
-// Covers: Between, NotBetween, BetweenExpr, NotBetweenExpr, In, NotIn, InExpr, NotInExpr.
 type CBRangeSetOperationsTestSuite struct {
 	*ConditionBuilderTestSuite
 }
 
-// TestBetween tests the Between and OrBetween conditions.
+// TestBetween tests Between and OrBetween conditions.
 func (suite *CBRangeSetOperationsTestSuite) TestBetween() {
 	suite.T().Logf("Testing Between condition for %s", suite.ds.Kind)
 
@@ -38,8 +37,6 @@ func (suite *CBRangeSetOperationsTestSuite) TestBetween() {
 		for _, user := range users {
 			suite.True(user.Age >= 25 && user.Age <= 30, "Age should be between 25 and 30")
 		}
-
-		suite.T().Logf("Found %d users with age between 25 and 30", len(users))
 	})
 
 	suite.Run("OrBetween", func() {
@@ -58,12 +55,10 @@ func (suite *CBRangeSetOperationsTestSuite) TestBetween() {
 			suite.True((user.Age >= 25 && user.Age <= 26) || (user.Age >= 34 && user.Age <= 36),
 				"Age should match Between conditions")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestNotBetween tests the NotBetween and OrNotBetween conditions.
+// TestNotBetween tests NotBetween and OrNotBetween conditions.
 func (suite *CBRangeSetOperationsTestSuite) TestNotBetween() {
 	suite.T().Logf("Testing NotBetween condition for %s", suite.ds.Kind)
 
@@ -81,8 +76,6 @@ func (suite *CBRangeSetOperationsTestSuite) TestNotBetween() {
 		for _, user := range users {
 			suite.True(user.Age < 26 || user.Age > 34, "Age should not be between 26 and 34")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrNotBetween", func() {
@@ -96,12 +89,10 @@ func (suite *CBRangeSetOperationsTestSuite) TestNotBetween() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestBetweenExpr tests the BetweenExpr and OrBetweenExpr conditions.
+// TestBetweenExpr tests BetweenExpr and OrBetweenExpr conditions.
 func (suite *CBRangeSetOperationsTestSuite) TestBetweenExpr() {
 	suite.T().Logf("Testing BetweenExpr condition for %s", suite.ds.Kind)
 
@@ -126,8 +117,6 @@ func (suite *CBRangeSetOperationsTestSuite) TestBetweenExpr() {
 		for _, user := range users {
 			suite.True(user.Age >= 25 && user.Age <= 30, "Age should be between 25 and 30")
 		}
-
-		suite.T().Logf("Found %d users with age between 25 and 30", len(users))
 	})
 
 	suite.Run("OrBetweenExpr", func() {
@@ -146,12 +135,10 @@ func (suite *CBRangeSetOperationsTestSuite) TestBetweenExpr() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestNotBetweenExpr tests the NotBetweenExpr and OrNotBetweenExpr conditions.
+// TestNotBetweenExpr tests NotBetweenExpr and OrNotBetweenExpr conditions.
 func (suite *CBRangeSetOperationsTestSuite) TestNotBetweenExpr() {
 	suite.T().Logf("Testing NotBetweenExpr condition for %s", suite.ds.Kind)
 
@@ -172,8 +159,6 @@ func (suite *CBRangeSetOperationsTestSuite) TestNotBetweenExpr() {
 		for _, user := range users {
 			suite.True(user.Age < 26 || user.Age > 34, "Age should not be between 26 and 34")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrNotBetweenExpr", func() {
@@ -192,12 +177,10 @@ func (suite *CBRangeSetOperationsTestSuite) TestNotBetweenExpr() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestIn tests the In and OrIn conditions.
+// TestIn tests In and OrIn conditions.
 func (suite *CBRangeSetOperationsTestSuite) TestIn() {
 	suite.T().Logf("Testing In condition for %s", suite.ds.Kind)
 
@@ -214,8 +197,6 @@ func (suite *CBRangeSetOperationsTestSuite) TestIn() {
 		emails := []string{users[0].Email, users[1].Email}
 		suite.Contains(emails, "alice@example.com")
 		suite.Contains(emails, "bob@example.com")
-
-		suite.T().Logf("Found users: %s, %s", users[0].Name, users[1].Name)
 	})
 
 	suite.Run("BasicInWithIntegers", func() {
@@ -230,8 +211,6 @@ func (suite *CBRangeSetOperationsTestSuite) TestIn() {
 		suite.Len(users, 2, "Should find two users")
 		suite.Equal(int16(25), users[0].Age)
 		suite.Equal(int16(35), users[1].Age)
-
-		suite.T().Logf("Found users with ages: %d, %d", users[0].Age, users[1].Age)
 	})
 
 	suite.Run("OrIn", func() {
@@ -245,12 +224,10 @@ func (suite *CBRangeSetOperationsTestSuite) TestIn() {
 		)
 
 		suite.Len(users, 2, "Should find two users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestNotIn tests the NotIn and OrNotIn conditions.
+// TestNotIn tests NotIn and OrNotIn conditions.
 func (suite *CBRangeSetOperationsTestSuite) TestNotIn() {
 	suite.T().Logf("Testing NotIn condition for %s", suite.ds.Kind)
 
@@ -268,8 +245,6 @@ func (suite *CBRangeSetOperationsTestSuite) TestNotIn() {
 		for _, user := range users {
 			suite.NotEqual("charlie@example.com", user.Email)
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrNotIn", func() {
@@ -283,12 +258,10 @@ func (suite *CBRangeSetOperationsTestSuite) TestNotIn() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestInExpr tests the InExpr and OrInExpr conditions.
+// TestInExpr tests InExpr and OrInExpr conditions.
 func (suite *CBRangeSetOperationsTestSuite) TestInExpr() {
 	suite.T().Logf("Testing InExpr condition for %s", suite.ds.Kind)
 
@@ -304,8 +277,6 @@ func (suite *CBRangeSetOperationsTestSuite) TestInExpr() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrInExpr", func() {
@@ -322,12 +293,10 @@ func (suite *CBRangeSetOperationsTestSuite) TestInExpr() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestNotInExpr tests the NotInExpr and OrNotInExpr conditions.
+// TestNotInExpr tests NotInExpr and OrNotInExpr conditions.
 func (suite *CBRangeSetOperationsTestSuite) TestNotInExpr() {
 	suite.T().Logf("Testing NotInExpr condition for %s", suite.ds.Kind)
 
@@ -347,8 +316,6 @@ func (suite *CBRangeSetOperationsTestSuite) TestNotInExpr() {
 		for _, user := range users {
 			suite.NotEqual(int16(30), user.Age)
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrNotInExpr", func() {
@@ -365,7 +332,5 @@ func (suite *CBRangeSetOperationsTestSuite) TestNotInExpr() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }

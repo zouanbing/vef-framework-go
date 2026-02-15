@@ -12,8 +12,7 @@ func init() {
 	})
 }
 
-// EBUtilityFunctionsTestSuite tests utility expression methods of orm.ExprBuilder
-// including Decode and other utility functions.
+// EBUtilityFunctionsTestSuite tests utility expression methods of orm.ExprBuilder.
 type EBUtilityFunctionsTestSuite struct {
 	*BaseTestSuite
 }
@@ -22,7 +21,6 @@ type EBUtilityFunctionsTestSuite struct {
 func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 	suite.T().Logf("Testing Decode utility function for %s", suite.ds.Kind)
 
-	// Test 1: DECODE for status mapping with string results
 	suite.Run("DecodeStatusDescriptionMapping", func() {
 		type DecodeStatusResult struct {
 			ID         string `bun:"id"`
@@ -48,8 +46,8 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 			Limit(5).
 			Scan(suite.ctx, &decodeStatusResults)
 
-		suite.NoError(err, "DECODE should work for status description mapping")
-		suite.True(len(decodeStatusResults) > 0, "Should have decode status results")
+		suite.Require().NoError(err, "DECODE should work for status description mapping")
+		suite.Require().NotEmpty(decodeStatusResults, "Should have decode status results")
 
 		for _, result := range decodeStatusResults {
 			suite.NotEmpty(result.StatusDesc, "Status description should not be empty")
@@ -70,7 +68,6 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 		}
 	})
 
-	// Test 2: DECODE for status priority mapping with integer results
 	suite.Run("DecodeStatusPriorityMapping", func() {
 		type DecodePriorityResult struct {
 			ID             string `bun:"id"`
@@ -96,8 +93,8 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 			Limit(5).
 			Scan(suite.ctx, &decodePriorityResults)
 
-		suite.NoError(err, "DECODE should work for priority mapping")
-		suite.True(len(decodePriorityResults) > 0, "Should have decode priority results")
+		suite.Require().NoError(err, "DECODE should work for priority mapping")
+		suite.Require().NotEmpty(decodePriorityResults, "Should have decode priority results")
 
 		for _, result := range decodePriorityResults {
 			suite.True(result.StatusPriority > 0, "Status priority should be positive")
@@ -118,7 +115,6 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 		}
 	})
 
-	// Test 3: DECODE with combined string and integer mappings
 	suite.Run("DecodeCombinedMapping", func() {
 		type DecodeCombinedResult struct {
 			ID             string `bun:"id"`
@@ -154,8 +150,8 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 			Limit(5).
 			Scan(suite.ctx, &decodeCombinedResults)
 
-		suite.NoError(err, "Combined DECODE should work")
-		suite.True(len(decodeCombinedResults) > 0, "Should have combined decode results")
+		suite.Require().NoError(err, "Combined DECODE should work")
+		suite.Require().NotEmpty(decodeCombinedResults, "Should have combined decode results")
 
 		for _, result := range decodeCombinedResults {
 			suite.NotEmpty(result.StatusDesc, "Status description should not be empty")
@@ -163,17 +159,17 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 
 			switch result.Status {
 			case "published":
-				suite.Equal("Published Article", result.StatusDesc)
-				suite.Equal(int64(1), result.StatusPriority)
+				suite.Equal("Published Article", result.StatusDesc, "Should map published status description")
+				suite.Equal(int64(1), result.StatusPriority, "Should map published priority")
 			case "draft":
-				suite.Equal("Draft Article", result.StatusDesc)
-				suite.Equal(int64(3), result.StatusPriority)
+				suite.Equal("Draft Article", result.StatusDesc, "Should map draft status description")
+				suite.Equal(int64(3), result.StatusPriority, "Should map draft priority")
 			case "review":
-				suite.Equal("Under Review", result.StatusDesc)
-				suite.Equal(int64(2), result.StatusPriority)
+				suite.Equal("Under Review", result.StatusDesc, "Should map review status description")
+				suite.Equal(int64(2), result.StatusPriority, "Should map review priority")
 			default:
-				suite.Equal("Unknown Status", result.StatusDesc)
-				suite.Equal(int64(99), result.StatusPriority)
+				suite.Equal("Unknown Status", result.StatusDesc, "Should map unknown status description")
+				suite.Equal(int64(99), result.StatusPriority, "Should map unknown priority")
 			}
 
 			suite.T().Logf("Id: %s, Post %s: %s -> %s (Priority: %d)",
@@ -181,7 +177,6 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 		}
 	})
 
-	// Test 4: DECODE with invalid arguments (less than 3 parameters)
 	suite.Run("DecodeInvalidArguments", func() {
 		type DecodeInvalidResult struct {
 			ID     string  `bun:"id"`
@@ -199,8 +194,8 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 			Limit(1).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "DECODE with invalid arguments should return NULL")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "DECODE with invalid arguments should return NULL")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Nil(result.Result, "Result should be NULL for invalid DECODE arguments")
@@ -208,7 +203,6 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 		}
 	})
 
-	// Test 5: DECODE with minimal arguments (exactly 3 parameters)
 	suite.Run("DecodeMinimalArguments", func() {
 		type DecodeMinimalResult struct {
 			ID     string  `bun:"id"`
@@ -231,8 +225,8 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "DECODE with minimal arguments should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "DECODE with minimal arguments should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			if result.Status == "published" {
@@ -252,7 +246,6 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 		}
 	})
 
-	// Test 6: DECODE without default value (even number of arguments)
 	suite.Run("DecodeWithoutDefault", func() {
 		type DecodeNoDefaultResult struct {
 			ID     string  `bun:"id"`
@@ -276,8 +269,8 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "DECODE without default should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "DECODE without default should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			switch result.Status {
@@ -301,7 +294,6 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 		}
 	})
 
-	// Test 7: DECODE with NULL value mapping
 	suite.Run("DecodeNullValueMapping", func() {
 		type DecodeNullMappingResult struct {
 			ID          string  `bun:"id"`
@@ -326,8 +318,8 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "DECODE with NULL value mapping should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "DECODE with NULL value mapping should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			if result.Description == nil {
@@ -346,7 +338,6 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 		}
 	})
 
-	// Test 8: DECODE with nested expression as input
 	suite.Run("DecodeNestedExpression", func() {
 		type DecodeNestedResult struct {
 			ID            string `bun:"id"`
@@ -396,8 +387,8 @@ func (suite *EBUtilityFunctionsTestSuite) TestDecode() {
 			Limit(8).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "DECODE with nested expression should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "DECODE with nested expression should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.NotEmpty(result.ViewCategory, "View category should not be empty")

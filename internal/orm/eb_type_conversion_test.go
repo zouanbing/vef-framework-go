@@ -15,12 +15,7 @@ func init() {
 	})
 }
 
-// EBTypeConversionFunctionsTestSuite tests type conversion function methods of orm.ExprBuilder
-// including ToString, ToInteger, ToDecimal, ToFloat, ToBool, ToDate, ToTime, ToTimestamp,
-// and ToJSON.
-//
-// This suite verifies cross-database compatibility for type conversion functions across
-// PostgreSQL, MySQL, and SQLite.
+// EBTypeConversionFunctionsTestSuite tests type conversion function methods of orm.ExprBuilder.
 type EBTypeConversionFunctionsTestSuite struct {
 	*BaseTestSuite
 }
@@ -47,8 +42,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToString() {
 			Limit(5).
 			Scan(suite.ctx, &toStringResults)
 
-		suite.NoError(err, "ToString should work")
-		suite.True(len(toStringResults) > 0, "Should have ToString results")
+		suite.Require().NoError(err, "ToString should work")
+		suite.Require().NotEmpty(toStringResults, "Should have ToString results")
 
 		for _, result := range toStringResults {
 			suite.NotEmpty(result.CountStr, "String representation should not be empty")
@@ -82,8 +77,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToInteger() {
 			Limit(5).
 			Scan(suite.ctx, &toIntResults)
 
-		suite.NoError(err, "ToInteger should work")
-		suite.True(len(toIntResults) > 0, "Should have ToInteger results")
+		suite.Require().NoError(err, "ToInteger should work")
+		suite.Require().NotEmpty(toIntResults, "Should have ToInteger results")
 
 		for _, result := range toIntResults {
 			suite.True(result.IntValue >= 0, "Integer value should be non-negative")
@@ -114,8 +109,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToFloat() {
 			Limit(5).
 			Scan(suite.ctx, &toFloatResults)
 
-		suite.NoError(err, "ToFloat should work")
-		suite.True(len(toFloatResults) > 0, "Should have ToFloat results")
+		suite.Require().NoError(err, "ToFloat should work")
+		suite.Require().NotEmpty(toFloatResults, "Should have ToFloat results")
 
 		for _, result := range toFloatResults {
 			suite.Equal(float64(result.ViewCount), result.FloatValue, "Float value should equal view count")
@@ -146,8 +141,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDecimal() {
 			Limit(5).
 			Scan(suite.ctx, &toDecimalResults)
 
-		suite.NoError(err, "ToDecimal should work")
-		suite.True(len(toDecimalResults) > 0, "Should have ToDecimal results")
+		suite.Require().NoError(err, "ToDecimal should work")
+		suite.Require().NotEmpty(toDecimalResults, "Should have ToDecimal results")
 
 		for _, result := range toDecimalResults {
 			suite.True(result.DecimalValue >= 0, "Decimal value should be non-negative")
@@ -178,8 +173,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToBool() {
 			Limit(5).
 			Scan(suite.ctx, &toBoolResults)
 
-		suite.NoError(err, "ToBool should work")
-		suite.True(len(toBoolResults) > 0, "Should have ToBool results")
+		suite.Require().NoError(err, "ToBool should work")
+		suite.Require().NotEmpty(toBoolResults, "Should have ToBool results")
 
 		for _, result := range toBoolResults {
 			suite.T().Logf("ID: %s, ViewCount: %d, IsPositive: %v",
@@ -209,8 +204,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDate() {
 			Limit(5).
 			Scan(suite.ctx, &toDateResults)
 
-		suite.NoError(err, "ToDate should work")
-		suite.True(len(toDateResults) > 0, "Should have ToDate results")
+		suite.Require().NoError(err, "ToDate should work")
+		suite.Require().NotEmpty(toDateResults, "Should have ToDate results")
 
 		for _, result := range toDateResults {
 			suite.NotZero(result.DateOnly, "Date should not be zero")
@@ -241,8 +236,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTime() {
 			Limit(5).
 			Scan(suite.ctx, &toTimeResults)
 
-		suite.NoError(err, "ToTime should work")
-		suite.True(len(toTimeResults) > 0, "Should have ToTime results")
+		suite.Require().NoError(err, "ToTime should work")
+		suite.Require().NotEmpty(toTimeResults, "Should have ToTime results")
 
 		for _, result := range toTimeResults {
 			suite.NotZero(result.TimeOnly, "Time should not be zero")
@@ -273,8 +268,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTimestamp() {
 			Limit(5).
 			Scan(suite.ctx, &toTimestampResults)
 
-		suite.NoError(err, "ToTimestamp should work")
-		suite.True(len(toTimestampResults) > 0, "Should have ToTimestamp results")
+		suite.Require().NoError(err, "ToTimestamp should work")
+		suite.Require().NotEmpty(toTimestampResults, "Should have ToTimestamp results")
 
 		for _, result := range toTimestampResults {
 			suite.NotZero(result.Timestamp, "Timestamp should not be zero")
@@ -305,8 +300,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToJSON() {
 			Limit(3).
 			Scan(suite.ctx, &toJSONResults)
 
-		suite.NoError(err, "ToJSON should work on supported databases")
-		suite.True(len(toJSONResults) > 0, "Should have ToJSON results")
+		suite.Require().NoError(err, "ToJSON should work on supported databases")
+		suite.Require().NotEmpty(toJSONResults, "Should have ToJSON results")
 
 		for _, result := range toJSONResults {
 			suite.NotEmpty(result.JSONValue, "Json value should not be empty")
@@ -337,8 +332,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToStringNullHandling() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToString(NULL) should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToString(NULL) should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Nil(result.StringNull, "ToString(NULL) should return NULL")
@@ -369,8 +364,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToIntegerNullHandling() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToInteger(NULL) should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToInteger(NULL) should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Nil(result.IntNull, "ToInteger(NULL) should return NULL")
@@ -401,8 +396,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToFloatNullHandling() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToFloat(NULL) should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToFloat(NULL) should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Nil(result.FloatNull, "ToFloat(NULL) should return NULL")
@@ -433,8 +428,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDecimalNullHandling() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToDecimal(NULL) should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToDecimal(NULL) should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Nil(result.DecimalNull, "ToDecimal(NULL) should return NULL")
@@ -465,8 +460,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToBoolNullHandling() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToBool(NULL) should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToBool(NULL) should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Nil(result.BoolNull, "ToBool(NULL) should return NULL")
@@ -497,8 +492,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDateNullHandling() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToDate(NULL) should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToDate(NULL) should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Nil(result.DateNull, "ToDate(NULL) should return NULL")
@@ -529,8 +524,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTimeNullHandling() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToTime(NULL) should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToTime(NULL) should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Nil(result.TimeNull, "ToTime(NULL) should return NULL")
@@ -561,8 +556,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTimestampNullHandling() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToTimestamp(NULL) should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToTimestamp(NULL) should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Nil(result.TimestampNull, "ToTimestamp(NULL) should return NULL")
@@ -593,8 +588,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToJSONNullHandling() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToJSON(NULL) should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToJSON(NULL) should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Nil(result.JSONNull, "ToJSON(NULL) should return NULL")
@@ -625,8 +620,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDecimalPrecisionVariation
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToDecimal with precision and scale should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToDecimal with precision and scale should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.T().Logf("ID: %s, ViewCount: %d, DecimalValue: %.2f",
@@ -651,8 +646,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDecimalPrecisionVariation
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToDecimal with precision only should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToDecimal with precision only should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.T().Logf("ID: %s, ViewCount: %d, DecimalValue: %.0f",
@@ -677,8 +672,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDecimalPrecisionVariation
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToDecimal without parameters should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToDecimal without parameters should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.T().Logf("ID: %s, ViewCount: %d, DecimalValue: %.0f",
@@ -708,8 +703,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDateWithFormat() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToDate without format should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToDate without format should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.NotZero(result.DateValue, "Date should not be zero")
@@ -744,8 +739,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToDateWithFormat() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToDate with format should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToDate with format should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.NotZero(result.DateValue, "Date should not be zero")
@@ -776,8 +771,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTimeWithFormat() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToTime without format should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToTime without format should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.NotZero(result.TimeValue, "Time should not be zero")
@@ -812,8 +807,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTimeWithFormat() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToTime with format should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToTime with format should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.NotZero(result.TimeValue, "Time should not be zero")
@@ -844,8 +839,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTimestampWithFormat() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToTimestamp without format should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToTimestamp without format should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.NotZero(result.TimestampValue, "Timestamp should not be zero")
@@ -880,8 +875,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToTimestampWithFormat() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToTimestamp with format should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToTimestamp with format should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.NotZero(result.TimestampValue, "Timestamp should not be zero")
@@ -912,8 +907,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToStringFromDifferentTypes(
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToString(boolean) should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToString(boolean) should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.NotEmpty(result.ActiveString, "Boolean string should not be empty")
@@ -939,8 +934,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToStringFromDifferentTypes(
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToString(date) should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToString(date) should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.NotEmpty(result.DateString, "Date string should not be empty")
@@ -970,8 +965,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToIntegerFromStrings() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToInteger(negative string) should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToInteger(negative string) should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Equal(int64(-123), result.IntValue, "Should convert negative string correctly")
@@ -995,8 +990,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToIntegerFromStrings() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToInteger('0') should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToInteger('0') should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Equal(int64(0), result.IntValue, "Should convert '0' correctly")
@@ -1025,8 +1020,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToFloatFromStrings() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToFloat('3.14159') should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToFloat('3.14159') should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.InDelta(3.14159, result.FloatValue, 0.00001, "Should convert decimal string correctly")
@@ -1050,8 +1045,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToFloatFromStrings() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToFloat('-99.99') should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToFloat('-99.99') should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.InDelta(-99.99, result.FloatValue, 0.01, "Should convert negative float string correctly")
@@ -1080,8 +1075,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToBoolDirectConversion() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToBool(1) should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToBool(1) should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.True(result.BoolValue, "ToBool(1) should return true")
@@ -1105,8 +1100,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToBoolDirectConversion() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToBool(0) should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToBool(0) should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.False(result.BoolValue, "ToBool(0) should return false")
@@ -1130,8 +1125,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToBoolDirectConversion() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToBool(-1) should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToBool(-1) should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.True(result.BoolValue, "ToBool(-1) should return true (non-zero)")
@@ -1160,8 +1155,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToIntegerBoundaryConditions
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToInteger(large positive) should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToInteger(large positive) should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Equal(int64(2147483647), result.IntValue, "Should handle large positive integer")
@@ -1185,8 +1180,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToIntegerBoundaryConditions
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToInteger(large negative) should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToInteger(large negative) should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Equal(int64(-2147483647), result.IntValue, "Should handle large negative integer")
@@ -1215,8 +1210,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToFloatPrecisionAndBoundari
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToFloat(very small) should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToFloat(very small) should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.InDelta(0.000001, result.FloatValue, 0.0000001, "Should handle very small float")
@@ -1240,8 +1235,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToFloatPrecisionAndBoundari
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToFloat(very large) should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToFloat(very large) should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.InDelta(999999999.99, result.FloatValue, 0.01, "Should handle very large float")
@@ -1265,8 +1260,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToFloatPrecisionAndBoundari
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToFloat(0.0) should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToFloat(0.0) should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Equal(float64(0.0), result.FloatValue, "Should handle zero float")
@@ -1296,8 +1291,8 @@ func (suite *EBTypeConversionFunctionsTestSuite) TestToBoolDatabaseSpecificBehav
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToBool(column) should work")
-		suite.True(len(results) > 0, "Should have results")
+		suite.Require().NoError(err, "ToBool(column) should work")
+		suite.Require().NotEmpty(results, "Should have results")
 
 		for _, result := range results {
 			suite.Equal(result.IsActive, result.BoolAsBool, "ToBool should preserve boolean value")

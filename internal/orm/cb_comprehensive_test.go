@@ -15,12 +15,11 @@ func init() {
 }
 
 // CBComprehensiveTestSuite tests complex condition scenarios and comprehensive patterns.
-// Covers: ApplyIf, complex combinations, edge cases, and real-world usage patterns.
 type CBComprehensiveTestSuite struct {
 	*ConditionBuilderTestSuite
 }
 
-// TestApplyIf tests the ApplyIf method for conditional application of conditions.
+// TestApplyIf tests ApplyIf method for conditional application of conditions.
 func (suite *CBComprehensiveTestSuite) TestApplyIf() {
 	suite.T().Logf("Testing ApplyIf method for %s", suite.ds.Kind)
 
@@ -41,8 +40,6 @@ func (suite *CBComprehensiveTestSuite) TestApplyIf() {
 		for _, user := range users {
 			suite.True(user.IsActive, "User should be active")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("ApplyNotApplied", func() {
@@ -58,8 +55,6 @@ func (suite *CBComprehensiveTestSuite) TestApplyIf() {
 		)
 
 		suite.Len(users, 20, "Should find all users (condition not applied)")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("MultipleApply", func() {
@@ -83,8 +78,6 @@ func (suite *CBComprehensiveTestSuite) TestApplyIf() {
 		for _, user := range users {
 			suite.True(user.Age > 25, "Age should be greater than 25")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
@@ -113,8 +106,6 @@ func (suite *CBComprehensiveTestSuite) TestComplexConditionCombinations() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("ComplexOrConditionsWithGrouping", func() {
@@ -134,8 +125,6 @@ func (suite *CBComprehensiveTestSuite) TestComplexConditionCombinations() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("SubqueryWithComplexConditions", func() {
@@ -155,8 +144,6 @@ func (suite *CBComprehensiveTestSuite) TestComplexConditionCombinations() {
 		)
 
 		suite.True(len(posts) > 0, "Should find posts")
-
-		suite.T().Logf("Found %d posts", len(posts))
 	})
 }
 
@@ -173,8 +160,6 @@ func (suite *CBComprehensiveTestSuite) TestEdgeCases() {
 		)
 
 		suite.Len(users, 0, "Should find no users with empty IN list")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("NullComparisons", func() {
@@ -187,8 +172,6 @@ func (suite *CBComprehensiveTestSuite) TestEdgeCases() {
 		)
 
 		suite.True(len(posts) > 0, "Should find all posts")
-
-		suite.T().Logf("Found %d posts", len(posts))
 	})
 
 	suite.Run("ChainedOrConditions", func() {
@@ -203,8 +186,6 @@ func (suite *CBComprehensiveTestSuite) TestEdgeCases() {
 		)
 
 		suite.Len(users, 3, "Should find three users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("MixedAndOrConditions", func() {
@@ -222,8 +203,6 @@ func (suite *CBComprehensiveTestSuite) TestEdgeCases() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
@@ -249,8 +228,6 @@ func (suite *CBComprehensiveTestSuite) TestPerformanceScenarios() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("DeeplyNestedConditions", func() {
@@ -269,7 +246,5 @@ func (suite *CBComprehensiveTestSuite) TestPerformanceScenarios() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }

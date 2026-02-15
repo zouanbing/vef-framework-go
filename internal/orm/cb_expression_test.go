@@ -15,12 +15,11 @@ func init() {
 }
 
 // CBExpressionOperationsTestSuite tests expression-based condition methods.
-// Covers: EqualsExpr, NotEqualsExpr, GreaterThanExpr, LessThanExpr, Expr, and their Or variants.
 type CBExpressionOperationsTestSuite struct {
 	*ConditionBuilderTestSuite
 }
 
-// TestEqualsExpr tests the EqualsExpr and OrEqualsExpr conditions.
+// TestEqualsExpr tests EqualsExpr and OrEqualsExpr conditions.
 func (suite *CBExpressionOperationsTestSuite) TestEqualsExpr() {
 	suite.T().Logf("Testing EqualsExpr condition for %s", suite.ds.Kind)
 
@@ -36,8 +35,6 @@ func (suite *CBExpressionOperationsTestSuite) TestEqualsExpr() {
 
 		suite.Len(users, 1, "Should find one user")
 		suite.Equal(int16(30), users[0].Age)
-
-		suite.T().Logf("Found user: %s", users[0].Name)
 	})
 
 	suite.Run("OrEqualsExpr", func() {
@@ -54,12 +51,10 @@ func (suite *CBExpressionOperationsTestSuite) TestEqualsExpr() {
 		)
 
 		suite.Len(users, 2, "Should find two users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestNotEqualsExpr tests the NotEqualsExpr and OrNotEqualsExpr conditions.
+// TestNotEqualsExpr tests NotEqualsExpr and OrNotEqualsExpr conditions.
 func (suite *CBExpressionOperationsTestSuite) TestNotEqualsExpr() {
 	suite.T().Logf("Testing NotEqualsExpr condition for %s", suite.ds.Kind)
 
@@ -79,8 +74,6 @@ func (suite *CBExpressionOperationsTestSuite) TestNotEqualsExpr() {
 		for _, user := range users {
 			suite.NotEqual(int16(30), user.Age)
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrNotEqualsExpr", func() {
@@ -97,12 +90,10 @@ func (suite *CBExpressionOperationsTestSuite) TestNotEqualsExpr() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestGreaterThanExpr tests the GreaterThanExpr and OrGreaterThanExpr conditions.
+// TestGreaterThanExpr tests GreaterThanExpr and OrGreaterThanExpr conditions.
 func (suite *CBExpressionOperationsTestSuite) TestGreaterThanExpr() {
 	suite.T().Logf("Testing GreaterThanExpr condition for %s", suite.ds.Kind)
 
@@ -121,8 +112,6 @@ func (suite *CBExpressionOperationsTestSuite) TestGreaterThanExpr() {
 		for _, user := range users {
 			suite.True(user.Age > 30, "Age should be greater than 30")
 		}
-
-		suite.T().Logf("Found %d users with age > 30", len(users))
 	})
 
 	suite.Run("OrGreaterThanExpr", func() {
@@ -139,12 +128,10 @@ func (suite *CBExpressionOperationsTestSuite) TestGreaterThanExpr() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestLessThanExpr tests the LessThanExpr and OrLessThanExpr conditions.
+// TestLessThanExpr tests LessThanExpr and OrLessThanExpr conditions.
 func (suite *CBExpressionOperationsTestSuite) TestLessThanExpr() {
 	suite.T().Logf("Testing LessThanExpr condition for %s", suite.ds.Kind)
 
@@ -163,8 +150,6 @@ func (suite *CBExpressionOperationsTestSuite) TestLessThanExpr() {
 		for _, user := range users {
 			suite.True(user.Age < 30, "Age should be less than 30")
 		}
-
-		suite.T().Logf("Found %d users with age < 30", len(users))
 	})
 
 	suite.Run("OrLessThanExpr", func() {
@@ -181,12 +166,10 @@ func (suite *CBExpressionOperationsTestSuite) TestLessThanExpr() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestExpr tests the Expr and OrExpr conditions.
+// TestExpr tests Expr and OrExpr conditions.
 func (suite *CBExpressionOperationsTestSuite) TestExpr() {
 	suite.T().Logf("Testing Expr condition for %s", suite.ds.Kind)
 
@@ -205,8 +188,6 @@ func (suite *CBExpressionOperationsTestSuite) TestExpr() {
 		for _, user := range users {
 			suite.True(user.Age > 30, "Age should be greater than 30")
 		}
-
-		suite.T().Logf("Found %d users with age > 30", len(users))
 	})
 
 	suite.Run("OrExpr", func() {
@@ -223,8 +204,6 @@ func (suite *CBExpressionOperationsTestSuite) TestExpr() {
 		)
 
 		suite.Len(users, 2, "Should find two users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("ComplexExpr", func() {
@@ -239,7 +218,5 @@ func (suite *CBExpressionOperationsTestSuite) TestExpr() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }

@@ -15,24 +15,15 @@ func init() {
 	})
 }
 
-// EBDateTimeFunctionsTestSuite tests date and time manipulation methods of orm.ExprBuilder
-// including CurrentDate, CurrentTime, CurrentTimestamp, Now, date extraction functions
-// (ExtractYear, ExtractMonth, ExtractDay, ExtractHour, ExtractMinute, ExtractSecond),
-// DateTrunc, DateAdd, DateSubtract, DateDiff, and Age.
-//
-// This suite verifies cross-database compatibility for date/time functions across
-// PostgreSQL, MySQL, and SQLite. Note that SQLite has limited support for many
-// date/time functions and some tests are skipped accordingly.
+// EBDateTimeFunctionsTestSuite tests date and time manipulation methods of orm.ExprBuilder.
 type EBDateTimeFunctionsTestSuite struct {
 	*BaseTestSuite
 }
 
 // TestCurrentDate tests the CurrentDate function.
-// CurrentDate returns the current date without time component.
 func (suite *EBDateTimeFunctionsTestSuite) TestCurrentDate() {
 	suite.T().Logf("Testing CurrentDate function for %s", suite.ds.Kind)
 
-	// Test 1: Get current date using CurrentDate()
 	suite.Run("GetCurrentDate", func() {
 		type CurrentDateResult struct {
 			CurrentDate time.Time `bun:"current_date"`
@@ -47,7 +38,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestCurrentDate() {
 			Limit(1).
 			Scan(suite.ctx, &result)
 
-		suite.NoError(err, "CurrentDate query should execute successfully")
+		suite.Require().NoError(err, "CurrentDate query should execute successfully")
 		suite.NotZero(result.CurrentDate, "CurrentDate should return a non-zero date value")
 
 		now := time.Now()
@@ -58,11 +49,9 @@ func (suite *EBDateTimeFunctionsTestSuite) TestCurrentDate() {
 }
 
 // TestCurrentTime tests the CurrentTime function.
-// CurrentTime returns the current time without date component.
 func (suite *EBDateTimeFunctionsTestSuite) TestCurrentTime() {
 	suite.T().Logf("Testing CurrentTime function for %s", suite.ds.Kind)
 
-	// Test 1: Get current time using CurrentTime()
 	suite.Run("GetCurrentTime", func() {
 		type CurrentTimeResult struct {
 			CurrentTime time.Time `bun:"current_time"`
@@ -77,7 +66,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestCurrentTime() {
 			Limit(1).
 			Scan(suite.ctx, &result)
 
-		suite.NoError(err, "CurrentTime query should execute successfully")
+		suite.Require().NoError(err, "CurrentTime query should execute successfully")
 		suite.NotZero(result.CurrentTime, "CurrentTime should return a non-zero time value")
 
 		suite.T().Logf("CurrentTime: %v", result.CurrentTime)
@@ -85,11 +74,9 @@ func (suite *EBDateTimeFunctionsTestSuite) TestCurrentTime() {
 }
 
 // TestCurrentTimestamp tests the CurrentTimestamp function.
-// CurrentTimestamp returns the current date and time.
 func (suite *EBDateTimeFunctionsTestSuite) TestCurrentTimestamp() {
 	suite.T().Logf("Testing CurrentTimestamp function for %s", suite.ds.Kind)
 
-	// Test 1: Get current timestamp using CurrentTimestamp()
 	suite.Run("GetCurrentTimestamp", func() {
 		type CurrentTimestampResult struct {
 			CurrentTimestamp time.Time `bun:"current_timestamp"`
@@ -104,7 +91,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestCurrentTimestamp() {
 			Limit(1).
 			Scan(suite.ctx, &result)
 
-		suite.NoError(err, "CurrentTimestamp query should execute successfully")
+		suite.Require().NoError(err, "CurrentTimestamp query should execute successfully")
 		suite.NotZero(result.CurrentTimestamp, "CurrentTimestamp should return a non-zero timestamp value")
 
 		now := time.Now()
@@ -115,11 +102,9 @@ func (suite *EBDateTimeFunctionsTestSuite) TestCurrentTimestamp() {
 }
 
 // TestNow tests the Now function.
-// Now returns the current timestamp (alias for CurrentTimestamp).
 func (suite *EBDateTimeFunctionsTestSuite) TestNow() {
 	suite.T().Logf("Testing Now function for %s", suite.ds.Kind)
 
-	// Test 1: Get current timestamp using Now()
 	suite.Run("GetNow", func() {
 		type NowResult struct {
 			Now time.Time `bun:"now"`
@@ -134,7 +119,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestNow() {
 			Limit(1).
 			Scan(suite.ctx, &result)
 
-		suite.NoError(err, "Now query should execute successfully")
+		suite.Require().NoError(err, "Now query should execute successfully")
 		suite.NotZero(result.Now, "Now should return a non-zero timestamp value")
 
 		now := time.Now()
@@ -143,7 +128,6 @@ func (suite *EBDateTimeFunctionsTestSuite) TestNow() {
 		suite.T().Logf("Now: %v", result.Now)
 	})
 
-	// Test 2: Use all current time functions together (CurrentDate, CurrentTime, CurrentTimestamp, Now)
 	suite.Run("AllCurrentTimeFunctions", func() {
 		type AllCurrentResult struct {
 			CurrentDate      time.Time `bun:"current_date"`
@@ -170,7 +154,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestNow() {
 			Limit(1).
 			Scan(suite.ctx, &result)
 
-		suite.NoError(err, "Combined current time functions query should execute successfully")
+		suite.Require().NoError(err, "Combined current time functions query should execute successfully")
 		suite.NotZero(result.CurrentDate, "CurrentDate should return a non-zero value in combined query")
 		suite.NotZero(result.CurrentTime, "CurrentTime should return a non-zero value in combined query")
 		suite.NotZero(result.CurrentTimestamp, "CurrentTimestamp should return a non-zero value in combined query")
@@ -182,11 +166,9 @@ func (suite *EBDateTimeFunctionsTestSuite) TestNow() {
 }
 
 // TestExtractYear tests the ExtractYear function.
-// ExtractYear extracts the year from a date/timestamp.
 func (suite *EBDateTimeFunctionsTestSuite) TestExtractYear() {
 	suite.T().Logf("Testing ExtractYear function for %s", suite.ds.Kind)
 
-	// Test 1: Extract year from created_at column
 	suite.Run("ExtractYearFromCreatedAt", func() {
 		type YearResult struct {
 			CreatedAt time.Time `bun:"created_at"`
@@ -204,8 +186,8 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractYear() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ExtractYear query should execute successfully")
-		suite.True(len(results) > 0, "ExtractYear should return at least one result")
+		suite.Require().NoError(err, "ExtractYear query should execute successfully")
+		suite.Require().NotEmpty(results, "ExtractYear should return at least one result")
 
 		for _, result := range results {
 			suite.Equal(int64(result.CreatedAt.Year()), result.Year, "Extracted year should match the actual year from created_at timestamp")
@@ -215,11 +197,9 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractYear() {
 }
 
 // TestExtractMonth tests the ExtractMonth function.
-// ExtractMonth extracts the month from a date/timestamp.
 func (suite *EBDateTimeFunctionsTestSuite) TestExtractMonth() {
 	suite.T().Logf("Testing ExtractMonth function for %s", suite.ds.Kind)
 
-	// Test 1: Extract month from created_at column
 	suite.Run("ExtractMonthFromCreatedAt", func() {
 		type MonthResult struct {
 			CreatedAt time.Time `bun:"created_at"`
@@ -237,8 +217,8 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractMonth() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ExtractMonth query should execute successfully")
-		suite.True(len(results) > 0, "ExtractMonth should return at least one result")
+		suite.Require().NoError(err, "ExtractMonth query should execute successfully")
+		suite.Require().NotEmpty(results, "ExtractMonth should return at least one result")
 
 		for _, result := range results {
 			suite.Equal(int64(result.CreatedAt.Month()), result.Month, "Extracted month should match the actual month from created_at timestamp")
@@ -249,11 +229,9 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractMonth() {
 }
 
 // TestExtractDay tests the ExtractDay function.
-// ExtractDay extracts the day from a date/timestamp.
 func (suite *EBDateTimeFunctionsTestSuite) TestExtractDay() {
 	suite.T().Logf("Testing ExtractDay function for %s", suite.ds.Kind)
 
-	// Test 1: Extract day from created_at column
 	suite.Run("ExtractDayFromCreatedAt", func() {
 		type DayResult struct {
 			CreatedAt time.Time `bun:"created_at"`
@@ -271,8 +249,8 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractDay() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ExtractDay query should execute successfully")
-		suite.True(len(results) > 0, "ExtractDay should return at least one result")
+		suite.Require().NoError(err, "ExtractDay query should execute successfully")
+		suite.Require().NotEmpty(results, "ExtractDay should return at least one result")
 
 		for _, result := range results {
 			suite.Equal(int64(result.CreatedAt.Day()), result.Day, "Extracted day should match the actual day from created_at timestamp")
@@ -283,11 +261,9 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractDay() {
 }
 
 // TestExtractHour tests the ExtractHour function.
-// ExtractHour extracts the hour from a timestamp.
 func (suite *EBDateTimeFunctionsTestSuite) TestExtractHour() {
 	suite.T().Logf("Testing ExtractHour function for %s", suite.ds.Kind)
 
-	// Test 1: Extract hour from created_at column
 	suite.Run("ExtractHourFromCreatedAt", func() {
 		type HourResult struct {
 			CreatedAt time.Time `bun:"created_at"`
@@ -305,8 +281,8 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractHour() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ExtractHour query should execute successfully")
-		suite.True(len(results) > 0, "ExtractHour should return at least one result")
+		suite.Require().NoError(err, "ExtractHour query should execute successfully")
+		suite.Require().NotEmpty(results, "ExtractHour should return at least one result")
 
 		for _, result := range results {
 			suite.Equal(int64(result.CreatedAt.Hour()), result.Hour, "Extracted hour should match the actual hour from created_at timestamp")
@@ -317,11 +293,9 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractHour() {
 }
 
 // TestExtractMinute tests the ExtractMinute function.
-// ExtractMinute extracts the minute from a timestamp.
 func (suite *EBDateTimeFunctionsTestSuite) TestExtractMinute() {
 	suite.T().Logf("Testing ExtractMinute function for %s", suite.ds.Kind)
 
-	// Test 1: Extract minute from created_at column
 	suite.Run("ExtractMinuteFromCreatedAt", func() {
 		type MinuteResult struct {
 			CreatedAt time.Time `bun:"created_at"`
@@ -339,8 +313,8 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractMinute() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ExtractMinute query should execute successfully")
-		suite.True(len(results) > 0, "ExtractMinute should return at least one result")
+		suite.Require().NoError(err, "ExtractMinute query should execute successfully")
+		suite.Require().NotEmpty(results, "ExtractMinute should return at least one result")
 
 		for _, result := range results {
 			suite.Equal(int64(result.CreatedAt.Minute()), result.Minute, "Extracted minute should match the actual minute from created_at timestamp")
@@ -351,11 +325,9 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractMinute() {
 }
 
 // TestExtractSecond tests the ExtractSecond function.
-// ExtractSecond extracts the second from a timestamp.
 func (suite *EBDateTimeFunctionsTestSuite) TestExtractSecond() {
 	suite.T().Logf("Testing ExtractSecond function for %s", suite.ds.Kind)
 
-	// Test 1: Extract second from created_at column
 	suite.Run("ExtractSecondFromCreatedAt", func() {
 		type SecondResult struct {
 			ID        string    `bun:"id"`
@@ -374,8 +346,8 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractSecond() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ExtractSecond query should execute successfully")
-		suite.True(len(results) > 0, "ExtractSecond should return at least one result")
+		suite.Require().NoError(err, "ExtractSecond query should execute successfully")
+		suite.Require().NotEmpty(results, "ExtractSecond should return at least one result")
 
 		for _, result := range results {
 			suite.True(result.Second >= 0 && result.Second < 60, "Extracted second should be in valid range (0-59)")
@@ -384,7 +356,6 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractSecond() {
 		}
 	})
 
-	// Test 2: Use all extract functions together (Year, Month, Day, Hour, Minute, Second)
 	suite.Run("AllExtractFunctions", func() {
 		type AllExtractResult struct {
 			CreatedAt time.Time `bun:"created_at"`
@@ -422,8 +393,8 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractSecond() {
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Combined extract functions query should execute successfully")
-		suite.True(len(results) > 0, "Combined extract query should return at least one result")
+		suite.Require().NoError(err, "Combined extract functions query should execute successfully")
+		suite.Require().NotEmpty(results, "Combined extract query should return at least one result")
 
 		for _, result := range results {
 			suite.Equal(int64(result.CreatedAt.Year()), result.Year, "Extracted year should match actual year")
@@ -446,11 +417,9 @@ func (suite *EBDateTimeFunctionsTestSuite) TestExtractSecond() {
 }
 
 // TestDateTrunc tests the DateTrunc function.
-// DateTrunc truncates date/timestamp to specified precision.
 func (suite *EBDateTimeFunctionsTestSuite) TestDateTrunc() {
 	suite.T().Logf("Testing DateTrunc function for %s", suite.ds.Kind)
 
-	// Test 1: Truncate to different precisions (year, month, day, hour)
 	suite.Run("TruncateToDifferentPrecisions", func() {
 		type TruncResult struct {
 			CreatedAt  time.Time `bun:"created_at"`
@@ -480,8 +449,8 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateTrunc() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "DateTrunc query should execute successfully")
-		suite.True(len(results) > 0, "DateTrunc should return at least one result")
+		suite.Require().NoError(err, "DateTrunc query should execute successfully")
+		suite.Require().NotEmpty(results, "DateTrunc should return at least one result")
 
 		for _, result := range results {
 			// Verify truncated dates are on or before original
@@ -500,7 +469,6 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateTrunc() {
 func (suite *EBDateTimeFunctionsTestSuite) TestDateAdd() {
 	suite.T().Logf("Testing DateAdd function for %s", suite.ds.Kind)
 
-	// Test 1: Add different date intervals (7 days, 3 months, 1 year)
 	suite.Run("AddDateIntervals", func() {
 		type DateAddResult struct {
 			CreatedAt   time.Time `bun:"created_at"`
@@ -526,8 +494,8 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateAdd() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "DateAdd query should execute successfully")
-		suite.True(len(results) > 0, "DateAdd should return at least one result")
+		suite.Require().NoError(err, "DateAdd query should execute successfully")
+		suite.Require().NotEmpty(results, "DateAdd should return at least one result")
 
 		for _, result := range results {
 			suite.True(result.AddedDays.After(result.CreatedAt), "Date with added days should be after original timestamp")
@@ -539,7 +507,6 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateAdd() {
 		}
 	})
 
-	// Test 2: Add different time intervals (30 seconds, 45 minutes, 2 hours)
 	suite.Run("AddTimeIntervals", func() {
 		type TimeAddResult struct {
 			CreatedAt    time.Time `bun:"created_at"`
@@ -565,8 +532,8 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateAdd() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "DateAdd with time units should execute successfully")
-		suite.True(len(results) > 0, "DateAdd should return at least one result")
+		suite.Require().NoError(err, "DateAdd with time units should execute successfully")
+		suite.Require().NotEmpty(results, "DateAdd should return at least one result")
 
 		for _, result := range results {
 			suite.True(result.AddedSeconds.After(result.CreatedAt), "Date with added seconds should be after original timestamp")
@@ -583,7 +550,6 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateAdd() {
 func (suite *EBDateTimeFunctionsTestSuite) TestDateSubtract() {
 	suite.T().Logf("Testing DateSubtract function for %s", suite.ds.Kind)
 
-	// Test 1: Subtract different date intervals (5 days, 2 months, 1 year)
 	suite.Run("SubtractDateIntervals", func() {
 		type DateSubtractResult struct {
 			CreatedAt        time.Time `bun:"created_at"`
@@ -609,8 +575,8 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateSubtract() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "DateSubtract query should execute successfully")
-		suite.True(len(results) > 0, "DateSubtract should return at least one result")
+		suite.Require().NoError(err, "DateSubtract query should execute successfully")
+		suite.Require().NotEmpty(results, "DateSubtract should return at least one result")
 
 		for _, result := range results {
 			suite.True(result.SubtractedDays.Before(result.CreatedAt), "Date with subtracted days should be before original timestamp")
@@ -622,7 +588,6 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateSubtract() {
 		}
 	})
 
-	// Test 2: Subtract different time intervals (45 seconds, 30 minutes, 3 hours)
 	suite.Run("SubtractTimeIntervals", func() {
 		type TimeSubtractResult struct {
 			CreatedAt         time.Time `bun:"created_at"`
@@ -648,8 +613,8 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateSubtract() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "DateSubtract with time units should execute successfully")
-		suite.True(len(results) > 0, "DateSubtract should return at least one result")
+		suite.Require().NoError(err, "DateSubtract with time units should execute successfully")
+		suite.Require().NotEmpty(results, "DateSubtract should return at least one result")
 
 		for _, result := range results {
 			suite.True(result.SubtractedSeconds.Before(result.CreatedAt), "Date with subtracted seconds should be before original timestamp")
@@ -663,11 +628,9 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateSubtract() {
 }
 
 // TestDateDiff tests the DateDiff function.
-// Returns the difference between two dates in the specified unit.
 func (suite *EBDateTimeFunctionsTestSuite) TestDateDiff() {
 	suite.T().Logf("Testing DateDiff function for %s", suite.ds.Kind)
 
-	// Test 1: Calculate time differences in time units (seconds, minutes, hours)
 	suite.Run("CalculateTimeDifferences", func() {
 		type TimeDiffResult struct {
 			CreatedAt   time.Time `bun:"created_at"`
@@ -694,8 +657,8 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateDiff() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "DateDiff query should execute successfully")
-		suite.True(len(results) > 0, "DateDiff should return at least one result")
+		suite.Require().NoError(err, "DateDiff query should execute successfully")
+		suite.Require().NotEmpty(results, "DateDiff should return at least one result")
 
 		for _, result := range results {
 			// Verify that seconds, minutes, and hours maintain consistent relationships
@@ -715,7 +678,6 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateDiff() {
 		}
 	})
 
-	// Test 2: Calculate date differences in date units (days, months, years)
 	suite.Run("CalculateDateDifferences", func() {
 		type DateDiffResult struct {
 			CreatedAt  time.Time `bun:"created_at"`
@@ -742,8 +704,8 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateDiff() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "DateDiff query should execute successfully")
-		suite.True(len(results) > 0, "DateDiff should return at least one result")
+		suite.Require().NoError(err, "DateDiff query should execute successfully")
+		suite.Require().NotEmpty(results, "DateDiff should return at least one result")
 
 		for _, result := range results {
 			// Verify that days, months, and years maintain consistent relationships
@@ -765,12 +727,9 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateDiff() {
 }
 
 // TestAge tests the Age function.
-// Age returns the age (interval) between two timestamps in PostgreSQL-compatible format.
-// Returns a string in format: "X years Y mons Z days".
 func (suite *EBDateTimeFunctionsTestSuite) TestAge() {
 	suite.T().Logf("Testing Age function for %s", suite.ds.Kind)
 
-	// Test 1: Calculate age interval between updated_at and created_at
 	suite.Run("CalculateAgeInterval", func() {
 		type AgeResult struct {
 			ID        string `bun:"id"`
@@ -795,8 +754,8 @@ func (suite *EBDateTimeFunctionsTestSuite) TestAge() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Age query should execute successfully")
-		suite.True(len(results) > 0, "Age should return at least one result")
+		suite.Require().NoError(err, "Age query should execute successfully")
+		suite.Require().NotEmpty(results, "Age should return at least one result")
 
 		for _, result := range results {
 			suite.NotEmpty(result.Age, "Age interval should not be empty")
@@ -811,7 +770,6 @@ func (suite *EBDateTimeFunctionsTestSuite) TestAge() {
 		}
 	})
 
-	// Test 2: Calculate age with known date values to verify accuracy
 	suite.Run("CalculateAgeWithKnownDates", func() {
 		type AgeTestResult struct {
 			Age string `bun:"age"`
@@ -830,7 +788,7 @@ func (suite *EBDateTimeFunctionsTestSuite) TestAge() {
 			}, "age").
 			Scan(suite.ctx, &result)
 
-		suite.NoError(err, "Age query with known dates should execute successfully")
+		suite.Require().NoError(err, "Age query with known dates should execute successfully")
 		suite.NotEmpty(result.Age, "Age interval should not be empty")
 
 		// The result should contain years, mons, and days
@@ -849,11 +807,9 @@ func (suite *EBDateTimeFunctionsTestSuite) TestAge() {
 }
 
 // TestCombinedDateTimeFunctions tests using multiple date/time functions together.
-// This verifies that date/time functions can be nested and combined.
 func (suite *EBDateTimeFunctionsTestSuite) TestCombinedDateTimeFunctions() {
 	suite.T().Logf("Testing combined date/time functions for %s", suite.ds.Kind)
 
-	// Test 1: Nest and combine multiple date/time functions (Extract, DateDiff, DateTrunc, Now)
 	suite.Run("NestedDateTimeFunctions", func() {
 		type CombinedResult struct {
 			CreatedAt     time.Time `bun:"created_at"`
@@ -883,8 +839,8 @@ func (suite *EBDateTimeFunctionsTestSuite) TestCombinedDateTimeFunctions() {
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Combined date/time functions query should execute successfully")
-		suite.True(len(results) > 0, "Combined date/time functions should return at least one result")
+		suite.Require().NoError(err, "Combined date/time functions query should execute successfully")
+		suite.Require().NotEmpty(results, "Combined date/time functions should return at least one result")
 
 		for _, result := range results {
 			suite.True(result.Year > 2000, "Extracted year should be in reasonable range (after 2000)")

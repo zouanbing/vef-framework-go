@@ -16,14 +16,11 @@ func init() {
 }
 
 // CBAnyAllTestSuite tests ANY and ALL subquery condition methods.
-// Covers: EqualsAny, NotEqualsAny, GreaterThanAny, GreaterThanAll,
-// GreaterThanOrEqualAny, GreaterThanOrEqualAll, LessThanAny, LessThanAll,
-// LessThanOrEqualAny, LessThanOrEqualAll, and their Or variants.
 type CBAnyAllTestSuite struct {
 	*ConditionBuilderTestSuite
 }
 
-// TestEqualsAny tests the EqualsAny and OrEqualsAny conditions.
+// TestEqualsAny tests EqualsAny and OrEqualsAny conditions.
 func (suite *CBAnyAllTestSuite) TestEqualsAny() {
 	if suite.ds.Kind == config.SQLite {
 		suite.T().Skip("ANY/ALL not supported on SQLite")
@@ -51,8 +48,6 @@ func (suite *CBAnyAllTestSuite) TestEqualsAny() {
 		for _, user := range users {
 			suite.True(user.Age == 25 || user.Age == 30, "Age should be 25 or 30")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrEqualsAny", func() {
@@ -72,12 +67,10 @@ func (suite *CBAnyAllTestSuite) TestEqualsAny() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestNotEqualsAny tests the NotEqualsAny and OrNotEqualsAny conditions.
+// TestNotEqualsAny tests NotEqualsAny and OrNotEqualsAny conditions.
 func (suite *CBAnyAllTestSuite) TestNotEqualsAny() {
 	if suite.ds.Kind == config.SQLite {
 		suite.T().Skip("ANY/ALL not supported on SQLite")
@@ -101,8 +94,6 @@ func (suite *CBAnyAllTestSuite) TestNotEqualsAny() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrNotEqualsAny", func() {
@@ -122,8 +113,6 @@ func (suite *CBAnyAllTestSuite) TestNotEqualsAny() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
@@ -151,8 +140,6 @@ func (suite *CBAnyAllTestSuite) TestGreaterThanAnyAll() {
 		)
 
 		suite.True(len(users) > 0, "Should find users with age > ANY(25,30)")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrGreaterThanAny", func() {
@@ -172,8 +159,6 @@ func (suite *CBAnyAllTestSuite) TestGreaterThanAnyAll() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("GreaterThanAll", func() {
@@ -196,8 +181,6 @@ func (suite *CBAnyAllTestSuite) TestGreaterThanAnyAll() {
 		for _, user := range users {
 			suite.True(user.Age > 30, "Age should be > 30")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrGreaterThanAll", func() {
@@ -217,8 +200,6 @@ func (suite *CBAnyAllTestSuite) TestGreaterThanAnyAll() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
@@ -246,8 +227,6 @@ func (suite *CBAnyAllTestSuite) TestGreaterThanOrEqualAnyAll() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrGreaterThanOrEqualAny", func() {
@@ -267,8 +246,6 @@ func (suite *CBAnyAllTestSuite) TestGreaterThanOrEqualAnyAll() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("GreaterThanOrEqualAll", func() {
@@ -287,8 +264,6 @@ func (suite *CBAnyAllTestSuite) TestGreaterThanOrEqualAnyAll() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrGreaterThanOrEqualAll", func() {
@@ -308,8 +283,6 @@ func (suite *CBAnyAllTestSuite) TestGreaterThanOrEqualAnyAll() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
@@ -337,8 +310,6 @@ func (suite *CBAnyAllTestSuite) TestLessThanAnyAll() {
 		)
 
 		suite.True(len(users) > 0, "Should find users with age < ANY(30,40)")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrLessThanAny", func() {
@@ -358,8 +329,6 @@ func (suite *CBAnyAllTestSuite) TestLessThanAnyAll() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("LessThanAll", func() {
@@ -382,8 +351,6 @@ func (suite *CBAnyAllTestSuite) TestLessThanAnyAll() {
 		for _, user := range users {
 			suite.True(user.Age < 30, "Age should be < 30")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrLessThanAll", func() {
@@ -403,8 +370,6 @@ func (suite *CBAnyAllTestSuite) TestLessThanAnyAll() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
@@ -432,8 +397,6 @@ func (suite *CBAnyAllTestSuite) TestLessThanOrEqualAnyAll() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrLessThanOrEqualAny", func() {
@@ -453,8 +416,6 @@ func (suite *CBAnyAllTestSuite) TestLessThanOrEqualAnyAll() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("LessThanOrEqualAll", func() {
@@ -473,8 +434,6 @@ func (suite *CBAnyAllTestSuite) TestLessThanOrEqualAnyAll() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrLessThanOrEqualAll", func() {
@@ -494,7 +453,5 @@ func (suite *CBAnyAllTestSuite) TestLessThanOrEqualAnyAll() {
 		)
 
 		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }

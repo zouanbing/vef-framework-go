@@ -16,12 +16,7 @@ func init() {
 	})
 }
 
-// UpdateTestSuite tests UPDATE operations including CTE operations, table sources,
-// selection methods, filter operations, column updates, flags, ordering, RETURNING clause,
-// Apply methods, and execution methods across all databases.
-//
-// SetupTest inserts fresh test data before each test method; TearDownTest cleans it up.
-// This ensures update operations never modify fixture data.
+// UpdateTestSuite tests UPDATE operations across all databases.
 type UpdateTestSuite struct {
 	*BaseTestSuite
 
@@ -1128,28 +1123,24 @@ func (suite *UpdateTestSuite) TestExecution() {
 	})
 }
 
-// TestUpdateDB tests DB() method on UpdateQuery.
+// TestUpdateDB tests DB() method returns the underlying database.
 func (suite *UpdateTestSuite) TestUpdateDB() {
 	suite.T().Logf("Testing Update DB for %s", suite.ds.Kind)
 
 	query := suite.db.NewUpdate().Model((*Tag)(nil))
-	db := query.DB()
-
-	suite.NotNil(db, "DB() should return non-nil")
+	suite.NotNil(query.DB(), "Should return underlying database")
 }
 
-// TestUpdateWithRecursive tests WithRecursive on UpdateQuery.
+// TestUpdateWithRecursive tests WithRecursive CTE on UpdateQuery.
 func (suite *UpdateTestSuite) TestUpdateWithRecursive() {
 	suite.T().Logf("Testing Update WithRecursive for %s", suite.ds.Kind)
 
-	// Insert a test tag to update
 	tag := &Tag{Name: "RecursiveUpdateTest"}
 	tag.ID = "test-upd-recursive"
 
 	_, err := suite.db.NewInsert().Model(tag).Exec(suite.ctx)
-	suite.NoError(err)
+	suite.Require().NoError(err, "Should insert test tag")
 
-	// Update using WithRecursive (simple usage to cover the method)
 	_, err = suite.db.NewUpdate().
 		WithRecursive("ids", func(sq orm.SelectQuery) {
 			sq.Model((*Tag)(nil)).
@@ -1169,148 +1160,93 @@ func (suite *UpdateTestSuite) TestUpdateWithRecursive() {
 			})
 		}).
 		Exec(suite.ctx)
+	suite.NoError(err, "Should update using WithRecursive CTE")
 
-	suite.NoError(err, "Update WithRecursive should work")
-
-	// Clean up
 	_, _ = suite.db.NewDelete().Model((*Tag)(nil)).Where(func(cb orm.ConditionBuilder) {
 		cb.Equals("id", "test-upd-recursive")
 	}).Exec(suite.ctx)
 }
 
-// TestUpdateTableSubQuery tests Update TableSubQuery method.
-func (suite *UpdateTestSuite) TestUpdateTableSubQuery() {
-	suite.T().Logf("Testing Update TableSubQuery for %s", suite.ds.Kind)
+// TestTableSpecMethods tests table specification methods with and without aliases.
+func (suite *UpdateTestSuite) TestTableSpecMethods() {
+	suite.T().Logf("Testing table specification methods for %s", suite.ds.Kind)
 
-	query := suite.db.NewUpdate().
-		TableSubQuery(func(sq orm.SelectQuery) {
-			sq.Model((*Tag)(nil)).Select("id", "name")
-		}, "t").
-		Set("name", "updated")
+	nonexistentWhere := func(cb orm.ConditionBuilder) {
+		cb.Equals("id", "nonexistent")
+	}
 
-	suite.NotNil(query, "Update TableSubQuery should return non-nil")
-}
+	suite.Run("ModelTableWithAlias", func() {
+		query := suite.db.NewUpdate().
+			ModelTable("test_tag", "t").
+			Set("name", "updated").
+			Where(nonexistentWhere)
+		suite.NotNil(query, "Should build query with ModelTable alias")
+	})
 
-// TestUpdateModelTableWithAlias tests Update ModelTable with alias.
-func (suite *UpdateTestSuite) TestUpdateModelTableWithAlias() {
-	suite.T().Logf("Testing Update ModelTable with alias for %s", suite.ds.Kind)
+	suite.Run("ModelTableNoAlias", func() {
+		query := suite.db.NewUpdate().
+			ModelTable("test_tag").
+			Set("name", "updated").
+			Where(nonexistentWhere)
+		suite.NotNil(query, "Should build query with ModelTable")
+	})
 
-	query := suite.db.NewUpdate().
-		ModelTable("test_tag", "t").
-		Set("name", "updated").
-		Where(func(cb orm.ConditionBuilder) {
-			cb.Equals("id", "nonexistent")
-		})
+	suite.Run("TableWithAlias", func() {
+		query := suite.db.NewUpdate().
+			Table("test_tag", "t").
+			Set("name", "updated").
+			Where(nonexistentWhere)
+		suite.NotNil(query, "Should build query with Table alias")
+	})
 
-	suite.NotNil(query, "Update ModelTable with alias should return non-nil")
-}
+	suite.Run("TableNoAlias", func() {
+		query := suite.db.NewUpdate().
+			Table("test_tag").
+			Set("name", "updated").
+			Where(nonexistentWhere)
+		suite.NotNil(query, "Should build query with Table")
+	})
 
-// TestUpdateTableWithAlias tests Update Table with alias.
-func (suite *UpdateTestSuite) TestUpdateTableWithAlias() {
-	suite.T().Logf("Testing Update Table with alias for %s", suite.ds.Kind)
+	suite.Run("TableExprWithAlias", func() {
+		query := suite.db.NewUpdate().
+			TableExpr(func(eb orm.ExprBuilder) any {
+				return eb.SubQuery(func(sq orm.SelectQuery) {
+					sq.Model((*Tag)(nil)).Select("id", "name")
+				})
+			}, "t").
+			Set("name", "updated").
+			Where(nonexistentWhere)
+		suite.NotNil(query, "Should build query with TableExpr alias")
+	})
 
-	query := suite.db.NewUpdate().
-		Table("test_tag", "t").
-		Set("name", "updated").
-		Where(func(cb orm.ConditionBuilder) {
-			cb.Equals("id", "nonexistent")
-		})
+	suite.Run("TableExprNoAlias", func() {
+		query := suite.db.NewUpdate().
+			TableExpr(func(eb orm.ExprBuilder) any {
+				return eb.SubQuery(func(sq orm.SelectQuery) {
+					sq.Model((*Tag)(nil)).Select("id", "name")
+				})
+			}).
+			Set("name", "updated").
+			Where(nonexistentWhere)
+		suite.NotNil(query, "Should build query with TableExpr")
+	})
 
-	suite.NotNil(query, "Update Table with alias should return non-nil")
-}
-
-// TestUpdateTableExprWithAlias tests Update TableExpr with alias.
-func (suite *UpdateTestSuite) TestUpdateTableExprWithAlias() {
-	suite.T().Logf("Testing Update TableExpr with alias for %s", suite.ds.Kind)
-
-	query := suite.db.NewUpdate().
-		TableExpr(func(eb orm.ExprBuilder) any {
-			return eb.SubQuery(func(sq orm.SelectQuery) {
+	suite.Run("TableSubQueryWithAlias", func() {
+		query := suite.db.NewUpdate().
+			TableSubQuery(func(sq orm.SelectQuery) {
 				sq.Model((*Tag)(nil)).Select("id", "name")
-			})
-		}, "t").
-		Set("name", "updated").
-		Where(func(cb orm.ConditionBuilder) {
-			cb.Equals("id", "nonexistent")
-		})
+			}, "t").
+			Set("name", "updated")
+		suite.NotNil(query, "Should build query with TableSubQuery alias")
+	})
 
-	suite.NotNil(query, "Update TableExpr with alias should return non-nil")
-}
-
-// TestUpdateTableSubQueryWithAlias tests Update TableSubQuery with alias.
-func (suite *UpdateTestSuite) TestUpdateTableSubQueryWithAlias() {
-	suite.T().Logf("Testing Update TableSubQuery with alias for %s", suite.ds.Kind)
-
-	query := suite.db.NewUpdate().
-		TableSubQuery(func(sq orm.SelectQuery) {
-			sq.Model((*Tag)(nil)).Select("id", "name")
-		}, "t").
-		Set("name", "updated").
-		Where(func(cb orm.ConditionBuilder) {
-			cb.Equals("id", "nonexistent")
-		})
-
-	suite.NotNil(query, "Update TableSubQuery with alias should return non-nil")
-}
-
-// TestUpdateModelTableNoAlias tests Update ModelTable without alias.
-func (suite *UpdateTestSuite) TestUpdateModelTableNoAlias() {
-	suite.T().Logf("Testing Update ModelTable without alias for %s", suite.ds.Kind)
-
-	query := suite.db.NewUpdate().
-		ModelTable("test_tag").
-		Set("name", "updated").
-		Where(func(cb orm.ConditionBuilder) {
-			cb.Equals("id", "nonexistent")
-		})
-
-	suite.NotNil(query, "Update ModelTable no alias should return non-nil")
-}
-
-// TestUpdateTableNoAlias tests Update Table without alias.
-func (suite *UpdateTestSuite) TestUpdateTableNoAlias() {
-	suite.T().Logf("Testing Update Table without alias for %s", suite.ds.Kind)
-
-	query := suite.db.NewUpdate().
-		Table("test_tag").
-		Set("name", "updated").
-		Where(func(cb orm.ConditionBuilder) {
-			cb.Equals("id", "nonexistent")
-		})
-
-	suite.NotNil(query, "Update Table no alias should return non-nil")
-}
-
-// TestUpdateTableExprNoAlias tests Update TableExpr without alias.
-func (suite *UpdateTestSuite) TestUpdateTableExprNoAlias() {
-	suite.T().Logf("Testing Update TableExpr without alias for %s", suite.ds.Kind)
-
-	query := suite.db.NewUpdate().
-		TableExpr(func(eb orm.ExprBuilder) any {
-			return eb.SubQuery(func(sq orm.SelectQuery) {
+	suite.Run("TableSubQueryNoAlias", func() {
+		query := suite.db.NewUpdate().
+			TableSubQuery(func(sq orm.SelectQuery) {
 				sq.Model((*Tag)(nil)).Select("id", "name")
-			})
-		}).
-		Set("name", "updated").
-		Where(func(cb orm.ConditionBuilder) {
-			cb.Equals("id", "nonexistent")
-		})
-
-	suite.NotNil(query, "Update TableExpr no alias should return non-nil")
-}
-
-// TestUpdateTableSubQueryNoAlias tests Update TableSubQuery without alias.
-func (suite *UpdateTestSuite) TestUpdateTableSubQueryNoAlias() {
-	suite.T().Logf("Testing Update TableSubQuery without alias for %s", suite.ds.Kind)
-
-	query := suite.db.NewUpdate().
-		TableSubQuery(func(sq orm.SelectQuery) {
-			sq.Model((*Tag)(nil)).Select("id", "name")
-		}).
-		Set("name", "updated").
-		Where(func(cb orm.ConditionBuilder) {
-			cb.Equals("id", "nonexistent")
-		})
-
-	suite.NotNil(query, "Update TableSubQuery no alias should return non-nil")
+			}).
+			Set("name", "updated").
+			Where(nonexistentWhere)
+		suite.NotNil(query, "Should build query with TableSubQuery")
+	})
 }

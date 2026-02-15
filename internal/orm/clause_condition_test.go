@@ -12,8 +12,7 @@ func init() {
 	})
 }
 
-// ClauseConditionTestSuite tests ClauseConditionBuilder methods used in JOIN ON, HAVING, etc.
-// Covers: Or, BuildGroup, AppendGroup, AppendQuery on ClauseConditionBuilder.
+// ClauseConditionTestSuite tests ClauseConditionBuilder methods across all databases.
 type ClauseConditionTestSuite struct {
 	*BaseTestSuite
 }

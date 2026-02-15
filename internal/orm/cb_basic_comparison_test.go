@@ -14,14 +14,12 @@ func init() {
 	})
 }
 
-// CBBasicComparisonTestSuite tests basic comparison condition methods.
-// Covers: Equals, NotEquals, GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual
-// and their column comparison variants (EqualsColumn, etc.).
+// CBBasicComparisonTestSuite tests basic comparison and column comparison conditions.
 type CBBasicComparisonTestSuite struct {
 	*ConditionBuilderTestSuite
 }
 
-// TestEquals tests the Equals and OrEquals conditions.
+// TestEquals tests Equals and OrEquals conditions.
 func (suite *CBBasicComparisonTestSuite) TestEquals() {
 	suite.T().Logf("Testing Equals condition for %s", suite.ds.Kind)
 
@@ -35,8 +33,6 @@ func (suite *CBBasicComparisonTestSuite) TestEquals() {
 
 		suite.Len(users, 1, "Should find exactly one user")
 		suite.Equal("Alice Johnson", users[0].Name, "Should find Alice Johnson")
-
-		suite.T().Logf("Found user: %s", users[0].Name)
 	})
 
 	suite.Run("OrEquals", func() {
@@ -50,14 +46,11 @@ func (suite *CBBasicComparisonTestSuite) TestEquals() {
 		)
 
 		suite.Len(users, 2, "Should find two users")
-		suite.Equal("Alice Johnson", users[0].Name)
-		suite.Equal("Bob Smith", users[1].Name)
-
-		suite.T().Logf("Found users: %s, %s", users[0].Name, users[1].Name)
+		suite.Equal("Alice Johnson", users[0].Name, "Should find Alice first")
+		suite.Equal("Bob Smith", users[1].Name, "Should find Bob second")
 	})
 
 	suite.Run("EqualsWithDifferentTypes", func() {
-		// Test with integer
 		users := suite.assertQueryReturnsUsers(
 			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
@@ -66,9 +59,8 @@ func (suite *CBBasicComparisonTestSuite) TestEquals() {
 		)
 
 		suite.Len(users, 1, "Should find one user with age 30")
-		suite.Equal(int16(30), users[0].Age)
+		suite.Equal(int16(30), users[0].Age, "Should match age 30")
 
-		// Test with boolean
 		activeUsers := suite.assertQueryReturnsUsers(
 			suite.selectUsers().
 				Where(func(cb orm.ConditionBuilder) {
@@ -79,14 +71,12 @@ func (suite *CBBasicComparisonTestSuite) TestEquals() {
 		suite.True(len(activeUsers) > 0, "Should find active users")
 
 		for _, user := range activeUsers {
-			suite.True(user.IsActive, "All users should be active")
+			suite.True(user.IsActive, "Should only return active users")
 		}
-
-		suite.T().Logf("Found %d active users", len(activeUsers))
 	})
 }
 
-// TestNotEquals tests the NotEquals and OrNotEquals conditions.
+// TestNotEquals tests NotEquals and OrNotEquals conditions.
 func (suite *CBBasicComparisonTestSuite) TestNotEquals() {
 	suite.T().Logf("Testing NotEquals condition for %s", suite.ds.Kind)
 
@@ -104,8 +94,6 @@ func (suite *CBBasicComparisonTestSuite) TestNotEquals() {
 		for _, user := range users {
 			suite.NotEqual("Alice Johnson", user.Name, "Should not be Alice Johnson")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 
 	suite.Run("OrNotEquals", func() {
@@ -118,18 +106,16 @@ func (suite *CBBasicComparisonTestSuite) TestNotEquals() {
 				OrderBy("name"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
+		suite.True(len(users) > 0, "Should find users matching either condition")
 
 		for _, user := range users {
 			suite.True(user.Name != "Alice Johnson" || user.Age != 25,
 				"Should match NotEquals condition")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestGreaterThan tests the GreaterThan and OrGreaterThan conditions.
+// TestGreaterThan tests GreaterThan and OrGreaterThan conditions.
 func (suite *CBBasicComparisonTestSuite) TestGreaterThan() {
 	suite.T().Logf("Testing GreaterThan condition for %s", suite.ds.Kind)
 
@@ -144,10 +130,8 @@ func (suite *CBBasicComparisonTestSuite) TestGreaterThan() {
 		suite.Len(users, 10, "Should find users with age > 30")
 
 		for _, user := range users {
-			suite.True(user.Age > 30, "Age should be greater than 30")
+			suite.True(user.Age > 30, "Should have age greater than 30")
 		}
-
-		suite.T().Logf("Found %d users with age > 30", len(users))
 	})
 
 	suite.Run("OrGreaterThan", func() {
@@ -160,18 +144,16 @@ func (suite *CBBasicComparisonTestSuite) TestGreaterThan() {
 				OrderBy("age"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
+		suite.True(len(users) > 0, "Should find users matching either condition")
 
 		for _, user := range users {
 			suite.True(user.Age > 30 || user.Age > 24,
-				"Age should match GreaterThan condition")
+				"Should match GreaterThan condition")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestGreaterThanOrEqual tests the GreaterThanOrEqual and OrGreaterThanOrEqual conditions.
+// TestGreaterThanOrEqual tests GreaterThanOrEqual and OrGreaterThanOrEqual conditions.
 func (suite *CBBasicComparisonTestSuite) TestGreaterThanOrEqual() {
 	suite.T().Logf("Testing GreaterThanOrEqual condition for %s", suite.ds.Kind)
 
@@ -187,10 +169,8 @@ func (suite *CBBasicComparisonTestSuite) TestGreaterThanOrEqual() {
 		suite.Len(users, 11, "Should find users with age >= 30")
 
 		for _, user := range users {
-			suite.True(user.Age >= 30, "Age should be >= 30")
+			suite.True(user.Age >= 30, "Should have age >= 30")
 		}
-
-		suite.T().Logf("Found %d users with age >= 30", len(users))
 	})
 
 	suite.Run("OrGreaterThanOrEqual", func() {
@@ -203,18 +183,16 @@ func (suite *CBBasicComparisonTestSuite) TestGreaterThanOrEqual() {
 				OrderBy("age"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
+		suite.True(len(users) > 0, "Should find users matching either condition")
 
 		for _, user := range users {
 			suite.True(user.Age >= 35 || user.Age >= 25,
-				"Age should match GreaterThanOrEqual condition")
+				"Should match GreaterThanOrEqual condition")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestLessThan tests the LessThan and OrLessThan conditions.
+// TestLessThan tests LessThan and OrLessThan conditions.
 func (suite *CBBasicComparisonTestSuite) TestLessThan() {
 	suite.T().Logf("Testing LessThan condition for %s", suite.ds.Kind)
 
@@ -229,10 +207,8 @@ func (suite *CBBasicComparisonTestSuite) TestLessThan() {
 		suite.Len(users, 9, "Should find users with age < 30")
 
 		for _, user := range users {
-			suite.True(user.Age < 30, "Age should be less than 30")
+			suite.True(user.Age < 30, "Should have age less than 30")
 		}
-
-		suite.T().Logf("Found %d users with age < 30", len(users))
 	})
 
 	suite.Run("OrLessThan", func() {
@@ -245,18 +221,16 @@ func (suite *CBBasicComparisonTestSuite) TestLessThan() {
 				OrderBy("age"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
+		suite.True(len(users) > 0, "Should find users matching either condition")
 
 		for _, user := range users {
 			suite.True(user.Age < 26 || user.Age < 31,
-				"Age should match LessThan condition")
+				"Should match LessThan condition")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestLessThanOrEqual tests the LessThanOrEqual and OrLessThanOrEqual conditions.
+// TestLessThanOrEqual tests LessThanOrEqual and OrLessThanOrEqual conditions.
 func (suite *CBBasicComparisonTestSuite) TestLessThanOrEqual() {
 	suite.T().Logf("Testing LessThanOrEqual condition for %s", suite.ds.Kind)
 
@@ -272,10 +246,8 @@ func (suite *CBBasicComparisonTestSuite) TestLessThanOrEqual() {
 		suite.Len(users, 10, "Should find users with age <= 30")
 
 		for _, user := range users {
-			suite.True(user.Age <= 30, "Age should be <= 30")
+			suite.True(user.Age <= 30, "Should have age <= 30")
 		}
-
-		suite.T().Logf("Found %d users with age <= 30", len(users))
 	})
 
 	suite.Run("OrLessThanOrEqual", func() {
@@ -288,18 +260,16 @@ func (suite *CBBasicComparisonTestSuite) TestLessThanOrEqual() {
 				OrderBy("age"),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
+		suite.True(len(users) > 0, "Should find users matching either condition")
 
 		for _, user := range users {
 			suite.True(user.Age <= 25 || user.Age <= 35,
-				"Age should match LessThanOrEqual condition")
+				"Should match LessThanOrEqual condition")
 		}
-
-		suite.T().Logf("Found %d users", len(users))
 	})
 }
 
-// TestEqualsColumn tests the EqualsColumn and OrEqualsColumn conditions.
+// TestEqualsColumn tests EqualsColumn and OrEqualsColumn conditions.
 func (suite *CBBasicComparisonTestSuite) TestEqualsColumn() {
 	suite.T().Logf("Testing EqualsColumn condition for %s", suite.ds.Kind)
 
@@ -311,9 +281,7 @@ func (suite *CBBasicComparisonTestSuite) TestEqualsColumn() {
 				}),
 		)
 
-		suite.Len(users, 0, "Users may have different created_at and updated_at due to time offsets in test data")
-
-		suite.T().Logf("Found %d users with matching timestamps", len(users))
+		suite.Len(users, 0, "Should find no users since fixture data has different timestamps")
 	})
 
 	suite.Run("OrEqualsColumn", func() {
@@ -325,13 +293,11 @@ func (suite *CBBasicComparisonTestSuite) TestEqualsColumn() {
 				}),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users via OR fallback")
 	})
 }
 
-// TestNotEqualsColumn tests the NotEqualsColumn and OrNotEqualsColumn conditions.
+// TestNotEqualsColumn tests NotEqualsColumn and OrNotEqualsColumn conditions.
 func (suite *CBBasicComparisonTestSuite) TestNotEqualsColumn() {
 	suite.T().Logf("Testing NotEqualsColumn condition for %s", suite.ds.Kind)
 
@@ -343,9 +309,7 @@ func (suite *CBBasicComparisonTestSuite) TestNotEqualsColumn() {
 				}),
 		)
 
-		suite.Len(users, 20, "All users have different created_at and updated_at")
-
-		suite.T().Logf("Found %d users with different timestamps", len(users))
+		suite.Len(users, 20, "Should find all users with different timestamps")
 	})
 
 	suite.Run("OrNotEqualsColumn", func() {
@@ -357,13 +321,11 @@ func (suite *CBBasicComparisonTestSuite) TestNotEqualsColumn() {
 				}),
 		)
 
-		suite.True(len(users) > 0, "Should find users")
-
-		suite.T().Logf("Found %d users", len(users))
+		suite.True(len(users) > 0, "Should find users matching either condition")
 	})
 }
 
-// TestGreaterThanColumn tests the GreaterThanColumn and OrGreaterThanColumn conditions.
+// TestGreaterThanColumn tests GreaterThanColumn and OrGreaterThanColumn conditions.
 func (suite *CBBasicComparisonTestSuite) TestGreaterThanColumn() {
 	suite.T().Logf("Testing GreaterThanColumn condition for %s", suite.ds.Kind)
 
@@ -375,9 +337,7 @@ func (suite *CBBasicComparisonTestSuite) TestGreaterThanColumn() {
 				}),
 		)
 
-		suite.Len(posts, 0, "No column is greater than itself")
-
-		suite.T().Logf("Found %d posts", len(posts))
+		suite.Len(posts, 0, "Should find no posts since column equals itself")
 	})
 
 	suite.Run("OrGreaterThanColumn", func() {
@@ -390,16 +350,14 @@ func (suite *CBBasicComparisonTestSuite) TestGreaterThanColumn() {
 		)
 
 		suite.True(len(posts) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d posts", len(posts))
 	})
 }
 
-// TestGreaterThanOrEqualColumn tests the GreaterThanOrEqualColumn and OrGreaterThanOrEqualColumn conditions.
+// TestGreaterThanOrEqualColumn tests GreaterThanOrEqualColumn and OrGreaterThanOrEqualColumn conditions.
 func (suite *CBBasicComparisonTestSuite) TestGreaterThanOrEqualColumn() {
 	suite.T().Logf("Testing GreaterThanOrEqualColumn condition for %s", suite.ds.Kind)
 
-	suite.Run("BasicGreaterThanOrEqualColumn", func() {
+	suite.Run("BasicGteColumn", func() {
 		posts := suite.assertQueryReturnsPosts(
 			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
@@ -407,12 +365,10 @@ func (suite *CBBasicComparisonTestSuite) TestGreaterThanOrEqualColumn() {
 				}),
 		)
 
-		suite.True(len(posts) > 0, "All posts have view_count >= view_count")
-
-		suite.T().Logf("Found %d posts", len(posts))
+		suite.True(len(posts) > 0, "Should find all posts since column >= itself")
 	})
 
-	suite.Run("OrGreaterThanOrEqualColumn", func() {
+	suite.Run("OrGteColumn", func() {
 		posts := suite.assertQueryReturnsPosts(
 			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
@@ -421,13 +377,11 @@ func (suite *CBBasicComparisonTestSuite) TestGreaterThanOrEqualColumn() {
 				}),
 		)
 
-		suite.True(len(posts) > 0, "Should find posts")
-
-		suite.T().Logf("Found %d posts", len(posts))
+		suite.True(len(posts) > 0, "Should find posts matching either condition")
 	})
 }
 
-// TestLessThanColumn tests the LessThanColumn and OrLessThanColumn conditions.
+// TestLessThanColumn tests LessThanColumn and OrLessThanColumn conditions.
 func (suite *CBBasicComparisonTestSuite) TestLessThanColumn() {
 	suite.T().Logf("Testing LessThanColumn condition for %s", suite.ds.Kind)
 
@@ -439,9 +393,7 @@ func (suite *CBBasicComparisonTestSuite) TestLessThanColumn() {
 				}),
 		)
 
-		suite.Len(posts, 0, "No column is less than itself")
-
-		suite.T().Logf("Found %d posts", len(posts))
+		suite.Len(posts, 0, "Should find no posts since column equals itself")
 	})
 
 	suite.Run("OrLessThanColumn", func() {
@@ -454,16 +406,14 @@ func (suite *CBBasicComparisonTestSuite) TestLessThanColumn() {
 		)
 
 		suite.True(len(posts) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d posts", len(posts))
 	})
 }
 
-// TestLessThanOrEqualColumn tests the LessThanOrEqualColumn and OrLessThanOrEqualColumn conditions.
+// TestLessThanOrEqualColumn tests LessThanOrEqualColumn and OrLessThanOrEqualColumn conditions.
 func (suite *CBBasicComparisonTestSuite) TestLessThanOrEqualColumn() {
 	suite.T().Logf("Testing LessThanOrEqualColumn condition for %s", suite.ds.Kind)
 
-	suite.Run("BasicLessThanOrEqualColumn", func() {
+	suite.Run("BasicLteColumn", func() {
 		posts := suite.assertQueryReturnsPosts(
 			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
@@ -471,12 +421,10 @@ func (suite *CBBasicComparisonTestSuite) TestLessThanOrEqualColumn() {
 				}),
 		)
 
-		suite.True(len(posts) > 0, "All posts have view_count <= view_count")
-
-		suite.T().Logf("Found %d posts", len(posts))
+		suite.True(len(posts) > 0, "Should find all posts since column <= itself")
 	})
 
-	suite.Run("OrLessThanOrEqualColumn", func() {
+	suite.Run("OrLteColumn", func() {
 		posts := suite.assertQueryReturnsPosts(
 			suite.selectPosts().
 				Where(func(cb orm.ConditionBuilder) {
@@ -485,8 +433,6 @@ func (suite *CBBasicComparisonTestSuite) TestLessThanOrEqualColumn() {
 				}),
 		)
 
-		suite.True(len(posts) > 0, "Should find posts")
-
-		suite.T().Logf("Found %d posts", len(posts))
+		suite.True(len(posts) > 0, "Should find posts matching either condition")
 	})
 }

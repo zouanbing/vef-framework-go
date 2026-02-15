@@ -14,13 +14,12 @@ func init() {
 	})
 }
 
-// CBNullBooleanChecksTestSuite tests NULL and boolean check condition methods.
-// Covers: IsNull, IsNotNull, IsTrue, IsFalse, IsTrueOrNull, IsFalseOrNull and their Or variants.
+// CBNullBooleanChecksTestSuite tests NULL and boolean check conditions.
 type CBNullBooleanChecksTestSuite struct {
 	*ConditionBuilderTestSuite
 }
 
-// TestIsNull tests the IsNull and OrIsNull conditions.
+// TestIsNull tests IsNull and OrIsNull conditions.
 func (suite *CBNullBooleanChecksTestSuite) TestIsNull() {
 	suite.T().Logf("Testing IsNull condition for %s", suite.ds.Kind)
 
@@ -35,10 +34,8 @@ func (suite *CBNullBooleanChecksTestSuite) TestIsNull() {
 		suite.True(len(posts) >= 0, "Should execute successfully")
 
 		for _, post := range posts {
-			suite.Nil(post.Description, "Description should be NULL")
+			suite.Nil(post.Description, "Should have NULL description")
 		}
-
-		suite.T().Logf("Found %d posts with NULL description", len(posts))
 	})
 
 	suite.Run("OrIsNull", func() {
@@ -51,12 +48,10 @@ func (suite *CBNullBooleanChecksTestSuite) TestIsNull() {
 		)
 
 		suite.True(len(posts) >= 0, "Should execute successfully")
-
-		suite.T().Logf("Found %d posts", len(posts))
 	})
 }
 
-// TestIsNotNull tests the IsNotNull and OrIsNotNull conditions.
+// TestIsNotNull tests IsNotNull and OrIsNotNull conditions.
 func (suite *CBNullBooleanChecksTestSuite) TestIsNotNull() {
 	suite.T().Logf("Testing IsNotNull condition for %s", suite.ds.Kind)
 
@@ -68,13 +63,11 @@ func (suite *CBNullBooleanChecksTestSuite) TestIsNotNull() {
 				}),
 		)
 
-		suite.True(len(posts) > 0, "Should find posts")
+		suite.True(len(posts) > 0, "Should find posts with non-NULL title")
 
 		for _, post := range posts {
-			suite.NotEmpty(post.Title, "Title should not be NULL")
+			suite.NotEmpty(post.Title, "Should have non-NULL title")
 		}
-
-		suite.T().Logf("Found %d posts with non-NULL title", len(posts))
 	})
 
 	suite.Run("OrIsNotNull", func() {
@@ -86,13 +79,11 @@ func (suite *CBNullBooleanChecksTestSuite) TestIsNotNull() {
 				}),
 		)
 
-		suite.True(len(posts) > 0, "Should find posts")
-
-		suite.T().Logf("Found %d posts", len(posts))
+		suite.True(len(posts) > 0, "Should find posts matching either condition")
 	})
 }
 
-// TestIsTrue tests the IsTrue and OrIsTrue conditions.
+// TestIsTrue tests IsTrue and OrIsTrue conditions.
 func (suite *CBNullBooleanChecksTestSuite) TestIsTrue() {
 	suite.T().Logf("Testing IsTrue condition for %s", suite.ds.Kind)
 
@@ -107,10 +98,8 @@ func (suite *CBNullBooleanChecksTestSuite) TestIsTrue() {
 		suite.True(len(users) > 0, "Should find active users")
 
 		for _, user := range users {
-			suite.True(user.IsActive, "User should be active")
+			suite.True(user.IsActive, "Should be active")
 		}
-
-		suite.T().Logf("Found %d active users", len(users))
 	})
 
 	suite.Run("OrIsTrue", func() {
@@ -125,14 +114,12 @@ func (suite *CBNullBooleanChecksTestSuite) TestIsTrue() {
 		suite.True(len(users) >= 0, "Should execute successfully")
 
 		for _, user := range users {
-			suite.True(user.IsActive, "User should be active")
+			suite.True(user.IsActive, "Should be active")
 		}
-
-		suite.T().Logf("Found %d active users", len(users))
 	})
 }
 
-// TestIsFalse tests the IsFalse and OrIsFalse conditions.
+// TestIsFalse tests IsFalse and OrIsFalse conditions.
 func (suite *CBNullBooleanChecksTestSuite) TestIsFalse() {
 	suite.T().Logf("Testing IsFalse condition for %s", suite.ds.Kind)
 
@@ -147,10 +134,8 @@ func (suite *CBNullBooleanChecksTestSuite) TestIsFalse() {
 		suite.True(len(users) >= 0, "Should execute successfully")
 
 		for _, user := range users {
-			suite.False(user.IsActive, "User should be inactive")
+			suite.False(user.IsActive, "Should be inactive")
 		}
-
-		suite.T().Logf("Found %d inactive users", len(users))
 	})
 
 	suite.Run("OrIsFalse", func() {
@@ -165,9 +150,7 @@ func (suite *CBNullBooleanChecksTestSuite) TestIsFalse() {
 		suite.True(len(users) >= 0, "Should execute successfully")
 
 		for _, user := range users {
-			suite.False(user.IsActive, "User should be inactive")
+			suite.False(user.IsActive, "Should be inactive")
 		}
-
-		suite.T().Logf("Found %d inactive users", len(users))
 	})
 }
