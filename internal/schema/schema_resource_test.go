@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/stretchr/testify/suite"
@@ -19,8 +20,10 @@ import (
 	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/internal/apptest"
+	isecurity "github.com/ilxqx/vef-framework-go/internal/security"
 	"github.com/ilxqx/vef-framework-go/internal/testx"
 	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/ilxqx/vef-framework-go/security"
 )
 
 // SchemaResourceTestSuite tests the schema API resource functionality.
@@ -67,17 +70,25 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSour
 
 	testApp, stop := apptest.NewTestApp(
 		suite.T(),
-		fx.Replace(dsConfig),
+		fx.Replace(
+			dsConfig,
+			&security.JWTConfig{
+				Secret:   security.DefaultJWTSecret,
+				Audience: "test_app",
+			},
+		),
 		fx.Populate(&bunDB),
 	)
 
 	defer stop()
 
+	token := suite.generateToken()
+
 	suite.setupTestTables(bunDB.DB, dsConfig.Kind)
 	defer suite.cleanupTestTables(bunDB.DB, dsConfig.Kind)
 
 	suite.Run("ListTables", func() {
-		resp := suite.makeAPIRequest(testApp, api.Request{
+		resp := suite.makeAPIRequest(testApp, token, api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/schema",
 				Action:   "list_tables",
@@ -109,7 +120,7 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSour
 	})
 
 	suite.Run("GetTableSchemaSuccess", func() {
-		resp := suite.makeAPIRequest(testApp, api.Request{
+		resp := suite.makeAPIRequest(testApp, token, api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/schema",
 				Action:   "get_table_schema",
@@ -151,7 +162,7 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSour
 	})
 
 	suite.Run("GetTableSchemaWithPrimaryKey", func() {
-		resp := suite.makeAPIRequest(testApp, api.Request{
+		resp := suite.makeAPIRequest(testApp, token, api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/schema",
 				Action:   "get_table_schema",
@@ -180,7 +191,7 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSour
 	})
 
 	suite.Run("GetTableSchemaNotFound", func() {
-		resp := suite.makeAPIRequest(testApp, api.Request{
+		resp := suite.makeAPIRequest(testApp, token, api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/schema",
 				Action:   "get_table_schema",
@@ -201,7 +212,7 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSour
 	})
 
 	suite.Run("GetTableSchemaValidationError", func() {
-		resp := suite.makeAPIRequest(testApp, api.Request{
+		resp := suite.makeAPIRequest(testApp, token, api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/schema",
 				Action:   "get_table_schema",
@@ -219,12 +230,32 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSour
 	})
 }
 
-func (suite *SchemaResourceTestSuite) makeAPIRequest(testApp *app.App, body api.Request) *http.Response {
+func (suite *SchemaResourceTestSuite) generateToken() string {
+	jwtCfg := &security.JWTConfig{
+		Secret:   security.DefaultJWTSecret,
+		Audience: "test_app",
+	}
+
+	jwtInstance, err := security.NewJWT(jwtCfg)
+	suite.Require().NoError(err)
+
+	claims := security.NewJWTClaimsBuilder().
+		WithSubject("test-admin@admin").
+		WithType(isecurity.TokenTypeAccess)
+
+	token, err := jwtInstance.Generate(claims, 1*time.Hour, 0)
+	suite.Require().NoError(err)
+
+	return token
+}
+
+func (suite *SchemaResourceTestSuite) makeAPIRequest(testApp *app.App, token string, body api.Request) *http.Response {
 	jsonBody, err := encoding.ToJSON(body)
 	suite.Require().NoError(err, "Should encode request to JSON")
 
 	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+	req.Header.Set(fiber.HeaderAuthorization, security.AuthSchemeBearer+" "+token)
 
 	resp, err := testApp.Test(req)
 	suite.Require().NoError(err, "API request should not fail")

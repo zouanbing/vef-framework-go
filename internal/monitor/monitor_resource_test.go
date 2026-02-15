@@ -2,33 +2,25 @@ package monitor_test
 
 import (
 	"context"
-	"io"
-	"net/http"
-	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/gofiber/fiber/v3"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/fx"
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/encoding"
-	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/internal/apptest"
 	"github.com/ilxqx/vef-framework-go/monitor"
-	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/ilxqx/vef-framework-go/security"
 )
 
 type MonitorResourceTestSuite struct {
-	suite.Suite
+	apptest.Suite
 
 	ctx     context.Context
-	app     *app.App
-	stop    func()
 	service monitor.Service
+	token   string
 }
 
 func (suite *MonitorResourceTestSuite) SetupSuite() {
@@ -47,78 +39,52 @@ func (suite *MonitorResourceTestSuite) SetupSuite() {
 		GitCommit:  "test123abc",
 	}
 
-	suite.app, suite.stop = apptest.NewTestApp(
-		suite.T(),
+	suite.SetupApp(
 		fx.Replace(
 			&config.DataSourceConfig{
 				Kind: "sqlite",
 			},
 			monitorConfig,
+			&security.JWTConfig{
+				Secret:   security.DefaultJWTSecret,
+				Audience: "test_app",
+			},
 		),
 		fx.Supply(buildInfo),
 		fx.Populate(&suite.service),
 	)
+
+	suite.token = suite.GenerateToken(&security.Principal{
+		ID:   "test-admin",
+		Name: "admin",
+	})
 
 	time.Sleep(100 * time.Millisecond)
 }
 
 func (suite *MonitorResourceTestSuite) TearDownSuite() {
 	suite.T().Log("Tearing down MonitorResourceTestSuite")
-
-	if suite.stop != nil {
-		suite.stop()
-	}
-}
-
-func (suite *MonitorResourceTestSuite) makeAPIRequest(body api.Request) *http.Response {
-	jsonBody, err := encoding.ToJSON(body)
-	suite.Require().NoError(err, "Should encode request to JSON")
-
-	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
-	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-
-	resp, err := suite.app.Test(req)
-	suite.Require().NoError(err, "API request should not fail")
-
-	return resp
-}
-
-func (suite *MonitorResourceTestSuite) readBody(resp *http.Response) result.Result {
-	body, err := io.ReadAll(resp.Body)
-	defer resp.Body.Close()
-
-	suite.Require().NoError(err, "Should read response body")
-	res, err := encoding.FromJSON[result.Result](string(body))
-	suite.Require().NoError(err, "Should decode response JSON")
-
-	return *res
-}
-
-func (suite *MonitorResourceTestSuite) readDataAsMap(data any) map[string]any {
-	m, ok := data.(map[string]any)
-	suite.Require().True(ok, "Data should be a map")
-
-	return m
+	suite.TearDownApp()
 }
 
 func (suite *MonitorResourceTestSuite) TestGetOverview() {
 	suite.T().Log("Testing get_overview endpoint")
 
 	suite.Run("Success", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/monitor",
 				Action:   "get_overview",
 				Version:  "v1",
 			},
-		})
+		}, suite.token)
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.True(body.IsOk(), "Overview request should succeed")
 
-		data := suite.readDataAsMap(body.Data)
+		data := suite.ReadDataAsMap(body.Data)
 
 		suite.Contains(data, "host", "Should have host info")
 		suite.Contains(data, "cpu", "Should have CPU info")
@@ -129,7 +95,7 @@ func (suite *MonitorResourceTestSuite) TestGetOverview() {
 		suite.Contains(data, "load", "Should have load info")
 		suite.Contains(data, "build", "Should have build info")
 
-		buildInfo := suite.readDataAsMap(data["build"])
+		buildInfo := suite.ReadDataAsMap(data["build"])
 		suite.Equal("v1.0.0-test", buildInfo["appVersion"], "AppVersion should match")
 		suite.NotEmpty(buildInfo["vefVersion"], "VEFVersion should be populated")
 		suite.Equal("2024-01-01T00:00:00Z", buildInfo["buildTime"], "BuildTime should match")
@@ -141,20 +107,20 @@ func (suite *MonitorResourceTestSuite) TestGetCPU() {
 	suite.T().Log("Testing get_cpu endpoint")
 
 	suite.Run("Success", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/monitor",
 				Action:   "get_cpu",
 				Version:  "v1",
 			},
-		})
+		}, suite.token)
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.True(body.IsOk(), "CPU request should succeed")
 
-		data := suite.readDataAsMap(body.Data)
+		data := suite.ReadDataAsMap(body.Data)
 
 		suite.Contains(data, "physicalCores", "Should have physical cores")
 		suite.Contains(data, "logicalCores", "Should have logical cores")
@@ -176,24 +142,24 @@ func (suite *MonitorResourceTestSuite) TestGetMemory() {
 	suite.T().Log("Testing get_memory endpoint")
 
 	suite.Run("Success", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/monitor",
 				Action:   "get_memory",
 				Version:  "v1",
 			},
-		})
+		}, suite.token)
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.True(body.IsOk(), "Memory request should succeed")
 
-		data := suite.readDataAsMap(body.Data)
+		data := suite.ReadDataAsMap(body.Data)
 
 		suite.Contains(data, "virtual", "Should have virtual memory info")
 
-		virtual := suite.readDataAsMap(data["virtual"])
+		virtual := suite.ReadDataAsMap(data["virtual"])
 		suite.Contains(virtual, "total", "Should have total memory")
 		suite.Contains(virtual, "used", "Should have used memory")
 		suite.Contains(virtual, "usedPercent", "Should have used percent")
@@ -208,20 +174,20 @@ func (suite *MonitorResourceTestSuite) TestGetDisk() {
 	suite.T().Log("Testing get_disk endpoint")
 
 	suite.Run("Success", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/monitor",
 				Action:   "get_disk",
 				Version:  "v1",
 			},
-		})
+		}, suite.token)
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.True(body.IsOk(), "Disk request should succeed")
 
-		data := suite.readDataAsMap(body.Data)
+		data := suite.ReadDataAsMap(body.Data)
 
 		suite.Contains(data, "partitions", "Should have partitions")
 
@@ -229,7 +195,7 @@ func (suite *MonitorResourceTestSuite) TestGetDisk() {
 		suite.True(ok, "Partitions should be an array")
 		suite.NotEmpty(partitions, "Should have at least one partition")
 
-		firstPartition := suite.readDataAsMap(partitions[0])
+		firstPartition := suite.ReadDataAsMap(partitions[0])
 		suite.Contains(firstPartition, "mountPoint", "Should have mount point")
 		suite.Contains(firstPartition, "total", "Should have total size")
 	})
@@ -239,20 +205,20 @@ func (suite *MonitorResourceTestSuite) TestGetNetwork() {
 	suite.T().Log("Testing get_network endpoint")
 
 	suite.Run("Success", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/monitor",
 				Action:   "get_network",
 				Version:  "v1",
 			},
-		})
+		}, suite.token)
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.True(body.IsOk(), "Network request should succeed")
 
-		data := suite.readDataAsMap(body.Data)
+		data := suite.ReadDataAsMap(body.Data)
 
 		suite.Contains(data, "interfaces", "Should have interfaces")
 
@@ -260,7 +226,7 @@ func (suite *MonitorResourceTestSuite) TestGetNetwork() {
 		suite.True(ok, "Interfaces should be an array")
 		suite.NotEmpty(interfaces, "Should have at least one network interface")
 
-		firstInterface := suite.readDataAsMap(interfaces[0])
+		firstInterface := suite.ReadDataAsMap(interfaces[0])
 		suite.Contains(firstInterface, "name", "Should have interface name")
 		suite.NotEmpty(firstInterface["name"], "Interface name should not be empty")
 	})
@@ -270,20 +236,20 @@ func (suite *MonitorResourceTestSuite) TestGetHost() {
 	suite.T().Log("Testing get_host endpoint")
 
 	suite.Run("Success", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/monitor",
 				Action:   "get_host",
 				Version:  "v1",
 			},
-		})
+		}, suite.token)
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.True(body.IsOk(), "Host request should succeed")
 
-		data := suite.readDataAsMap(body.Data)
+		data := suite.ReadDataAsMap(body.Data)
 
 		suite.Contains(data, "hostname", "Should have hostname")
 		suite.Contains(data, "os", "Should have OS")
@@ -294,27 +260,27 @@ func (suite *MonitorResourceTestSuite) TestGetHost() {
 	})
 
 	suite.Run("ConsistentResults", func() {
-		resp1 := suite.makeAPIRequest(api.Request{
+		resp1 := suite.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/monitor",
 				Action:   "get_host",
 				Version:  "v1",
 			},
-		})
+		}, suite.token)
 
-		body1 := suite.readBody(resp1)
-		data1 := suite.readDataAsMap(body1.Data)
+		body1 := suite.ReadResult(resp1)
+		data1 := suite.ReadDataAsMap(body1.Data)
 
-		resp2 := suite.makeAPIRequest(api.Request{
+		resp2 := suite.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/monitor",
 				Action:   "get_host",
 				Version:  "v1",
 			},
-		})
+		}, suite.token)
 
-		body2 := suite.readBody(resp2)
-		data2 := suite.readDataAsMap(body2.Data)
+		body2 := suite.ReadResult(resp2)
+		data2 := suite.ReadDataAsMap(body2.Data)
 
 		suite.Equal(data1["hostname"], data2["hostname"], "Hostname should be consistent")
 		suite.Equal(data1["os"], data2["os"], "OS should be consistent")
@@ -325,20 +291,20 @@ func (suite *MonitorResourceTestSuite) TestGetProcess() {
 	suite.T().Log("Testing get_process endpoint")
 
 	suite.Run("Success", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/monitor",
 				Action:   "get_process",
 				Version:  "v1",
 			},
-		})
+		}, suite.token)
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.True(body.IsOk(), "Process request should succeed")
 
-		data := suite.readDataAsMap(body.Data)
+		data := suite.ReadDataAsMap(body.Data)
 
 		suite.Contains(data, "pid", "Should have PID")
 		suite.Contains(data, "name", "Should have process name")
@@ -358,20 +324,20 @@ func (suite *MonitorResourceTestSuite) TestGetLoad() {
 	suite.T().Log("Testing get_load endpoint")
 
 	suite.Run("Success", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/monitor",
 				Action:   "get_load",
 				Version:  "v1",
 			},
-		})
+		}, suite.token)
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.True(body.IsOk(), "Load request should succeed")
 
-		data := suite.readDataAsMap(body.Data)
+		data := suite.ReadDataAsMap(body.Data)
 
 		suite.Contains(data, "load1", "Should have 1-minute load")
 		suite.Contains(data, "load5", "Should have 5-minute load")
@@ -387,20 +353,20 @@ func (suite *MonitorResourceTestSuite) TestGetBuildInfo() {
 	suite.T().Log("Testing get_build_info endpoint")
 
 	suite.Run("Success", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/monitor",
 				Action:   "get_build_info",
 				Version:  "v1",
 			},
-		})
+		}, suite.token)
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.True(body.IsOk(), "Build info request should succeed")
 
-		data := suite.readDataAsMap(body.Data)
+		data := suite.ReadDataAsMap(body.Data)
 
 		suite.Equal("v1.0.0-test", data["appVersion"], "AppVersion should match")
 		suite.NotEmpty(data["vefVersion"], "VEFVersion should be populated")

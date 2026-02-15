@@ -29,11 +29,11 @@ func NewResource(service storage.Service) api.Resource {
 		Resource: api.NewRPCResource(
 			"sys/storage",
 			api.WithOperations(
-				api.OperationSpec{Action: "upload", Public: isStorageAPIPublic},
-				api.OperationSpec{Action: "get_presigned_url", Public: isStorageAPIPublic},
-				api.OperationSpec{Action: "delete_temp", Public: isStorageAPIPublic},
-				api.OperationSpec{Action: "stat", Public: isStorageAPIPublic},
-				api.OperationSpec{Action: "list", Public: isStorageAPIPublic},
+				api.OperationSpec{Action: "upload"},
+				api.OperationSpec{Action: "get_presigned_url"},
+				api.OperationSpec{Action: "delete_temp"},
+				api.OperationSpec{Action: "stat"},
+				api.OperationSpec{Action: "list"},
 			),
 		),
 	}
