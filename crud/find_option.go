@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/ilxqx/go-streams"
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/orm"
@@ -126,15 +125,13 @@ func withSort(specs []*sortx.OrderSpec, parts ...QueryPart) *FindOperationOption
 			}
 
 			if len(sortable.Sort) > 0 {
-				streams.FromSlice(sortable.Sort).
-					ForEach(func(spec sortx.OrderSpec) {
-						applyOrderSpec(spec)
-					})
+				for _, spec := range sortable.Sort {
+					applyOrderSpec(spec)
+				}
 			} else {
-				streams.FromSlice(specs).
-					ForEach(func(spec *sortx.OrderSpec) {
-						applyOrderSpec(*spec)
-					})
+				for _, spec := range specs {
+					applyOrderSpec(*spec)
+				}
 			}
 
 			return nil

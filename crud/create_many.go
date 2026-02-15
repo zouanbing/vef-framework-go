@@ -53,6 +53,8 @@ func (c *createManyOperation[TModel, TParams]) createMany(sc storage.Service, pu
 		}
 
 		return db.RunInTX(ctx.Context(), func(txCtx context.Context, tx orm.DB) error {
+			cleanup := func() error { return batchCleanup(txCtx, promoter, models) }
+
 			query := tx.NewInsert().Model(&models)
 			if c.preCreateMany != nil {
 				if err := c.preCreateMany(models, params.List, query, ctx, tx); err != nil {
@@ -62,29 +64,19 @@ func (c *createManyOperation[TModel, TParams]) createMany(sc storage.Service, pu
 
 			for i := range models {
 				if err := promoter.Promote(txCtx, &models[i], nil); err != nil {
-					if rollbackErr := batchCleanup(txCtx, promoter, models[:i]); rollbackErr != nil {
-						return fmt.Errorf("promote files for model %d failed: %w; rollback also failed: %w", i, err, rollbackErr)
-					}
+					err = fmt.Errorf("promote files for model %d failed: %w", i, err)
 
-					return fmt.Errorf("promote files for model %d failed: %w", i, err)
+					return withCleanup(err, func() error { return batchCleanup(txCtx, promoter, models[:i]) })
 				}
 			}
 
 			if _, err := query.Exec(txCtx); err != nil {
-				if cleanupErr := batchCleanup(txCtx, promoter, models); cleanupErr != nil {
-					return fmt.Errorf("batch create failed: %w; cleanup files also failed: %w", err, cleanupErr)
-				}
-
-				return err
+				return withCleanup(err, cleanup)
 			}
 
 			if c.postCreateMany != nil {
 				if err := c.postCreateMany(models, params.List, ctx, tx); err != nil {
-					if cleanupErr := batchCleanup(txCtx, promoter, models); cleanupErr != nil {
-						return fmt.Errorf("post-create-many failed: %w; cleanup files also failed: %w", err, cleanupErr)
-					}
-
-					return err
+					return withCleanup(err, cleanup)
 				}
 			}
 
@@ -92,11 +84,7 @@ func (c *createManyOperation[TModel, TParams]) createMany(sc storage.Service, pu
 			for i := range models {
 				pk, err := db.ModelPKs(&models[i])
 				if err != nil {
-					if cleanupErr := batchCleanup(txCtx, promoter, models); cleanupErr != nil {
-						return fmt.Errorf("get primary keys failed: %w; cleanup files also failed: %w", err, cleanupErr)
-					}
-
-					return err
+					return withCleanup(err, cleanup)
 				}
 
 				pks[i] = pk

@@ -2,6 +2,7 @@ package crud_test
 
 import (
 	"bytes"
+	"errors"
 	"io"
 
 	"github.com/gofiber/fiber/v3"
@@ -13,17 +14,25 @@ import (
 	"github.com/ilxqx/vef-framework-go/csv"
 	"github.com/ilxqx/vef-framework-go/excel"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
+	"github.com/ilxqx/vef-framework-go/internal/testx"
 )
 
 func init() {
-	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
-		return &ExportTestSuite{BaseTestSuite: base.clone()}
+	registry.Add(func(env *testx.DBEnv) suite.TestingSuite {
+		return &ExportTestSuite{
+			BaseTestSuite: BaseTestSuite{
+				ctx:   env.Ctx,
+				db:    env.DB,
+				bunDB: env.BunDB,
+				ds:    env.DS,
+			},
+		}
 	})
 }
 
-// ExportUser is the test model for export tests (uses tabular tags).
-type ExportUser struct {
-	bun.BaseModel `bun:"table:export_user,alias:eu"`
+// ExportEmployee is the test model for export tests (uses tabular tags).
+type ExportEmployee struct {
+	bun.BaseModel `bun:"table:export_employee,alias:ee"`
 	orm.Model     `tabular:"-" bun:"extend"`
 
 	Name   string `json:"name"   tabular:"姓名,width=20" bun:",notnull"`
@@ -32,8 +41,8 @@ type ExportUser struct {
 	Status string `json:"status" tabular:"状态,width=10" bun:",notnull,default:'active'"`
 }
 
-// ExportUserSearch is the search parameters for ExportUser.
-type ExportUserSearch struct {
+// ExportEmployeeSearch is the search parameters for ExportEmployee.
+type ExportEmployeeSearch struct {
 	api.P
 
 	Keyword *string `json:"keyword" search:"contains,column=name|email"`
@@ -42,59 +51,62 @@ type ExportUserSearch struct {
 
 // Test Resources for Export
 
-type TestUserExportResource struct {
+type TestEmployeeExportResource struct {
 	api.Resource
-	crud.Export[ExportUser, ExportUserSearch]
+	crud.Export[ExportEmployee, ExportEmployeeSearch]
 }
 
-func NewTestUserExportResource() api.Resource {
-	return &TestUserExportResource{
-		Resource: api.NewRPCResource("test/user_export"),
-		Export:   crud.NewExport[ExportUser, ExportUserSearch]().Public(),
+func NewTestEmployeeExportResource() api.Resource {
+	return &TestEmployeeExportResource{
+		Resource: api.NewRPCResource("test/employee_export"),
+		Export:   crud.NewExport[ExportEmployee, ExportEmployeeSearch]().WithCondition(fixtureScope).Public(),
 	}
 }
 
-type TestUserExportWithOptionsResource struct {
+type TestEmployeeExportWithOptionsResource struct {
 	api.Resource
-	crud.Export[ExportUser, ExportUserSearch]
+	crud.Export[ExportEmployee, ExportEmployeeSearch]
 }
 
-func NewTestUserExportWithOptionsResource() api.Resource {
-	return &TestUserExportWithOptionsResource{
-		Resource: api.NewRPCResource("test/user_export_opts"),
-		Export: crud.NewExport[ExportUser, ExportUserSearch]().
+func NewTestEmployeeExportWithOptionsResource() api.Resource {
+	return &TestEmployeeExportWithOptionsResource{
+		Resource: api.NewRPCResource("test/employee_export_opts"),
+		Export: crud.NewExport[ExportEmployee, ExportEmployeeSearch]().
+			WithCondition(fixtureScope).
 			Public().
 			WithExcelOptions(excel.WithSheetName("用户列表")),
 	}
 }
 
-type TestUserExportWithFilenameResource struct {
+type TestEmployeeExportWithFilenameResource struct {
 	api.Resource
-	crud.Export[ExportUser, ExportUserSearch]
+	crud.Export[ExportEmployee, ExportEmployeeSearch]
 }
 
-func NewTestUserExportWithFilenameResource() api.Resource {
-	return &TestUserExportWithFilenameResource{
-		Resource: api.NewRPCResource("test/user_export_filename"),
-		Export: crud.NewExport[ExportUser, ExportUserSearch]().
+func NewTestEmployeeExportWithFilenameResource() api.Resource {
+	return &TestEmployeeExportWithFilenameResource{
+		Resource: api.NewRPCResource("test/employee_export_filename"),
+		Export: crud.NewExport[ExportEmployee, ExportEmployeeSearch]().
+			WithCondition(fixtureScope).
 			Public().
-			WithFilenameBuilder(func(_ ExportUserSearch, _ fiber.Ctx) string {
+			WithFilenameBuilder(func(_ ExportEmployeeSearch, _ fiber.Ctx) string {
 				return "custom_users.xlsx"
 			}),
 	}
 }
 
-type TestUserExportWithPreProcessorResource struct {
+type TestEmployeeExportWithPreProcessorResource struct {
 	api.Resource
-	crud.Export[ExportUser, ExportUserSearch]
+	crud.Export[ExportEmployee, ExportEmployeeSearch]
 }
 
-func NewTestUserExportWithPreProcessorResource() api.Resource {
-	return &TestUserExportWithPreProcessorResource{
-		Resource: api.NewRPCResource("test/user_export_preproc"),
-		Export: crud.NewExport[ExportUser, ExportUserSearch]().
+func NewTestEmployeeExportWithPreProcessorResource() api.Resource {
+	return &TestEmployeeExportWithPreProcessorResource{
+		Resource: api.NewRPCResource("test/employee_export_preproc"),
+		Export: crud.NewExport[ExportEmployee, ExportEmployeeSearch]().
+			WithCondition(fixtureScope).
 			Public().
-			WithPreExport(func(models []ExportUser, _ ExportUserSearch, ctx fiber.Ctx, _ orm.DB) error {
+			WithPreExport(func(models []ExportEmployee, _ ExportEmployeeSearch, ctx fiber.Ctx, _ orm.DB) error {
 				// Add custom header with count
 				ctx.Set("X-Export-Count", string(rune('0'+len(models))))
 
@@ -103,15 +115,16 @@ func NewTestUserExportWithPreProcessorResource() api.Resource {
 	}
 }
 
-type TestUserExportWithFilterResource struct {
+type TestEmployeeExportWithFilterResource struct {
 	api.Resource
-	crud.Export[ExportUser, ExportUserSearch]
+	crud.Export[ExportEmployee, ExportEmployeeSearch]
 }
 
-func NewTestUserExportWithFilterResource() api.Resource {
-	return &TestUserExportWithFilterResource{
-		Resource: api.NewRPCResource("test/user_export_filter"),
-		Export: crud.NewExport[ExportUser, ExportUserSearch]().
+func NewTestEmployeeExportWithFilterResource() api.Resource {
+	return &TestEmployeeExportWithFilterResource{
+		Resource: api.NewRPCResource("test/employee_export_filter"),
+		Export: crud.NewExport[ExportEmployee, ExportEmployeeSearch]().
+			WithCondition(fixtureScope).
 			WithCondition(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "active")
 			}).
@@ -119,48 +132,87 @@ func NewTestUserExportWithFilterResource() api.Resource {
 	}
 }
 
-type TestUserExportCSVResource struct {
+type TestEmployeeExportCSVResource struct {
 	api.Resource
-	crud.Export[ExportUser, ExportUserSearch]
+	crud.Export[ExportEmployee, ExportEmployeeSearch]
 }
 
-func NewTestUserExportCSVResource() api.Resource {
-	return &TestUserExportCSVResource{
-		Resource: api.NewRPCResource("test/user_export_csv"),
-		Export: crud.NewExport[ExportUser, ExportUserSearch]().
+func NewTestEmployeeExportCSVResource() api.Resource {
+	return &TestEmployeeExportCSVResource{
+		Resource: api.NewRPCResource("test/employee_export_csv"),
+		Export: crud.NewExport[ExportEmployee, ExportEmployeeSearch]().
+			WithCondition(fixtureScope).
 			Public().
 			WithDefaultFormat(crud.FormatCsv),
 	}
 }
 
-type TestUserExportCSVWithOptionsResource struct {
+type TestEmployeeExportCSVWithOptionsResource struct {
 	api.Resource
-	crud.Export[ExportUser, ExportUserSearch]
+	crud.Export[ExportEmployee, ExportEmployeeSearch]
 }
 
-func NewTestUserExportCSVWithOptionsResource() api.Resource {
-	return &TestUserExportCSVWithOptionsResource{
-		Resource: api.NewRPCResource("test/user_export_csv_opts"),
-		Export: crud.NewExport[ExportUser, ExportUserSearch]().
+func NewTestEmployeeExportCSVWithOptionsResource() api.Resource {
+	return &TestEmployeeExportCSVWithOptionsResource{
+		Resource: api.NewRPCResource("test/employee_export_csv_opts"),
+		Export: crud.NewExport[ExportEmployee, ExportEmployeeSearch]().
+			WithCondition(fixtureScope).
 			Public().
 			WithDefaultFormat(crud.FormatCsv).
 			WithCsvOptions(csv.WithExportDelimiter(';')),
 	}
 }
 
-type TestUserExportCSVWithFilenameResource struct {
+type TestEmployeeExportCSVWithFilenameResource struct {
 	api.Resource
-	crud.Export[ExportUser, ExportUserSearch]
+	crud.Export[ExportEmployee, ExportEmployeeSearch]
 }
 
-func NewTestUserExportCSVWithFilenameResource() api.Resource {
-	return &TestUserExportCSVWithFilenameResource{
-		Resource: api.NewRPCResource("test/user_export_csv_filename"),
-		Export: crud.NewExport[ExportUser, ExportUserSearch]().
+func NewTestEmployeeExportCSVWithFilenameResource() api.Resource {
+	return &TestEmployeeExportCSVWithFilenameResource{
+		Resource: api.NewRPCResource("test/employee_export_csv_filename"),
+		Export: crud.NewExport[ExportEmployee, ExportEmployeeSearch]().
+			WithCondition(fixtureScope).
 			Public().
 			WithDefaultFormat(crud.FormatCsv).
-			WithFilenameBuilder(func(_ ExportUserSearch, _ fiber.Ctx) string {
+			WithFilenameBuilder(func(_ ExportEmployeeSearch, _ fiber.Ctx) string {
 				return "custom_users.csv"
+			}),
+	}
+}
+
+// ErrorQueryApplierExportResource - Export with QueryApplier that returns error.
+type ErrorQueryApplierExportResource struct {
+	api.Resource
+	crud.Export[ExportEmployee, ExportEmployeeSearch]
+}
+
+func NewErrorQueryApplierExportResource() api.Resource {
+	return &ErrorQueryApplierExportResource{
+		Resource: api.NewRPCResource("test/employee_export_err_applier"),
+		Export: crud.NewExport[ExportEmployee, ExportEmployeeSearch]().
+			WithCondition(fixtureScope).
+			WithQueryApplier(func(_ orm.SelectQuery, _ ExportEmployeeSearch, _ fiber.Ctx) error {
+				return errors.New("export query applier error")
+			}).
+			Public(),
+	}
+}
+
+// PreExportErrorResource - Export with preExport processor that returns error.
+type PreExportErrorResource struct {
+	api.Resource
+	crud.Export[ExportEmployee, ExportEmployeeSearch]
+}
+
+func NewPreExportErrorResource() api.Resource {
+	return &PreExportErrorResource{
+		Resource: api.NewRPCResource("test/employee_export_preproc_err"),
+		Export: crud.NewExport[ExportEmployee, ExportEmployeeSearch]().
+			WithCondition(fixtureScope).
+			Public().
+			WithPreExport(func(_ []ExportEmployee, _ ExportEmployeeSearch, _ fiber.Ctx, _ orm.DB) error {
+				return errors.New("pre-export error")
 			}),
 	}
 }
@@ -175,14 +227,16 @@ type ExportTestSuite struct {
 // SetupSuite runs once before all tests in the suite.
 func (suite *ExportTestSuite) SetupSuite() {
 	suite.setupBaseSuite(
-		NewTestUserExportResource,
-		NewTestUserExportWithOptionsResource,
-		NewTestUserExportWithFilenameResource,
-		NewTestUserExportWithPreProcessorResource,
-		NewTestUserExportWithFilterResource,
-		NewTestUserExportCSVResource,
-		NewTestUserExportCSVWithOptionsResource,
-		NewTestUserExportCSVWithFilenameResource,
+		NewTestEmployeeExportResource,
+		NewTestEmployeeExportWithOptionsResource,
+		NewTestEmployeeExportWithFilenameResource,
+		NewTestEmployeeExportWithPreProcessorResource,
+		NewTestEmployeeExportWithFilterResource,
+		NewTestEmployeeExportCSVResource,
+		NewTestEmployeeExportCSVWithOptionsResource,
+		NewTestEmployeeExportCSVWithFilenameResource,
+		NewErrorQueryApplierExportResource,
+		NewPreExportErrorResource,
 	)
 }
 
@@ -196,9 +250,9 @@ func (suite *ExportTestSuite) TearDownSuite() {
 func (suite *ExportTestSuite) TestExportBasic() {
 	suite.T().Logf("Testing basic Excel export for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/user_export",
+			Resource: "test/employee_export",
 			Action:   "export",
 			Version:  "v1",
 		},
@@ -228,9 +282,9 @@ func (suite *ExportTestSuite) TestExportWithSearchFilter() {
 
 	suite.Run("FilterByStatus", func() {
 		status := "active"
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user_export",
+				Resource: "test/employee_export",
 				Action:   "export",
 				Version:  "v1",
 			},
@@ -251,9 +305,9 @@ func (suite *ExportTestSuite) TestExportWithSearchFilter() {
 
 	suite.Run("FilterByKeyword", func() {
 		keyword := "Engineer"
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user_export",
+				Resource: "test/employee_export",
 				Action:   "export",
 				Version:  "v1",
 			},
@@ -276,9 +330,9 @@ func (suite *ExportTestSuite) TestExportWithSearchFilter() {
 func (suite *ExportTestSuite) TestExportWithCustomFilename() {
 	suite.T().Logf("Testing export with custom filename for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/user_export_filename",
+			Resource: "test/employee_export_filename",
 			Action:   "export",
 			Version:  "v1",
 		},
@@ -296,9 +350,9 @@ func (suite *ExportTestSuite) TestExportWithCustomFilename() {
 func (suite *ExportTestSuite) TestExportWithPreProcessor() {
 	suite.T().Logf("Testing export with pre-processor for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/user_export_preproc",
+			Resource: "test/employee_export_preproc",
 			Action:   "export",
 			Version:  "v1",
 		},
@@ -316,9 +370,9 @@ func (suite *ExportTestSuite) TestExportWithPreProcessor() {
 func (suite *ExportTestSuite) TestExportWithFilterApplier() {
 	suite.T().Logf("Testing export with filter applier for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/user_export_filter",
+			Resource: "test/employee_export_filter",
 			Action:   "export",
 			Version:  "v1",
 		},
@@ -333,12 +387,12 @@ func (suite *ExportTestSuite) TestExportWithFilterApplier() {
 	suite.NotEmpty(body, "Should return non-empty response body")
 
 	// Parse the Excel file to verify only active users are exported
-	importer := excel.NewImporterFor[ExportUser]()
+	importer := excel.NewImporterFor[ExportEmployee]()
 	users, _, err := importer.Import(bytes.NewReader(body))
 	suite.NoError(err, "Should parse exported Excel file successfully")
 
-	exportedUsers, ok := users.([]ExportUser)
-	suite.True(ok, "Type assertion to []ExportUser should succeed")
+	exportedUsers, ok := users.([]ExportEmployee)
+	suite.True(ok, "Type assertion to []ExportEmployee should succeed")
 	suite.NotEmpty(exportedUsers, "Should export at least one user")
 
 	// Verify all exported users have status "active"
@@ -352,9 +406,9 @@ func (suite *ExportTestSuite) TestExportWithFilterApplier() {
 func (suite *ExportTestSuite) TestExportEmptyResult() {
 	suite.T().Logf("Testing export with empty result for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/user_export",
+			Resource: "test/employee_export",
 			Action:   "export",
 			Version:  "v1",
 		},
@@ -381,9 +435,9 @@ func (suite *ExportTestSuite) TestExportEmptyResult() {
 func (suite *ExportTestSuite) TestExportWithOptions() {
 	suite.T().Logf("Testing export with options for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/user_export_opts",
+			Resource: "test/employee_export_opts",
 			Action:   "export",
 			Version:  "v1",
 		},
@@ -398,12 +452,12 @@ func (suite *ExportTestSuite) TestExportWithOptions() {
 	suite.NotEmpty(body, "Should return non-empty response body")
 
 	// Verify the Excel file can be parsed successfully with custom sheet name
-	importer := excel.NewImporterFor[ExportUser](excel.WithImportSheetName("用户列表"))
+	importer := excel.NewImporterFor[ExportEmployee](excel.WithImportSheetName("用户列表"))
 	users, _, err := importer.Import(bytes.NewReader(body))
 	suite.NoError(err, "Should parse Excel file with custom sheet name successfully")
 
-	exportedUsers, ok := users.([]ExportUser)
-	suite.True(ok, "Type assertion to []ExportUser should succeed")
+	exportedUsers, ok := users.([]ExportEmployee)
+	suite.True(ok, "Type assertion to []ExportEmployee should succeed")
 	suite.NotEmpty(exportedUsers, "Should export at least one user")
 	suite.T().Logf("Successfully exported %d users with custom options", len(exportedUsers))
 }
@@ -413,9 +467,9 @@ func (suite *ExportTestSuite) TestExportNegativeCases() {
 
 	suite.Run("InvalidSearchParameter", func() {
 		// Export should handle invalid search parameters gracefully
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user_export",
+				Resource: "test/employee_export",
 				Action:   "export",
 				Version:  "v1",
 			},
@@ -438,9 +492,9 @@ func (suite *ExportTestSuite) TestExportNegativeCases() {
 func (suite *ExportTestSuite) TestExportContentType() {
 	suite.T().Logf("Testing export content type for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/user_export",
+			Resource: "test/employee_export",
 			Action:   "export",
 			Version:  "v1",
 		},
@@ -462,9 +516,9 @@ func (suite *ExportTestSuite) TestExportContentType() {
 func (suite *ExportTestSuite) TestExportResponseHeaders() {
 	suite.T().Logf("Testing export response headers for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/user_export",
+			Resource: "test/employee_export",
 			Action:   "export",
 			Version:  "v1",
 		},
@@ -489,9 +543,9 @@ func (suite *ExportTestSuite) TestExportResponseHeaders() {
 func (suite *ExportTestSuite) TestExportCSVBasic() {
 	suite.T().Logf("Testing basic CSV export for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/user_export_csv",
+			Resource: "test/employee_export_csv",
 			Action:   "export",
 			Version:  "v1",
 		},
@@ -520,9 +574,9 @@ func (suite *ExportTestSuite) TestExportCSVWithSearchFilter() {
 
 	suite.Run("FilterByStatus", func() {
 		status := "active"
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user_export_csv",
+				Resource: "test/employee_export_csv",
 				Action:   "export",
 				Version:  "v1",
 			},
@@ -543,9 +597,9 @@ func (suite *ExportTestSuite) TestExportCSVWithSearchFilter() {
 
 	suite.Run("FilterByKeyword", func() {
 		keyword := "Engineer"
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user_export_csv",
+				Resource: "test/employee_export_csv",
 				Action:   "export",
 				Version:  "v1",
 			},
@@ -568,9 +622,9 @@ func (suite *ExportTestSuite) TestExportCSVWithSearchFilter() {
 func (suite *ExportTestSuite) TestExportCSVWithCustomFilename() {
 	suite.T().Logf("Testing CSV export with custom filename for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/user_export_csv_filename",
+			Resource: "test/employee_export_csv_filename",
 			Action:   "export",
 			Version:  "v1",
 		},
@@ -588,9 +642,9 @@ func (suite *ExportTestSuite) TestExportCSVWithCustomFilename() {
 func (suite *ExportTestSuite) TestExportCSVWithOptions() {
 	suite.T().Logf("Testing CSV export with options for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/user_export_csv_opts",
+			Resource: "test/employee_export_csv_opts",
 			Action:   "export",
 			Version:  "v1",
 		},
@@ -605,12 +659,12 @@ func (suite *ExportTestSuite) TestExportCSVWithOptions() {
 	suite.NotEmpty(body, "Should return non-empty response body")
 
 	// Verify semicolon delimiter is used by parsing with semicolon delimiter
-	importer := csv.NewImporterFor[ExportUser](csv.WithImportDelimiter(';'))
+	importer := csv.NewImporterFor[ExportEmployee](csv.WithImportDelimiter(';'))
 	users, _, err := importer.Import(bytes.NewReader(body))
 	suite.NoError(err, "Should parse CSV with semicolon delimiter successfully")
 
-	exportedUsers, ok := users.([]ExportUser)
-	suite.True(ok, "Type assertion to []ExportUser should succeed")
+	exportedUsers, ok := users.([]ExportEmployee)
+	suite.True(ok, "Type assertion to []ExportEmployee should succeed")
 	suite.NotEmpty(exportedUsers, "Should export at least one user")
 	suite.T().Logf("Successfully parsed CSV with custom delimiter, got %d users", len(exportedUsers))
 }
@@ -618,9 +672,9 @@ func (suite *ExportTestSuite) TestExportCSVWithOptions() {
 func (suite *ExportTestSuite) TestExportCSVEmptyResult() {
 	suite.T().Logf("Testing CSV export with empty result for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/user_export_csv",
+			Resource: "test/employee_export_csv",
 			Action:   "export",
 			Version:  "v1",
 		},
@@ -648,9 +702,9 @@ func (suite *ExportTestSuite) TestExportFormatOverride() {
 	suite.T().Logf("Testing export format override for %s", suite.ds.Kind)
 
 	// Test format parameter override - use Excel endpoint but override to CSV
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/user_export",
+			Resource: "test/employee_export",
 			Action:   "export",
 			Version:  "v1",
 		},
@@ -675,9 +729,9 @@ func (suite *ExportTestSuite) TestExportFormatOverride() {
 func (suite *ExportTestSuite) TestExportCSVContentType() {
 	suite.T().Logf("Testing CSV export content type for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/user_export_csv",
+			Resource: "test/employee_export_csv",
 			Action:   "export",
 			Version:  "v1",
 		},
@@ -694,4 +748,60 @@ func (suite *ExportTestSuite) TestExportCSVContentType() {
 	suite.Contains(contentDisposition, "attachment", "Should have attachment disposition")
 	suite.Contains(contentDisposition, "filename=", "Should include filename")
 	suite.T().Log("CSV content type and disposition headers verified successfully")
+}
+
+// TestExportUnsupportedFormat tests export with an unsupported format.
+func (suite *ExportTestSuite) TestExportUnsupportedFormat() {
+	suite.T().Logf("Testing Export API unsupported format for %s", suite.ds.Kind)
+
+	resp := suite.MakeRPCRequest(api.Request{
+		Identifier: api.Identifier{
+			Resource: "test/employee_export",
+			Action:   "export",
+			Version:  "v1",
+		},
+		Meta: map[string]any{
+			"format": "pdf",
+		},
+	})
+
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+	body := suite.ReadResult(resp)
+	suite.False(body.IsOk(), "Should fail for unsupported format")
+
+	suite.T().Logf("Export with unsupported format failed as expected")
+}
+
+// TestExportErrorQueryApplier tests export with a QueryApplier that returns error.
+func (suite *ExportTestSuite) TestExportErrorQueryApplier() {
+	suite.T().Logf("Testing Export API error query applier for %s", suite.ds.Kind)
+
+	resp := suite.MakeRPCRequest(api.Request{
+		Identifier: api.Identifier{
+			Resource: "test/employee_export_err_applier",
+			Action:   "export",
+			Version:  "v1",
+		},
+	})
+
+	suite.Contains([]int{200, 500}, resp.StatusCode, "Should return error status code")
+
+	suite.T().Logf("Export failed as expected due to query applier error")
+}
+
+// TestExportPreProcessorError tests export with a preExport processor that returns error.
+func (suite *ExportTestSuite) TestExportPreProcessorError() {
+	suite.T().Logf("Testing Export API pre-processor error for %s", suite.ds.Kind)
+
+	resp := suite.MakeRPCRequest(api.Request{
+		Identifier: api.Identifier{
+			Resource: "test/employee_export_preproc_err",
+			Action:   "export",
+			Version:  "v1",
+		},
+	})
+
+	suite.Contains([]int{200, 500}, resp.StatusCode, "Should return error status code")
+
+	suite.T().Logf("Export failed as expected due to pre-processor error")
 }

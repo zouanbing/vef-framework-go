@@ -19,13 +19,7 @@ func (a *findAllOperation[TModel, TSearch]) Provide() []api.OperationSpec {
 }
 
 func (a *findAllOperation[TModel, TSearch]) findAll(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, transformer mold.Transformer, search TSearch, meta api.Meta) error, error) {
-	if err := a.Setup(db, &FindOperationConfig{
-		QueryParts: &QueryPartsConfig{
-			Condition:         []QueryPart{QueryRoot},
-			Sort:              []QueryPart{QueryRoot},
-			AuditUserRelation: []QueryPart{QueryRoot},
-		},
-	}); err != nil {
+	if err := a.Setup(db, defaultFindConfig); err != nil {
 		return nil, err
 	}
 

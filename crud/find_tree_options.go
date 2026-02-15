@@ -105,24 +105,24 @@ func (a *findTreeOptionsOperation[TModel, TSearch]) findTreeOptions(db orm.DB) (
 			return err
 		}
 
-		// Helper function to apply column selections with proper aliasing
-		applyColumnSelections := func(query orm.SelectQuery) {
-			if a.idColumn == IDColumn {
-				query.Select(a.idColumn)
+		// selectColumnAs adds a column with optional aliasing: uses Select when column matches alias, SelectAs otherwise.
+		selectColumnAs := func(q orm.SelectQuery, column, alias string) {
+			if column == alias {
+				q.Select(column)
 			} else {
-				query.SelectAs(a.idColumn, IDColumn)
+				q.SelectAs(column, alias)
 			}
+		}
 
-			if a.parentIDColumn == ParentIDColumn {
-				query.Select(a.parentIDColumn)
-			} else {
-				query.SelectAs(a.parentIDColumn, ParentIDColumn)
-			}
+		// applyTreeColumns selects id and parent_id columns on a CTE sub-query.
+		applyTreeColumns := func(q orm.SelectQuery) {
+			selectColumnAs(q, a.idColumn, IDColumn)
+			selectColumnAs(q, a.parentIDColumn, ParentIDColumn)
 		}
 
 		query.WithRecursive(
 			"_tree", func(cteQuery orm.SelectQuery) {
-				applyColumnSelections(cteQuery.Model((*TModel)(nil)))
+				applyTreeColumns(cteQuery.Model((*TModel)(nil)))
 
 				if err := a.ConfigureQuery(cteQuery, search, meta, ctx, QueryBase); err != nil {
 					SetQueryError(ctx, err)
@@ -132,7 +132,7 @@ func (a *findTreeOptionsOperation[TModel, TSearch]) findTreeOptions(db orm.DB) (
 
 				// Recursive part: find all ancestor nodes
 				cteQuery.UnionAll(func(recursiveQuery orm.SelectQuery) {
-					applyColumnSelections(recursiveQuery.Model((*TModel)(nil)))
+					applyTreeColumns(recursiveQuery.Model((*TModel)(nil)))
 
 					if err := a.ConfigureQuery(recursiveQuery, search, meta, ctx, QueryRecursive); err != nil {
 						SetQueryError(ctx, err)
@@ -159,26 +159,12 @@ func (a *findTreeOptionsOperation[TModel, TSearch]) findTreeOptions(db orm.DB) (
 			return queryErr
 		}
 
-		applyColumnSelections(query)
-
-		if config.LabelColumn == LabelColumn {
-			query.Select(config.LabelColumn)
-		} else {
-			query.SelectAs(config.LabelColumn, LabelColumn)
-		}
-
-		if config.ValueColumn == ValueColumn {
-			query.Select(config.ValueColumn)
-		} else {
-			query.SelectAs(config.ValueColumn, ValueColumn)
-		}
+		applyTreeColumns(query)
+		selectColumnAs(query, config.LabelColumn, LabelColumn)
+		selectColumnAs(query, config.ValueColumn, ValueColumn)
 
 		if config.DescriptionColumn != "" {
-			if config.DescriptionColumn == DescriptionColumn {
-				query.Select(config.DescriptionColumn)
-			} else {
-				query.SelectAs(config.DescriptionColumn, DescriptionColumn)
-			}
+			selectColumnAs(query, config.DescriptionColumn, DescriptionColumn)
 		}
 
 		query.ApplyIf(len(metaColumns) > 0, func(sq orm.SelectQuery) {

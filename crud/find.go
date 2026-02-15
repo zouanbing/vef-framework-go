@@ -4,12 +4,21 @@ import (
 	"slices"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/samber/lo"
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/sortx"
 )
+
+// defaultFindConfig is the default configuration for standard (non-tree) find operations.
+// All options apply to QueryRoot only.
+var defaultFindConfig = &FindOperationConfig{
+	QueryParts: &QueryPartsConfig{
+		Condition:         []QueryPart{QueryRoot},
+		Sort:              []QueryPart{QueryRoot},
+		AuditUserRelation: []QueryPart{QueryRoot},
+	},
+}
 
 // baseFindOperation is the base implementation for all find operations.
 // It provides a unified query configuration system using FindOperationOption.
@@ -38,71 +47,8 @@ func (a *baseFindOperation[TModel, TSearch, TProcessorIn, TOperation]) Setup(db 
 	defer func() { a.setupDone = true }()
 
 	if config != nil && config.QueryParts != nil {
-		var (
-			qp    = config.QueryParts
-			table = db.TableOf((*TModel)(nil))
-		)
-
-		opt := withSearchApplier[TSearch](
-			lo.Ternary(qp.Condition != nil, qp.Condition, []QueryPart{QueryRoot})...,
-		)
-		a.options = append(a.options, opt)
-
-		// Auto-apply data permission filtering unless disabled
-		if !a.dataPermDisabled {
-			opt := withDataPerm(lo.Ternary(qp.Condition != nil, qp.Condition, []QueryPart{QueryRoot})...)
-			a.options = append(a.options, opt)
-		}
-
-		// Validate and apply audit user model if configured
-		if a.auditUserModel != nil {
-			pkLen := len(table.PKs)
-			if pkLen == 0 {
-				return ErrModelNoPrimaryKey
-			}
-
-			if pkLen > 1 {
-				return ErrAuditUserCompositePK
-			}
-
-			opt := withAuditUserNames(
-				a.auditUserModel,
-				a.auditUserNameColumn,
-				lo.Ternary(qp.AuditUserRelation != nil, qp.AuditUserRelation, []QueryPart{QueryRoot})...,
-			)
-			a.options = append(a.options, opt)
-		}
-
-		if a.defaultSort == nil {
-			if len(table.PKs) == 1 {
-				opt := withSort(
-					[]*sortx.OrderSpec{
-						{
-							Column:    table.PKs[0].Name,
-							Direction: sortx.OrderDesc,
-						},
-					},
-					lo.Ternary(qp.Sort != nil, qp.Sort, []QueryPart{QueryRoot})...,
-				)
-				a.options = append(a.options, opt)
-			} else {
-				if field, ok := table.FieldMap[orm.ColumnCreatedAt]; ok {
-					opt := withSort(
-						[]*sortx.OrderSpec{
-							{
-								Column:    field.Name,
-								Direction: sortx.OrderDesc,
-							},
-						},
-						lo.Ternary(qp.Sort != nil, qp.Sort, []QueryPart{QueryRoot})...,
-					)
-					a.options = append(a.options, opt)
-				}
-			}
-		} else if len(a.defaultSort) > 0 {
-			// User-defined default sorting
-			opt := withSort(a.defaultSort, lo.Ternary(qp.Sort != nil, qp.Sort, []QueryPart{QueryRoot})...)
-			a.options = append(a.options, opt)
+		if err := a.setupQueryParts(db, config.QueryParts); err != nil {
+			return err
 		}
 	}
 
@@ -119,11 +65,80 @@ func (a *baseFindOperation[TModel, TSearch, TProcessorIn, TOperation]) Setup(db 
 	return nil
 }
 
+// setupQueryParts configures query options based on QueryPartsConfig.
+func (a *baseFindOperation[TModel, TSearch, TProcessorIn, TOperation]) setupQueryParts(db orm.DB, qp *QueryPartsConfig) error {
+	table := db.TableOf((*TModel)(nil))
+
+	condParts := partsOrDefault(qp.Condition)
+	sortParts := partsOrDefault(qp.Sort)
+	auditParts := partsOrDefault(qp.AuditUserRelation)
+
+	a.options = append(a.options, withSearchApplier[TSearch](condParts...))
+
+	if !a.dataPermDisabled {
+		a.options = append(a.options, withDataPerm(condParts...))
+	}
+
+	if a.auditUserModel != nil {
+		if err := a.setupAuditUserNames(table, auditParts); err != nil {
+			return err
+		}
+	}
+
+	a.setupDefaultSort(table, sortParts)
+
+	return nil
+}
+
+// setupAuditUserNames validates and configures audit user name relations.
+func (a *baseFindOperation[TModel, TSearch, TProcessorIn, TOperation]) setupAuditUserNames(table *orm.Table, parts []QueryPart) error {
+	switch len(table.PKs) {
+	case 0:
+		return ErrModelNoPrimaryKey
+	case 1:
+		a.options = append(a.options, withAuditUserNames(a.auditUserModel, a.auditUserNameColumn, parts...))
+
+		return nil
+	default:
+		return ErrAuditUserCompositePK
+	}
+}
+
+// setupDefaultSort configures default sorting based on model schema.
+func (a *baseFindOperation[TModel, TSearch, TProcessorIn, TOperation]) setupDefaultSort(table *orm.Table, parts []QueryPart) {
+	switch {
+	case a.defaultSort == nil && len(table.PKs) == 1:
+		// Auto-sort by single primary key descending
+		a.options = append(a.options, withSort([]*sortx.OrderSpec{
+			{Column: table.PKs[0].Name, Direction: sortx.OrderDesc},
+		}, parts...))
+	case a.defaultSort == nil:
+		// Fallback: sort by created_at if available
+		if field, ok := table.FieldMap[orm.ColumnCreatedAt]; ok {
+			a.options = append(a.options, withSort([]*sortx.OrderSpec{
+				{Column: field.Name, Direction: sortx.OrderDesc},
+			}, parts...))
+		}
+
+	case len(a.defaultSort) > 0:
+		a.options = append(a.options, withSort(a.defaultSort, parts...))
+	}
+}
+
+// partsOrDefault returns the given parts, or []QueryPart{QueryRoot} if nil.
+func partsOrDefault(parts []QueryPart) []QueryPart {
+	if parts != nil {
+		return parts
+	}
+
+	return []QueryPart{QueryRoot}
+}
+
 // ConfigureQuery applies all query configuration options for the specified query part.
 func (a *baseFindOperation[TModel, TSearch, TProcessorIn, TOperation]) ConfigureQuery(query orm.SelectQuery, search TSearch, meta api.Meta, ctx fiber.Ctx, part QueryPart) error {
 	applied := make(map[*FindOperationOption]bool)
 
-	applyOpts := func(opts []*FindOperationOption) error {
+	for _, opts := range [2][]*FindOperationOption{a.optionsByPart[part], a.optionsByPart[QueryAll]} {
 		for _, opt := range opts {
 			if applied[opt] {
 				continue
@@ -135,15 +150,9 @@ func (a *baseFindOperation[TModel, TSearch, TProcessorIn, TOperation]) Configure
 
 			applied[opt] = true
 		}
-
-		return nil
 	}
 
-	if err := applyOpts(a.optionsByPart[part]); err != nil {
-		return err
-	}
-
-	return applyOpts(a.optionsByPart[QueryAll])
+	return nil
 }
 
 // Process applies post-query processing to transform or enrich the query results.

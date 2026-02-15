@@ -1,7 +1,10 @@
 package crud_test
 
 import (
+	"errors"
+	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/stretchr/testify/suite"
@@ -10,53 +13,61 @@ import (
 	"github.com/ilxqx/vef-framework-go/crud"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
+	"github.com/ilxqx/vef-framework-go/internal/testx"
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
 func init() {
-	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
-		return &DeleteManyTestSuite{BaseTestSuite: base.clone()}
+	registry.Add(func(env *testx.DBEnv) suite.TestingSuite {
+		return &DeleteManyTestSuite{
+			BaseTestSuite: BaseTestSuite{
+				ctx:   env.Ctx,
+				db:    env.DB,
+				bunDB: env.BunDB,
+				ds:    env.DS,
+			},
+		}
 	})
 }
 
 // Test Resources.
-type TestUserDeleteManyResource struct {
+type EmployeeDeleteManyResource struct {
 	api.Resource
-	crud.DeleteMany[TestUser]
+	crud.DeleteMany[Employee]
 }
 
-func NewTestUserDeleteManyResource() api.Resource {
-	return &TestUserDeleteManyResource{
-		Resource:   api.NewRPCResource("test/user_delete_many"),
-		DeleteMany: crud.NewDeleteMany[TestUser]().Public(),
+func NewEmployeeDeleteManyResource() api.Resource {
+	return &EmployeeDeleteManyResource{
+		Resource:   api.NewRPCResource("test/employee_delete_many"),
+		DeleteMany: crud.NewDeleteMany[Employee]().Public(),
 	}
 }
 
 // Resource for composite PK testing.
-type TestCompositePKDeleteManyResource struct {
+type ProjectAssignmentCompositeDeleteManyResource struct {
 	api.Resource
-	crud.DeleteMany[TestCompositePKItem]
+	crud.DeleteMany[ProjectAssignment]
 }
 
-func NewTestCompositePKDeleteManyResource() api.Resource {
-	return &TestCompositePKDeleteManyResource{
-		Resource:   api.NewRPCResource("test/composite_pk_delete_many"),
-		DeleteMany: crud.NewDeleteMany[TestCompositePKItem]().Public(),
+func NewProjectAssignmentCompositeDeleteManyResource() api.Resource {
+	return &ProjectAssignmentCompositeDeleteManyResource{
+		Resource:   api.NewRPCResource("test/project_assignment_delete_many"),
+		DeleteMany: crud.NewDeleteMany[ProjectAssignment]().Public(),
 	}
 }
 
 // Resource with PreDeleteMany hook.
-type TestUserDeleteManyWithPreHookResource struct {
+type EmployeeDeleteManyWithPreHookResource struct {
 	api.Resource
-	crud.DeleteMany[TestUser]
+	crud.DeleteMany[Employee]
 }
 
-func NewTestUserDeleteManyWithPreHookResource() api.Resource {
-	return &TestUserDeleteManyWithPreHookResource{
-		Resource: api.NewRPCResource("test/user_delete_many_prehook"),
-		DeleteMany: crud.NewDeleteMany[TestUser]().
+func NewEmployeeDeleteManyWithPreHookResource() api.Resource {
+	return &EmployeeDeleteManyWithPreHookResource{
+		Resource: api.NewRPCResource("test/employee_delete_many_prehook"),
+		DeleteMany: crud.NewDeleteMany[Employee]().
 			Public().
-			WithPreDeleteMany(func(models []TestUser, _ orm.DeleteQuery, ctx fiber.Ctx, _ orm.DB) error {
+			WithPreDeleteMany(func(models []Employee, _ orm.DeleteQuery, ctx fiber.Ctx, _ orm.DB) error {
 				// Check if any active users in batch
 				activeCount := 0
 
@@ -76,21 +87,68 @@ func NewTestUserDeleteManyWithPreHookResource() api.Resource {
 }
 
 // Resource with PostDeleteMany hook.
-type TestUserDeleteManyWithPostHookResource struct {
+type EmployeeDeleteManyWithPostHookResource struct {
 	api.Resource
-	crud.DeleteMany[TestUser]
+	crud.DeleteMany[Employee]
 }
 
-func NewTestUserDeleteManyWithPostHookResource() api.Resource {
-	return &TestUserDeleteManyWithPostHookResource{
-		Resource: api.NewRPCResource("test/user_delete_many_posthook"),
-		DeleteMany: crud.NewDeleteMany[TestUser]().
+func NewEmployeeDeleteManyWithPostHookResource() api.Resource {
+	return &EmployeeDeleteManyWithPostHookResource{
+		Resource: api.NewRPCResource("test/employee_delete_many_posthook"),
+		DeleteMany: crud.NewDeleteMany[Employee]().
 			Public().
-			WithPostDeleteMany(func(models []TestUser, ctx fiber.Ctx, _ orm.DB) error {
+			WithPostDeleteMany(func(models []Employee, ctx fiber.Ctx, _ orm.DB) error {
 				// Set custom header with count
 				ctx.Set("X-Deleted-Count", strconv.Itoa(len(models)))
 
 				return nil
+			}),
+	}
+}
+
+// Resource with DisableDataPerm.
+type EmployeeDeleteManyNoPermResource struct {
+	api.Resource
+	crud.DeleteMany[Employee]
+}
+
+func NewEmployeeDeleteManyNoPermResource() api.Resource {
+	return &EmployeeDeleteManyNoPermResource{
+		Resource:   api.NewRPCResource("test/employee_delete_many_noperm"),
+		DeleteMany: crud.NewDeleteMany[Employee]().DisableDataPerm().Public(),
+	}
+}
+
+// Resource with PreDeleteMany hook that returns error.
+type EmployeeDeleteManyPreHookErrorResource struct {
+	api.Resource
+	crud.DeleteMany[Employee]
+}
+
+func NewEmployeeDeleteManyPreHookErrorResource() api.Resource {
+	return &EmployeeDeleteManyPreHookErrorResource{
+		Resource: api.NewRPCResource("test/employee_delete_many_prehook_err"),
+		DeleteMany: crud.NewDeleteMany[Employee]().
+			Public().
+			WithPreDeleteMany(func(_ []Employee, _ orm.DeleteQuery, _ fiber.Ctx, _ orm.DB) error {
+				return errors.New("pre-delete-many hook rejected")
+			}),
+	}
+}
+
+// Resource with PostDeleteMany hook that returns error.
+type EmployeeDeleteManyPostHookErrorResource struct {
+	api.Resource
+	crud.DeleteMany[Employee]
+}
+
+func NewEmployeeDeleteManyPostHookErrorResource() api.Resource {
+	return &EmployeeDeleteManyPostHookErrorResource{
+		Resource: api.NewRPCResource("test/employee_delete_many_posthook_err"),
+		DeleteMany: crud.NewDeleteMany[Employee]().
+			Public().
+			WithPostDeleteMany(func(_ []Employee, _ fiber.Ctx, _ orm.DB) error {
+				return errors.New("post-delete-many hook rejected")
 			}),
 	}
 }
@@ -104,41 +162,14 @@ type DeleteManyTestSuite struct {
 // SetupSuite runs once before all tests in the suite.
 func (suite *DeleteManyTestSuite) SetupSuite() {
 	suite.setupBaseSuite(
-		NewTestUserDeleteManyResource,
-		NewTestUserDeleteManyWithPreHookResource,
-		NewTestUserDeleteManyWithPostHookResource,
-		NewTestCompositePKDeleteManyResource,
+		NewEmployeeDeleteManyResource,
+		NewEmployeeDeleteManyWithPreHookResource,
+		NewEmployeeDeleteManyWithPostHookResource,
+		NewProjectAssignmentCompositeDeleteManyResource,
+		NewEmployeeDeleteManyNoPermResource,
+		NewEmployeeDeleteManyPreHookErrorResource,
+		NewEmployeeDeleteManyPostHookErrorResource,
 	)
-
-	// Insert additional test users specifically for delete tests
-	deluser001 := TestUser{Name: "Delete User 1", Email: "deluser001@example.com", Age: 25, Status: "active"}
-	deluser001.ID = "deluser001"
-	deluser002 := TestUser{Name: "Delete User 2", Email: "deluser002@example.com", Age: 26, Status: "active"}
-	deluser002.ID = "deluser002"
-	deluser003 := TestUser{Name: "Delete User 3", Email: "deluser003@example.com", Age: 27, Status: "inactive"}
-	deluser003.ID = "deluser003"
-	deluser004 := TestUser{Name: "Delete User 4", Email: "deluser004@example.com", Age: 28, Status: "active"}
-	deluser004.ID = "deluser004"
-	deluser005 := TestUser{Name: "Delete User 5", Email: "deluser005@example.com", Age: 29, Status: "active"}
-	deluser005.ID = "deluser005"
-	deluser006 := TestUser{Name: "Delete User 6", Email: "deluser006@example.com", Age: 30, Status: "inactive"}
-	deluser006.ID = "deluser006"
-	deluser007 := TestUser{Name: "Delete User 7", Email: "deluser007@example.com", Age: 31, Status: "active"}
-	deluser007.ID = "deluser007"
-	deluser008 := TestUser{Name: "Delete User 8", Email: "deluser008@example.com", Age: 32, Status: "active"}
-	deluser008.ID = "deluser008"
-	deluser009 := TestUser{Name: "Delete User 9", Email: "deluser009@example.com", Age: 33, Status: "inactive"}
-	deluser009.ID = "deluser009"
-	deluser010 := TestUser{Name: "Delete User 10", Email: "deluser010@example.com", Age: 34, Status: "active"}
-	deluser010.ID = "deluser010"
-
-	additionalUsers := []TestUser{
-		deluser001, deluser002, deluser003, deluser004, deluser005,
-		deluser006, deluser007, deluser008, deluser009, deluser010,
-	}
-
-	_, err := suite.db.NewInsert().Model(&additionalUsers).Exec(suite.ctx)
-	suite.Require().NoError(err, "Failed to insert additional test users for delete tests")
 }
 
 // TearDownSuite runs once after all tests in the suite.
@@ -146,13 +177,54 @@ func (suite *DeleteManyTestSuite) TearDownSuite() {
 	suite.tearDownBaseSuite()
 }
 
+// SetupTest inserts isolated test data before each test method.
+func (suite *DeleteManyTestSuite) SetupTest() {
+	// Insert test employees specifically for delete tests
+	additionalUsers := []Employee{
+		{Name: "Delete User 1", Email: "deluser001@example.com", Age: 25, Position: "Engineer", DepartmentID: "dept005", Status: "active"},
+		{Name: "Delete User 2", Email: "deluser002@example.com", Age: 26, Position: "Engineer", DepartmentID: "dept005", Status: "active"},
+		{Name: "Delete User 3", Email: "deluser003@example.com", Age: 27, Position: "Designer", DepartmentID: "dept007", Status: "inactive"},
+		{Name: "Delete User 4", Email: "deluser004@example.com", Age: 28, Position: "Engineer", DepartmentID: "dept005", Status: "active"},
+		{Name: "Delete User 5", Email: "deluser005@example.com", Age: 29, Position: "Analyst", DepartmentID: "dept015", Status: "active"},
+		{Name: "Delete User 6", Email: "deluser006@example.com", Age: 30, Position: "Designer", DepartmentID: "dept007", Status: "inactive"},
+		{Name: "Delete User 7", Email: "deluser007@example.com", Age: 31, Position: "Engineer", DepartmentID: "dept006", Status: "active"},
+		{Name: "Delete User 8", Email: "deluser008@example.com", Age: 32, Position: "Team Lead", DepartmentID: "dept005", Status: "active"},
+		{Name: "Delete User 9", Email: "deluser009@example.com", Age: 33, Position: "Analyst", DepartmentID: "dept015", Status: "inactive"},
+		{Name: "Delete User 10", Email: "deluser010@example.com", Age: 34, Position: "Director", DepartmentID: "dept001", Status: "active"},
+	}
+	for i := range additionalUsers {
+		additionalUsers[i].ID = fmt.Sprintf("deluser%03d", i+1)
+	}
+
+	_, err := suite.db.NewInsert().Model(&additionalUsers).Exec(suite.ctx)
+	suite.Require().NoError(err, "Failed to insert test employees for delete_many tests")
+
+	// Insert test project assignments for composite PK tests.
+	// ProjectAssignment uses raw string fields (no orm.Model), so set audit fields manually.
+	now := time.Now().UTC().Format("2006-01-02 15:04:05")
+	testAssignments := []ProjectAssignment{
+		{ProjectCode: "proj-test", EmployeeID: "emp001", Role: "Lead", Status: "active", CreatedAt: now, CreatedBy: "test"},
+		{ProjectCode: "proj-test", EmployeeID: "emp002", Role: "Member", Status: "active", CreatedAt: now, CreatedBy: "test"},
+		{ProjectCode: "proj-test", EmployeeID: "emp003", Role: "Member", Status: "active", CreatedAt: now, CreatedBy: "test"},
+		{ProjectCode: "proj-test", EmployeeID: "emp004", Role: "Reviewer", Status: "active", CreatedAt: now, CreatedBy: "test"},
+	}
+
+	_, err = suite.bunDB.NewInsert().Model(&testAssignments).Exec(suite.ctx)
+	suite.Require().NoError(err, "Failed to insert test project assignments for delete_many tests")
+}
+
+// TearDownTest removes all test-inserted data (created_at >= 2026) after each test method.
+func (suite *DeleteManyTestSuite) TearDownTest() {
+	suite.cleanupTestRecords()
+}
+
 // TestDeleteManyBasic tests basic DeleteMany functionality.
 func (suite *DeleteManyTestSuite) TestDeleteManyBasic() {
 	suite.T().Logf("Testing DeleteMany API basic functionality for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/user_delete_many",
+			Resource: "test/employee_delete_many",
 			Action:   "delete_many",
 			Version:  "v1",
 		},
@@ -162,7 +234,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyBasic() {
 	})
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Should return successful response")
 	suite.Equal(body.Message, i18n.T(result.OkMessage), "Should return OK message")
 
@@ -173,9 +245,9 @@ func (suite *DeleteManyTestSuite) TestDeleteManyBasic() {
 func (suite *DeleteManyTestSuite) TestDeleteManyWithPreHook() {
 	suite.T().Logf("Testing DeleteMany API with PreDeleteMany hook for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/user_delete_many_prehook",
+			Resource: "test/employee_delete_many_prehook",
 			Action:   "delete_many",
 			Version:  "v1",
 		},
@@ -187,7 +259,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyWithPreHook() {
 	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	suite.NotEmpty(resp.Header.Get("X-Delete-Active-Count"), "Should set X-Delete-Active-Count header via PreDeleteMany hook")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Should return successful response")
 	suite.Equal(body.Message, i18n.T(result.OkMessage), "Should return OK message")
 
@@ -199,9 +271,9 @@ func (suite *DeleteManyTestSuite) TestDeleteManyWithPreHook() {
 func (suite *DeleteManyTestSuite) TestDeleteManyWithPostHook() {
 	suite.T().Logf("Testing DeleteMany API with PostDeleteMany hook for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/user_delete_many_posthook",
+			Resource: "test/employee_delete_many_posthook",
 			Action:   "delete_many",
 			Version:  "v1",
 		},
@@ -213,7 +285,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyWithPostHook() {
 	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	suite.NotEmpty(resp.Header.Get("X-Deleted-Count"), "Should set X-Deleted-Count header via PostDeleteMany hook")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Should return successful response")
 	suite.Equal(body.Message, i18n.T(result.OkMessage), "Should return OK message")
 
@@ -226,9 +298,9 @@ func (suite *DeleteManyTestSuite) TestDeleteManyNegativeCases() {
 	suite.T().Logf("Testing DeleteMany API negative cases for %s", suite.ds.Kind)
 
 	suite.Run("EmptyArray", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user_delete_many",
+				Resource: "test/employee_delete_many",
 				Action:   "delete_many",
 				Version:  "v1",
 			},
@@ -238,26 +310,26 @@ func (suite *DeleteManyTestSuite) TestDeleteManyNegativeCases() {
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail when pks list is empty")
 
 		suite.T().Logf("Validation failed as expected for empty pks list")
 	})
 
 	suite.Run("NonExistentUser", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user_delete_many",
+				Resource: "test/employee_delete_many",
 				Action:   "delete_many",
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"pks": []string{"user008", "nonexistent"},
+				"pks": []string{"emp008", "nonexistent"},
 			},
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail when one user does not exist in batch")
 		suite.Equal(body.Message, i18n.T(result.ErrMessageRecordNotFound), "Should return record not found message")
 
@@ -265,9 +337,9 @@ func (suite *DeleteManyTestSuite) TestDeleteManyNegativeCases() {
 	})
 
 	suite.Run("MissingPrimaryKeys", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user_delete_many",
+				Resource: "test/employee_delete_many",
 				Action:   "delete_many",
 				Version:  "v1",
 			},
@@ -277,7 +349,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyNegativeCases() {
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail when primary keys parameter is missing")
 		suite.Contains(body.Message, i18n.T("batch_delete_pks"), "Message should indicate primary keys is required")
 
@@ -285,9 +357,9 @@ func (suite *DeleteManyTestSuite) TestDeleteManyNegativeCases() {
 	})
 
 	suite.Run("InvalidPrimaryKeysType", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user_delete_many",
+				Resource: "test/employee_delete_many",
 				Action:   "delete_many",
 				Version:  "v1",
 			},
@@ -302,9 +374,9 @@ func (suite *DeleteManyTestSuite) TestDeleteManyNegativeCases() {
 	})
 
 	suite.Run("AllNonExistent", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user_delete_many",
+				Resource: "test/employee_delete_many",
 				Action:   "delete_many",
 				Version:  "v1",
 			},
@@ -314,7 +386,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyNegativeCases() {
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail when all users do not exist")
 		suite.Equal(body.Message, i18n.T(result.ErrMessageRecordNotFound), "Should return record not found message")
 
@@ -323,9 +395,9 @@ func (suite *DeleteManyTestSuite) TestDeleteManyNegativeCases() {
 
 	suite.Run("DeleteTwice", func() {
 		// First delete
-		resp1 := suite.makeAPIRequest(api.Request{
+		resp1 := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user_delete_many",
+				Resource: "test/employee_delete_many",
 				Action:   "delete_many",
 				Version:  "v1",
 			},
@@ -335,15 +407,15 @@ func (suite *DeleteManyTestSuite) TestDeleteManyNegativeCases() {
 		})
 
 		suite.Equal(200, resp1.StatusCode, "Should return 200 status code")
-		body1 := suite.readBody(resp1)
+		body1 := suite.ReadResult(resp1)
 		suite.True(body1.IsOk(), "Should return successful response on first delete")
 
 		suite.T().Logf("First delete of deluser009 and deluser010 succeeded")
 
 		// Try to delete same users again
-		resp2 := suite.makeAPIRequest(api.Request{
+		resp2 := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user_delete_many",
+				Resource: "test/employee_delete_many",
 				Action:   "delete_many",
 				Version:  "v1",
 			},
@@ -353,7 +425,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyNegativeCases() {
 		})
 
 		suite.Equal(200, resp2.StatusCode, "Should return 200 status code")
-		body2 := suite.readBody(resp2)
+		body2 := suite.ReadResult(resp2)
 		suite.False(body2.IsOk(), "Should fail when trying to delete already deleted users")
 		suite.Equal(body2.Message, i18n.T(result.ErrMessageRecordNotFound), "Should return record not found message")
 
@@ -361,10 +433,23 @@ func (suite *DeleteManyTestSuite) TestDeleteManyNegativeCases() {
 	})
 
 	suite.Run("PartiallyDeleted", func() {
-		// deluser001 was deleted by TestDeleteManyBasic, deluser007 still exists
-		resp := suite.makeAPIRequest(api.Request{
+		// First delete deluser001 so it no longer exists
+		resp1 := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user_delete_many",
+				Resource: "test/employee_delete_many",
+				Action:   "delete_many",
+				Version:  "v1",
+			},
+			Params: map[string]any{
+				"pks": []string{"deluser001"},
+			},
+		})
+		suite.True(suite.ReadResult(resp1).IsOk(), "Pre-delete of deluser001 should succeed")
+
+		// Now try to delete both deluser001 (deleted) and deluser007 (exists)
+		resp := suite.MakeRPCRequest(api.Request{
+			Identifier: api.Identifier{
+				Resource: "test/employee_delete_many",
 				Action:   "delete_many",
 				Version:  "v1",
 			},
@@ -374,7 +459,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyNegativeCases() {
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail when one user is already deleted")
 		suite.Equal(body.Message, i18n.T(result.ErrMessageRecordNotFound), "Should return record not found message")
 
@@ -388,9 +473,9 @@ func (suite *DeleteManyTestSuite) TestDeleteManyTransactionRollback() {
 
 	suite.Run("AllOrNothingSemantics", func() {
 		// Try to delete a batch where the second item doesn't exist
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user_delete_many",
+				Resource: "test/employee_delete_many",
 				Action:   "delete_many",
 				Version:  "v1",
 			},
@@ -400,11 +485,11 @@ func (suite *DeleteManyTestSuite) TestDeleteManyTransactionRollback() {
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail when one item in batch does not exist")
 
 		// Verify that the first user was not deleted (transaction rolled back)
-		count, err := suite.db.NewSelect().Model((*TestUser)(nil)).Where(func(cb orm.ConditionBuilder) {
+		count, err := suite.db.NewSelect().Model((*Employee)(nil)).Where(func(cb orm.ConditionBuilder) {
 			cb.Equals("id", "deluser007")
 		}).Count(suite.ctx)
 		suite.NoError(err, "Should successfully query database")
@@ -420,9 +505,9 @@ func (suite *DeleteManyTestSuite) TestDeleteManyPrimaryKeyFormats() {
 
 	suite.Run("SinglePK_DirectValues", func() {
 		// Single PK with direct value array: ["id1", "id2"]
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user_delete_many",
+				Resource: "test/employee_delete_many",
 				Action:   "delete_many",
 				Version:  "v1",
 			},
@@ -432,7 +517,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyPrimaryKeyFormats() {
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.True(body.IsOk(), "Should return successful response for single primary key with direct values")
 
 		suite.T().Logf("Successfully deleted user using single primary key direct value format")
@@ -440,10 +525,9 @@ func (suite *DeleteManyTestSuite) TestDeleteManyPrimaryKeyFormats() {
 
 	suite.Run("SinglePK_MapFormat", func() {
 		// Single PK with map format: [{"id": "value1"}, {"id": "value2"}]
-		// Test the map format with already deleted users (from DeleteTwice)
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user_delete_many",
+				Resource: "test/employee_delete_many",
 				Action:   "delete_many",
 				Version:  "v1",
 			},
@@ -456,90 +540,159 @@ func (suite *DeleteManyTestSuite) TestDeleteManyPrimaryKeyFormats() {
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-		body := suite.readBody(resp)
-		suite.False(body.IsOk(), "Should fail when users were already deleted")
+		body := suite.ReadResult(resp)
+		suite.True(body.IsOk(), "Should succeed deleting users with map format")
 
-		suite.T().Logf("Map format correctly handled - users were already deleted by DeleteTwice")
+		suite.T().Logf("Map format correctly handled - deleted deluser009 and deluser010")
 	})
 
 	suite.Run("SinglePK_MixedFormat", func() {
 		// Mixed format - both direct values and maps
-		// Use already deleted users to demonstrate the mixed format
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user_delete_many",
+				Resource: "test/employee_delete_many",
 				Action:   "delete_many",
 				Version:  "v1",
 			},
 			Params: map[string]any{
 				"pks": []any{
-					"deluser001",                       // direct value - already deleted
-					map[string]any{"id": "deluser002"}, // map format - already deleted
+					"deluser001",                       // direct value
+					map[string]any{"id": "deluser002"}, // map format
 				},
 			},
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-		body := suite.readBody(resp)
-		suite.False(body.IsOk(), "Should fail when users were already deleted")
+		body := suite.ReadResult(resp)
+		suite.True(body.IsOk(), "Should succeed deleting users with mixed format")
 
-		suite.T().Logf("Mixed format correctly handled - users were already deleted")
+		suite.T().Logf("Mixed format correctly handled - deleted deluser001 and deluser002")
 	})
 
-	// Composite PK tests with TestCompositePKItem model
+	// Composite PK tests with ProjectAssignment model
 	suite.Run("CompositePK_MapFormatRequired", func() {
 		// Test with map format (correct for composite PKs)
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/composite_pk_delete_many",
+				Resource: "test/project_assignment_delete_many",
 				Action:   "delete_many",
 				Version:  "v1",
 			},
 			Params: map[string]any{
 				"pks": []any{
-					map[string]any{"tenantId": "tenant001", "itemCode": "item001"},
-					map[string]any{"tenantId": "tenant001", "itemCode": "item002"},
+					map[string]any{"projectCode": "proj-test", "employeeId": "emp001"},
+					map[string]any{"projectCode": "proj-test", "employeeId": "emp003"},
 				},
 			},
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.True(body.IsOk(), "Composite primary key deletion with map format should succeed")
 
 		// Verify items were deleted
 		count, err := suite.db.NewSelect().
-			Model((*TestCompositePKItem)(nil)).
+			Model((*ProjectAssignment)(nil)).
 			Where(func(cb orm.ConditionBuilder) {
-				cb.Equals("tenant_id", "tenant001")
+				cb.Equals("project_code", "proj-test")
 			}).
 			Count(suite.ctx)
 		suite.NoError(err, "Should successfully query database")
-		suite.Equal(int64(0), count, "Both items for tenant001 should be deleted")
+		suite.Equal(int64(2), count, "proj-test should have 2 remaining members after deleting 2")
 
 		suite.T().Logf("Successfully deleted 2 items using composite primary key map format")
 	})
 
 	suite.Run("CompositePK_PartialKeys", func() {
 		// Test with missing one of the composite keys
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/composite_pk_delete_many",
+				Resource: "test/project_assignment_delete_many",
 				Action:   "delete_many",
 				Version:  "v1",
 			},
 			Params: map[string]any{
 				"pks": []any{
-					map[string]any{"tenantId": "tenant002"}, // Missing itemCode
+					map[string]any{"projectCode": "proj-test"}, // Missing employeeId
 				},
 			},
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail when missing composite primary key fields")
-		suite.Contains(body.Message, "itemCode", "Error message should mention missing itemCode field")
+		suite.Contains(body.Message, "employeeId", "Error message should mention missing employeeId field")
 
 		suite.T().Logf("Validation failed as expected for missing composite primary key field")
 	})
+}
+
+// TestDeleteManyWithDisableDataPerm tests DeleteMany with DisableDataPerm.
+func (suite *DeleteManyTestSuite) TestDeleteManyWithDisableDataPerm() {
+	suite.T().Logf("Testing DeleteMany API with DisableDataPerm for %s", suite.ds.Kind)
+
+	resp := suite.MakeRPCRequest(api.Request{
+		Identifier: api.Identifier{
+			Resource: "test/employee_delete_many_noperm",
+			Action:   "delete_many",
+			Version:  "v1",
+		},
+		Params: map[string]any{
+			"pks": []any{
+				map[string]any{"id": "deluser009"},
+				map[string]any{"id": "deluser010"},
+			},
+		},
+	})
+
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+	body := suite.ReadResult(resp)
+	suite.True(body.IsOk(), "Should return successful response")
+	suite.Equal(body.Message, i18n.T(result.OkMessage), "Should return OK message")
+
+	suite.T().Logf("Deleted 2 employees with DisableDataPerm successfully")
+}
+
+// TestDeleteManyPreHookError tests DeleteMany with a pre-hook that returns error.
+func (suite *DeleteManyTestSuite) TestDeleteManyPreHookError() {
+	suite.T().Logf("Testing DeleteMany API pre-hook error for %s", suite.ds.Kind)
+
+	resp := suite.MakeRPCRequest(api.Request{
+		Identifier: api.Identifier{
+			Resource: "test/employee_delete_many_prehook_err",
+			Action:   "delete_many",
+			Version:  "v1",
+		},
+		Params: map[string]any{
+			"ids": []any{
+				map[string]any{"id": "deluser001"},
+			},
+		},
+	})
+
+	suite.Contains([]int{200, 500}, resp.StatusCode, "Should return error status code")
+
+	suite.T().Logf("DeleteMany failed as expected due to pre-hook error")
+}
+
+// TestDeleteManyPostHookError tests DeleteMany with a post-hook that returns error.
+func (suite *DeleteManyTestSuite) TestDeleteManyPostHookError() {
+	suite.T().Logf("Testing DeleteMany API post-hook error for %s", suite.ds.Kind)
+
+	resp := suite.MakeRPCRequest(api.Request{
+		Identifier: api.Identifier{
+			Resource: "test/employee_delete_many_posthook_err",
+			Action:   "delete_many",
+			Version:  "v1",
+		},
+		Params: map[string]any{
+			"ids": []any{
+				map[string]any{"id": "deluser002"},
+			},
+		},
+	})
+
+	suite.Contains([]int{200, 500}, resp.StatusCode, "Should return error status code")
+
+	suite.T().Logf("DeleteMany failed as expected due to post-hook error")
 }

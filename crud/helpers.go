@@ -18,21 +18,21 @@ import (
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 
-// validateColumnsExist validates that the specified columns exist in the model schema.
-func validateColumnsExist(schema *schema.Table, columns ...struct {
+// columnRef pairs a logical name with a column identifier for validation.
+type columnRef struct {
 	name   string
 	column string
-},
-) error {
+}
+
+// validateColumnsExist validates that the specified columns exist in the model schema.
+func validateColumnsExist(schema *schema.Table, columns ...columnRef) error {
 	for _, c := range columns {
-		if c.column != "" {
-			if !schema.HasField(c.column) {
-				return result.Err(i18n.T("field_not_exist_in_model", map[string]any{
-					"field": c.column,
-					"name":  c.name,
-					"model": schema.TypeName,
-				}))
-			}
+		if c.column != "" && !schema.HasField(c.column) {
+			return result.Err(i18n.T("field_not_exist_in_model", map[string]any{
+				"field": c.column,
+				"name":  c.name,
+				"model": schema.TypeName,
+			}))
 		}
 	}
 
@@ -41,19 +41,10 @@ func validateColumnsExist(schema *schema.Table, columns ...struct {
 
 // validateOptionColumns validates columns for DataOptionColumnMapping.
 func validateOptionColumns(schema *schema.Table, mapping *DataOptionColumnMapping) error {
-	columns := []struct {
-		name   string
-		column string
-	}{
+	columns := []columnRef{
 		{"labelColumn", mapping.LabelColumn},
 		{"valueColumn", mapping.ValueColumn},
-	}
-
-	if mapping.DescriptionColumn != "" {
-		columns = append(columns, struct {
-			name   string
-			column string
-		}{"descriptionColumn", mapping.DescriptionColumn})
+		{"descriptionColumn", mapping.DescriptionColumn},
 	}
 
 	return validateColumnsExist(schema, columns...)
@@ -101,34 +92,22 @@ func GetAuditUserNameRelations(userModel any, nameColumn ...string) []*orm.Relat
 		nc = nameColumn[0]
 	}
 
-	relations := []*orm.RelationSpec{
-		{
+	auditRelation := func(alias, fk, aliasColumn string) *orm.RelationSpec {
+		return &orm.RelationSpec{
 			Model:         userModel,
-			Alias:         "creator",
+			Alias:         alias,
 			JoinType:      orm.JoinLeft,
-			ForeignColumn: "created_by",
+			ForeignColumn: fk,
 			SelectedColumns: []orm.ColumnInfo{
-				{
-					Name:  nc,
-					Alias: orm.ColumnCreatedByName,
-				},
+				{Name: nc, Alias: aliasColumn},
 			},
-		},
-		{
-			Model:         userModel,
-			Alias:         "updater",
-			JoinType:      orm.JoinLeft,
-			ForeignColumn: "updated_by",
-			SelectedColumns: []orm.ColumnInfo{
-				{
-					Name:  nc,
-					Alias: orm.ColumnUpdatedByName,
-				},
-			},
-		},
+		}
 	}
 
-	return relations
+	return []*orm.RelationSpec{
+		auditRelation("creator", "created_by", orm.ColumnCreatedByName),
+		auditRelation("updater", "updated_by", orm.ColumnUpdatedByName),
+	}
 }
 
 // columnAliasPattern matches "column AS alias" format (case-insensitive AS, flexible spaces).
@@ -191,6 +170,20 @@ func buildMetaJSONExpr(eb orm.ExprBuilder, metaColumns []orm.ColumnInfo) schema.
 	}
 
 	return eb.JSONObject(jsonArgs...)
+}
+
+// withCleanup attempts a cleanup when err is non-nil.
+// Returns the original error, optionally wrapped with the cleanup error.
+func withCleanup(err error, cleanup func() error) error {
+	if err == nil {
+		return nil
+	}
+
+	if cleanupErr := cleanup(); cleanupErr != nil {
+		return fmt.Errorf("%w; cleanup also failed: %w", err, cleanupErr)
+	}
+
+	return err
 }
 
 // batchCleanup cleans up files in batch, collecting all errors.

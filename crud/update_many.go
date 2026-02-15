@@ -93,6 +93,9 @@ func (u *updateManyOperation[TModel, TParams]) updateMany(db orm.DB, sc storage.
 		}
 
 		return db.RunInTX(ctx.Context(), func(txCtx context.Context, tx orm.DB) error {
+			n := len(oldModels)
+			rollback := func() error { return batchRollback(txCtx, promoter, oldModels, models, n) }
+
 			query := tx.NewUpdate().Model(&oldModels)
 
 			if u.preUpdateMany != nil {
@@ -109,29 +112,19 @@ func (u *updateManyOperation[TModel, TParams]) updateMany(db orm.DB, sc storage.
 
 			for i := range oldModels {
 				if err := promoter.Promote(txCtx, &oldModels[i], &models[i]); err != nil {
-					if rollbackErr := batchRollback(txCtx, promoter, oldModels, models, i); rollbackErr != nil {
-						return fmt.Errorf("promote files for model %d failed: %w; rollback also failed: %w", i, err, rollbackErr)
-					}
+					err = fmt.Errorf("promote files for model %d failed: %w", i, err)
 
-					return fmt.Errorf("promote files for model %d failed: %w", i, err)
+					return withCleanup(err, func() error { return batchRollback(txCtx, promoter, oldModels, models, i) })
 				}
 			}
 
 			if _, err := query.Bulk().Exec(txCtx); err != nil {
-				if rollbackErr := batchRollback(txCtx, promoter, oldModels, models, len(oldModels)); rollbackErr != nil {
-					return fmt.Errorf("batch update failed: %w; rollback files also failed: %w", err, rollbackErr)
-				}
-
-				return err
+				return withCleanup(err, rollback)
 			}
 
 			if u.postUpdateMany != nil {
 				if err := u.postUpdateMany(oldModels, models, params.List, ctx, tx); err != nil {
-					if rollbackErr := batchRollback(txCtx, promoter, oldModels, models, len(oldModels)); rollbackErr != nil {
-						return fmt.Errorf("post-update-many failed: %w; rollback files also failed: %w", err, rollbackErr)
-					}
-
-					return err
+					return withCleanup(err, rollback)
 				}
 			}
 

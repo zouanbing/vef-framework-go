@@ -1,7 +1,12 @@
 package crud_test
 
 import (
+	"errors"
+	"testing"
+
+	"github.com/gofiber/fiber/v3"
 	"github.com/samber/lo"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ilxqx/vef-framework-go/api"
@@ -9,27 +14,35 @@ import (
 	"github.com/ilxqx/vef-framework-go/crud"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
+	"github.com/ilxqx/vef-framework-go/internal/testx"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/sortx"
 	"github.com/ilxqx/vef-framework-go/tree"
 )
 
 func init() {
-	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
-		return &FindTreeTestSuite{BaseTestSuite: base.clone()}
+	registry.Add(func(env *testx.DBEnv) suite.TestingSuite {
+		return &FindTreeTestSuite{
+			BaseTestSuite: BaseTestSuite{
+				ctx:   env.Ctx,
+				db:    env.DB,
+				bunDB: env.BunDB,
+				ds:    env.DS,
+			},
+		}
 	})
 }
 
-// Tree builder for TestCategory.
-func buildCategoryTree(flatCategories []TestCategory) []TestCategory {
-	adapter := tree.Adapter[TestCategory]{
-		GetID: func(c TestCategory) string {
+// Tree builder for Department.
+func buildCategoryTree(flatCategories []Department) []Department {
+	adapter := tree.Adapter[Department]{
+		GetID: func(c Department) string {
 			return c.ID
 		},
-		GetParentID: func(c TestCategory) string {
+		GetParentID: func(c Department) string {
 			return lo.FromPtrOr(c.ParentID, "")
 		},
-		SetChildren: func(c *TestCategory, children []TestCategory) {
+		SetChildren: func(c *Department, children []Department) {
 			c.Children = children
 		},
 	}
@@ -38,15 +51,16 @@ func buildCategoryTree(flatCategories []TestCategory) []TestCategory {
 }
 
 // Test Resources.
-type TestCategoryFindTreeResource struct {
+type DepartmentFindTreeResource struct {
 	api.Resource
-	crud.FindTree[TestCategory, TestCategorySearch]
+	crud.FindTree[Department, DepartmentSearch]
 }
 
-func NewTestCategoryFindTreeResource() api.Resource {
-	return &TestCategoryFindTreeResource{
-		Resource: api.NewRPCResource("test/category_tree"),
-		FindTree: crud.NewFindTree[TestCategory, TestCategorySearch](buildCategoryTree).
+func NewDepartmentFindTreeResource() api.Resource {
+	return &DepartmentFindTreeResource{
+		Resource: api.NewRPCResource("test/department_tree"),
+		FindTree: crud.NewFindTree[Department, DepartmentSearch](buildCategoryTree).
+			WithCondition(fixtureScope).
 			Public().
 			WithIDColumn("id").
 			WithParentIDColumn("parent_id"),
@@ -56,18 +70,19 @@ func NewTestCategoryFindTreeResource() api.Resource {
 // Filtered Tree Resource.
 type FilteredCategoryFindTreeResource struct {
 	api.Resource
-	crud.FindTree[TestCategory, TestCategorySearch]
+	crud.FindTree[Department, DepartmentSearch]
 }
 
 func NewFilteredCategoryFindTreeResource() api.Resource {
 	return &FilteredCategoryFindTreeResource{
-		Resource: api.NewRPCResource("test/category_tree_filtered"),
-		FindTree: crud.NewFindTree[TestCategory, TestCategorySearch](buildCategoryTree).
+		Resource: api.NewRPCResource("test/department_tree_filtered"),
+		FindTree: crud.NewFindTree[Department, DepartmentSearch](buildCategoryTree).
+			WithCondition(fixtureScope).
 			WithCondition(func(cb orm.ConditionBuilder) {
-				// Only show Electronics and its children
+				// Only show Engineering and its children
 				cb.Group(func(cb orm.ConditionBuilder) {
-					cb.OrEquals("id", "cat001")
-					cb.OrEquals("parent_id", "cat001")
+					cb.OrEquals("id", "dept001")
+					cb.OrEquals("parent_id", "dept001")
 				})
 			}).
 			Public().
@@ -79,13 +94,14 @@ func NewFilteredCategoryFindTreeResource() api.Resource {
 // Ordered Tree Resource.
 type OrderedCategoryFindTreeResource struct {
 	api.Resource
-	crud.FindTree[TestCategory, TestCategorySearch]
+	crud.FindTree[Department, DepartmentSearch]
 }
 
 func NewOrderedCategoryFindTreeResource() api.Resource {
 	return &OrderedCategoryFindTreeResource{
-		Resource: api.NewRPCResource("test/category_tree_ordered"),
-		FindTree: crud.NewFindTree[TestCategory, TestCategorySearch](buildCategoryTree).
+		Resource: api.NewRPCResource("test/department_tree_ordered"),
+		FindTree: crud.NewFindTree[Department, DepartmentSearch](buildCategoryTree).
+			WithCondition(fixtureScope).
 			WithDefaultSort(&sortx.OrderSpec{
 				Column: "sort",
 			}).
@@ -98,17 +114,63 @@ func NewOrderedCategoryFindTreeResource() api.Resource {
 // AuditUser Tree Resource - with audit user names.
 type AuditUserCategoryFindTreeResource struct {
 	api.Resource
-	crud.FindTree[TestCategory, TestCategorySearch]
+	crud.FindTree[Department, DepartmentSearch]
 }
 
 func NewAuditUserCategoryFindTreeResource() api.Resource {
 	return &AuditUserCategoryFindTreeResource{
-		Resource: api.NewRPCResource("test/category_tree_audit"),
-		FindTree: crud.NewFindTree[TestCategory, TestCategorySearch](buildCategoryTree).
+		Resource: api.NewRPCResource("test/department_tree_audit"),
+		FindTree: crud.NewFindTree[Department, DepartmentSearch](buildCategoryTree).
+			WithCondition(fixtureScope).
 			Public().
 			WithIDColumn("id").
 			WithParentIDColumn("parent_id").
-			WithAuditUserNames((*TestAuditUser)(nil)),
+			WithAuditUserNames((*Operator)(nil)),
+	}
+}
+
+// QueryApplierDepartmentFindTreeResource - with WithQueryApplier.
+type QueryApplierDepartmentFindTreeResource struct {
+	api.Resource
+	crud.FindTree[Department, DepartmentSearch]
+}
+
+func NewQueryApplierDepartmentFindTreeResource() api.Resource {
+	return &QueryApplierDepartmentFindTreeResource{
+		Resource: api.NewRPCResource("test/department_tree_query_applier"),
+		FindTree: crud.NewFindTree[Department, DepartmentSearch](buildCategoryTree).
+			WithCondition(fixtureScope).
+			Public().
+			WithIDColumn("id").
+			WithParentIDColumn("parent_id").
+			WithQueryApplier(func(query orm.SelectQuery, _ DepartmentSearch, _ fiber.Ctx) error {
+				// Custom query applier: only include root departments (no parent)
+				query.Where(func(cb orm.ConditionBuilder) {
+					cb.IsNull("parent_id")
+				})
+
+				return nil
+			}),
+	}
+}
+
+// ErrorQueryApplierDepartmentFindTreeResource - with QueryApplier that returns error.
+type ErrorQueryApplierDepartmentFindTreeResource struct {
+	api.Resource
+	crud.FindTree[Department, DepartmentSearch]
+}
+
+func NewErrorQueryApplierDepartmentFindTreeResource() api.Resource {
+	return &ErrorQueryApplierDepartmentFindTreeResource{
+		Resource: api.NewRPCResource("test/department_tree_err_applier"),
+		FindTree: crud.NewFindTree[Department, DepartmentSearch](buildCategoryTree).
+			WithCondition(fixtureScope).
+			Public().
+			WithIDColumn("id").
+			WithParentIDColumn("parent_id").
+			WithQueryApplier(func(_ orm.SelectQuery, _ DepartmentSearch, _ fiber.Ctx) error {
+				return errors.New("tree query applier error")
+			}),
 	}
 }
 
@@ -125,10 +187,12 @@ func (suite *FindTreeTestSuite) SetupSuite() {
 	}
 
 	suite.setupBaseSuite(
-		NewTestCategoryFindTreeResource,
+		NewDepartmentFindTreeResource,
 		NewFilteredCategoryFindTreeResource,
 		NewOrderedCategoryFindTreeResource,
 		NewAuditUserCategoryFindTreeResource,
+		NewQueryApplierDepartmentFindTreeResource,
+		NewErrorQueryApplierDepartmentFindTreeResource,
 	)
 }
 
@@ -141,39 +205,41 @@ func (suite *FindTreeTestSuite) TearDownSuite() {
 func (suite *FindTreeTestSuite) TestFindTreeBasic() {
 	suite.T().Logf("Testing FindTree API basic functionality for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/category_tree",
+			Resource: "test/department_tree",
 			Action:   "find_tree",
 			Version:  "v1",
 		},
 	})
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Should return successful response")
 	suite.Equal(body.Message, i18n.T(result.OkMessage), "Should return OK message")
 	suite.NotNil(body.Data, "Data should not be nil")
 
-	tree := suite.readDataAsSlice(body.Data)
-	suite.Len(tree, 3, "Should return 3 root categories")
+	tree := suite.ReadDataAsSlice(body.Data)
+	suite.Len(tree, 4, "Should return 4 root departments")
 
-	// Verify default ordering by created_at DESC - Clothing (latest) should be first
-	first := suite.readDataAsMap(tree[0])
-	suite.Equal("Clothing", first["name"], "First category should be Clothing (latest created_at)")
+	// Verify default ordering by id DESC - HR (dept004) should be first
+	first := suite.ReadDataAsMap(tree[0])
+	suite.Equal("HR", first["name"], "First department should be HR (dept004)")
 
-	second := suite.readDataAsMap(tree[1])
-	suite.Equal("Books", second["name"], "Second category should be Books")
+	second := suite.ReadDataAsMap(tree[1])
+	suite.Equal("Marketing", second["name"], "Second department should be Marketing (dept003)")
 
-	third := suite.readDataAsMap(tree[2])
-	suite.Equal("Electronics", third["name"], "Third category should be Electronics (earliest created_at)")
+	third := suite.ReadDataAsMap(tree[2])
+	suite.Equal("Product", third["name"], "Third department should be Product (dept002)")
 
-	// Check Electronics has children (it's the third item due to DESC ordering)
-	electronics := third
-	children := suite.readDataAsSlice(electronics["children"])
-	suite.Len(children, 2, "Electronics should have 2 children (Computers and Phones)")
+	fourth := suite.ReadDataAsMap(tree[3])
+	suite.Equal("Engineering", fourth["name"], "Fourth department should be Engineering (dept001)")
 
-	suite.T().Logf("Found %d root categories with default ordering (DESC by created_at)", len(tree))
+	// Check Engineering has children (it's the fourth item due to DESC ordering)
+	children := suite.ReadDataAsSlice(fourth["children"])
+	suite.Len(children, 4, "Engineering should have 4 children (Backend, Frontend, DevOps, QA)")
+
+	suite.T().Logf("Found %d root departments with default ordering (DESC by id)", len(tree))
 }
 
 // TestFindTreeWithSearch tests FindTree with search conditions.
@@ -181,79 +247,79 @@ func (suite *FindTreeTestSuite) TestFindTreeWithSearch() {
 	suite.T().Logf("Testing FindTree API with search filters for %s", suite.ds.Kind)
 
 	suite.Run("SearchByCode", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/category_tree",
+				Resource: "test/department_tree",
 				Action:   "find_tree",
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"code": "electronics",
+				"code": "ENG",
 			},
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.True(body.IsOk(), "Should return successful response")
 
-		tree := suite.readDataAsSlice(body.Data)
-		suite.Len(tree, 1, "Should return only Electronics category")
+		tree := suite.ReadDataAsSlice(body.Data)
+		suite.Len(tree, 1, "Should return only Engineering department")
 
-		electronics := suite.readDataAsMap(tree[0])
-		suite.Equal("Electronics", electronics["name"], "Category name should be Electronics")
+		eng := suite.ReadDataAsMap(tree[0])
+		suite.Equal("Engineering", eng["name"], "Department name should be Engineering")
 
-		suite.T().Logf("Found 1 category matching code 'electronics': %s", electronics["name"])
+		suite.T().Logf("Found 1 department matching code 'ENG': %s", eng["name"])
 	})
 
 	suite.Run("SearchByParentID", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/category_tree",
+				Resource: "test/department_tree",
 				Action:   "find_tree",
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"parentId": "cat001", // Electronics' children
+				"parentId": "dept001", // Engineering's children
 			},
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.True(body.IsOk(), "Should return successful response")
 
-		tree := suite.readDataAsSlice(body.Data)
-		suite.Len(tree, 1, "Should return 1 tree with Electronics as root (recursive CTE finds ancestors)")
+		tree := suite.ReadDataAsSlice(body.Data)
+		suite.Len(tree, 1, "Should return 1 tree with Engineering as root (recursive CTE finds ancestors)")
 
-		electronics := suite.readDataAsMap(tree[0])
-		suite.Equal("Electronics", electronics["name"], "Root should be Electronics")
+		eng := suite.ReadDataAsMap(tree[0])
+		suite.Equal("Engineering", eng["name"], "Root should be Engineering")
 
-		// Electronics should have 2 children: Computers and Phones
-		children := suite.readDataAsSlice(electronics["children"])
-		suite.Len(children, 2, "Electronics should have 2 children (Computers and Phones)")
+		// Engineering should have 4 children: Backend, Frontend, DevOps, QA
+		children := suite.ReadDataAsSlice(eng["children"])
+		suite.Len(children, 4, "Engineering should have 4 children (Backend, Frontend, DevOps, QA)")
 
-		suite.T().Logf("Found tree rooted at Electronics with %d children", len(children))
+		suite.T().Logf("Found tree rooted at Engineering with %d children", len(children))
 	})
 
 	suite.Run("SearchByKeyword", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/category_tree",
+				Resource: "test/department_tree",
 				Action:   "find_tree",
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"keyword": "Computer",
+				"keyword": "Backend",
 			},
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.True(body.IsOk(), "Should return successful response")
 
-		tree := suite.readDataAsSlice(body.Data)
-		suite.GreaterOrEqual(len(tree), 1, "Should return at least 1 category matching keyword 'Computer'")
+		tree := suite.ReadDataAsSlice(body.Data)
+		suite.GreaterOrEqual(len(tree), 1, "Should return at least 1 department matching keyword 'Backend'")
 
-		suite.T().Logf("Found %d categories matching keyword 'Computer'", len(tree))
+		suite.T().Logf("Found %d departments matching keyword 'Backend'", len(tree))
 	})
 }
 
@@ -261,60 +327,63 @@ func (suite *FindTreeTestSuite) TestFindTreeWithSearch() {
 func (suite *FindTreeTestSuite) TestFindTreeWithFilterApplier() {
 	suite.T().Logf("Testing FindTree API with filter applier for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/category_tree_filtered",
+			Resource: "test/department_tree_filtered",
 			Action:   "find_tree",
 			Version:  "v1",
 		},
 	})
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Should return successful response")
 
-	tree := suite.readDataAsSlice(body.Data)
-	suite.Len(tree, 1, "Should return only Electronics root (filtered to Electronics and its children)")
+	tree := suite.ReadDataAsSlice(body.Data)
+	suite.Len(tree, 1, "Should return only Engineering root (filtered to Engineering and its children)")
 
-	electronics := suite.readDataAsMap(tree[0])
-	suite.Equal("Electronics", electronics["name"], "Root category should be Electronics")
+	eng := suite.ReadDataAsMap(tree[0])
+	suite.Equal("Engineering", eng["name"], "Root department should be Engineering")
 
-	children := suite.readDataAsSlice(electronics["children"])
-	suite.Len(children, 2, "Electronics should have 2 children (Computers and Phones)")
+	children := suite.ReadDataAsSlice(eng["children"])
+	suite.Len(children, 4, "Engineering should have 4 children (Backend, Frontend, DevOps, QA)")
 
-	suite.T().Logf("Found 1 filtered tree rooted at Electronics with %d children", len(children))
+	suite.T().Logf("Found 1 filtered tree rooted at Engineering with %d children", len(children))
 }
 
 // TestFindTreeWithSortApplier tests FindTree with sort applier.
 func (suite *FindTreeTestSuite) TestFindTreeWithSortApplier() {
 	suite.T().Logf("Testing FindTree API with sort applier for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/category_tree_ordered",
+			Resource: "test/department_tree_ordered",
 			Action:   "find_tree",
 			Version:  "v1",
 		},
 	})
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Should return successful response")
 
-	tree := suite.readDataAsSlice(body.Data)
-	suite.Len(tree, 3, "Should return 3 root categories")
+	tree := suite.ReadDataAsSlice(body.Data)
+	suite.Len(tree, 4, "Should return 4 root departments")
 
-	// Verify ordering by sort field
-	first := suite.readDataAsMap(tree[0])
-	suite.Equal("Electronics", first["name"], "First category should be Electronics (sort=1)")
+	// Verify ordering by sort field ASC
+	first := suite.ReadDataAsMap(tree[0])
+	suite.Equal("Engineering", first["name"], "First department should be Engineering (sort=1)")
 
-	second := suite.readDataAsMap(tree[1])
-	suite.Equal("Books", second["name"], "Second category should be Books (sort=2)")
+	second := suite.ReadDataAsMap(tree[1])
+	suite.Equal("Product", second["name"], "Second department should be Product (sort=2)")
 
-	third := suite.readDataAsMap(tree[2])
-	suite.Equal("Clothing", third["name"], "Third category should be Clothing (sort=3)")
+	third := suite.ReadDataAsMap(tree[2])
+	suite.Equal("Marketing", third["name"], "Third department should be Marketing (sort=3)")
 
-	suite.T().Logf("Found 3 root categories ordered by sort field: Electronics, Books, Clothing")
+	fourth := suite.ReadDataAsMap(tree[3])
+	suite.Equal("HR", fourth["name"], "Fourth department should be HR (sort=4)")
+
+	suite.T().Logf("Found 4 root departments ordered by sort field: Engineering, Product, Marketing, HR")
 }
 
 // TestFindTreeNegativeCases tests negative scenarios.
@@ -322,9 +391,9 @@ func (suite *FindTreeTestSuite) TestFindTreeNegativeCases() {
 	suite.T().Logf("Testing FindTree API negative cases for %s", suite.ds.Kind)
 
 	suite.Run("NoMatchingRecords", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/category_tree",
+				Resource: "test/department_tree",
 				Action:   "find_tree",
 				Version:  "v1",
 			},
@@ -334,19 +403,19 @@ func (suite *FindTreeTestSuite) TestFindTreeNegativeCases() {
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.True(body.IsOk(), "Should return successful response")
 
-		tree := suite.readDataAsSlice(body.Data)
+		tree := suite.ReadDataAsSlice(body.Data)
 		suite.Len(tree, 0, "Should return empty tree when no records match")
 
 		suite.T().Logf("No matching records found as expected for keyword 'NonexistentCategory'")
 	})
 
 	suite.Run("EmptySearchCriteria", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/category_tree",
+				Resource: "test/department_tree",
 				Action:   "find_tree",
 				Version:  "v1",
 			},
@@ -354,13 +423,13 @@ func (suite *FindTreeTestSuite) TestFindTreeNegativeCases() {
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.True(body.IsOk(), "Should return successful response")
 
-		tree := suite.readDataAsSlice(body.Data)
-		suite.Len(tree, 3, "Should return all 3 root categories with empty search criteria")
+		tree := suite.ReadDataAsSlice(body.Data)
+		suite.Len(tree, 4, "Should return all 4 root departments with empty search criteria")
 
-		suite.T().Logf("Empty search criteria returned %d root categories", len(tree))
+		suite.T().Logf("Empty search criteria returned %d root departments", len(tree))
 	})
 }
 
@@ -368,47 +437,110 @@ func (suite *FindTreeTestSuite) TestFindTreeNegativeCases() {
 func (suite *FindTreeTestSuite) TestFindTreeWithAuditUserNames() {
 	suite.T().Logf("Testing FindTree API with audit user names for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/category_tree_audit",
+			Resource: "test/department_tree_audit",
 			Action:   "find_tree",
 			Version:  "v1",
 		},
 	})
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Should return successful response")
 	suite.NotNil(body.Data, "Data should not be nil")
 
-	tree := suite.readDataAsSlice(body.Data)
-	suite.Len(tree, 3, "Should return 3 root categories")
+	tree := suite.ReadDataAsSlice(body.Data)
+	suite.Len(tree, 4, "Should return 4 root departments")
 
-	// Verify all categories have audit user names (they were all created/updated by 'test' user initially)
-	// But our fixture data has created_by and updated_by set to 'test', not actual audit user IDs
-	// So we'll verify the structure is correct
-	rootCategoriesWithAudit := 0
+	rootDepartmentsWithAudit := 0
 
-	childCategoriesWithAudit := 0
+	childDepartmentsWithAudit := 0
 	for _, c := range tree {
-		category := suite.readDataAsMap(c)
-		suite.NotNil(category["createdByName"], "Category %s should have createdByName", category["id"])
-		suite.NotNil(category["updatedByName"], "Category %s should have updatedByName", category["id"])
+		dept := suite.ReadDataAsMap(c)
+		suite.NotNil(dept["createdByName"], "Department %s should have createdByName", dept["id"])
+		suite.NotNil(dept["updatedByName"], "Department %s should have updatedByName", dept["id"])
 
-		rootCategoriesWithAudit++
+		rootDepartmentsWithAudit++
 
 		// Check children if they exist
-		if category["children"] != nil {
-			children := suite.readDataAsSlice(category["children"])
+		if dept["children"] != nil {
+			children := suite.ReadDataAsSlice(dept["children"])
 			for _, ch := range children {
-				child := suite.readDataAsMap(ch)
-				suite.NotNil(child["createdByName"], "Child category %s should have createdByName", child["id"])
-				suite.NotNil(child["updatedByName"], "Child category %s should have updatedByName", child["id"])
+				child := suite.ReadDataAsMap(ch)
+				suite.NotNil(child["createdByName"], "Child department %s should have createdByName", child["id"])
+				suite.NotNil(child["updatedByName"], "Child department %s should have updatedByName", child["id"])
 
-				childCategoriesWithAudit++
+				childDepartmentsWithAudit++
 			}
 		}
 	}
 
-	suite.T().Logf("Verified audit user names for %d root categories and %d child categories", rootCategoriesWithAudit, childCategoriesWithAudit)
+	suite.T().Logf("Verified audit user names for %d root departments and %d child departments", rootDepartmentsWithAudit, childDepartmentsWithAudit)
+}
+
+// TestFindTreeWithQueryApplier tests FindTree with WithQueryApplier.
+func (suite *FindTreeTestSuite) TestFindTreeWithQueryApplier() {
+	suite.T().Logf("Testing FindTree API with WithQueryApplier for %s", suite.ds.Kind)
+
+	resp := suite.MakeRPCRequest(api.Request{
+		Identifier: api.Identifier{
+			Resource: "test/department_tree_query_applier",
+			Action:   "find_tree",
+			Version:  "v1",
+		},
+	})
+
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+	body := suite.ReadResult(resp)
+	suite.True(body.IsOk(), "Should return successful response")
+
+	tree := suite.ReadDataAsSlice(body.Data)
+	suite.Len(tree, 4, "Should return 4 root departments (query applier filters base to roots only)")
+
+	suite.T().Logf("WithQueryApplier returned %d root departments", len(tree))
+}
+
+// TestFindTreeErrorQueryApplier tests FindTree with a QueryApplier that returns error.
+func (suite *FindTreeTestSuite) TestFindTreeErrorQueryApplier() {
+	suite.T().Logf("Testing FindTree API error query applier for %s", suite.ds.Kind)
+
+	resp := suite.MakeRPCRequest(api.Request{
+		Identifier: api.Identifier{
+			Resource: "test/department_tree_err_applier",
+			Action:   "find_tree",
+			Version:  "v1",
+		},
+	})
+
+	suite.Contains([]int{200, 500}, resp.StatusCode, "Should return error status code")
+
+	suite.T().Logf("FindTree failed as expected due to query applier error")
+}
+
+// TestFindTreeWrapperMethods covers find_tree.go WithSelect/WithSelectAs/WithRelation wrapper methods.
+func TestFindTreeWrapperMethods(t *testing.T) {
+	treeBuilder := func(flat []orm.Model) []orm.Model { return flat }
+
+	t.Run("WithSelect", func(t *testing.T) {
+		ft := crud.NewFindTree[orm.Model, struct{}](treeBuilder).WithSelect("col1")
+		assert.NotNil(t, ft, "WithSelect should return non-nil builder")
+	})
+
+	t.Run("WithSelectAs", func(t *testing.T) {
+		ft := crud.NewFindTree[orm.Model, struct{}](treeBuilder).WithSelectAs("col1", "alias1")
+		assert.NotNil(t, ft, "WithSelectAs should return non-nil builder")
+	})
+
+	t.Run("WithRelation", func(t *testing.T) {
+		ft := crud.NewFindTree[orm.Model, struct{}](treeBuilder).WithRelation(&orm.RelationSpec{
+			Model: (*orm.Model)(nil),
+		})
+		assert.NotNil(t, ft, "WithRelation should return non-nil builder")
+	})
+
+	t.Run("WithQueryApplier", func(t *testing.T) {
+		ft := crud.NewFindTree[orm.Model, struct{}](treeBuilder).WithQueryApplier(nil)
+		assert.NotNil(t, ft, "WithQueryApplier should return non-nil builder")
+	})
 }

@@ -18,13 +18,7 @@ func (a *findOneOperation[TModel, TSearch]) Provide() []api.OperationSpec {
 }
 
 func (a *findOneOperation[TModel, TSearch]) findOne(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, transformer mold.Transformer, search TSearch, meta api.Meta) error, error) {
-	if err := a.Setup(db, &FindOperationConfig{
-		QueryParts: &QueryPartsConfig{
-			Condition:         []QueryPart{QueryRoot},
-			Sort:              []QueryPart{QueryRoot},
-			AuditUserRelation: []QueryPart{QueryRoot},
-		},
-	}); err != nil {
+	if err := a.Setup(db, defaultFindConfig); err != nil {
 		return nil, err
 	}
 

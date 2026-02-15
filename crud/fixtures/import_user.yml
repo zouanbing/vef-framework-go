@@ -1,9 +1,0 @@
-- id: import001
-  name: Import Alice
-  email: import_alice@example.com
-  age: 28
-  status: active
-  created_at: '2025-01-01 12:00:00'
-  created_by: test
-  updated_at: '2025-01-01 12:00:00'
-  updated_by: test

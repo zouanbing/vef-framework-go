@@ -5,16 +5,19 @@ import "github.com/ilxqx/vef-framework-go/orm"
 // TabularFormat represents the format type for import/export operations.
 type TabularFormat string
 
-// i18n message keys for APIs.
+// Tabular format types for import/export.
+const (
+	FormatExcel TabularFormat = "excel"
+	FormatCsv   TabularFormat = "csv"
+)
+
+// Error message keys and codes.
 const (
 	ErrMessageProcessorMustReturnSlice = "processor_must_return_slice"
+	ErrCodeProcessorInvalidReturn      = 2400
 )
 
-// Error codes for APIs.
-const (
-	ErrCodeProcessorInvalidReturn = 2400
-)
-
+// RPC action names (snake_case identifiers).
 const (
 	RPCActionCreate          = "create"
 	RPCActionUpdate          = "update"
@@ -30,8 +33,10 @@ const (
 	RPCActionFindTreeOptions = "find_tree_options"
 	RPCActionImport          = "import"
 	RPCActionExport          = "export"
+)
 
-	// REST Action format: "<method> <path>", path supports Fiber route patterns (e.g., /:id).
+// REST action names in "<method> <path>" format, supporting Fiber route patterns (e.g., /:id).
+const (
 	RESTActionCreate          = "post /"
 	RESTActionUpdate          = "put /:" + IDColumn
 	RESTActionDelete          = "delete /:" + IDColumn
@@ -46,20 +51,22 @@ const (
 	RESTActionFindTreeOptions = "get /tree/options"
 	RESTActionImport          = "post /import"
 	RESTActionExport          = "get /export"
+)
 
-	// Tabular format types for import/export.
-	FormatExcel TabularFormat = "excel"
-	FormatCsv   TabularFormat = "csv"
-
-	maxQueryLimit              = 10000
-	maxOptionsLimit            = 10000
-	defaultAuditUserNameColumn = "name"
-	defaultLabelColumn         = "name"
-	defaultValueColumn         = orm.ColumnID
-
+// Well-known column names.
+const (
 	IDColumn          = orm.ColumnID
 	ParentIDColumn    = "parent_id"
 	LabelColumn       = "label"
 	ValueColumn       = "value"
 	DescriptionColumn = "description"
+)
+
+// Internal defaults.
+const (
+	maxQueryLimit              = 10000
+	maxOptionsLimit            = 10000
+	defaultAuditUserNameColumn = "name"
+	defaultLabelColumn         = "name"
+	defaultValueColumn         = orm.ColumnID
 )

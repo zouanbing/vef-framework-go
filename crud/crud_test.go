@@ -14,19 +14,14 @@ import (
 )
 
 // registry holds all CRUD test suite factories, populated by init() in each suite file.
-// Execution order is irrelevant: each suite reloads fixtures in SetupSuite.
-var registry = testx.NewRegistry[BaseTestSuite]()
+// Fixtures are loaded once per database; each suite manages its own test data isolation.
+var registry = testx.NewRegistry[testx.DBEnv]()
 
-// baseFactory creates a BaseSuite from a DBEnv — called once per database.
-func baseFactory(env *testx.DBEnv) *BaseTestSuite {
+// baseFactory sets up fixtures and returns the DBEnv — called once per database.
+func baseFactory(env *testx.DBEnv) *testx.DBEnv {
 	setupTestFixtures(env.T, env.Ctx, env.DB, env.RawDB, env.DS.Kind)
 
-	return &BaseTestSuite{
-		ctx:   env.Ctx,
-		db:    env.DB,
-		bunDB: env.BunDB,
-		ds:    env.DS,
-	}
+	return env
 }
 
 // TestAll runs every registered CRUD suite against all configured databases.
@@ -40,12 +35,14 @@ func setupTestFixtures(t *testing.T, ctx context.Context, db orm.DB, rawDB *sql.
 	t.Helper()
 
 	models := []any{
-		(*TestAuditUser)(nil),
-		(*TestUser)(nil),
-		(*TestCategory)(nil),
-		(*TestCompositePKItem)(nil),
-		(*ExportUser)(nil),
-		(*ImportUser)(nil),
+		(*Operator)(nil),
+		(*Employee)(nil),
+		(*Department)(nil),
+		(*ProjectAssignment)(nil),
+		(*ExportEmployee)(nil),
+		(*ImportEmployee)(nil),
+		(*OptionItem)(nil),
+		(*TreeOptionItem)(nil),
 	}
 
 	db.RegisterModel(models...)

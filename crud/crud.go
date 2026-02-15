@@ -1,21 +1,15 @@
 package crud
 
-import (
-	"github.com/samber/lo"
-
-	"github.com/ilxqx/vef-framework-go/api"
-)
+import "github.com/ilxqx/vef-framework-go/api"
 
 // NewBuilder creates a new base API builder instance.
 func NewBuilder[T any](self T, kind ...api.Kind) Builder[T] {
-	return &baseBuilder[T]{
-		self: self,
-		kind: lo.TernaryF(
-			len(kind) > 0,
-			func() api.Kind { return kind[0] },
-			func() api.Kind { return api.KindRPC },
-		),
+	k := api.KindRPC
+	if len(kind) > 0 {
+		k = kind[0]
 	}
+
+	return &baseBuilder[T]{self: self, kind: k}
 }
 
 func getAction(rpcAction, restAction string, kind ...api.Kind) string {

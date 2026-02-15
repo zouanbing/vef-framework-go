@@ -89,6 +89,8 @@ func (u *updateOperation[TModel, TParams]) update(db orm.DB, sc storage.Service,
 		}
 
 		return db.RunInTX(ctx.Context(), func(txCtx context.Context, tx orm.DB) error {
+			rollback := func() error { return promoter.Promote(txCtx, &model, &oldModel) }
+
 			query := tx.NewUpdate().Model(&oldModel)
 			if u.preUpdate != nil {
 				if err := u.preUpdate(&oldModel, &model, &params, query, ctx, tx); err != nil {
@@ -105,20 +107,12 @@ func (u *updateOperation[TModel, TParams]) update(db orm.DB, sc storage.Service,
 			}
 
 			if _, err := query.WherePK().Exec(txCtx); err != nil {
-				if cleanupErr := promoter.Promote(txCtx, &model, &oldModel); cleanupErr != nil {
-					return fmt.Errorf("update failed: %w; rollback files also failed: %w", err, cleanupErr)
-				}
-
-				return err
+				return withCleanup(err, rollback)
 			}
 
 			if u.postUpdate != nil {
 				if err := u.postUpdate(&oldModel, &model, &params, ctx, tx); err != nil {
-					if cleanupErr := promoter.Promote(txCtx, &model, &oldModel); cleanupErr != nil {
-						return fmt.Errorf("post-update failed: %w; rollback files also failed: %w", err, cleanupErr)
-					}
-
-					return err
+					return withCleanup(err, rollback)
 				}
 			}
 

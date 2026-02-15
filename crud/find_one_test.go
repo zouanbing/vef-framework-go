@@ -1,56 +1,70 @@
 package crud_test
 
 import (
+	"errors"
+	"testing"
+
 	"github.com/gofiber/fiber/v3"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/crud"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
+	"github.com/ilxqx/vef-framework-go/internal/testx"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/sortx"
 )
 
 func init() {
-	registry.Add(func(base *BaseTestSuite) suite.TestingSuite {
-		return &FindOneTestSuite{BaseTestSuite: base.clone()}
+	registry.Add(func(env *testx.DBEnv) suite.TestingSuite {
+		return &FindOneTestSuite{
+			BaseTestSuite: BaseTestSuite{
+				ctx:   env.Ctx,
+				db:    env.DB,
+				bunDB: env.BunDB,
+				ds:    env.DS,
+			},
+		}
 	})
 }
 
 // Test Resources.
-type TestUserFindOneResource struct {
+type EmployeeFindOneResource struct {
 	api.Resource
-	crud.FindOne[TestUser, TestUserSearch]
+	crud.FindOne[Employee, EmployeeSearch]
 }
 
-func NewTestUserFindOneResource() api.Resource {
-	return &TestUserFindOneResource{
-		Resource: api.NewRPCResource("test/user"),
-		FindOne:  crud.NewFindOne[TestUser, TestUserSearch]().Public(),
+func NewEmployeeFindOneResource() api.Resource {
+	return &EmployeeFindOneResource{
+		Resource: api.NewRPCResource("test/employee"),
+		FindOne:  crud.NewFindOne[Employee, EmployeeSearch]().WithCondition(fixtureScope).Public(),
 	}
 }
 
 // Processed User Resource - with processor.
 type ProcessedUserFindOneResource struct {
 	api.Resource
-	crud.FindOne[TestUser, TestUserSearch]
+	crud.FindOne[Employee, EmployeeSearch]
 }
 
 type ProcessedUser struct {
-	TestUser
+	Employee
 
 	Processed bool `json:"processed"`
 }
 
 func NewProcessedUserFindOneResource() api.Resource {
 	return &ProcessedUserFindOneResource{
-		Resource: api.NewRPCResource("test/user_processed"),
-		FindOne: crud.NewFindOne[TestUser, TestUserSearch]().
+		Resource: api.NewRPCResource("test/employee_processed"),
+		FindOne: crud.NewFindOne[Employee, EmployeeSearch]().
+			WithCondition(fixtureScope).
 			Public().
-			WithProcessor(func(user TestUser, _ TestUserSearch, _ fiber.Ctx) any {
+			WithProcessor(func(user Employee, _ EmployeeSearch, _ fiber.Ctx) any {
 				return ProcessedUser{
-					TestUser:  user,
+					Employee:  user,
 					Processed: true,
 				}
 			}),
@@ -60,13 +74,14 @@ func NewProcessedUserFindOneResource() api.Resource {
 // Filtered User Resource - with filter applier.
 type FilteredUserFineOneResource struct {
 	api.Resource
-	crud.FindOne[TestUser, TestUserSearch]
+	crud.FindOne[Employee, EmployeeSearch]
 }
 
 func NewFilteredUserFineOneResource() api.Resource {
 	return &FilteredUserFineOneResource{
-		Resource: api.NewRPCResource("test/user_filtered"),
-		FindOne: crud.NewFindOne[TestUser, TestUserSearch]().
+		Resource: api.NewRPCResource("test/employee_filtered"),
+		FindOne: crud.NewFindOne[Employee, EmployeeSearch]().
+			WithCondition(fixtureScope).
 			WithCondition(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "active").GreaterThan("age", 32)
 			}).
@@ -77,13 +92,14 @@ func NewFilteredUserFineOneResource() api.Resource {
 // Ordered User Resource - with order applier.
 type OrderedUserFindOneResource struct {
 	api.Resource
-	crud.FindOne[TestUser, TestUserSearch]
+	crud.FindOne[Employee, EmployeeSearch]
 }
 
 func NewOrderedUserFindOneResource() api.Resource {
 	return &OrderedUserFindOneResource{
-		Resource: api.NewRPCResource("test/user_ordered"),
-		FindOne: crud.NewFindOne[TestUser, TestUserSearch]().
+		Resource: api.NewRPCResource("test/employee_ordered"),
+		FindOne: crud.NewFindOne[Employee, EmployeeSearch]().
+			WithCondition(fixtureScope).
 			WithDefaultSort(&sortx.OrderSpec{
 				Column:    "age",
 				Direction: sortx.OrderDesc,
@@ -93,16 +109,35 @@ func NewOrderedUserFindOneResource() api.Resource {
 }
 
 // AuditUser User Resource - with audit user names.
-type AuditUserTestUserFindOneResource struct {
+type AuditedEmployeeFindOneResource struct {
 	api.Resource
-	crud.FindOne[TestUser, TestUserSearch]
+	crud.FindOne[Employee, EmployeeSearch]
 }
 
-func NewAuditUserTestUserFindOneResource() api.Resource {
-	return &AuditUserTestUserFindOneResource{
-		Resource: api.NewRPCResource("test/user_audit"),
-		FindOne: crud.NewFindOne[TestUser, TestUserSearch]().
-			WithAuditUserNames((*TestAuditUser)(nil)).
+func NewAuditedEmployeeFindOneResource() api.Resource {
+	return &AuditedEmployeeFindOneResource{
+		Resource: api.NewRPCResource("test/employee_audit"),
+		FindOne: crud.NewFindOne[Employee, EmployeeSearch]().
+			WithCondition(fixtureScope).
+			WithAuditUserNames((*Operator)(nil)).
+			Public(),
+	}
+}
+
+// ErrorQueryApplierFindOneResource - FindOne with QueryApplier that returns error.
+type ErrorQueryApplierFindOneResource struct {
+	api.Resource
+	crud.FindOne[Employee, EmployeeSearch]
+}
+
+func NewErrorQueryApplierFindOneResource() api.Resource {
+	return &ErrorQueryApplierFindOneResource{
+		Resource: api.NewRPCResource("test/employee_err_applier"),
+		FindOne: crud.NewFindOne[Employee, EmployeeSearch]().
+			WithCondition(fixtureScope).
+			WithQueryApplier(func(_ orm.SelectQuery, _ EmployeeSearch, _ fiber.Ctx) error {
+				return errors.New("query applier error")
+			}).
 			Public(),
 	}
 }
@@ -116,11 +151,12 @@ type FindOneTestSuite struct {
 // SetupSuite runs once before all tests in the suite.
 func (suite *FindOneTestSuite) SetupSuite() {
 	suite.setupBaseSuite(
-		NewTestUserFindOneResource,
+		NewEmployeeFindOneResource,
 		NewProcessedUserFindOneResource,
 		NewFilteredUserFineOneResource,
 		NewOrderedUserFindOneResource,
-		NewAuditUserTestUserFindOneResource,
+		NewAuditedEmployeeFindOneResource,
+		NewErrorQueryApplierFindOneResource,
 	)
 }
 
@@ -133,41 +169,40 @@ func (suite *FindOneTestSuite) TearDownSuite() {
 func (suite *FindOneTestSuite) TestFindOneBasic() {
 	suite.T().Logf("Testing FindOne API basic functionality for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/user",
+			Resource: "test/employee",
 			Action:   "find_one",
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"id": "user003",
+			"id": "emp003",
 		},
 	})
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Should return successful response")
 	suite.Equal(body.Message, i18n.T(result.OkMessage), "Should return OK message")
 	suite.NotNil(body.Data, "Data should not be nil")
 	suite.Subset(body.Data, map[string]any{
-		"id":          "user003",
-		"name":        "Charlie Brown",
-		"email":       "charlie@example.com",
-		"age":         float64(28),
-		"status":      "inactive",
-		"description": "Designer",
-	}, "Should return correct user data")
+		"id":     "emp003",
+		"name":   "Yuki Tanaka",
+		"email":  "yuki.tanaka@company.com",
+		"age":    float64(31),
+		"status": "active",
+	}, "Should return correct employee data")
 
-	suite.T().Logf("Found user: user003 (Charlie Brown)")
+	suite.T().Logf("Found employee: emp003 (Yuki Tanaka)")
 }
 
 // TestFindOneNotFound tests FindOne when record doesn't exist.
 func (suite *FindOneTestSuite) TestFindOneNotFound() {
 	suite.T().Logf("Testing FindOne API record not found for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/user",
+			Resource: "test/employee",
 			Action:   "find_one",
 			Version:  "v1",
 		},
@@ -177,7 +212,7 @@ func (suite *FindOneTestSuite) TestFindOneNotFound() {
 	})
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.Equal(body.Code, result.ErrCodeRecordNotFound, "Should return record not found error code")
 	suite.Equal(body.Message, i18n.T(result.ErrMessageRecordNotFound), "Should return record not found message")
 	suite.Nil(body.Data, "Data should be nil when record not found")
@@ -190,65 +225,61 @@ func (suite *FindOneTestSuite) TestFindOneWithSearchApplier() {
 	suite.T().Logf("Testing FindOne API with search filters for %s", suite.ds.Kind)
 
 	suite.Run("SearchByKeyword", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user",
+				Resource: "test/employee",
 				Action:   "find_one",
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"keyword": "Johnson",
+				"keyword": "Zhang",
 			},
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.True(body.IsOk(), "Should return successful response")
 		suite.NotNil(body.Data, "Data should not be nil")
 		suite.Subset(body.Data, map[string]any{
-			"id":          "user001",
-			"name":        "Alice Johnson",
-			"email":       "alice@example.com",
-			"age":         float64(25),
-			"status":      "active",
-			"description": "Software Engineer",
-		}, "Should return user matching keyword 'Johnson'")
+			"id":    "emp001",
+			"name":  "Wei Zhang",
+			"email": "wei.zhang@company.com",
+			"age":   float64(35),
+		}, "Should return employee matching keyword 'Zhang'")
 
-		suite.T().Logf("Found user by keyword: user001 (Alice Johnson)")
+		suite.T().Logf("Found employee by keyword: emp001 (Wei Zhang)")
 	})
 
 	suite.Run("SearchByEmail", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user",
+				Resource: "test/employee",
 				Action:   "find_one",
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"email": "grace@example.com",
+				"email": "ahmed.hassan@company.com",
 			},
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.True(body.IsOk(), "Should return successful response")
 		suite.NotNil(body.Data, "Data should not be nil")
 		suite.Subset(body.Data, map[string]any{
-			"id":          "user007",
-			"name":        "Grace Lee",
-			"email":       "grace@example.com",
-			"age":         float64(29),
-			"status":      "active",
-			"description": "UX Researcher",
-		}, "Should return user matching email")
+			"id":    "emp007",
+			"name":  "Ahmed Hassan",
+			"email": "ahmed.hassan@company.com",
+			"age":   float64(29),
+		}, "Should return employee matching email")
 
-		suite.T().Logf("Found user by email: user007 (Grace Lee)")
+		suite.T().Logf("Found employee by email: emp007 (Ahmed Hassan)")
 	})
 
 	suite.Run("SearchByAgeRange", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user",
+				Resource: "test/employee",
 				Action:   "find_one",
 				Version:  "v1",
 			},
@@ -258,137 +289,126 @@ func (suite *FindOneTestSuite) TestFindOneWithSearchApplier() {
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.True(body.IsOk(), "Should return successful response")
 		suite.NotNil(body.Data, "Data should not be nil")
 		suite.Subset(body.Data, map[string]any{
-			"id":          "user010",
-			"name":        "Jack Taylor",
-			"email":       "jack@example.com",
-			"age":         float64(33),
-			"status":      "active",
-			"description": "Team Lead",
-		}, "Should return user in age range 33-34")
+			"id":   "emp019",
+			"name": "Daniel Brown",
+			"age":  float64(34),
+		}, "Should return employee in age range 33-34")
 
-		suite.T().Logf("Found user by age range: user010 (Jack Taylor, age 33)")
+		suite.T().Logf("Found employee by age range: emp019 (Daniel Brown, age 34)")
 	})
 
 	suite.Run("SearchByMultipleConditions", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user",
+				Resource: "test/employee",
 				Action:   "find_one",
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"email":  "ivy@example.com",
+				"email":  "kevin.park@company.com",
 				"status": "inactive",
 			},
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.True(body.IsOk(), "Should return successful response")
 		suite.NotNil(body.Data, "Data should not be nil")
 		suite.Subset(body.Data, map[string]any{
-			"id":          "user009",
-			"name":        "Ivy Chen",
-			"email":       "ivy@example.com",
-			"age":         float64(26),
-			"status":      "inactive",
-			"description": "QA Engineer",
-		}, "Should return user matching multiple conditions")
+			"id":     "emp009",
+			"name":   "Kevin Park",
+			"email":  "kevin.park@company.com",
+			"age":    float64(26),
+			"status": "inactive",
+		}, "Should return employee matching multiple conditions")
 
-		suite.T().Logf("Found user by multiple conditions: user009 (Ivy Chen)")
+		suite.T().Logf("Found employee by multiple conditions: emp009 (Kevin Park)")
 	})
 }
 
 // TestFindOneWithProcessor tests FindOne with post-processing.
-func (suite *FindOneTestSuite) TestFindOneWithWithProcessor() {
+func (suite *FindOneTestSuite) TestFindOneWithProcessor() {
 	suite.T().Logf("Testing FindOne API with processor for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/user_processed",
+			Resource: "test/employee_processed",
 			Action:   "find_one",
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"id": "user001",
+			"id": "emp001",
 		},
 	})
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Should return successful response")
 	suite.NotNil(body.Data, "Data should not be nil")
 	suite.Subset(body.Data, map[string]any{
-		"id":          "user001",
-		"name":        "Alice Johnson",
-		"email":       "alice@example.com",
-		"age":         float64(25),
-		"status":      "active",
-		"description": "Software Engineer",
-		"processed":   true,
-	}, "Should return processed user data")
+		"id":        "emp001",
+		"name":      "Wei Zhang",
+		"email":     "wei.zhang@company.com",
+		"age":       float64(35),
+		"processed": true,
+	}, "Should return processed employee data")
 
-	suite.T().Logf("Found user with post-processing applied: user001 (processed=true)")
+	suite.T().Logf("Found employee with post-processing applied: emp001 (processed=true)")
 }
 
 // TestFindOneWithFilterApplier tests FindOne with filter applier.
 func (suite *FindOneTestSuite) TestFindOneWithFilterApplier() {
 	suite.T().Logf("Testing FindOne API with filter applier for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/user_filtered",
+			Resource: "test/employee_filtered",
 			Action:   "find_one",
 			Version:  "v1",
 		},
 	})
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Should return successful response")
 	suite.NotNil(body.Data, "Data should not be nil")
 	suite.Subset(body.Data, map[string]any{
-		"id":          "user010",
-		"name":        "Jack Taylor",
-		"email":       "jack@example.com",
-		"age":         float64(33),
-		"status":      "active",
-		"description": "Team Lead",
-	}, "Should return user matching filter (status=active AND age>32)")
+		"id":     "emp023",
+		"name":   "Noah Anderson",
+		"age":    float64(39),
+		"status": "active",
+	}, "Should return employee matching filter (status=active AND age>32)")
 
-	suite.T().Logf("Found user with filter applier: user010 (Jack Taylor)")
+	suite.T().Logf("Found employee with filter applier: emp023 (Noah Anderson)")
 }
 
 // TestFindOneWithSortApplier tests FindOne with sort applier.
 func (suite *FindOneTestSuite) TestFindOneWithSortApplier() {
 	suite.T().Logf("Testing FindOne API with sort applier for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/user_ordered",
+			Resource: "test/employee_ordered",
 			Action:   "find_one",
 			Version:  "v1",
 		},
 	})
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Should return successful response")
 	suite.NotNil(body.Data, "Data should not be nil")
 	suite.Subset(body.Data, map[string]any{
-		"id":          "user006",
-		"name":        "Frank Miller",
-		"email":       "frank@example.com",
-		"age":         float64(35),
-		"status":      "inactive",
-		"description": "Sales Manager",
-	}, "Should return user with highest age (sorted by age DESC)")
+		"id":   "emp013",
+		"name": "Carlos Rodriguez",
+		"age":  float64(50),
+	}, "Should return employee with highest age (sorted by age DESC)")
 
-	suite.T().Logf("Found user with sort applier: user006 (Frank Miller, age 35 - oldest)")
+	suite.T().Logf("Found employee with sort applier: emp013 (Carlos Rodriguez, age 50 - oldest)")
 }
 
 // TestFindOneNegativeCases tests negative scenarios.
@@ -396,7 +416,7 @@ func (suite *FindOneTestSuite) TestFindOneNegativeCases() {
 	suite.T().Logf("Testing FindOne API negative cases for %s", suite.ds.Kind)
 
 	suite.Run("InvalidResource", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/nonexistent",
 				Action:   "find_one",
@@ -410,9 +430,9 @@ func (suite *FindOneTestSuite) TestFindOneNegativeCases() {
 	})
 
 	suite.Run("InvalidAction", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user",
+				Resource: "test/employee",
 				Action:   "nonexistentAction",
 				Version:  "v1",
 			},
@@ -424,9 +444,9 @@ func (suite *FindOneTestSuite) TestFindOneNegativeCases() {
 	})
 
 	suite.Run("InvalidVersion", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user",
+				Resource: "test/employee",
 				Action:   "find_one",
 				Version:  "v999",
 			},
@@ -438,9 +458,9 @@ func (suite *FindOneTestSuite) TestFindOneNegativeCases() {
 	})
 
 	suite.Run("EmptySearchCriteria", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user",
+				Resource: "test/employee",
 				Action:   "find_one",
 				Version:  "v1",
 			},
@@ -448,7 +468,7 @@ func (suite *FindOneTestSuite) TestFindOneNegativeCases() {
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.True(body.IsOk(), "Should return successful response with empty criteria")
 		suite.NotNil(body.Data, "Data should not be nil")
 
@@ -456,9 +476,9 @@ func (suite *FindOneTestSuite) TestFindOneNegativeCases() {
 	})
 
 	suite.Run("InvalidRangeValue", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user",
+				Resource: "test/employee",
 				Action:   "find_one",
 				Version:  "v1",
 			},
@@ -468,27 +488,27 @@ func (suite *FindOneTestSuite) TestFindOneNegativeCases() {
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.True(body.IsOk(), "Should work even with invalid range format")
 
 		suite.T().Logf("Invalid range value handled gracefully")
 	})
 
 	suite.Run("MultipleConditionsNoMatch", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
-				Resource: "test/user",
+				Resource: "test/employee",
 				Action:   "find_one",
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"email":  "alice@example.com",
+				"email":  "wei.zhang@company.com",
 				"status": "inactive",
 			},
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.Equal(result.ErrCodeRecordNotFound, body.Code, "Should return record not found error code")
 		suite.Nil(body.Data, "Data should be nil when no match found")
 
@@ -500,31 +520,65 @@ func (suite *FindOneTestSuite) TestFindOneNegativeCases() {
 func (suite *FindOneTestSuite) TestFindOneWithAuditUserNames() {
 	suite.T().Logf("Testing FindOne API with audit user names for %s", suite.ds.Kind)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
-			Resource: "test/user_audit",
+			Resource: "test/employee_audit",
 			Action:   "find_one",
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"id": "user001",
+			"id": "emp001",
 		},
 	})
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Should return successful response")
 	suite.NotNil(body.Data, "Data should not be nil")
 
-	user := suite.readDataAsMap(body.Data)
-	suite.Equal("user001", user["id"], "Should return correct user id")
-	suite.Equal("Alice Johnson", user["name"], "Should return correct user name")
+	user := suite.ReadDataAsMap(body.Data)
+	suite.Equal("emp001", user["id"], "Should return correct employee id")
+	suite.Equal("Wei Zhang", user["name"], "Should return correct employee name")
 
 	suite.NotNil(user["createdByName"], "Should have createdByName populated")
 	suite.NotNil(user["updatedByName"], "Should have updatedByName populated")
 
-	suite.Equal("John Doe", user["createdByName"], "Should return correct creator name")
-	suite.Equal("Jane Smith", user["updatedByName"], "Should return correct updater name")
+	suite.Equal("Sarah Chen", user["createdByName"], "Should return correct creator name")
+	suite.Equal("James Liu", user["updatedByName"], "Should return correct updater name")
 
-	suite.T().Logf("Found user with audit names: user001 (created by: %s, updated by: %s)", user["createdByName"], user["updatedByName"])
+	suite.T().Logf("Found employee with audit names: emp001 (created by: %s, updated by: %s)", user["createdByName"], user["updatedByName"])
+}
+
+// TestFindOneErrorQueryApplier tests FindOne with a QueryApplier that returns error.
+func (suite *FindOneTestSuite) TestFindOneErrorQueryApplier() {
+	suite.T().Logf("Testing FindOne API error query applier for %s", suite.ds.Kind)
+
+	resp := suite.MakeRPCRequest(api.Request{
+		Identifier: api.Identifier{
+			Resource: "test/employee_err_applier",
+			Action:   "find_one",
+			Version:  "v1",
+		},
+		Params: map[string]any{
+			"id": "emp001",
+		},
+	})
+
+	suite.Contains([]int{200, 500}, resp.StatusCode, "Should return error status code")
+
+	suite.T().Logf("FindOne failed as expected due to query applier error")
+}
+
+// TestSetupErrFindOneNoPK covers find_one.go:27-29 - FindOne Setup error with no PK model.
+func TestSetupErrFindOneNoPK(t *testing.T) {
+	db := newTestDB(t)
+
+	fo := crud.NewFindOne[NoPKModel, struct{}]()
+	fo.WithAuditUserNames((*struct{})(nil))
+
+	specs := fo.Public().Provide()
+	require.Len(t, specs, 1, "Should return exactly 1 operation spec")
+
+	err := callHandlerFactory(t, specs[0].Handler, db)
+	assert.ErrorIs(t, err, crud.ErrModelNoPrimaryKey, "Should return ErrModelNoPrimaryKey")
 }

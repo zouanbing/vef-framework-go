@@ -47,6 +47,8 @@ func (c *createOperation[TModel, TParams]) create(sc storage.Service, publisher 
 		}
 
 		return db.RunInTX(ctx.Context(), func(txCtx context.Context, tx orm.DB) error {
+			cleanup := func() error { return promoter.Promote(txCtx, nil, &model) }
+
 			query := tx.NewInsert().Model(&model)
 			if c.preCreate != nil {
 				if err := c.preCreate(&model, &params, query, ctx, tx); err != nil {
@@ -59,30 +61,18 @@ func (c *createOperation[TModel, TParams]) create(sc storage.Service, publisher 
 			}
 
 			if _, err := query.Exec(txCtx); err != nil {
-				if cleanupErr := promoter.Promote(txCtx, nil, &model); cleanupErr != nil {
-					return fmt.Errorf("insert failed: %w; cleanup files also failed: %w", err, cleanupErr)
-				}
-
-				return err
+				return withCleanup(err, cleanup)
 			}
 
 			if c.postCreate != nil {
 				if err := c.postCreate(&model, &params, ctx, tx); err != nil {
-					if cleanupErr := promoter.Promote(txCtx, nil, &model); cleanupErr != nil {
-						return fmt.Errorf("post-create failed: %w; cleanup files also failed: %w", err, cleanupErr)
-					}
-
-					return err
+					return withCleanup(err, cleanup)
 				}
 			}
 
 			pks, err := db.ModelPKs(&model)
 			if err != nil {
-				if cleanupErr := promoter.Promote(txCtx, nil, &model); cleanupErr != nil {
-					return fmt.Errorf("get primary keys failed: %w; cleanup files also failed: %w", err, cleanupErr)
-				}
-
-				return err
+				return withCleanup(err, cleanup)
 			}
 
 			return result.Ok(pks).Response(ctx)

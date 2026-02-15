@@ -8,6 +8,15 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
+// selectColumn adds a column to the SELECT clause, aliasing it if the name differs from the target.
+func selectColumn(query orm.SelectQuery, column, target string) {
+	if column == target {
+		query.Select(column)
+	} else {
+		query.SelectAs(column, target)
+	}
+}
+
 type findOptionsOperation[TModel, TSearch any] struct {
 	Find[TModel, TSearch, []DataOption, FindOptions[TModel, TSearch]]
 
@@ -26,13 +35,7 @@ func (a *findOptionsOperation[TModel, TSearch]) WithDefaultColumnMapping(mapping
 }
 
 func (a *findOptionsOperation[TModel, TSearch]) findOptions(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, config DataOptionConfig, search TSearch, meta api.Meta) error, error) {
-	if err := a.Setup(db, &FindOperationConfig{
-		QueryParts: &QueryPartsConfig{
-			Condition:         []QueryPart{QueryRoot},
-			Sort:              []QueryPart{QueryRoot},
-			AuditUserRelation: []QueryPart{QueryRoot},
-		},
-	}); err != nil {
+	if err := a.Setup(db, defaultFindConfig); err != nil {
 		return nil, err
 	}
 
@@ -55,24 +58,11 @@ func (a *findOptionsOperation[TModel, TSearch]) findOptions(db orm.DB) (func(ctx
 			return err
 		}
 
-		if config.ValueColumn == ValueColumn {
-			query.Select(config.ValueColumn)
-		} else {
-			query.SelectAs(config.ValueColumn, ValueColumn)
-		}
-
-		if config.LabelColumn == LabelColumn {
-			query.Select(config.LabelColumn)
-		} else {
-			query.SelectAs(config.LabelColumn, LabelColumn)
-		}
+		selectColumn(query, config.ValueColumn, ValueColumn)
+		selectColumn(query, config.LabelColumn, LabelColumn)
 
 		if config.DescriptionColumn != "" {
-			if config.DescriptionColumn == DescriptionColumn {
-				query.Select(config.DescriptionColumn)
-			} else {
-				query.SelectAs(config.DescriptionColumn, DescriptionColumn)
-			}
+			selectColumn(query, config.DescriptionColumn, DescriptionColumn)
 		}
 
 		query.ApplyIf(len(metaColumns) > 0, func(sq orm.SelectQuery) {

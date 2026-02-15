@@ -32,13 +32,7 @@ func (a *findPageOperation[TModel, TSearch]) WithDefaultPageSize(size int) FindP
 }
 
 func (a *findPageOperation[TModel, TSearch]) findPage(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, transformer mold.Transformer, pageable page.Pageable, search TSearch, meta api.Meta) error, error) {
-	if err := a.Setup(db, &FindOperationConfig{
-		QueryParts: &QueryPartsConfig{
-			Condition:         []QueryPart{QueryRoot},
-			Sort:              []QueryPart{QueryRoot},
-			AuditUserRelation: []QueryPart{QueryRoot},
-		},
-	}); err != nil {
+	if err := a.Setup(db, defaultFindConfig); err != nil {
 		return nil, err
 	}
 
@@ -69,23 +63,26 @@ func (a *findPageOperation[TModel, TSearch]) findPage(db orm.DB) (func(ctx fiber
 			return err
 		}
 
-		processedModels := a.Process(models, search, ctx)
-		if typedModels, ok := processedModels.([]TModel); ok {
+		processed := a.Process(models, search, ctx)
+
+		// Fast path: no processor or processor returned same type
+		if typedModels, ok := processed.([]TModel); ok {
 			return result.Ok(page.New(pageable, total, typedModels)).Response(ctx)
 		}
 
-		modelsValue := reflect.Indirect(reflect.ValueOf(processedModels))
-		if modelsValue.Kind() != reflect.Slice {
+		// Slow path: processor returned a different slice type, use reflection
+		rv := reflect.Indirect(reflect.ValueOf(processed))
+		if rv.Kind() != reflect.Slice {
 			return result.Err(
-				i18n.T(ErrMessageProcessorMustReturnSlice, map[string]any{"type": reflect.TypeOf(processedModels).String()}),
+				i18n.T(ErrMessageProcessorMustReturnSlice, map[string]any{"type": reflect.TypeOf(processed).String()}),
 				result.WithCode(ErrCodeProcessorInvalidReturn),
 				result.WithStatus(fiber.StatusInternalServerError),
 			)
 		}
 
-		items := make([]any, modelsValue.Len())
+		items := make([]any, rv.Len())
 		for i := range items {
-			items[i] = modelsValue.Index(i).Interface()
+			items[i] = rv.Index(i).Interface()
 		}
 
 		return result.Ok(page.New(pageable, total, items)).Response(ctx)

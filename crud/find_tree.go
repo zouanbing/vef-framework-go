@@ -153,12 +153,10 @@ func (a *findTreeOperation[TModel, TSearch]) findTree(db orm.DB) (func(ctx fiber
 			return err
 		}
 
-		if len(flatModels) > 0 {
-			if err := streams.Range(0, len(flatModels)).ForEachErr(func(i int) error {
-				return transformer.Struct(ctx.Context(), &flatModels[i])
-			}); err != nil {
-				return err
-			}
+		if err := streams.Range(0, len(flatModels)).ForEachErr(func(i int) error {
+			return transformer.Struct(ctx.Context(), &flatModels[i])
+		}); err != nil {
+			return err
 		}
 
 		models := a.treeBuilder(flatModels)
