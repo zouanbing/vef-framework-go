@@ -15,6 +15,19 @@ var logger = log.Named("security")
 
 var Module = fx.Module(
 	"vef:security",
+	fx.Decorate(func(cfg *config.SecurityConfig) *config.SecurityConfig {
+		if cfg.RefreshNotBefore <= 0 {
+			cfg.RefreshNotBefore = AccessTokenExpires / 2
+		}
+		if cfg.LoginRateLimit <= 0 {
+			cfg.LoginRateLimit = 6
+		}
+		if cfg.RefreshRateLimit <= 0 {
+			cfg.RefreshRateLimit = 1
+		}
+
+		return cfg
+	}),
 	fx.Decorate(
 		fx.Annotate(
 			func(loader security.RolePermissionsLoader, bus event.Bus) security.RolePermissionsLoader {
@@ -81,7 +94,6 @@ var Module = fx.Module(
 		),
 		fx.Annotate(
 			NewAuthResource,
-			fx.ParamTags(``, ``, `optional:"true"`),
 			fx.ResultTags(`group:"vef:api:resources"`),
 		),
 	),

@@ -10,20 +10,22 @@ import (
 )
 
 const (
-	tokenTypeAccess    = "access"
-	tokenTypeRefresh   = "refresh"
-	accessTokenExpires = time.Minute * 30
+	TokenTypeAccess    = "access"
+	TokenTypeRefresh   = "refresh"
+	AccessTokenExpires = time.Minute * 30
 )
 
 type JWTTokenGenerator struct {
-	jwt          *security.JWT
-	tokenExpires time.Duration
+	jwt              *security.JWT
+	tokenExpires     time.Duration
+	refreshNotBefore time.Duration
 }
 
 func NewJWTTokenGenerator(jwt *security.JWT, securityConfig *config.SecurityConfig) security.TokenGenerator {
 	return &JWTTokenGenerator{
-		jwt:          jwt,
-		tokenExpires: securityConfig.TokenExpires,
+		jwt:              jwt,
+		tokenExpires:     securityConfig.TokenExpires,
+		refreshNotBefore: securityConfig.RefreshNotBefore,
 	}
 }
 
@@ -57,16 +59,16 @@ func (g *JWTTokenGenerator) generateAccessToken(jwtID string, principal *securit
 		WithSubject(fmt.Sprintf("%s@%s", principal.ID, principal.Name)).
 		WithRoles(principal.Roles).
 		WithDetails(principal.Details).
-		WithType(tokenTypeAccess)
+		WithType(TokenTypeAccess)
 
-	return g.jwt.Generate(claimsBuilder, accessTokenExpires, 0)
+	return g.jwt.Generate(claimsBuilder, AccessTokenExpires, 0)
 }
 
 func (g *JWTTokenGenerator) generateRefreshToken(jwtID string, principal *security.Principal) (string, error) {
 	claimsBuilder := security.NewJWTClaimsBuilder().
 		WithID(jwtID).
 		WithSubject(fmt.Sprintf("%s@%s", principal.ID, principal.Name)).
-		WithType(tokenTypeRefresh)
+		WithType(TokenTypeRefresh)
 
-	return g.jwt.Generate(claimsBuilder, g.tokenExpires, refreshTokenNotBefore)
+	return g.jwt.Generate(claimsBuilder, g.tokenExpires, g.refreshNotBefore)
 }

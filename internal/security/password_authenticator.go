@@ -25,10 +25,6 @@ func NewPasswordAuthenticator(
 	loader security.UserLoader,
 	encoder password.Encoder,
 ) security.Authenticator {
-	if loader == nil {
-		return nil
-	}
-
 	return &PasswordAuthenticator{
 		loader:  loader,
 		encoder: encoder,
@@ -38,6 +34,10 @@ func NewPasswordAuthenticator(
 func (*PasswordAuthenticator) Supports(kind string) bool { return kind == AuthKindPassword }
 
 func (p *PasswordAuthenticator) Authenticate(ctx context.Context, authentication security.Authentication) (*security.Principal, error) {
+	if p.loader == nil {
+		return nil, result.ErrNotImplemented(i18n.T(result.ErrMessageUserLoaderNotImplemented))
+	}
+
 	username := authentication.Principal
 	if username == "" {
 		return nil, result.ErrPrincipalInvalid(i18n.T("username_required"))

@@ -2,8 +2,10 @@ package security
 
 import (
 	"github.com/gofiber/fiber/v3"
+	"go.uber.org/fx"
 
 	"github.com/ilxqx/vef-framework-go/api"
+	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/httpx"
@@ -12,25 +14,36 @@ import (
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
+// AuthResourceParams holds the dependencies for AuthResource construction.
+type AuthResourceParams struct {
+	fx.In
+
+	AuthManager    security.AuthManager
+	TokenGenerator security.TokenGenerator
+	UserInfoLoader security.UserInfoLoader `optional:"true"`
+	Publisher      event.Publisher
+	SecurityConfig *config.SecurityConfig
+}
+
 // NewAuthResource creates a new authentication resource with the provided auth manager and token generator.
-func NewAuthResource(authManager security.AuthManager, tokenGenerator security.TokenGenerator, userInfoLoader security.UserInfoLoader, publisher event.Publisher) api.Resource {
+func NewAuthResource(params AuthResourceParams) api.Resource {
 	return &AuthResource{
-		authManager:    authManager,
-		tokenGenerator: tokenGenerator,
-		userInfoLoader: userInfoLoader,
-		publisher:      publisher,
+		authManager:    params.AuthManager,
+		tokenGenerator: params.TokenGenerator,
+		userInfoLoader: params.UserInfoLoader,
+		publisher:      params.Publisher,
 		Resource: api.NewRPCResource(
 			"security/auth",
 			api.WithOperations(
 				api.OperationSpec{
 					Action:    "login",
 					Public:    true,
-					RateLimit: loginRateLimit,
+					RateLimit: &api.RateLimitConfig{Max: params.SecurityConfig.LoginRateLimit},
 				},
 				api.OperationSpec{
 					Action:    "refresh",
 					Public:    true,
-					RateLimit: refreshRateLimit,
+					RateLimit: &api.RateLimitConfig{Max: params.SecurityConfig.RefreshRateLimit},
 				},
 				api.OperationSpec{
 					Action: "logout",

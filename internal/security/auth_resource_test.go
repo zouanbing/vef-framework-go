@@ -3,14 +3,10 @@ package security_test
 import (
 	"context"
 	"errors"
-	"io"
-	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/gofiber/fiber/v3"
 	"github.com/guregu/null/v6"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -18,10 +14,8 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/i18n"
-	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/internal/apptest"
 	isecurity "github.com/ilxqx/vef-framework-go/internal/security"
 	"github.com/ilxqx/vef-framework-go/password"
@@ -88,11 +82,9 @@ func (m *MockPublisher) ClearPublishedEvents() {
 
 // AuthResourceTestSuite is the test suite for AuthResource.
 type AuthResourceTestSuite struct {
-	suite.Suite
+	apptest.Suite
 
 	ctx            context.Context
-	app            *app.App
-	stop           func()
 	userLoader     *MockUserLoader
 	userInfoLoader *MockUserInfoLoader
 	publisher      *MockPublisher
@@ -126,11 +118,7 @@ func (suite *AuthResourceTestSuite) SetupSuite() {
 // TearDownSuite runs once after all tests in the suite.
 func (suite *AuthResourceTestSuite) TearDownSuite() {
 	suite.T().Log("Tearing down AuthResourceTestSuite")
-
-	if suite.stop != nil {
-		suite.stop()
-	}
-
+	suite.TearDownApp()
 	suite.T().Log("AuthResourceTestSuite teardown complete")
 }
 
@@ -147,8 +135,7 @@ func (suite *AuthResourceTestSuite) setupTestApp() {
 	hashedPassword, err := password.NewBcryptEncoder().Encode("password123")
 	suite.Require().NoError(err)
 
-	suite.app, suite.stop = apptest.NewTestApp(
-		suite.T(),
+	suite.SetupApp(
 		fx.Supply(
 			fx.Annotate(
 				suite.userLoader,
@@ -172,7 +159,10 @@ func (suite *AuthResourceTestSuite) setupTestApp() {
 				Kind: "sqlite",
 			},
 			&config.SecurityConfig{
-				TokenExpires: 24 * time.Hour,
+				TokenExpires:     24 * time.Hour,
+				RefreshNotBefore: 1 * time.Millisecond,
+				LoginRateLimit:   1000,
+				RefreshRateLimit: 1000,
 			},
 			&security.JWTConfig{
 				Secret:   suite.jwtSecret,
@@ -204,60 +194,13 @@ func (suite *AuthResourceTestSuite) setupTestApp() {
 
 // Helper methods for making API requests and reading responses
 
-func (suite *AuthResourceTestSuite) makeAPIRequest(body api.Request) *http.Response {
-	jsonBody, err := encoding.ToJSON(body)
-	suite.Require().NoError(err, "Should encode request to JSON")
-
-	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
-	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-
-	// Use 30 second timeout to handle slower CI environments
-	resp, err := suite.app.Test(req, 30*time.Second)
-	suite.Require().NoError(err, "API request should not fail")
-
-	return resp
-}
-
-func (suite *AuthResourceTestSuite) makeAPIRequestWithToken(body api.Request, token string) *http.Response {
-	jsonBody, err := encoding.ToJSON(body)
-	suite.Require().NoError(err, "Should encode request to JSON")
-
-	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
-	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-	req.Header.Set(fiber.HeaderAuthorization, security.AuthSchemeBearer+" "+token)
-
-	// Use 30 second timeout to handle slower CI environments
-	resp, err := suite.app.Test(req, 30*time.Second)
-	suite.Require().NoError(err, "API request should not fail")
-
-	return resp
-}
-
-func (suite *AuthResourceTestSuite) readBody(resp *http.Response) result.Result {
-	body, err := io.ReadAll(resp.Body)
-	defer resp.Body.Close()
-
-	suite.Require().NoError(err, "Should read response body")
-	res, err := encoding.FromJSON[result.Result](string(body))
-	suite.Require().NoError(err, "Should decode response JSON")
-
-	return *res
-}
-
-func (suite *AuthResourceTestSuite) readDataAsMap(data any) map[string]any {
-	m, ok := data.(map[string]any)
-	suite.Require().True(ok, "Data should be a map")
-
-	return m
-}
-
 // Test Cases
 
 // TestLoginSuccess tests successful login with valid credentials.
 func (suite *AuthResourceTestSuite) TestLoginSuccess() {
 	suite.T().Log("Testing successful login")
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "login",
@@ -272,11 +215,11 @@ func (suite *AuthResourceTestSuite) TestLoginSuccess() {
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Login should succeed")
 	suite.Equal(i18n.T(result.OkMessage), body.Message, "Should return success message")
 
-	data := suite.readDataAsMap(body.Data)
+	data := suite.ReadDataAsMap(body.Data)
 	suite.Contains(data, "accessToken", "Response should contain access token")
 	suite.Contains(data, "refreshToken", "Response should contain refresh token")
 	suite.NotEmpty(data["accessToken"], "Access token should not be empty")
@@ -290,7 +233,7 @@ func (suite *AuthResourceTestSuite) TestLoginInvalidCredentials() {
 	suite.T().Log("Testing login with invalid credentials")
 
 	suite.Run("WrongPassword", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "security/auth",
 				Action:   "login",
@@ -305,13 +248,13 @@ func (suite *AuthResourceTestSuite) TestLoginInvalidCredentials() {
 
 		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Login should fail with wrong password")
 		suite.Equal(result.ErrCodeCredentialsInvalid, body.Code, "Should return credentials invalid error")
 	})
 
 	suite.Run("UserNotFound", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "security/auth",
 				Action:   "login",
@@ -326,7 +269,7 @@ func (suite *AuthResourceTestSuite) TestLoginInvalidCredentials() {
 
 		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Login should fail with non-existent user")
 		suite.Equal(result.ErrCodeCredentialsInvalid, body.Code, "Should return credentials invalid error")
 	})
@@ -337,7 +280,7 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 	suite.T().Log("Testing login with missing parameters")
 
 	suite.Run("MissingUsername", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "security/auth",
 				Action:   "login",
@@ -351,13 +294,13 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 
 		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Login should fail without username")
 		suite.Equal(result.ErrCodePrincipalInvalid, body.Code, "Should return principal invalid error")
 	})
 
 	suite.Run("MissingPassword", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "security/auth",
 				Action:   "login",
@@ -371,13 +314,13 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 
 		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Login should fail without password")
 		suite.Equal(result.ErrCodeCredentialsInvalid, body.Code, "Should return credentials invalid error")
 	})
 
 	suite.Run("EmptyPassword", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "security/auth",
 				Action:   "login",
@@ -392,7 +335,7 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 
 		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Login should fail with empty password")
 		suite.Equal(result.ErrCodeCredentialsInvalid, body.Code, "Should return credentials invalid error")
 	})
@@ -403,7 +346,7 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 			Return((*security.Principal)(nil), "", result.ErrRecordNotFound).
 			Once()
 
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "security/auth",
 				Action:   "login",
@@ -418,7 +361,7 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 
 		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Login should fail when loader reports record not found")
 		suite.Equal(result.ErrCodeCredentialsInvalid, body.Code, "Should return credentials invalid error")
 		suite.userLoader.AssertExpectations(suite.T())
@@ -430,7 +373,7 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 			Return((*security.Principal)(nil), "", errors.New("loader failure")).
 			Once()
 
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "security/auth",
 				Action:   "login",
@@ -445,7 +388,7 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 
 		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Login should fail when loader returns unexpected error")
 		suite.Equal(result.ErrCodeCredentialsInvalid, body.Code, "Should return credentials invalid error")
 		suite.userLoader.AssertExpectations(suite.T())
@@ -456,7 +399,7 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 func (suite *AuthResourceTestSuite) TestRefreshSuccess() {
 	suite.T().Log("Testing successful token refresh")
 
-	loginResp := suite.makeAPIRequest(api.Request{
+	loginResp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "login",
@@ -469,13 +412,13 @@ func (suite *AuthResourceTestSuite) TestRefreshSuccess() {
 		},
 	})
 
-	loginBody := suite.readBody(loginResp)
+	loginBody := suite.ReadResult(loginResp)
 	suite.True(loginBody.IsOk(), "Login should succeed")
 
-	tokens := suite.readDataAsMap(loginBody.Data)
+	tokens := suite.ReadDataAsMap(loginBody.Data)
 	refreshToken := tokens["refreshToken"].(string)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "refresh",
@@ -488,11 +431,11 @@ func (suite *AuthResourceTestSuite) TestRefreshSuccess() {
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Refresh should succeed")
 	suite.Equal(i18n.T(result.OkMessage), body.Message, "Should return success message")
 
-	data := suite.readDataAsMap(body.Data)
+	data := suite.ReadDataAsMap(body.Data)
 	suite.Contains(data, "accessToken", "Response should contain access token")
 	suite.Contains(data, "refreshToken", "Response should contain refresh token")
 	suite.NotEmpty(data["accessToken"], "Access token should not be empty")
@@ -508,7 +451,7 @@ func (suite *AuthResourceTestSuite) TestRefreshInvalidToken() {
 	suite.T().Log("Testing refresh with invalid tokens")
 
 	suite.Run("InvalidToken", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "security/auth",
 				Action:   "refresh",
@@ -522,13 +465,13 @@ func (suite *AuthResourceTestSuite) TestRefreshInvalidToken() {
 		suite.True(resp.StatusCode == 200 || resp.StatusCode == 401,
 			"Should return 200 or 401, got %d", resp.StatusCode)
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Refresh should fail with invalid token")
 		suite.Equal(result.ErrCodeTokenInvalid, body.Code, "Should return token invalid error")
 	})
 
 	suite.Run("EmptyToken", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "security/auth",
 				Action:   "refresh",
@@ -541,13 +484,13 @@ func (suite *AuthResourceTestSuite) TestRefreshInvalidToken() {
 
 		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Refresh should fail with empty token")
 		suite.Equal(result.ErrCodeTokenInvalid, body.Code, "Should return token invalid error")
 	})
 
 	suite.Run("MissingToken", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "security/auth",
 				Action:   "refresh",
@@ -558,7 +501,7 @@ func (suite *AuthResourceTestSuite) TestRefreshInvalidToken() {
 
 		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Refresh should fail without token")
 		suite.Equal(result.ErrCodeTokenInvalid, body.Code, "Should return token invalid error")
 	})
@@ -568,7 +511,7 @@ func (suite *AuthResourceTestSuite) TestRefreshInvalidToken() {
 func (suite *AuthResourceTestSuite) TestRefreshWithAccessToken() {
 	suite.T().Log("Testing refresh with access token (should fail)")
 
-	loginResp := suite.makeAPIRequest(api.Request{
+	loginResp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "login",
@@ -581,13 +524,13 @@ func (suite *AuthResourceTestSuite) TestRefreshWithAccessToken() {
 		},
 	})
 
-	loginBody := suite.readBody(loginResp)
+	loginBody := suite.ReadResult(loginResp)
 	suite.True(loginBody.IsOk(), "Login should succeed")
 
-	tokens := suite.readDataAsMap(loginBody.Data)
+	tokens := suite.ReadDataAsMap(loginBody.Data)
 	accessToken := tokens["accessToken"].(string)
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "refresh",
@@ -600,7 +543,7 @@ func (suite *AuthResourceTestSuite) TestRefreshWithAccessToken() {
 
 	suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Refresh should fail with access token")
 	suite.Equal(result.ErrCodeTokenInvalid, body.Code, "Should return token invalid error")
 }
@@ -609,7 +552,7 @@ func (suite *AuthResourceTestSuite) TestRefreshWithAccessToken() {
 func (suite *AuthResourceTestSuite) TestRefreshUserNotFound() {
 	suite.T().Log("Testing refresh when user is not found")
 
-	loginResp := suite.makeAPIRequest(api.Request{
+	loginResp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "login",
@@ -622,10 +565,10 @@ func (suite *AuthResourceTestSuite) TestRefreshUserNotFound() {
 		},
 	})
 
-	loginBody := suite.readBody(loginResp)
+	loginBody := suite.ReadResult(loginResp)
 	suite.True(loginBody.IsOk(), "Login should succeed")
 
-	tokens := suite.readDataAsMap(loginBody.Data)
+	tokens := suite.ReadDataAsMap(loginBody.Data)
 	refreshToken := tokens["refreshToken"].(string)
 
 	prevExpected := append([]*mock.Call(nil), suite.userLoader.ExpectedCalls...)
@@ -638,7 +581,7 @@ func (suite *AuthResourceTestSuite) TestRefreshUserNotFound() {
 		_ = call
 	}
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "refresh",
@@ -651,7 +594,7 @@ func (suite *AuthResourceTestSuite) TestRefreshUserNotFound() {
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Refresh should fail when user not found")
 	suite.Equal(result.ErrCodeRecordNotFound, body.Code, "Should return record not found error")
 }
@@ -660,7 +603,7 @@ func (suite *AuthResourceTestSuite) TestRefreshUserNotFound() {
 func (suite *AuthResourceTestSuite) TestLogoutSuccess() {
 	suite.T().Log("Testing successful logout")
 
-	loginResp := suite.makeAPIRequest(api.Request{
+	loginResp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "login",
@@ -673,13 +616,13 @@ func (suite *AuthResourceTestSuite) TestLogoutSuccess() {
 		},
 	})
 
-	loginBody := suite.readBody(loginResp)
+	loginBody := suite.ReadResult(loginResp)
 	suite.True(loginBody.IsOk(), "Login should succeed")
 
-	tokens := suite.readDataAsMap(loginBody.Data)
+	tokens := suite.ReadDataAsMap(loginBody.Data)
 	accessToken := tokens["accessToken"].(string)
 
-	resp := suite.makeAPIRequestWithToken(api.Request{
+	resp := suite.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "logout",
@@ -689,7 +632,7 @@ func (suite *AuthResourceTestSuite) TestLogoutSuccess() {
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Logout should succeed")
 	suite.Equal(i18n.T(result.OkMessage), body.Message, "Should return success message")
 }
@@ -698,7 +641,7 @@ func (suite *AuthResourceTestSuite) TestLogoutSuccess() {
 func (suite *AuthResourceTestSuite) TestLoginAndRefreshFlow() {
 	suite.T().Log("Testing complete login and refresh flow")
 
-	loginResp := suite.makeAPIRequest(api.Request{
+	loginResp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "login",
@@ -711,12 +654,12 @@ func (suite *AuthResourceTestSuite) TestLoginAndRefreshFlow() {
 		},
 	})
 
-	loginBody := suite.readBody(loginResp)
+	loginBody := suite.ReadResult(loginResp)
 	suite.True(loginBody.IsOk(), "Login should succeed")
 
-	tokens1 := suite.readDataAsMap(loginBody.Data)
+	tokens1 := suite.ReadDataAsMap(loginBody.Data)
 
-	refreshResp1 := suite.makeAPIRequest(api.Request{
+	refreshResp1 := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "refresh",
@@ -727,15 +670,15 @@ func (suite *AuthResourceTestSuite) TestLoginAndRefreshFlow() {
 		},
 	})
 
-	refreshBody1 := suite.readBody(refreshResp1)
+	refreshBody1 := suite.ReadResult(refreshResp1)
 	suite.True(refreshBody1.IsOk(), "First refresh should succeed")
 
-	tokens2 := suite.readDataAsMap(refreshBody1.Data)
+	tokens2 := suite.ReadDataAsMap(refreshBody1.Data)
 
 	suite.NotEqual(tokens1["accessToken"], tokens2["accessToken"], "New access token should be different")
 	suite.NotEqual(tokens1["refreshToken"], tokens2["refreshToken"], "New refresh token should be different")
 
-	refreshResp2 := suite.makeAPIRequest(api.Request{
+	refreshResp2 := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "refresh",
@@ -746,15 +689,15 @@ func (suite *AuthResourceTestSuite) TestLoginAndRefreshFlow() {
 		},
 	})
 
-	refreshBody2 := suite.readBody(refreshResp2)
+	refreshBody2 := suite.ReadResult(refreshResp2)
 	suite.True(refreshBody2.IsOk(), "Second refresh should succeed")
 
-	tokens3 := suite.readDataAsMap(refreshBody2.Data)
+	tokens3 := suite.ReadDataAsMap(refreshBody2.Data)
 
 	suite.NotEqual(tokens2["accessToken"], tokens3["accessToken"], "Tokens should keep changing")
 	suite.NotEqual(tokens2["refreshToken"], tokens3["refreshToken"], "Tokens should keep changing")
 
-	logoutResp := suite.makeAPIRequestWithToken(api.Request{
+	logoutResp := suite.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "logout",
@@ -762,7 +705,7 @@ func (suite *AuthResourceTestSuite) TestLoginAndRefreshFlow() {
 		},
 	}, tokens3["accessToken"].(string))
 
-	logoutBody := suite.readBody(logoutResp)
+	logoutBody := suite.ReadResult(logoutResp)
 	suite.True(logoutBody.IsOk(), "Logout should succeed")
 }
 
@@ -770,7 +713,7 @@ func (suite *AuthResourceTestSuite) TestLoginAndRefreshFlow() {
 func (suite *AuthResourceTestSuite) TestTokenDetails() {
 	suite.T().Log("Testing token details and format")
 
-	loginResp := suite.makeAPIRequest(api.Request{
+	loginResp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "login",
@@ -783,10 +726,10 @@ func (suite *AuthResourceTestSuite) TestTokenDetails() {
 		},
 	})
 
-	loginBody := suite.readBody(loginResp)
+	loginBody := suite.ReadResult(loginResp)
 	suite.True(loginBody.IsOk(), "Login should succeed")
 
-	tokens := suite.readDataAsMap(loginBody.Data)
+	tokens := suite.ReadDataAsMap(loginBody.Data)
 	accessToken := tokens["accessToken"].(string)
 	refreshToken := tokens["refreshToken"].(string)
 
@@ -803,7 +746,7 @@ func (suite *AuthResourceTestSuite) TestTokenDetails() {
 func (suite *AuthResourceTestSuite) TestGetUserInfoSuccess() {
 	suite.T().Log("Testing successful get user info")
 
-	loginResp := suite.makeAPIRequest(api.Request{
+	loginResp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "login",
@@ -816,10 +759,10 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoSuccess() {
 		},
 	})
 
-	loginBody := suite.readBody(loginResp)
+	loginBody := suite.ReadResult(loginResp)
 	suite.True(loginBody.IsOk(), "Login should succeed")
 
-	tokens := suite.readDataAsMap(loginBody.Data)
+	tokens := suite.ReadDataAsMap(loginBody.Data)
 	accessToken := tokens["accessToken"].(string)
 
 	avatarURL := "https://example.com/avatar.jpg"
@@ -855,7 +798,7 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoSuccess() {
 		return p.ID == "user001"
 	}), mock.Anything).Return(expectedUserInfo, nil).Once()
 
-	resp := suite.makeAPIRequestWithToken(api.Request{
+	resp := suite.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "get_user_info",
@@ -865,11 +808,11 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoSuccess() {
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Get user info should succeed")
 	suite.Equal(i18n.T(result.OkMessage), body.Message, "Should return success message")
 
-	data := suite.readDataAsMap(body.Data)
+	data := suite.ReadDataAsMap(body.Data)
 	suite.Equal("user001", data["id"], "User ID should match")
 	suite.Equal("Test User", data["name"], "User name should match")
 	suite.Equal("male", data["gender"], "Gender should match")
@@ -903,7 +846,7 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoSuccess() {
 func (suite *AuthResourceTestSuite) TestGetUserInfoUnauthenticated() {
 	suite.T().Log("Testing get user info without authentication")
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "get_user_info",
@@ -918,7 +861,7 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoUnauthenticated() {
 func (suite *AuthResourceTestSuite) TestGetUserInfoLoaderError() {
 	suite.T().Log("Testing get user info with loader error")
 
-	loginResp := suite.makeAPIRequest(api.Request{
+	loginResp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "login",
@@ -931,17 +874,17 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoLoaderError() {
 		},
 	})
 
-	loginBody := suite.readBody(loginResp)
+	loginBody := suite.ReadResult(loginResp)
 	suite.True(loginBody.IsOk(), "Login should succeed")
 
-	tokens := suite.readDataAsMap(loginBody.Data)
+	tokens := suite.ReadDataAsMap(loginBody.Data)
 	accessToken := tokens["accessToken"].(string)
 
 	suite.userInfoLoader.On("LoadUserInfo", mock.Anything, mock.MatchedBy(func(p *security.Principal) bool {
 		return p.ID == "user001"
 	}), mock.Anything).Return((*security.UserInfo)(nil), errors.New("database connection failed")).Once()
 
-	resp := suite.makeAPIRequestWithToken(api.Request{
+	resp := suite.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "get_user_info",
@@ -951,7 +894,7 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoLoaderError() {
 
 	suite.Equal(500, resp.StatusCode, "Should return 500 Internal Server Error")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Get user info should fail when loader returns error")
 
 	suite.userInfoLoader.AssertExpectations(suite.T())
@@ -961,7 +904,7 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoLoaderError() {
 func (suite *AuthResourceTestSuite) TestGetUserInfoWithEmptyMenus() {
 	suite.T().Log("Testing get user info with empty menus")
 
-	loginResp := suite.makeAPIRequest(api.Request{
+	loginResp := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "login",
@@ -974,10 +917,10 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoWithEmptyMenus() {
 		},
 	})
 
-	loginBody := suite.readBody(loginResp)
+	loginBody := suite.ReadResult(loginResp)
 	suite.True(loginBody.IsOk(), "Login should succeed")
 
-	tokens := suite.readDataAsMap(loginBody.Data)
+	tokens := suite.ReadDataAsMap(loginBody.Data)
 	accessToken := tokens["accessToken"].(string)
 
 	expectedUserInfo := &security.UserInfo{
@@ -992,7 +935,7 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoWithEmptyMenus() {
 		return p.ID == "user001"
 	}), mock.Anything).Return(expectedUserInfo, nil).Once()
 
-	resp := suite.makeAPIRequestWithToken(api.Request{
+	resp := suite.MakeRPCRequestWithToken(api.Request{
 		Identifier: api.Identifier{
 			Resource: "security/auth",
 			Action:   "get_user_info",
@@ -1002,10 +945,10 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoWithEmptyMenus() {
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.readBody(resp)
+	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Get user info should succeed")
 
-	data := suite.readDataAsMap(body.Data)
+	data := suite.ReadDataAsMap(body.Data)
 	suite.Equal("user001", data["id"], "User ID should match")
 	suite.Equal("Test User", data["name"], "User name should match")
 	suite.Equal("unknown", data["gender"], "Gender should be unknown")
@@ -1029,7 +972,7 @@ func (suite *AuthResourceTestSuite) TestLoginEventPublished() {
 	suite.Run("LoginSuccessEvent", func() {
 		suite.publisher.ClearPublishedEvents()
 
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "security/auth",
 				Action:   "login",
@@ -1044,7 +987,7 @@ func (suite *AuthResourceTestSuite) TestLoginEventPublished() {
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.True(body.IsOk(), "Login should succeed")
 
 		events := suite.publisher.GetPublishedEvents()
@@ -1070,7 +1013,7 @@ func (suite *AuthResourceTestSuite) TestLoginEventPublished() {
 	suite.Run("LoginFailureEvent", func() {
 		suite.publisher.ClearPublishedEvents()
 
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "security/auth",
 				Action:   "login",
@@ -1085,7 +1028,7 @@ func (suite *AuthResourceTestSuite) TestLoginEventPublished() {
 
 		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Login should fail")
 
 		events := suite.publisher.GetPublishedEvents()
@@ -1111,7 +1054,7 @@ func (suite *AuthResourceTestSuite) TestLoginEventPublished() {
 	suite.Run("UserNotFoundEvent", func() {
 		suite.publisher.ClearPublishedEvents()
 
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "security/auth",
 				Action:   "login",
@@ -1126,7 +1069,7 @@ func (suite *AuthResourceTestSuite) TestLoginEventPublished() {
 
 		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
-		body := suite.readBody(resp)
+		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Login should fail")
 
 		events := suite.publisher.GetPublishedEvents()
