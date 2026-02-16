@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestPlaintextEncoder_Encode tests the Encode method of PlaintextEncoder.
-func TestPlaintextEncoder_Encode(t *testing.T) {
+// TestPlaintextEncoderEncode tests the Encode method of PlaintextEncoder.
+func TestPlaintextEncoderEncode(t *testing.T) {
 	encoder := NewPlaintextEncoder()
 
 	t.Run("EncodesAsPlaintext", func(t *testing.T) {
@@ -55,8 +55,8 @@ func TestPlaintextEncoder_Encode(t *testing.T) {
 	})
 }
 
-// TestPlaintextEncoder_Matches tests the Matches method of PlaintextEncoder.
-func TestPlaintextEncoder_Matches(t *testing.T) {
+// TestPlaintextEncoderMatches tests the Matches method of PlaintextEncoder.
+func TestPlaintextEncoderMatches(t *testing.T) {
 	encoder := NewPlaintextEncoder()
 
 	t.Run("MatchesCorrectPassword", func(t *testing.T) {
@@ -110,8 +110,8 @@ func TestPlaintextEncoder_Matches(t *testing.T) {
 	})
 }
 
-// TestPlaintextEncoder_UpgradeEncoding tests the UpgradeEncoding method of PlaintextEncoder.
-func TestPlaintextEncoder_UpgradeEncoding(t *testing.T) {
+// TestPlaintextEncoderUpgradeEncoding tests the UpgradeEncoding method of PlaintextEncoder.
+func TestPlaintextEncoderUpgradeEncoding(t *testing.T) {
 	encoder := NewPlaintextEncoder()
 
 	t.Run("AlwaysNeedsUpgrade", func(t *testing.T) {

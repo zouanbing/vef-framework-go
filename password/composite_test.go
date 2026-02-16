@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestCompositeEncoder_Encode tests the Encode method of CompositeEncoder.
-func TestCompositeEncoder_Encode(t *testing.T) {
+// TestCompositeEncoderEncode tests the Encode method of CompositeEncoder.
+func TestCompositeEncoderEncode(t *testing.T) {
 	encoders := map[EncoderID]Encoder{
 		EncoderBcrypt:    NewBcryptEncoder(),
 		EncoderArgon2:    NewArgon2Encoder(),
@@ -37,8 +37,8 @@ func TestCompositeEncoder_Encode(t *testing.T) {
 	})
 }
 
-// TestCompositeEncoder_Matches tests the Matches method of CompositeEncoder.
-func TestCompositeEncoder_Matches(t *testing.T) {
+// TestCompositeEncoderMatches tests the Matches method of CompositeEncoder.
+func TestCompositeEncoderMatches(t *testing.T) {
 	encoders := map[EncoderID]Encoder{
 		EncoderBcrypt:    NewBcryptEncoder(),
 		EncoderArgon2:    NewArgon2Encoder(),
@@ -108,8 +108,8 @@ func TestCompositeEncoder_Matches(t *testing.T) {
 	})
 }
 
-// TestCompositeEncoder_UpgradeEncoding tests the UpgradeEncoding method of CompositeEncoder.
-func TestCompositeEncoder_UpgradeEncoding(t *testing.T) {
+// TestCompositeEncoderUpgradeEncoding tests the UpgradeEncoding method of CompositeEncoder.
+func TestCompositeEncoderUpgradeEncoding(t *testing.T) {
 	encoders := map[EncoderID]Encoder{
 		EncoderBcrypt:    NewBcryptEncoder(),
 		EncoderArgon2:    NewArgon2Encoder(),

@@ -9,8 +9,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// TestBcryptEncoder_Encode tests the Encode method of BcryptEncoder.
-func TestBcryptEncoder_Encode(t *testing.T) {
+// TestBcryptEncoderEncode tests the Encode method of BcryptEncoder.
+func TestBcryptEncoderEncode(t *testing.T) {
 	encoder := NewBcryptEncoder()
 
 	t.Run("BasicEncoding", func(t *testing.T) {
@@ -111,8 +111,8 @@ func TestBcryptEncoder_Encode(t *testing.T) {
 	})
 }
 
-// TestBcryptEncoder_Matches tests the Matches method of BcryptEncoder.
-func TestBcryptEncoder_Matches(t *testing.T) {
+// TestBcryptEncoderMatches tests the Matches method of BcryptEncoder.
+func TestBcryptEncoderMatches(t *testing.T) {
 	encoder := NewBcryptEncoder()
 
 	t.Run("MatchesCorrectPassword", func(t *testing.T) {
@@ -219,8 +219,8 @@ func TestBcryptEncoder_Matches(t *testing.T) {
 	})
 }
 
-// TestBcryptEncoder_UpgradeEncoding tests the UpgradeEncoding method of BcryptEncoder.
-func TestBcryptEncoder_UpgradeEncoding(t *testing.T) {
+// TestBcryptEncoderUpgradeEncoding tests the UpgradeEncoding method of BcryptEncoder.
+func TestBcryptEncoderUpgradeEncoding(t *testing.T) {
 	t.Run("NeedsUpgradeWhenCostIncreased", func(t *testing.T) {
 		encoder10 := NewBcryptEncoder(WithBcryptCost(10))
 		encoder12 := NewBcryptEncoder(WithBcryptCost(12))

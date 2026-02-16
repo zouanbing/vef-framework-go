@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestMd5Encoder_Encode tests the Encode method of MD5Encoder.
-func TestMd5Encoder_Encode(t *testing.T) {
+// TestMd5EncoderEncode tests the Encode method of MD5Encoder.
+func TestMd5EncoderEncode(t *testing.T) {
 	encoder := NewMd5Encoder()
 
 	t.Run("BasicEncoding", func(t *testing.T) {
@@ -106,8 +106,8 @@ func TestMd5Encoder_Encode(t *testing.T) {
 	})
 }
 
-// TestMd5Encoder_Matches tests the Matches method of MD5Encoder.
-func TestMd5Encoder_Matches(t *testing.T) {
+// TestMd5EncoderMatches tests the Matches method of MD5Encoder.
+func TestMd5EncoderMatches(t *testing.T) {
 	encoder := NewMd5Encoder()
 
 	t.Run("MatchesCorrectPassword", func(t *testing.T) {
@@ -238,8 +238,8 @@ func TestMd5Encoder_Matches(t *testing.T) {
 	})
 }
 
-// TestMd5Encoder_UpgradeEncoding tests the UpgradeEncoding method of MD5Encoder.
-func TestMd5Encoder_UpgradeEncoding(t *testing.T) {
+// TestMd5EncoderUpgradeEncoding tests the UpgradeEncoding method of MD5Encoder.
+func TestMd5EncoderUpgradeEncoding(t *testing.T) {
 	encoder := NewMd5Encoder()
 
 	t.Run("AlwaysNeedsUpgrade", func(t *testing.T) {

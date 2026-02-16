@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestPbkdf2Encoder_Encode tests the Encode method of Pbkdf2Encoder.
-func TestPbkdf2Encoder_Encode(t *testing.T) {
+// TestPbkdf2EncoderEncode tests the Encode method of Pbkdf2Encoder.
+func TestPbkdf2EncoderEncode(t *testing.T) {
 	encoder := NewPbkdf2Encoder()
 
 	t.Run("BasicEncoding", func(t *testing.T) {
@@ -96,8 +96,8 @@ func TestPbkdf2Encoder_Encode(t *testing.T) {
 	})
 }
 
-// TestPbkdf2Encoder_Matches tests the Matches method of Pbkdf2Encoder.
-func TestPbkdf2Encoder_Matches(t *testing.T) {
+// TestPbkdf2EncoderMatches tests the Matches method of Pbkdf2Encoder.
+func TestPbkdf2EncoderMatches(t *testing.T) {
 	encoder := NewPbkdf2Encoder()
 
 	t.Run("MatchesCorrectPassword", func(t *testing.T) {
@@ -169,8 +169,8 @@ func TestPbkdf2Encoder_Matches(t *testing.T) {
 	})
 }
 
-// TestPbkdf2Encoder_UpgradeEncoding tests the UpgradeEncoding method of Pbkdf2Encoder.
-func TestPbkdf2Encoder_UpgradeEncoding(t *testing.T) {
+// TestPbkdf2EncoderUpgradeEncoding tests the UpgradeEncoding method of Pbkdf2Encoder.
+func TestPbkdf2EncoderUpgradeEncoding(t *testing.T) {
 	t.Run("NeedsUpgradeWhenIterationsIncreased", func(t *testing.T) {
 		lowEncoder := NewPbkdf2Encoder(WithPbkdf2Iterations(100000))
 		highEncoder := NewPbkdf2Encoder(WithPbkdf2Iterations(310000))

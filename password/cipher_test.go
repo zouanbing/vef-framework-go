@@ -36,8 +36,8 @@ func (m *mockCipher) Decrypt(ciphertext string) (string, error) {
 	return string(decoded), nil
 }
 
-// TestCipherEncoder_Encode tests the Encode method of CipherEncoder.
-func TestCipherEncoder_Encode(t *testing.T) {
+// TestCipherEncoderEncode tests the Encode method of CipherEncoder.
+func TestCipherEncoderEncode(t *testing.T) {
 	cipher := &mockCipher{}
 	bcryptEncoder := NewBcryptEncoder()
 	encoder := NewCipherEncoder(cipher, bcryptEncoder)
@@ -124,8 +124,8 @@ func TestCipherEncoder_Encode(t *testing.T) {
 	})
 }
 
-// TestCipherEncoder_Matches tests the Matches method of CipherEncoder.
-func TestCipherEncoder_Matches(t *testing.T) {
+// TestCipherEncoderMatches tests the Matches method of CipherEncoder.
+func TestCipherEncoderMatches(t *testing.T) {
 	cipher := &mockCipher{}
 	bcryptEncoder := NewBcryptEncoder()
 	encoder := NewCipherEncoder(cipher, bcryptEncoder)
@@ -229,8 +229,8 @@ func TestCipherEncoder_Matches(t *testing.T) {
 	})
 }
 
-// TestCipherEncoder_UpgradeEncoding tests the UpgradeEncoding method of CipherEncoder.
-func TestCipherEncoder_UpgradeEncoding(t *testing.T) {
+// TestCipherEncoderUpgradeEncoding tests the UpgradeEncoding method of CipherEncoder.
+func TestCipherEncoderUpgradeEncoding(t *testing.T) {
 	cipher := &mockCipher{}
 
 	t.Run("DelegatesUpgradeToEncoder", func(t *testing.T) {

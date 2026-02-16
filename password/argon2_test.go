@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestArgon2Encoder_Encode tests the Encode method of Argon2Encoder.
-func TestArgon2Encoder_Encode(t *testing.T) {
+// TestArgon2EncoderEncode tests the Encode method of Argon2Encoder.
+func TestArgon2EncoderEncode(t *testing.T) {
 	encoder := NewArgon2Encoder()
 
 	t.Run("BasicEncoding", func(t *testing.T) {
@@ -100,8 +100,8 @@ func TestArgon2Encoder_Encode(t *testing.T) {
 	})
 }
 
-// TestArgon2Encoder_Matches tests the Matches method of Argon2Encoder.
-func TestArgon2Encoder_Matches(t *testing.T) {
+// TestArgon2EncoderMatches tests the Matches method of Argon2Encoder.
+func TestArgon2EncoderMatches(t *testing.T) {
 	encoder := NewArgon2Encoder()
 
 	t.Run("MatchesCorrectPassword", func(t *testing.T) {
@@ -159,8 +159,8 @@ func TestArgon2Encoder_Matches(t *testing.T) {
 	})
 }
 
-// TestArgon2Encoder_UpgradeEncoding tests the UpgradeEncoding method of Argon2Encoder.
-func TestArgon2Encoder_UpgradeEncoding(t *testing.T) {
+// TestArgon2EncoderUpgradeEncoding tests the UpgradeEncoding method of Argon2Encoder.
+func TestArgon2EncoderUpgradeEncoding(t *testing.T) {
 	t.Run("NeedsUpgradeWhenParametersIncreased", func(t *testing.T) {
 		lowEncoder := NewArgon2Encoder(
 			WithArgon2Memory(32*1024),

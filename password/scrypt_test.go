@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestScryptEncoder_Encode tests the Encode method of ScryptEncoder.
-func TestScryptEncoder_Encode(t *testing.T) {
+// TestScryptEncoderEncode tests the Encode method of ScryptEncoder.
+func TestScryptEncoderEncode(t *testing.T) {
 	encoder := NewScryptEncoder()
 
 	t.Run("BasicEncoding", func(t *testing.T) {
@@ -100,8 +100,8 @@ func TestScryptEncoder_Encode(t *testing.T) {
 	})
 }
 
-// TestScryptEncoder_Matches tests the Matches method of ScryptEncoder.
-func TestScryptEncoder_Matches(t *testing.T) {
+// TestScryptEncoderMatches tests the Matches method of ScryptEncoder.
+func TestScryptEncoderMatches(t *testing.T) {
 	encoder := NewScryptEncoder()
 
 	t.Run("MatchesCorrectPassword", func(t *testing.T) {
@@ -159,8 +159,8 @@ func TestScryptEncoder_Matches(t *testing.T) {
 	})
 }
 
-// TestScryptEncoder_UpgradeEncoding tests the UpgradeEncoding method of ScryptEncoder.
-func TestScryptEncoder_UpgradeEncoding(t *testing.T) {
+// TestScryptEncoderUpgradeEncoding tests the UpgradeEncoding method of ScryptEncoder.
+func TestScryptEncoderUpgradeEncoding(t *testing.T) {
 	t.Run("NeedsUpgradeWhenParametersIncreased", func(t *testing.T) {
 		lowEncoder := NewScryptEncoder(
 			WithScryptN(16384),

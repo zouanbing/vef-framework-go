@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestSha256Encoder_Encode tests the Encode method of SHA256Encoder.
-func TestSha256Encoder_Encode(t *testing.T) {
+// TestSha256EncoderEncode tests the Encode method of SHA256Encoder.
+func TestSha256EncoderEncode(t *testing.T) {
 	encoder := NewSha256Encoder()
 
 	t.Run("BasicEncoding", func(t *testing.T) {
@@ -115,8 +115,8 @@ func TestSha256Encoder_Encode(t *testing.T) {
 	})
 }
 
-// TestSha256Encoder_Matches tests the Matches method of SHA256Encoder.
-func TestSha256Encoder_Matches(t *testing.T) {
+// TestSha256EncoderMatches tests the Matches method of SHA256Encoder.
+func TestSha256EncoderMatches(t *testing.T) {
 	encoder := NewSha256Encoder()
 
 	t.Run("MatchesCorrectPassword", func(t *testing.T) {
@@ -257,8 +257,8 @@ func TestSha256Encoder_Matches(t *testing.T) {
 	})
 }
 
-// TestSha256Encoder_UpgradeEncoding tests the UpgradeEncoding method of SHA256Encoder.
-func TestSha256Encoder_UpgradeEncoding(t *testing.T) {
+// TestSha256EncoderUpgradeEncoding tests the UpgradeEncoding method of SHA256Encoder.
+func TestSha256EncoderUpgradeEncoding(t *testing.T) {
 	encoder := NewSha256Encoder()
 
 	t.Run("AlwaysNeedsUpgrade", func(t *testing.T) {
