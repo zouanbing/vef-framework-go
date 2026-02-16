@@ -272,11 +272,11 @@ func (suite *SQLGuardTestSuite) createTestDB(enableGuard bool) *bun.DB {
 	}
 
 	db, err := database.New(cfg)
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, "Should not return error")
 
 	// Create test table using raw SQL (unquoted)
 	_, err = db.NewRaw("CREATE TABLE IF NOT EXISTS test_guard (id INTEGER PRIMARY KEY, name TEXT)").Exec(suite.ctx)
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, "Should not return error")
 
 	return db
 }
@@ -305,7 +305,7 @@ func (suite *SQLGuardTestSuite) TestTruncateStatementBlocked() {
 
 	// Insert test data first
 	_, err := db.NewRaw("INSERT INTO test_guard (name) VALUES ('test')").Exec(suite.ctx)
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, "Should not return error")
 
 	_, err = db.NewRaw("TRUNCATE TABLE test_guard").Exec(suite.ctx)
 
@@ -326,7 +326,7 @@ func (suite *SQLGuardTestSuite) TestDeleteWithoutWhereBlocked() {
 
 	// Insert test data first
 	_, err := db.NewRaw("INSERT INTO test_guard (name) VALUES ('test')").Exec(suite.ctx)
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, "Should not return error")
 
 	_, err = db.NewRaw("DELETE FROM test_guard").Exec(suite.ctx)
 
@@ -387,7 +387,7 @@ func (suite *SQLGuardTestSuite) TestDisabledGuardAllowsDangerousSql() {
 	suite.NoError(err, "DROP should work when SQL guard is disabled")
 }
 
-// TestSQLGuardTestSuite tests s q l guard test suite functionality.
+// TestSQLGuardTestSuite tests SQL guard test suite functionality.
 func TestSQLGuardTestSuite(t *testing.T) {
 	suite.Run(t, new(SQLGuardTestSuite))
 }

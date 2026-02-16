@@ -28,7 +28,7 @@ type TestUser struct {
 	Password string      `tabular:"-"` // Ignored field
 }
 
-// TestCSVExportImport tests c s v export import functionality.
+// TestCSVExportImport tests CSV export import functionality.
 func TestCSVExportImport(t *testing.T) {
 	users := []TestUser{
 		{
@@ -94,7 +94,7 @@ func TestCSVExportImport(t *testing.T) {
 	assert.False(t, importedUsers[1].Remark.Valid, "Should not be valid")
 }
 
-// TestCSVImportWithCustomDelimiter tests c s v import with custom delimiter functionality.
+// TestCSVImportWithCustomDelimiter tests CSV import with custom delimiter functionality.
 func TestCSVImportWithCustomDelimiter(t *testing.T) {
 	csvContent := `用户ID;姓名;邮箱
 1;张三;zhangsan@example.com
@@ -119,7 +119,7 @@ func TestCSVImportWithCustomDelimiter(t *testing.T) {
 	assert.Equal(t, "张三", users[0].Name, "Should equal expected value")
 }
 
-// TestCSVImportWithoutHeader tests c s v import without header functionality.
+// TestCSVImportWithoutHeader tests CSV import without header functionality.
 func TestCSVImportWithoutHeader(t *testing.T) {
 	csvContent := `1,张三,zhangsan@example.com
 2,李四,lisi@example.com`
@@ -143,7 +143,7 @@ func TestCSVImportWithoutHeader(t *testing.T) {
 	assert.Equal(t, "张三", users[0].Name, "Should equal expected value")
 }
 
-// TestCSVExportWithoutHeader tests c s v export without header functionality.
+// TestCSVExportWithoutHeader tests CSV export without header functionality.
 func TestCSVExportWithoutHeader(t *testing.T) {
 	type SimpleUser struct {
 		ID    int    `tabular:"用户ID"`
@@ -164,7 +164,7 @@ func TestCSVExportWithoutHeader(t *testing.T) {
 	assert.Contains(t, csvContent, "1,张三,zhangsan@example.com", "Should contain expected value")
 }
 
-// TestCSVImportWithSkipRows tests c s v import with skip rows functionality.
+// TestCSVImportWithSkipRows tests CSV import with skip rows functionality.
 func TestCSVImportWithSkipRows(t *testing.T) {
 	csvContent := `用户数据表,,,
 用户ID,姓名,邮箱

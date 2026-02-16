@@ -66,7 +66,7 @@ func newPKFieldForModel(t *testing.T, db *bun.DB, model any) *PKField {
 	return NewPKField(table.PKs[0])
 }
 
-// TestPKFieldValidateModel tests p k field validate model scenarios.
+// TestPKFieldValidateModel tests PK field validate model scenarios.
 func TestPKFieldValidateModel(t *testing.T) {
 	db := newTestBunDB(t)
 	pkField := newPKFieldForModel(t, db, (*stringPKModel)(nil))

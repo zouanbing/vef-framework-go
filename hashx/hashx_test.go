@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestMD5 tests m d5 functionality.
+// TestMD5 tests MD5 functionality.
 func TestMD5(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -33,7 +33,7 @@ func TestMD5(t *testing.T) {
 	}
 }
 
-// TestSHA1 tests s h a1 functionality.
+// TestSHA1 tests SHA1 functionality.
 func TestSHA1(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -58,7 +58,7 @@ func TestSHA1(t *testing.T) {
 	}
 }
 
-// TestSHA256 tests s h a256 functionality.
+// TestSHA256 tests SHA256 functionality.
 func TestSHA256(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -83,7 +83,7 @@ func TestSHA256(t *testing.T) {
 	}
 }
 
-// TestSHA512 tests s h a512 functionality.
+// TestSHA512 tests SHA512 functionality.
 func TestSHA512(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -107,7 +107,7 @@ func TestSHA512(t *testing.T) {
 	}
 }
 
-// TestSM3 tests s m3 functionality.
+// TestSM3 tests SM3 functionality.
 func TestSM3(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -132,7 +132,7 @@ func TestSM3(t *testing.T) {
 	}
 }
 
-// TestHmacMD5 tests hmac m d5 functionality.
+// TestHmacMD5 tests HMAC MD5 functionality.
 func TestHmacMD5(t *testing.T) {
 	tests := []struct {
 		name string
@@ -165,7 +165,7 @@ func TestHmacMD5(t *testing.T) {
 	})
 }
 
-// TestHmacSHA1 tests hmac s h a1 functionality.
+// TestHmacSHA1 tests HMAC SHA1 functionality.
 func TestHmacSHA1(t *testing.T) {
 	tests := []struct {
 		name string
@@ -187,7 +187,7 @@ func TestHmacSHA1(t *testing.T) {
 	}
 }
 
-// TestHmacSHA256 tests hmac s h a256 functionality.
+// TestHmacSHA256 tests HMAC SHA256 functionality.
 func TestHmacSHA256(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -215,7 +215,7 @@ func TestHmacSHA256(t *testing.T) {
 	}
 }
 
-// TestHmacSHA512 tests hmac s h a512 functionality.
+// TestHmacSHA512 tests HMAC SHA512 functionality.
 func TestHmacSHA512(t *testing.T) {
 	tests := []struct {
 		name string
@@ -237,7 +237,7 @@ func TestHmacSHA512(t *testing.T) {
 	}
 }
 
-// TestHmacSM3 tests hmac s m3 functionality.
+// TestHmacSM3 tests HMAC SM3 functionality.
 func TestHmacSM3(t *testing.T) {
 	tests := []struct {
 		name string
@@ -262,8 +262,8 @@ func TestHmacSM3(t *testing.T) {
 	}
 }
 
-// TestHashFunctions_NilInput tests Hash Functions nil input scenarios.
-func TestHashFunctions_NilInput(t *testing.T) {
+// TestHashFunctionsNilInput tests Hash Functions nil input scenarios.
+func TestHashFunctionsNilInput(t *testing.T) {
 	tests := []struct {
 		name     string
 		testFunc func() string

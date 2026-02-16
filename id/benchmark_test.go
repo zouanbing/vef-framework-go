@@ -187,7 +187,7 @@ func BenchmarkMemoryAllocation(b *testing.B) {
 }
 
 func BenchmarkConcurrentPerformance(b *testing.B) {
-	b.Run("SnowflakeID_Concurrent", func(b *testing.B) {
+	b.Run("SnowflakeIDConcurrent", func(b *testing.B) {
 		generator, _ := NewSnowflakeIDGenerator(1)
 
 		b.ResetTimer()
@@ -198,7 +198,7 @@ func BenchmarkConcurrentPerformance(b *testing.B) {
 		})
 	})
 
-	b.Run("XID_Concurrent", func(b *testing.B) {
+	b.Run("XIDConcurrent", func(b *testing.B) {
 		generator := NewXIDGenerator()
 
 		b.ResetTimer()
@@ -209,7 +209,7 @@ func BenchmarkConcurrentPerformance(b *testing.B) {
 		})
 	})
 
-	b.Run("UUID_Concurrent", func(b *testing.B) {
+	b.Run("UUIDConcurrent", func(b *testing.B) {
 		generator := NewUUIDGenerator()
 
 		b.ResetTimer()
@@ -220,7 +220,7 @@ func BenchmarkConcurrentPerformance(b *testing.B) {
 		})
 	})
 
-	b.Run("RandomID_Concurrent", func(b *testing.B) {
+	b.Run("RandomIDConcurrent", func(b *testing.B) {
 		generator := NewRandomIDGenerator(WithAlphabet("0123456789abcdefghijklmnopqrstuvwxyz"), WithLength(21))
 
 		b.ResetTimer()

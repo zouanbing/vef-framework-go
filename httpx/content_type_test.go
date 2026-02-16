@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestIsJSON tests is j s o n functionality.
+// TestIsJSON tests IsJSON functionality.
 func TestIsJSON(t *testing.T) {
 	t.Run("ApplicationJson", func(t *testing.T) {
 		app := fiber.New()

@@ -246,16 +246,16 @@ func TestGenerateLargeData(t *testing.T) {
 		name string
 		size int
 	}{
-		{"Small_100B", 100},
-		{"Medium_1KB", 1024},
-		{"Large_10KB", 10240},
+		{"Small100B", 100},
+		{"Medium1KB", 1024},
+		{"Large10KB", 10240},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			data := generateLargeData(tt.size)
-			assert.Len(t, data, tt.size, "generated data size should equal %d bytes", tt.size)
-			assert.NotNil(t, data, "generated data should not be nil")
+			assert.Len(t, data, tt.size, "Generated data size should equal %d bytes", tt.size)
+			assert.NotNil(t, data, "Generated data should not be nil")
 		})
 	}
 }
@@ -266,20 +266,20 @@ func TestGenerateRandomString(t *testing.T) {
 		name   string
 		length int
 	}{
-		{"Short_5", 5},
-		{"Medium_20", 20},
-		{"Long_100", 100},
+		{"Short5", 5},
+		{"Medium20", 20},
+		{"Long100", 100},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			str := generateRandomString(tt.length)
-			assert.Len(t, str, tt.length, "generated string length should equal %d", tt.length)
-			assert.NotEmpty(t, str, "generated string should not be empty")
+			assert.Len(t, str, tt.length, "Generated string length should equal %d", tt.length)
+			assert.NotEmpty(t, str, "Generated string should not be empty")
 			// Verify all characters are alphanumeric
 			for _, ch := range str {
 				assert.True(t, (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9'),
-					"string should only contain alphanumeric characters, but contains '%c'", ch)
+					"String should only contain alphanumeric characters, but contains '%c'", ch)
 			}
 		})
 	}
@@ -356,14 +356,14 @@ func TestGenerateNestedStruct(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := generateNestedStruct(tt.depth)
-			assert.NotNil(t, result, "generated struct should not be nil")
+			assert.NotNil(t, result, "Generated struct should not be nil")
 
 			if tt.depth == 0 {
 				_, ok := result.(SimpleStruct)
-				assert.True(t, ok, "should return SimpleStruct at depth 0")
+				assert.True(t, ok, "Should return SimpleStruct at depth 0")
 			} else {
 				_, ok := result.(ComplexStruct)
-				assert.True(t, ok, "should return ComplexStruct at depth > 0")
+				assert.True(t, ok, "Should return ComplexStruct at depth > 0")
 			}
 		})
 	}
@@ -376,9 +376,9 @@ func TestGenerateLargeStruct(t *testing.T) {
 		targetSize int
 		minItems   int
 	}{
-		{"Small_1KB", 1024, 1},
-		{"Medium_10KB", 10240, 10},
-		{"Large_100KB", 102400, 100},
+		{"Small1KB", 1024, 1},
+		{"Medium10KB", 10240, 10},
+		{"Large100KB", 102400, 100},
 	}
 
 	for _, tt := range tests {
@@ -396,30 +396,30 @@ func TestGenerateLargeStruct(t *testing.T) {
 func TestGenerateUnicodeString(t *testing.T) {
 	str := generateUnicodeString()
 	assert.NotEmpty(t, str, "Unicode string should not be empty")
-	assert.Contains(t, str, "世界", "should contain Chinese characters")
-	assert.Contains(t, str, "🌍", "should contain emoji")
-	assert.Contains(t, str, "Привет", "should contain Russian characters")
-	assert.Contains(t, str, "مرحبا", "should contain Arabic characters")
+	assert.Contains(t, str, "世界", "Should contain Chinese characters")
+	assert.Contains(t, str, "🌍", "Should contain emoji")
+	assert.Contains(t, str, "Привет", "Should contain Russian characters")
+	assert.Contains(t, str, "مرحبا", "Should contain Arabic characters")
 }
 
 // TestGenerateSpecialCharString tests generate special char string functionality.
 func TestGenerateSpecialCharString(t *testing.T) {
 	str := generateSpecialCharString()
-	assert.NotEmpty(t, str, "special char string should not be empty")
-	assert.Contains(t, str, `\n`, "should contain newline escape")
-	assert.Contains(t, str, `"`, "should contain double quote", "Should contain expected value")
-	assert.Contains(t, str, `'`, "should contain single quote")
-	assert.Contains(t, str, `<`, "should contain less-than sign")
-	assert.Contains(t, str, `>`, "should contain greater-than sign")
-	assert.Contains(t, str, `&`, "should contain ampersand")
+	assert.NotEmpty(t, str, "Special char string should not be empty")
+	assert.Contains(t, str, `\n`, "Should contain newline escape")
+	assert.Contains(t, str, `"`, "Should contain double quote")
+	assert.Contains(t, str, `'`, "Should contain single quote")
+	assert.Contains(t, str, `<`, "Should contain less-than sign")
+	assert.Contains(t, str, `>`, "Should contain greater-than sign")
+	assert.Contains(t, str, `&`, "Should contain ampersand")
 }
 
 // TestGenerateControlCharString tests generate control char string functionality.
 func TestGenerateControlCharString(t *testing.T) {
 	str := generateControlCharString()
-	assert.NotEmpty(t, str, "control char string should not be empty")
-	assert.Contains(t, str, "Start", "should contain 'Start'")
-	assert.Contains(t, str, "End", "should contain 'End'")
+	assert.NotEmpty(t, str, "Control char string should not be empty")
+	assert.Contains(t, str, "Start", "Should contain 'Start'")
+	assert.Contains(t, str, "End", "Should contain 'End'")
 	// Verify it contains control characters
 	hasControlChar := false
 	for _, ch := range str {
@@ -430,7 +430,7 @@ func TestGenerateControlCharString(t *testing.T) {
 		}
 	}
 
-	assert.True(t, hasControlChar, "should contain control characters")
+	assert.True(t, hasControlChar, "Should contain control characters")
 }
 
 // TestAssertStructEqual tests assert struct equal functionality.
@@ -439,7 +439,7 @@ func TestAssertStructEqual(t *testing.T) {
 	s2 := SimpleStruct{Name: "Test", Age: 30, Active: true}
 
 	// Just verify the function works without panicking
-	_ = assertStructEqual(t, s1, s2, "equal structs should be equal")
+	_ = assertStructEqual(t, s1, s2, "Equal structs should be equal")
 }
 
 // TestAssertErrorContains tests assert error contains functionality.
@@ -447,7 +447,7 @@ func TestAssertErrorContains(t *testing.T) {
 	err := errors.New("this is a test error with keyword")
 
 	// Just verify the function works without panicking
-	_ = assertErrorContains(t, err, "keyword", "error should contain keyword")
+	_ = assertErrorContains(t, err, "keyword", "Error should contain keyword")
 }
 
 // TestAssertHelpers tests assert helpers functionality.

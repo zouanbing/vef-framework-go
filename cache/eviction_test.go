@@ -37,7 +37,7 @@ func TestNoOpEvictionHandler(t *testing.T) {
 	})
 }
 
-// TestLRUHandler tests l r u handler functionality.
+// TestLRUHandler tests LRU handler functionality.
 func TestLRUHandler(t *testing.T) {
 	t.Run("BasicInsertionAndEviction", func(_ *testing.T) {
 		handler := NewLruHandler()
@@ -178,7 +178,7 @@ func TestLRUHandler(t *testing.T) {
 	})
 }
 
-// TestFIFOHandler tests f i f o handler functionality.
+// TestFIFOHandler tests FIFO handler functionality.
 func TestFIFOHandler(t *testing.T) {
 	t.Run("BasicInsertionAndEviction", func(_ *testing.T) {
 		handler := NewFifoHandler()
@@ -293,7 +293,7 @@ func TestFIFOHandler(t *testing.T) {
 	})
 }
 
-// TestLFUHandler tests l f u handler functionality.
+// TestLFUHandler tests LFU handler functionality.
 func TestLFUHandler(t *testing.T) {
 	t.Run("BasicInsertionAndEviction", func(_ *testing.T) {
 		handler := NewLfuHandler()
@@ -520,7 +520,7 @@ func TestEvictionHandlerFactory(t *testing.T) {
 	})
 }
 
-// TestLRUHandlerUpdateBehavior tests l r u handler update behavior functionality.
+// TestLRUHandlerUpdateBehavior tests LRU handler update behavior functionality.
 func TestLRUHandlerUpdateBehavior(t *testing.T) {
 	t.Run("UpdateMoveKeyToFront", func(_ *testing.T) {
 		handler := NewLruHandler()
@@ -569,7 +569,7 @@ func TestLRUHandlerUpdateBehavior(t *testing.T) {
 	})
 }
 
-// TestLFUHandlerUpdateBehavior tests l f u handler update behavior functionality.
+// TestLFUHandlerUpdateBehavior tests LFU handler update behavior functionality.
 func TestLFUHandlerUpdateBehavior(t *testing.T) {
 	t.Run("RepeatedUpdatesDoNotCauseDuplicates", func(_ *testing.T) {
 		handler := NewLfuHandler()
@@ -630,7 +630,7 @@ func TestLFUHandlerUpdateBehavior(t *testing.T) {
 	})
 }
 
-// TestFIFOHandlerUpdateBehavior tests f i f o handler update behavior functionality.
+// TestFIFOHandlerUpdateBehavior tests FIFO handler update behavior functionality.
 func TestFIFOHandlerUpdateBehavior(t *testing.T) {
 	t.Run("RepeatedUpdatesDoNotCauseDuplicates", func(_ *testing.T) {
 		handler := NewFifoHandler()

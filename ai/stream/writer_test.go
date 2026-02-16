@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestSSEWriter_WriteChunk tests S S E Writer write chunk scenarios.
-func TestSSEWriter_WriteChunk(t *testing.T) {
+// TestSSEWriterWriteChunk tests SSE Writer write chunk scenarios.
+func TestSSEWriterWriteChunk(t *testing.T) {
 	tests := []struct {
 		name     string
 		chunk    Chunk
@@ -48,8 +48,8 @@ func TestSSEWriter_WriteChunk(t *testing.T) {
 	}
 }
 
-// TestSSEWriter_WriteDone tests S S E Writer write done scenarios.
-func TestSSEWriter_WriteDone(t *testing.T) {
+// TestSSEWriterWriteDone tests SSE Writer write done scenarios.
+func TestSSEWriterWriteDone(t *testing.T) {
 	var buf bytes.Buffer
 
 	w := newSseWriter(bufio.NewWriter(&buf))
@@ -60,8 +60,8 @@ func TestSSEWriter_WriteDone(t *testing.T) {
 	assert.Equal(t, "data: [DONE]\n\n", buf.String(), "Should equal expected value")
 }
 
-// TestSSEWriter_Flush tests S S E Writer flush scenarios.
-func TestSSEWriter_Flush(t *testing.T) {
+// TestSSEWriterFlush tests SSE Writer flush scenarios.
+func TestSSEWriterFlush(t *testing.T) {
 	var buf bytes.Buffer
 
 	bw := bufio.NewWriter(&buf)
@@ -74,7 +74,7 @@ func TestSSEWriter_Flush(t *testing.T) {
 	assert.Equal(t, "pending data", buf.String(), "Should equal expected value")
 }
 
-// TestSSEHeaders tests s s e headers functionality.
+// TestSSEHeaders tests SSE headers functionality.
 func TestSSEHeaders(t *testing.T) {
 	assert.Equal(t, "text/event-stream", SseHeaders["Content-Type"], "Should equal expected value")
 	assert.Equal(t, "no-cache", SseHeaders["Cache-Control"], "Should equal expected value")
@@ -84,25 +84,25 @@ func TestSSEHeaders(t *testing.T) {
 	assert.Equal(t, "no", SseHeaders["X-Accel-Buffering"], "Should equal expected value")
 }
 
-// TestDefaultIDGenerator_Format tests Default I D Generator format scenarios.
-func TestDefaultIDGenerator_Format(t *testing.T) {
+// TestDefaultIDGeneratorFormat tests default ID generator format scenarios.
+func TestDefaultIDGeneratorFormat(t *testing.T) {
 	prefixes := []string{"message", "text", "reasoning", "call"}
 
 	for _, prefix := range prefixes {
 		t.Run(prefix, func(t *testing.T) {
 			id := defaultIDGenerator(prefix)
 
-			assert.True(t, strings.HasPrefix(id, prefix+"_"))
+			assert.True(t, strings.HasPrefix(id, prefix+"_"), "Condition should be true")
 			// UUID v7 format: prefix_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 			parts := strings.SplitN(id, "_", 2)
 			require.Len(t, parts, 2, "Length should be 2")
-			assert.Len(t, parts[1], 36) // UUID length
+			assert.Len(t, parts[1], 36, "Length should match expected value") // UUID length
 		})
 	}
 }
 
-// TestDefaultIDGenerator_Uniqueness tests Default I D Generator uniqueness scenarios.
-func TestDefaultIDGenerator_Uniqueness(t *testing.T) {
+// TestDefaultIDGeneratorUniqueness tests default ID generator uniqueness scenarios.
+func TestDefaultIDGeneratorUniqueness(t *testing.T) {
 	ids := make(map[string]bool)
 
 	for range 100 {

@@ -39,7 +39,7 @@ func TestGenerate(t *testing.T) {
 	})
 }
 
-// TestGenerateUUID tests generate u u i d functionality.
+// TestGenerateUUID tests GenerateUUID functionality.
 func TestGenerateUUID(t *testing.T) {
 	t.Run("GenerateValidUUIDV7", func(t *testing.T) {
 		uuid := GenerateUUID()

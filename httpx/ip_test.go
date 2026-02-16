@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestGetIP tests get i p functionality.
+// TestGetIP tests GetIP functionality.
 func TestGetIP(t *testing.T) {
 	t.Run("XForwardedForHeader", func(t *testing.T) {
 		app := fiber.New()

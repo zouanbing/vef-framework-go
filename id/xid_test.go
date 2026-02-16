@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestXIDGenerator tests x i d generator functionality.
+// TestXIDGenerator tests XID generator functionality.
 func TestXIDGenerator(t *testing.T) {
 	t.Run("CreateGenerator", func(t *testing.T) {
 		generator := NewXIDGenerator()

@@ -96,7 +96,7 @@ func TestRandomIdGeneratorEdgeCases(t *testing.T) {
 	})
 }
 
-// TestUUIDEdgeCases tests u u i d edge cases functionality.
+// TestUUIDEdgeCases tests UUID edge cases functionality.
 func TestUUIDEdgeCases(t *testing.T) {
 	t.Run("RapidGenerationWithoutCollision", func(t *testing.T) {
 		generator := NewUUIDGenerator()

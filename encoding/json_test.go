@@ -13,7 +13,7 @@ type JSONTestSuite struct {
 	suite.Suite
 }
 
-// TestJSONTestSuite tests j s o n test suite functionality.
+// TestJSONTestSuite tests JSON test suite functionality.
 func TestJSONTestSuite(t *testing.T) {
 	suite.Run(t, new(JSONTestSuite))
 }

@@ -12,7 +12,7 @@ type XMLTestSuite struct {
 	suite.Suite
 }
 
-// TestXMLTestSuite tests x m l test suite functionality.
+// TestXMLTestSuite tests XML test suite functionality.
 func TestXMLTestSuite(t *testing.T) {
 	suite.Run(t, new(XMLTestSuite))
 }

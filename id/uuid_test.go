@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestUUIDGenerator tests u u i d generator functionality.
+// TestUUIDGenerator tests UUID generator functionality.
 func TestUUIDGenerator(t *testing.T) {
 	t.Run("CreateGenerator", func(t *testing.T) {
 		generator := NewUUIDGenerator()

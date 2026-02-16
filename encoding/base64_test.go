@@ -112,7 +112,7 @@ func TestBase64RoundTrip(t *testing.T) {
 	assert.Equal(t, data, decoded, "Round-trip encoding/decoding should preserve original data")
 }
 
-// TestToBase64URL tests to base64 u r l functionality.
+// TestToBase64URL tests to base64 URL functionality.
 func TestToBase64URL(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -144,7 +144,7 @@ func TestToBase64URL(t *testing.T) {
 	}
 }
 
-// TestFromBase64URL tests from base64 u r l functionality.
+// TestFromBase64URL tests from base64 URL functionality.
 func TestFromBase64URL(t *testing.T) {
 	tests := []struct {
 		name      string

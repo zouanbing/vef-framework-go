@@ -39,8 +39,8 @@ func TestGuardCheck(t *testing.T) {
 				require.Error(t, err, "Should block dangerous SQL")
 
 				var guardErr *GuardError
-				require.True(t, errors.As(err, &guardErr))
-				assert.True(t, errors.Is(guardErr.Err, tt.errType))
+				require.True(t, errors.As(err, &guardErr), "Condition should be true")
+				assert.True(t, errors.Is(guardErr.Err, tt.errType), "Condition should be true")
 			} else {
 				assert.NoError(t, err, "Should allow safe SQL")
 			}
@@ -90,7 +90,7 @@ func TestGuardError(t *testing.T) {
 		assert.Contains(t, err.Error(), "dangerous sql detected", "Should contain expected value")
 		assert.Contains(t, err.Error(), "no_drop", "Should contain expected value")
 		assert.Contains(t, err.Error(), "DROP", "Should contain expected value")
-		assert.True(t, errors.Is(err, ErrDangerousSQL))
+		assert.True(t, errors.Is(err, ErrDangerousSQL), "Condition should be true")
 	})
 
 	t.Run("WithoutViolation", func(t *testing.T) {
@@ -100,6 +100,6 @@ func TestGuardError(t *testing.T) {
 		}
 
 		assert.Equal(t, ErrSQLParseFailed.Error(), err.Error(), "Should equal expected value")
-		assert.True(t, errors.Is(err, ErrSQLParseFailed))
+		assert.True(t, errors.Is(err, ErrSQLParseFailed), "Condition should be true")
 	})
 }
