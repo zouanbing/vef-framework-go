@@ -124,7 +124,7 @@ func TestImporterImportFromFile(t *testing.T) {
 	assert.Equal(t, "张三", imported[0].Name, "Should equal expected value")
 	assert.Equal(t, "zhang@example.com", imported[0].Email, "Should equal expected value")
 	assert.Equal(t, 30, imported[0].Age, "Should equal expected value")
-	assert.InDelta(t, 10000.50, imported[0].Salary, 0.01)
+	assert.InDelta(t, 10000.50, imported[0].Salary, 0.01, "Salary should be within delta of expected value")
 	assert.Equal(t, 1, imported[0].Status, "Should equal expected value")
 	assert.True(t, imported[0].Remark.Valid, "Should be valid")
 	assert.Equal(t, "测试用户1", imported[0].Remark.ValueOrZero(), "Should equal expected value")
@@ -754,7 +754,7 @@ func TestRoundTrip(t *testing.T) {
 		assert.Equal(t, original[i].Name, imported[i].Name, "Should equal expected value")
 		assert.Equal(t, original[i].Email, imported[i].Email, "Should equal expected value")
 		assert.Equal(t, original[i].Age, imported[i].Age, "Should equal expected value")
-		assert.InDelta(t, original[i].Salary, imported[i].Salary, 0.01)
+		assert.InDelta(t, original[i].Salary, imported[i].Salary, 0.01, "Salary should be within delta of original value")
 		assert.Equal(t, original[i].Status, imported[i].Status, "Should equal expected value")
 		assert.Equal(t, original[i].Remark.Valid, imported[i].Remark.Valid, "Should equal expected value")
 

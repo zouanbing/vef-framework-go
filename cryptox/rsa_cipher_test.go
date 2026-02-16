@@ -275,9 +275,9 @@ func TestRsaCipher_KeySizes(t *testing.T) {
 		name    string
 		keySize int
 	}{
-		{"1024-bit", 1024},
-		{"2048-bit", 2048},
-		{"4096-bit", 4096},
+		{"KeySize1024Bit", 1024},
+		{"KeySize2048Bit", 2048},
+		{"KeySize4096Bit", 4096},
 	}
 
 	for _, tt := range tests {

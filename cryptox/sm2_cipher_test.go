@@ -203,15 +203,15 @@ func TestSm2Cipher_SignVerify(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			signature, err := cipher.Sign(tt.data)
-			require.NoError(t, err, "Should not return error")
+			require.NoError(t, err, "Should sign data without error")
 
 			valid, err := cipher.Verify(tt.data, signature)
-			require.NoError(t, err, "Should not return error")
-			assert.True(t, valid, "Should be valid")
+			require.NoError(t, err, "Should verify signature without error")
+			assert.True(t, valid, "Signature should be valid for original data")
 
 			valid, err = cipher.Verify(tt.data+"tampered", signature)
-			require.NoError(t, err, "Should not return error")
-			assert.False(t, valid, "Should not be valid")
+			require.NoError(t, err, "Should verify tampered data without error")
+			assert.False(t, valid, "Signature should be invalid for tampered data")
 		})
 	}
 }
@@ -246,8 +246,8 @@ func TestSm2Cipher_VerifyWithoutPublicKey(t *testing.T) {
 	require.NoError(t, err, "Should not return error")
 
 	valid, err := verifierCipher.Verify(data, signature)
-	require.NoError(t, err, "Should not return error")
-	assert.True(t, valid, "Should be valid")
+	require.NoError(t, err, "Should verify signature without error")
+	assert.True(t, valid, "Signature should be valid when verified using derived public key")
 }
 
 // TestSm2Cipher_InvalidSignature tests Sm2 Cipher invalid signature scenarios.
@@ -284,10 +284,10 @@ func TestSm2Cipher_DifferentSignatures(t *testing.T) {
 		"SM2 should produce different signatures due to random component")
 
 	valid1, err := cipher.Verify(data, signature1)
-	require.NoError(t, err, "Should not return error")
-	assert.True(t, valid1, "Should be valid")
+	require.NoError(t, err, "Should verify first signature without error")
+	assert.True(t, valid1, "First signature should be valid")
 
 	valid2, err := cipher.Verify(data, signature2)
-	require.NoError(t, err, "Should not return error")
-	assert.True(t, valid2, "Should be valid")
+	require.NoError(t, err, "Should verify second signature without error")
+	assert.True(t, valid2, "Second signature should be valid")
 }

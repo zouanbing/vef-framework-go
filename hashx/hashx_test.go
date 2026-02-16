@@ -150,10 +150,10 @@ func TestHmacMD5(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := HmacMD5(tt.key, tt.data)
 			assert.Len(t, result, 32, "Length should be 32")
-			assert.Regexp(t, "^[0-9a-f]+$", result)
+			assert.Regexp(t, "^[0-9a-f]+$", result, "Should contain only lowercase hex characters")
 
 			result2 := HmacMD5(tt.key, tt.data)
-			assert.Equal(t, result, result2, "should produce consistent results")
+			assert.Equal(t, result, result2, "Should produce consistent results")
 		})
 	}
 
@@ -182,7 +182,7 @@ func TestHmacSHA1(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := HmacSHA1(tt.key, tt.data)
 			assert.Len(t, result, 40, "Length should be 40")
-			assert.Regexp(t, "^[0-9a-f]+$", result)
+			assert.Regexp(t, "^[0-9a-f]+$", result, "Should contain only lowercase hex characters")
 		})
 	}
 }
@@ -206,7 +206,7 @@ func TestHmacSHA256(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := HmacSHA256(tt.key, tt.data)
 			assert.Len(t, result, 64, "Length should be 64")
-			assert.Regexp(t, "^[0-9a-f]+$", result)
+			assert.Regexp(t, "^[0-9a-f]+$", result, "Should contain only lowercase hex characters")
 
 			if tt.expected != "" {
 				assert.Equal(t, tt.expected, result, "Should equal expected value")
@@ -232,7 +232,7 @@ func TestHmacSHA512(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := HmacSHA512(tt.key, tt.data)
 			assert.Len(t, result, 128, "Length should be 128")
-			assert.Regexp(t, "^[0-9a-f]+$", result)
+			assert.Regexp(t, "^[0-9a-f]+$", result, "Should contain only lowercase hex characters")
 		})
 	}
 }
@@ -254,10 +254,10 @@ func TestHmacSM3(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := HmacSM3(tt.key, tt.data)
 			assert.Len(t, result, 64, "Length should be 64")
-			assert.Regexp(t, "^[0-9a-f]+$", result)
+			assert.Regexp(t, "^[0-9a-f]+$", result, "Should contain only lowercase hex characters")
 
 			result2 := HmacSM3(tt.key, tt.data)
-			assert.Equal(t, result, result2, "should produce consistent results")
+			assert.Equal(t, result, result2, "Should produce consistent results")
 		})
 	}
 }
@@ -279,7 +279,7 @@ func TestHashFunctions_NilInput(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := tt.testFunc()
 			assert.NotEmpty(t, result, "Should not be empty")
-			assert.Regexp(t, "^[0-9a-f]+$", result)
+			assert.Regexp(t, "^[0-9a-f]+$", result, "Should contain only lowercase hex characters")
 		})
 	}
 }
@@ -302,7 +302,7 @@ func TestHashOutputFormat(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := tt.testFunc(testData)
-			assert.Regexp(t, "^[0-9a-f]+$", result)
+			assert.Regexp(t, "^[0-9a-f]+$", result, "Should contain only lowercase hex characters")
 			assert.NotEmpty(t, result, "Should not be empty")
 		})
 	}
