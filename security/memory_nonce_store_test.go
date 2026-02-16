@@ -25,8 +25,8 @@ func TestNewMemoryNonceStore(t *testing.T) {
 	})
 }
 
-// TestMemoryNonceStore_Exists tests Memory Nonce Store exists scenarios.
-func TestMemoryNonceStore_Exists(t *testing.T) {
+// TestMemoryNonceStoreExists tests MemoryNonceStore Exists scenarios.
+func TestMemoryNonceStoreExists(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("NonExistentNonce", func(t *testing.T) {
@@ -75,8 +75,8 @@ func TestMemoryNonceStore_Exists(t *testing.T) {
 	})
 }
 
-// TestMemoryNonceStore_Store tests Memory Nonce Store store scenarios.
-func TestMemoryNonceStore_Store(t *testing.T) {
+// TestMemoryNonceStoreStore tests MemoryNonceStore Store scenarios.
+func TestMemoryNonceStoreStore(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("StoreNewNonce", func(t *testing.T) {
@@ -122,8 +122,8 @@ func TestMemoryNonceStore_Store(t *testing.T) {
 	})
 }
 
-// TestMemoryNonceStore_DifferentApps tests Memory Nonce Store different apps scenarios.
-func TestMemoryNonceStore_DifferentApps(t *testing.T) {
+// TestMemoryNonceStoreDifferentApps tests MemoryNonceStore different apps scenarios.
+func TestMemoryNonceStoreDifferentApps(t *testing.T) {
 	ctx := context.Background()
 	store := NewMemoryNonceStore()
 
@@ -174,8 +174,8 @@ func TestMemoryNonceStore_DifferentApps(t *testing.T) {
 	})
 }
 
-// TestMemoryNonceStore_TTLExpiration tests Memory Nonce Store t t l expiration scenarios.
-func TestMemoryNonceStore_TTLExpiration(t *testing.T) {
+// TestMemoryNonceStoreTTLExpiration tests MemoryNonceStore TTL expiration scenarios.
+func TestMemoryNonceStoreTTLExpiration(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("NonceExpiresAfterTTL", func(t *testing.T) {
@@ -229,8 +229,8 @@ func TestMemoryNonceStore_TTLExpiration(t *testing.T) {
 	})
 }
 
-// TestMemoryNonceStore_MultipleNonces tests Memory Nonce Store multiple nonces scenarios.
-func TestMemoryNonceStore_MultipleNonces(t *testing.T) {
+// TestMemoryNonceStoreMultipleNonces tests MemoryNonceStore multiple nonces scenarios.
+func TestMemoryNonceStoreMultipleNonces(t *testing.T) {
 	ctx := context.Background()
 	store := NewMemoryNonceStore()
 
@@ -268,8 +268,8 @@ func TestMemoryNonceStore_MultipleNonces(t *testing.T) {
 	})
 }
 
-// TestMemoryNonceStore_KeyFormat tests Memory Nonce Store key format scenarios.
-func TestMemoryNonceStore_KeyFormat(t *testing.T) {
+// TestMemoryNonceStoreKeyFormat tests MemoryNonceStore key format scenarios.
+func TestMemoryNonceStoreKeyFormat(t *testing.T) {
 	ctx := context.Background()
 	store := NewMemoryNonceStore()
 
@@ -321,8 +321,8 @@ func TestMemoryNonceStore_KeyFormat(t *testing.T) {
 	})
 }
 
-// TestMemoryNonceStore_Concurrency tests Memory Nonce Store concurrency scenarios.
-func TestMemoryNonceStore_Concurrency(t *testing.T) {
+// TestMemoryNonceStoreConcurrency tests MemoryNonceStore concurrency scenarios.
+func TestMemoryNonceStoreConcurrency(t *testing.T) {
 	ctx := context.Background()
 	store := NewMemoryNonceStore()
 
@@ -372,8 +372,8 @@ func TestMemoryNonceStore_Concurrency(t *testing.T) {
 	})
 }
 
-// TestMemoryNonceStore_ContextHandling tests Memory Nonce Store context handling scenarios.
-func TestMemoryNonceStore_ContextHandling(t *testing.T) {
+// TestMemoryNonceStoreContextHandling tests MemoryNonceStore context handling scenarios.
+func TestMemoryNonceStoreContextHandling(t *testing.T) {
 	t.Run("CancelledContext", func(t *testing.T) {
 		store := NewMemoryNonceStore()
 		ctx, cancel := context.WithCancel(context.Background())

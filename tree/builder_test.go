@@ -94,7 +94,7 @@ func findCategoryByID(categories []TestCategory, id string) *TestCategory {
 func TestBuild(t *testing.T) {
 	adapter := createTestNodeAdapter()
 
-	t.Run("Builds simple tree structure", func(t *testing.T) {
+	t.Run("BuildsSimpleTreeStructure", func(t *testing.T) {
 		nodes := []TestNode{
 			{ID: "1", ParentID: "", Name: "Root"},
 			{ID: "2", ParentID: "1", Name: "Child 1"},
@@ -115,7 +115,7 @@ func TestBuild(t *testing.T) {
 		assert.Empty(t, root.Children[1].Children, "Should be empty")
 	})
 
-	t.Run("Builds tree with multiple roots", func(t *testing.T) {
+	t.Run("BuildsTreeWithMultipleRoots", func(t *testing.T) {
 		nodes := createTestNodes()
 
 		result := Build(nodes, adapter)
@@ -140,7 +140,7 @@ func TestBuild(t *testing.T) {
 		assert.Empty(t, orphan.Children, "Should be empty")
 	})
 
-	t.Run("Builds deep nested tree", func(t *testing.T) {
+	t.Run("BuildsDeepNestedTree", func(t *testing.T) {
 		nodes := createComplexTestNodes()
 
 		result := Build(nodes, adapter)
@@ -160,7 +160,7 @@ func TestBuild(t *testing.T) {
 		assert.Len(t, childC.Children, 2, "Length should be 2")
 	})
 
-	t.Run("Handles empty slice", func(t *testing.T) {
+	t.Run("HandlesEmptySlice", func(t *testing.T) {
 		var nodes []TestNode
 
 		result := Build(nodes, adapter)
@@ -169,7 +169,7 @@ func TestBuild(t *testing.T) {
 		assert.Empty(t, result, "Should be empty")
 	})
 
-	t.Run("Handles single node", func(t *testing.T) {
+	t.Run("HandlesSingleNode", func(t *testing.T) {
 		nodes := []TestNode{
 			{ID: "1", ParentID: "", Name: "Single"},
 		}
@@ -182,7 +182,7 @@ func TestBuild(t *testing.T) {
 		assert.Empty(t, result[0].Children, "Should be empty")
 	})
 
-	t.Run("Handles nodes with empty IDs", func(t *testing.T) {
+	t.Run("HandlesNodesWithEmptyIDs", func(t *testing.T) {
 		nodes := []TestNode{
 			{ID: "", ParentID: "", Name: "Empty ID"},
 			{ID: "1", ParentID: "", Name: "Valid"},
@@ -197,7 +197,7 @@ func TestBuild(t *testing.T) {
 		assert.Equal(t, "Valid", validNode.Name, "Should equal expected value")
 	})
 
-	t.Run("Handles circular references gracefully", func(t *testing.T) {
+	t.Run("HandlesCircularReferencesGracefully", func(t *testing.T) {
 		nodes := []TestNode{
 			{ID: "1", ParentID: "2", Name: "Node 1"},
 			{ID: "2", ParentID: "1", Name: "Node 2"},
@@ -208,7 +208,7 @@ func TestBuild(t *testing.T) {
 		require.Empty(t, result, "Should be empty")
 	})
 
-	t.Run("Handles partial circular references", func(t *testing.T) {
+	t.Run("HandlesPartialCircularReferences", func(t *testing.T) {
 		nodes := []TestNode{
 			{ID: "root", ParentID: "", Name: "Root"},
 			{ID: "1", ParentID: "2", Name: "Node 1"},
@@ -225,7 +225,7 @@ func TestBuild(t *testing.T) {
 		assert.Equal(t, "3", root.Children[0].ID, "Should equal expected value")
 	})
 
-	t.Run("Works with different data types", func(t *testing.T) {
+	t.Run("WorksWithDifferentDataTypes", func(t *testing.T) {
 		categories := []TestCategory{
 			{CategoryID: "tech", ParentCatID: "", CategoryName: "Technology", Level: 1},
 			{CategoryID: "software", ParentCatID: "tech", CategoryName: "Software", Level: 2},
@@ -253,7 +253,7 @@ func TestBuild(t *testing.T) {
 func TestFindNode(t *testing.T) {
 	adapter := createTestNodeAdapter()
 
-	t.Run("Finds root node", func(t *testing.T) {
+	t.Run("FindsRootNode", func(t *testing.T) {
 		nodes := createTestNodes()
 		tree := Build(nodes, adapter)
 
@@ -264,7 +264,7 @@ func TestFindNode(t *testing.T) {
 		assert.Equal(t, "Root 1", result.Name, "Should equal expected value")
 	})
 
-	t.Run("Finds deep nested node", func(t *testing.T) {
+	t.Run("FindsDeepNestedNode", func(t *testing.T) {
 		nodes := createComplexTestNodes()
 		tree := Build(nodes, adapter)
 
@@ -275,7 +275,7 @@ func TestFindNode(t *testing.T) {
 		assert.Equal(t, "F", result.Name, "Should equal expected value")
 	})
 
-	t.Run("Finds leaf node", func(t *testing.T) {
+	t.Run("FindsLeafNode", func(t *testing.T) {
 		nodes := createTestNodes()
 		tree := Build(nodes, adapter)
 
@@ -286,7 +286,7 @@ func TestFindNode(t *testing.T) {
 		assert.Equal(t, "Child 1-1-1", result.Name, "Should equal expected value")
 	})
 
-	t.Run("Finds intermediate node with children", func(t *testing.T) {
+	t.Run("FindsIntermediateNodeWithChildren", func(t *testing.T) {
 		nodes := createTestNodes()
 		tree := Build(nodes, adapter)
 
@@ -298,7 +298,7 @@ func TestFindNode(t *testing.T) {
 		assert.Len(t, result.Children, 2, "Length should be 2")
 	})
 
-	t.Run("Returns false for non-existent node", func(t *testing.T) {
+	t.Run("ReturnsFalseForNonExistentNode", func(t *testing.T) {
 		nodes := createTestNodes()
 		tree := Build(nodes, adapter)
 
@@ -308,7 +308,7 @@ func TestFindNode(t *testing.T) {
 		assert.Equal(t, "", result.ID, "Should equal expected value")
 	})
 
-	t.Run("Returns false for empty target ID", func(t *testing.T) {
+	t.Run("ReturnsFalseForEmptyTargetID", func(t *testing.T) {
 		nodes := createTestNodes()
 		tree := Build(nodes, adapter)
 
@@ -317,7 +317,7 @@ func TestFindNode(t *testing.T) {
 		assert.False(t, found, "Should not be found")
 	})
 
-	t.Run("Handles empty tree", func(t *testing.T) {
+	t.Run("HandlesEmptyTree", func(t *testing.T) {
 		var tree []TestNode
 
 		_, found := FindNode(tree, "1", adapter)
@@ -325,7 +325,7 @@ func TestFindNode(t *testing.T) {
 		assert.False(t, found, "Should not be found")
 	})
 
-	t.Run("Finds nodes in different branches", func(t *testing.T) {
+	t.Run("FindsNodesInDifferentBranches", func(t *testing.T) {
 		nodes := createTestNodes()
 		tree := Build(nodes, adapter)
 
@@ -342,7 +342,7 @@ func TestFindNode(t *testing.T) {
 		assert.Equal(t, "8", result3.ID, "Should equal expected value")
 	})
 
-	t.Run("Works with different data types", func(t *testing.T) {
+	t.Run("WorksWithDifferentDataTypes", func(t *testing.T) {
 		categories := []TestCategory{
 			{CategoryID: "tech", ParentCatID: "", CategoryName: "Technology"},
 			{CategoryID: "software", ParentCatID: "tech", CategoryName: "Software"},
@@ -359,7 +359,7 @@ func TestFindNode(t *testing.T) {
 		assert.Equal(t, "AI", result.CategoryName, "Should equal expected value")
 	})
 
-	t.Run("Finds first occurrence with duplicate IDs", func(t *testing.T) {
+	t.Run("FindsFirstOccurrenceWithDuplicateIDs", func(t *testing.T) {
 		nodes := []TestNode{
 			{ID: "1", ParentID: "", Name: "Root"},
 			{ID: "2", ParentID: "1", Name: "Child 1"},
@@ -379,7 +379,7 @@ func TestFindNode(t *testing.T) {
 func TestFindNodePath(t *testing.T) {
 	adapter := createTestNodeAdapter()
 
-	t.Run("Finds path to root node", func(t *testing.T) {
+	t.Run("FindsPathToRootNode", func(t *testing.T) {
 		nodes := createTestNodes()
 		tree := Build(nodes, adapter)
 
@@ -391,7 +391,7 @@ func TestFindNodePath(t *testing.T) {
 		assert.Equal(t, "Root 1", path[0].Name, "Should equal expected value")
 	})
 
-	t.Run("Finds path to deep nested node", func(t *testing.T) {
+	t.Run("FindsPathToDeepNestedNode", func(t *testing.T) {
 		nodes := createComplexTestNodes()
 		tree := Build(nodes, adapter)
 
@@ -405,7 +405,7 @@ func TestFindNodePath(t *testing.T) {
 		assert.Equal(t, "f", path[3].ID, "Should equal expected value")
 	})
 
-	t.Run("Finds path to immediate child", func(t *testing.T) {
+	t.Run("FindsPathToImmediateChild", func(t *testing.T) {
 		nodes := createTestNodes()
 		tree := Build(nodes, adapter)
 
@@ -417,7 +417,7 @@ func TestFindNodePath(t *testing.T) {
 		assert.Equal(t, "2", path[1].ID, "Should equal expected value")
 	})
 
-	t.Run("Finds path to leaf node", func(t *testing.T) {
+	t.Run("FindsPathToLeafNode", func(t *testing.T) {
 		nodes := createTestNodes()
 		tree := Build(nodes, adapter)
 
@@ -430,7 +430,7 @@ func TestFindNodePath(t *testing.T) {
 		assert.Equal(t, "4", path[2].ID, "Should equal expected value")
 	})
 
-	t.Run("Finds path to orphan node", func(t *testing.T) {
+	t.Run("FindsPathToOrphanNode", func(t *testing.T) {
 		nodes := createTestNodes()
 		tree := Build(nodes, adapter)
 
@@ -442,7 +442,7 @@ func TestFindNodePath(t *testing.T) {
 		assert.Equal(t, "Orphan", path[0].Name, "Should equal expected value")
 	})
 
-	t.Run("Returns nil for non-existent node", func(t *testing.T) {
+	t.Run("ReturnsNilForNonExistentNode", func(t *testing.T) {
 		nodes := createTestNodes()
 		tree := Build(nodes, adapter)
 
@@ -452,7 +452,7 @@ func TestFindNodePath(t *testing.T) {
 		assert.Nil(t, path, "Should be nil")
 	})
 
-	t.Run("Returns nil for empty target ID", func(t *testing.T) {
+	t.Run("ReturnsNilForEmptyTargetID", func(t *testing.T) {
 		nodes := createTestNodes()
 		tree := Build(nodes, adapter)
 
@@ -462,7 +462,7 @@ func TestFindNodePath(t *testing.T) {
 		assert.Nil(t, path, "Should be nil")
 	})
 
-	t.Run("Handles empty tree", func(t *testing.T) {
+	t.Run("HandlesEmptyTree", func(t *testing.T) {
 		var tree []TestNode
 
 		path, found := FindNodePath(tree, "1", adapter)
@@ -471,7 +471,7 @@ func TestFindNodePath(t *testing.T) {
 		assert.Nil(t, path, "Should be nil")
 	})
 
-	t.Run("Finds paths in different branches", func(t *testing.T) {
+	t.Run("FindsPathsInDifferentBranches", func(t *testing.T) {
 		nodes := createTestNodes()
 		tree := Build(nodes, adapter)
 
@@ -489,7 +489,7 @@ func TestFindNodePath(t *testing.T) {
 		assert.Equal(t, "7", path2[1].ID, "Should equal expected value")
 	})
 
-	t.Run("Path contains complete node data", func(t *testing.T) {
+	t.Run("PathContainsCompleteNodeData", func(t *testing.T) {
 		nodes := createTestNodes()
 		tree := Build(nodes, adapter)
 
@@ -507,7 +507,7 @@ func TestFindNodePath(t *testing.T) {
 		assert.Equal(t, "2", path[2].ParentID, "Should equal expected value")
 	})
 
-	t.Run("Works with different data types", func(t *testing.T) {
+	t.Run("WorksWithDifferentDataTypes", func(t *testing.T) {
 		categories := []TestCategory{
 			{CategoryID: "tech", ParentCatID: "", CategoryName: "Technology", Level: 1},
 			{CategoryID: "software", ParentCatID: "tech", CategoryName: "Software", Level: 2},
@@ -530,7 +530,7 @@ func TestFindNodePath(t *testing.T) {
 		assert.Equal(t, 3, path[2].Level, "Should equal expected value")
 	})
 
-	t.Run("Finds correct path in complex tree", func(t *testing.T) {
+	t.Run("FindsCorrectPathInComplexTree", func(t *testing.T) {
 		nodes := createComplexTestNodes()
 		tree := Build(nodes, adapter)
 
@@ -545,9 +545,9 @@ func TestFindNodePath(t *testing.T) {
 	})
 }
 
-// TestAdapter_EdgeCases tests Adapter edge cases scenarios.
-func TestAdapter_EdgeCases(t *testing.T) {
-	t.Run("Adapter with nil functions panics", func(t *testing.T) {
+// TestAdapterEdgeCases tests Adapter edge cases scenarios.
+func TestAdapterEdgeCases(t *testing.T) {
+	t.Run("AdapterWithNilFunctionsPanics", func(t *testing.T) {
 		nodes := []TestNode{
 			{ID: "1", ParentID: "", Name: "Test"},
 		}
@@ -556,10 +556,10 @@ func TestAdapter_EdgeCases(t *testing.T) {
 
 		assert.Panics(t, func() {
 			Build(nodes, badAdapter)
-		})
+		}, "Should panic as expected")
 	})
 
-	t.Run("Large tree performance", func(t *testing.T) {
+	t.Run("LargeTreePerformance", func(t *testing.T) {
 		const nodeCount = 1000
 
 		nodes := make([]TestNode, nodeCount)
@@ -581,7 +581,7 @@ func TestAdapter_EdgeCases(t *testing.T) {
 		assert.Len(t, result[0].Children, nodeCount-1, "Length should be nodeCount-1")
 	})
 
-	t.Run("Deep nesting performance", func(t *testing.T) {
+	t.Run("DeepNestingPerformance", func(t *testing.T) {
 		const depth = 100
 
 		nodes := make([]TestNode, depth)
@@ -611,7 +611,7 @@ func TestAdapter_EdgeCases(t *testing.T) {
 		assert.Equal(t, depth, depthCount, "Should equal expected value")
 	})
 
-	t.Run("Nodes with special characters in IDs", func(t *testing.T) {
+	t.Run("NodesWithSpecialCharactersInIDs", func(t *testing.T) {
 		nodes := []TestNode{
 			{ID: "root/path", ParentID: "", Name: "Root with slash"},
 			{ID: "child@domain.com", ParentID: "root/path", Name: "Child with email"},
@@ -633,7 +633,7 @@ func TestAdapter_EdgeCases(t *testing.T) {
 		assert.Equal(t, "unicode_测试_🌟", emailChild.Children[0].ID, "Should equal expected value")
 	})
 
-	t.Run("Concurrent read safety", func(*testing.T) {
+	t.Run("ConcurrentReadSafety", func(*testing.T) {
 		nodes := createComplexTestNodes()
 		adapter := createTestNodeAdapter()
 		tree := Build(nodes, adapter)
@@ -662,7 +662,7 @@ func TestAdapter_EdgeCases(t *testing.T) {
 		}
 	})
 
-	t.Run("Adapter function consistency", func(t *testing.T) {
+	t.Run("AdapterFunctionConsistency", func(t *testing.T) {
 		nodes := []TestNode{
 			{ID: "1", ParentID: "", Name: "Root", Children: []TestNode{}},
 		}
@@ -680,9 +680,9 @@ func TestAdapter_EdgeCases(t *testing.T) {
 	})
 }
 
-// TestAdapter_BenchmarkScenarios tests Adapter benchmark scenarios scenarios.
-func TestAdapter_BenchmarkScenarios(t *testing.T) {
-	t.Run("Balanced tree structure", func(t *testing.T) {
+// TestAdapterBenchmarkScenarios tests Adapter benchmark scenarios.
+func TestAdapterBenchmarkScenarios(t *testing.T) {
+	t.Run("BalancedTreeStructure", func(t *testing.T) {
 		const nodeCount = 100
 
 		nodes := make([]TestNode, nodeCount)

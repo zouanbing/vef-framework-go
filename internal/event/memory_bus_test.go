@@ -12,8 +12,8 @@ import (
 	"github.com/ilxqx/vef-framework-go/event"
 )
 
-// TestMemoryEventBus_BasicPublishSubscribe tests Memory Event Bus basic publish subscribe scenarios.
-func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
+// TestMemoryEventBusBasicPublishSubscribe tests MemoryEventBus basic publish subscribe scenarios.
+func TestMemoryEventBusBasicPublishSubscribe(t *testing.T) {
 	t.Run("SingleSubscriberReceivesEvent", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
@@ -185,8 +185,8 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 	})
 }
 
-// TestMemoryEventBus_Unsubscribe tests Memory Event Bus unsubscribe scenarios.
-func TestMemoryEventBus_Unsubscribe(t *testing.T) {
+// TestMemoryEventBusUnsubscribe tests MemoryEventBus unsubscribe scenarios.
+func TestMemoryEventBusUnsubscribe(t *testing.T) {
 	t.Run("UnsubscribePreventsFurtherEventDelivery", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
@@ -337,8 +337,8 @@ func TestMemoryEventBus_Unsubscribe(t *testing.T) {
 	})
 }
 
-// TestMemoryEventBus_Lifecycle tests Memory Event Bus lifecycle scenarios.
-func TestMemoryEventBus_Lifecycle(t *testing.T) {
+// TestMemoryEventBusLifecycle tests MemoryEventBus lifecycle scenarios.
+func TestMemoryEventBusLifecycle(t *testing.T) {
 	t.Run("StartAndShutdown", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 
@@ -427,8 +427,8 @@ func TestMemoryEventBus_Lifecycle(t *testing.T) {
 	})
 }
 
-// TestMemoryEventBus_Middleware tests Memory Event Bus middleware scenarios.
-func TestMemoryEventBus_Middleware(t *testing.T) {
+// TestMemoryEventBusMiddleware tests MemoryEventBus middleware scenarios.
+func TestMemoryEventBusMiddleware(t *testing.T) {
 	t.Run("MiddlewareProcessesEvents", func(t *testing.T) {
 		var (
 			processedEvents []event.Event
@@ -558,8 +558,8 @@ func TestMemoryEventBus_Middleware(t *testing.T) {
 	})
 }
 
-// TestMemoryEventBus_Concurrency tests Memory Event Bus concurrency scenarios.
-func TestMemoryEventBus_Concurrency(t *testing.T) {
+// TestMemoryEventBusConcurrency tests MemoryEventBus concurrency scenarios.
+func TestMemoryEventBusConcurrency(t *testing.T) {
 	t.Run("ConcurrentPublishAndSubscribe", func(t *testing.T) {
 		bus := createTestEventBus(t)
 

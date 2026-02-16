@@ -86,8 +86,8 @@ func TestNewSignatureAuthenticator(t *testing.T) {
 	})
 }
 
-// TestSignatureAuthenticator_Supports tests Signature Authenticator supports scenarios.
-func TestSignatureAuthenticator_Supports(t *testing.T) {
+// TestSignatureAuthenticatorSupports tests SignatureAuthenticator Supports scenarios.
+func TestSignatureAuthenticatorSupports(t *testing.T) {
 	loader := new(MockExternalAppLoader)
 	auth := NewSignatureAuthenticator(loader, nil)
 
@@ -106,8 +106,8 @@ func TestSignatureAuthenticator_Supports(t *testing.T) {
 	})
 }
 
-// TestSignatureAuthenticator_Authenticate tests Signature Authenticator authenticate scenarios.
-func TestSignatureAuthenticator_Authenticate(t *testing.T) {
+// TestSignatureAuthenticatorAuthenticate tests SignatureAuthenticator Authenticate scenarios.
+func TestSignatureAuthenticatorAuthenticate(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("MissingAppID", func(t *testing.T) {
@@ -217,8 +217,8 @@ func TestSignatureAuthenticator_Authenticate(t *testing.T) {
 	})
 }
 
-// TestSignatureAuthenticator_TimestampValidation tests Signature Authenticator timestamp validation scenarios.
-func TestSignatureAuthenticator_TimestampValidation(t *testing.T) {
+// TestSignatureAuthenticatorTimestampValidation tests SignatureAuthenticator timestamp validation scenarios.
+func TestSignatureAuthenticatorTimestampValidation(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("ExpiredTimestamp", func(t *testing.T) {
@@ -293,8 +293,8 @@ func TestSignatureAuthenticator_TimestampValidation(t *testing.T) {
 	})
 }
 
-// TestSignatureAuthenticator_SignatureValidation tests Signature Authenticator signature validation scenarios.
-func TestSignatureAuthenticator_SignatureValidation(t *testing.T) {
+// TestSignatureAuthenticatorSignatureValidation tests SignatureAuthenticator signature validation scenarios.
+func TestSignatureAuthenticatorSignatureValidation(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("InvalidSignature", func(t *testing.T) {
@@ -369,8 +369,8 @@ func TestSignatureAuthenticator_SignatureValidation(t *testing.T) {
 	})
 }
 
-// TestSignatureAuthenticator_NonceValidation tests Signature Authenticator nonce validation scenarios.
-func TestSignatureAuthenticator_NonceValidation(t *testing.T) {
+// TestSignatureAuthenticatorNonceValidation tests SignatureAuthenticator nonce validation scenarios.
+func TestSignatureAuthenticatorNonceValidation(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("NonceAlreadyUsed", func(t *testing.T) {
@@ -444,8 +444,8 @@ func TestSignatureAuthenticator_NonceValidation(t *testing.T) {
 	})
 }
 
-// TestSignatureAuthenticator_IPWhitelist tests Signature Authenticator i p whitelist scenarios.
-func TestSignatureAuthenticator_IPWhitelist(t *testing.T) {
+// TestSignatureAuthenticatorIPWhitelist tests SignatureAuthenticator IP whitelist scenarios.
+func TestSignatureAuthenticatorIPWhitelist(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("DisabledApp", func(t *testing.T) {
@@ -528,8 +528,8 @@ func TestSignatureAuthenticator_IPWhitelist(t *testing.T) {
 	})
 }
 
-// TestSignatureAuthenticator_SuccessfulAuthentication tests Signature Authenticator successful authentication scenarios.
-func TestSignatureAuthenticator_SuccessfulAuthentication(t *testing.T) {
+// TestSignatureAuthenticatorSuccessfulAuthentication tests SignatureAuthenticator successful authentication scenarios.
+func TestSignatureAuthenticatorSuccessfulAuthentication(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("WithNonceStore", func(t *testing.T) {

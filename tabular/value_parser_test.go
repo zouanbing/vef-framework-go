@@ -13,8 +13,8 @@ import (
 	"github.com/ilxqx/vef-framework-go/timex"
 )
 
-// TestDefaultParser_Parse_EmptyString tests Default Parser parse_ empty string scenarios.
-func TestDefaultParser_Parse_EmptyString(t *testing.T) {
+// TestDefaultParserParseEmptyString tests DefaultParser Parse empty string scenarios.
+func TestDefaultParserParseEmptyString(t *testing.T) {
 	parser := NewDefaultParser("")
 
 	tests := []struct {
@@ -38,8 +38,8 @@ func TestDefaultParser_Parse_EmptyString(t *testing.T) {
 	}
 }
 
-// TestDefaultParser_Parse_BasicTypes tests Default Parser parse_ basic types scenarios.
-func TestDefaultParser_Parse_BasicTypes(t *testing.T) {
+// TestDefaultParserParseBasicTypes tests DefaultParser Parse basic types scenarios.
+func TestDefaultParserParseBasicTypes(t *testing.T) {
 	parser := NewDefaultParser("")
 
 	tests := []struct {
@@ -76,8 +76,8 @@ func TestDefaultParser_Parse_BasicTypes(t *testing.T) {
 	}
 }
 
-// TestDefaultParser_Parse_InvalidBasicTypes tests Default Parser parse_ invalid basic types scenarios.
-func TestDefaultParser_Parse_InvalidBasicTypes(t *testing.T) {
+// TestDefaultParserParseInvalidBasicTypes tests DefaultParser Parse invalid basic types scenarios.
+func TestDefaultParserParseInvalidBasicTypes(t *testing.T) {
 	parser := NewDefaultParser("")
 
 	tests := []struct {
@@ -99,8 +99,8 @@ func TestDefaultParser_Parse_InvalidBasicTypes(t *testing.T) {
 	}
 }
 
-// TestDefaultParser_Parse_PointerTypes tests Default Parser parse_ pointer types scenarios.
-func TestDefaultParser_Parse_PointerTypes(t *testing.T) {
+// TestDefaultParserParsePointerTypes tests DefaultParser Parse pointer types scenarios.
+func TestDefaultParserParsePointerTypes(t *testing.T) {
 	parser := NewDefaultParser("")
 
 	tests := []struct {
@@ -160,8 +160,8 @@ func TestDefaultParser_Parse_PointerTypes(t *testing.T) {
 	}
 }
 
-// TestDefaultParser_Parse_NullTypes tests Default Parser parse_ null types scenarios.
-func TestDefaultParser_Parse_NullTypes(t *testing.T) {
+// TestDefaultParserParseNullTypes tests DefaultParser Parse null types scenarios.
+func TestDefaultParserParseNullTypes(t *testing.T) {
 	parser := NewDefaultParser("")
 
 	tests := []struct {
@@ -188,8 +188,8 @@ func TestDefaultParser_Parse_NullTypes(t *testing.T) {
 	}
 }
 
-// TestDefaultParser_Parse_InvalidNullTypes tests Default Parser parse_ invalid null types scenarios.
-func TestDefaultParser_Parse_InvalidNullTypes(t *testing.T) {
+// TestDefaultParserParseInvalidNullTypes tests DefaultParser Parse invalid null types scenarios.
+func TestDefaultParserParseInvalidNullTypes(t *testing.T) {
 	parser := NewDefaultParser("")
 
 	tests := []struct {
@@ -210,8 +210,8 @@ func TestDefaultParser_Parse_InvalidNullTypes(t *testing.T) {
 	}
 }
 
-// TestDefaultParser_Parse_TimeTypes tests Default Parser parse_ time types scenarios.
-func TestDefaultParser_Parse_TimeTypes(t *testing.T) {
+// TestDefaultParserParseTimeTypes tests DefaultParser Parse time types scenarios.
+func TestDefaultParserParseTimeTypes(t *testing.T) {
 	parser := NewDefaultParser("")
 
 	testTimeStr := "2024-01-15 14:30:45"
@@ -278,8 +278,8 @@ func TestDefaultParser_Parse_TimeTypes(t *testing.T) {
 	}
 }
 
-// TestDefaultParser_Parse_TimeTypesWithFormat tests Default Parser parse_ time types with format scenarios.
-func TestDefaultParser_Parse_TimeTypesWithFormat(t *testing.T) {
+// TestDefaultParserParseTimeTypesWithFormat tests DefaultParser Parse time types with format scenarios.
+func TestDefaultParserParseTimeTypesWithFormat(t *testing.T) {
 	tests := []struct {
 		name       string
 		format     string
@@ -344,8 +344,8 @@ func TestDefaultParser_Parse_TimeTypesWithFormat(t *testing.T) {
 	}
 }
 
-// TestDefaultParser_Parse_InvalidTimeTypes tests Default Parser parse_ invalid time types scenarios.
-func TestDefaultParser_Parse_InvalidTimeTypes(t *testing.T) {
+// TestDefaultParserParseInvalidTimeTypes tests DefaultParser Parse invalid time types scenarios.
+func TestDefaultParserParseInvalidTimeTypes(t *testing.T) {
 	parser := NewDefaultParser("")
 
 	tests := []struct {
@@ -367,8 +367,8 @@ func TestDefaultParser_Parse_InvalidTimeTypes(t *testing.T) {
 	}
 }
 
-// TestDefaultParser_Parse_DecimalTypes tests Default Parser parse_ decimal types scenarios.
-func TestDefaultParser_Parse_DecimalTypes(t *testing.T) {
+// TestDefaultParserParseDecimalTypes tests DefaultParser Parse decimal types scenarios.
+func TestDefaultParserParseDecimalTypes(t *testing.T) {
 	parser := NewDefaultParser("")
 
 	tests := []struct {
@@ -401,8 +401,8 @@ func TestDefaultParser_Parse_DecimalTypes(t *testing.T) {
 	}
 }
 
-// TestDefaultParser_Parse_InvalidDecimalTypes tests Default Parser parse_ invalid decimal types scenarios.
-func TestDefaultParser_Parse_InvalidDecimalTypes(t *testing.T) {
+// TestDefaultParserParseInvalidDecimalTypes tests DefaultParser Parse invalid decimal types scenarios.
+func TestDefaultParserParseInvalidDecimalTypes(t *testing.T) {
 	parser := NewDefaultParser("")
 
 	tests := []struct {
@@ -422,8 +422,8 @@ func TestDefaultParser_Parse_InvalidDecimalTypes(t *testing.T) {
 	}
 }
 
-// TestDefaultParser_Parse_UnsupportedTypes tests Default Parser parse_ unsupported types scenarios.
-func TestDefaultParser_Parse_UnsupportedTypes(t *testing.T) {
+// TestDefaultParserParseUnsupportedTypes tests DefaultParser Parse unsupported types scenarios.
+func TestDefaultParserParseUnsupportedTypes(t *testing.T) {
 	parser := NewDefaultParser("")
 
 	type CustomStruct struct {
@@ -449,8 +449,8 @@ func TestDefaultParser_Parse_UnsupportedTypes(t *testing.T) {
 	}
 }
 
-// TestDefaultParser_Parse_EdgeCases tests Default Parser parse_ edge cases scenarios.
-func TestDefaultParser_Parse_EdgeCases(t *testing.T) {
+// TestDefaultParserParseEdgeCases tests DefaultParser Parse edge cases scenarios.
+func TestDefaultParserParseEdgeCases(t *testing.T) {
 	parser := NewDefaultParser("")
 
 	tests := []struct {
@@ -478,8 +478,8 @@ func TestDefaultParser_Parse_EdgeCases(t *testing.T) {
 	}
 }
 
-// TestDefaultParser_Parse_UnicodeStrings tests Default Parser parse_ unicode strings scenarios.
-func TestDefaultParser_Parse_UnicodeStrings(t *testing.T) {
+// TestDefaultParserParseUnicodeStrings tests DefaultParser Parse unicode strings scenarios.
+func TestDefaultParserParseUnicodeStrings(t *testing.T) {
 	parser := NewDefaultParser("")
 
 	tests := []struct {
@@ -503,8 +503,8 @@ func TestDefaultParser_Parse_UnicodeStrings(t *testing.T) {
 	}
 }
 
-// TestDefaultParser_Parse_BooleanVariants tests Default Parser parse_ boolean variants scenarios.
-func TestDefaultParser_Parse_BooleanVariants(t *testing.T) {
+// TestDefaultParserParseBooleanVariants tests DefaultParser Parse boolean variants scenarios.
+func TestDefaultParserParseBooleanVariants(t *testing.T) {
 	parser := NewDefaultParser("")
 
 	tests := []struct {
@@ -529,8 +529,8 @@ func TestDefaultParser_Parse_BooleanVariants(t *testing.T) {
 	}
 }
 
-// TestDefaultParser_Parse_FloatPrecision tests Default Parser parse_ float precision scenarios.
-func TestDefaultParser_Parse_FloatPrecision(t *testing.T) {
+// TestDefaultParserParseFloatPrecision tests DefaultParser Parse float precision scenarios.
+func TestDefaultParserParseFloatPrecision(t *testing.T) {
 	parser := NewDefaultParser("")
 
 	tests := []struct {
@@ -545,7 +545,7 @@ func TestDefaultParser_Parse_FloatPrecision(t *testing.T) {
 			targetType: reflect.TypeFor[float32](),
 			validate: func(t *testing.T, result any) {
 				f := result.(float32)
-				assert.InDelta(t, 3.14159, f, 0.00001)
+				assert.InDelta(t, 3.14159, f, 0.00001, "InDelta assertion should pass")
 			},
 		},
 		{
@@ -554,7 +554,7 @@ func TestDefaultParser_Parse_FloatPrecision(t *testing.T) {
 			targetType: reflect.TypeFor[float64](),
 			validate: func(t *testing.T, result any) {
 				f := result.(float64)
-				assert.InDelta(t, 3.14159265359, f, 0.000000001)
+				assert.InDelta(t, 3.14159265359, f, 0.000000001, "InDelta assertion should pass")
 			},
 		},
 	}
@@ -568,8 +568,8 @@ func TestDefaultParser_Parse_FloatPrecision(t *testing.T) {
 	}
 }
 
-// TestDefaultParser_NewDefaultParser tests Default Parser new default parser scenarios.
-func TestDefaultParser_NewDefaultParser(t *testing.T) {
+// TestDefaultParserNewDefaultParser tests DefaultParser NewDefaultParser scenarios.
+func TestDefaultParserNewDefaultParser(t *testing.T) {
 	tests := []struct {
 		name   string
 		format string
@@ -587,8 +587,8 @@ func TestDefaultParser_NewDefaultParser(t *testing.T) {
 	}
 }
 
-// TestDefaultParser_Parse_EmptyStringForPointer tests Default Parser parse_ empty string for pointer scenarios.
-func TestDefaultParser_Parse_EmptyStringForPointer(t *testing.T) {
+// TestDefaultParserParseEmptyStringForPointer tests DefaultParser Parse empty string for pointer scenarios.
+func TestDefaultParserParseEmptyStringForPointer(t *testing.T) {
 	parser := NewDefaultParser("")
 
 	result, err := parser.Parse("", reflect.TypeFor[*string]())
@@ -596,8 +596,8 @@ func TestDefaultParser_Parse_EmptyStringForPointer(t *testing.T) {
 	assert.Nil(t, result, "Should be nil")
 }
 
-// TestDefaultParser_Parse_EmptyStringForNullTypes tests Default Parser parse_ empty string for null types scenarios.
-func TestDefaultParser_Parse_EmptyStringForNullTypes(t *testing.T) {
+// TestDefaultParserParseEmptyStringForNullTypes tests DefaultParser Parse empty string for null types scenarios.
+func TestDefaultParserParseEmptyStringForNullTypes(t *testing.T) {
 	parser := NewDefaultParser("")
 
 	tests := []struct {

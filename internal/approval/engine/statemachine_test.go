@@ -9,8 +9,8 @@ import (
 	"github.com/ilxqx/vef-framework-go/approval"
 )
 
-// TestInstanceStateMachine_ValidTransitions tests instance state machine valid transitions scenarios.
-func TestInstanceStateMachine_ValidTransitions(t *testing.T) {
+// TestInstanceStateMachineValidTransitions tests instance state machine valid transitions scenarios.
+func TestInstanceStateMachineValidTransitions(t *testing.T) {
 	tests := []struct {
 		name string
 		from approval.InstanceStatus
@@ -26,14 +26,14 @@ func TestInstanceStateMachine_ValidTransitions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.True(t, InstanceStateMachine.CanTransition(tt.from, tt.to))
-			assert.NoError(t, InstanceStateMachine.Transition(tt.from, tt.to))
+			assert.True(t, InstanceStateMachine.CanTransition(tt.from, tt.to), "Condition should be true")
+			assert.NoError(t, InstanceStateMachine.Transition(tt.from, tt.to), "Should not return error")
 		})
 	}
 }
 
-// TestInstanceStateMachine_InvalidTransitions tests instance state machine invalid transitions scenarios.
-func TestInstanceStateMachine_InvalidTransitions(t *testing.T) {
+// TestInstanceStateMachineInvalidTransitions tests instance state machine invalid transitions scenarios.
+func TestInstanceStateMachineInvalidTransitions(t *testing.T) {
 	tests := []struct {
 		name string
 		from approval.InstanceStatus
@@ -49,14 +49,14 @@ func TestInstanceStateMachine_InvalidTransitions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.False(t, InstanceStateMachine.CanTransition(tt.from, tt.to))
-			assert.Error(t, InstanceStateMachine.Transition(tt.from, tt.to))
+			assert.False(t, InstanceStateMachine.CanTransition(tt.from, tt.to), "Condition should be false")
+			assert.Error(t, InstanceStateMachine.Transition(tt.from, tt.to), "Should return error")
 		})
 	}
 }
 
-// TestTaskStateMachine_ValidTransitions tests task state machine valid transitions scenarios.
-func TestTaskStateMachine_ValidTransitions(t *testing.T) {
+// TestTaskStateMachineValidTransitions tests task state machine valid transitions scenarios.
+func TestTaskStateMachineValidTransitions(t *testing.T) {
 	tests := []struct {
 		name string
 		from approval.TaskStatus
@@ -77,14 +77,14 @@ func TestTaskStateMachine_ValidTransitions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.True(t, TaskStateMachine.CanTransition(tt.from, tt.to))
-			assert.NoError(t, TaskStateMachine.Transition(tt.from, tt.to))
+			assert.True(t, TaskStateMachine.CanTransition(tt.from, tt.to), "Condition should be true")
+			assert.NoError(t, TaskStateMachine.Transition(tt.from, tt.to), "Should not return error")
 		})
 	}
 }
 
-// TestTaskStateMachine_InvalidTransitions tests task state machine invalid transitions scenarios.
-func TestTaskStateMachine_InvalidTransitions(t *testing.T) {
+// TestTaskStateMachineInvalidTransitions tests task state machine invalid transitions scenarios.
+func TestTaskStateMachineInvalidTransitions(t *testing.T) {
 	tests := []struct {
 		name string
 		from approval.TaskStatus
@@ -102,14 +102,14 @@ func TestTaskStateMachine_InvalidTransitions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.False(t, TaskStateMachine.CanTransition(tt.from, tt.to))
-			assert.Error(t, TaskStateMachine.Transition(tt.from, tt.to))
+			assert.False(t, TaskStateMachine.CanTransition(tt.from, tt.to), "Condition should be false")
+			assert.Error(t, TaskStateMachine.Transition(tt.from, tt.to), "Should return error")
 		})
 	}
 }
 
-// TestInstanceStateMachine_AvailableTransitions tests instance state machine available transitions scenarios.
-func TestInstanceStateMachine_AvailableTransitions(t *testing.T) {
+// TestInstanceStateMachineAvailableTransitions tests instance state machine available transitions scenarios.
+func TestInstanceStateMachineAvailableTransitions(t *testing.T) {
 	targets := InstanceStateMachine.AvailableTransitions(approval.InstanceRunning)
 	require.Len(t, targets, 4, "Should have 4 available transitions from running")
 
@@ -124,8 +124,8 @@ func TestInstanceStateMachine_AvailableTransitions(t *testing.T) {
 	assert.True(t, targetSet[approval.InstanceReturned], "Should include returned")
 }
 
-// TestTaskStateMachine_AvailableTransitions tests task state machine available transitions scenarios.
-func TestTaskStateMachine_AvailableTransitions(t *testing.T) {
+// TestTaskStateMachineAvailableTransitions tests task state machine available transitions scenarios.
+func TestTaskStateMachineAvailableTransitions(t *testing.T) {
 	pending := TaskStateMachine.AvailableTransitions(approval.TaskPending)
 	assert.Len(t, pending, 8, "Should have 8 available transitions from pending")
 
@@ -143,8 +143,8 @@ func TestTaskStateMachine_AvailableTransitions(t *testing.T) {
 	assert.Empty(t, approved, "Should have no transitions from final state")
 }
 
-// TestStateMachine_TransitionError tests state machine transition error scenarios.
-func TestStateMachine_TransitionError(t *testing.T) {
+// TestStateMachineTransitionError tests state machine transition error scenarios.
+func TestStateMachineTransitionError(t *testing.T) {
 	err := InstanceStateMachine.Transition(approval.InstanceApproved, approval.InstanceRunning)
 	require.Error(t, err, "Should return error for invalid transition")
 	assert.Contains(t, err.Error(), "invalid instance transition", "Should contain expected value")

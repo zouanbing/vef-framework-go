@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestParseTag_CommaSeparated tests Parse Tag comma separated scenarios.
-func TestParseTag_CommaSeparated(t *testing.T) {
+// TestParseTagCommaSeparated tests ParseTag comma separated scenarios.
+func TestParseTagCommaSeparated(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
@@ -148,8 +148,8 @@ func TestParseTag_CommaSeparated(t *testing.T) {
 	}
 }
 
-// TestParseTag_SpaceSeparated tests Parse Tag space separated scenarios.
-func TestParseTag_SpaceSeparated(t *testing.T) {
+// TestParseTagSpaceSeparated tests ParseTag space separated scenarios.
+func TestParseTagSpaceSeparated(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
@@ -262,8 +262,8 @@ func TestParseTag_SpaceSeparated(t *testing.T) {
 	}
 }
 
-// TestParseTag_CustomDelimiters tests Parse Tag custom delimiters scenarios.
-func TestParseTag_CustomDelimiters(t *testing.T) {
+// TestParseTagCustomDelimiters tests ParseTag custom delimiters scenarios.
+func TestParseTagCustomDelimiters(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
@@ -340,8 +340,8 @@ func TestParseTag_CustomDelimiters(t *testing.T) {
 	}
 }
 
-// TestParseTag_BareValueMode tests Parse Tag bare value mode scenarios.
-func TestParseTag_BareValueMode(t *testing.T) {
+// TestParseTagBareValueMode tests ParseTag bare value mode scenarios.
+func TestParseTagBareValueMode(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
@@ -458,8 +458,8 @@ func TestParseTag_BareValueMode(t *testing.T) {
 	}
 }
 
-// TestParseTag_EdgeCases tests Parse Tag edge cases scenarios.
-func TestParseTag_EdgeCases(t *testing.T) {
+// TestParseTagEdgeCases tests ParseTag edge cases scenarios.
+func TestParseTagEdgeCases(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
@@ -548,8 +548,8 @@ func TestParseTag_EdgeCases(t *testing.T) {
 	}
 }
 
-// TestParseTag_OptionsOrdering tests Parse Tag options ordering scenarios.
-func TestParseTag_OptionsOrdering(t *testing.T) {
+// TestParseTagOptionsOrdering tests ParseTag options ordering scenarios.
+func TestParseTagOptionsOrdering(t *testing.T) {
 	t.Run("MultipleOptionsAppliedInOrder", func(t *testing.T) {
 		input := "a:1 b:2"
 

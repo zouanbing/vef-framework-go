@@ -372,7 +372,7 @@ func (s *ApprovalSuite) SetupSuite() {
 	dsConfig := s.pgc.DataSource
 
 	bunDB, err := database.New(dsConfig)
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 
 	createApprovalTables(s.T(), bunDB)
 
@@ -548,7 +548,7 @@ func (s *ApprovalSuite) TestCategoryUpdate() {
 		},
 	}, s.authToken)
 	createBody := s.ReadResult(createResp)
-	s.Require().True(createBody.IsOk())
+	s.Require().True(createBody.IsOk(), "Condition should be true")
 	id := s.ReadDataAsMap(createBody.Data)["id"]
 
 	resp := s.MakeRPCRequestWithToken(api.Request{
@@ -584,7 +584,7 @@ func (s *ApprovalSuite) TestCategoryDelete() {
 		},
 	}, s.authToken)
 	createBody := s.ReadResult(createResp)
-	s.Require().True(createBody.IsOk())
+	s.Require().True(createBody.IsOk(), "Condition should be true")
 	id := s.ReadDataAsMap(createBody.Data)["id"]
 
 	resp := s.MakeRPCRequestWithToken(api.Request{
@@ -661,7 +661,7 @@ func (s *ApprovalSuite) TestDelegationFindAll() {
 		},
 	}, s.authToken)
 	createBody := s.ReadResult(createResp)
-	s.Require().True(createBody.IsOk())
+	s.Require().True(createBody.IsOk(), "Condition should be true")
 
 	// DelegationSearch embeds api.M (via apis.Sortable), so search params
 	// are decoded from Meta, not Params. String fields with search:"eq" apply
@@ -723,7 +723,7 @@ func (s *ApprovalSuite) TestDelegationUpdate() {
 		},
 	}, s.authToken)
 	createBody := s.ReadResult(createResp)
-	s.Require().True(createBody.IsOk())
+	s.Require().True(createBody.IsOk(), "Condition should be true")
 	id := s.ReadDataAsMap(createBody.Data)["id"]
 
 	resp := s.MakeRPCRequestWithToken(api.Request{
@@ -760,7 +760,7 @@ func (s *ApprovalSuite) TestDelegationDelete() {
 		},
 	}, s.authToken)
 	createBody := s.ReadResult(createResp)
-	s.Require().True(createBody.IsOk())
+	s.Require().True(createBody.IsOk(), "Condition should be true")
 	id := s.ReadDataAsMap(createBody.Data)["id"]
 
 	resp := s.MakeRPCRequestWithToken(api.Request{
@@ -845,7 +845,7 @@ func (s *ApprovalSuite) TestFlowPublishVersionAndGetGraph() {
 		},
 	}, s.authToken)
 	catBody := s.ReadResult(catResp)
-	s.Require().True(catBody.IsOk())
+	s.Require().True(catBody.IsOk(), "Condition should be true")
 	categoryID := s.ReadDataAsMap(catBody.Data)["id"].(string)
 
 	definition := `{
@@ -949,7 +949,7 @@ func (s *ApprovalSuite) TestFlowDeployInvalidDefinition() {
 		},
 	}, s.authToken)
 	catBody := s.ReadResult(catResp)
-	s.Require().True(catBody.IsOk())
+	s.Require().True(catBody.IsOk(), "Condition should be true")
 	categoryID := s.ReadDataAsMap(catBody.Data)["id"].(string)
 
 	resp := s.MakeRPCRequestWithToken(api.Request{
@@ -989,7 +989,7 @@ func (s *ApprovalSuite) TestInstanceStart() {
 		},
 	}, s.authToken)
 	catBody := s.ReadResult(catResp)
-	s.Require().True(catBody.IsOk())
+	s.Require().True(catBody.IsOk(), "Condition should be true")
 	categoryID := s.ReadDataAsMap(catBody.Data)["id"].(string)
 
 	definition := `{
@@ -1496,7 +1496,7 @@ func (s *ApprovalSuite) TestInstanceProcessTaskApprove() {
 		Column("status").
 		Where("id = ?", instanceID).
 		Scan(s.ctx, &status)
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.Equal("approved", status, "instance should be approved after all tasks approved")
 }
 
@@ -1549,7 +1549,7 @@ func (s *ApprovalSuite) TestInstanceProcessTaskReject() {
 		Column("status").
 		Where("id = ?", instanceID).
 		Scan(s.ctx, &status)
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.Equal("rejected", status, "instance should be rejected")
 }
 
@@ -1579,7 +1579,7 @@ func (s *ApprovalSuite) TestInstanceWithdrawSuccess() {
 		Column("status").
 		Where("id = ?", instanceID).
 		Scan(s.ctx, &status)
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.Equal("withdrawn", status, "instance should be withdrawn")
 }
 
@@ -1627,7 +1627,7 @@ func (s *ApprovalSuite) TestInstanceAddCcSuccess() {
 		TableExpr("apv_cc_record").
 		Where("instance_id = ?", instanceID).
 		Count(s.ctx)
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.Equal(2, count, "should have 2 CC records")
 }
 
@@ -1678,7 +1678,7 @@ func (s *ApprovalSuite) TestInstanceAddAssigneeSuccess() {
 		Where("instance_id = ?", instanceID).
 		Where("assignee_id = ?", "new-approver-001").
 		Count(s.ctx)
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.Equal(1, count, "should have a task for the new assignee")
 }
 
@@ -1748,7 +1748,7 @@ func (s *ApprovalSuite) TestInstanceRemoveAssigneeSuccess() {
 		Column("status").
 		Where("id = ?", extraTaskID).
 		Scan(s.ctx, &taskStatus)
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.Equal("removed", taskStatus, "extra assignee task should be removed")
 }
 
@@ -1883,7 +1883,7 @@ func (s *ApprovalSuite) TestInstanceProcessTaskTransfer() {
 		Column("status").
 		Where("id = ?", taskID).
 		Scan(s.ctx, &origStatus)
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.Equal("transferred", origStatus, "original task should be transferred")
 
 	count, err := s.bunDB.NewSelect().
@@ -1892,7 +1892,7 @@ func (s *ApprovalSuite) TestInstanceProcessTaskTransfer() {
 		Where("assignee_id = ?", "approver-002").
 		Where("status = ?", "pending").
 		Count(s.ctx)
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.Equal(1, count, "should have a pending task for the transfer target")
 }
 

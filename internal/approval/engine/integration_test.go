@@ -733,7 +733,7 @@ func TestApprovalProcessorDuplicateHandlerNone(t *testing.T) {
 	assert.Len(t, tasks, 2, "DuplicateHandlerNone should keep duplicate assignees")
 }
 
-// TestLoadFlowCategoryID tests load flow category i d scenarios.
+// TestLoadFlowCategoryID tests load flow category ID scenarios.
 func TestLoadFlowCategoryID(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()

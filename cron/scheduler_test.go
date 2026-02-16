@@ -33,8 +33,8 @@ func TestNewScheduler(t *testing.T) {
 	assert.NotNil(t, scheduler, "Scheduler should not be nil")
 }
 
-// TestScheduler_NewJob_OneTime tests creating and executing a one-time job.
-func TestScheduler_NewJob_OneTime(t *testing.T) {
+// TestSchedulerNewJobOneTime tests creating and executing a one-time job.
+func TestSchedulerNewJobOneTime(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err, "Should create gocron scheduler")
 
@@ -71,8 +71,8 @@ func TestScheduler_NewJob_OneTime(t *testing.T) {
 	assert.Equal(t, int32(1), atomic.LoadInt32(&executed), "One-time job should execute exactly once")
 }
 
-// TestScheduler_NewJob_Duration tests creating and executing a duration-based job with limited runs.
-func TestScheduler_NewJob_Duration(t *testing.T) {
+// TestSchedulerNewJobDuration tests creating and executing a duration-based job with limited runs.
+func TestSchedulerNewJobDuration(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err, "Should create gocron scheduler")
 
@@ -108,8 +108,8 @@ func TestScheduler_NewJob_Duration(t *testing.T) {
 	assert.Equal(t, int32(3), atomic.LoadInt32(&executed), "Duration job should execute exactly 3 times")
 }
 
-// TestScheduler_NewJob_Cron tests creating and executing a cron-based job with limited runs.
-func TestScheduler_NewJob_Cron(t *testing.T) {
+// TestSchedulerNewJobCron tests creating and executing a cron-based job with limited runs.
+func TestSchedulerNewJobCron(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err, "Should create gocron scheduler")
 
@@ -145,8 +145,8 @@ func TestScheduler_NewJob_Cron(t *testing.T) {
 	assert.Equal(t, int32(2), atomic.LoadInt32(&executed), "Cron job should execute exactly 2 times")
 }
 
-// TestScheduler_NewJob_DurationRandom tests creating and executing a random duration job.
-func TestScheduler_NewJob_DurationRandom(t *testing.T) {
+// TestSchedulerNewJobDurationRandom tests creating and executing a random duration job.
+func TestSchedulerNewJobDurationRandom(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err, "Should create gocron scheduler")
 
@@ -184,8 +184,8 @@ func TestScheduler_NewJob_DurationRandom(t *testing.T) {
 	assert.LessOrEqual(t, executions, int32(2), "Random duration job should not exceed limit")
 }
 
-// TestScheduler_Jobs tests retrieving all scheduled jobs.
-func TestScheduler_Jobs(t *testing.T) {
+// TestSchedulerJobs tests retrieving all scheduled jobs.
+func TestSchedulerJobs(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err, "Should create gocron scheduler")
 
@@ -213,8 +213,8 @@ func TestScheduler_Jobs(t *testing.T) {
 	assert.Equal(t, "test-job", jobs[0].Name(), "Job name should match")
 }
 
-// TestScheduler_RemoveJob tests removing a job by ID.
-func TestScheduler_RemoveJob(t *testing.T) {
+// TestSchedulerRemoveJob tests removing a job by ID.
+func TestSchedulerRemoveJob(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err, "Should create gocron scheduler")
 
@@ -244,8 +244,8 @@ func TestScheduler_RemoveJob(t *testing.T) {
 	assert.Len(t, jobs, 0, "Scheduler should have no jobs after removal")
 }
 
-// TestScheduler_RemoveByTags tests removing jobs by tag.
-func TestScheduler_RemoveByTags(t *testing.T) {
+// TestSchedulerRemoveByTags tests removing jobs by tag.
+func TestSchedulerRemoveByTags(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err, "Should create gocron scheduler")
 
@@ -292,8 +292,8 @@ func TestScheduler_RemoveByTags(t *testing.T) {
 	assert.Equal(t, "job3", jobs[0].Name(), "Remaining job should be job3")
 }
 
-// TestScheduler_UpdateJob tests updating an existing job.
-func TestScheduler_UpdateJob(t *testing.T) {
+// TestSchedulerUpdateJob tests updating an existing job.
+func TestSchedulerUpdateJob(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err, "Should create gocron scheduler")
 
@@ -340,8 +340,8 @@ func TestScheduler_UpdateJob(t *testing.T) {
 	assert.Equal(t, int32(1), atomic.LoadInt32(&executed2), "Updated task should execute once")
 }
 
-// TestScheduler_WithContext tests job cancellation via context.
-func TestScheduler_WithContext(t *testing.T) {
+// TestSchedulerWithContext tests job cancellation via context.
+func TestSchedulerWithContext(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err, "Should create gocron scheduler")
 
@@ -384,8 +384,8 @@ func TestScheduler_WithContext(t *testing.T) {
 	assert.Equal(t, int32(0), atomic.LoadInt32(&executed), "Job should not execute after context cancellation")
 }
 
-// TestScheduler_StopJobs tests stopping all jobs.
-func TestScheduler_StopJobs(t *testing.T) {
+// TestSchedulerStopJobs tests stopping all jobs.
+func TestSchedulerStopJobs(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err, "Should create gocron scheduler")
 
@@ -426,8 +426,8 @@ func TestScheduler_StopJobs(t *testing.T) {
 	assert.Equal(t, executedAfterStop, finalExecuted, "Jobs should not execute after being stopped")
 }
 
-// TestJob_RunNow tests triggering a job immediately.
-func TestJob_RunNow(t *testing.T) {
+// TestJobRunNow tests triggering a job immediately.
+func TestJobRunNow(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err, "Should create gocron scheduler")
 
@@ -466,8 +466,8 @@ func TestJob_RunNow(t *testing.T) {
 	assert.Equal(t, int32(1), atomic.LoadInt32(&executed), "Job should execute immediately after RunNow")
 }
 
-// TestJob_NextRuns tests retrieving future run times.
-func TestJob_NextRuns(t *testing.T) {
+// TestJobNextRuns tests retrieving future run times.
+func TestJobNextRuns(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err, "Should create gocron scheduler")
 

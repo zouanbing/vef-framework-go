@@ -220,8 +220,8 @@ func TestParseStruct(t *testing.T) {
 	}
 }
 
-// TestParseStruct_NonStructTypes tests Parse Struct non struct types scenarios.
-func TestParseStruct_NonStructTypes(t *testing.T) {
+// TestParseStructNonStructTypes tests ParseStruct non struct types scenarios.
+func TestParseStructNonStructTypes(t *testing.T) {
 	tests := []struct {
 		name string
 		typ  reflect.Type
@@ -272,8 +272,8 @@ func TestNewSchemaFor(t *testing.T) {
 	assert.Equal(t, []string{"姓名", "邮箱"}, schema.ColumnNames(), "Should equal expected value")
 }
 
-// TestSchema_ColumnNames tests Schema column names scenarios.
-func TestSchema_ColumnNames(t *testing.T) {
+// TestSchemaColumnNames tests Schema column names scenarios.
+func TestSchemaColumnNames(t *testing.T) {
 	type TestStruct struct {
 		Name  string `tabular:"用户名"`
 		Email string `tabular:"电子邮箱"`
@@ -418,8 +418,8 @@ func TestBuildColumn(t *testing.T) {
 	}
 }
 
-// TestSchema_ColumnOrderingSorting tests Schema column ordering sorting scenarios.
-func TestSchema_ColumnOrderingSorting(t *testing.T) {
+// TestSchemaColumnOrderingSorting tests Schema column ordering sorting scenarios.
+func TestSchemaColumnOrderingSorting(t *testing.T) {
 	type UnorderedStruct struct {
 		Field5 string `tabular:"字段5,order=4"`
 		Field2 string `tabular:"字段2,order=1"`
@@ -439,8 +439,8 @@ func TestSchema_ColumnOrderingSorting(t *testing.T) {
 	assert.Equal(t, []int{0, 1, 2, 3, 4}, orders, "Should equal expected value")
 }
 
-// TestSchema_EmptySchema tests Schema empty schema scenarios.
-func TestSchema_EmptySchema(t *testing.T) {
+// TestSchemaEmptySchema tests Schema empty schema scenarios.
+func TestSchemaEmptySchema(t *testing.T) {
 	type EmptyStruct struct{}
 
 	schema := NewSchemaFor[EmptyStruct]()

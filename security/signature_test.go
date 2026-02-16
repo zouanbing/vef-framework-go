@@ -84,8 +84,8 @@ func TestNewSignature(t *testing.T) {
 	})
 }
 
-// TestSignature_Sign tests Signature sign scenarios.
-func TestSignature_Sign(t *testing.T) {
+// TestSignatureSign tests Signature sign scenarios.
+func TestSignatureSign(t *testing.T) {
 	sig, err := NewSignature(testSignatureSecret)
 	require.NoError(t, err, "Should create signature without error")
 
@@ -141,8 +141,8 @@ func TestSignature_Sign(t *testing.T) {
 	})
 }
 
-// TestSignature_Verify tests Signature verify scenarios.
-func TestSignature_Verify(t *testing.T) {
+// TestSignatureVerify tests Signature verify scenarios.
+func TestSignatureVerify(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("ValidSignature", func(t *testing.T) {
@@ -316,8 +316,8 @@ func TestSignature_Verify(t *testing.T) {
 	})
 }
 
-// TestSignature_VerifyWithSecret tests Signature verify with secret scenarios.
-func TestSignature_VerifyWithSecret(t *testing.T) {
+// TestSignatureVerifyWithSecret tests Signature verify with secret scenarios.
+func TestSignatureVerifyWithSecret(t *testing.T) {
 	ctx := context.Background()
 	differentSecret := "bf7786789ce92be8d04d5b62e233ff72fa861ff6e53dfbc2d44c3a4a47cd25d3"
 
@@ -366,8 +366,8 @@ func TestSignature_VerifyWithSecret(t *testing.T) {
 	})
 }
 
-// TestSignature_Algorithms tests Signature algorithms scenarios.
-func TestSignature_Algorithms(t *testing.T) {
+// TestSignatureAlgorithms tests Signature algorithms scenarios.
+func TestSignatureAlgorithms(t *testing.T) {
 	ctx := context.Background()
 
 	algorithms := []struct {

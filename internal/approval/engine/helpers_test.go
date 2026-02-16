@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/null"
+	"github.com/ilxqx/vef-framework-go/timex"
 )
 
 func newNullTime(t time.Time) null.Time {
@@ -80,7 +80,7 @@ func TestDeduplicateAssignees(t *testing.T) {
 	}
 }
 
-// TestExtractUserIDs tests extract user i ds scenarios.
+// TestExtractUserIDs tests extract user IDs scenarios.
 func TestExtractUserIDs(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -183,7 +183,7 @@ func TestMatchDelegation(t *testing.T) {
 			expectedID: "",
 		},
 		{
-			name:       "NoMatch",
+			name: "NoMatch",
 			delegations: []approval.Delegation{
 				{DelegateeID: "d1", FlowID: null.StringFrom("other-flow")},
 			},

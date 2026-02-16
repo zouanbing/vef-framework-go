@@ -56,12 +56,12 @@ func (s *QueryServiceTestSuite) startFlowAndGetInstance(applicantID, title strin
 		ApplicantID: applicantID,
 		FormData:    map[string]any{"reason": "test"},
 	})
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 
 	return instance
 }
 
-func (s *QueryServiceTestSuite) TestFindInstances_NoFilter() {
+func (s *QueryServiceTestSuite) TestFindInstancesNoFilter() {
 	instance := s.startFlowAndGetInstance("applicant1", "Test Instance")
 
 	results, count, err := s.svc.FindInstances(s.ctx, InstanceQuery{
@@ -69,39 +69,39 @@ func (s *QueryServiceTestSuite) TestFindInstances_NoFilter() {
 	})
 	s.Require().NoError(err, "FindInstances with no filter should succeed")
 	s.Equal(1, count, "Should find 1 instance")
-	s.Require().Len(results, 1)
+	s.Require().Len(results, 1, "Length should match expected value")
 	s.Equal(instance.ID, results[0].ID)
 }
 
-func (s *QueryServiceTestSuite) TestFindInstances_FilterByApplicantID() {
+func (s *QueryServiceTestSuite) TestFindInstancesFilterByApplicantID() {
 	s.startFlowAndGetInstance("applicant1", "Instance A")
 
 	results, count, err := s.svc.FindInstances(s.ctx, InstanceQuery{
 		ApplicantID: "applicant1",
 		Pageable:    page.Pageable{Page: 1, Size: 10},
 	})
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.Equal(1, count)
-	s.Require().Len(results, 1)
+	s.Require().Len(results, 1, "Length should match expected value")
 	s.Equal("applicant1", results[0].ApplicantID)
 
 	results, count, err = s.svc.FindInstances(s.ctx, InstanceQuery{
 		ApplicantID: "nonexistent",
 		Pageable:    page.Pageable{Page: 1, Size: 10},
 	})
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.Equal(0, count)
 	s.Empty(results)
 }
 
-func (s *QueryServiceTestSuite) TestFindInstances_FilterByStatus() {
+func (s *QueryServiceTestSuite) TestFindInstancesFilterByStatus() {
 	s.startFlowAndGetInstance("applicant1", "Running Instance")
 
 	results, count, err := s.svc.FindInstances(s.ctx, InstanceQuery{
 		Status:   string(approval.InstanceRunning),
 		Pageable: page.Pageable{Page: 1, Size: 10},
 	})
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.Equal(1, count)
 	s.Equal(string(approval.InstanceRunning), results[0].Status)
 
@@ -109,19 +109,19 @@ func (s *QueryServiceTestSuite) TestFindInstances_FilterByStatus() {
 		Status:   string(approval.InstanceRejected),
 		Pageable: page.Pageable{Page: 1, Size: 10},
 	})
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.Equal(0, count)
 	s.Empty(results)
 }
 
-func (s *QueryServiceTestSuite) TestFindInstances_FilterByFlowID() {
+func (s *QueryServiceTestSuite) TestFindInstancesFilterByFlowID() {
 	instance := s.startFlowAndGetInstance("applicant1", "Flow Filter Test")
 
 	results, count, err := s.svc.FindInstances(s.ctx, InstanceQuery{
 		FlowID:   instance.FlowID,
 		Pageable: page.Pageable{Page: 1, Size: 10},
 	})
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.Equal(1, count)
 	s.Equal(instance.FlowID, results[0].FlowID)
 
@@ -129,18 +129,18 @@ func (s *QueryServiceTestSuite) TestFindInstances_FilterByFlowID() {
 		FlowID:   "nonexistent_flow_id",
 		Pageable: page.Pageable{Page: 1, Size: 10},
 	})
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.Equal(0, count)
 }
 
-func (s *QueryServiceTestSuite) TestFindInstances_FilterByKeyword() {
+func (s *QueryServiceTestSuite) TestFindInstancesFilterByKeyword() {
 	s.startFlowAndGetInstance("applicant1", "Leave Application")
 
 	results, count, err := s.svc.FindInstances(s.ctx, InstanceQuery{
 		Keyword:  "Leave",
 		Pageable: page.Pageable{Page: 1, Size: 10},
 	})
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.Equal(1, count)
 	s.Contains(results[0].Title, "Leave")
 
@@ -148,37 +148,37 @@ func (s *QueryServiceTestSuite) TestFindInstances_FilterByKeyword() {
 		Keyword:  "zzz_nonexistent",
 		Pageable: page.Pageable{Page: 1, Size: 10},
 	})
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.Equal(0, count)
 }
 
-func (s *QueryServiceTestSuite) TestFindInstances_Pagination() {
+func (s *QueryServiceTestSuite) TestFindInstancesPagination() {
 	s.startFlowAndGetInstance("applicant1", "Page Test")
 
 	results, count, err := s.svc.FindInstances(s.ctx, InstanceQuery{
 		Pageable: page.Pageable{Page: 1, Size: 1},
 	})
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.Equal(1, count)
 	s.Len(results, 1)
 
 	results, _, err = s.svc.FindInstances(s.ctx, InstanceQuery{
 		Pageable: page.Pageable{Page: 2, Size: 1},
 	})
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.Empty(results)
 }
 
-func (s *QueryServiceTestSuite) TestFindInstances_EmptyResult() {
+func (s *QueryServiceTestSuite) TestFindInstancesEmptyResult() {
 	results, count, err := s.svc.FindInstances(s.ctx, InstanceQuery{
 		Pageable: page.Pageable{Page: 1, Size: 10},
 	})
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.Equal(0, count)
 	s.Empty(results)
 }
 
-func (s *QueryServiceTestSuite) TestFindTasks_NoFilter() {
+func (s *QueryServiceTestSuite) TestFindTasksNoFilter() {
 	s.startFlowAndGetInstance("applicant1", "Task Query Test")
 
 	results, count, err := s.svc.FindTasks(s.ctx, TaskQuery{
@@ -189,14 +189,14 @@ func (s *QueryServiceTestSuite) TestFindTasks_NoFilter() {
 	s.NotEmpty(results)
 }
 
-func (s *QueryServiceTestSuite) TestFindTasks_FilterByAssigneeID() {
+func (s *QueryServiceTestSuite) TestFindTasksFilterByAssigneeID() {
 	s.startFlowAndGetInstance("applicant1", "Assignee Filter")
 
 	results, count, err := s.svc.FindTasks(s.ctx, TaskQuery{
 		AssigneeID: "user1",
 		Pageable:   page.Pageable{Page: 1, Size: 10},
 	})
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.True(count > 0)
 	for _, task := range results {
 		s.Equal("user1", task.AssigneeID)
@@ -206,53 +206,53 @@ func (s *QueryServiceTestSuite) TestFindTasks_FilterByAssigneeID() {
 		AssigneeID: "nonexistent",
 		Pageable:   page.Pageable{Page: 1, Size: 10},
 	})
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.Equal(0, count)
 }
 
-func (s *QueryServiceTestSuite) TestFindTasks_FilterByInstanceID() {
+func (s *QueryServiceTestSuite) TestFindTasksFilterByInstanceID() {
 	instance := s.startFlowAndGetInstance("applicant1", "Instance Filter")
 
 	results, count, err := s.svc.FindTasks(s.ctx, TaskQuery{
 		InstanceID: instance.ID,
 		Pageable:   page.Pageable{Page: 1, Size: 10},
 	})
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.True(count > 0)
 	for _, task := range results {
 		s.Equal(instance.ID, task.InstanceID)
 	}
 }
 
-func (s *QueryServiceTestSuite) TestFindTasks_FilterByStatus() {
+func (s *QueryServiceTestSuite) TestFindTasksFilterByStatus() {
 	s.startFlowAndGetInstance("applicant1", "Status Filter")
 
 	results, count, err := s.svc.FindTasks(s.ctx, TaskQuery{
 		Status:   string(approval.TaskPending),
 		Pageable: page.Pageable{Page: 1, Size: 10},
 	})
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.True(count > 0)
 	for _, task := range results {
 		s.Equal(string(approval.TaskPending), task.Status)
 	}
 }
 
-func (s *QueryServiceTestSuite) TestFindTasks_EmptyResult() {
+func (s *QueryServiceTestSuite) TestFindTasksEmptyResult() {
 	results, count, err := s.svc.FindTasks(s.ctx, TaskQuery{
 		Pageable: page.Pageable{Page: 1, Size: 10},
 	})
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.Equal(0, count)
 	s.Empty(results)
 }
 
-func (s *QueryServiceTestSuite) TestGetInstanceDetail_Success() {
+func (s *QueryServiceTestSuite) TestGetInstanceDetailSuccess() {
 	instance := s.startFlowAndGetInstance("applicant1", "Detail Test")
 
 	detail, err := s.svc.GetInstanceDetail(s.ctx, instance.ID)
 	s.Require().NoError(err, "GetInstanceDetail should succeed")
-	s.Require().NotNil(detail)
+	s.Require().NotNil(detail, "Should not be nil")
 
 	s.Equal(instance.ID, detail.Instance.ID)
 	s.Equal("Detail Test", detail.Instance.Title)
@@ -262,13 +262,13 @@ func (s *QueryServiceTestSuite) TestGetInstanceDetail_Success() {
 	s.NotEmpty(detail.FlowNodes, "Should have flow nodes")
 }
 
-func (s *QueryServiceTestSuite) TestGetInstanceDetail_NonexistentInstance() {
+func (s *QueryServiceTestSuite) TestGetInstanceDetailNonexistentInstance() {
 	_, err := s.svc.GetInstanceDetail(s.ctx, "nonexistent_id")
 	s.Require().Error(err, "Should return error for nonexistent instance")
 	s.Contains(err.Error(), "query instance")
 }
 
-func (s *QueryServiceTestSuite) TestGetActionLogs_Success() {
+func (s *QueryServiceTestSuite) TestGetActionLogsSuccess() {
 	instance := s.startFlowAndGetInstance("applicant1", "Action Log Test")
 
 	logs, err := s.svc.GetActionLogs(s.ctx, instance.ID)
@@ -277,14 +277,14 @@ func (s *QueryServiceTestSuite) TestGetActionLogs_Success() {
 	s.Equal(string(approval.ActionSubmit), logs[0].Action)
 }
 
-func (s *QueryServiceTestSuite) TestGetActionLogs_EmptyResult() {
+func (s *QueryServiceTestSuite) TestGetActionLogsEmptyResult() {
 	logs, err := s.svc.GetActionLogs(s.ctx, id.Generate())
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 	s.Empty(logs)
 }
 
-// TestQueryService_QueryErrors tests query service query errors scenarios.
-func TestQueryService_QueryErrors(t *testing.T) {
+// TestQueryServiceQueryErrors tests query service query errors scenarios.
+func TestQueryServiceQueryErrors(t *testing.T) {
 	tests := []struct {
 		name        string
 		dropTable   string
