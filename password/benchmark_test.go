@@ -250,7 +250,7 @@ func BenchmarkArgon2Matches_Default(b *testing.B) {
 	}
 }
 
-// Comparison test that prints a formatted table.
+// TestEncoderPerformanceComparison runs a comparison test that prints a formatted table.
 func TestEncoderPerformanceComparison(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping performance comparison in short mode")

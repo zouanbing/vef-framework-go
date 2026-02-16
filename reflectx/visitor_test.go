@@ -539,7 +539,7 @@ func TestMethodVisitorCallableMethodValue(t *testing.T) {
 	visitor := Visitor{
 		VisitMethod: func(method reflect.Method, methodValue reflect.Value, _ int) VisitAction {
 			if method.Name == "BaseMethod" {
-				// methodValue 应该是可调用的方法值，已经绑定了接收者
+				// methodValue should be a callable method value bound to the receiver.
 				results := methodValue.Call(nil)
 				if len(results) > 0 {
 					methodResults = append(methodResults, results[0].String())
@@ -549,7 +549,7 @@ func TestMethodVisitorCallableMethodValue(t *testing.T) {
 			return Continue
 		},
 		VisitStruct: func(_ reflect.Type, _ reflect.Value, depth int) VisitAction {
-			// 只访问第一层结构，避免重复
+			// Only visit the first-level struct to avoid repetition.
 			if depth > 0 {
 				return SkipChildren
 			}
@@ -560,7 +560,7 @@ func TestMethodVisitorCallableMethodValue(t *testing.T) {
 
 	Visit(reflect.ValueOf(testStruct), visitor)
 
-	// 验证我们能够直接调用 methodValue
+	// Verify we can call methodValue directly.
 	assert.Len(t, methodResults, 1, "Length should be 1")
 	assert.Equal(t, "base", methodResults[0], "Should equal expected value")
 }
