@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/decimal"
 	"github.com/ilxqx/vef-framework-go/null"
+	"github.com/ilxqx/vef-framework-go/timex"
 )
 
 // TestCopyBasic tests basic struct copying functionality.
@@ -1087,6 +1087,100 @@ func TestCopyOptions(t *testing.T) {
 
 		require.NoError(t, Copy(src, &dst, WithCaseInsensitive()), "Should copy with case insensitive option")
 		assert.Equal(t, "John Doe", dst.Name, "Name should match despite case difference")
+	})
+}
+
+// TestCopyDeepCopy tests copy with deep copy option.
+func TestCopyDeepCopy(t *testing.T) {
+	t.Run("DeepCopySlice", func(t *testing.T) {
+		type Source struct {
+			Tags []string
+		}
+
+		type Dest struct {
+			Tags []string
+		}
+
+		src := Source{Tags: []string{"a", "b", "c"}}
+
+		var dst Dest
+
+		require.NoError(t, Copy(src, &dst, WithDeepCopy()), "Should copy with deep copy option")
+		assert.Equal(t, []string{"a", "b", "c"}, dst.Tags, "Tags should match")
+
+		// Modify source to verify deep copy
+		src.Tags[0] = "modified"
+		assert.Equal(t, "a", dst.Tags[0], "Deep copy should not share underlying array")
+	})
+
+	t.Run("DeepCopyNestedStruct", func(t *testing.T) {
+		type Inner struct {
+			Value string
+		}
+
+		type Source struct {
+			Inner *Inner
+		}
+
+		type Dest struct {
+			Inner *Inner
+		}
+
+		src := Source{Inner: &Inner{Value: "test"}}
+
+		var dst Dest
+
+		require.NoError(t, Copy(src, &dst, WithDeepCopy()), "Should deep copy nested struct")
+		require.NotNil(t, dst.Inner, "Inner should not be nil")
+		assert.Equal(t, "test", dst.Inner.Value, "Inner value should match")
+	})
+}
+
+// TestCopyFieldNameMapping tests copy with field name mapping.
+func TestCopyFieldNameMapping(t *testing.T) {
+	t.Run("MappedFields", func(t *testing.T) {
+		type Source struct {
+			FullName string
+		}
+
+		type Dest struct {
+			Name string
+		}
+
+		src := Source{FullName: "John Doe"}
+
+		var dst Dest
+
+		require.NoError(t, Copy(src, &dst, WithFieldNameMapping(
+			FieldNameMapping{
+				SrcType: Source{},
+				DstType: Dest{},
+				Mapping: map[string]string{
+					"FullName": "Name",
+				},
+			},
+		)), "Should copy with field name mapping")
+		assert.Equal(t, "John Doe", dst.Name, "Mapped field should match")
+	})
+}
+
+// TestCopyCustomTypeConverters tests copy with custom type converters.
+func TestCopyCustomTypeConverters(t *testing.T) {
+	t.Run("CustomStringToIntConverter", func(t *testing.T) {
+		type Source struct {
+			Value string
+		}
+
+		type Dest struct {
+			Value string
+		}
+
+		src := Source{Value: "hello"}
+
+		var dst Dest
+
+		require.NoError(t, Copy(src, &dst, WithTypeConverters()), "Should copy with empty custom converters")
+		assert.Equal(t, "hello", dst.Value, "Value should match")
 	})
 }
 

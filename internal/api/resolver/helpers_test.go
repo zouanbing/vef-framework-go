@@ -179,6 +179,135 @@ func (*mockResource) CreateUserFactory() func() error {
 	return func() error { return nil }
 }
 
+// TestRESTResolve tests the REST resolver.
+func TestRESTResolve(t *testing.T) {
+	resolver := NewRest()
+
+	t.Run("NonRESTResourceReturnsNil", func(t *testing.T) {
+		resource := api.NewRPCResource("test")
+		spec := api.OperationSpec{Action: "get", Handler: func() error { return nil }}
+
+		result, err := resolver.Resolve(resource, spec)
+
+		assert.NoError(t, err, "Should not return error for non-REST resource")
+		assert.Nil(t, result, "Should return nil for non-REST resource")
+	})
+
+	t.Run("RESTWithoutHandler", func(t *testing.T) {
+		resource := api.NewRESTResource("test")
+		spec := api.OperationSpec{Action: "get", Handler: nil}
+
+		_, err := resolver.Resolve(resource, spec)
+
+		assert.Error(t, err, "Should return error when REST handler is nil")
+		assert.Contains(t, err.Error(), "handler is required", "Error should indicate handler required")
+	})
+
+	t.Run("RESTWithValidHandler", func(t *testing.T) {
+		resource := api.NewRESTResource("test")
+		spec := api.OperationSpec{Action: "get", Handler: func() error { return nil }}
+
+		result, err := resolver.Resolve(resource, spec)
+
+		assert.NoError(t, err, "Should resolve valid REST handler")
+		assert.NotNil(t, result, "Should return resolved handler")
+	})
+}
+
+// TestRPCResolve tests the RPC resolver.
+func TestRPCResolve(t *testing.T) {
+	resolver := NewRPC()
+
+	t.Run("NonRPCResourceReturnsNil", func(t *testing.T) {
+		resource := api.NewRESTResource("test")
+		spec := api.OperationSpec{Action: "get", Handler: func() error { return nil }}
+
+		result, err := resolver.Resolve(resource, spec)
+
+		assert.NoError(t, err, "Should not return error for non-RPC resource")
+		assert.Nil(t, result, "Should return nil for non-RPC resource")
+	})
+
+	t.Run("RPCWithExplicitHandler", func(t *testing.T) {
+		resource := api.NewRPCResource("test")
+		spec := api.OperationSpec{Action: "get", Handler: func() error { return nil }}
+
+		result, err := resolver.Resolve(resource, spec)
+
+		assert.NoError(t, err, "Should resolve explicit RPC handler")
+		assert.NotNil(t, result, "Should return resolved handler")
+	})
+
+	t.Run("RPCWithMethodLookup", func(t *testing.T) {
+		resource := &mockResource{
+			Resource: api.NewRPCResource("test"),
+		}
+		spec := api.OperationSpec{Action: "get_user"}
+
+		result, err := resolver.Resolve(resource, spec)
+
+		assert.NoError(t, err, "Should resolve RPC handler via method lookup")
+		assert.NotNil(t, result, "Should return resolved handler")
+	})
+
+	t.Run("RPCMethodNotFound", func(t *testing.T) {
+		resource := &mockResource{
+			Resource: api.NewRPCResource("test"),
+		}
+		spec := api.OperationSpec{Action: "non_existent_method"}
+
+		_, err := resolver.Resolve(resource, spec)
+
+		assert.Error(t, err, "Should return error when method not found")
+	})
+
+	t.Run("RPCWithFactoryMethod", func(t *testing.T) {
+		resource := &mockResource{
+			Resource: api.NewRPCResource("test"),
+		}
+		spec := api.OperationSpec{Action: "create_user_factory"}
+
+		result, err := resolver.Resolve(resource, spec)
+
+		assert.NoError(t, err, "Should resolve factory method")
+		assert.NotNil(t, result, "Should return resolved factory handler")
+	})
+}
+
+// TestResolveHandlerFromSpec tests resolveHandlerFromSpec with various inputs.
+func TestResolveHandlerFromSpec(t *testing.T) {
+	t.Run("StringHandlerMethodLookup", func(t *testing.T) {
+		resource := &mockResource{
+			Resource: api.NewRPCResource("test"),
+		}
+		spec := api.OperationSpec{Action: "get_user", Handler: "GetUser"}
+
+		result, err := resolveHandlerFromSpec(spec, resource)
+
+		assert.NoError(t, err, "Should resolve string handler via method lookup")
+		assert.NotNil(t, result, "Should return resolved handler")
+	})
+
+	t.Run("FuncHandler", func(t *testing.T) {
+		resource := api.NewRPCResource("test")
+		spec := api.OperationSpec{Action: "get", Handler: func() error { return nil }}
+
+		result, err := resolveHandlerFromSpec(spec, resource)
+
+		assert.NoError(t, err, "Should resolve func handler")
+		assert.NotNil(t, result, "Should return resolved handler")
+	})
+
+	t.Run("InvalidHandlerType", func(t *testing.T) {
+		resource := api.NewRPCResource("test")
+		spec := api.OperationSpec{Action: "get", Handler: 42}
+
+		_, err := resolveHandlerFromSpec(spec, resource)
+
+		assert.Error(t, err, "Should return error for invalid handler type")
+	})
+}
+
 func TestFindHandlerMethod(t *testing.T) {
 	t.Log("Testing findHandlerMethod function")
 

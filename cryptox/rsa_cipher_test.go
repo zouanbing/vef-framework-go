@@ -399,6 +399,115 @@ func TestRsaCipher_InvalidSignature(t *testing.T) {
 	assert.Error(t, err, "Should return error")
 }
 
+// TestRsaCipher_InvalidPem tests RSA cipher with invalid PEM data.
+func TestRsaCipher_InvalidPem(t *testing.T) {
+	t.Run("InvalidPrivatePem", func(t *testing.T) {
+		_, err := NewRSAFromPem([]byte("not-a-pem"), nil)
+		assert.Error(t, err, "Should return error for invalid private PEM")
+	})
+
+	t.Run("InvalidPublicPem", func(t *testing.T) {
+		_, err := NewRSAFromPem(nil, []byte("not-a-pem"))
+		assert.Error(t, err, "Should return error for invalid public PEM")
+	})
+
+	t.Run("UnsupportedPrivatePemType", func(t *testing.T) {
+		badPEM := pem.EncodeToMemory(&pem.Block{
+			Type:  "CERTIFICATE",
+			Bytes: []byte("fake-data"),
+		})
+		_, err := NewRSAFromPem(badPEM, nil)
+		assert.Error(t, err, "Should return error for unsupported PEM type")
+	})
+
+	t.Run("UnsupportedPublicPemType", func(t *testing.T) {
+		badPEM := pem.EncodeToMemory(&pem.Block{
+			Type:  "CERTIFICATE",
+			Bytes: []byte("fake-data"),
+		})
+		_, err := NewRSAFromPem(nil, badPEM)
+		assert.Error(t, err, "Should return error for unsupported public PEM type")
+	})
+
+	t.Run("Pkcs1PublicKeyPem", func(t *testing.T) {
+		privateKey, err := generateRSAKeyPair(2048)
+		require.NoError(t, err, "Should generate RSA key pair")
+
+		publicKeyBytes := x509.MarshalPKCS1PublicKey(&privateKey.PublicKey)
+		publicPEM := pem.EncodeToMemory(&pem.Block{
+			Type:  "RSA PUBLIC KEY",
+			Bytes: publicKeyBytes,
+		})
+
+		cipher, err := NewRSAFromPem(nil, publicPEM)
+		require.NoError(t, err, "Should parse PKCS1 public key PEM")
+
+		_, err = cipher.Encrypt("test")
+		assert.NoError(t, err, "Should encrypt with PKCS1 public key")
+	})
+}
+
+// TestRsaCipher_InvalidHex tests RSA cipher with invalid hex-encoded keys.
+func TestRsaCipher_InvalidHex(t *testing.T) {
+	t.Run("InvalidPrivateHex", func(t *testing.T) {
+		_, err := NewRSAFromHex("not-hex", "")
+		assert.Error(t, err, "Should return error for invalid private hex")
+	})
+
+	t.Run("InvalidPublicHex", func(t *testing.T) {
+		_, err := NewRSAFromHex("", "not-hex")
+		assert.Error(t, err, "Should return error for invalid public hex")
+	})
+
+	t.Run("InvalidKeyBytes", func(t *testing.T) {
+		_, err := NewRSAFromHex(hex.EncodeToString([]byte("bad-key")), "")
+		assert.Error(t, err, "Should return error for invalid key bytes")
+	})
+}
+
+// TestRsaCipher_InvalidBase64 tests RSA cipher with invalid base64-encoded keys.
+func TestRsaCipher_InvalidBase64(t *testing.T) {
+	t.Run("InvalidPrivateBase64", func(t *testing.T) {
+		_, err := NewRSAFromBase64("!!!invalid!!!", "")
+		assert.Error(t, err, "Should return error for invalid private base64")
+	})
+
+	t.Run("InvalidPublicBase64", func(t *testing.T) {
+		_, err := NewRSAFromBase64("", "!!!invalid!!!")
+		assert.Error(t, err, "Should return error for invalid public base64")
+	})
+
+	t.Run("InvalidKeyBytes", func(t *testing.T) {
+		_, err := NewRSAFromBase64(base64.StdEncoding.EncodeToString([]byte("bad-key")), "")
+		assert.Error(t, err, "Should return error for invalid key bytes")
+	})
+}
+
+// TestRsaCipher_DecryptInvalidBase64 tests RSA decrypt with invalid base64 ciphertext.
+func TestRsaCipher_DecryptInvalidBase64(t *testing.T) {
+	privateKey, err := generateRSAKeyPair(2048)
+	require.NoError(t, err, "Should generate RSA key pair")
+
+	cipher, err := NewRSA(privateKey, &privateKey.PublicKey)
+	require.NoError(t, err, "Should create RSA cipher")
+
+	_, err = cipher.Decrypt("!!!not-base64!!!")
+	assert.Error(t, err, "Should return error for invalid base64 ciphertext")
+}
+
+// TestRsaCipher_EncryptWithoutPublicKey tests RSA encrypt without public key.
+func TestRsaCipher_EncryptWithoutPublicKey(t *testing.T) {
+	privateKey, err := generateRSAKeyPair(2048)
+	require.NoError(t, err, "Should generate RSA key pair")
+
+	// Create cipher with private key only, then nil out public key
+	cipher, err := NewRSA(nil, &privateKey.PublicKey)
+	require.NoError(t, err, "Should create RSA cipher")
+
+	_, err = cipher.Decrypt("dGVzdA==")
+	assert.Error(t, err, "Should return error when decrypting without private key")
+}
+
 // TestRsaCipher_DifferentSignModes tests Rsa Cipher different sign modes scenarios.
 func TestRsaCipher_DifferentSignModes(t *testing.T) {
 	privateKey, err := generateRSAKeyPair(2048)

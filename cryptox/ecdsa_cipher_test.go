@@ -2,6 +2,7 @@ package cryptox
 
 import (
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/pem"
 	"testing"
@@ -213,6 +214,116 @@ func TestEcdsa_Pkcs8PrivateKey(t *testing.T) {
 	valid, err := cipher.Verify(data, signature)
 	require.NoError(t, err, "Should verify signature successfully")
 	assert.True(t, valid, "Signature should be valid")
+}
+
+// TestEcdsa_InvalidPem tests ECDSA cipher with invalid PEM data.
+func TestEcdsa_InvalidPem(t *testing.T) {
+	t.Run("InvalidPrivatePem", func(t *testing.T) {
+		_, err := NewECDSAFromPem([]byte("not-a-pem"), nil)
+		assert.Error(t, err, "Should return error for invalid private PEM")
+	})
+
+	t.Run("InvalidPublicPem", func(t *testing.T) {
+		_, err := NewECDSAFromPem(nil, []byte("not-a-pem"))
+		assert.Error(t, err, "Should return error for invalid public PEM")
+	})
+
+	t.Run("UnsupportedPrivatePemType", func(t *testing.T) {
+		badPEM := pem.EncodeToMemory(&pem.Block{
+			Type:  "CERTIFICATE",
+			Bytes: []byte("fake-data"),
+		})
+		_, err := NewECDSAFromPem(badPEM, nil)
+		assert.Error(t, err, "Should return error for unsupported PEM type")
+	})
+
+	t.Run("UnsupportedPublicPemType", func(t *testing.T) {
+		badPEM := pem.EncodeToMemory(&pem.Block{
+			Type:  "CERTIFICATE",
+			Bytes: []byte("fake-data"),
+		})
+		_, err := NewECDSAFromPem(nil, badPEM)
+		assert.Error(t, err, "Should return error for unsupported public PEM type")
+	})
+}
+
+// TestEcdsa_InvalidHex tests ECDSA cipher with invalid hex-encoded keys.
+func TestEcdsa_InvalidHex(t *testing.T) {
+	t.Run("InvalidPrivateHex", func(t *testing.T) {
+		_, err := NewECDSAFromHex("not-hex", "")
+		assert.Error(t, err, "Should return error for invalid private hex")
+	})
+
+	t.Run("InvalidPublicHex", func(t *testing.T) {
+		_, err := NewECDSAFromHex("", "not-hex")
+		assert.Error(t, err, "Should return error for invalid public hex")
+	})
+
+	t.Run("InvalidKeyBytes", func(t *testing.T) {
+		_, err := NewECDSAFromHex(hex.EncodeToString([]byte("bad-key")), "")
+		assert.Error(t, err, "Should return error for invalid key bytes")
+	})
+}
+
+// TestEcdsa_FromBase64 tests creating ECDSA cipher from base64-encoded keys.
+func TestEcdsa_FromBase64(t *testing.T) {
+	t.Run("ValidKeys", func(t *testing.T) {
+		privateKey, err := GenerateECDSAKey(EcdsaCurveP256)
+		require.NoError(t, err, "Should generate ECDSA key pair")
+
+		privateKeyBytes, err := x509.MarshalECPrivateKey(privateKey)
+		require.NoError(t, err, "Should marshal EC private key")
+
+		publicKeyBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
+		require.NoError(t, err, "Should marshal public key")
+
+		cipher, err := NewECDSAFromBase64(
+			base64.StdEncoding.EncodeToString(privateKeyBytes),
+			base64.StdEncoding.EncodeToString(publicKeyBytes),
+		)
+		require.NoError(t, err, "Should create ECDSA cipher from base64")
+
+		data := "Test message"
+		signature, err := cipher.Sign(data)
+		require.NoError(t, err, "Should sign data")
+
+		valid, err := cipher.Verify(data, signature)
+		require.NoError(t, err, "Should verify")
+		assert.True(t, valid, "Signature should be valid")
+	})
+
+	t.Run("InvalidPrivateBase64", func(t *testing.T) {
+		_, err := NewECDSAFromBase64("!!!invalid!!!", "")
+		assert.Error(t, err, "Should return error for invalid private base64")
+	})
+
+	t.Run("InvalidPublicBase64", func(t *testing.T) {
+		_, err := NewECDSAFromBase64("", "!!!invalid!!!")
+		assert.Error(t, err, "Should return error for invalid public base64")
+	})
+
+	t.Run("InvalidKeyBytes", func(t *testing.T) {
+		_, err := NewECDSAFromBase64(base64.StdEncoding.EncodeToString([]byte("bad-key")), "")
+		assert.Error(t, err, "Should return error for invalid key bytes")
+	})
+}
+
+// TestEcdsa_VerifyWithoutPublicKey tests ECDSA verify without public key.
+func TestEcdsa_VerifyWithoutPublicKey(t *testing.T) {
+	privateKey, err := GenerateECDSAKey(EcdsaCurveP256)
+	require.NoError(t, err, "Should generate ECDSA key pair")
+
+	// Verify with derived public key (from private key)
+	cipher, err := NewECDSA(privateKey, nil)
+	require.NoError(t, err, "Should create ECDSA cipher")
+
+	data := "Test message"
+	signature, err := cipher.Sign(data)
+	require.NoError(t, err, "Should sign")
+
+	valid, err := cipher.Verify(data, signature)
+	require.NoError(t, err, "Should verify")
+	assert.True(t, valid, "Should be valid")
 }
 
 // TestEcdsa_DifferentSignatures tests that ECDSA produces different signatures.
