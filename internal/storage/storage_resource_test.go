@@ -582,7 +582,7 @@ func (suite *StorageResourceTestSuite) TestUploadWithContentType() {
 }
 
 // TestDeleteTemp tests the delete_temp action for removing temporary uploaded files.
-// Tests cover successful deletion, rejection of non-temp keys, idempotent deletion, and missing parameter validation.
+// It covers successful deletion, rejection of non-temp keys, idempotent deletion, and missing parameter validation.
 func (suite *StorageResourceTestSuite) TestDeleteTemp() {
 	suite.T().Log("Testing delete temporary file functionality")
 
@@ -732,7 +732,7 @@ func (suite *StorageResourceTestSuite) TestConcurrentUploads() {
 	}
 }
 
-// TestStorageResourceSuite runs the test suite.
+// TestStorageResourceTestSuite runs the test suite.
 func TestStorageResourceTestSuite(t *testing.T) {
 	suite.Run(t, new(StorageResourceTestSuite))
 }

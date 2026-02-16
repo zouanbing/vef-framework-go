@@ -321,7 +321,7 @@ func (suite *TranslateTransformerTestSuite) TestTranslateMissingTargetField() {
 	})
 }
 
-// TestTranslateIntFieldType tests translation with int field type (now supported).
+// TestTranslateIntFieldKind tests translation with int field kind (now supported).
 func (suite *TranslateTransformerTestSuite) TestTranslateIntFieldKind() {
 	suite.T().Log("Testing translate transformer with int field type")
 
@@ -344,7 +344,7 @@ func (suite *TranslateTransformerTestSuite) TestTranslateIntFieldKind() {
 	})
 }
 
-// TestTranslateUnsupportedFieldType tests error handling for unsupported field types.
+// TestTranslateUnsupportedFieldKind tests error handling for unsupported field kinds.
 func (suite *TranslateTransformerTestSuite) TestTranslateUnsupportedFieldKind() {
 	suite.T().Log("Testing translate transformer with unsupported field types")
 
@@ -541,7 +541,7 @@ func (suite *TranslateTransformerTestSuite) TestTranslateIntegration() {
 	})
 }
 
-// TestTranslateTransformerSuite runs the test suite.
+// TestTranslateTransformerTestSuite runs the test suite.
 func TestTranslateTransformerTestSuite(t *testing.T) {
 	suite.Run(t, new(TranslateTransformerTestSuite))
 }

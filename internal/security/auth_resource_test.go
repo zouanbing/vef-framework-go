@@ -133,7 +133,7 @@ func (suite *AuthResourceTestSuite) SetupTest() {
 func (suite *AuthResourceTestSuite) setupTestApp() {
 	// Hash the password for test user
 	hashedPassword, err := password.NewBcryptEncoder().Encode("password123")
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, "Should not return error")
 
 	suite.SetupApp(
 		fx.Supply(
@@ -1089,7 +1089,7 @@ func (suite *AuthResourceTestSuite) TestLoginEventPublished() {
 	})
 }
 
-// TestAuthResourceSuite runs the test suite.
+// TestAuthResourceTestSuite runs the test suite.
 func TestAuthResourceTestSuite(t *testing.T) {
 	suite.Run(t, new(AuthResourceTestSuite))
 }
