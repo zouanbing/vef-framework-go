@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestAesCipher_Cbc tests AES encryption and decryption in CBC mode.
-func TestAesCipher_Cbc(t *testing.T) {
+// TestAesCipherCbc tests AES encryption and decryption in CBC mode.
+func TestAesCipherCbc(t *testing.T) {
 	key := make([]byte, 32)
 	iv := make([]byte, 16)
 	_, err := rand.Read(key)
@@ -45,8 +45,8 @@ func TestAesCipher_Cbc(t *testing.T) {
 	}
 }
 
-// TestAesCipher_Gcm tests AES encryption and decryption in GCM mode.
-func TestAesCipher_Gcm(t *testing.T) {
+// TestAesCipherGcm tests AES encryption and decryption in GCM mode.
+func TestAesCipherGcm(t *testing.T) {
 	key := make([]byte, 32)
 	_, err := rand.Read(key)
 	require.NoError(t, err, "Should generate random key")
@@ -78,8 +78,8 @@ func TestAesCipher_Gcm(t *testing.T) {
 	}
 }
 
-// TestAesCipher_FromHex tests creating AES cipher from hex-encoded key.
-func TestAesCipher_FromHex(t *testing.T) {
+// TestAesCipherFromHex tests creating AES cipher from hex-encoded key.
+func TestAesCipherFromHex(t *testing.T) {
 	keyHex := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 	iv := []byte{0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef}
 
@@ -96,8 +96,8 @@ func TestAesCipher_FromHex(t *testing.T) {
 	assert.Equal(t, plaintext, decrypted, "Decrypted text should match original plaintext")
 }
 
-// TestAesCipher_FromBase64 tests creating AES cipher from base64-encoded key.
-func TestAesCipher_FromBase64(t *testing.T) {
+// TestAesCipherFromBase64 tests creating AES cipher from base64-encoded key.
+func TestAesCipherFromBase64(t *testing.T) {
 	key := make([]byte, 32)
 	iv := make([]byte, 16)
 	_, err := rand.Read(key)
@@ -120,8 +120,8 @@ func TestAesCipher_FromBase64(t *testing.T) {
 	assert.Equal(t, plaintext, decrypted, "Decrypted text should match original plaintext")
 }
 
-// TestAesCipher_InvalidKeySize tests that invalid key size is rejected.
-func TestAesCipher_InvalidKeySize(t *testing.T) {
+// TestAesCipherInvalidKeySize tests that invalid key size is rejected.
+func TestAesCipherInvalidKeySize(t *testing.T) {
 	invalidKey := make([]byte, 15)
 	iv := make([]byte, 16)
 
@@ -129,8 +129,8 @@ func TestAesCipher_InvalidKeySize(t *testing.T) {
 	assert.Error(t, err, "Should reject invalid key size")
 }
 
-// TestAesCipher_InvalidIvSize tests that invalid IV size is rejected.
-func TestAesCipher_InvalidIvSize(t *testing.T) {
+// TestAesCipherInvalidIvSize tests that invalid IV size is rejected.
+func TestAesCipherInvalidIvSize(t *testing.T) {
 	key := make([]byte, 32)
 	invalidIV := make([]byte, 8)
 
@@ -138,8 +138,8 @@ func TestAesCipher_InvalidIvSize(t *testing.T) {
 	assert.Error(t, err, "Should reject invalid IV size")
 }
 
-// TestAesCipher_GcmAuthentication tests GCM mode authentication tag verification.
-func TestAesCipher_GcmAuthentication(t *testing.T) {
+// TestAesCipherGcmAuthentication tests GCM mode authentication tag verification.
+func TestAesCipherGcmAuthentication(t *testing.T) {
 	key := make([]byte, 32)
 	_, err := rand.Read(key)
 	require.NoError(t, err, "Should generate random key")
@@ -157,8 +157,8 @@ func TestAesCipher_GcmAuthentication(t *testing.T) {
 	assert.Error(t, err, "Should reject tampered ciphertext")
 }
 
-// TestAesCipher_KeySizes tests AES with different key sizes.
-func TestAesCipher_KeySizes(t *testing.T) {
+// TestAesCipherKeySizes tests AES with different key sizes.
+func TestAesCipherKeySizes(t *testing.T) {
 	tests := []struct {
 		name    string
 		keySize int
@@ -192,8 +192,8 @@ func TestAesCipher_KeySizes(t *testing.T) {
 	}
 }
 
-// TestAesCipher_DefaultMode tests that default mode is GCM.
-func TestAesCipher_DefaultMode(t *testing.T) {
+// TestAesCipherDefaultMode tests that default mode is GCM.
+func TestAesCipherDefaultMode(t *testing.T) {
 	key := make([]byte, 32)
 	_, err := rand.Read(key)
 	require.NoError(t, err, "Should generate random key")

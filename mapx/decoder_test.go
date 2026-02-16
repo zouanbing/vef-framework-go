@@ -10,10 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/decimal"
 	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/sortx"
+	"github.com/ilxqx/vef-framework-go/timex"
 )
 
 type TestStruct struct {
@@ -262,7 +262,7 @@ func TestDecoderOptions(t *testing.T) {
 			Name string `yaml:"fullName"`
 		}
 
-		input := map[string]any{"FullName": "John"}
+		input := map[string]any{"fullName": "John"}
 		result, err := FromMap[TestStruct](input, WithTagName("yaml"))
 		require.NoError(t, err, "Decoding with custom tag name should succeed")
 		assert.Equal(t, "John", result.Name, "Name should match")

@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestEcdsa_SignVerify tests ECDSA signing and verification.
-func TestEcdsa_SignVerify(t *testing.T) {
+// TestEcdsaSignVerify tests ECDSA signing and verification.
+func TestEcdsaSignVerify(t *testing.T) {
 	privateKey, err := GenerateECDSAKey(EcdsaCurveP256)
 	require.NoError(t, err, "Should generate ECDSA key pair")
 
@@ -45,8 +45,8 @@ func TestEcdsa_SignVerify(t *testing.T) {
 	}
 }
 
-// TestEcdsa_FromPem tests creating ECDSA cipher from PEM-encoded keys.
-func TestEcdsa_FromPem(t *testing.T) {
+// TestEcdsaFromPem tests creating ECDSA cipher from PEM-encoded keys.
+func TestEcdsaFromPem(t *testing.T) {
 	privateKey, err := GenerateECDSAKey(EcdsaCurveP256)
 	require.NoError(t, err, "Should generate ECDSA key pair")
 
@@ -78,8 +78,8 @@ func TestEcdsa_FromPem(t *testing.T) {
 	assert.True(t, valid, "Signature should be valid")
 }
 
-// TestEcdsa_FromHex tests creating ECDSA cipher from hex-encoded keys.
-func TestEcdsa_FromHex(t *testing.T) {
+// TestEcdsaFromHex tests creating ECDSA cipher from hex-encoded keys.
+func TestEcdsaFromHex(t *testing.T) {
 	privateKey, err := GenerateECDSAKey(EcdsaCurveP256)
 	require.NoError(t, err, "Should generate ECDSA key pair")
 
@@ -105,8 +105,8 @@ func TestEcdsa_FromHex(t *testing.T) {
 	assert.True(t, valid, "Signature should be valid")
 }
 
-// TestEcdsa_PublicKeyOnly tests ECDSA cipher with only public key.
-func TestEcdsa_PublicKeyOnly(t *testing.T) {
+// TestEcdsaPublicKeyOnly tests ECDSA cipher with only public key.
+func TestEcdsaPublicKeyOnly(t *testing.T) {
 	privateKey, err := GenerateECDSAKey(EcdsaCurveP256)
 	require.NoError(t, err, "Should generate ECDSA key pair")
 
@@ -119,8 +119,8 @@ func TestEcdsa_PublicKeyOnly(t *testing.T) {
 	assert.ErrorIs(t, err, ErrPrivateKeyRequiredForSign, "Should return correct error")
 }
 
-// TestEcdsa_PrivateKeyOnly tests ECDSA cipher with only private key.
-func TestEcdsa_PrivateKeyOnly(t *testing.T) {
+// TestEcdsaPrivateKeyOnly tests ECDSA cipher with only private key.
+func TestEcdsaPrivateKeyOnly(t *testing.T) {
 	privateKey, err := GenerateECDSAKey(EcdsaCurveP256)
 	require.NoError(t, err, "Should generate ECDSA key pair")
 
@@ -136,15 +136,15 @@ func TestEcdsa_PrivateKeyOnly(t *testing.T) {
 	assert.True(t, valid, "Signature should be valid")
 }
 
-// TestEcdsa_NoKeys tests that creating cipher without keys fails.
-func TestEcdsa_NoKeys(t *testing.T) {
+// TestEcdsaNoKeys tests that creating cipher without keys fails.
+func TestEcdsaNoKeys(t *testing.T) {
 	_, err := NewECDSA(nil, nil)
 	assert.Error(t, err, "Should reject creating cipher without any keys")
 	assert.ErrorIs(t, err, ErrAtLeastOneKeyRequired, "Should return correct error")
 }
 
-// TestEcdsa_Curves tests ECDSA with different curves.
-func TestEcdsa_Curves(t *testing.T) {
+// TestEcdsaCurves tests ECDSA with different curves.
+func TestEcdsaCurves(t *testing.T) {
 	curves := []struct {
 		name  string
 		curve ECDSACurve
@@ -174,8 +174,8 @@ func TestEcdsa_Curves(t *testing.T) {
 	}
 }
 
-// TestEcdsa_InvalidSignature tests verification with invalid signatures.
-func TestEcdsa_InvalidSignature(t *testing.T) {
+// TestEcdsaInvalidSignature tests verification with invalid signatures.
+func TestEcdsaInvalidSignature(t *testing.T) {
 	privateKey, err := GenerateECDSAKey(EcdsaCurveP256)
 	require.NoError(t, err, "Should generate ECDSA key pair")
 
@@ -191,8 +191,8 @@ func TestEcdsa_InvalidSignature(t *testing.T) {
 	assert.Error(t, err, "Should reject malformed signature")
 }
 
-// TestEcdsa_Pkcs8PrivateKey tests creating ECDSA cipher from PKCS8 PEM.
-func TestEcdsa_Pkcs8PrivateKey(t *testing.T) {
+// TestEcdsaPkcs8PrivateKey tests creating ECDSA cipher from PKCS8 PEM.
+func TestEcdsaPkcs8PrivateKey(t *testing.T) {
 	privateKey, err := GenerateECDSAKey(EcdsaCurveP256)
 	require.NoError(t, err, "Should generate ECDSA key pair")
 
@@ -216,8 +216,8 @@ func TestEcdsa_Pkcs8PrivateKey(t *testing.T) {
 	assert.True(t, valid, "Signature should be valid")
 }
 
-// TestEcdsa_InvalidPem tests ECDSA cipher with invalid PEM data.
-func TestEcdsa_InvalidPem(t *testing.T) {
+// TestEcdsaInvalidPem tests ECDSA cipher with invalid PEM data.
+func TestEcdsaInvalidPem(t *testing.T) {
 	t.Run("InvalidPrivatePem", func(t *testing.T) {
 		_, err := NewECDSAFromPem([]byte("not-a-pem"), nil)
 		assert.Error(t, err, "Should return error for invalid private PEM")
@@ -247,8 +247,8 @@ func TestEcdsa_InvalidPem(t *testing.T) {
 	})
 }
 
-// TestEcdsa_InvalidHex tests ECDSA cipher with invalid hex-encoded keys.
-func TestEcdsa_InvalidHex(t *testing.T) {
+// TestEcdsaInvalidHex tests ECDSA cipher with invalid hex-encoded keys.
+func TestEcdsaInvalidHex(t *testing.T) {
 	t.Run("InvalidPrivateHex", func(t *testing.T) {
 		_, err := NewECDSAFromHex("not-hex", "")
 		assert.Error(t, err, "Should return error for invalid private hex")
@@ -265,8 +265,8 @@ func TestEcdsa_InvalidHex(t *testing.T) {
 	})
 }
 
-// TestEcdsa_FromBase64 tests creating ECDSA cipher from base64-encoded keys.
-func TestEcdsa_FromBase64(t *testing.T) {
+// TestEcdsaFromBase64 tests creating ECDSA cipher from base64-encoded keys.
+func TestEcdsaFromBase64(t *testing.T) {
 	t.Run("ValidKeys", func(t *testing.T) {
 		privateKey, err := GenerateECDSAKey(EcdsaCurveP256)
 		require.NoError(t, err, "Should generate ECDSA key pair")
@@ -308,8 +308,8 @@ func TestEcdsa_FromBase64(t *testing.T) {
 	})
 }
 
-// TestEcdsa_VerifyWithoutPublicKey tests ECDSA verify without public key.
-func TestEcdsa_VerifyWithoutPublicKey(t *testing.T) {
+// TestEcdsaVerifyWithoutPublicKey tests ECDSA verify without public key.
+func TestEcdsaVerifyWithoutPublicKey(t *testing.T) {
 	privateKey, err := GenerateECDSAKey(EcdsaCurveP256)
 	require.NoError(t, err, "Should generate ECDSA key pair")
 
@@ -326,8 +326,8 @@ func TestEcdsa_VerifyWithoutPublicKey(t *testing.T) {
 	assert.True(t, valid, "Should be valid")
 }
 
-// TestEcdsa_DifferentSignatures tests that ECDSA produces different signatures.
-func TestEcdsa_DifferentSignatures(t *testing.T) {
+// TestEcdsaDifferentSignatures tests that ECDSA produces different signatures.
+func TestEcdsaDifferentSignatures(t *testing.T) {
 	privateKey, err := GenerateECDSAKey(EcdsaCurveP256)
 	require.NoError(t, err, "Should generate ECDSA key pair")
 

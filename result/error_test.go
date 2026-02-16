@@ -381,7 +381,7 @@ func TestPredefinedErrors(t *testing.T) {
 		{"ErrSignatureInvalid", ErrSignatureInvalid, ErrCodeSignatureInvalid, fiber.StatusUnauthorized},
 		{"ErrExternalAppNotFound", ErrExternalAppNotFound, ErrCodeExternalAppNotFound, fiber.StatusUnauthorized},
 		{"ErrExternalAppDisabled", ErrExternalAppDisabled, ErrCodeExternalAppDisabled, fiber.StatusUnauthorized},
-		{"ErrIpNotAllowed", ErrIPNotAllowed, ErrCodeIPNotAllowed, fiber.StatusUnauthorized},
+		{"ErrIPNotAllowed", ErrIPNotAllowed, ErrCodeIPNotAllowed, fiber.StatusUnauthorized},
 		{"ErrUnauthenticated", ErrUnauthenticated, ErrCodeUnauthenticated, fiber.StatusUnauthorized},
 		{"ErrAccessDenied", ErrAccessDenied, ErrCodeAccessDenied, fiber.StatusForbidden},
 		{"ErrUnknown", ErrUnknown, ErrCodeUnknown, fiber.StatusInternalServerError},

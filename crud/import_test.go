@@ -723,7 +723,7 @@ func (suite *ImportTestSuite) TestImportNoFile() {
 	httpReq.Header.Set(fiber.HeaderContentType, writer.FormDataContentType())
 
 	resp, err := suite.App.Test(httpReq)
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, "Should not return error")
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.ReadResult(resp)
@@ -822,7 +822,7 @@ func (suite *ImportTestSuite) makeMultipartAPIRequest(req api.Request, filename 
 	httpReq.Header.Set(fiber.HeaderContentType, writer.FormDataContentType())
 
 	resp, err := suite.App.Test(httpReq)
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, "Should not return error")
 
 	return resp
 }

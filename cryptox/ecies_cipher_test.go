@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestECIES_EncryptDecrypt tests ECIES encryption and decryption.
-func TestECIES_EncryptDecrypt(t *testing.T) {
+// TestECIESEncryptDecrypt tests ECIES encryption and decryption.
+func TestECIESEncryptDecrypt(t *testing.T) {
 	privateKey, err := GenerateECIESKey(EciesCurveP256)
 	require.NoError(t, err, "Should generate ECIES key pair")
 
@@ -40,8 +40,8 @@ func TestECIES_EncryptDecrypt(t *testing.T) {
 	}
 }
 
-// TestEcies_Curves tests ECIES with different curves.
-func TestEcies_Curves(t *testing.T) {
+// TestEciesCurves tests ECIES with different curves.
+func TestEciesCurves(t *testing.T) {
 	curves := []struct {
 		name  string
 		curve ECIESCurve
@@ -72,8 +72,8 @@ func TestEcies_Curves(t *testing.T) {
 	}
 }
 
-// TestEcies_FromBytes tests creating ECIES cipher from byte-encoded keys.
-func TestEcies_FromBytes(t *testing.T) {
+// TestEciesFromBytes tests creating ECIES cipher from byte-encoded keys.
+func TestEciesFromBytes(t *testing.T) {
 	privateKey, err := GenerateECIESKey(EciesCurveP256)
 	require.NoError(t, err, "Should generate ECIES key pair")
 
@@ -93,8 +93,8 @@ func TestEcies_FromBytes(t *testing.T) {
 	assert.Equal(t, plaintext, decrypted, "Decrypted text should match original plaintext")
 }
 
-// TestEcies_FromHex tests creating ECIES cipher from hex-encoded keys.
-func TestEcies_FromHex(t *testing.T) {
+// TestEciesFromHex tests creating ECIES cipher from hex-encoded keys.
+func TestEciesFromHex(t *testing.T) {
 	privateKey, err := GenerateECIESKey(EciesCurveP256)
 	require.NoError(t, err, "Should generate ECIES key pair")
 
@@ -114,8 +114,8 @@ func TestEcies_FromHex(t *testing.T) {
 	assert.Equal(t, plaintext, decrypted, "Decrypted text should match original plaintext")
 }
 
-// TestEcies_PublicKeyOnly tests ECIES cipher with only public key.
-func TestEcies_PublicKeyOnly(t *testing.T) {
+// TestEciesPublicKeyOnly tests ECIES cipher with only public key.
+func TestEciesPublicKeyOnly(t *testing.T) {
 	privateKey, err := GenerateECIESKey(EciesCurveP256)
 	require.NoError(t, err, "Should generate ECIES key pair")
 
@@ -131,8 +131,8 @@ func TestEcies_PublicKeyOnly(t *testing.T) {
 	assert.ErrorIs(t, err, ErrPrivateKeyRequiredForDecrypt, "Should return correct error")
 }
 
-// TestEcies_PrivateKeyOnly tests ECIES cipher with only private key.
-func TestEcies_PrivateKeyOnly(t *testing.T) {
+// TestEciesPrivateKeyOnly tests ECIES cipher with only private key.
+func TestEciesPrivateKeyOnly(t *testing.T) {
 	privateKey, err := GenerateECIESKey(EciesCurveP256)
 	require.NoError(t, err, "Should generate ECIES key pair")
 
@@ -149,15 +149,15 @@ func TestEcies_PrivateKeyOnly(t *testing.T) {
 	assert.Equal(t, plaintext, decrypted, "Decrypted text should match original plaintext")
 }
 
-// TestEcies_NoKeys tests that creating cipher without keys fails.
-func TestEcies_NoKeys(t *testing.T) {
+// TestEciesNoKeys tests that creating cipher without keys fails.
+func TestEciesNoKeys(t *testing.T) {
 	_, err := NewECIES(nil, nil)
 	assert.Error(t, err, "Should reject creating cipher without any keys")
 	assert.ErrorIs(t, err, ErrAtLeastOneKeyRequired, "Should return correct error")
 }
 
-// TestEcies_DifferentCiphertexts tests that ECIES produces different ciphertexts.
-func TestEcies_DifferentCiphertexts(t *testing.T) {
+// TestEciesDifferentCiphertexts tests that ECIES produces different ciphertexts.
+func TestEciesDifferentCiphertexts(t *testing.T) {
 	privateKey, err := GenerateECIESKey(EciesCurveP256)
 	require.NoError(t, err, "Should generate ECIES key pair")
 
@@ -184,8 +184,8 @@ func TestEcies_DifferentCiphertexts(t *testing.T) {
 	assert.Equal(t, plaintext, decrypted2, "Second decrypted text should match original plaintext")
 }
 
-// TestEcies_CrossKeyDecryption tests encryption with one key and decryption with another.
-func TestEcies_CrossKeyDecryption(t *testing.T) {
+// TestEciesCrossKeyDecryption tests encryption with one key and decryption with another.
+func TestEciesCrossKeyDecryption(t *testing.T) {
 	senderKey, err := GenerateECIESKey(EciesCurveP256)
 	require.NoError(t, err, "Should generate sender key pair")
 
@@ -214,8 +214,8 @@ func TestEcies_CrossKeyDecryption(t *testing.T) {
 	assert.Error(t, err, "Should reject decryption with wrong private key")
 }
 
-// TestEcies_InvalidCiphertext tests decryption with invalid ciphertext.
-func TestEcies_InvalidCiphertext(t *testing.T) {
+// TestEciesInvalidCiphertext tests decryption with invalid ciphertext.
+func TestEciesInvalidCiphertext(t *testing.T) {
 	privateKey, err := GenerateECIESKey(EciesCurveP256)
 	require.NoError(t, err, "Should generate ECIES key pair")
 
@@ -229,8 +229,8 @@ func TestEcies_InvalidCiphertext(t *testing.T) {
 	assert.Error(t, err, "Should reject malformed ciphertext")
 }
 
-// TestEcies_EmptyString tests ECIES with empty string input.
-func TestEcies_EmptyString(t *testing.T) {
+// TestEciesEmptyString tests ECIES with empty string input.
+func TestEciesEmptyString(t *testing.T) {
 	privateKey, err := GenerateECIESKey(EciesCurveP256)
 	require.NoError(t, err, "Should generate ECIES key pair")
 

@@ -81,7 +81,7 @@ func TestExtractHTMLURLs(t *testing.T) {
 			if len(tt.expected) == 0 {
 				assert.Empty(t, urls, "Should be empty")
 			} else {
-				assert.ElementsMatch(t, tt.expected, urls)
+				assert.ElementsMatch(t, tt.expected, urls, "ElementsMatch assertion should pass")
 			}
 		})
 	}
@@ -249,7 +249,7 @@ func TestExtractMarkdownURLs(t *testing.T) {
 			if len(tt.expected) == 0 {
 				assert.Empty(t, urls, "Should be empty")
 			} else {
-				assert.ElementsMatch(t, tt.expected, urls)
+				assert.ElementsMatch(t, tt.expected, urls, "ElementsMatch assertion should pass")
 			}
 		})
 	}

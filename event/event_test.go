@@ -74,8 +74,8 @@ func TestNewBaseEvent(t *testing.T) {
 	})
 }
 
-// TestBaseEvent_Metadata tests Base Event metadata scenarios.
-func TestBaseEvent_Metadata(t *testing.T) {
+// TestBaseEventMetadata tests Base Event metadata scenarios.
+func TestBaseEventMetadata(t *testing.T) {
 	t.Run("MetaReturnsAllMetadata", func(t *testing.T) {
 		event := NewBaseEvent("test.event",
 			WithMeta("key1", "value1"),
@@ -103,8 +103,8 @@ func TestBaseEvent_Metadata(t *testing.T) {
 	})
 }
 
-// TestBaseEvent_JSONSerialization tests Base Event j s o n serialization scenarios.
-func TestBaseEvent_JSONSerialization(t *testing.T) {
+// TestBaseEventJSONSerialization tests Base Event JSON serialization scenarios.
+func TestBaseEventJSONSerialization(t *testing.T) {
 	t.Run("MarshalMinimalEvent", func(t *testing.T) {
 		event := NewBaseEvent("test.event")
 
@@ -249,8 +249,8 @@ func TestBaseEvent_JSONSerialization(t *testing.T) {
 	})
 }
 
-// TestBaseEvent_Immutability tests Base Event immutability scenarios.
-func TestBaseEvent_Immutability(t *testing.T) {
+// TestBaseEventImmutability tests Base Event immutability scenarios.
+func TestBaseEventImmutability(t *testing.T) {
 	t.Run("CoreFieldsAreImmutableAfterCreation", func(t *testing.T) {
 		event := NewBaseEvent("test.event", WithSource("test-source"))
 

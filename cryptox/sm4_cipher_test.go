@@ -13,8 +13,8 @@ import (
 	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
-// TestSm4Cipher_Cbc tests SM4 encryption and decryption in CBC mode.
-func TestSm4Cipher_Cbc(t *testing.T) {
+// TestSm4CipherCbc tests SM4 encryption and decryption in CBC mode.
+func TestSm4CipherCbc(t *testing.T) {
 	key := make([]byte, sm4.BlockSize)
 	iv := make([]byte, sm4.BlockSize)
 	_, err := rand.Read(key)
@@ -49,8 +49,8 @@ func TestSm4Cipher_Cbc(t *testing.T) {
 	}
 }
 
-// TestSm4Cipher_Ecb tests SM4 encryption and decryption in ECB mode.
-func TestSm4Cipher_Ecb(t *testing.T) {
+// TestSm4CipherEcb tests SM4 encryption and decryption in ECB mode.
+func TestSm4CipherEcb(t *testing.T) {
 	key := make([]byte, sm4.BlockSize)
 	_, err := rand.Read(key)
 	require.NoError(t, err, "Should generate random key")
@@ -82,8 +82,8 @@ func TestSm4Cipher_Ecb(t *testing.T) {
 	}
 }
 
-// TestSm4Cipher_FromHex tests creating SM4 cipher from hex-encoded key.
-func TestSm4Cipher_FromHex(t *testing.T) {
+// TestSm4CipherFromHex tests creating SM4 cipher from hex-encoded key.
+func TestSm4CipherFromHex(t *testing.T) {
 	keyHex := "0123456789abcdef0123456789abcdef"
 	ivHex := "fedcba9876543210fedcba9876543210"
 
@@ -103,8 +103,8 @@ func TestSm4Cipher_FromHex(t *testing.T) {
 	assert.Equal(t, plaintext, decrypted, "Decrypted text should match original plaintext")
 }
 
-// TestSm4Cipher_FromBase64 tests creating SM4 cipher from base64-encoded key.
-func TestSm4Cipher_FromBase64(t *testing.T) {
+// TestSm4CipherFromBase64 tests creating SM4 cipher from base64-encoded key.
+func TestSm4CipherFromBase64(t *testing.T) {
 	key := make([]byte, sm4.BlockSize)
 	iv := make([]byte, sm4.BlockSize)
 	_, err := rand.Read(key)
@@ -127,8 +127,8 @@ func TestSm4Cipher_FromBase64(t *testing.T) {
 	assert.Equal(t, plaintext, decrypted, "Decrypted text should match original plaintext")
 }
 
-// TestSm4Cipher_InvalidKeySize tests that invalid key size is rejected.
-func TestSm4Cipher_InvalidKeySize(t *testing.T) {
+// TestSm4CipherInvalidKeySize tests that invalid key size is rejected.
+func TestSm4CipherInvalidKeySize(t *testing.T) {
 	invalidKey := make([]byte, 8)
 	iv := make([]byte, sm4.BlockSize)
 
@@ -136,8 +136,8 @@ func TestSm4Cipher_InvalidKeySize(t *testing.T) {
 	assert.Error(t, err, "Should reject invalid key size")
 }
 
-// TestSm4Cipher_InvalidIvSize tests that invalid IV size is rejected.
-func TestSm4Cipher_InvalidIvSize(t *testing.T) {
+// TestSm4CipherInvalidIvSize tests that invalid IV size is rejected.
+func TestSm4CipherInvalidIvSize(t *testing.T) {
 	key := make([]byte, sm4.BlockSize)
 	invalidIV := make([]byte, 8)
 
@@ -145,8 +145,8 @@ func TestSm4Cipher_InvalidIvSize(t *testing.T) {
 	assert.Error(t, err, "Should reject invalid IV size")
 }
 
-// TestSm4Cipher_Ecb_NoIVRequired tests that ECB mode doesn't require IV.
-func TestSm4Cipher_Ecb_NoIvRequired(t *testing.T) {
+// TestSm4CipherEcbNoIvRequired tests that ECB mode doesn't require IV.
+func TestSm4CipherEcbNoIvRequired(t *testing.T) {
 	key := make([]byte, sm4.BlockSize)
 	_, err := rand.Read(key)
 	require.NoError(t, err, "Should generate random key")
@@ -164,8 +164,8 @@ func TestSm4Cipher_Ecb_NoIvRequired(t *testing.T) {
 	assert.Equal(t, plaintext, decrypted, "Decrypted text should match original plaintext")
 }
 
-// TestSm4Cipher_Ecb_Deterministic tests that ECB mode is deterministic.
-func TestSm4Cipher_Ecb_Deterministic(t *testing.T) {
+// TestSm4CipherEcbDeterministic tests that ECB mode is deterministic.
+func TestSm4CipherEcbDeterministic(t *testing.T) {
 	key := make([]byte, sm4.BlockSize)
 	_, err := rand.Read(key)
 	require.NoError(t, err, "Should generate random key")
@@ -185,8 +185,8 @@ func TestSm4Cipher_Ecb_Deterministic(t *testing.T) {
 		"ECB mode should produce same ciphertext for same plaintext")
 }
 
-// TestSm4Cipher_Cbc_NonDeterministic tests CBC mode with fixed IV.
-func TestSm4Cipher_Cbc_NonDeterministic(t *testing.T) {
+// TestSm4CipherCbcNonDeterministic tests CBC mode with fixed IV.
+func TestSm4CipherCbcNonDeterministic(t *testing.T) {
 	key := make([]byte, sm4.BlockSize)
 	iv := make([]byte, sm4.BlockSize)
 	_, err := rand.Read(key)
@@ -218,8 +218,8 @@ func TestSm4Cipher_Cbc_NonDeterministic(t *testing.T) {
 	assert.Equal(t, plaintext, decrypted2, "Second decrypted text should match original plaintext")
 }
 
-// TestSm4Cipher_LongMessage tests SM4 with long messages spanning multiple blocks.
-func TestSm4Cipher_LongMessage(t *testing.T) {
+// TestSm4CipherLongMessage tests SM4 with long messages spanning multiple blocks.
+func TestSm4CipherLongMessage(t *testing.T) {
 	key := make([]byte, sm4.BlockSize)
 	iv := make([]byte, sm4.BlockSize)
 	_, err := rand.Read(key)
@@ -241,8 +241,8 @@ func TestSm4Cipher_LongMessage(t *testing.T) {
 	assert.Equal(t, plaintext, decrypted, "Decrypted text should match original plaintext")
 }
 
-// TestSm4Cipher_EmptyString tests SM4 with empty string input.
-func TestSm4Cipher_EmptyString(t *testing.T) {
+// TestSm4CipherEmptyString tests SM4 with empty string input.
+func TestSm4CipherEmptyString(t *testing.T) {
 	key := make([]byte, sm4.BlockSize)
 	iv := make([]byte, sm4.BlockSize)
 	_, err := rand.Read(key)
@@ -263,8 +263,8 @@ func TestSm4Cipher_EmptyString(t *testing.T) {
 	assert.Equal(t, plaintext, decrypted, "Decrypted text should match empty plaintext")
 }
 
-// TestSm4Cipher_DefaultMode tests that default mode is CBC.
-func TestSm4Cipher_DefaultMode(t *testing.T) {
+// TestSm4CipherDefaultMode tests that default mode is CBC.
+func TestSm4CipherDefaultMode(t *testing.T) {
 	key := make([]byte, sm4.BlockSize)
 	iv := make([]byte, sm4.BlockSize)
 	_, err := rand.Read(key)

@@ -280,7 +280,7 @@ func TestParseMetaFields(t *testing.T) {
 
 // TestPromote tests promote functionality.
 func TestPromote(t *testing.T) {
-	t.Run("Create_UploadedFile", func(t *testing.T) {
+	t.Run("CreateUploadedFile", func(t *testing.T) {
 		t.Log("Testing file promotion for uploaded_file fields")
 
 		service := newMockService()
@@ -307,7 +307,7 @@ func TestPromote(t *testing.T) {
 			"Second attachment should exist in storage")
 	})
 
-	t.Run("Create_RichText", func(t *testing.T) {
+	t.Run("CreateRichText", func(t *testing.T) {
 		t.Log("Testing URL promotion in richtext fields")
 
 		service := newMockService()
@@ -331,7 +331,7 @@ func TestPromote(t *testing.T) {
 			"Document file should exist in storage")
 	})
 
-	t.Run("Create_Markdown", func(t *testing.T) {
+	t.Run("CreateMarkdown", func(t *testing.T) {
 		t.Log("Testing URL promotion in markdown fields")
 
 		service := newMockService()
@@ -355,7 +355,7 @@ func TestPromote(t *testing.T) {
 			"Document file should exist in storage")
 	})
 
-	t.Run("Update_ReplaceFiles", func(t *testing.T) {
+	t.Run("UpdateReplaceFiles", func(t *testing.T) {
 		t.Log("Testing file replacement during update")
 
 		service := newMockService()
@@ -395,7 +395,7 @@ func TestPromote(t *testing.T) {
 			"Old attachment should be deleted from storage")
 	})
 
-	t.Run("Update_PartialChange", func(t *testing.T) {
+	t.Run("UpdatePartialChange", func(t *testing.T) {
 		t.Log("Testing partial file updates")
 
 		service := newMockService()
@@ -435,7 +435,7 @@ func TestPromote(t *testing.T) {
 			"New attachment should exist in storage")
 	})
 
-	t.Run("Update_RichtextUrlChange", func(t *testing.T) {
+	t.Run("UpdateRichtextUrlChange", func(t *testing.T) {
 		t.Log("Testing richtext URL updates")
 
 		service := newMockService()
@@ -617,7 +617,7 @@ func TestPromote(t *testing.T) {
 
 // TestPromoterTypes tests promoter types functionality.
 func TestPromoterTypes(t *testing.T) {
-	t.Run("PointerTypes_Create", func(t *testing.T) {
+	t.Run("PointerTypesCreate", func(t *testing.T) {
 		t.Log("Testing file promotion with pointer field types")
 
 		service := newMockService()
@@ -640,7 +640,7 @@ func TestPromoterTypes(t *testing.T) {
 			"Pointer content URL should be promoted")
 	})
 
-	t.Run("PointerTypes_Update", func(t *testing.T) {
+	t.Run("PointerTypesUpdate", func(t *testing.T) {
 		t.Log("Testing file updates with pointer field types")
 
 		service := newMockService()
@@ -670,7 +670,7 @@ func TestPromoterTypes(t *testing.T) {
 			"Old avatar file should be deleted")
 	})
 
-	t.Run("PointerTypes_NilPointers", func(t *testing.T) {
+	t.Run("PointerTypesNilPointers", func(t *testing.T) {
 		t.Log("Testing nil pointer handling")
 
 		service := newMockService()
@@ -688,7 +688,7 @@ func TestPromoterTypes(t *testing.T) {
 		assert.Nil(t, model.Content, "Nil content pointer should remain nil")
 	})
 
-	t.Run("NullTypes_Create", func(t *testing.T) {
+	t.Run("NullTypesCreate", func(t *testing.T) {
 		t.Log("Testing file promotion with null.String types")
 
 		service := newMockService()
@@ -716,7 +716,7 @@ func TestPromoterTypes(t *testing.T) {
 			"Null summary URL should be promoted")
 	})
 
-	t.Run("NullTypes_Update", func(t *testing.T) {
+	t.Run("NullTypesUpdate", func(t *testing.T) {
 		t.Log("Testing null type field updates")
 
 		service := newMockService()
@@ -742,7 +742,7 @@ func TestPromoterTypes(t *testing.T) {
 			"Old avatar should be deleted when field becomes invalid")
 	})
 
-	t.Run("NullTypes_InvalidNull", func(t *testing.T) {
+	t.Run("NullTypesInvalidNull", func(t *testing.T) {
 		t.Log("Testing invalid null.String handling")
 
 		service := newMockService()

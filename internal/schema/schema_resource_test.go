@@ -237,14 +237,14 @@ func (suite *SchemaResourceTestSuite) generateToken() string {
 	}
 
 	jwtInstance, err := security.NewJWT(jwtCfg)
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, "Should not return error")
 
 	claims := security.NewJWTClaimsBuilder().
 		WithSubject("test-admin@admin").
 		WithType(isecurity.TokenTypeAccess)
 
 	token, err := jwtInstance.Generate(claims, 1*time.Hour, 0)
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, "Should not return error")
 
 	return token
 }

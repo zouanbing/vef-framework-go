@@ -503,7 +503,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyTransactionRollback() {
 func (suite *DeleteManyTestSuite) TestDeleteManyPrimaryKeyFormats() {
 	suite.T().Logf("Testing DeleteMany API primary key formats for %s", suite.ds.Kind)
 
-	suite.Run("SinglePK_DirectValues", func() {
+	suite.Run("SinglePKDirectValues", func() {
 		// Single PK with direct value array: ["id1", "id2"]
 		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
@@ -523,7 +523,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyPrimaryKeyFormats() {
 		suite.T().Logf("Successfully deleted user using single primary key direct value format")
 	})
 
-	suite.Run("SinglePK_MapFormat", func() {
+	suite.Run("SinglePKMapFormat", func() {
 		// Single PK with map format: [{"id": "value1"}, {"id": "value2"}]
 		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
@@ -546,7 +546,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyPrimaryKeyFormats() {
 		suite.T().Logf("Map format correctly handled - deleted deluser009 and deluser010")
 	})
 
-	suite.Run("SinglePK_MixedFormat", func() {
+	suite.Run("SinglePKMixedFormat", func() {
 		// Mixed format - both direct values and maps
 		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
@@ -570,7 +570,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyPrimaryKeyFormats() {
 	})
 
 	// Composite PK tests with ProjectAssignment model
-	suite.Run("CompositePK_MapFormatRequired", func() {
+	suite.Run("CompositePKMapFormatRequired", func() {
 		// Test with map format (correct for composite PKs)
 		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
@@ -580,8 +580,8 @@ func (suite *DeleteManyTestSuite) TestDeleteManyPrimaryKeyFormats() {
 			},
 			Params: map[string]any{
 				"pks": []any{
-					map[string]any{"ProjectCode": "proj-test", "employeeId": "emp001"},
-					map[string]any{"ProjectCode": "proj-test", "employeeId": "emp003"},
+					map[string]any{"projectCode": "proj-test", "employeeId": "emp001"},
+					map[string]any{"projectCode": "proj-test", "employeeId": "emp003"},
 				},
 			},
 		})
@@ -603,7 +603,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyPrimaryKeyFormats() {
 		suite.T().Logf("Successfully deleted 2 items using composite primary key map format")
 	})
 
-	suite.Run("CompositePK_PartialKeys", func() {
+	suite.Run("CompositePKPartialKeys", func() {
 		// Test with missing one of the composite keys
 		resp := suite.MakeRPCRequest(api.Request{
 			Identifier: api.Identifier{
@@ -613,7 +613,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyPrimaryKeyFormats() {
 			},
 			Params: map[string]any{
 				"pks": []any{
-					map[string]any{"ProjectCode": "proj-test"}, // Missing employeeId
+					map[string]any{"projectCode": "proj-test"}, // Missing employeeId
 				},
 			},
 		})

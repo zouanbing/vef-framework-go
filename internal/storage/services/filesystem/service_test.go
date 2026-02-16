@@ -289,8 +289,8 @@ func TestCleanupEmptyDirs(t *testing.T) {
 	service := &Service{root: tempDir}
 
 	nestedPath := filepath.Join(tempDir, "a", "b", "c", "test.txt")
-	require.NoError(t, os.MkdirAll(filepath.Dir(nestedPath), 0o755))
-	require.NoError(t, os.WriteFile(nestedPath, []byte("test"), 0o644))
+	require.NoError(t, os.MkdirAll(filepath.Dir(nestedPath), 0o755), "Should not return error")
+	require.NoError(t, os.WriteFile(nestedPath, []byte("test"), 0o644), "Should not return error")
 
 	require.NoError(t, os.Remove(nestedPath), "Should not return error")
 

@@ -30,7 +30,7 @@ func (s *CachedDataDictResolverTestSuite) SetupSuite() {
 	s.bus = ievent.NewMemoryBus([]event.Middleware{})
 
 	err := s.bus.Start()
-	s.Require().NoError(err)
+	s.Require().NoError(err, "Should not return error")
 }
 
 func (s *CachedDataDictResolverTestSuite) TearDownSuite() {
