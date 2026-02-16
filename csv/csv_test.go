@@ -160,7 +160,7 @@ func TestCSVExportWithoutHeader(t *testing.T) {
 	require.NoError(t, err, "Should not return error")
 
 	csvContent := buf.String()
-	assert.NotContains(t, csvContent, "用户ID")
+	assert.NotContains(t, csvContent, "用户ID", "Should not contain value")
 	assert.Contains(t, csvContent, "1,张三,zhangsan@example.com", "Should contain expected value")
 }
 

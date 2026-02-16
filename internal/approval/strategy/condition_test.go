@@ -11,6 +11,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/decimal"
 )
 
+// TestFieldConditionEvaluator tests field condition evaluator scenarios.
 func TestFieldConditionEvaluator(t *testing.T) {
 	e := NewFieldConditionEvaluator()
 	assert.Equal(t, approval.ConditionField, e.Type(), "Should return ConditionField type")
@@ -98,6 +99,7 @@ func TestFieldConditionEvaluator(t *testing.T) {
 	}
 }
 
+// TestFieldConditionEvaluatorSymbolOperators tests field condition evaluator symbol operators scenarios.
 func TestFieldConditionEvaluatorSymbolOperators(t *testing.T) {
 	e := NewFieldConditionEvaluator()
 	ctx := context.Background()
@@ -132,6 +134,7 @@ func TestFieldConditionEvaluatorSymbolOperators(t *testing.T) {
 	}
 }
 
+// TestFieldConditionEvaluatorEmptyCollections tests field condition evaluator empty collections scenarios.
 func TestFieldConditionEvaluatorEmptyCollections(t *testing.T) {
 	e := NewFieldConditionEvaluator()
 	ctx := context.Background()
@@ -161,6 +164,7 @@ func TestFieldConditionEvaluatorEmptyCollections(t *testing.T) {
 	}
 }
 
+// TestExpressionConditionEvaluator tests expression condition evaluator scenarios.
 func TestExpressionConditionEvaluator(t *testing.T) {
 	e := NewExpressionConditionEvaluator()
 	assert.Equal(t, approval.ConditionExpression, e.Type(), "Should return ConditionExpression type")
@@ -234,6 +238,7 @@ func TestExpressionConditionEvaluator(t *testing.T) {
 	})
 }
 
+// TestToDecimal tests to decimal scenarios.
 func TestToDecimal(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -257,6 +262,7 @@ func TestToDecimal(t *testing.T) {
 	}
 }
 
+// TestContainsAny tests contains any scenarios.
 func TestContainsAny(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -280,10 +286,12 @@ func TestContainsAny(t *testing.T) {
 	}
 }
 
+// TestIsEmpty tests is empty scenarios.
 func TestIsEmpty(t *testing.T) {
 	assert.False(t, isEmpty(42), "Should return false for non-nil non-container type")
 }
 
+// TestToString tests to string scenarios.
 func TestToString(t *testing.T) {
 	tests := []struct {
 		name     string

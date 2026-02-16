@@ -15,6 +15,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/orm"
 )
 
+// TestEventNames tests event names scenarios.
 func TestEventNames(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -48,6 +49,7 @@ func TestEventNames(t *testing.T) {
 	}
 }
 
+// TestEventConstructors tests event constructors scenarios.
 func TestEventConstructors(t *testing.T) {
 	t.Run("InstanceCreatedEvent", func(t *testing.T) {
 		evt := approval.NewInstanceCreatedEvent("inst1", "flow1", "My Title", "user1")
@@ -224,6 +226,7 @@ func TestEventConstructors(t *testing.T) {
 	})
 }
 
+// TestEventOccurredAtAll tests event occurred at all scenarios.
 func TestEventOccurredAtAll(t *testing.T) {
 	before := time.Now().Add(-time.Second)
 	deadline := time.Now()
@@ -254,6 +257,7 @@ func TestEventOccurredAtAll(t *testing.T) {
 	}
 }
 
+// TestToMap tests to map scenarios.
 func TestToMap(t *testing.T) {
 	t.Run("ValidStruct", func(t *testing.T) {
 		m, err := toMap(approval.NewFlowPublishedEvent("f1", "v1"))
@@ -280,6 +284,7 @@ func TestToMap(t *testing.T) {
 	})
 }
 
+// TestNewEventPublisher tests new event publisher scenarios.
 func TestNewEventPublisher(t *testing.T) {
 	pub := NewEventPublisher(nil)
 	require.NotNil(t, pub, "Should create publisher")
@@ -302,6 +307,7 @@ func setupTestDB(t *testing.T) (orm.DB, func()) {
 	return internalORM.New(bunDB), func() { _ = bunDB.Close() }
 }
 
+// TestPublishAll tests publish all scenarios.
 func TestPublishAll(t *testing.T) {
 	t.Run("NilEvents", func(t *testing.T) {
 		pub := NewEventPublisher(nil)

@@ -10,6 +10,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
 )
 
+// TestNewFlowResource tests new flow resource scenarios.
 func TestNewFlowResource(t *testing.T) {
 	svc := new(service.FlowService)
 	r := NewFlowResource(svc)
@@ -39,6 +40,7 @@ func TestNewFlowResource(t *testing.T) {
 	})
 }
 
+// TestNewInstanceResource tests new instance resource scenarios.
 func TestNewInstanceResource(t *testing.T) {
 	instanceSvc := new(service.InstanceService)
 	querySvc := new(service.QueryService)
@@ -82,6 +84,7 @@ func TestNewInstanceResource(t *testing.T) {
 	})
 }
 
+// TestNewCategoryResource tests new category resource scenarios.
 func TestNewCategoryResource(t *testing.T) {
 	r := NewCategoryResource()
 
@@ -99,6 +102,7 @@ func TestNewCategoryResource(t *testing.T) {
 	})
 }
 
+// TestNewDelegationResource tests new delegation resource scenarios.
 func TestNewDelegationResource(t *testing.T) {
 	r := NewDelegationResource()
 

@@ -220,7 +220,7 @@ func TestParseDecimalRange(t *testing.T) {
 	})
 
 	t.Run("InvalidStart", func(t *testing.T) {
-		_, _, ok := parseDecimalRange([]string{"not_a_number", "99.99"})
+		_, _, ok := parseDecimalRange([]string{"Not_a_number", "99.99"})
 		assert.False(t, ok, "Invalid start should return false")
 	})
 

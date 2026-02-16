@@ -7,9 +7,10 @@ import (
 
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/null"
+	"github.com/ilxqx/vef-framework-go/timex"
 )
 
 // TestDefaultParser_Parse_EmptyString tests Default Parser parse_ empty string scenarios.
@@ -153,7 +154,7 @@ func TestDefaultParser_Parse_PointerTypes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := parser.Parse(tt.cellValue, tt.targetType)
-			assert.NoError(t, err, "Should not return error")
+			require.NoError(t, err, "Should not return error")
 			tt.validate(t, result)
 		})
 	}
@@ -271,7 +272,7 @@ func TestDefaultParser_Parse_TimeTypes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := parser.Parse(tt.cellValue, tt.targetType)
-			assert.NoError(t, err, "Should not return error")
+			require.NoError(t, err, "Should not return error")
 			tt.validate(t, result)
 		})
 	}
@@ -337,7 +338,7 @@ func TestDefaultParser_Parse_TimeTypesWithFormat(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			parser := NewDefaultParser(tt.format)
 			result, err := parser.Parse(tt.cellValue, tt.targetType)
-			assert.NoError(t, err, "Should not return error")
+			require.NoError(t, err, "Should not return error")
 			tt.validate(t, result)
 		})
 	}

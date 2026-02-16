@@ -22,6 +22,7 @@ type FlowServiceTestSuite struct {
 	cleanup func()
 }
 
+// TestFlowServiceTestSuite tests flow service test suite scenarios.
 func TestFlowServiceTestSuite(t *testing.T) {
 	suite.Run(t, new(FlowServiceTestSuite))
 }
@@ -604,6 +605,7 @@ func (s *FlowServiceTestSuite) TestGetFlowGraph_NoPublishedVersion() {
 	s.ErrorIs(err, ErrNoPublishedVersion)
 }
 
+// TestToStringSlice tests to string slice scenarios.
 func TestToStringSlice(t *testing.T) {
 	t.Run("ValidStringSlice", func(t *testing.T) {
 		result, ok := toStringSlice([]any{"a", "b", "c"})
@@ -630,6 +632,7 @@ func TestToStringSlice(t *testing.T) {
 	})
 }
 
+// TestApplyNodeData_ExtendedCoverage tests apply node data extended coverage scenarios.
 func TestApplyNodeData_ExtendedCoverage(t *testing.T) {
 	t.Run("AllProperties", func(t *testing.T) {
 		node := &approval.FlowNode{}
@@ -674,6 +677,7 @@ func TestApplyNodeData_ExtendedCoverage(t *testing.T) {
 	})
 }
 
+// TestValidateFlowDefinition tests validate flow definition scenarios.
 func TestValidateFlowDefinition(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -741,6 +745,7 @@ func TestValidateFlowDefinition(t *testing.T) {
 	}
 }
 
+// TestExtractFromData tests extract from data scenarios.
 func TestExtractFromData(t *testing.T) {
 	tests := []struct {
 		name string
@@ -782,6 +787,7 @@ func TestExtractFromData(t *testing.T) {
 	}
 }
 
+// TestGetFlowGraph_QueryErrors tests get flow graph query errors scenarios.
 func TestGetFlowGraph_QueryErrors(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -842,6 +848,7 @@ func TestGetFlowGraph_QueryErrors(t *testing.T) {
 	}
 }
 
+// TestDeployFlow_ExtendedNodeProperties tests deploy flow extended node properties scenarios.
 func TestDeployFlow_ExtendedNodeProperties(t *testing.T) {
 	ctx := context.Background()
 	db, cleanup := setupTestDB(t)

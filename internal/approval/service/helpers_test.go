@@ -46,7 +46,7 @@ func setupTestDB(t *testing.T) (orm.DB, func()) {
 	dsConfig := &config.DataSourceConfig{Kind: config.SQLite}
 
 	bunDB, err := database.New(dsConfig)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create database")
 
 	// Register models
 	bunDB.RegisterModel(allModels...)
@@ -55,7 +55,7 @@ func setupTestDB(t *testing.T) (orm.DB, func()) {
 	ctx := context.Background()
 	for _, m := range allModels {
 		_, err := bunDB.NewCreateTable().Model(m).IfNotExists().Exec(ctx)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should create table")
 	}
 
 	db := internalORM.New(bunDB)
@@ -128,7 +128,7 @@ func buildSimpleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	flow.CreatedBy = "system"
 	flow.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(flow).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert flow")
 
 	version := &approval.FlowVersion{
 		FlowID:  flow.ID,
@@ -139,7 +139,7 @@ func buildSimpleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	version.CreatedBy = "system"
 	version.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(version).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert version")
 
 	startNode := &approval.FlowNode{
 		FlowVersionID: version.ID,
@@ -151,7 +151,7 @@ func buildSimpleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	startNode.CreatedBy = "system"
 	startNode.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(startNode).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert startNode")
 
 	approvalNode := &approval.FlowNode{
 		FlowVersionID:           version.ID,
@@ -173,7 +173,7 @@ func buildSimpleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	approvalNode.CreatedBy = "system"
 	approvalNode.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(approvalNode).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert approvalNode")
 
 	endNode := &approval.FlowNode{
 		FlowVersionID: version.ID,
@@ -185,7 +185,7 @@ func buildSimpleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	endNode.CreatedBy = "system"
 	endNode.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(endNode).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert endNode")
 
 	// Assignees: user1, user2
 	for i, uid := range []string{"user1", "user2"} {
@@ -197,7 +197,7 @@ func buildSimpleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		}
 		assignee.ID = id.Generate()
 		_, err = db.NewInsert().Model(assignee).Exec(ctx)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should insert assignee")
 	}
 
 	// Edges
@@ -226,7 +226,7 @@ func buildAutoCompleteFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	flow.CreatedBy = "system"
 	flow.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(flow).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert flow")
 
 	version := &approval.FlowVersion{
 		FlowID:  flow.ID,
@@ -237,7 +237,7 @@ func buildAutoCompleteFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	version.CreatedBy = "system"
 	version.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(version).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert version")
 
 	startNode := &approval.FlowNode{
 		FlowVersionID: version.ID,
@@ -249,7 +249,7 @@ func buildAutoCompleteFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	startNode.CreatedBy = "system"
 	startNode.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(startNode).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert startNode")
 
 	endNode := &approval.FlowNode{
 		FlowVersionID: version.ID,
@@ -261,7 +261,7 @@ func buildAutoCompleteFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	endNode.CreatedBy = "system"
 	endNode.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(endNode).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert endNode")
 
 	insertEdge(t, ctx, db, version.ID, startNode.ID, endNode.ID)
 
@@ -287,7 +287,7 @@ func buildHandleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	flow.CreatedBy = "system"
 	flow.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(flow).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert flow")
 
 	version := &approval.FlowVersion{
 		FlowID:  flow.ID,
@@ -298,7 +298,7 @@ func buildHandleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	version.CreatedBy = "system"
 	version.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(version).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert version")
 
 	startNode := &approval.FlowNode{
 		FlowVersionID: version.ID,
@@ -310,7 +310,7 @@ func buildHandleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	startNode.CreatedBy = "system"
 	startNode.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(startNode).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert startNode")
 
 	handleNode := &approval.FlowNode{
 		FlowVersionID:          version.ID,
@@ -325,7 +325,7 @@ func buildHandleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	handleNode.CreatedBy = "system"
 	handleNode.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(handleNode).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert handleNode")
 
 	endNode := &approval.FlowNode{
 		FlowVersionID: version.ID,
@@ -337,7 +337,7 @@ func buildHandleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	endNode.CreatedBy = "system"
 	endNode.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(endNode).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert endNode")
 
 	insertAssignee(t, ctx, db, handleNode.ID, approval.AssigneeUser, []string{"user1", "user2"}, 0)
 
@@ -366,7 +366,7 @@ func buildParallelFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	flow.CreatedBy = "system"
 	flow.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(flow).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert flow")
 
 	version := &approval.FlowVersion{
 		FlowID:  flow.ID,
@@ -377,7 +377,7 @@ func buildParallelFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	version.CreatedBy = "system"
 	version.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(version).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert version")
 
 	startNode := &approval.FlowNode{
 		FlowVersionID: version.ID,
@@ -389,7 +389,7 @@ func buildParallelFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	startNode.CreatedBy = "system"
 	startNode.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(startNode).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert startNode")
 
 	approvalNode := &approval.FlowNode{
 		FlowVersionID:          version.ID,
@@ -405,7 +405,7 @@ func buildParallelFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	approvalNode.CreatedBy = "system"
 	approvalNode.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(approvalNode).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert approvalNode")
 
 	endNode := &approval.FlowNode{
 		FlowVersionID: version.ID,
@@ -417,7 +417,7 @@ func buildParallelFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	endNode.CreatedBy = "system"
 	endNode.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(endNode).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert endNode")
 
 	// Single assignee config with 3 users
 	assignee := &approval.FlowNodeAssignee{
@@ -428,7 +428,7 @@ func buildParallelFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	}
 	assignee.ID = id.Generate()
 	_, err = db.NewInsert().Model(assignee).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert assignee")
 
 	insertEdge(t, ctx, db, version.ID, startNode.ID, approvalNode.ID)
 	insertEdge(t, ctx, db, version.ID, approvalNode.ID, endNode.ID)
@@ -455,7 +455,7 @@ func buildMultiStageFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	flow.CreatedBy = "system"
 	flow.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(flow).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert flow")
 
 	version := &approval.FlowVersion{
 		FlowID:  flow.ID,
@@ -466,7 +466,7 @@ func buildMultiStageFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	version.CreatedBy = "system"
 	version.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(version).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert version")
 
 	startNode := createNode(t, ctx, db, version.ID, "start", approval.NodeStart, "Start", approval.ApprovalSequential, approval.PassAll)
 	approval1 := createNode(t, ctx, db, version.ID, "approval1", approval.NodeApproval, "First Approval", approval.ApprovalSequential, approval.PassAll)
@@ -507,7 +507,7 @@ func createNode(t *testing.T, ctx context.Context, db orm.DB, versionID, key str
 	node.UpdatedBy = "system"
 
 	_, err := db.NewInsert().Model(node).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert node")
 
 	return node
 }
@@ -524,7 +524,7 @@ func insertAssignee(t *testing.T, ctx context.Context, db orm.DB, nodeID string,
 	assignee.ID = id.Generate()
 
 	_, err := db.NewInsert().Model(assignee).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert assignee")
 }
 
 func insertEdge(t *testing.T, ctx context.Context, db orm.DB, versionID, sourceID, targetID string) {
@@ -538,7 +538,7 @@ func insertEdge(t *testing.T, ctx context.Context, db orm.DB, versionID, sourceI
 	edge.ID = id.Generate()
 
 	_, err := db.NewInsert().Model(edge).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert edge")
 }
 
 // queryTasks loads tasks for an instance from DB.
@@ -550,7 +550,7 @@ func queryTasks(t *testing.T, ctx context.Context, db orm.DB, instanceID string)
 	err := db.NewSelect().Model(&tasks).Where(func(c orm.ConditionBuilder) {
 		c.Equals("instance_id", instanceID)
 	}).OrderBy("sort_order").Scan(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should query records")
 
 	return tasks
 }
@@ -565,7 +565,7 @@ func queryTasksByNode(t *testing.T, ctx context.Context, db orm.DB, instanceID, 
 		c.Equals("instance_id", instanceID)
 		c.Equals("node_id", nodeID)
 	}).OrderBy("sort_order").Scan(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should query records")
 
 	return tasks
 }
@@ -577,7 +577,7 @@ func queryEvents(t *testing.T, ctx context.Context, db orm.DB) []approval.EventO
 	var events []approval.EventOutbox
 
 	err := db.NewSelect().Model(&events).OrderBy("created_at", "id").Scan(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should query records")
 
 	return events
 }
@@ -591,7 +591,7 @@ func queryInstance(t *testing.T, ctx context.Context, db orm.DB, instanceID stri
 	err := db.NewSelect().Model(&inst).Where(func(c orm.ConditionBuilder) {
 		c.Equals("id", instanceID)
 	}).Scan(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should query records")
 
 	return inst
 }

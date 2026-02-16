@@ -275,7 +275,7 @@ func TestRenderPartitionBy(t *testing.T) {
 		columns  []string
 		expected string
 	}{
-		{"RangeSingleColumn", PartitionRange, []string{"created_at"}, "RANGE (created_at)"},
+		{"RangeSingleColumn", PartitionRange, []string{"Created_at"}, "RANGE (created_at)"},
 		{"ListSingleColumn", PartitionList, []string{"status"}, "LIST (status)"},
 		{"HashMultiColumn", PartitionHash, []string{"user_id", "order_date"}, "HASH (user_id, order_date)"},
 	}

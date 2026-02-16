@@ -16,6 +16,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/orm"
 )
 
+// TestStartProcessAutoCompleteFlow tests start process auto complete flow scenarios.
 func TestStartProcessAutoCompleteFlow(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -34,6 +35,7 @@ func TestStartProcessAutoCompleteFlow(t *testing.T) {
 	assert.True(t, inst.FinishedAt.Valid, "FinishedAt should be set")
 }
 
+// TestStartProcessSimpleApprovalFlow tests start process simple approval flow scenarios.
 func TestStartProcessSimpleApprovalFlow(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -62,6 +64,7 @@ func TestStartProcessSimpleApprovalFlow(t *testing.T) {
 	assert.Len(t, snapshots, 1, "Should create one form snapshot for the approval node")
 }
 
+// TestStartProcessHandleFlow tests start process handle flow scenarios.
 func TestStartProcessHandleFlow(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -87,6 +90,7 @@ func TestStartProcessHandleFlow(t *testing.T) {
 	}
 }
 
+// TestStartProcessBranchFlow tests start process branch flow scenarios.
 func TestStartProcessBranchFlow(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -122,6 +126,7 @@ func TestStartProcessBranchFlow(t *testing.T) {
 	})
 }
 
+// TestProcessNodeProcessorNotFound tests process node processor not found scenarios.
 func TestProcessNodeProcessorNotFound(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -138,6 +143,7 @@ func TestProcessNodeProcessorNotFound(t *testing.T) {
 	assert.ErrorIs(t, err, ErrProcessorNotFound, "Error should be ErrProcessorNotFound")
 }
 
+// TestAdvanceToNextNode tests advance to next node scenarios.
 func TestAdvanceToNextNode(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -167,6 +173,7 @@ func TestAdvanceToNextNode(t *testing.T) {
 	})
 }
 
+// TestEvaluateNodeCompletion tests evaluate node completion scenarios.
 func TestEvaluateNodeCompletion(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -219,6 +226,7 @@ func TestEvaluateNodeCompletion(t *testing.T) {
 	})
 }
 
+// TestPredictNextNode tests predict next node scenarios.
 func TestPredictNextNode(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -634,6 +642,7 @@ func TestHandleProcessorEmptyAssignee(t *testing.T) {
 	})
 }
 
+// TestApprovalProcessorParallelApproval tests approval processor parallel approval scenarios.
 func TestApprovalProcessorParallelApproval(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -680,6 +689,7 @@ func TestApprovalProcessorParallelApproval(t *testing.T) {
 	}
 }
 
+// TestApprovalProcessorDuplicateHandlerNone tests approval processor duplicate handler none scenarios.
 func TestApprovalProcessorDuplicateHandlerNone(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -723,6 +733,7 @@ func TestApprovalProcessorDuplicateHandlerNone(t *testing.T) {
 	assert.Len(t, tasks, 2, "DuplicateHandlerNone should keep duplicate assignees")
 }
 
+// TestLoadFlowCategoryID tests load flow category i d scenarios.
 func TestLoadFlowCategoryID(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -753,6 +764,7 @@ func TestLoadFlowCategoryID(t *testing.T) {
 	})
 }
 
+// TestResolveDelegationChain tests resolve delegation chain scenarios.
 func TestResolveDelegationChain(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -791,6 +803,7 @@ func TestResolveDelegationChain(t *testing.T) {
 	})
 }
 
+// TestApplyDelegation tests apply delegation scenarios.
 func TestApplyDelegation(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -827,6 +840,7 @@ func TestApplyDelegation(t *testing.T) {
 	assert.Empty(t, result[1].DelegateFromID, "Non-delegated user should have empty DelegateFromID")
 }
 
+// TestCreateTasksForUsers tests create tasks for users scenarios.
 func TestCreateTasksForUsers(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -857,6 +871,7 @@ func TestCreateTasksForUsers(t *testing.T) {
 	})
 }
 
+// TestSaveFormSnapshot tests save form snapshot scenarios.
 func TestSaveFormSnapshot(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -882,6 +897,7 @@ func TestSaveFormSnapshot(t *testing.T) {
 	assert.Equal(t, "value1", snapshots[0].FormData["field1"], "Snapshot should contain correct form data")
 }
 
+// TestCreateTasksWithDelegation tests create tasks with delegation scenarios.
 func TestCreateTasksWithDelegation(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -926,6 +942,7 @@ func TestCreateTasksWithDelegation(t *testing.T) {
 	assert.False(t, normalTask.DelegateFromID.Valid, "Normal task should not have delegation")
 }
 
+// TestDelegation tests delegation scenarios.
 func TestDelegation(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -1021,6 +1038,7 @@ func TestDelegation(t *testing.T) {
 	})
 }
 
+// TestHandleProcessorPredictWithAssignees tests handle processor predict with assignees scenarios.
 func TestHandleProcessorPredictWithAssignees(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -1061,6 +1079,7 @@ func TestHandleProcessorPredictWithAssignees(t *testing.T) {
 	assert.ElementsMatch(t, []string{"h1", "h2"}, assigneeIDs, "Should predict handle assignees")
 }
 
+// TestStartProcessWithEventPublisher tests start process with event publisher scenarios.
 func TestStartProcessWithEventPublisher(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -1081,6 +1100,7 @@ func TestStartProcessWithEventPublisher(t *testing.T) {
 	assert.True(t, len(events) > 0, "Should publish at least one event for auto-complete flow")
 }
 
+// TestPredictSameApplicantTransferAdmin tests predict same applicant transfer admin scenarios.
 func TestPredictSameApplicantTransferAdmin(t *testing.T) {
 	p := NewApprovalProcessor(nil, nil)
 
@@ -1096,6 +1116,7 @@ func TestPredictSameApplicantTransferAdmin(t *testing.T) {
 	assert.Equal(t, []string{"u1"}, ids, "transfer_admin falls into default which returns applicant ID")
 }
 
+// TestPredictSameApplicantTransferSuperiorError tests predict same applicant transfer superior error scenarios.
 func TestPredictSameApplicantTransferSuperiorError(t *testing.T) {
 	mockOrg := &MockOrganizationService{err: errors.New("predict org error")}
 	p := NewApprovalProcessor(mockOrg, nil)
@@ -1111,6 +1132,7 @@ func TestPredictSameApplicantTransferSuperiorError(t *testing.T) {
 
 // --- Sub-flow tests ---
 
+// TestSubFlowProcessorProcess tests sub flow processor process scenarios.
 func TestSubFlowProcessorProcess(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -1172,6 +1194,7 @@ func TestSubFlowProcessorProcess(t *testing.T) {
 	assert.True(t, len(subTasks) > 0, "Sub-flow should have tasks at its approval node")
 }
 
+// TestSubFlowProcessorValidation tests sub flow processor validation scenarios.
 func TestSubFlowProcessorValidation(t *testing.T) {
 	t.Run("NilEngine", func(t *testing.T) {
 		p := NewSubFlowProcessor()
@@ -1217,6 +1240,7 @@ func TestSubFlowProcessorValidation(t *testing.T) {
 	})
 }
 
+// TestSubFlowProcessorCycleDetection tests sub flow processor cycle detection scenarios.
 func TestSubFlowProcessorCycleDetection(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -1296,6 +1320,7 @@ func TestSubFlowProcessorCycleDetection(t *testing.T) {
 	})
 }
 
+// TestResumeParentFlow tests resume parent flow scenarios.
 func TestResumeParentFlow(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -1392,6 +1417,7 @@ func TestResumeParentFlow(t *testing.T) {
 	})
 }
 
+// TestHandleProcessResultUnknownAction tests handle process result unknown action scenarios.
 func TestHandleProcessResultUnknownAction(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()

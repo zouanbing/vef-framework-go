@@ -183,6 +183,7 @@ func (suite *ParamResolversTestSuite) readBody(resp *http.Response) string {
 	return string(body)
 }
 
+// TestParamResolversTestSuite tests param resolvers test suite scenarios.
 func TestParamResolversTestSuite(t *testing.T) {
 	suite.Run(t, new(ParamResolversTestSuite))
 }
@@ -245,7 +246,7 @@ func (*TestParamResolversResource) VerifyDbFactory(db orm.DB) func(ctx fiber.Ctx
 	injected := db != nil
 
 	return func(ctx fiber.Ctx) error {
-		return result.Ok(map[string]any{"factory_injected": injected}).Response(ctx)
+		return result.Ok(map[string]any{"Factory_injected": injected}).Response(ctx)
 	}
 }
 
@@ -259,7 +260,7 @@ func (*TestParamResolversResource) VerifyStorageFactory(service storage.Service)
 	injected := service != nil
 
 	return func(ctx fiber.Ctx) error {
-		return result.Ok(map[string]any{"factory_injected": injected}).Response(ctx)
+		return result.Ok(map[string]any{"Factory_injected": injected}).Response(ctx)
 	}
 }
 
@@ -273,7 +274,7 @@ func (*TestParamResolversResource) VerifyMoldFactory(transformer mold.Transforme
 	injected := transformer != nil
 
 	return func(ctx fiber.Ctx) error {
-		return result.Ok(map[string]any{"factory_injected": injected}).Response(ctx)
+		return result.Ok(map[string]any{"Factory_injected": injected}).Response(ctx)
 	}
 }
 
@@ -287,7 +288,7 @@ func (*TestParamResolversResource) VerifyEventFactory(publisher event.Publisher)
 	injected := publisher != nil
 
 	return func(ctx fiber.Ctx) error {
-		return result.Ok(map[string]any{"factory_injected": injected}).Response(ctx)
+		return result.Ok(map[string]any{"Factory_injected": injected}).Response(ctx)
 	}
 }
 
@@ -301,6 +302,6 @@ func (*TestParamResolversResource) VerifyCronFactory(scheduler cron.Scheduler) f
 	injected := scheduler != nil
 
 	return func(ctx fiber.Ctx) error {
-		return result.Ok(map[string]any{"factory_injected": injected}).Response(ctx)
+		return result.Ok(map[string]any{"Factory_injected": injected}).Response(ctx)
 	}
 }

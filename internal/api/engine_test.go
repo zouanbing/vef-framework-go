@@ -136,6 +136,7 @@ func newRegistrationEngine(t *testing.T, specs []api.OperationSpec, extraOpts ..
 	return newTestEngine(t, opts...), router
 }
 
+// TestNewEngine tests new engine scenarios.
 func TestNewEngine(t *testing.T) {
 	t.Run("ReturnsNonNilEngine", func(t *testing.T) {
 		eng, err := NewEngine()
@@ -172,6 +173,7 @@ func TestNewEngine(t *testing.T) {
 	})
 }
 
+// TestEngineOptions tests engine options scenarios.
 func TestEngineOptions(t *testing.T) {
 	t.Run("WithDefaultTimeout", func(t *testing.T) {
 		customTimeout := 60 * time.Second
@@ -234,6 +236,7 @@ func TestEngineOptions(t *testing.T) {
 	})
 }
 
+// TestEngineRegister tests engine register scenarios.
 func TestEngineRegister(t *testing.T) {
 	t.Run("NilResource", func(t *testing.T) {
 		eng, err := NewEngine()
@@ -418,6 +421,7 @@ func TestEngineRegister(t *testing.T) {
 	})
 }
 
+// TestEngineLookup tests engine lookup scenarios.
 func TestEngineLookup(t *testing.T) {
 	t.Run("NotFound", func(t *testing.T) {
 		e := newTestEngine(t)
@@ -471,6 +475,7 @@ func TestEngineLookup(t *testing.T) {
 	})
 }
 
+// TestEngineMount tests engine mount scenarios.
 func TestEngineMount(t *testing.T) {
 	t.Run("SetupError", func(t *testing.T) {
 		e := newTestEngine(t, WithRouters(&MockRouterStrategy{name: "rpc", setupErr: errors.New("setup failed")}))
@@ -558,6 +563,7 @@ func TestEngineMount(t *testing.T) {
 	})
 }
 
+// TestResolveTimeout tests resolve timeout scenarios.
 func TestResolveTimeout(t *testing.T) {
 	e := newTestEngine(t, WithDefaultTimeout(30*time.Second))
 
@@ -578,6 +584,7 @@ func TestResolveTimeout(t *testing.T) {
 	}
 }
 
+// TestResolveRateLimit tests resolve rate limit scenarios.
 func TestResolveRateLimit(t *testing.T) {
 	defaultLimit := &api.RateLimitConfig{Max: 100, Period: 5 * time.Minute}
 	customLimit := &api.RateLimitConfig{Max: 10, Period: 1 * time.Minute}
@@ -599,6 +606,7 @@ func TestResolveRateLimit(t *testing.T) {
 	}
 }
 
+// TestFindRouterStrategy tests find router strategy scenarios.
 func TestFindRouterStrategy(t *testing.T) {
 	rpcRouter := &MockRouterStrategy{name: "rpc"}
 	restRouter := &MockRouterStrategy{name: "rest"}
@@ -623,6 +631,7 @@ func TestFindRouterStrategy(t *testing.T) {
 	})
 }
 
+// TestAdaptHandler tests adapt handler scenarios.
 func TestAdaptHandler(t *testing.T) {
 	t.Run("FirstAdapterSucceeds", func(t *testing.T) {
 		e := newTestEngine(t, WithHandlerAdapters(&MockHandlerAdapter{}, &MockHandlerAdapter{}))
@@ -688,6 +697,7 @@ func TestAdaptHandler(t *testing.T) {
 	})
 }
 
+// TestWrapHandlerIfNecessary tests wrap handler if necessary scenarios.
 func TestWrapHandlerIfNecessary(t *testing.T) {
 	e := newTestEngine(t)
 	handler := func(fiber.Ctx) error { return nil }
@@ -734,6 +744,7 @@ func TestWrapHandlerIfNecessary(t *testing.T) {
 	})
 }
 
+// TestResolveAuthConfig tests resolve auth config scenarios.
 func TestResolveAuthConfig(t *testing.T) {
 	e := newTestEngine(t, WithDefaultAuth(api.BearerAuth()))
 	res := &MockResource{kind: api.KindRPC, name: "test/resource"}
@@ -786,6 +797,7 @@ func TestResolveAuthConfig(t *testing.T) {
 	})
 }
 
+// TestResolveHandler tests resolve handler scenarios.
 func TestResolveHandler(t *testing.T) {
 	res := &MockResource{kind: api.KindRPC, name: "test/resource"}
 	spec := api.OperationSpec{Action: "create"}
@@ -833,6 +845,7 @@ func TestResolveHandler(t *testing.T) {
 	})
 }
 
+// TestRegisterResource tests register resource scenarios.
 func TestRegisterResource(t *testing.T) {
 	t.Run("NoCollectorsReturnsSuccess", func(t *testing.T) {
 		e := newTestEngine(t, WithRouters(&MockRouterStrategy{name: "rpc"}))
@@ -854,6 +867,7 @@ func TestRegisterResource(t *testing.T) {
 	})
 }
 
+// TestRegisterAfterMount tests register after mount scenarios.
 func TestRegisterAfterMount(t *testing.T) {
 	t.Run("RegisterAfterMountRoutesImmediately", func(t *testing.T) {
 		e, router := newRegistrationEngine(t,

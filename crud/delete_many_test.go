@@ -580,8 +580,8 @@ func (suite *DeleteManyTestSuite) TestDeleteManyPrimaryKeyFormats() {
 			},
 			Params: map[string]any{
 				"pks": []any{
-					map[string]any{"projectCode": "proj-test", "employeeId": "emp001"},
-					map[string]any{"projectCode": "proj-test", "employeeId": "emp003"},
+					map[string]any{"ProjectCode": "proj-test", "employeeId": "emp001"},
+					map[string]any{"ProjectCode": "proj-test", "employeeId": "emp003"},
 				},
 			},
 		})
@@ -613,7 +613,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyPrimaryKeyFormats() {
 			},
 			Params: map[string]any{
 				"pks": []any{
-					map[string]any{"projectCode": "proj-test"}, // Missing employeeId
+					map[string]any{"ProjectCode": "proj-test"}, // Missing employeeId
 				},
 			},
 		})

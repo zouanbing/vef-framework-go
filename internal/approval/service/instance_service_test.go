@@ -29,6 +29,7 @@ type InstanceServiceTestSuite struct {
 	cleanup   func()
 }
 
+// TestInstanceServiceTestSuite tests instance service test suite scenarios.
 func TestInstanceServiceTestSuite(t *testing.T) {
 	suite.Run(t, new(InstanceServiceTestSuite))
 }
@@ -1067,7 +1068,7 @@ func (s *InstanceServiceTestSuite) TestStartInstance_NotAllowedInitiate() {
 	initiator := &approval.FlowInitiator{
 		FlowID:        flow.ID,
 		InitiatorKind: approval.InitiatorUser,
-		InitiatorIDs:  []string{"other_user"},
+		InitiatorIDs:  []string{"Other_user"},
 	}
 	initiator.ID = id.Generate()
 	_, err = s.db.NewInsert().Model(initiator).Exec(s.ctx)
@@ -1834,6 +1835,7 @@ func (s *InstanceServiceTestSuite) TestSubFlow_InstanceHasAuditFields() {
 	s.Equal(instance.ID, childInstance.ParentInstanceID.String)
 }
 
+// TestFilterEditableFormData tests filter editable form data scenarios.
 func TestFilterEditableFormData(t *testing.T) {
 	t.Run("EmptyPermissionsReturnsAllFields", func(t *testing.T) {
 		data := map[string]any{"name": "Alice", "age": 30}
@@ -1881,6 +1883,7 @@ func TestFilterEditableFormData(t *testing.T) {
 	})
 }
 
+// TestValidateOpinion tests validate opinion scenarios.
 func TestValidateOpinion(t *testing.T) {
 	t.Run("RequiredAndEmpty", func(t *testing.T) {
 		err := validateOpinion(&approval.FlowNode{IsOpinionRequired: true}, "")
@@ -1910,6 +1913,7 @@ type InstanceServiceEdgeCaseTestSuite struct {
 	cleanup   func()
 }
 
+// TestInstanceServiceEdgeCaseTestSuite tests instance service edge case test suite scenarios.
 func TestInstanceServiceEdgeCaseTestSuite(t *testing.T) {
 	suite.Run(t, new(InstanceServiceEdgeCaseTestSuite))
 }
@@ -2252,7 +2256,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRollbackTarget_StartTypeInvalidTa
 func (s *InstanceServiceEdgeCaseTestSuite) TestCheckInitiationPermission_ByDept() {
 	flow, _, _, _, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
 	s.disableAllInitiate(flow)
-	s.insertInitiator(flow.ID, approval.InitiatorDept, []string{"dept_engineering"})
+	s.insertInitiator(flow.ID, approval.InitiatorDept, []string{"Dept_engineering"})
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
 		FlowCode:        "simple_flow",
@@ -2813,7 +2817,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRemoveAssignee_FlowAdmin() {
 	}).Scan(s.ctx)
 	s.Require().NoError(err, "Should query flow")
 
-	flow.AdminUserIDs = []string{"flow_admin"}
+	flow.AdminUserIDs = []string{"Flow_admin"}
 	_, err = s.db.NewUpdate().Model(&flow).WherePK().Exec(s.ctx)
 	s.Require().NoError(err, "Should update flow admin")
 

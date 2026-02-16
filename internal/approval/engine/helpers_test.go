@@ -16,6 +16,7 @@ func newNullTime(t time.Time) null.Time {
 	return null.NewTime(timex.Time(t), true)
 }
 
+// TestDeduplicateAssignees tests deduplicate assignees scenarios.
 func TestDeduplicateAssignees(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -79,6 +80,7 @@ func TestDeduplicateAssignees(t *testing.T) {
 	}
 }
 
+// TestExtractUserIDs tests extract user i ds scenarios.
 func TestExtractUserIDs(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -111,6 +113,7 @@ func TestExtractUserIDs(t *testing.T) {
 	}
 }
 
+// TestMatchDelegation tests match delegation scenarios.
 func TestMatchDelegation(t *testing.T) {
 	now := time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC)
 	past := now.Add(-24 * time.Hour)
@@ -222,6 +225,7 @@ func TestMatchDelegation(t *testing.T) {
 	}
 }
 
+// TestPredictEmptyAssignee tests predict empty assignee scenarios.
 func TestPredictEmptyAssignee(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -280,6 +284,7 @@ func TestPredictEmptyAssignee(t *testing.T) {
 	}
 }
 
+// TestGetSuperior tests get superior scenarios.
 func TestGetSuperior(t *testing.T) {
 	t.Run("NilOrgService", func(t *testing.T) {
 		uid, err := getSuperior(t.Context(), nil, "user1")

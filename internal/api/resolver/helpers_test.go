@@ -9,6 +9,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/api"
 )
 
+// TestSelectClosestMatch tests select closest match scenarios.
 func TestSelectClosestMatch(t *testing.T) {
 	t.Log("Testing selectClosestMatch function")
 
@@ -44,6 +45,7 @@ func TestSelectClosestMatch(t *testing.T) {
 	})
 }
 
+// TestValidateHandlerSignature tests validate handler signature scenarios.
 func TestValidateHandlerSignature(t *testing.T) {
 	t.Log("Testing validateHandlerSignature function")
 
@@ -63,14 +65,14 @@ func TestValidateHandlerSignature(t *testing.T) {
 		fn := func() string { return "" }
 		err := validateHandlerSignature(reflect.TypeOf(fn))
 		assert.Error(t, err, "Handler returning non-error should be invalid")
-		assert.Contains(t, err.Error(), "invalid return type")
+		assert.Contains(t, err.Error(), "invalid return type", "Should contain expected value")
 	})
 
 	t.Run("TooManyReturns", func(t *testing.T) {
 		fn := func() (string, error) { return "", nil }
 		err := validateHandlerSignature(reflect.TypeOf(fn))
 		assert.Error(t, err, "Handler with too many returns should be invalid")
-		assert.Contains(t, err.Error(), "too many return values")
+		assert.Contains(t, err.Error(), "too many return values", "Should contain expected value")
 	})
 
 	t.Run("WithParameters", func(t *testing.T) {
@@ -80,6 +82,7 @@ func TestValidateHandlerSignature(t *testing.T) {
 	})
 }
 
+// TestIsHandlerFactory tests is handler factory scenarios.
 func TestIsHandlerFactory(t *testing.T) {
 	t.Log("Testing isHandlerFactory function")
 
@@ -132,6 +135,7 @@ func TestIsHandlerFactory(t *testing.T) {
 	})
 }
 
+// TestValidateHandler tests validate handler scenarios.
 func TestValidateHandler(t *testing.T) {
 	t.Log("Testing validateHandler function")
 
@@ -150,7 +154,7 @@ func TestValidateHandler(t *testing.T) {
 	t.Run("NotAFunction", func(t *testing.T) {
 		err := validateHandler(reflect.ValueOf("not a function"))
 		assert.Error(t, err, "Non-function should fail validation")
-		assert.Contains(t, err.Error(), "must be a function")
+		assert.Contains(t, err.Error(), "must be a function", "Should contain expected value")
 	})
 
 	t.Run("NilFunction", func(t *testing.T) {
@@ -158,7 +162,7 @@ func TestValidateHandler(t *testing.T) {
 
 		err := validateHandler(reflect.ValueOf(fn))
 		assert.Error(t, err, "Nil function should fail validation")
-		assert.Contains(t, err.Error(), "cannot be nil")
+		assert.Contains(t, err.Error(), "cannot be nil", "Should contain expected value")
 	})
 }
 
@@ -308,6 +312,7 @@ func TestResolveHandlerFromSpec(t *testing.T) {
 	})
 }
 
+// TestFindHandlerMethod tests find handler method scenarios.
 func TestFindHandlerMethod(t *testing.T) {
 	t.Log("Testing findHandlerMethod function")
 
@@ -330,7 +335,7 @@ func TestFindHandlerMethod(t *testing.T) {
 	t.Run("NotFound", func(t *testing.T) {
 		_, err := findHandlerMethod(reflect.ValueOf(resource), "NonExistent")
 		assert.Error(t, err, "Non-existent method should fail")
-		assert.Contains(t, err.Error(), "not found")
+		assert.Contains(t, err.Error(), "not found", "Should contain expected value")
 	})
 
 	t.Run("FactoryMethod", func(t *testing.T) {

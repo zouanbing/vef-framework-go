@@ -247,8 +247,8 @@ func TestVisit_SkipChildrenAction(t *testing.T) {
 	Visit(reflect.ValueOf(testStruct), visitor)
 
 	// Should not visit VisitorTestServices or its nested structures due to SkipChildren
-	assert.NotContains(t, visitedStructs, "VisitorTestServices")
-	assert.NotContains(t, visitedStructs, "VisitorTestLogger")
+	assert.NotContains(t, visitedStructs, "VisitorTestServices", "Should not contain value")
+	assert.NotContains(t, visitedStructs, "VisitorTestLogger", "Should not contain value")
 }
 
 // TestVisit_TaggedFields tests Visit tagged fields scenarios.
@@ -441,7 +441,7 @@ func TestVisitType_MaxDepth(t *testing.T) {
 	VisitType(reflect.TypeFor[VisitorTestNested](), visitor, WithMaxDepth(2))
 
 	// Should not visit deeper structures due to MaxDepth
-	assert.NotContains(t, visitedTypes, "VisitorTestLogger")
+	assert.NotContains(t, visitedTypes, "VisitorTestLogger", "Should not contain value")
 }
 
 // TestVisitType_StopAction tests Visit Type stop action scenarios.
@@ -463,7 +463,7 @@ func TestVisitType_StopAction(t *testing.T) {
 
 	// Should stop after finding VisitorTestEmbedded
 	assert.Contains(t, visitedTypes, "VisitorTestEmbedded", "Should contain expected value")
-	assert.NotContains(t, visitedTypes, "VisitorTestBase")
+	assert.NotContains(t, visitedTypes, "VisitorTestBase", "Should not contain value")
 }
 
 // TestVisitType_SkipChildrenAction tests Visit Type skip children action scenarios.
@@ -488,8 +488,8 @@ func TestVisitType_SkipChildrenAction(t *testing.T) {
 	VisitType(reflect.TypeFor[VisitorTestEmbedded](), visitor)
 
 	// Should not visit VisitorTestServices or its nested structures due to SkipChildren
-	assert.NotContains(t, visitedTypes, "VisitorTestServices")
-	assert.NotContains(t, visitedTypes, "VisitorTestLogger")
+	assert.NotContains(t, visitedTypes, "VisitorTestServices", "Should not contain value")
+	assert.NotContains(t, visitedTypes, "VisitorTestLogger", "Should not contain value")
 }
 
 // TestVisitType_NonStruct tests Visit Type non struct scenarios.
@@ -1232,7 +1232,7 @@ func TestVisit_FieldIndexPath_PointerFields(t *testing.T) {
 	// Verify we can access the value through the index path
 	cacheValue := reflect.ValueOf(testStruct).FieldByIndex(cacheFieldIndex)
 	assert.Equal(t, reflect.Ptr, cacheValue.Kind(), "Should equal expected value")
-	assert.False(t, cacheValue.IsNil())
+	assert.False(t, cacheValue.IsNil(), "Should be false")
 
 	sizeValue := reflect.ValueOf(testStruct).FieldByIndex(sizeFieldIndex)
 	assert.Equal(t, int64(512), sizeValue.Int(), "Should equal expected value")

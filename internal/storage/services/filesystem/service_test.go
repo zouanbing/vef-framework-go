@@ -163,7 +163,7 @@ func TestFilesystemService(t *testing.T) {
 			})
 
 			require.NoError(t, err, "Should not return error")
-			assert.GreaterOrEqual(t, len(objects), 3)
+			assert.GreaterOrEqual(t, len(objects), 3, "Should be greater or equal")
 		})
 
 		t.Run("ListWithPrefix", func(t *testing.T) {
@@ -184,7 +184,7 @@ func TestFilesystemService(t *testing.T) {
 			require.NoError(t, err, "Should not return error")
 
 			for _, obj := range objects {
-				assert.NotContains(t, obj.Key, "folder/")
+				assert.NotContains(t, obj.Key, "folder/", "Should not contain value")
 			}
 		})
 	})
@@ -292,12 +292,12 @@ func TestCleanupEmptyDirs(t *testing.T) {
 	require.NoError(t, os.MkdirAll(filepath.Dir(nestedPath), 0o755))
 	require.NoError(t, os.WriteFile(nestedPath, []byte("test"), 0o644))
 
-	require.NoError(t, os.Remove(nestedPath))
+	require.NoError(t, os.Remove(nestedPath), "Should not return error")
 
 	service.cleanupEmptyDirs(filepath.Dir(nestedPath))
 
 	_, err := os.Stat(filepath.Join(tempDir, "a"))
-	assert.True(t, os.IsNotExist(err))
+	assert.True(t, os.IsNotExist(err), "Should be true")
 }
 
 // TestEdgeCases tests edge cases functionality.

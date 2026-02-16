@@ -61,6 +61,7 @@ func (e *errUserService) GetUsersByRole(context.Context, string) ([]string, erro
 	return nil, errors.New("user service error")
 }
 
+// TestUserResolver tests user resolver scenarios.
 func TestUserResolver(t *testing.T) {
 	r := NewUserResolver()
 	assert.Equal(t, approval.AssigneeUser, r.Kind(), "Should return AssigneeUser kind")
@@ -85,6 +86,7 @@ func TestUserResolver(t *testing.T) {
 	})
 }
 
+// TestSelfResolver tests self resolver scenarios.
 func TestSelfResolver(t *testing.T) {
 	r := NewSelfResolver()
 	assert.Equal(t, approval.AssigneeSelf, r.Kind(), "Should return AssigneeSelf kind")
@@ -105,6 +107,7 @@ func TestSelfResolver(t *testing.T) {
 	})
 }
 
+// TestRoleResolver tests role resolver scenarios.
 func TestRoleResolver(t *testing.T) {
 	r := NewRoleResolver()
 	assert.Equal(t, approval.AssigneeRole, r.Kind(), "Should return AssigneeRole kind")
@@ -145,6 +148,7 @@ func TestRoleResolver(t *testing.T) {
 	})
 }
 
+// TestSuperiorResolver tests superior resolver scenarios.
 func TestSuperiorResolver(t *testing.T) {
 	r := NewSuperiorResolver()
 	assert.Equal(t, approval.AssigneeSuperior, r.Kind(), "Should return AssigneeSuperior kind")
@@ -184,6 +188,7 @@ func TestSuperiorResolver(t *testing.T) {
 	})
 }
 
+// TestDeptLeaderResolver tests dept leader resolver scenarios.
 func TestDeptLeaderResolver(t *testing.T) {
 	r := NewDeptLeaderResolver()
 	assert.Equal(t, approval.AssigneeDeptLeader, r.Kind(), "Should return AssigneeDeptLeader kind")
@@ -214,6 +219,7 @@ func TestDeptLeaderResolver(t *testing.T) {
 	})
 }
 
+// TestDeptResolver tests dept resolver scenarios.
 func TestDeptResolver(t *testing.T) {
 	r := NewDeptResolver()
 	assert.Equal(t, approval.AssigneeDept, r.Kind(), "Should return AssigneeDept kind")
@@ -269,6 +275,7 @@ func TestDeptResolver(t *testing.T) {
 	})
 }
 
+// TestFormFieldResolver tests form field resolver scenarios.
 func TestFormFieldResolver(t *testing.T) {
 	r := NewFormFieldResolver()
 	assert.Equal(t, approval.AssigneeFormField, r.Kind(), "Should return AssigneeFormField kind")
@@ -330,6 +337,7 @@ func TestFormFieldResolver(t *testing.T) {
 	})
 }
 
+// TestCompositeResolver tests composite resolver scenarios.
 func TestCompositeResolver(t *testing.T) {
 	t.Run("ResolveAll", func(t *testing.T) {
 		composite := NewCompositeResolver(NewUserResolver(), NewSelfResolver())

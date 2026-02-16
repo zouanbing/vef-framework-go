@@ -143,7 +143,7 @@ func TestBuilderStreamToWriter(t *testing.T) {
 		output := buf.String()
 		chunks := parseSseChunks(t, output)
 
-		require.GreaterOrEqual(t, len(chunks), 4)
+		require.GreaterOrEqual(t, len(chunks), 4, "Should be greater or equal")
 
 		// Verify start chunk
 		assert.Equal(t, "start", chunks[0]["type"], "Should equal expected value")
@@ -224,8 +224,8 @@ func TestBuilderStreamToWriter(t *testing.T) {
 			StreamToWriter(w)
 
 		output := buf.String()
-		assert.NotContains(t, output, "reasoning-start")
-		assert.NotContains(t, output, "reasoning-delta")
+		assert.NotContains(t, output, "reasoning-start", "Should not contain value")
+		assert.NotContains(t, output, "reasoning-delta", "Should not contain value")
 	})
 
 	t.Run("StreamsToolCalls", func(t *testing.T) {

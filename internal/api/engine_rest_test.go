@@ -772,6 +772,7 @@ func (suite *RESTEngineTestSuite) TestPermissionCheckerCalledOnAdmin() {
 	suite.permissionChecker.AssertCalled(suite.T(), "HasPermission", mock.Anything, mock.Anything, "items:admin")
 }
 
+// TestRESTEngineTestSuite tests r e s t engine test suite scenarios.
 func TestRESTEngineTestSuite(t *testing.T) {
 	suite.Run(t, new(RESTEngineTestSuite))
 }

@@ -740,7 +740,7 @@ func TestMemoryCacheConcurrency(t *testing.T) {
 		wg.Wait()
 
 		size, _ := cache.Size(ctx)
-		assert.LessOrEqual(t, size, int64(100))
+		assert.LessOrEqual(t, size, int64(100), "Should match expected")
 	})
 
 	t.Run("ConcurrentReads", func(*testing.T) {
@@ -792,8 +792,8 @@ func TestMemoryCacheConcurrency(t *testing.T) {
 		wg.Wait()
 
 		size, _ := cache.Size(ctx)
-		assert.GreaterOrEqual(t, size, int64(0))
-		assert.LessOrEqual(t, size, int64(100))
+		assert.GreaterOrEqual(t, size, int64(0), "Should be greater or equal")
+		assert.LessOrEqual(t, size, int64(100), "Should match expected")
 	})
 
 	t.Run("ConcurrentEvictions", func(t *testing.T) {
@@ -811,7 +811,7 @@ func TestMemoryCacheConcurrency(t *testing.T) {
 		wg.Wait()
 
 		size, _ := cache.Size(ctx)
-		assert.LessOrEqual(t, size, int64(10))
+		assert.LessOrEqual(t, size, int64(10), "Should match expected")
 	})
 }
 

@@ -11,6 +11,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/approval/strategy"
 )
 
+// TestNormalizePassRatio tests normalize pass ratio scenarios.
 func TestNormalizePassRatio(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -34,6 +35,7 @@ func TestNormalizePassRatio(t *testing.T) {
 	}
 }
 
+// TestNewFlowEngine tests new flow engine scenarios.
 func TestNewFlowEngine(t *testing.T) {
 	t.Run("RegistersProcessors", func(t *testing.T) {
 		processors := []NodeProcessor{
@@ -55,6 +57,7 @@ func TestNewFlowEngine(t *testing.T) {
 	})
 }
 
+// TestBuildPassRuleContext tests build pass rule context scenarios.
 func TestBuildPassRuleContext(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -122,6 +125,7 @@ func TestBuildPassRuleContext(t *testing.T) {
 	}
 }
 
+// TestEvaluatePassRuleWithTasks tests evaluate pass rule with tasks scenarios.
 func TestEvaluatePassRuleWithTasks(t *testing.T) {
 	registry := strategy.NewStrategyRegistry(
 		[]approval.PassRuleStrategy{strategy.NewAllPassStrategy()},
@@ -168,6 +172,7 @@ func TestEvaluatePassRuleWithTasks(t *testing.T) {
 	})
 }
 
+// TestEvaluateBranchConditions tests evaluate branch conditions scenarios.
 func TestEvaluateBranchConditions(t *testing.T) {
 	registry := strategy.NewStrategyRegistry(
 		nil,
@@ -347,6 +352,7 @@ func TestEvaluateBranchConditions(t *testing.T) {
 }
 
 
+// TestPublishEventsNilPublisher tests publish events nil publisher scenarios.
 func TestPublishEventsNilPublisher(t *testing.T) {
 	engine := NewFlowEngine(nil, nil, nil)
 
@@ -362,6 +368,7 @@ func TestPublishEventsNilPublisher(t *testing.T) {
 }
 
 
+// TestResumeParentFlowNoOp tests resume parent flow no op scenarios.
 func TestResumeParentFlowNoOp(t *testing.T) {
 	engine := NewFlowEngine(nil, nil, nil)
 
@@ -372,6 +379,7 @@ func TestResumeParentFlowNoOp(t *testing.T) {
 	})
 }
 
+// TestEvaluateBranchConditionsWithDeptSubject tests evaluate branch conditions with dept subject scenarios.
 func TestEvaluateBranchConditionsWithDeptSubject(t *testing.T) {
 	registry := strategy.NewStrategyRegistry(
 		nil,
@@ -418,6 +426,7 @@ func TestEvaluateBranchConditionsWithDeptSubject(t *testing.T) {
 	})
 }
 
+// TestFlowEngineProcessorRegistration tests flow engine processor registration scenarios.
 func TestFlowEngineProcessorRegistration(t *testing.T) {
 	t.Run("AllProcessorTypes", func(t *testing.T) {
 		processors := []NodeProcessor{
@@ -450,6 +459,7 @@ func TestFlowEngineProcessorRegistration(t *testing.T) {
 }
 
 
+// TestEvaluateBranchConditionsExpressionWithDept tests evaluate branch conditions expression with dept scenarios.
 func TestEvaluateBranchConditionsExpressionWithDept(t *testing.T) {
 	registry := strategy.NewStrategyRegistry(
 		nil,
@@ -485,6 +495,7 @@ func TestEvaluateBranchConditionsExpressionWithDept(t *testing.T) {
 	})
 }
 
+// TestEvaluateBranchConditionsFieldOperators tests evaluate branch conditions field operators scenarios.
 func TestEvaluateBranchConditionsFieldOperators(t *testing.T) {
 	registry := strategy.NewStrategyRegistry(
 		nil,

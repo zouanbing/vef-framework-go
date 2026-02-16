@@ -46,14 +46,14 @@ func setupTestDB(t *testing.T) (orm.DB, func()) {
 	dsConfig := &config.DataSourceConfig{Kind: config.SQLite}
 
 	bunDB, err := database.New(dsConfig)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create database")
 
 	bunDB.RegisterModel(allModels...)
 
 	ctx := context.Background()
 	for _, m := range allModels {
 		_, err := bunDB.NewCreateTable().Model(m).IfNotExists().Exec(ctx)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should create table")
 	}
 
 	db := internalORM.New(bunDB)
@@ -180,7 +180,7 @@ func buildSimpleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	approvalNode.CreatedBy = "system"
 	approvalNode.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(approvalNode).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert approvalNode")
 
 	endNode := createFlowNode(t, ctx, db, version.ID, "end", approval.NodeEnd, "End")
 
@@ -233,7 +233,7 @@ func buildHandleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	handleNode.CreatedBy = "system"
 	handleNode.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(handleNode).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert handleNode")
 
 	endNode := createFlowNode(t, ctx, db, version.ID, "end", approval.NodeEnd, "End")
 
@@ -270,7 +270,7 @@ func buildBranchFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	approval1.CreatedBy = "system"
 	approval1.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(approval1).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert approval1")
 
 	approval2 := &approval.FlowNode{
 		FlowVersionID:          version.ID,
@@ -286,7 +286,7 @@ func buildBranchFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	approval2.CreatedBy = "system"
 	approval2.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(approval2).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert approval2")
 
 	endNode := createFlowNode(t, ctx, db, version.ID, "end", approval.NodeEnd, "End")
 
@@ -313,7 +313,7 @@ func buildBranchFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		},
 	}
 	_, err = db.NewUpdate().Model(branchNode).WherePK().Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should execute query")
 
 	insertEdge(t, ctx, db, version.ID, startNode.ID, branchNode.ID)
 	insertEdge(t, ctx, db, version.ID, branchNode.ID, approval1.ID, highBranchID)
@@ -350,7 +350,7 @@ func buildFlowWithSameApplicant(t *testing.T, ctx context.Context, db orm.DB, sa
 	approvalNode.CreatedBy = "system"
 	approvalNode.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(approvalNode).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert approvalNode")
 
 	endNode := createFlowNode(t, ctx, db, version.ID, "end", approval.NodeEnd, "End")
 
@@ -398,7 +398,7 @@ func buildEmptyAssigneeFlow(
 	node.CreatedBy = "system"
 	node.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(node).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert node")
 
 	endNode := createFlowNode(t, ctx, db, version.ID, "end", approval.NodeEnd, "End")
 
@@ -427,14 +427,14 @@ func createFlowAndVersion(t *testing.T, ctx context.Context, db orm.DB, code, na
 	flow.CreatedBy = "system"
 	flow.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(flow).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert flow")
 
 	version := &approval.FlowVersion{FlowID: flow.ID, Version: 1, Status: approval.VersionPublished}
 	version.ID = id.Generate()
 	version.CreatedBy = "system"
 	version.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(version).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert version")
 
 	return flow, version
 }
@@ -454,7 +454,7 @@ func createFlowNode(t *testing.T, ctx context.Context, db orm.DB, versionID, key
 	node.UpdatedBy = "system"
 
 	_, err := db.NewInsert().Model(node).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert node")
 
 	return node
 }
@@ -471,7 +471,7 @@ func insertAssignee(t *testing.T, ctx context.Context, db orm.DB, nodeID string,
 	assignee.ID = id.Generate()
 
 	_, err := db.NewInsert().Model(assignee).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert assignee")
 }
 
 func insertEdge(t *testing.T, ctx context.Context, db orm.DB, versionID, sourceID, targetID string, sourceHandle ...string) {
@@ -489,7 +489,7 @@ func insertEdge(t *testing.T, ctx context.Context, db orm.DB, versionID, sourceI
 	}
 
 	_, err := db.NewInsert().Model(edge).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert edge")
 }
 
 func createInstance(t *testing.T, ctx context.Context, db orm.DB, flow *approval.Flow, version *approval.FlowVersion, applicantID string, formData map[string]any) *approval.Instance {
@@ -509,7 +509,7 @@ func createInstance(t *testing.T, ctx context.Context, db orm.DB, flow *approval
 	instance.UpdatedBy = applicantID
 
 	_, err := db.NewInsert().Model(instance).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert instance")
 
 	return instance
 }
@@ -523,7 +523,7 @@ func queryTasksByNode(t *testing.T, ctx context.Context, db orm.DB, instanceID, 
 		c.Equals("instance_id", instanceID)
 		c.Equals("node_id", nodeID)
 	}).OrderBy("sort_order").Scan(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should query records")
 
 	return tasks
 }
@@ -536,7 +536,7 @@ func queryInstance(t *testing.T, ctx context.Context, db orm.DB, instanceID stri
 	err := db.NewSelect().Model(&inst).Where(func(c orm.ConditionBuilder) {
 		c.Equals("id", instanceID)
 	}).Scan(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should query records")
 
 	return inst
 }
@@ -549,7 +549,7 @@ func queryFormSnapshots(t *testing.T, ctx context.Context, db orm.DB, instanceID
 	err := db.NewSelect().Model(&snapshots).Where(func(c orm.ConditionBuilder) {
 		c.Equals("instance_id", instanceID)
 	}).Scan(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should query records")
 
 	return snapshots
 }
@@ -570,7 +570,7 @@ func createParentInstance(t *testing.T, ctx context.Context, db orm.DB, flow *ap
 	instance.UpdatedBy = applicantID
 
 	_, err := db.NewInsert().Model(instance).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert instance")
 
 	return instance
 }
@@ -592,7 +592,7 @@ func createRunningParentInstance(t *testing.T, ctx context.Context, db orm.DB, f
 	instance.UpdatedBy = "applicant1"
 
 	_, err := db.NewInsert().Model(instance).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert instance")
 
 	return instance
 }
@@ -615,7 +615,7 @@ func createChildInstance(t *testing.T, ctx context.Context, db orm.DB, parentIns
 	instance.UpdatedBy = "applicant1"
 
 	_, err := db.NewInsert().Model(instance).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert instance")
 
 	return instance
 }
@@ -634,5 +634,5 @@ func insertDelegation(t *testing.T, ctx context.Context, db orm.DB, delegatorID,
 	delegation.UpdatedBy = "system"
 
 	_, err := db.NewInsert().Model(delegation).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should insert delegation")
 }

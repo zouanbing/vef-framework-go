@@ -281,7 +281,7 @@ func TestCombinedLibraries(t *testing.T) {
 
 		obj := result.ToObject(vm)
 		assert.Equal(t, "2025-01-15", obj.Get("date").String(), "Should equal expected value")
-		assert.True(t, obj.Get("isValid").ToBoolean())
+		assert.True(t, obj.Get("isValid").ToBoolean(), "Should be true")
 	})
 
 	t.Run("PriceCalculationWithFormatting", func(t *testing.T) {
@@ -353,8 +353,8 @@ func TestGoJavaScriptInterop(t *testing.T) {
 
 		obj := result.ToObject(vm)
 		assert.Equal(t, "Alice", obj.Get("capitalized").String(), "Should equal expected value")
-		assert.True(t, obj.Get("isValidEmail").ToBoolean())
-		assert.True(t, obj.Get("isAdult").ToBoolean())
+		assert.True(t, obj.Get("isValidEmail").ToBoolean(), "Should be true")
+		assert.True(t, obj.Get("isAdult").ToBoolean(), "Should be true")
 	})
 
 	t.Run("PassArrayToJS", func(t *testing.T) {
@@ -392,13 +392,13 @@ func TestGoJavaScriptInterop(t *testing.T) {
 		require.NoError(t, err, "Should not return error")
 
 		obj := result.ToObject(vm)
-		assert.NotEmpty(t, obj.Get("timestamp").String())
+		assert.NotEmpty(t, obj.Get("timestamp").String(), "Should not be empty")
 		assert.Equal(t, "115", obj.Get("calculation").String(), "Should equal expected value")
 		assert.Equal(t, "Hello world", obj.Get("processed").String(), "Should equal expected value")
 
 		validation := obj.Get("validation").ToObject(vm)
-		assert.True(t, validation.Get("email").ToBoolean())
-		assert.True(t, validation.Get("uuid").ToBoolean())
+		assert.True(t, validation.Get("email").ToBoolean(), "Should be true")
+		assert.True(t, validation.Get("uuid").ToBoolean(), "Should be true")
 	})
 }
 

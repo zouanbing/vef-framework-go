@@ -205,7 +205,7 @@ func TestSourceChunks(t *testing.T) {
 		assert.Equal(t, ChunkTypeSourceURL, chunk["type"], "Should equal expected value")
 		assert.Equal(t, "src_1", chunk["sourceID"], "Should equal expected value")
 		assert.Equal(t, "https://example.com", chunk["url"], "Should equal expected value")
-		assert.NotContains(t, chunk, "title")
+		assert.NotContains(t, chunk, "title", "Should not contain value")
 	})
 
 	t.Run("SourceDocumentWithTitle", func(t *testing.T) {
@@ -223,7 +223,7 @@ func TestSourceChunks(t *testing.T) {
 		assert.Equal(t, ChunkTypeSourceDocument, chunk["type"], "Should equal expected value")
 		assert.Equal(t, "src_2", chunk["sourceID"], "Should equal expected value")
 		assert.Equal(t, "application/pdf", chunk["mediaType"], "Should equal expected value")
-		assert.NotContains(t, chunk, "title")
+		assert.NotContains(t, chunk, "title", "Should not contain value")
 	})
 }
 

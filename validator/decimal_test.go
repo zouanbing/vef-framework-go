@@ -18,11 +18,11 @@ func TestDecimalMinValidation(t *testing.T) {
 		value   string
 		wantErr bool
 	}{
-		{"validMinimum", "10.5", false},
-		{"validAboveMinimum", "20.0", false},
-		{"invalidBelowMinimum", "5.0", true},
-		{"invalidZero", "0", true},
-		{"validExactMinimum", "10.5", false},
+		{"ValidMinimum", "10.5", false},
+		{"ValidAboveMinimum", "20.0", false},
+		{"InvalidBelowMinimum", "5.0", true},
+		{"InvalidZero", "0", true},
+		{"ValidExactMinimum", "10.5", false},
 	}
 
 	for _, tt := range tests {
@@ -52,11 +52,11 @@ func TestDecimalMaxValidation(t *testing.T) {
 		value   string
 		wantErr bool
 	}{
-		{"validMaximum", "100", false},
-		{"validBelowMaximum", "50.5", false},
-		{"invalidAboveMaximum", "150.0", true},
-		{"validExactMaximum", "100.00", false},
-		{"validZero", "0", false},
+		{"ValidMaximum", "100", false},
+		{"ValidBelowMaximum", "50.5", false},
+		{"InvalidAboveMaximum", "150.0", true},
+		{"ValidExactMaximum", "100.00", false},
+		{"ValidZero", "0", false},
 	}
 
 	for _, tt := range tests {
@@ -86,11 +86,11 @@ func TestDecimalRangeValidation(t *testing.T) {
 		value   string
 		wantErr bool
 	}{
-		{"validInRange", "25.5", false},
-		{"validMinimumBoundary", "1", false},
-		{"validMaximumBoundary", "50", false},
-		{"invalidBelowRange", "0.5", true},
-		{"invalidAboveRange", "51", true},
+		{"ValidInRange", "25.5", false},
+		{"ValidMinimumBoundary", "1", false},
+		{"ValidMaximumBoundary", "50", false},
+		{"InvalidBelowRange", "0.5", true},
+		{"InvalidAboveRange", "51", true},
 	}
 
 	for _, tt := range tests {

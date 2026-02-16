@@ -21,19 +21,20 @@ func (*mockMiddleware) Process(ctx fiber.Ctx) error { return ctx.Next() }
 
 var _ api.Middleware = (*mockMiddleware)(nil)
 
+// TestNewChain tests new chain scenarios.
 func TestNewChain(t *testing.T) {
 	t.Run("Empty", func(t *testing.T) {
 		chain := NewChain()
-		assert.NotNil(t, chain)
-		assert.Empty(t, chain.Handlers())
+		assert.NotNil(t, chain, "Chain should not be nil")
+		assert.Empty(t, chain.Handlers(), "Handlers should be empty")
 	})
 
 	t.Run("Single", func(t *testing.T) {
 		chain := NewChain(&mockMiddleware{name: "test", order: 1})
 		handlers := chain.Handlers()
 
-		assert.Len(t, handlers, 1)
-		assert.NotNil(t, handlers[0])
+		assert.Len(t, handlers, 1, "Should have exactly 1 handler")
+		assert.NotNil(t, handlers[0], "Handler should not be nil")
 	})
 
 	t.Run("SortsByOrder", func(t *testing.T) {
@@ -44,9 +45,9 @@ func TestNewChain(t *testing.T) {
 		chain := NewChain(high, low, mid)
 
 		// Verify internal ordering: low(-100) < mid(0) < high(100)
-		assert.Equal(t, "low", chain.middlewares[0].Name())
-		assert.Equal(t, "mid", chain.middlewares[1].Name())
-		assert.Equal(t, "high", chain.middlewares[2].Name())
+		assert.Equal(t, "low", chain.middlewares[0].Name(), "First middleware should be low")
+		assert.Equal(t, "mid", chain.middlewares[1].Name(), "Second middleware should be mid")
+		assert.Equal(t, "high", chain.middlewares[2].Name(), "Third middleware should be high")
 	})
 
 	t.Run("DoesNotMutateInput", func(t *testing.T) {
@@ -58,11 +59,12 @@ func TestNewChain(t *testing.T) {
 		NewChain(mids...)
 
 		// Original slice should be unmodified
-		assert.Equal(t, "b", mids[0].Name())
-		assert.Equal(t, "a", mids[1].Name())
+		assert.Equal(t, "b", mids[0].Name(), "Original first element should be unchanged")
+		assert.Equal(t, "a", mids[1].Name(), "Original second element should be unchanged")
 	})
 }
 
+// TestChainHandlers tests chain handlers scenarios.
 func TestChainHandlers(t *testing.T) {
 	t.Run("ReturnsCorrectCount", func(t *testing.T) {
 		chain := NewChain(
@@ -70,7 +72,7 @@ func TestChainHandlers(t *testing.T) {
 			&mockMiddleware{name: "b", order: 2},
 		)
 
-		assert.Len(t, chain.Handlers(), 2)
+		assert.Len(t, chain.Handlers(), 2, "Should have exactly 2 handlers")
 	})
 
 	t.Run("HandlerTypesAreFiberHandler", func(t *testing.T) {
@@ -92,10 +94,10 @@ func TestChainHandlers(t *testing.T) {
 		// Pass in shuffled order
 		chain := NewChain(audit, auth, rateLimit, contextual, dataPermission)
 
-		assert.Equal(t, "auth", chain.middlewares[0].Name())
-		assert.Equal(t, "contextual", chain.middlewares[1].Name())
-		assert.Equal(t, "data_permission", chain.middlewares[2].Name())
-		assert.Equal(t, "ratelimit", chain.middlewares[3].Name())
-		assert.Equal(t, "audit", chain.middlewares[4].Name())
+		assert.Equal(t, "auth", chain.middlewares[0].Name(), "First should be auth")
+		assert.Equal(t, "contextual", chain.middlewares[1].Name(), "Second should be contextual")
+		assert.Equal(t, "data_permission", chain.middlewares[2].Name(), "Third should be data_permission")
+		assert.Equal(t, "ratelimit", chain.middlewares[3].Name(), "Fourth should be ratelimit")
+		assert.Equal(t, "audit", chain.middlewares[4].Name(), "Fifth should be audit")
 	})
 }

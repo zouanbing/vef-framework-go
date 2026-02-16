@@ -446,6 +446,6 @@ func TestSchema_EmptySchema(t *testing.T) {
 	schema := NewSchemaFor[EmptyStruct]()
 
 	assert.Equal(t, 0, schema.ColumnCount(), "Should equal expected value")
-	assert.Empty(t, schema.Columns())
-	assert.Empty(t, schema.ColumnNames())
+	assert.Empty(t, schema.Columns(), "Should be empty")
+	assert.Empty(t, schema.ColumnNames(), "Should be empty")
 }

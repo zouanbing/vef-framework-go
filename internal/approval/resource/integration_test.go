@@ -1900,6 +1900,7 @@ func (s *ApprovalSuite) TestInstanceProcessTaskTransfer() {
 // Test entry point
 // ---------------------------------------------------------------------------
 
+// TestApprovalSuite tests approval suite scenarios.
 func TestApprovalSuite(t *testing.T) {
 	suite.Run(t, new(ApprovalSuite))
 }

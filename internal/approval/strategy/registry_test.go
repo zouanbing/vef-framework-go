@@ -9,6 +9,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/approval"
 )
 
+// TestNewStrategyRegistry tests new strategy registry scenarios.
 func TestNewStrategyRegistry(t *testing.T) {
 	t.Run("RegistersAll", func(t *testing.T) {
 		r := NewStrategyRegistry(
@@ -33,6 +34,7 @@ func TestNewStrategyRegistry(t *testing.T) {
 	})
 }
 
+// TestGetPassRuleStrategy tests get pass rule strategy scenarios.
 func TestGetPassRuleStrategy(t *testing.T) {
 	r := NewStrategyRegistry(
 		[]approval.PassRuleStrategy{NewAllPassStrategy()},
@@ -42,7 +44,7 @@ func TestGetPassRuleStrategy(t *testing.T) {
 	t.Run("Found", func(t *testing.T) {
 		s, err := r.GetPassRuleStrategy(approval.PassAll)
 		require.NoError(t, err, "Should find AllPassStrategy")
-		assert.IsType(t, &AllPassStrategy{}, s)
+		assert.IsType(t, &AllPassStrategy{}, s, "Should be expected type")
 	})
 
 	t.Run("NotFound", func(t *testing.T) {
@@ -52,6 +54,7 @@ func TestGetPassRuleStrategy(t *testing.T) {
 	})
 }
 
+// TestGetConditionEvaluator tests get condition evaluator scenarios.
 func TestGetConditionEvaluator(t *testing.T) {
 	r := NewStrategyRegistry(
 		nil, nil,
@@ -61,7 +64,7 @@ func TestGetConditionEvaluator(t *testing.T) {
 	t.Run("Found", func(t *testing.T) {
 		e, err := r.GetConditionEvaluator(approval.ConditionField)
 		require.NoError(t, err, "Should find FieldConditionEvaluator")
-		assert.IsType(t, &FieldConditionEvaluator{}, e)
+		assert.IsType(t, &FieldConditionEvaluator{}, e, "Should be expected type")
 	})
 
 	t.Run("NotFound", func(t *testing.T) {
@@ -71,6 +74,7 @@ func TestGetConditionEvaluator(t *testing.T) {
 	})
 }
 
+// TestCompositeAssigneeResolver tests composite assignee resolver scenarios.
 func TestCompositeAssigneeResolver(t *testing.T) {
 	r := NewStrategyRegistry(
 		nil,

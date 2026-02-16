@@ -79,9 +79,9 @@ func TestValidatorI18nPhoneNumber(t *testing.T) {
 		phoneNumber string
 		wantErr     bool
 	}{
-		{"validPhone", "13800138000", false},
-		{"invalidPhone", "invalid", true},
-		{"emptyPhone", "", true},
+		{"ValidPhone", "13800138000", false},
+		{"InvalidPhone", "invalid", true},
+		{"EmptyPhone", "", true},
 	}
 
 	languages := []struct {

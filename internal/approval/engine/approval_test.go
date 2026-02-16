@@ -9,12 +9,14 @@ import (
 	"github.com/ilxqx/vef-framework-go/approval"
 )
 
+// TestNewApprovalProcessor tests new approval processor scenarios.
 func TestNewApprovalProcessor(t *testing.T) {
 	p := NewApprovalProcessor(nil, nil)
 	require.NotNil(t, p, "Should return a non-nil processor")
 	assert.Equal(t, approval.NodeApproval, p.NodeKind(), "Should return NodeApproval kind")
 }
 
+// TestIsSameApplicant tests is same applicant scenarios.
 func TestIsSameApplicant(t *testing.T) {
 	p := &ApprovalProcessor{}
 
@@ -67,6 +69,7 @@ func TestIsSameApplicant(t *testing.T) {
 	}
 }
 
+// TestPredictSameApplicant tests predict same applicant scenarios.
 func TestPredictSameApplicant(t *testing.T) {
 	p := NewApprovalProcessor(nil, nil)
 

@@ -25,6 +25,7 @@ type QueryServiceTestSuite struct {
 	cleanup func()
 }
 
+// TestQueryServiceTestSuite tests query service test suite scenarios.
 func TestQueryServiceTestSuite(t *testing.T) {
 	suite.Run(t, new(QueryServiceTestSuite))
 }
@@ -282,6 +283,7 @@ func (s *QueryServiceTestSuite) TestGetActionLogs_EmptyResult() {
 	s.Empty(logs)
 }
 
+// TestQueryService_QueryErrors tests query service query errors scenarios.
 func TestQueryService_QueryErrors(t *testing.T) {
 	tests := []struct {
 		name        string

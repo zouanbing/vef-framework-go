@@ -15,10 +15,10 @@ func TestNewBaseEvent(t *testing.T) {
 		event := NewBaseEvent("test.event")
 
 		assert.Equal(t, "test.event", event.Type(), "Should equal expected value")
-		assert.Empty(t, event.Source())
-		assert.NotEmpty(t, event.ID())
-		assert.False(t, event.Time().IsZero())
-		assert.Empty(t, event.Meta())
+		assert.Empty(t, event.Source(), "Source should be empty")
+		assert.NotEmpty(t, event.ID(), "ID should not be empty")
+		assert.False(t, event.Time().IsZero(), "Time should not be zero")
+		assert.Empty(t, event.Meta(), "Meta should be empty")
 	})
 
 	t.Run("CreationWithSourceOption", func(t *testing.T) {
@@ -26,18 +26,18 @@ func TestNewBaseEvent(t *testing.T) {
 
 		assert.Equal(t, "user.created", event.Type(), "Should equal expected value")
 		assert.Equal(t, "user-service", event.Source(), "Should equal expected value")
-		assert.NotEmpty(t, event.ID())
-		assert.False(t, event.Time().IsZero())
-		assert.Empty(t, event.Meta())
+		assert.NotEmpty(t, event.ID(), "ID should not be empty")
+		assert.False(t, event.Time().IsZero(), "Time should not be zero")
+		assert.Empty(t, event.Meta(), "Meta should be empty")
 	})
 
 	t.Run("CreationWithSingleMetadataOption", func(t *testing.T) {
 		event := NewBaseEvent("order.placed", WithMeta("version", "1.0"))
 
 		assert.Equal(t, "order.placed", event.Type(), "Should equal expected value")
-		assert.Empty(t, event.Source())
-		assert.NotEmpty(t, event.ID())
-		assert.False(t, event.Time().IsZero())
+		assert.Empty(t, event.Source(), "Source should be empty")
+		assert.NotEmpty(t, event.ID(), "ID should not be empty")
+		assert.False(t, event.Time().IsZero(), "Time should not be zero")
 		assert.Len(t, event.Meta(), 1, "Length should be 1")
 		assert.Equal(t, "1.0", event.Meta()["version"], "Should equal expected value")
 	})
@@ -52,8 +52,8 @@ func TestNewBaseEvent(t *testing.T) {
 
 		assert.Equal(t, "payment.processed", event.Type(), "Should equal expected value")
 		assert.Equal(t, "payment-service", event.Source(), "Should equal expected value")
-		assert.NotEmpty(t, event.ID())
-		assert.False(t, event.Time().IsZero())
+		assert.NotEmpty(t, event.ID(), "ID should not be empty")
+		assert.False(t, event.Time().IsZero(), "Time should not be zero")
 
 		meta := event.Meta()
 		assert.Len(t, meta, 3, "Length should be 3")
@@ -70,7 +70,7 @@ func TestNewBaseEvent(t *testing.T) {
 		event2 := NewBaseEvent("test.event")
 
 		assert.NotEqual(t, event1.ID(), event2.ID(), "Should not equal")
-		assert.True(t, event2.Time().After(event1.Time()) || event2.Time().Equal(event1.Time()))
+		assert.True(t, event2.Time().After(event1.Time()) || event2.Time().Equal(event1.Time()), "Second event time should be after or equal to first")
 	})
 }
 
@@ -99,7 +99,7 @@ func TestBaseEvent_Metadata(t *testing.T) {
 
 		freshMeta := event.Meta()
 		assert.Equal(t, "value", freshMeta["key"], "Should equal expected value")
-		assert.NotContains(t, freshMeta, "new")
+		assert.NotContains(t, freshMeta, "new", "External modification should not affect original meta")
 	})
 }
 
@@ -170,7 +170,7 @@ func TestBaseEvent_JSONSerialization(t *testing.T) {
 
 		expectedTime, _ := time.Parse(time.RFC3339, "2023-01-01T12:00:00Z")
 		assert.Equal(t, expectedTime, event.Time(), "Should equal expected value")
-		assert.Empty(t, event.Meta())
+		assert.Empty(t, event.Meta(), "Meta should be empty")
 	})
 
 	t.Run("UnmarshalEventWithMetadata", func(t *testing.T) {
@@ -235,8 +235,8 @@ func TestBaseEvent_JSONSerialization(t *testing.T) {
 		err := json.Unmarshal([]byte(jsonData), &event)
 		require.NoError(t, err, "Should not return error")
 
-		assert.NotNil(t, event.Meta())
-		assert.Empty(t, event.Meta())
+		assert.NotNil(t, event.Meta(), "Meta should not be nil")
+		assert.Empty(t, event.Meta(), "Meta should be empty")
 	})
 
 	t.Run("UnmarshalInvalidJSONReturnsError", func(t *testing.T) {

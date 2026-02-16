@@ -672,7 +672,7 @@ func TestAdapter_EdgeCases(t *testing.T) {
 		node := nodes[0]
 		assert.Equal(t, "1", adapter.GetID(node), "Should equal expected value")
 		assert.Equal(t, "", adapter.GetParentID(node), "Should equal expected value")
-		assert.Empty(t, adapter.GetChildren(node))
+		assert.Empty(t, adapter.GetChildren(node), "Should be empty")
 
 		newChildren := []TestNode{{ID: "child", Name: "Test Child"}}
 		adapter.SetChildren(&nodes[0], newChildren)

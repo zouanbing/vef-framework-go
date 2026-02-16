@@ -10,6 +10,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/approval"
 )
 
+// TestStartProcessor tests start processor scenarios.
 func TestStartProcessor(t *testing.T) {
 	p := NewStartProcessor()
 
@@ -24,6 +25,7 @@ func TestStartProcessor(t *testing.T) {
 	})
 }
 
+// TestEndProcessor tests end processor scenarios.
 func TestEndProcessor(t *testing.T) {
 	p := NewEndProcessor()
 
@@ -39,6 +41,7 @@ func TestEndProcessor(t *testing.T) {
 	})
 }
 
+// TestConditionProcessor tests condition processor scenarios.
 func TestConditionProcessor(t *testing.T) {
 	p := NewConditionProcessor()
 

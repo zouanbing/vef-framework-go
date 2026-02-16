@@ -8,9 +8,10 @@ import (
 	"github.com/ilxqx/vef-framework-go/approval"
 )
 
+// TestAllPassStrategy tests all pass strategy scenarios.
 func TestAllPassStrategy(t *testing.T) {
 	s := NewAllPassStrategy()
-	assert.Equal(t, approval.PassAll, s.Rule())
+	assert.Equal(t, approval.PassAll, s.Rule(), "Rule should be PassAll")
 
 	tests := []struct {
 		name     string
@@ -27,14 +28,15 @@ func TestAllPassStrategy(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, s.Evaluate(tt.ctx))
+			assert.Equal(t, tt.expected, s.Evaluate(tt.ctx), "Evaluate result should match expected")
 		})
 	}
 }
 
+// TestOnePassStrategy tests one pass strategy scenarios.
 func TestOnePassStrategy(t *testing.T) {
 	s := NewOnePassStrategy()
-	assert.Equal(t, approval.PassAny, s.Rule())
+	assert.Equal(t, approval.PassAny, s.Rule(), "Rule should be PassAny")
 
 	tests := []struct {
 		name     string
@@ -50,14 +52,15 @@ func TestOnePassStrategy(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, s.Evaluate(tt.ctx))
+			assert.Equal(t, tt.expected, s.Evaluate(tt.ctx), "Evaluate result should match expected")
 		})
 	}
 }
 
+// TestRatioPassStrategy tests ratio pass strategy scenarios.
 func TestRatioPassStrategy(t *testing.T) {
 	s := NewRatioPassStrategy()
-	assert.Equal(t, approval.PassRatio, s.Rule())
+	assert.Equal(t, approval.PassRatio, s.Rule(), "Rule should be PassRatio")
 
 	tests := []struct {
 		name     string
@@ -103,14 +106,15 @@ func TestRatioPassStrategy(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, s.Evaluate(tt.ctx))
+			assert.Equal(t, tt.expected, s.Evaluate(tt.ctx), "Evaluate result should match expected")
 		})
 	}
 }
 
+// TestOneRejectStrategy tests one reject strategy scenarios.
 func TestOneRejectStrategy(t *testing.T) {
 	s := NewOneRejectStrategy()
-	assert.Equal(t, approval.PassAnyReject, s.Rule())
+	assert.Equal(t, approval.PassAnyReject, s.Rule(), "Rule should be PassAnyReject")
 
 	tests := []struct {
 		name     string
@@ -126,7 +130,7 @@ func TestOneRejectStrategy(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, s.Evaluate(tt.ctx))
+			assert.Equal(t, tt.expected, s.Evaluate(tt.ctx), "Evaluate result should match expected")
 		})
 	}
 }

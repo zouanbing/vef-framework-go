@@ -9,6 +9,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/approval"
 )
 
+// TestPrepareSubFormData tests prepare sub form data scenarios.
 func TestPrepareSubFormData(t *testing.T) {
 	p := &SubFlowProcessor{}
 
@@ -77,17 +78,19 @@ func TestPrepareSubFormData(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := p.prepareSubFormData(tt.parentData, tt.config)
-			assert.Equal(t, approval.FormData(tt.expected), got)
+			assert.Equal(t, approval.FormData(tt.expected), got, "Should equal expected value")
 		})
 	}
 }
 
+// TestNewSubFlowProcessor tests new sub flow processor scenarios.
 func TestNewSubFlowProcessor(t *testing.T) {
 	p := NewSubFlowProcessor()
 	require.NotNil(t, p, "Should return a non-nil processor")
 	assert.Equal(t, approval.NodeSubFlow, p.NodeKind(), "Should return NodeSubFlow kind")
 }
 
+// TestSubFlowProcessorSetFlowEngine tests sub flow processor set flow engine scenarios.
 func TestSubFlowProcessorSetFlowEngine(t *testing.T) {
 	t.Run("SetsEngine", func(t *testing.T) {
 		p := NewSubFlowProcessor()
