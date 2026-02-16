@@ -30,7 +30,7 @@ type RateLimit struct {
 func NewRateLimit() api.Middleware {
 	return &RateLimit{
 		h: limiter.New(limiter.Config{
-			LimiterMiddleware: limiter.FixedWindow{},
+			LimiterMiddleware: limiter.SlidingWindow{},
 			MaxFunc: func(ctx fiber.Ctx) int {
 				if op := shared.Operation(ctx); op != nil {
 					return op.RateLimit.Max
@@ -38,7 +38,13 @@ func NewRateLimit() api.Middleware {
 
 				return defaultRateLimitMax
 			},
-			Expiration: defaultRateLimitExpiration,
+			ExpirationFunc: func(c fiber.Ctx) time.Duration {
+				if op := shared.Operation(c); op != nil {
+					return op.RateLimit.Period
+				}
+
+				return defaultRateLimitExpiration
+			},
 			KeyGenerator: func(ctx fiber.Ctx) string {
 				var sb strings.Builder
 				if req := shared.Request(ctx); req != nil {
