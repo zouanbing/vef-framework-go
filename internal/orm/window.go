@@ -1225,7 +1225,7 @@ func newWindowMinExpr(qb QueryBuilder) *windowMinExpr {
 		},
 	}
 
-	expr.simpleAggExpr = newGenericSimpleAggExpr[WindowMinBuilder](expr, qb, "MIN")
+	expr.simpleAggExpr = newGenericMinExpr[WindowMinBuilder](expr, qb)
 
 	return expr
 }
@@ -1237,7 +1237,7 @@ func newWindowMaxExpr(qb QueryBuilder) *windowMaxExpr {
 		},
 	}
 
-	expr.simpleAggExpr = newGenericSimpleAggExpr[WindowMaxBuilder](expr, qb, "MAX")
+	expr.simpleAggExpr = newGenericMaxExpr[WindowMaxBuilder](expr, qb)
 
 	return expr
 }

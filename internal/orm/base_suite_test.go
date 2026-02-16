@@ -135,8 +135,3 @@ func (suite *BaseTestSuite) selectPosts() orm.SelectQuery {
 func (suite *BaseTestSuite) selectCategories() orm.SelectQuery {
 	return suite.db.NewSelect().Model((*Category)(nil)).Where(fixtureScope)
 }
-
-// selectComments returns a Comment select query scoped to fixture data.
-func (suite *BaseTestSuite) selectComments() orm.SelectQuery {
-	return suite.db.NewSelect().Model((*Comment)(nil)).Where(fixtureScope)
-}
