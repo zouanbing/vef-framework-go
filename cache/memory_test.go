@@ -85,14 +85,14 @@ func TestMemoryCacheBasicOperations(t *testing.T) {
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "key1", "value1")
-		assert.True(t, cache.Contains(ctx, "key1"))
+		assert.True(t, cache.Contains(ctx, "key1"), "Condition should be true")
 	})
 
 	t.Run("ContainsNonExistentKey", func(t *testing.T) {
 		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
-		assert.False(t, cache.Contains(ctx, "nonexistent"))
+		assert.False(t, cache.Contains(ctx, "nonexistent"), "Condition should be false")
 	})
 
 	t.Run("DeleteExistingKey", func(t *testing.T) {
@@ -102,7 +102,7 @@ func TestMemoryCacheBasicOperations(t *testing.T) {
 		_ = cache.Set(ctx, "key1", "value1")
 		err := cache.Delete(ctx, "key1")
 		require.NoError(t, err, "Should not return error")
-		assert.False(t, cache.Contains(ctx, "key1"))
+		assert.False(t, cache.Contains(ctx, "key1"), "Condition should be false")
 	})
 
 	t.Run("DeleteNonExistentKey", func(t *testing.T) {
@@ -169,11 +169,11 @@ func TestMemoryCacheExpiration(t *testing.T) {
 		err := cache.Set(ctx, "key1", "value1")
 		require.NoError(t, err, "Should not return error")
 
-		assert.True(t, cache.Contains(ctx, "key1"))
+		assert.True(t, cache.Contains(ctx, "key1"), "Condition should be true")
 
 		time.Sleep(150 * time.Millisecond)
 
-		assert.False(t, cache.Contains(ctx, "key1"))
+		assert.False(t, cache.Contains(ctx, "key1"), "Condition should be false")
 		_, found := cache.Get(ctx, "key1")
 		assert.False(t, found, "Should not be found")
 	})
@@ -185,11 +185,11 @@ func TestMemoryCacheExpiration(t *testing.T) {
 		err := cache.Set(ctx, "key1", "value1", 100*time.Millisecond)
 		require.NoError(t, err, "Should not return error")
 
-		assert.True(t, cache.Contains(ctx, "key1"))
+		assert.True(t, cache.Contains(ctx, "key1"), "Condition should be true")
 
 		time.Sleep(150 * time.Millisecond)
 
-		assert.False(t, cache.Contains(ctx, "key1"))
+		assert.False(t, cache.Contains(ctx, "key1"), "Condition should be false")
 	})
 
 	t.Run("CustomTtlOverridesDefault", func(t *testing.T) {
@@ -200,7 +200,7 @@ func TestMemoryCacheExpiration(t *testing.T) {
 
 		time.Sleep(150 * time.Millisecond)
 
-		assert.False(t, cache.Contains(ctx, "key1"))
+		assert.False(t, cache.Contains(ctx, "key1"), "Condition should be false")
 	})
 
 	t.Run("ZeroTtlMeansNoExpiration", func(t *testing.T) {
@@ -211,7 +211,7 @@ func TestMemoryCacheExpiration(t *testing.T) {
 
 		time.Sleep(100 * time.Millisecond)
 
-		assert.True(t, cache.Contains(ctx, "key1"))
+		assert.True(t, cache.Contains(ctx, "key1"), "Condition should be true")
 	})
 
 	t.Run("NegativeTtlIgnored", func(t *testing.T) {
@@ -222,7 +222,7 @@ func TestMemoryCacheExpiration(t *testing.T) {
 
 		time.Sleep(150 * time.Millisecond)
 
-		assert.False(t, cache.Contains(ctx, "key1"))
+		assert.False(t, cache.Contains(ctx, "key1"), "Condition should be false")
 	})
 }
 
@@ -312,8 +312,8 @@ func TestMemoryCacheEvictionPolicies(t *testing.T) {
 
 		size, _ = cache.Size(ctx)
 		assert.Equal(t, int64(3), size, "Should equal expected value")
-		assert.False(t, cache.Contains(ctx, "key1"))
-		assert.True(t, cache.Contains(ctx, "key4"))
+		assert.False(t, cache.Contains(ctx, "key1"), "Condition should be false")
+		assert.True(t, cache.Contains(ctx, "key4"), "Condition should be true")
 	})
 
 	t.Run("LRUWithAccessUpdates", func(t *testing.T) {
@@ -328,10 +328,10 @@ func TestMemoryCacheEvictionPolicies(t *testing.T) {
 
 		_ = cache.Set(ctx, "key4", "value4")
 
-		assert.True(t, cache.Contains(ctx, "key1"))
-		assert.False(t, cache.Contains(ctx, "key2"))
-		assert.True(t, cache.Contains(ctx, "key3"))
-		assert.True(t, cache.Contains(ctx, "key4"))
+		assert.True(t, cache.Contains(ctx, "key1"), "Condition should be true")
+		assert.False(t, cache.Contains(ctx, "key2"), "Condition should be false")
+		assert.True(t, cache.Contains(ctx, "key3"), "Condition should be true")
+		assert.True(t, cache.Contains(ctx, "key4"), "Condition should be true")
 	})
 
 	t.Run("LFUEviction", func(t *testing.T) {
@@ -348,10 +348,10 @@ func TestMemoryCacheEvictionPolicies(t *testing.T) {
 
 		_ = cache.Set(ctx, "key4", "value4")
 
-		assert.True(t, cache.Contains(ctx, "key1"))
-		assert.True(t, cache.Contains(ctx, "key2"))
-		assert.False(t, cache.Contains(ctx, "key3"))
-		assert.True(t, cache.Contains(ctx, "key4"))
+		assert.True(t, cache.Contains(ctx, "key1"), "Condition should be true")
+		assert.True(t, cache.Contains(ctx, "key2"), "Condition should be true")
+		assert.False(t, cache.Contains(ctx, "key3"), "Condition should be false")
+		assert.True(t, cache.Contains(ctx, "key4"), "Condition should be true")
 	})
 
 	t.Run("FIFOEviction", func(t *testing.T) {
@@ -367,10 +367,10 @@ func TestMemoryCacheEvictionPolicies(t *testing.T) {
 
 		_ = cache.Set(ctx, "key4", "value4")
 
-		assert.False(t, cache.Contains(ctx, "key1"))
-		assert.True(t, cache.Contains(ctx, "key2"))
-		assert.True(t, cache.Contains(ctx, "key3"))
-		assert.True(t, cache.Contains(ctx, "key4"))
+		assert.False(t, cache.Contains(ctx, "key1"), "Condition should be false")
+		assert.True(t, cache.Contains(ctx, "key2"), "Condition should be true")
+		assert.True(t, cache.Contains(ctx, "key3"), "Condition should be true")
+		assert.True(t, cache.Contains(ctx, "key4"), "Condition should be true")
 	})
 
 	t.Run("NoOpPolicyFallsBackToLRU", func(t *testing.T) {
@@ -386,7 +386,7 @@ func TestMemoryCacheEvictionPolicies(t *testing.T) {
 		size, _ := cache.Size(ctx)
 		assert.Equal(t, int64(2), size, "Should equal expected value")
 
-		assert.True(t, cache.Contains(ctx, "key3"))
+		assert.True(t, cache.Contains(ctx, "key3"), "Condition should be true")
 
 		count := 0
 		if cache.Contains(ctx, "key1") {
@@ -624,7 +624,7 @@ func TestMemoryCacheClear(t *testing.T) {
 		cache.Clear(ctx)
 
 		_ = cache.Set(ctx, "key2", "value2")
-		assert.True(t, cache.Contains(ctx, "key2"))
+		assert.True(t, cache.Contains(ctx, "key2"), "Condition should be true")
 	})
 }
 
@@ -655,7 +655,7 @@ func TestMemoryCacheClose(t *testing.T) {
 		err := cache.Set(ctx, "key2", "value2")
 		assert.ErrorIs(t, err, ErrCacheClosed, "Error should be ErrCacheClosed")
 
-		assert.False(t, cache.Contains(ctx, "key1"))
+		assert.False(t, cache.Contains(ctx, "key1"), "Condition should be false")
 
 		err = cache.Delete(ctx, "key1")
 		assert.NoError(t, err, "Should not return error")
@@ -688,7 +688,7 @@ func TestMemoryCacheClose(t *testing.T) {
 	})
 }
 
-// TestMemoryCacheGC tests memory cache g c functionality.
+// TestMemoryCacheGC tests memory cache GC functionality.
 func TestMemoryCacheGC(t *testing.T) {
 	ctx := context.Background()
 
@@ -717,7 +717,7 @@ func TestMemoryCacheGC(t *testing.T) {
 
 		time.Sleep(150 * time.Millisecond)
 
-		assert.True(t, cache.Contains(ctx, "key1"))
+		assert.True(t, cache.Contains(ctx, "key1"), "Condition should be true")
 	})
 }
 
@@ -875,8 +875,8 @@ func TestMemoryCacheEdgeCases(t *testing.T) {
 
 		size, _ := cache.Size(ctx)
 		assert.Equal(t, int64(1), size, "Should equal expected value")
-		assert.False(t, cache.Contains(ctx, "key1"))
-		assert.True(t, cache.Contains(ctx, "key2"))
+		assert.False(t, cache.Contains(ctx, "key1"), "Condition should be false")
+		assert.True(t, cache.Contains(ctx, "key2"), "Condition should be true")
 	})
 
 	t.Run("EmptyKey", func(t *testing.T) {

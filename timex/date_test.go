@@ -280,7 +280,7 @@ func TestDateWeekdayMethods(t *testing.T) {
 	})
 }
 
-// TestDateMarshalJSON tests date marshal j s o n functionality.
+// TestDateMarshalJSON tests date marshal JSON functionality.
 func TestDateMarshalJSON(t *testing.T) {
 	date := Date(testTime(2023, 12, 25, 0, 0, 0))
 	data, err := date.MarshalJSON()
@@ -290,7 +290,7 @@ func TestDateMarshalJSON(t *testing.T) {
 	assert.Equal(t, expected, string(data), "JSON should match expected format")
 }
 
-// TestDateUnmarshalJSON tests date unmarshal j s o n functionality.
+// TestDateUnmarshalJSON tests date unmarshal JSON functionality.
 func TestDateUnmarshalJSON(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -359,7 +359,7 @@ func TestDateScan(t *testing.T) {
 	}
 }
 
-// TestDateJSONRoundTrip tests date j s o n round trip functionality.
+// TestDateJSONRoundTrip tests date JSON round trip functionality.
 func TestDateJSONRoundTrip(t *testing.T) {
 	original := Date(testTime(2023, 12, 25, 0, 0, 0))
 

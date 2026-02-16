@@ -252,7 +252,7 @@ func TestTimeEndOfMethods(t *testing.T) {
 	})
 }
 
-// TestTimeMarshalJSON tests time marshal j s o n functionality.
+// TestTimeMarshalJSON tests time marshal JSON functionality.
 func TestTimeMarshalJSON(t *testing.T) {
 	timeOnly := Time(time.Date(1970, 1, 1, 14, 30, 45, 0, time.Local))
 	data, err := timeOnly.MarshalJSON()
@@ -262,7 +262,7 @@ func TestTimeMarshalJSON(t *testing.T) {
 	assert.Equal(t, expected, string(data), "JSON should match expected format")
 }
 
-// TestTimeUnmarshalJSON tests time unmarshal j s o n functionality.
+// TestTimeUnmarshalJSON tests time unmarshal JSON functionality.
 func TestTimeUnmarshalJSON(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -331,7 +331,7 @@ func TestTimeScan(t *testing.T) {
 	}
 }
 
-// TestTimeJSONRoundTrip tests time j s o n round trip functionality.
+// TestTimeJSONRoundTrip tests time JSON round trip functionality.
 func TestTimeJSONRoundTrip(t *testing.T) {
 	original := Time(time.Date(1970, 1, 1, 14, 30, 45, 0, time.Local))
 

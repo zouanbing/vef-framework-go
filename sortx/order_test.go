@@ -83,7 +83,7 @@ func TestOrderDirectionUnmarshalText(t *testing.T) {
 	}
 }
 
-// TestOrderDirectionMarshalJSON tests order direction marshal j s o n functionality.
+// TestOrderDirectionMarshalJSON tests order direction marshal JSON functionality.
 func TestOrderDirectionMarshalJSON(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -103,7 +103,7 @@ func TestOrderDirectionMarshalJSON(t *testing.T) {
 	}
 }
 
-// TestOrderDirectionUnmarshalJSON tests order direction unmarshal j s o n functionality.
+// TestOrderDirectionUnmarshalJSON tests order direction unmarshal JSON functionality.
 func TestOrderDirectionUnmarshalJSON(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -140,7 +140,7 @@ func TestOrderDirectionUnmarshalJSON(t *testing.T) {
 	}
 }
 
-// TestOrderDirectionJSONRoundTrip tests order direction j s o n round trip functionality.
+// TestOrderDirectionJSONRoundTrip tests order direction JSON round trip functionality.
 func TestOrderDirectionJSONRoundTrip(t *testing.T) {
 	tests := []struct {
 		name  string

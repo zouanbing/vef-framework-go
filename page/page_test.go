@@ -245,7 +245,7 @@ func TestPageHasPrevious(t *testing.T) {
 	}
 }
 
-// TestPageableJSONMarshaling tests pageable j s o n marshaling functionality.
+// TestPageableJSONMarshaling tests pageable JSON marshaling functionality.
 func TestPageableJSONMarshaling(t *testing.T) {
 	pageable := Pageable{
 		Page: 2,
@@ -268,7 +268,7 @@ func TestPageableJSONMarshaling(t *testing.T) {
 	t.Logf("✓ JSON marshaling - Original: %+v, Result: %+v", pageable, result)
 }
 
-// TestPageJSONMarshaling tests page j s o n marshaling functionality.
+// TestPageJSONMarshaling tests page JSON marshaling functionality.
 func TestPageJSONMarshaling(t *testing.T) {
 	items := []string{"item1", "item2", "item3"}
 	page := Page[string]{
