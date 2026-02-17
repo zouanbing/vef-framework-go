@@ -11,13 +11,11 @@ import (
 )
 
 // EventPublisher publishes events to EventOutbox table.
-type EventPublisher struct {
-	db orm.DB
-}
+type EventPublisher struct{}
 
 // NewEventPublisher creates a new EventPublisher.
-func NewEventPublisher(db orm.DB) *EventPublisher {
-	return &EventPublisher{db: db}
+func NewEventPublisher() *EventPublisher {
+	return &EventPublisher{}
 }
 
 // PublishAll marshals each event and inserts into the event outbox table.
@@ -38,7 +36,7 @@ func (p *EventPublisher) PublishAll(ctx context.Context, db orm.DB, events []app
 			EventID:   id.Generate(),
 			EventType: evt.EventName(),
 			Payload:   payloadMap,
-			Status:    "pending",
+			Status:    approval.EventOutboxPending,
 		})
 	}
 

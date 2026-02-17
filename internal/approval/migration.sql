@@ -169,7 +169,7 @@ CREATE TABLE IF NOT EXISTS apv_flow_node (
     pass_rule VARCHAR(16) NOT NULL DEFAULT 'all',
     pass_ratio NUMERIC(3,2) NOT NULL DEFAULT 1.00 CONSTRAINT ck_apv_flow_node__pass_ratio CHECK (pass_ratio >= 0 AND pass_ratio <= 1),
     -- Empty handler config
-    empty_handler_action VARCHAR(16) NOT NULL DEFAULT 'auto_pass',
+    empty_handler_action VARCHAR(32) NOT NULL DEFAULT 'auto_pass',
     fallback_user_ids JSONB NOT NULL DEFAULT '[]',
     admin_user_ids JSONB NOT NULL DEFAULT '[]',
     same_applicant_action VARCHAR(32) NOT NULL DEFAULT 'self_approve',

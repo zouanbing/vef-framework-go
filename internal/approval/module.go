@@ -8,6 +8,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/approval/resource"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
 	"github.com/ilxqx/vef-framework-go/internal/approval/strategy"
+	"github.com/ilxqx/vef-framework-go/internal/approval/timeout"
 )
 
 // Module is the approval workflow engine module.
@@ -19,4 +20,5 @@ var Module = fx.Module(
 	publisher.Module,
 	service.Module,
 	resource.Module,
+	timeout.Module,
 )

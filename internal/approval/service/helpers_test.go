@@ -37,6 +37,8 @@ var allModels = []any{
 	(*approval.FlowInitiator)(nil),
 	(*approval.FlowNodeCC)(nil),
 	(*approval.FlowFormField)(nil),
+	(*approval.UrgeRecord)(nil),
+	(*approval.TimeoutNotify)(nil),
 }
 
 // setupTestDB creates an in-memory SQLite database with all approval tables.

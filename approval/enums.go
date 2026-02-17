@@ -232,6 +232,57 @@ const (
 	ActionExecute        ActionType = "execute" // System execution action
 )
 
+// CCKind represents the kind of CC recipient.
+type CCKind string
+
+const (
+	CCUser      CCKind = "user"
+	CCRole      CCKind = "role"
+	CCDept      CCKind = "dept"
+	CCFormField CCKind = "form_field"
+)
+
+// EventOutboxStatus represents the processing status of an event outbox record.
+type EventOutboxStatus string
+
+const (
+	EventOutboxPending    EventOutboxStatus = "pending"
+	EventOutboxProcessing EventOutboxStatus = "processing"
+	EventOutboxCompleted  EventOutboxStatus = "completed"
+	EventOutboxFailed     EventOutboxStatus = "failed"
+)
+
+// FieldKind represents the kind of a form field.
+type FieldKind string
+
+const (
+	FieldInput    FieldKind = "input"
+	FieldTextarea FieldKind = "textarea"
+	FieldSelect   FieldKind = "select"
+	FieldNumber   FieldKind = "number"
+	FieldDate     FieldKind = "date"
+	FieldUpload   FieldKind = "upload"
+)
+
+// TimeoutAction represents the action to take when a task times out.
+type TimeoutAction string
+
+const (
+	TimeoutActionNone          TimeoutAction = "none"           // Mark timeout only, no auto action
+	TimeoutActionAutoPass      TimeoutAction = "auto_pass"      // Automatically approve the task
+	TimeoutActionAutoReject    TimeoutAction = "auto_reject"    // Automatically reject the task
+	TimeoutActionNotify        TimeoutAction = "notify"         // Send notification only
+	TimeoutActionTransferAdmin TimeoutAction = "transfer_admin" // Transfer to node admin
+)
+
+// TimeoutNotifyType represents the type of timeout notification.
+type TimeoutNotifyType string
+
+const (
+	TimeoutNotifyPreWarning TimeoutNotifyType = "pre_warning" // Pre-deadline warning
+	TimeoutNotifyTimeout    TimeoutNotifyType = "timeout"     // Actual timeout
+)
+
 // Permission represents the permission level.
 type Permission string
 

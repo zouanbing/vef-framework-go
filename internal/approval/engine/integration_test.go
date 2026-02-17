@@ -31,7 +31,7 @@ func TestStartProcessAutoCompleteFlow(t *testing.T) {
 	require.NoError(t, err, "StartProcess should succeed for auto-complete flow")
 
 	inst := queryInstance(t, ctx, db, instance.ID)
-	assert.Equal(t, string(approval.InstanceApproved), inst.Status, "Instance should be approved after Start->End")
+	assert.Equal(t, approval.InstanceApproved, inst.Status, "Instance should be approved after Start->End")
 	assert.True(t, inst.FinishedAt.Valid, "FinishedAt should be set")
 }
 
@@ -50,14 +50,14 @@ func TestStartProcessSimpleApprovalFlow(t *testing.T) {
 	require.NoError(t, err, "StartProcess should succeed for simple approval flow")
 
 	inst := queryInstance(t, ctx, db, instance.ID)
-	assert.Equal(t, string(approval.InstanceRunning), inst.Status, "Instance should be running while waiting for approval")
+	assert.Equal(t, approval.InstanceRunning, inst.Status, "Instance should be running while waiting for approval")
 	assert.Equal(t, approvalNode.ID, inst.CurrentNodeID.String, "CurrentNodeID should point to approval node")
 
 	tasks := queryTasksByNode(t, ctx, db, instance.ID, approvalNode.ID)
 	require.Len(t, tasks, 2, "Should create 2 tasks for sequential approval")
-	assert.Equal(t, string(approval.TaskPending), tasks[0].Status, "First task should be pending")
+	assert.Equal(t, approval.TaskPending, tasks[0].Status, "First task should be pending")
 	assert.Equal(t, 1, tasks[0].SortOrder, "First task sort order should be 1")
-	assert.Equal(t, string(approval.TaskWaiting), tasks[1].Status, "Second task should be waiting")
+	assert.Equal(t, approval.TaskWaiting, tasks[1].Status, "Second task should be waiting")
 	assert.Equal(t, 2, tasks[1].SortOrder, "Second task sort order should be 2")
 
 	snapshots := queryFormSnapshots(t, ctx, db, instance.ID)
@@ -79,14 +79,14 @@ func TestStartProcessHandleFlow(t *testing.T) {
 	require.NoError(t, err, "StartProcess should succeed for handle flow")
 
 	inst := queryInstance(t, ctx, db, instance.ID)
-	assert.Equal(t, string(approval.InstanceRunning), inst.Status, "Instance should be running")
+	assert.Equal(t, approval.InstanceRunning, inst.Status, "Instance should be running")
 	assert.Equal(t, handleNode.ID, inst.CurrentNodeID.String, "CurrentNodeID should point to handle node")
 
 	tasks := queryTasksByNode(t, ctx, db, instance.ID, handleNode.ID)
 	require.Len(t, tasks, 2, "Should create 2 tasks for handle node")
 	for _, task := range tasks {
 		assert.Equal(t, 0, task.SortOrder, "Handle tasks should all have sortOrder=0")
-		assert.Equal(t, string(approval.TaskPending), task.Status, "Handle tasks should be pending")
+		assert.Equal(t, approval.TaskPending, task.Status, "Handle tasks should be pending")
 	}
 }
 
@@ -106,7 +106,7 @@ func TestStartProcessBranchFlow(t *testing.T) {
 		require.NoError(t, err, "StartProcess should succeed for branch flow with high value")
 
 		inst := queryInstance(t, ctx, db, instance.ID)
-		assert.Equal(t, string(approval.InstanceRunning), inst.Status, "Instance should be running at high-value approval")
+		assert.Equal(t, approval.InstanceRunning, inst.Status, "Instance should be running at high-value approval")
 		assert.Equal(t, approval1.ID, inst.CurrentNodeID.String, "Should route to high-value approval node")
 
 		tasks := queryTasksByNode(t, ctx, db, instance.ID, approval1.ID)
@@ -189,7 +189,7 @@ func TestEvaluateNodeCompletion(t *testing.T) {
 			InstanceID: instance.ID,
 			NodeID:     approvalNode.ID,
 			AssigneeID: uid,
-			Status:     string(approval.TaskPending),
+			Status:     approval.TaskPending,
 		}
 		task.ID = id.Generate()
 		task.CreatedBy = "system"
@@ -205,7 +205,7 @@ func TestEvaluateNodeCompletion(t *testing.T) {
 	})
 
 	tasks := queryTasksByNode(t, ctx, db, instance.ID, approvalNode.ID)
-	tasks[0].Status = string(approval.TaskApproved)
+	tasks[0].Status = approval.TaskApproved
 	_, err := db.NewUpdate().Model(&tasks[0]).WherePK().Exec(ctx)
 	require.NoError(t, err, "Should update first task to approved")
 
@@ -215,7 +215,7 @@ func TestEvaluateNodeCompletion(t *testing.T) {
 		assert.Equal(t, approval.PassRulePending, result, "Should be pending with one approved and one pending")
 	})
 
-	tasks[1].Status = string(approval.TaskApproved)
+	tasks[1].Status = approval.TaskApproved
 	_, err = db.NewUpdate().Model(&tasks[1]).WherePK().Exec(ctx)
 	require.NoError(t, err, "Should update second task to approved")
 
@@ -300,7 +300,7 @@ func TestApprovalProcessorEmptyAssignee(t *testing.T) {
 		require.NoError(t, err, "StartProcess should succeed with empty assignee auto_pass")
 
 		inst := queryInstance(t, ctx, db, instance.ID)
-		assert.Equal(t, string(approval.InstanceApproved), inst.Status, "Instance should auto-complete when empty assignee auto_pass")
+		assert.Equal(t, approval.InstanceApproved, inst.Status, "Instance should auto-complete when empty assignee auto_pass")
 	})
 
 	t.Run("TransferAdmin", func(t *testing.T) {
@@ -314,7 +314,7 @@ func TestApprovalProcessorEmptyAssignee(t *testing.T) {
 		require.NoError(t, err, "StartProcess should succeed with empty assignee transfer_admin")
 
 		inst := queryInstance(t, ctx, db, instance.ID)
-		assert.Equal(t, string(approval.InstanceRunning), inst.Status, "Instance should be running")
+		assert.Equal(t, approval.InstanceRunning, inst.Status, "Instance should be running")
 
 		tasks := queryTasksByNode(t, ctx, db, instance.ID, node.ID)
 		require.Len(t, tasks, 2, "Should create tasks for admin users")
@@ -420,7 +420,7 @@ func TestApprovalProcessorSameApplicant(t *testing.T) {
 		require.NoError(t, err, "StartProcess should auto-pass when same applicant")
 
 		inst := queryInstance(t, ctx, db, instance.ID)
-		assert.Equal(t, string(approval.InstanceApproved), inst.Status, "Instance should be approved (auto-pass)")
+		assert.Equal(t, approval.InstanceApproved, inst.Status, "Instance should be approved (auto-pass)")
 
 		tasks := queryTasksByNode(t, ctx, db, instance.ID, approvalNode.ID)
 		assert.Len(t, tasks, 0, "Should not create tasks for auto-pass")
@@ -435,7 +435,7 @@ func TestApprovalProcessorSameApplicant(t *testing.T) {
 		require.NoError(t, err, "StartProcess should succeed for self-approve")
 
 		inst := queryInstance(t, ctx, db, instance.ID)
-		assert.Equal(t, string(approval.InstanceRunning), inst.Status, "Instance should be running for self-approve")
+		assert.Equal(t, approval.InstanceRunning, inst.Status, "Instance should be running for self-approve")
 
 		tasks := queryTasksByNode(t, ctx, db, instance.ID, approvalNode.ID)
 		require.Len(t, tasks, 1, "Should create 1 task for self-approve")
@@ -557,7 +557,7 @@ func TestHandleProcessorEmptyAssignee(t *testing.T) {
 		require.NoError(t, err, "StartProcess should succeed for handle empty auto_pass")
 
 		inst := queryInstance(t, ctx, db, instance.ID)
-		assert.Equal(t, string(approval.InstanceApproved), inst.Status, "Instance should auto-complete")
+		assert.Equal(t, approval.InstanceApproved, inst.Status, "Instance should auto-complete")
 	})
 
 	t.Run("TransferAdmin", func(t *testing.T) {
@@ -685,7 +685,7 @@ func TestApprovalProcessorParallelApproval(t *testing.T) {
 
 	for _, task := range tasks {
 		assert.Equal(t, 0, task.SortOrder, "Parallel tasks should all have sortOrder=0")
-		assert.Equal(t, string(approval.TaskPending), task.Status, "Parallel tasks should all be pending")
+		assert.Equal(t, approval.TaskPending, task.Status, "Parallel tasks should all be pending")
 	}
 }
 
@@ -990,11 +990,11 @@ func TestDelegation(t *testing.T) {
 		assert.Equal(t, "delegatee_seq", tasks[0].AssigneeID, "First task should be assigned to delegate")
 		assert.Equal(t, "user1", tasks[0].DelegateFromID.String, "First task DelegateFromID should reference user1")
 		assert.Equal(t, 1, tasks[0].SortOrder, "First task sort order should be 1")
-		assert.Equal(t, string(approval.TaskPending), tasks[0].Status, "First task should be pending")
+		assert.Equal(t, approval.TaskPending, tasks[0].Status, "First task should be pending")
 
 		assert.Equal(t, "user2", tasks[1].AssigneeID, "Second task should remain as user2")
 		assert.Equal(t, 2, tasks[1].SortOrder, "Second task sort order should be 2")
-		assert.Equal(t, string(approval.TaskWaiting), tasks[1].Status, "Second task should be waiting")
+		assert.Equal(t, approval.TaskWaiting, tasks[1].Status, "Second task should be waiting")
 	})
 
 	t.Run("HandleWithDelegation", func(t *testing.T) {
@@ -1085,7 +1085,7 @@ func TestStartProcessWithEventPublisher(t *testing.T) {
 	defer cleanup()
 
 	ctx := context.Background()
-	eventPub := publisher.NewEventPublisher(db)
+	eventPub := publisher.NewEventPublisher()
 	eng := setupEngine(nil, nil, eventPub)
 
 	flow, version, _, _ := buildAutoCompleteFlow(t, ctx, db)
@@ -1174,7 +1174,7 @@ func TestSubFlowProcessorProcess(t *testing.T) {
 	require.NoError(t, err, "StartProcess should succeed with sub-flow")
 
 	parentInst := queryInstance(t, ctx, db, parentInstance.ID)
-	assert.Equal(t, string(approval.InstanceRunning), parentInst.Status, "Parent should be running while sub-flow is pending")
+	assert.Equal(t, approval.InstanceRunning, parentInst.Status, "Parent should be running while sub-flow is pending")
 	assert.Equal(t, subFlowNode.ID, parentInst.CurrentNodeID.String, "Parent should wait at sub-flow node")
 
 	var subInstances []approval.Instance
@@ -1185,7 +1185,7 @@ func TestSubFlowProcessorProcess(t *testing.T) {
 	require.Len(t, subInstances, 1, "Should create one sub-flow instance")
 
 	subInst := subInstances[0]
-	assert.Equal(t, string(approval.InstanceRunning), subInst.Status, "Sub-flow should be running")
+	assert.Equal(t, approval.InstanceRunning, subInst.Status, "Sub-flow should be running")
 	assert.Equal(t, parentInstance.ID, subInst.ParentInstanceID.String, "Sub-flow should reference parent")
 	assert.Equal(t, subFlowNode.ID, subInst.ParentNodeID.String, "Sub-flow should reference parent node")
 	assert.Equal(t, "applicant1", subInst.ApplicantID, "Sub-flow should inherit applicant")
@@ -1294,7 +1294,7 @@ func TestSubFlowProcessorCycleDetection(t *testing.T) {
 			Title:            "Child Instance",
 			SerialNo:         id.Generate(),
 			ApplicantID:      "applicant1",
-			Status:           string(approval.InstanceRunning),
+			Status:           approval.InstanceRunning,
 		}
 		childInstance.ID = id.Generate()
 		childInstance.CreatedBy = "applicant1"
@@ -1344,7 +1344,7 @@ func TestResumeParentFlow(t *testing.T) {
 		require.NoError(t, err, "ResumeParentFlow should succeed when child is approved")
 
 		parentInst := queryInstance(t, ctx, db, parentInstance.ID)
-		assert.Equal(t, string(approval.InstanceApproved), parentInst.Status, "Parent should be approved after child approved")
+		assert.Equal(t, approval.InstanceApproved, parentInst.Status, "Parent should be approved after child approved")
 	})
 
 	t.Run("RejectedChild", func(t *testing.T) {
@@ -1359,7 +1359,7 @@ func TestResumeParentFlow(t *testing.T) {
 		require.NoError(t, err, "ResumeParentFlow should succeed when child is rejected")
 
 		parentInst := queryInstance(t, ctx, db, parentInstance.ID)
-		assert.Equal(t, string(approval.InstanceRejected), parentInst.Status, "Parent should be rejected when child is rejected")
+		assert.Equal(t, approval.InstanceRejected, parentInst.Status, "Parent should be rejected when child is rejected")
 		assert.True(t, parentInst.FinishedAt.Valid, "Parent FinishedAt should be set")
 	})
 
@@ -1374,7 +1374,7 @@ func TestResumeParentFlow(t *testing.T) {
 			Title:         "Parent Instance",
 			SerialNo:      id.Generate(),
 			ApplicantID:   "applicant1",
-			Status:        string(approval.InstanceApproved),
+			Status:        approval.InstanceApproved,
 			CurrentNodeID: null.StringFrom(subFlowNode.ID),
 		}
 		parentInstance.ID = id.Generate()
@@ -1389,11 +1389,11 @@ func TestResumeParentFlow(t *testing.T) {
 		require.NoError(t, err, "ResumeParentFlow should be no-op when parent is not running")
 
 		parentInst := queryInstance(t, ctx, db, parentInstance.ID)
-		assert.Equal(t, string(approval.InstanceApproved), parentInst.Status, "Parent status should remain unchanged")
+		assert.Equal(t, approval.InstanceApproved, parentInst.Status, "Parent status should remain unchanged")
 	})
 
 	t.Run("WithEventPublisher", func(t *testing.T) {
-		eventPub := publisher.NewEventPublisher(db)
+		eventPub := publisher.NewEventPublisher()
 		eng := setupEngine(nil, nil, eventPub)
 
 		parentFlow, parentVersion := createFlowAndVersion(t, ctx, db, "parent_event_flow", "Parent Event")

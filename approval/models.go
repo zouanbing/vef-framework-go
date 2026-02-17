@@ -4,6 +4,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/decimal"
 	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/ilxqx/vef-framework-go/timex"
 )
 
 // ── Flow Definition ─────────────────────────────────────────────────────────
@@ -96,33 +97,36 @@ type FlowNode struct {
 	orm.BaseModel `bun:"table:apv_flow_node,alias:afn"`
 	orm.Model
 
-	FlowVersionID        string                 `json:"flowVersionId" bun:"flow_version_id"`
-	NodeKey              string                 `json:"nodeKey" bun:"node_key"`
-	NodeKind             NodeKind               `json:"nodeKind" bun:"node_kind"`
-	Name                 string                 `json:"name" bun:"name"`
-	Description          null.String            `json:"description" bun:"description,nullzero"`
-	ExecutionType        ExecutionType          `json:"executionType" bun:"execution_type"`
-	ApprovalMethod       ApprovalMethod         `json:"approvalMethod" bun:"approval_method"`
-	PassRule             PassRule               `json:"passRule" bun:"pass_rule"`
-	PassRatio            decimal.Decimal        `json:"passRatio" bun:"pass_ratio"`
-	EmptyHandlerAction   EmptyHandlerAction     `json:"emptyHandlerAction" bun:"empty_handler_action"`
-	FallbackUserIDs      []string               `json:"fallbackUserIds" bun:"fallback_user_ids,type:jsonb,nullzero"`
-	AdminUserIDs         []string               `json:"adminUserIds" bun:"admin_user_ids,type:jsonb,nullzero"`
-	SameApplicantAction  SameApplicantAction    `json:"sameApplicantAction" bun:"same_applicant_action"`
-	IsRollbackAllowed    bool                   `json:"isRollbackAllowed" bun:"is_rollback_allowed"`
-	RollbackType         RollbackType           `json:"rollbackType" bun:"rollback_type"`
-	RollbackDataStrategy RollbackDataStrategy   `json:"rollbackDataStrategy" bun:"rollback_data_strategy"`
-	IsAddAssigneeAllowed bool                   `json:"isAddAssigneeAllowed" bun:"is_add_assignee_allowed"`
-	AddAssigneeTypes     []string               `json:"addAssigneeTypes" bun:"add_assignee_types,type:jsonb,nullzero"`
-	IsRemoveAssigneeAllowed bool               `json:"isRemoveAssigneeAllowed" bun:"is_remove_assignee_allowed"`
-	FieldPermissions     map[string]any         `json:"fieldPermissions" bun:"field_permissions,type:jsonb,nullzero"`
-	IsManualCCAllowed    bool                   `json:"isManualCcAllowed" bun:"is_manual_cc_allowed"`
-	IsTransferAllowed    bool                   `json:"isTransferAllowed" bun:"is_transfer_allowed"`
-	IsOpinionRequired    bool                   `json:"isOpinionRequired" bun:"is_opinion_required"`
-	TimeoutHours         int                    `json:"timeoutHours" bun:"timeout_hours"`
-	DuplicateHandlerAction DuplicateHandlerAction `json:"duplicateHandlerAction" bun:"duplicate_handler_action"`
-	SubFlowConfig        map[string]any         `json:"subFlowConfig" bun:"sub_flow_config,type:jsonb,nullzero"`
-	Branches             []ConditionBranch      `json:"branches" bun:"branches,type:jsonb,nullzero"`
+	FlowVersionID            string                 `json:"flowVersionId" bun:"flow_version_id"`
+	NodeKey                  string                 `json:"nodeKey" bun:"node_key"`
+	NodeKind                 NodeKind               `json:"nodeKind" bun:"node_kind"`
+	Name                     string                 `json:"name" bun:"name"`
+	Description              null.String            `json:"description" bun:"description,nullzero"`
+	ExecutionType            ExecutionType          `json:"executionType" bun:"execution_type"`
+	ApprovalMethod           ApprovalMethod         `json:"approvalMethod" bun:"approval_method"`
+	PassRule                 PassRule               `json:"passRule" bun:"pass_rule"`
+	PassRatio                decimal.Decimal        `json:"passRatio" bun:"pass_ratio"`
+	EmptyHandlerAction       EmptyHandlerAction     `json:"emptyHandlerAction" bun:"empty_handler_action"`
+	FallbackUserIDs          []string               `json:"fallbackUserIds" bun:"fallback_user_ids,type:jsonb,nullzero"`
+	AdminUserIDs             []string               `json:"adminUserIds" bun:"admin_user_ids,type:jsonb,nullzero"`
+	SameApplicantAction      SameApplicantAction    `json:"sameApplicantAction" bun:"same_applicant_action"`
+	IsRollbackAllowed        bool                   `json:"isRollbackAllowed" bun:"is_rollback_allowed"`
+	RollbackType             RollbackType           `json:"rollbackType" bun:"rollback_type"`
+	RollbackDataStrategy     RollbackDataStrategy   `json:"rollbackDataStrategy" bun:"rollback_data_strategy"`
+	IsAddAssigneeAllowed     bool                   `json:"isAddAssigneeAllowed" bun:"is_add_assignee_allowed"`
+	AddAssigneeTypes         []string               `json:"addAssigneeTypes" bun:"add_assignee_types,type:jsonb,nullzero"`
+	IsRemoveAssigneeAllowed  bool                   `json:"isRemoveAssigneeAllowed" bun:"is_remove_assignee_allowed"`
+	FieldPermissions         map[string]any         `json:"fieldPermissions" bun:"field_permissions,type:jsonb,nullzero"`
+	IsManualCCAllowed        bool                   `json:"isManualCcAllowed" bun:"is_manual_cc_allowed"`
+	IsTransferAllowed        bool                   `json:"isTransferAllowed" bun:"is_transfer_allowed"`
+	IsOpinionRequired        bool                   `json:"isOpinionRequired" bun:"is_opinion_required"`
+	TimeoutHours             int                    `json:"timeoutHours" bun:"timeout_hours"`
+	TimeoutAction            TimeoutAction          `json:"timeoutAction" bun:"timeout_action"`
+	TimeoutNotifyBeforeHours int                    `json:"timeoutNotifyBeforeHours" bun:"timeout_notify_before_hours"`
+	UrgeCooldownMinutes      int                    `json:"urgeCooldownMinutes" bun:"urge_cooldown_minutes"`
+	DuplicateHandlerAction   DuplicateHandlerAction `json:"duplicateHandlerAction" bun:"duplicate_handler_action"`
+	SubFlowConfig            map[string]any         `json:"subFlowConfig" bun:"sub_flow_config,type:jsonb,nullzero"`
+	Branches                 []ConditionBranch      `json:"branches" bun:"branches,type:jsonb,nullzero"`
 }
 
 // FlowEdge represents a directed edge between two flow nodes.
@@ -154,7 +158,7 @@ type FlowNodeCC struct {
 	orm.IDModel
 
 	NodeID    string      `json:"nodeId" bun:"node_id"`
-	CCType    string      `json:"ccType" bun:"cc_type"`
+	CCKind    CCKind      `json:"ccKind" bun:"cc_kind"`
 	CCIDs     []string    `json:"ccIds" bun:"cc_ids,type:jsonb,nullzero"`
 	FormField null.String `json:"formField" bun:"form_field,nullzero"`
 }
@@ -166,7 +170,7 @@ type FlowFormField struct {
 
 	FlowVersionID string         `json:"flowVersionId" bun:"flow_version_id"`
 	Name          string         `json:"name" bun:"name"`
-	Kind          string         `json:"kind" bun:"kind"`
+	Kind          FieldKind      `json:"kind" bun:"kind"`
 	Label         string         `json:"label" bun:"label"`
 	Placeholder   null.String    `json:"placeholder" bun:"placeholder,nullzero"`
 	DefaultValue  null.String    `json:"defaultValue" bun:"default_value,nullzero"`
@@ -194,18 +198,18 @@ type Instance struct {
 	orm.BaseModel `bun:"table:apv_instance,alias:ai"`
 	orm.Model
 
-	FlowID           string      `json:"flowId" bun:"flow_id"`
-	FlowVersionID    string      `json:"flowVersionId" bun:"flow_version_id"`
-	ParentInstanceID null.String `json:"parentInstanceId" bun:"parent_instance_id,nullzero"`
-	ParentNodeID     null.String `json:"parentNodeId" bun:"parent_node_id,nullzero"`
-	Title            string      `json:"title" bun:"title"`
-	SerialNo         string      `json:"serialNo" bun:"serial_no"`
-	ApplicantID      string      `json:"applicantId" bun:"applicant_id"`
-	ApplicantDeptID  null.String `json:"applicantDeptId" bun:"applicant_dept_id,nullzero"`
-	Status           string      `json:"status" bun:"status"`
-	CurrentNodeID    null.String `json:"currentNodeId" bun:"current_node_id,nullzero"`
-	FinishedAt       null.DateTime `json:"finishedAt" bun:"finished_at,nullzero"`
-	BusinessRecordID null.String `json:"businessRecordId" bun:"business_record_id,nullzero"`
+	FlowID           string         `json:"flowId" bun:"flow_id"`
+	FlowVersionID    string         `json:"flowVersionId" bun:"flow_version_id"`
+	ParentInstanceID null.String    `json:"parentInstanceId" bun:"parent_instance_id,nullzero"`
+	ParentNodeID     null.String    `json:"parentNodeId" bun:"parent_node_id,nullzero"`
+	Title            string         `json:"title" bun:"title"`
+	SerialNo         string         `json:"serialNo" bun:"serial_no"`
+	ApplicantID      string         `json:"applicantId" bun:"applicant_id"`
+	ApplicantDeptID  null.String    `json:"applicantDeptId" bun:"applicant_dept_id,nullzero"`
+	Status           InstanceStatus `json:"status" bun:"status"`
+	CurrentNodeID    null.String    `json:"currentNodeId" bun:"current_node_id,nullzero"`
+	FinishedAt       null.DateTime  `json:"finishedAt" bun:"finished_at,nullzero"`
+	BusinessRecordID null.String    `json:"businessRecordId" bun:"business_record_id,nullzero"`
 	FormData         map[string]any `json:"formData" bun:"form_data,type:jsonb,nullzero"`
 }
 
@@ -219,7 +223,7 @@ type Task struct {
 	AssigneeID      string        `json:"assigneeId" bun:"assignee_id"`
 	DelegateFromID  null.String   `json:"delegateFromId" bun:"delegate_from_id,nullzero"`
 	SortOrder       int           `json:"sortOrder" bun:"sort_order"`
-	Status          string        `json:"status" bun:"status"`
+	Status          TaskStatus    `json:"status" bun:"status"`
 	ReadAt          null.DateTime `json:"readAt" bun:"read_at,nullzero"`
 	ParentTaskID    null.String   `json:"parentTaskId" bun:"parent_task_id,nullzero"`
 	AddAssigneeType null.String   `json:"addAssigneeType" bun:"add_assignee_type,nullzero"`
@@ -250,7 +254,7 @@ type ActionLog struct {
 	InstanceID        string         `json:"instanceId" bun:"instance_id"`
 	NodeID            null.String    `json:"nodeId" bun:"node_id,nullzero"`
 	TaskID            null.String    `json:"taskId" bun:"task_id,nullzero"`
-	Action            string         `json:"action" bun:"action"`
+	Action            ActionType     `json:"action" bun:"action"`
 	OperatorID        string         `json:"operatorId" bun:"operator_id"`
 	OperatorName      null.String    `json:"operatorName" bun:"operator_name,nullzero"`
 	OperatorDept      null.String    `json:"operatorDept" bun:"operator_dept,nullzero"`
@@ -304,8 +308,8 @@ type Delegation struct {
 	DelegateeID    string      `json:"delegateeId" bun:"delegatee_id"`
 	FlowCategoryID null.String `json:"flowCategoryId" bun:"flow_category_id,nullzero"`
 	FlowID         null.String `json:"flowId" bun:"flow_id,nullzero"`
-	StartTime      null.Time   `json:"startTime" bun:"start_time"`
-	EndTime        null.Time   `json:"endTime" bun:"end_time"`
+	StartTime      timex.DateTime `json:"startTime" bun:"start_time"`
+	EndTime        timex.DateTime `json:"endTime" bun:"end_time"`
 	IsActive       bool        `json:"isActive" bun:"is_active"`
 	Reason         null.String `json:"reason" bun:"reason,nullzero"`
 }
@@ -315,11 +319,35 @@ type EventOutbox struct {
 	orm.BaseModel `bun:"table:apv_event_outbox,alias:aeo"`
 	orm.Model
 
-	EventID     string         `json:"eventId" bun:"event_id"`
-	EventType   string         `json:"eventType" bun:"event_type"`
-	Payload     map[string]any `json:"payload" bun:"payload,type:jsonb"`
-	Status      string         `json:"status" bun:"status"`
-	RetryCount  int            `json:"retryCount" bun:"retry_count"`
-	LastError   null.String    `json:"lastError" bun:"last_error,nullzero"`
-	ProcessedAt null.Time      `json:"processedAt" bun:"processed_at,nullzero"`
+	EventID     string            `json:"eventId" bun:"event_id"`
+	EventType   string            `json:"eventType" bun:"event_type"`
+	Payload     map[string]any    `json:"payload" bun:"payload,type:jsonb"`
+	Status      EventOutboxStatus `json:"status" bun:"status"`
+	RetryCount  int               `json:"retryCount" bun:"retry_count"`
+	LastError   null.String       `json:"lastError" bun:"last_error,nullzero"`
+	ProcessedAt null.Time         `json:"processedAt" bun:"processed_at,nullzero"`
+}
+
+// UrgeRecord represents an urge/reminder record.
+type UrgeRecord struct {
+	orm.BaseModel `bun:"table:apv_urge_record,alias:aur"`
+	orm.IDModel
+	orm.CreatedModel
+
+	InstanceID   string      `json:"instanceId" bun:"instance_id"`
+	NodeID       string      `json:"nodeId" bun:"node_id"`
+	TaskID       null.String `json:"taskId" bun:"task_id,nullzero"`
+	UrgerID      string      `json:"urgerId" bun:"urger_id"`
+	TargetUserID string      `json:"targetUserId" bun:"target_user_id"`
+	Message      string      `json:"message" bun:"message"`
+}
+
+// TimeoutNotify records sent timeout notifications to prevent duplicates.
+type TimeoutNotify struct {
+	orm.BaseModel `bun:"table:apv_timeout_notify,alias:atn"`
+	orm.IDModel
+	orm.CreatedModel
+
+	TaskID     string            `json:"taskId" bun:"task_id"`
+	NotifyType TimeoutNotifyType `json:"notifyType" bun:"notify_type"`
 }

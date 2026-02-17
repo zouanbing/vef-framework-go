@@ -47,7 +47,7 @@ func (s *InstanceServiceTestSuite) SetupTest() {
 	}
 	s.serialGen = NewMockSerialNoGenerator()
 
-	pub := publisher.NewEventPublisher(s.db)
+	pub := publisher.NewEventPublisher()
 	s.eng = setupEngine(s.mockOrg, s.mockUser, pub)
 	s.svc = NewInstanceService(s.db, s.eng, s.serialGen, pub, s.mockUser)
 	s.flowSvc = NewFlowService(s.db, pub)
@@ -71,7 +71,7 @@ func (s *InstanceServiceTestSuite) TestStartInstanceSuccess() {
 	s.Require().NoError(err, "Should not return error")
 	s.Require().NotNil(instance, "Should not be nil")
 
-	s.Equal(string(approval.InstanceRunning), instance.Status)
+	s.Equal(approval.InstanceRunning, instance.Status)
 	s.Equal("simple_flow-0001", instance.SerialNo)
 	s.Equal("applicant1", instance.ApplicantID)
 	s.Equal(approvalNode.ID, instance.CurrentNodeID.String)
@@ -80,9 +80,9 @@ func (s *InstanceServiceTestSuite) TestStartInstanceSuccess() {
 	tasks := queryTasks(s.T(), s.ctx, s.db, instance.ID)
 	s.Require().Len(tasks, 2, "Length should match expected value")
 	s.Equal("user1", tasks[0].AssigneeID)
-	s.Equal(string(approval.TaskPending), tasks[0].Status)
+	s.Equal(approval.TaskPending, tasks[0].Status)
 	s.Equal("user2", tasks[1].AssigneeID)
-	s.Equal(string(approval.TaskWaiting), tasks[1].Status)
+	s.Equal(approval.TaskWaiting, tasks[1].Status)
 
 	// Verify events
 	events := queryEvents(s.T(), s.ctx, s.db)
@@ -115,8 +115,8 @@ func (s *InstanceServiceTestSuite) TestSequentialApprovalHappyPath() {
 
 	// Verify first task approved, second activated
 	tasks = queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
-	s.Equal(string(approval.TaskApproved), tasks[0].Status)
-	s.Equal(string(approval.TaskPending), tasks[1].Status)
+	s.Equal(approval.TaskApproved, tasks[0].Status)
+	s.Equal(approval.TaskPending, tasks[1].Status)
 
 	// User2 approves
 	err = s.svc.ProcessTask(s.ctx, ProcessTaskCmd{
@@ -130,7 +130,7 @@ func (s *InstanceServiceTestSuite) TestSequentialApprovalHappyPath() {
 
 	// Verify instance is approved (end node reached)
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
-	s.Equal(string(approval.InstanceApproved), inst.Status)
+	s.Equal(approval.InstanceApproved, inst.Status)
 }
 
 func (s *InstanceServiceTestSuite) TestParallelApprovalAllPass() {
@@ -148,7 +148,7 @@ func (s *InstanceServiceTestSuite) TestParallelApprovalAllPass() {
 	tasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	s.Require().Len(tasks, 3, "Length should match expected value")
 	for _, task := range tasks {
-		s.Equal(string(approval.TaskPending), task.Status)
+		s.Equal(approval.TaskPending, task.Status)
 	}
 
 	// All 3 approve
@@ -163,7 +163,7 @@ func (s *InstanceServiceTestSuite) TestParallelApprovalAllPass() {
 	}
 
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
-	s.Equal(string(approval.InstanceApproved), inst.Status)
+	s.Equal(approval.InstanceApproved, inst.Status)
 }
 
 func (s *InstanceServiceTestSuite) TestRejectionOneRejectStrategy() {
@@ -191,13 +191,13 @@ func (s *InstanceServiceTestSuite) TestRejectionOneRejectStrategy() {
 	s.Require().NoError(err, "Should not return error")
 
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
-	s.Equal(string(approval.InstanceRejected), inst.Status)
+	s.Equal(approval.InstanceRejected, inst.Status)
 
 	// Remaining tasks should be canceled
 	tasks = queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	for _, task := range tasks {
 		if task.AssigneeID != tasks[0].AssigneeID {
-			s.Equal(string(approval.TaskCanceled), task.Status)
+			s.Equal(approval.TaskCanceled, task.Status)
 		}
 	}
 }
@@ -217,13 +217,13 @@ func (s *InstanceServiceTestSuite) TestWithdraw() {
 	s.Require().NoError(err, "Should not return error")
 
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
-	s.Equal(string(approval.InstanceWithdrawn), inst.Status)
+	s.Equal(approval.InstanceWithdrawn, inst.Status)
 	s.True(inst.FinishedAt.Valid)
 
 	// All tasks should be canceled
 	tasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	for _, task := range tasks {
-		s.Equal(string(approval.TaskCanceled), task.Status)
+		s.Equal(approval.TaskCanceled, task.Status)
 	}
 }
 
@@ -262,11 +262,11 @@ func (s *InstanceServiceTestSuite) TestTransfer() {
 	newTaskFound := false
 	for _, task := range allTasks {
 		if task.ID == tasks[0].ID {
-			s.Equal(string(approval.TaskTransferred), task.Status)
+			s.Equal(approval.TaskTransferred, task.Status)
 			transferredFound = true
 		}
 
-		if task.AssigneeID == "user3" && task.Status == string(approval.TaskPending) {
+		if task.AssigneeID == "user3" && task.Status == approval.TaskPending {
 			newTaskFound = true
 		}
 	}
@@ -301,7 +301,7 @@ func (s *InstanceServiceTestSuite) TestRollback() {
 	tasks = queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	var user2Task string
 	for _, t := range tasks {
-		if t.AssigneeID == "user2" && t.Status == string(approval.TaskPending) {
+		if t.AssigneeID == "user2" && t.Status == approval.TaskPending {
 			user2Task = t.ID
 		}
 	}
@@ -319,7 +319,7 @@ func (s *InstanceServiceTestSuite) TestRollback() {
 
 	// Instance should still be running with new tasks on the target node
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
-	s.Equal(string(approval.InstanceRunning), inst.Status)
+	s.Equal(approval.InstanceRunning, inst.Status)
 }
 
 func (s *InstanceServiceTestSuite) TestAddAssigneeBefore() {
@@ -352,12 +352,12 @@ func (s *InstanceServiceTestSuite) TestAddAssigneeBefore() {
 	var newTask, originalTask bool
 	for _, t := range allTasks {
 		if t.AssigneeID == "user_before1" {
-			s.Equal(string(approval.TaskPending), t.Status)
+			s.Equal(approval.TaskPending, t.Status)
 			newTask = true
 		}
 
 		if t.ID == tasks[0].ID {
-			s.Equal(string(approval.TaskWaiting), t.Status)
+			s.Equal(approval.TaskWaiting, t.Status)
 			originalTask = true
 		}
 	}
@@ -393,7 +393,7 @@ func (s *InstanceServiceTestSuite) TestAddAssigneeAfter() {
 
 	for _, t := range allTasks {
 		if t.AssigneeID == "user_after1" {
-			s.Equal(string(approval.TaskWaiting), t.Status)
+			s.Equal(approval.TaskWaiting, t.Status)
 		}
 	}
 }
@@ -426,7 +426,7 @@ func (s *InstanceServiceTestSuite) TestAddAssigneeParallel() {
 
 	for _, t := range allTasks {
 		if t.AssigneeID == "user_parallel1" {
-			s.Equal(string(approval.TaskPending), t.Status)
+			s.Equal(approval.TaskPending, t.Status)
 		}
 	}
 }
@@ -453,7 +453,7 @@ func (s *InstanceServiceTestSuite) TestRemoveAssignee() {
 	removedFound := false
 	for _, t := range tasks {
 		if t.AssigneeID == "user1" {
-			s.Equal(string(approval.TaskRemoved), t.Status)
+			s.Equal(approval.TaskRemoved, t.Status)
 			removedFound = true
 		}
 	}
@@ -487,15 +487,15 @@ func (s *InstanceServiceTestSuite) TestProcessTaskExecuteOnHandleNode() {
 	tasks = queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, handleNode.ID)
 	for _, task := range tasks {
 		if task.ID == targetTask.ID {
-			s.Equal(string(approval.TaskHandled), task.Status)
+			s.Equal(approval.TaskHandled, task.Status)
 			continue
 		}
 
-		s.Equal(string(approval.TaskCanceled), task.Status)
+		s.Equal(approval.TaskCanceled, task.Status)
 	}
 
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
-	s.Equal(string(approval.InstanceApproved), inst.Status)
+	s.Equal(approval.InstanceApproved, inst.Status)
 }
 
 func (s *InstanceServiceTestSuite) TestRemoveAssigneeLastActionableTaskBlocked() {
@@ -515,7 +515,7 @@ func (s *InstanceServiceTestSuite) TestRemoveAssigneeLastActionableTaskBlocked()
 	// Make waiting task non-actionable, leaving only one actionable task.
 	waitingTaskID := tasks[1].ID
 	_, err = s.db.NewUpdate().Model((*approval.Task)(nil)).
-		Set("status", string(approval.TaskCanceled)).
+		Set("status", approval.TaskCanceled).
 		Where(func(c orm.ConditionBuilder) {
 			c.Equals("id", waitingTaskID)
 		}).Exec(s.ctx)
@@ -536,7 +536,7 @@ func (s *InstanceServiceTestSuite) TestRemoveAssigneeLastActionableTaskBlocked()
 	s.ErrorIs(err, ErrLastAssigneeRemoval)
 
 	latestTasks := queryTasks(s.T(), s.ctx, s.db, instance.ID)
-	s.Equal(string(approval.TaskPending), latestTasks[0].Status)
+	s.Equal(approval.TaskPending, latestTasks[0].Status)
 }
 
 func (s *InstanceServiceTestSuite) TestRemoveAssigneeSequentialPromotesWaitingTask() {
@@ -556,9 +556,9 @@ func (s *InstanceServiceTestSuite) TestRemoveAssigneeSequentialPromotesWaitingTa
 	var pendingTask, waitingTask approval.Task
 	for _, task := range tasks {
 		switch task.Status {
-		case string(approval.TaskPending):
+		case approval.TaskPending:
 			pendingTask = task
-		case string(approval.TaskWaiting):
+		case approval.TaskWaiting:
 			waitingTask = task
 		}
 	}
@@ -571,12 +571,12 @@ func (s *InstanceServiceTestSuite) TestRemoveAssigneeSequentialPromotesWaitingTa
 	latestTasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	for _, task := range latestTasks {
 		if task.ID == pendingTask.ID {
-			s.Equal(string(approval.TaskRemoved), task.Status)
+			s.Equal(approval.TaskRemoved, task.Status)
 			continue
 		}
 
 		if task.ID == waitingTask.ID {
-			s.Equal(string(approval.TaskPending), task.Status)
+			s.Equal(approval.TaskPending, task.Status)
 		}
 	}
 }
@@ -610,7 +610,7 @@ func (s *InstanceServiceTestSuite) TestMultiStageApproval() {
 	tasks2 := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approval2.ID)
 	s.Require().Len(tasks2, 1, "Length should match expected value")
 	s.Equal("user2", tasks2[0].AssigneeID)
-	s.Equal(string(approval.TaskPending), tasks2[0].Status)
+	s.Equal(approval.TaskPending, tasks2[0].Status)
 
 	// user2 approves -> instance complete
 	err = s.svc.ProcessTask(s.ctx, ProcessTaskCmd{
@@ -622,7 +622,7 @@ func (s *InstanceServiceTestSuite) TestMultiStageApproval() {
 	s.Require().NoError(err, "Should not return error")
 
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
-	s.Equal(string(approval.InstanceApproved), inst.Status)
+	s.Equal(approval.InstanceApproved, inst.Status)
 }
 
 // ==================== P2: Error Scenarios ====================
@@ -848,7 +848,7 @@ func (s *InstanceServiceTestSuite) TestEventsStartInstanceCreatedBeforeCompleted
 	s.Less(createdIndex, completedIndex, "instance created event must be before completed event")
 
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
-	s.Equal(string(approval.InstanceApproved), inst.Status)
+	s.Equal(approval.InstanceApproved, inst.Status)
 }
 
 func (s *InstanceServiceTestSuite) TestEventsWithdraw() {
@@ -897,7 +897,7 @@ func (s *InstanceServiceTestSuite) TestWithdrawNotApplicant() {
 
 	// Instance should still be running
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
-	s.Equal(string(approval.InstanceRunning), inst.Status)
+	s.Equal(approval.InstanceRunning, inst.Status)
 }
 
 func (s *InstanceServiceTestSuite) TestTransferThenApprovePassAll() {
@@ -929,7 +929,7 @@ func (s *InstanceServiceTestSuite) TestTransferThenApprovePassAll() {
 	allTasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	var user3TaskID string
 	for _, t := range allTasks {
-		if t.AssigneeID == "user3" && t.Status == string(approval.TaskPending) {
+		if t.AssigneeID == "user3" && t.Status == approval.TaskPending {
 			user3TaskID = t.ID
 		}
 	}
@@ -948,7 +948,7 @@ func (s *InstanceServiceTestSuite) TestTransferThenApprovePassAll() {
 	allTasks = queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	var user2TaskID string
 	for _, t := range allTasks {
-		if t.AssigneeID == "user2" && t.Status == string(approval.TaskPending) {
+		if t.AssigneeID == "user2" && t.Status == approval.TaskPending {
 			user2TaskID = t.ID
 		}
 	}
@@ -964,7 +964,7 @@ func (s *InstanceServiceTestSuite) TestTransferThenApprovePassAll() {
 
 	// Instance should be approved — transferred tasks must NOT block PassAll
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
-	s.Equal(string(approval.InstanceApproved), inst.Status)
+	s.Equal(approval.InstanceApproved, inst.Status)
 }
 
 func (s *InstanceServiceTestSuite) TestAddCCManualNotAllowed() {
@@ -1111,7 +1111,7 @@ func (s *InstanceServiceTestSuite) TestStartInstanceAllowedInitiateByUser() {
 		FormData:    map[string]any{},
 	})
 	s.Require().NoError(err, "Should not return error")
-	s.Equal(string(approval.InstanceRunning), instance.Status)
+	s.Equal(approval.InstanceRunning, instance.Status)
 }
 
 // TestRemoveAssigneeNotAuthorized verifies that a user who is neither a peer
@@ -1337,7 +1337,7 @@ func (s *InstanceServiceTestSuite) TestRemoveAssigneeTriggersCompletion() {
 	tasks = queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	var user2Task approval.Task
 	for _, t := range tasks {
-		if t.AssigneeID == "user2" && t.Status == string(approval.TaskPending) {
+		if t.AssigneeID == "user2" && t.Status == approval.TaskPending {
 			user2Task = t
 			break
 		}
@@ -1362,7 +1362,7 @@ func (s *InstanceServiceTestSuite) TestRemoveAssigneeTriggersCompletion() {
 	// After removing user2, PassAll should evaluate: 1 approved / 1 total → pass
 	// Flow should advance to End and complete as approved
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
-	s.Equal(string(approval.InstanceApproved), inst.Status)
+	s.Equal(approval.InstanceApproved, inst.Status)
 	s.True(inst.FinishedAt.Valid, "finished_at should be set")
 }
 
@@ -1511,7 +1511,7 @@ func (s *InstanceServiceTestSuite) TestSubFlowParentRejectedStateConvergence() {
 		c.Equals("parent_instance_id", parentInstance.ID)
 	}).Scan(s.ctx)
 	s.Require().NoError(err, "Should not return error")
-	s.Equal(string(approval.InstanceRunning), childInstance.Status)
+	s.Equal(approval.InstanceRunning, childInstance.Status)
 
 	// Find child's approval task
 	childTasks := queryTasksByNode(s.T(), s.ctx, s.db, childInstance.ID, childApproval.ID)
@@ -1529,12 +1529,12 @@ func (s *InstanceServiceTestSuite) TestSubFlowParentRejectedStateConvergence() {
 
 	// Verify child instance is rejected with finished_at
 	childInst := queryInstance(s.T(), s.ctx, s.db, childInstance.ID)
-	s.Equal(string(approval.InstanceRejected), childInst.Status)
+	s.Equal(approval.InstanceRejected, childInst.Status)
 	s.True(childInst.FinishedAt.Valid, "child finished_at should be set")
 
 	// Verify parent instance is rejected with finished_at
 	parentInst := queryInstance(s.T(), s.ctx, s.db, parentInstance.ID)
-	s.Equal(string(approval.InstanceRejected), parentInst.Status)
+	s.Equal(approval.InstanceRejected, parentInst.Status)
 	s.True(parentInst.FinishedAt.Valid, "parent finished_at should be set")
 
 	// Verify sub-flow events were published
@@ -1575,7 +1575,7 @@ func (s *InstanceServiceTestSuite) TestMainFlowApprovedPublishesCompletionEvent(
 	tasks = queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	var user2Task approval.Task
 	for _, t := range tasks {
-		if t.AssigneeID == "user2" && t.Status == string(approval.TaskPending) {
+		if t.AssigneeID == "user2" && t.Status == approval.TaskPending {
 			user2Task = t
 			break
 		}
@@ -1590,7 +1590,7 @@ func (s *InstanceServiceTestSuite) TestMainFlowApprovedPublishesCompletionEvent(
 
 	// Instance should be approved
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
-	s.Equal(string(approval.InstanceApproved), inst.Status)
+	s.Equal(approval.InstanceApproved, inst.Status)
 	s.True(inst.FinishedAt.Valid)
 
 	// Verify approval.instance.completed event was published
@@ -1649,7 +1649,7 @@ func (s *InstanceServiceTestSuite) TestRollbackPreviousTypeValidTarget() {
 	s.Require().NoError(err, "Should not return error")
 
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
-	s.Equal(string(approval.InstanceRunning), inst.Status)
+	s.Equal(approval.InstanceRunning, inst.Status)
 }
 
 func (s *InstanceServiceTestSuite) TestRollbackPreviousTypeInvalidTarget() {
@@ -1867,12 +1867,12 @@ func TestFilterEditableFormData(t *testing.T) {
 		assert.NotContains(t, result, "secret", "Hidden fields should be filtered out")
 	})
 
-	t.Run("FieldWithoutPermissionIncluded", func(t *testing.T) {
+	t.Run("FieldWithoutPermissionDenied", func(t *testing.T) {
 		data := map[string]any{"name": "Alice", "extra": "value"}
 		perms := map[string]any{"name": "editable"}
 		result := filterEditableFormData(data, perms)
 		assert.Contains(t, result, "name", "Editable field should be present")
-		assert.Contains(t, result, "extra", "Fields without permission config should be included")
+		assert.NotContains(t, result, "extra", "Fields without permission config should be denied by default")
 	})
 
 	t.Run("NonStringPermissionExcluded", func(t *testing.T) {
@@ -1931,7 +1931,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) SetupTest() {
 	}
 	s.serialGen = NewMockSerialNoGenerator()
 
-	pub := publisher.NewEventPublisher(s.db)
+	pub := publisher.NewEventPublisher()
 	eng := setupEngine(s.mockOrg, s.mockUser, pub)
 	s.svc = NewInstanceService(s.db, eng, s.serialGen, pub, s.mockUser)
 	s.flowSvc = NewFlowService(s.db, pub)
@@ -2227,7 +2227,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRollbackTargetStartType() {
 	s.Require().NoError(err, "Should rollback to start")
 
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
-	s.Equal(string(approval.InstanceRunning), inst.Status, "Instance should still be running after rollback")
+	s.Equal(approval.InstanceRunning, inst.Status, "Instance should still be running after rollback")
 }
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestRollbackTargetStartTypeInvalidTarget() {
@@ -2540,7 +2540,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRollbackDataKeepStrategy() {
 	s.Require().NoError(err, "Should rollback with data keep")
 
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
-	s.Equal(string(approval.InstanceRunning), inst.Status, "Instance should still be running")
+	s.Equal(approval.InstanceRunning, inst.Status, "Instance should still be running")
 }
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestProcessTaskFormDataWithNilInstanceFormData() {
@@ -2672,7 +2672,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRollbackDataKeepNoSnapshot() {
 	s.Require().NoError(err, "Rollback without snapshot should still succeed")
 
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
-	s.Equal(string(approval.InstanceRunning), inst.Status, "Instance should still be running")
+	s.Equal(approval.InstanceRunning, inst.Status, "Instance should still be running")
 	s.Equal(float64(1000), inst.FormData["amount"], "Form data should be preserved when no snapshot exists")
 }
 
@@ -2718,7 +2718,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestCheckInitiationPermissionNilUserS
 	s.disableAllInitiate(flow)
 	s.insertInitiator(flow.ID, approval.InitiatorRole, []string{"role_admin"})
 
-	pub := publisher.NewEventPublisher(s.db)
+	pub := publisher.NewEventPublisher()
 	eng := setupEngine(s.mockOrg, s.mockUser, pub)
 	svcNoUser := NewInstanceService(s.db, eng, s.serialGen, pub, nil)
 
@@ -2795,7 +2795,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestWithdrawWithEmptyReason() {
 	s.Require().NoError(err, "Withdraw with empty reason should succeed")
 
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
-	s.Equal(string(approval.InstanceWithdrawn), inst.Status, "Instance should be withdrawn")
+	s.Equal(approval.InstanceWithdrawn, inst.Status, "Instance should be withdrawn")
 
 	var logs []approval.ActionLog
 	err = s.db.NewSelect().Model(&logs).Where(func(c orm.ConditionBuilder) {
@@ -2832,7 +2832,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRemoveAssigneeFlowAdmin() {
 	removedFound := false
 	for _, t := range tasks {
 		if t.AssigneeID == "user1" {
-			s.Equal(string(approval.TaskRemoved), t.Status, "user1 task should have removed status")
+			s.Equal(approval.TaskRemoved, t.Status, "user1 task should have removed status")
 			removedFound = true
 		}
 	}
@@ -2863,7 +2863,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRemoveAssigneeNonSequentialNoProm
 	tasks = queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	removedCount := 0
 	for _, t := range tasks {
-		if t.Status == string(approval.TaskRemoved) {
+		if t.Status == approval.TaskRemoved {
 			removedCount++
 		}
 	}
@@ -2909,7 +2909,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestHandleApproveHandleNodeStatus() {
 	tasks = queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, handleNode.ID)
 	for _, t := range tasks {
 		if t.ID == tasks[0].ID {
-			s.Equal(string(approval.TaskHandled), t.Status, "Handle node tasks should get TaskHandled status")
+			s.Equal(approval.TaskHandled, t.Status, "Handle node tasks should get TaskHandled status")
 		}
 	}
 }
@@ -2938,7 +2938,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRejectTriggersPassRuleRejected() 
 	s.Require().NoError(err, "Should process rejection")
 
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
-	s.Equal(string(approval.InstanceRejected), inst.Status, "Instance should be rejected via PassAnyReject")
+	s.Equal(approval.InstanceRejected, inst.Status, "Instance should be rejected via PassAnyReject")
 	s.True(inst.FinishedAt.Valid, "FinishedAt should be set after rejection")
 }
 
@@ -3079,16 +3079,16 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRemoveAssigneeSequentialPromotes(
 
 	tasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	s.Require().Len(tasks, 2, "Should have two sequential tasks")
-	s.Equal(string(approval.TaskPending), tasks[0].Status, "First task should be pending")
-	s.Equal(string(approval.TaskWaiting), tasks[1].Status, "Second task should be waiting")
+	s.Equal(approval.TaskPending, tasks[0].Status, "First task should be pending")
+	s.Equal(approval.TaskWaiting, tasks[1].Status, "Second task should be waiting")
 
 	err := s.svc.RemoveAssignee(s.ctx, tasks[0].ID, tasks[1].AssigneeID)
 	s.Require().NoError(err, "Should remove pending assignee")
 
 	tasks = queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	for _, t := range tasks {
-		if t.AssigneeID == "user2" && t.Status != string(approval.TaskRemoved) {
-			s.Equal(string(approval.TaskPending), t.Status, "user2 should be promoted to pending")
+		if t.AssigneeID == "user2" && t.Status != approval.TaskRemoved {
+			s.Equal(approval.TaskPending, t.Status, "user2 should be promoted to pending")
 		}
 	}
 }
@@ -3112,10 +3112,10 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestAddAssigneeBefore() {
 	allTasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	for _, t := range allTasks {
 		if t.ID == tasks[0].ID {
-			s.Equal(string(approval.TaskWaiting), t.Status, "Original task should become waiting")
+			s.Equal(approval.TaskWaiting, t.Status, "Original task should become waiting")
 		}
 		if t.AssigneeID == "user_before" {
-			s.Equal(string(approval.TaskPending), t.Status, "Before-added task should be pending")
+			s.Equal(approval.TaskPending, t.Status, "Before-added task should be pending")
 		}
 	}
 }
@@ -3139,7 +3139,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestAddAssigneeAfter() {
 	allTasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	for _, t := range allTasks {
 		if t.AssigneeID == "user_after" {
-			s.Equal(string(approval.TaskWaiting), t.Status, "After-added task should be waiting")
+			s.Equal(approval.TaskWaiting, t.Status, "After-added task should be waiting")
 		}
 	}
 }
@@ -3163,7 +3163,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestAddAssigneeParallel() {
 	allTasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	for _, t := range allTasks {
 		if t.AssigneeID == "user_parallel" {
-			s.Equal(string(approval.TaskPending), t.Status, "Parallel-added task should be pending")
+			s.Equal(approval.TaskPending, t.Status, "Parallel-added task should be pending")
 		}
 	}
 }
@@ -3426,4 +3426,130 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestPublishVersionArchiveOldPublished
 
 	s.Equal(approval.VersionArchived, v1.Status, "v1 should be archived")
 	s.Equal(approval.VersionPublished, v2.Status, "v2 should be published")
+}
+
+// ==================== Urge Task ====================
+
+// TestUrgeTaskSuccess verifies successful urge task operation.
+func (s *InstanceServiceTestSuite) TestUrgeTaskSuccess() {
+	buildSimpleFlow(s.T(), s.ctx, s.db)
+
+	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		FlowCode:    "simple_flow",
+		Title:       "Urge Test",
+		ApplicantID: "applicant1",
+		FormData:    map[string]any{"reason": "test"},
+	})
+	s.Require().NoError(err, "Should start instance")
+
+	tasks := queryTasks(s.T(), s.ctx, s.db, instance.ID)
+	s.Require().NotEmpty(tasks, "Should have tasks")
+
+	pendingTask := tasks[0]
+
+	err = s.svc.UrgeTask(s.ctx, UrgeTaskCmd{
+		InstanceID: instance.ID,
+		TaskID:     pendingTask.ID,
+		UrgerID:    "applicant1",
+		Message:    "请尽快处理",
+	})
+	s.Require().NoError(err, "Should urge task")
+
+	// Verify urge record was created
+	var records []approval.UrgeRecord
+	err = s.db.NewSelect().Model(&records).Where(func(c orm.ConditionBuilder) {
+		c.Equals("task_id", pendingTask.ID)
+	}).Scan(s.ctx)
+	s.Require().NoError(err, "Should query urge records")
+	s.Len(records, 1, "Should have one urge record")
+	s.Equal("applicant1", records[0].UrgerID, "Urger should be applicant1")
+	s.Equal(pendingTask.AssigneeID, records[0].TargetUserID, "Target should be assignee")
+	s.Equal("请尽快处理", records[0].Message, "Message should match")
+
+	// Verify event was published
+	events := queryEvents(s.T(), s.ctx, s.db)
+	found := false
+	for _, evt := range events {
+		if evt.EventType == "approval.task.urged" {
+			found = true
+			break
+		}
+	}
+	s.True(found, "Should have urge event")
+}
+
+// TestUrgeTaskNotFound verifies urge with invalid task ID.
+func (s *InstanceServiceTestSuite) TestUrgeTaskNotFound() {
+	err := s.svc.UrgeTask(s.ctx, UrgeTaskCmd{
+		InstanceID: "nonexistent",
+		TaskID:     "nonexistent",
+		UrgerID:    "user1",
+	})
+	s.Error(err, "Should return error for nonexistent task")
+}
+
+// TestUrgeTaskNotPending verifies urge fails for completed tasks.
+func (s *InstanceServiceTestSuite) TestUrgeTaskNotPending() {
+	buildSimpleFlow(s.T(), s.ctx, s.db)
+
+	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		FlowCode:    "simple_flow",
+		Title:       "Urge Not Pending Test",
+		ApplicantID: "applicant1",
+		FormData:    map[string]any{"reason": "test"},
+	})
+	s.Require().NoError(err, "Should start instance")
+
+	tasks := queryTasks(s.T(), s.ctx, s.db, instance.ID)
+	s.Require().NotEmpty(tasks, "Should have tasks")
+
+	// Approve the first task so it becomes non-pending
+	err = s.svc.ProcessTask(s.ctx, ProcessTaskCmd{
+		InstanceID: instance.ID,
+		TaskID:     tasks[0].ID,
+		Action:     "approve",
+		OperatorID: tasks[0].AssigneeID,
+		Opinion:    "ok",
+	})
+	s.Require().NoError(err, "Should approve task")
+
+	// Try to urge the already-approved task
+	err = s.svc.UrgeTask(s.ctx, UrgeTaskCmd{
+		InstanceID: instance.ID,
+		TaskID:     tasks[0].ID,
+		UrgerID:    "applicant1",
+	})
+	s.Error(err, "Should return error for non-pending task")
+}
+
+// TestUrgeTaskCooldown verifies cooldown enforcement.
+func (s *InstanceServiceTestSuite) TestUrgeTaskCooldown() {
+	buildSimpleFlow(s.T(), s.ctx, s.db)
+
+	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		FlowCode:    "simple_flow",
+		Title:       "Urge Cooldown Test",
+		ApplicantID: "applicant1",
+		FormData:    map[string]any{"reason": "test"},
+	})
+	s.Require().NoError(err, "Should start instance")
+
+	tasks := queryTasks(s.T(), s.ctx, s.db, instance.ID)
+	s.Require().NotEmpty(tasks, "Should have tasks")
+
+	cmd := UrgeTaskCmd{
+		InstanceID: instance.ID,
+		TaskID:     tasks[0].ID,
+		UrgerID:    "applicant1",
+		Message:    "please hurry",
+	}
+
+	// First urge should succeed
+	err = s.svc.UrgeTask(s.ctx, cmd)
+	s.Require().NoError(err, "First urge should succeed")
+
+	// Second urge should fail (cooldown)
+	err = s.svc.UrgeTask(s.ctx, cmd)
+	s.Error(err, "Second urge should fail due to cooldown")
+	assert.Contains(s.T(), err.Error(), "催办操作过于频繁", "Error should mention cooldown")
 }

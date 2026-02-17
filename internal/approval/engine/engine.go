@@ -6,16 +6,21 @@ import (
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/internal/approval/publisher"
 	"github.com/ilxqx/vef-framework-go/internal/approval/strategy"
 	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/ilxqx/vef-framework-go/timex"
 )
+
+const maxNodeDepth = 100
+
+type nodeDepthKey struct{}
 
 var (
 	ErrNoMatchingEdge    = errors.New("no matching edge")
 	ErrProcessorNotFound = errors.New("processor not found")
+	ErrMaxNodeDepth      = errors.New("max node processing depth exceeded")
 )
 
 // FlowEngine is the core engine for processing approval workflows.
@@ -66,6 +71,13 @@ func (e *FlowEngine) StartProcess(ctx context.Context, db orm.DB, instance *appr
 
 // ProcessNode dispatches a node to the appropriate processor.
 func (e *FlowEngine) ProcessNode(ctx context.Context, db orm.DB, instance *approval.Instance, node *approval.FlowNode) error {
+	depth, _ := ctx.Value(nodeDepthKey{}).(int)
+	if depth >= maxNodeDepth {
+		return fmt.Errorf("%w: depth=%d, node=%s", ErrMaxNodeDepth, depth, node.ID)
+	}
+
+	ctx = context.WithValue(ctx, nodeDepthKey{}, depth+1)
+
 	processor, ok := e.processors[node.NodeKind]
 	if !ok {
 		return fmt.Errorf("%w: %s", ErrProcessorNotFound, node.NodeKind)
@@ -113,7 +125,7 @@ func (e *FlowEngine) handleProcessResult(ctx context.Context, db orm.DB, instanc
 
 	case NodeActionComplete:
 		instance.CurrentNodeID = null.StringFrom(node.ID)
-		instance.Status = string(result.FinalStatus)
+		instance.Status = result.FinalStatus
 		instance.FinishedAt = null.DateTimeFrom(timex.Now())
 
 		if _, err := db.NewUpdate().Model(instance).WherePK().Exec(ctx); err != nil {
@@ -220,18 +232,16 @@ func buildPassRuleContext(node *approval.FlowNode, tasks []approval.Task) approv
 	}
 
 	for _, t := range tasks {
-		status := approval.TaskStatus(t.Status)
-
 		// Exclude non-actionable tasks from total count:
 		// transferred, canceled, removed, skipped are no longer participating
-		switch status {
+		switch t.Status {
 		case approval.TaskTransferred, approval.TaskCanceled, approval.TaskRemoved, approval.TaskSkipped:
 			continue
 		}
 
 		ctx.TotalCount++
 
-		switch status {
+		switch t.Status {
 		case approval.TaskApproved, approval.TaskHandled:
 			ctx.ApprovedCount++
 		case approval.TaskRejected:
@@ -345,7 +355,7 @@ func (e *FlowEngine) resumeParentFlow(ctx context.Context, db orm.DB, childInsta
 	}
 
 	// Only resume if parent is still running
-	if approval.InstanceStatus(parentInstance.Status) != approval.InstanceRunning {
+	if parentInstance.Status != approval.InstanceRunning {
 		return nil
 	}
 
@@ -363,7 +373,7 @@ func (e *FlowEngine) resumeParentFlow(ctx context.Context, db orm.DB, childInsta
 	}
 
 	// Sub-flow rejected: complete parent as rejected
-	parentInstance.Status = string(approval.InstanceRejected)
+	parentInstance.Status = approval.InstanceRejected
 	parentInstance.FinishedAt = null.DateTimeFrom(timex.Now())
 
 	if _, err := db.NewUpdate().Model(&parentInstance).WherePK().Exec(ctx); err != nil {

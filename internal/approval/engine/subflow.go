@@ -84,7 +84,7 @@ func (p *SubFlowProcessor) Process(ctx context.Context, pc *ProcessContext) (*Pr
 		SerialNo:         id.Generate(),
 		ApplicantID:      pc.ApplicantID,
 		ApplicantDeptID:  pc.Instance.ApplicantDeptID,
-		Status:           string(approval.InstanceRunning),
+		Status:           approval.InstanceRunning,
 		FormData:         subFormData.ToMap(),
 	}
 	subInstance.ID = id.Generate()

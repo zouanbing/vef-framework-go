@@ -411,3 +411,57 @@ func NewFlowPublishedEvent(flowID, versionID string) *FlowPublishedEvent {
 
 func (e *FlowPublishedEvent) EventName() string     { return "approval.flow.published" }
 func (e *FlowPublishedEvent) OccurredAt() time.Time { return e.OccurredTime }
+
+// ==================== Timeout & Urge Events ====================
+
+// TaskDeadlineWarningEvent fired when a task is approaching its deadline.
+type TaskDeadlineWarningEvent struct {
+	TaskID       string    `json:"taskId"`
+	InstanceID   string    `json:"instanceId"`
+	NodeID       string    `json:"nodeId"`
+	AssigneeID   string    `json:"assigneeId"`
+	Deadline     time.Time `json:"deadline"`
+	HoursLeft    int       `json:"hoursLeft"`
+	OccurredTime time.Time `json:"occurredTime"`
+}
+
+func NewTaskDeadlineWarningEvent(taskID, instanceID, nodeID, assigneeID string, deadline time.Time, hoursLeft int) *TaskDeadlineWarningEvent {
+	return &TaskDeadlineWarningEvent{
+		TaskID:       taskID,
+		InstanceID:   instanceID,
+		NodeID:       nodeID,
+		AssigneeID:   assigneeID,
+		Deadline:     deadline,
+		HoursLeft:    hoursLeft,
+		OccurredTime: time.Now(),
+	}
+}
+
+func (e *TaskDeadlineWarningEvent) EventName() string     { return "approval.task.deadline_warning" }
+func (e *TaskDeadlineWarningEvent) OccurredAt() time.Time { return e.OccurredTime }
+
+// TaskUrgedEvent fired when a task assignee is urged/reminded.
+type TaskUrgedEvent struct {
+	InstanceID   string    `json:"instanceId"`
+	NodeID       string    `json:"nodeId"`
+	TaskID       string    `json:"taskId"`
+	UrgerID      string    `json:"urgerId"`
+	TargetUserID string    `json:"targetUserId"`
+	Message      string    `json:"message"`
+	OccurredTime time.Time `json:"occurredTime"`
+}
+
+func NewTaskUrgedEvent(instanceID, nodeID, taskID, urgerID, targetUserID, message string) *TaskUrgedEvent {
+	return &TaskUrgedEvent{
+		InstanceID:   instanceID,
+		NodeID:       nodeID,
+		TaskID:       taskID,
+		UrgerID:      urgerID,
+		TargetUserID: targetUserID,
+		Message:      message,
+		OccurredTime: time.Now(),
+	}
+}
+
+func (e *TaskUrgedEvent) EventName() string     { return "approval.task.urged" }
+func (e *TaskUrgedEvent) OccurredAt() time.Time { return e.OccurredTime }

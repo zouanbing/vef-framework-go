@@ -161,6 +161,9 @@ func createApprovalTables(t *testing.T, bunDB *bun.DB) {
 			is_transfer_allowed BOOLEAN NOT NULL DEFAULT true,
 			is_opinion_required BOOLEAN NOT NULL DEFAULT false,
 			timeout_hours INTEGER NOT NULL DEFAULT 0,
+			timeout_action VARCHAR(32) NOT NULL DEFAULT 'none',
+			timeout_notify_before_hours INTEGER NOT NULL DEFAULT 0,
+			urge_cooldown_minutes INTEGER NOT NULL DEFAULT 60,
 			duplicate_handler_action VARCHAR(32) NOT NULL DEFAULT 'none',
 			sub_flow_config JSONB,
 			branches JSONB
@@ -337,6 +340,24 @@ func createApprovalTables(t *testing.T, bunDB *bun.DB) {
 			retry_count INTEGER NOT NULL DEFAULT 0,
 			last_error TEXT,
 			processed_at TIMESTAMP
+		)`,
+		`CREATE TABLE IF NOT EXISTS apv_urge_record (
+			id VARCHAR(32) PRIMARY KEY,
+			created_at TIMESTAMP NOT NULL DEFAULT LOCALTIMESTAMP,
+			created_by VARCHAR(32) NOT NULL DEFAULT 'system',
+			instance_id VARCHAR(32) NOT NULL,
+			node_id VARCHAR(32) NOT NULL,
+			task_id VARCHAR(32),
+			urger_id VARCHAR(32) NOT NULL,
+			target_user_id VARCHAR(32) NOT NULL,
+			message TEXT
+		)`,
+		`CREATE TABLE IF NOT EXISTS apv_timeout_notify (
+			id VARCHAR(32) PRIMARY KEY,
+			created_at TIMESTAMP NOT NULL DEFAULT LOCALTIMESTAMP,
+			created_by VARCHAR(32) NOT NULL DEFAULT 'system',
+			task_id VARCHAR(32) NOT NULL,
+			notify_type VARCHAR(32) NOT NULL
 		)`,
 	}
 

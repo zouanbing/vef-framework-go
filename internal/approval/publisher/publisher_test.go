@@ -286,9 +286,8 @@ func TestToMap(t *testing.T) {
 
 // TestNewEventPublisher tests new event publisher scenarios.
 func TestNewEventPublisher(t *testing.T) {
-	pub := NewEventPublisher(nil)
+	pub := NewEventPublisher()
 	require.NotNil(t, pub, "Should create publisher")
-	assert.Nil(t, pub.db, "Should store nil db")
 }
 
 func setupTestDB(t *testing.T) (orm.DB, func()) {
@@ -310,13 +309,13 @@ func setupTestDB(t *testing.T) (orm.DB, func()) {
 // TestPublishAll tests publish all scenarios.
 func TestPublishAll(t *testing.T) {
 	t.Run("NilEvents", func(t *testing.T) {
-		pub := NewEventPublisher(nil)
+		pub := NewEventPublisher()
 		err := pub.PublishAll(context.Background(), nil, nil)
 		require.NoError(t, err, "Should return nil for nil events slice")
 	})
 
 	t.Run("EmptySlice", func(t *testing.T) {
-		pub := NewEventPublisher(nil)
+		pub := NewEventPublisher()
 		err := pub.PublishAll(context.Background(), nil, []approval.DomainEvent{})
 		require.NoError(t, err, "Should return nil for zero-length events slice")
 	})
@@ -326,7 +325,7 @@ func TestPublishAll(t *testing.T) {
 		defer cleanup()
 
 		ctx := context.Background()
-		err := NewEventPublisher(db).PublishAll(ctx, db, []approval.DomainEvent{
+		err := NewEventPublisher().PublishAll(ctx, db, []approval.DomainEvent{
 			approval.NewFlowPublishedEvent("flow1", "ver1"),
 		})
 		require.NoError(t, err, "Should insert single event successfully")
@@ -336,7 +335,7 @@ func TestPublishAll(t *testing.T) {
 		require.NoError(t, err, "Should query outbox records")
 		require.Len(t, records, 1, "Should have exactly one outbox record")
 		assert.Equal(t, "approval.flow.published", records[0].EventType, "Should store correct event type")
-		assert.Equal(t, "pending", records[0].Status, "Should store pending status")
+		assert.Equal(t, approval.EventOutboxPending, records[0].Status, "Should store pending status")
 		assert.NotEmpty(t, records[0].EventID, "Should generate event ID")
 		assert.Equal(t, "flow1", records[0].Payload["flowId"], "Should marshal payload correctly")
 	})
@@ -352,7 +351,7 @@ func TestPublishAll(t *testing.T) {
 			approval.NewCcNotifiedEvent("i1", "n1", []string{"cc1"}, false),
 		}
 
-		err := NewEventPublisher(db).PublishAll(ctx, db, events)
+		err := NewEventPublisher().PublishAll(ctx, db, events)
 		require.NoError(t, err, "Should insert multiple events successfully")
 
 		var records []approval.EventOutbox
@@ -373,7 +372,7 @@ func TestPublishAll(t *testing.T) {
 		db, cleanup := setupTestDB(t)
 		defer cleanup()
 
-		err := NewEventPublisher(db).PublishAll(context.Background(), db, []approval.DomainEvent{&unmarshalableEvent{}})
+		err := NewEventPublisher().PublishAll(context.Background(), db, []approval.DomainEvent{&unmarshalableEvent{}})
 		require.Error(t, err, "Should fail when event cannot be marshaled")
 		assert.Contains(t, err.Error(), "marshal event", "Should wrap marshal error")
 	})

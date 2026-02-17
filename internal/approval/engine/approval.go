@@ -87,13 +87,13 @@ func (p *ApprovalProcessor) resolveAndProcessAssignees(ctx context.Context, pc *
 func (p *ApprovalProcessor) createApprovalTasks(ctx context.Context, pc *ProcessContext, assignees []approval.ResolvedAssignee) error {
 	for i, assignee := range assignees {
 		sortOrder := 0
-		status := string(approval.TaskPending)
+		status := approval.TaskPending
 
 		if pc.Node.ApprovalMethod == approval.ApprovalSequential {
 			sortOrder = i + 1
 
 			if i > 0 {
-				status = string(approval.TaskWaiting)
+				status = approval.TaskWaiting
 			}
 		}
 

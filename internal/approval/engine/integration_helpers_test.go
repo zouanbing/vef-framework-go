@@ -16,6 +16,7 @@ import (
 	internalORM "github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/ilxqx/vef-framework-go/timex"
 )
 
 // allModels contains all approval models for table creation.
@@ -37,6 +38,8 @@ var allModels = []any{
 	(*approval.FlowInitiator)(nil),
 	(*approval.FlowNodeCC)(nil),
 	(*approval.FlowFormField)(nil),
+	(*approval.UrgeRecord)(nil),
+	(*approval.TimeoutNotify)(nil),
 }
 
 // setupTestDB creates an in-memory SQLite database with all approval tables.
@@ -501,7 +504,7 @@ func createInstance(t *testing.T, ctx context.Context, db orm.DB, flow *approval
 		Title:         "Test Instance",
 		SerialNo:      id.Generate(),
 		ApplicantID:   applicantID,
-		Status:        string(approval.InstanceRunning),
+		Status:        approval.InstanceRunning,
 		FormData:      formData,
 	}
 	instance.ID = id.Generate()
@@ -563,7 +566,7 @@ func createParentInstance(t *testing.T, ctx context.Context, db orm.DB, flow *ap
 		Title:         "Parent Instance",
 		SerialNo:      id.Generate(),
 		ApplicantID:   applicantID,
-		Status:        string(approval.InstanceRunning),
+		Status:        approval.InstanceRunning,
 	}
 	instance.ID = id.Generate()
 	instance.CreatedBy = applicantID
@@ -584,7 +587,7 @@ func createRunningParentInstance(t *testing.T, ctx context.Context, db orm.DB, f
 		Title:         "Parent Instance",
 		SerialNo:      id.Generate(),
 		ApplicantID:   "applicant1",
-		Status:        string(approval.InstanceRunning),
+		Status:        approval.InstanceRunning,
 		CurrentNodeID: null.StringFrom(currentNodeID),
 	}
 	instance.ID = id.Generate()
@@ -608,7 +611,7 @@ func createChildInstance(t *testing.T, ctx context.Context, db orm.DB, parentIns
 		Title:            "Child Instance",
 		SerialNo:         id.Generate(),
 		ApplicantID:      "applicant1",
-		Status:           string(status),
+		Status:           status,
 	}
 	instance.ID = id.Generate()
 	instance.CreatedBy = "applicant1"
@@ -627,6 +630,8 @@ func insertDelegation(t *testing.T, ctx context.Context, db orm.DB, delegatorID,
 		DelegatorID: delegatorID,
 		DelegateeID: delegateeID,
 		FlowID:      flowID,
+		StartTime:   timex.Now().AddYears(-1),
+		EndTime:     timex.Now().AddYears(1),
 		IsActive:    isActive,
 	}
 	delegation.ID = id.Generate()

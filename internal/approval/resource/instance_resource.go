@@ -35,6 +35,7 @@ func NewInstanceResource(instanceSvc *service.InstanceService, querySvc *service
 				api.OperationSpec{Action: "find_tasks"},
 				api.OperationSpec{Action: "get_detail"},
 				api.OperationSpec{Action: "get_action_logs"},
+				api.OperationSpec{Action: "urge_task"},
 			),
 		),
 	}
@@ -75,7 +76,7 @@ type ProcessTaskParams struct {
 
 	InstanceID   string         `json:"instanceId" validate:"required"`
 	TaskID       string         `json:"taskId" validate:"required"`
-	Action       string         `json:"action" validate:"required"`
+	Action       string         `json:"action" validate:"required,oneof=approve reject transfer rollback handle"`
 	OperatorID   string         `json:"operatorId" validate:"required"`
 	Opinion      string         `json:"opinion"`
 	FormData     map[string]any `json:"formData"`
@@ -143,8 +144,8 @@ type AddAssigneeParams struct {
 
 	InstanceID string   `json:"instanceId" validate:"required"`
 	TaskID     string   `json:"taskId" validate:"required"`
-	UserIDs    []string `json:"userIds" validate:"required,min=1"`
-	AddType    string   `json:"addType" validate:"required"`
+	UserIDs    []string `json:"userIds" validate:"required,min=1,max=50"`
+	AddType    string   `json:"addType" validate:"required,oneof=before after parallel"`
 	OperatorID string   `json:"operatorId" validate:"required"`
 }
 
@@ -272,4 +273,28 @@ func (r *InstanceResource) GetActionLogs(ctx fiber.Ctx, params GetActionLogsPara
 	}
 
 	return result.Ok(logs).Response(ctx)
+}
+
+// UrgeTaskParams contains the parameters for urging a task.
+type UrgeTaskParams struct {
+	api.P
+
+	InstanceID string `json:"instanceId" validate:"required"`
+	TaskID     string `json:"taskId" validate:"required"`
+	UrgerID    string `json:"urgerId" validate:"required"`
+	Message    string `json:"message"`
+}
+
+// UrgeTask sends an urge notification for a pending task.
+func (r *InstanceResource) UrgeTask(ctx fiber.Ctx, params UrgeTaskParams) error {
+	if err := r.instanceService.UrgeTask(ctx.Context(), service.UrgeTaskCmd{
+		InstanceID: params.InstanceID,
+		TaskID:     params.TaskID,
+		UrgerID:    params.UrgerID,
+		Message:    params.Message,
+	}); err != nil {
+		return err
+	}
+
+	return result.Ok().Response(ctx)
 }

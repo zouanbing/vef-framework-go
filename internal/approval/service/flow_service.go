@@ -20,6 +20,7 @@ type DeployFlowCmd struct {
 	FlowCode   string
 	FlowName   string
 	CategoryID string
+	TenantID   string
 	Definition string // JSON of approval.FlowDefinition
 	OperatorID string
 }
@@ -69,9 +70,14 @@ func (s *FlowService) DeployFlow(ctx context.Context, cmd DeployFlowCmd) (*appro
 
 		isNewFlow := result.IsRecordNotFound(err)
 
+		tenantID := cmd.TenantID
+		if tenantID == "" {
+			tenantID = "default"
+		}
+
 		if isNewFlow {
 			flow = approval.Flow{
-				TenantID:             "default",
+				TenantID:             tenantID,
 				CategoryID:           cmd.CategoryID,
 				Code:                 cmd.FlowCode,
 				Name:                 cmd.FlowName,
@@ -317,6 +323,22 @@ func applyNodeData(node *approval.FlowNode, data map[string]any) {
 	if v, ok := data["timeoutHours"]; ok {
 		if f, ok := v.(float64); ok {
 			node.TimeoutHours = int(f)
+		}
+	}
+
+	if v, ok := data["timeoutAction"].(string); ok {
+		node.TimeoutAction = approval.TimeoutAction(v)
+	}
+
+	if v, ok := data["timeoutNotifyBeforeHours"]; ok {
+		if f, ok := v.(float64); ok {
+			node.TimeoutNotifyBeforeHours = int(f)
+		}
+	}
+
+	if v, ok := data["urgeCooldownMinutes"]; ok {
+		if f, ok := v.(float64); ok {
+			node.UrgeCooldownMinutes = int(f)
 		}
 	}
 

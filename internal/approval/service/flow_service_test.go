@@ -30,7 +30,7 @@ func TestFlowServiceTestSuite(t *testing.T) {
 func (s *FlowServiceTestSuite) SetupTest() {
 	s.ctx = context.Background()
 	s.db, s.cleanup = setupTestDB(s.T())
-	pub := publisher.NewEventPublisher(s.db)
+	pub := publisher.NewEventPublisher()
 	s.svc = NewFlowService(s.db, pub)
 }
 
@@ -815,7 +815,7 @@ func TestGetFlowGraphQueryErrors(t *testing.T) {
 			db, cleanup := setupTestDB(t)
 			defer cleanup()
 
-			pub := publisher.NewEventPublisher(db)
+			pub := publisher.NewEventPublisher()
 			svc := NewFlowService(db, pub)
 
 			data, _ := json.Marshal(minimalFlowDefinition())
@@ -854,7 +854,7 @@ func TestDeployFlowExtendedNodeProperties(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
 
-	pub := publisher.NewEventPublisher(db)
+	pub := publisher.NewEventPublisher()
 	svc := NewFlowService(db, pub)
 
 	def := approval.FlowDefinition{

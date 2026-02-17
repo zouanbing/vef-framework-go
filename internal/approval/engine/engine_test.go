@@ -69,39 +69,39 @@ func TestBuildPassRuleContext(t *testing.T) {
 		{
 			name: "AllPending",
 			tasks: []approval.Task{
-				{Status: string(approval.TaskPending)},
-				{Status: string(approval.TaskPending)},
-				{Status: string(approval.TaskPending)},
+				{Status: approval.TaskPending},
+				{Status: approval.TaskPending},
+				{Status: approval.TaskPending},
 			},
 			wantTotal: 3, wantApproved: 0, wantRejected: 0,
 		},
 		{
 			name: "MixedStatuses",
 			tasks: []approval.Task{
-				{Status: string(approval.TaskApproved)},
-				{Status: string(approval.TaskRejected)},
-				{Status: string(approval.TaskPending)},
-				{Status: string(approval.TaskApproved)},
+				{Status: approval.TaskApproved},
+				{Status: approval.TaskRejected},
+				{Status: approval.TaskPending},
+				{Status: approval.TaskApproved},
 			},
 			wantTotal: 4, wantApproved: 2, wantRejected: 1,
 		},
 		{
 			name: "ExcludesNonActionable",
 			tasks: []approval.Task{
-				{Status: string(approval.TaskApproved)},
-				{Status: string(approval.TaskTransferred)},
-				{Status: string(approval.TaskCanceled)},
-				{Status: string(approval.TaskRemoved)},
-				{Status: string(approval.TaskSkipped)},
-				{Status: string(approval.TaskPending)},
+				{Status: approval.TaskApproved},
+				{Status: approval.TaskTransferred},
+				{Status: approval.TaskCanceled},
+				{Status: approval.TaskRemoved},
+				{Status: approval.TaskSkipped},
+				{Status: approval.TaskPending},
 			},
 			wantTotal: 2, wantApproved: 1, wantRejected: 0,
 		},
 		{
 			name: "HandledCountsAsApproved",
 			tasks: []approval.Task{
-				{Status: string(approval.TaskHandled)},
-				{Status: string(approval.TaskApproved)},
+				{Status: approval.TaskHandled},
+				{Status: approval.TaskApproved},
 			},
 			wantTotal: 2, wantApproved: 2, wantRejected: 0,
 		},
@@ -137,8 +137,8 @@ func TestEvaluatePassRuleWithTasks(t *testing.T) {
 
 	t.Run("AllApproved", func(t *testing.T) {
 		tasks := []approval.Task{
-			{Status: string(approval.TaskApproved)},
-			{Status: string(approval.TaskApproved)},
+			{Status: approval.TaskApproved},
+			{Status: approval.TaskApproved},
 		}
 		result, err := engine.EvaluatePassRuleWithTasks(node, tasks)
 		require.NoError(t, err, "Should evaluate without error")
@@ -147,8 +147,8 @@ func TestEvaluatePassRuleWithTasks(t *testing.T) {
 
 	t.Run("HasPending", func(t *testing.T) {
 		tasks := []approval.Task{
-			{Status: string(approval.TaskApproved)},
-			{Status: string(approval.TaskPending)},
+			{Status: approval.TaskApproved},
+			{Status: approval.TaskPending},
 		}
 		result, err := engine.EvaluatePassRuleWithTasks(node, tasks)
 		require.NoError(t, err, "Should evaluate without error")
@@ -157,8 +157,8 @@ func TestEvaluatePassRuleWithTasks(t *testing.T) {
 
 	t.Run("HasRejected", func(t *testing.T) {
 		tasks := []approval.Task{
-			{Status: string(approval.TaskApproved)},
-			{Status: string(approval.TaskRejected)},
+			{Status: approval.TaskApproved},
+			{Status: approval.TaskRejected},
 		}
 		result, err := engine.EvaluatePassRuleWithTasks(node, tasks)
 		require.NoError(t, err, "Should evaluate without error")

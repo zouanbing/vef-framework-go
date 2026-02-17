@@ -12,10 +12,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/timex"
 )
 
-func newNullTime(t time.Time) null.Time {
-	return null.NewTime(timex.Time(t), true)
-}
-
 // TestDeduplicateAssignees tests deduplicate assignees scenarios.
 func TestDeduplicateAssignees(t *testing.T) {
 	tests := []struct {
@@ -171,14 +167,14 @@ func TestMatchDelegation(t *testing.T) {
 		{
 			name: "ExpiredDelegation",
 			delegations: []approval.Delegation{
-				{DelegateeID: "d1", EndTime: newNullTime(past)},
+				{DelegateeID: "d1", EndTime: timex.DateTime(past)},
 			},
 			expectedID: "",
 		},
 		{
 			name: "NotStartedDelegation",
 			delegations: []approval.Delegation{
-				{DelegateeID: "d1", StartTime: newNullTime(future)},
+				{DelegateeID: "d1", StartTime: timex.DateTime(future)},
 			},
 			expectedID: "",
 		},

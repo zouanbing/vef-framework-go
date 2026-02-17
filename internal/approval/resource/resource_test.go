@@ -59,9 +59,9 @@ func TestNewInstanceResource(t *testing.T) {
 		assert.Same(t, querySvc, r.queryService, "Should store the injected QueryService")
 	})
 
-	t.Run("ShouldHaveTenOperations", func(t *testing.T) {
+	t.Run("ShouldHaveElevenOperations", func(t *testing.T) {
 		ops := r.Operations()
-		require.Len(t, ops, 10, "Should have exactly 10 operations")
+		require.Len(t, ops, 11, "Should have exactly 11 operations")
 
 		expectedActions := []string{
 			"start",
@@ -74,13 +74,14 @@ func TestNewInstanceResource(t *testing.T) {
 			"find_tasks",
 			"get_detail",
 			"get_action_logs",
+			"urge_task",
 		}
 		actions := make([]string, len(ops))
 		for i, op := range ops {
 			actions[i] = op.Action
 		}
 		assert.Equal(t, expectedActions, actions,
-			"Should have all 10 expected actions in order")
+			"Should have all 11 expected actions in order")
 	})
 }
 

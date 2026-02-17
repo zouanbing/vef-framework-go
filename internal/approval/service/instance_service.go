@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"time"
 
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/id"
@@ -12,6 +13,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/approval/publisher"
 	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/timex"
 )
 
@@ -35,6 +37,14 @@ type ProcessTaskCmd struct {
 	FormData     map[string]any
 	TransferToID string
 	TargetNodeID string
+}
+
+// UrgeTaskCmd contains the parameters for urging a task.
+type UrgeTaskCmd struct {
+	InstanceID string
+	TaskID     string
+	UrgerID    string
+	Message    string
 }
 
 // AddAssigneeCmd contains the parameters for dynamically adding assignees.
@@ -115,7 +125,7 @@ func (s *InstanceService) StartInstance(ctx context.Context, cmd StartInstanceCm
 			SerialNo:        serialNo,
 			ApplicantID:     cmd.ApplicantID,
 			ApplicantDeptID: null.NewString(cmd.ApplicantDeptID, cmd.ApplicantDeptID != ""),
-			Status:          string(approval.InstanceRunning),
+			Status:          approval.InstanceRunning,
 			FormData:        cmd.FormData,
 		}
 		instance.ID = id.Generate()
@@ -132,7 +142,7 @@ func (s *InstanceService) StartInstance(ctx context.Context, cmd StartInstanceCm
 
 		submitLog := &approval.ActionLog{
 			InstanceID: instance.ID,
-			Action:     string(approval.ActionSubmit),
+			Action:     approval.ActionSubmit,
 			OperatorID: cmd.ApplicantID,
 		}
 		submitLog.ID = id.Generate()
@@ -178,7 +188,7 @@ func (s *InstanceService) ProcessTask(ctx context.Context, cmd ProcessTaskCmd) e
 			return ErrInstanceNotFound
 		}
 
-		if approval.InstanceStatus(instance.Status) != approval.InstanceRunning {
+		if instance.Status != approval.InstanceRunning {
 			return ErrInstanceCompleted
 		}
 
@@ -195,7 +205,7 @@ func (s *InstanceService) ProcessTask(ctx context.Context, cmd ProcessTaskCmd) e
 			return ErrNotAssignee
 		}
 
-		if approval.TaskStatus(task.Status) != approval.TaskPending {
+		if task.Status != approval.TaskPending {
 			return ErrTaskNotPending
 		}
 
@@ -244,7 +254,7 @@ func (s *InstanceService) ProcessTask(ctx context.Context, cmd ProcessTaskCmd) e
 			InstanceID: instance.ID,
 			NodeID:     null.StringFrom(task.NodeID),
 			TaskID:     null.StringFrom(task.ID),
-			Action:     cmd.Action,
+			Action:     approval.ActionType(cmd.Action),
 			OperatorID: cmd.OperatorID,
 			Opinion:    null.NewString(cmd.Opinion, cmd.Opinion != ""),
 		}
@@ -363,13 +373,9 @@ func (s *InstanceService) handleTransfer(
 		NodeID:     task.NodeID,
 		AssigneeID: cmd.TransferToID,
 		SortOrder:  task.SortOrder,
-		Status:     string(approval.TaskPending),
+		Status:     approval.TaskPending,
 		Deadline:   task.Deadline,
 	}
-	newTask.ID = id.Generate()
-	newTask.CreatedBy = cmd.OperatorID
-	newTask.UpdatedBy = cmd.OperatorID
-
 	if _, err := tx.NewInsert().Model(newTask).Exec(ctx); err != nil {
 		return nil, fmt.Errorf("insert transfer task: %w", err)
 	}
@@ -417,8 +423,11 @@ func (s *InstanceService) handleRollback(
 			c.Equals("node_id", cmd.TargetNodeID)
 		}).Scan(ctx)
 
-		if err == nil && snapshot.FormData != nil {
+		switch {
+		case err == nil && snapshot.FormData != nil:
 			instance.FormData = snapshot.FormData
+		case err != nil && !result.IsRecordNotFound(err):
+			return nil, fmt.Errorf("load form snapshot: %w", err)
 		}
 	}
 
@@ -452,11 +461,11 @@ func validateOpinion(node *approval.FlowNode, opinion string) error {
 
 // finishTask transitions a task to the given status and sets its FinishedAt timestamp.
 func finishTask(ctx context.Context, tx orm.DB, task *approval.Task, status approval.TaskStatus) error {
-	if !engine.TaskStateMachine.CanTransition(approval.TaskStatus(task.Status), status) {
+	if !engine.TaskStateMachine.CanTransition(task.Status, status) {
 		return ErrInvalidTaskTransition
 	}
 
-	task.Status = string(status)
+	task.Status = status
 	task.FinishedAt = null.DateTimeFrom(timex.Now())
 
 	if _, err := tx.NewUpdate().Model(task).WherePK().Exec(ctx); err != nil {
@@ -473,19 +482,22 @@ func (s *InstanceService) activateNextSequentialTask(ctx context.Context, tx orm
 	err := tx.NewSelect().Model(&nextTask).Where(func(c orm.ConditionBuilder) {
 		c.Equals("instance_id", instance.ID)
 		c.Equals("node_id", node.ID)
-		c.Equals("status", string(approval.TaskWaiting))
+		c.Equals("status", approval.TaskWaiting)
 	}).OrderBy("sort_order").Limit(1).Scan(ctx)
 
 	if err != nil {
-		// No more waiting tasks, that's fine
-		return nil
+		if result.IsRecordNotFound(err) {
+			return nil
+		}
+
+		return fmt.Errorf("find next sequential task: %w", err)
 	}
 
 	if !engine.TaskStateMachine.CanTransition(approval.TaskWaiting, approval.TaskPending) {
 		return nil
 	}
 
-	nextTask.Status = string(approval.TaskPending)
+	nextTask.Status = approval.TaskPending
 
 	_, err = tx.NewUpdate().Model(&nextTask).WherePK().Exec(ctx)
 
@@ -495,7 +507,7 @@ func (s *InstanceService) activateNextSequentialTask(ctx context.Context, tx orm
 // cancelRemainingTasks cancels all pending/waiting tasks on the given node.
 func (s *InstanceService) cancelRemainingTasks(ctx context.Context, tx orm.DB, instanceID, nodeID string) error {
 	_, err := tx.NewUpdate().Model((*approval.Task)(nil)).
-		Set("status", string(approval.TaskCanceled)).
+		Set("status", approval.TaskCanceled).
 		Where(func(c orm.ConditionBuilder) {
 			c.Equals("instance_id", instanceID)
 			c.Equals("node_id", nodeID)
@@ -508,7 +520,7 @@ func (s *InstanceService) cancelRemainingTasks(ctx context.Context, tx orm.DB, i
 // cancelInstanceTasks cancels all pending/waiting tasks for an entire instance.
 func cancelInstanceTasks(ctx context.Context, tx orm.DB, instanceID string) error {
 	_, err := tx.NewUpdate().Model((*approval.Task)(nil)).
-		Set("status", string(approval.TaskCanceled)).
+		Set("status", approval.TaskCanceled).
 		Where(func(c orm.ConditionBuilder) {
 			c.Equals("instance_id", instanceID)
 			c.In("status", cancelableTaskStatuses)
@@ -561,7 +573,11 @@ func (s *InstanceService) validateRollbackTarget(ctx context.Context, tx orm.DB,
 			c.Equals("id", targetNodeID)
 			c.Equals("flow_version_id", instance.FlowVersionID)
 		}).Count(ctx)
-		if err != nil || count == 0 {
+		if err != nil {
+			return fmt.Errorf("find rollback target node: %w", err)
+		}
+
+		if count == 0 {
 			return ErrInvalidRollbackTarget
 		}
 	}
@@ -596,7 +612,7 @@ func (s *InstanceService) handleNodeCompletion(
 		return nil, nil
 
 	case approval.PassRuleRejected:
-		instance.Status = string(approval.InstanceRejected)
+		instance.Status = approval.InstanceRejected
 		instance.FinishedAt = null.DateTimeFrom(timex.Now())
 
 		if err := s.cancelRemainingTasks(ctx, tx, instance.ID, node.ID); err != nil {
@@ -631,12 +647,12 @@ func (s *InstanceService) Withdraw(ctx context.Context, instanceID, operatorID, 
 			return ErrNotApplicant
 		}
 
-		if !engine.InstanceStateMachine.CanTransition(approval.InstanceStatus(instance.Status), approval.InstanceWithdrawn) {
+		if !engine.InstanceStateMachine.CanTransition(instance.Status, approval.InstanceWithdrawn) {
 			return ErrWithdrawNotAllowed
 		}
 
 		now := timex.Now()
-		instance.Status = string(approval.InstanceWithdrawn)
+		instance.Status = approval.InstanceWithdrawn
 		instance.FinishedAt = null.DateTimeFrom(now)
 
 		if _, err := tx.NewUpdate().Model(&instance).WherePK().Exec(ctx); err != nil {
@@ -649,7 +665,7 @@ func (s *InstanceService) Withdraw(ctx context.Context, instanceID, operatorID, 
 
 		actionLog := &approval.ActionLog{
 			InstanceID: instanceID,
-			Action:     string(approval.ActionWithdraw),
+			Action:     approval.ActionWithdraw,
 			OperatorID: operatorID,
 			Opinion:    null.NewString(reason, reason != ""),
 		}
@@ -688,9 +704,28 @@ func (s *InstanceService) AddCC(ctx context.Context, instanceID string, ccUserID
 			}
 		}
 
+		// Filter out already-existing CC records to avoid duplicates
+		var existingCCs []approval.CCRecord
+
+		if err := tx.NewSelect().Model(&existingCCs).Where(func(c orm.ConditionBuilder) {
+			c.Equals("instance_id", instanceID)
+			c.In("cc_user_id", ccUserIDs)
+		}).Scan(ctx); err != nil {
+			return fmt.Errorf("query existing cc records: %w", err)
+		}
+
+		existingSet := make(map[string]struct{}, len(existingCCs))
+		for _, cc := range existingCCs {
+			existingSet[cc.CCUserID] = struct{}{}
+		}
+
 		records := make([]approval.CCRecord, 0, len(ccUserIDs))
 
 		for _, userID := range ccUserIDs {
+			if _, exists := existingSet[userID]; exists {
+				continue
+			}
+
 			record := approval.CCRecord{
 				InstanceID: instanceID,
 				CCUserID:   userID,
@@ -699,6 +734,10 @@ func (s *InstanceService) AddCC(ctx context.Context, instanceID string, ccUserID
 			record.ID = id.Generate()
 			record.CreatedBy = operatorID
 			records = append(records, record)
+		}
+
+		if len(records) == 0 {
+			return nil
 		}
 
 		if _, err := tx.NewInsert().Model(&records).Exec(ctx); err != nil {
@@ -722,7 +761,7 @@ func (s *InstanceService) AddAssignee(ctx context.Context, cmd AddAssigneeCmd) e
 			return ErrInstanceNotFound
 		}
 
-		if approval.InstanceStatus(instance.Status) != approval.InstanceRunning {
+		if instance.Status != approval.InstanceRunning {
 			return ErrInstanceCompleted
 		}
 
@@ -787,9 +826,9 @@ func (s *InstanceService) AddAssignee(ctx context.Context, cmd AddAssigneeCmd) e
 
 			switch addType {
 			case approval.AddAssigneeBefore:
-				newTask.Status = string(approval.TaskPending)
-				if engine.TaskStateMachine.CanTransition(approval.TaskStatus(task.Status), approval.TaskWaiting) {
-					task.Status = string(approval.TaskWaiting)
+				newTask.Status = approval.TaskPending
+				if engine.TaskStateMachine.CanTransition(task.Status, approval.TaskWaiting) {
+					task.Status = approval.TaskWaiting
 
 					if _, err := tx.NewUpdate().Model(&task).WherePK().Exec(ctx); err != nil {
 						return fmt.Errorf("update original task: %w", err)
@@ -797,10 +836,10 @@ func (s *InstanceService) AddAssignee(ctx context.Context, cmd AddAssigneeCmd) e
 				}
 
 			case approval.AddAssigneeAfter:
-				newTask.Status = string(approval.TaskWaiting)
+				newTask.Status = approval.TaskWaiting
 
 			case approval.AddAssigneeParallel:
-				newTask.Status = string(approval.TaskPending)
+				newTask.Status = approval.TaskPending
 			}
 
 			if _, err := tx.NewInsert().Model(newTask).Exec(ctx); err != nil {
@@ -813,7 +852,7 @@ func (s *InstanceService) AddAssignee(ctx context.Context, cmd AddAssigneeCmd) e
 			InstanceID:       instance.ID,
 			NodeID:           null.StringFrom(task.NodeID),
 			TaskID:           null.StringFrom(task.ID),
-			Action:           string(approval.ActionAddAssignee),
+			Action:           approval.ActionAddAssignee,
 			OperatorID:       cmd.OperatorID,
 			AddAssigneeType:  null.StringFrom(cmd.AddType),
 			AddAssigneeToIDs: cmd.UserIDs,
@@ -868,7 +907,7 @@ func (s *InstanceService) RemoveAssignee(ctx context.Context, taskID, operatorID
 			return ErrLastAssigneeRemoval
 		}
 
-		originalStatus := approval.TaskStatus(task.Status)
+		originalStatus := task.Status
 		if err := finishTask(ctx, tx, &task, approval.TaskRemoved); err != nil {
 			return err
 		}
@@ -891,7 +930,7 @@ func (s *InstanceService) RemoveAssignee(ctx context.Context, taskID, operatorID
 			InstanceID:        task.InstanceID,
 			NodeID:            null.StringFrom(task.NodeID),
 			TaskID:            null.StringFrom(task.ID),
-			Action:            string(approval.ActionRemoveAssignee),
+			Action:            approval.ActionRemoveAssignee,
 			OperatorID:        operatorID,
 			RemoveAssigneeIDs: []string{task.AssigneeID},
 		}
@@ -937,12 +976,9 @@ func (s *InstanceService) canRemoveAssigneeTask(ctx context.Context, tx orm.DB, 
 	simulatedTasks := make([]approval.Task, 0, len(tasks))
 	for _, current := range tasks {
 		if current.ID == task.ID {
-			current.Status = string(approval.TaskRemoved)
-		} else {
-			status := approval.TaskStatus(current.Status)
-			if status == approval.TaskPending || status == approval.TaskWaiting {
-				hasOtherActionable = true
-			}
+			current.Status = approval.TaskRemoved
+		} else if current.Status == approval.TaskPending || current.Status == approval.TaskWaiting {
+			hasOtherActionable = true
 		}
 
 		simulatedTasks = append(simulatedTasks, current)
@@ -1030,7 +1066,7 @@ func (s *InstanceService) checkInitiationPermission(ctx context.Context, tx orm.
 			for _, roleID := range ini.InitiatorIDs {
 				users, err := s.userService.GetUsersByRole(ctx, roleID)
 				if err != nil {
-					continue
+					return false, fmt.Errorf("get users by role %s: %w", roleID, err)
 				}
 
 				if slices.Contains(users, applicantID) {
@@ -1045,6 +1081,7 @@ func (s *InstanceService) checkInitiationPermission(ctx context.Context, tx orm.
 
 // filterEditableFormData filters form data to only include fields that are editable or required
 // based on the node's field permissions configuration.
+// Fields without explicit permission are rejected (deny-by-default).
 func filterEditableFormData(formData map[string]any, permissions map[string]any) map[string]any {
 	if len(permissions) == 0 {
 		return formData
@@ -1055,7 +1092,6 @@ func filterEditableFormData(formData map[string]any, permissions map[string]any)
 	for k, v := range formData {
 		perm, hasPerm := permissions[k]
 		if !hasPerm {
-			filtered[k] = v
 			continue
 		}
 
@@ -1066,4 +1102,77 @@ func filterEditableFormData(formData map[string]any, permissions map[string]any)
 	}
 
 	return filtered
+}
+
+// UrgeTask sends an urge notification for a pending task with cooldown enforcement.
+func (s *InstanceService) UrgeTask(ctx context.Context, cmd UrgeTaskCmd) error {
+	return s.db.RunInTX(ctx, func(ctx context.Context, tx orm.DB) error {
+		// Load the task
+		var task approval.Task
+		if err := tx.NewSelect().Model(&task).Where(func(c orm.ConditionBuilder) {
+			c.Equals("id", cmd.TaskID)
+			c.Equals("instance_id", cmd.InstanceID)
+		}).Scan(ctx); err != nil {
+			return ErrTaskNotFound
+		}
+
+		// Only pending or waiting tasks can be urged
+		if task.Status != approval.TaskPending && task.Status != approval.TaskWaiting {
+			return ErrTaskNotPending
+		}
+
+		// Load node to check cooldown settings
+		var node approval.FlowNode
+		if err := tx.NewSelect().Model(&node).Where(func(c orm.ConditionBuilder) {
+			c.Equals("id", task.NodeID)
+		}).Scan(ctx); err != nil {
+			return fmt.Errorf("load node: %w", err)
+		}
+
+		// Enforce cooldown: check if a recent urge exists within the cooldown window
+		cooldownMinutes := node.UrgeCooldownMinutes
+		if cooldownMinutes <= 0 {
+			cooldownMinutes = 30 // default 30 minutes
+		}
+
+		cooldownSince := timex.DateTime(time.Now().Add(-time.Duration(cooldownMinutes) * time.Minute))
+
+		existingCount, err := tx.NewSelect().Model((*approval.UrgeRecord)(nil)).Where(func(c orm.ConditionBuilder) {
+			c.Equals("task_id", cmd.TaskID)
+			c.Equals("urger_id", cmd.UrgerID)
+			c.GreaterThan("created_at", cooldownSince)
+		}).Count(ctx)
+		if err != nil {
+			return fmt.Errorf("check urge cooldown: %w", err)
+		}
+
+		if existingCount > 0 {
+			return result.Err(
+				fmt.Sprintf("催办操作过于频繁，请 %d 分钟后再试", cooldownMinutes),
+				result.WithCode(ErrCodeUrgeCooldown),
+			)
+		}
+
+		// Insert urge record
+		record := &approval.UrgeRecord{
+			InstanceID:   cmd.InstanceID,
+			NodeID:       task.NodeID,
+			TaskID:       null.StringFrom(cmd.TaskID),
+			UrgerID:      cmd.UrgerID,
+			TargetUserID: task.AssigneeID,
+			Message:      cmd.Message,
+		}
+
+		if _, err := tx.NewInsert().Model(record).Exec(ctx); err != nil {
+			return fmt.Errorf("insert urge record: %w", err)
+		}
+
+		// Publish urge event
+		event := approval.NewTaskUrgedEvent(
+			cmd.InstanceID, task.NodeID, cmd.TaskID,
+			cmd.UrgerID, task.AssigneeID, cmd.Message,
+		)
+
+		return s.publisher.PublishAll(ctx, tx, []approval.DomainEvent{event})
+	})
 }

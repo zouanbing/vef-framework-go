@@ -38,6 +38,8 @@ const (
 
 	ErrCodeDelegationNotFound = 40501
 	ErrCodeDelegationConflict = 40502
+
+	ErrCodeUrgeCooldown = 40601
 )
 
 // Error definitions.

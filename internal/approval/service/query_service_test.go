@@ -35,7 +35,7 @@ func (s *QueryServiceTestSuite) SetupTest() {
 	s.db, s.cleanup = setupTestDB(s.T())
 	s.svc = NewQueryService(s.db)
 
-	pub := publisher.NewEventPublisher(s.db)
+	pub := publisher.NewEventPublisher()
 	mockOrg := &MockOrganizationService{}
 	mockUser := &MockUserService{}
 	eng := setupEngine(mockOrg, mockUser, pub)
@@ -103,7 +103,7 @@ func (s *QueryServiceTestSuite) TestFindInstancesFilterByStatus() {
 	})
 	s.Require().NoError(err, "Should not return error")
 	s.Equal(1, count)
-	s.Equal(string(approval.InstanceRunning), results[0].Status)
+	s.Equal(approval.InstanceRunning, results[0].Status)
 
 	results, count, err = s.svc.FindInstances(s.ctx, InstanceQuery{
 		Status:   string(approval.InstanceRejected),
@@ -234,7 +234,7 @@ func (s *QueryServiceTestSuite) TestFindTasksFilterByStatus() {
 	s.Require().NoError(err, "Should not return error")
 	s.True(count > 0)
 	for _, task := range results {
-		s.Equal(string(approval.TaskPending), task.Status)
+		s.Equal(approval.TaskPending, task.Status)
 	}
 }
 
@@ -274,7 +274,7 @@ func (s *QueryServiceTestSuite) TestGetActionLogsSuccess() {
 	logs, err := s.svc.GetActionLogs(s.ctx, instance.ID)
 	s.Require().NoError(err, "GetActionLogs should succeed")
 	s.NotEmpty(logs, "Should have at least the submit action log")
-	s.Equal(string(approval.ActionSubmit), logs[0].Action)
+	s.Equal(approval.ActionSubmit, logs[0].Action)
 }
 
 func (s *QueryServiceTestSuite) TestGetActionLogsEmptyResult() {

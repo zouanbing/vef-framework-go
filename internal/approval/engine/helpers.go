@@ -9,6 +9,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/approval/strategy"
 	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/ilxqx/vef-framework-go/timex"
 )
 
 // saveFormSnapshot persists a snapshot of the form data at the current node.
@@ -83,13 +84,16 @@ func createTasksForUsers(ctx context.Context, pc *ProcessContext, userIDs []stri
 		return nil, ErrNoAssignee
 	}
 
+	deadline := computeDeadline(pc.Node)
+
 	for _, uid := range userIDs {
 		task := &approval.Task{
 			InstanceID: pc.Instance.ID,
 			NodeID:     pc.Node.ID,
 			AssigneeID: uid,
 			SortOrder:  0,
-			Status:     string(approval.TaskPending),
+			Status:     approval.TaskPending,
+			Deadline:   deadline,
 		}
 
 		if _, err := pc.DB.NewInsert().Model(task).Exec(ctx); err != nil {
@@ -151,13 +155,16 @@ func predictEmptyAssignee(pc *ProcessContext) ([]string, error) {
 
 // createTasksWithDelegation creates tasks for resolved assignees, setting DelegateFromID when applicable.
 func createTasksWithDelegation(ctx context.Context, pc *ProcessContext, assignees []approval.ResolvedAssignee) error {
+	deadline := computeDeadline(pc.Node)
+
 	for _, assignee := range assignees {
 		task := &approval.Task{
 			InstanceID: pc.Instance.ID,
 			NodeID:     pc.Node.ID,
 			AssigneeID: assignee.UserID,
 			SortOrder:  0,
-			Status:     string(approval.TaskPending),
+			Status:     approval.TaskPending,
+			Deadline:   deadline,
 		}
 
 		if assignee.DelegateFromID != "" {
@@ -181,6 +188,16 @@ func getSuperior(ctx context.Context, orgService approval.OrganizationService, u
 	uid, _, err := orgService.GetSuperior(ctx, userID)
 
 	return uid, err
+}
+
+// computeDeadline returns a deadline based on the node's TimeoutHours configuration.
+// Returns a zero-value null.DateTime if TimeoutHours is not set.
+func computeDeadline(node *approval.FlowNode) null.DateTime {
+	if node.TimeoutHours <= 0 {
+		return null.DateTime{}
+	}
+
+	return null.DateTimeFrom(timex.DateTime(timex.Now().Unwrap().Add(time.Duration(node.TimeoutHours) * time.Hour)))
 }
 
 // extractUserIDs extracts user IDs from a slice of ResolvedAssignee.
@@ -223,7 +240,12 @@ func resolveDelegationChain(ctx context.Context, db orm.DB, userID, flowID, flow
 			c.Equals("delegator_id", currentID)
 			c.IsTrue("is_active")
 		}).OrderByDesc("created_at").Limit(100).Scan(ctx)
-		if err != nil || len(delegations) == 0 {
+		if err != nil {
+			// DB error during delegation lookup; fall back to original assignee
+			break
+		}
+
+		if len(delegations) == 0 {
 			break
 		}
 
@@ -256,11 +278,11 @@ func matchDelegation(delegations []approval.Delegation, now time.Time, flowID, f
 	for i := range delegations {
 		d := &delegations[i]
 
-		if d.StartTime.Valid && now.Before(d.StartTime.V.Unwrap()) {
+		if !d.StartTime.IsZero() && now.Before(d.StartTime.Unwrap()) {
 			continue
 		}
 
-		if d.EndTime.Valid && now.After(d.EndTime.V.Unwrap()) {
+		if !d.EndTime.IsZero() && now.After(d.EndTime.Unwrap()) {
 			continue
 		}
 
