@@ -305,7 +305,7 @@ func applyNodeData(node *approval.FlowNode, data map[string]any) {
 		node.IsOpinionRequired = v
 	}
 
-	if v, ok := data["isManualCCAllowed"].(bool); ok {
+	if v, ok := data["isManualCcAllowed"].(bool); ok {
 		node.IsManualCCAllowed = v
 	}
 

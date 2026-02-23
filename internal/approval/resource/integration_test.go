@@ -1273,7 +1273,7 @@ func (s *ApprovalSuite) deployAndPublishFlow(flowCode, categoryCode string) (str
 				"isRollbackAllowed": true,
 				"isAddAssigneeAllowed": true,
 				"isRemoveAssigneeAllowed": true,
-				"isManualCCAllowed": true,
+				"isManualCcAllowed": true,
 				"assignees": [{"kind": "user", "ids": ["approver-001"]}]
 			}},
 			{"id": "end", "type": "end", "position": {"x": 400, "y": 0}, "data": {"label": "结束"}}

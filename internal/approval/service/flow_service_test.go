@@ -388,7 +388,7 @@ func (s *FlowServiceTestSuite) TestDeployFlowPropertiesMappedToNode() {
 				"passRule":             "ratio",
 				"isTransferAllowed":    true,
 				"isRollbackAllowed":    true,
-				"isManualCCAllowed":    true,
+				"isManualCcAllowed":    true,
 				"isOpinionRequired":    true,
 				"rollbackType":         "previous",
 				"rollbackDataStrategy": "keep",
