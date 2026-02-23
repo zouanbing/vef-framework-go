@@ -1248,7 +1248,7 @@ func (s *InstanceServiceTestSuite) TestDeployFlowConditionsStoredOnNodeBranches(
 		"nodes": [
 			{"id": "start1", "type": "start", "data": {"label": "Start"}},
 			{"id": "branch1", "type": "condition", "data": {"label": "Branch", "branches": [
-				{"id": "b1", "label": "High Amount", "conditions": [{"type": "field", "subject": "amount", "operator": ">", "value": 1000}], "priority": 0},
+				{"id": "b1", "label": "High Amount", "conditionGroups": [{"conditions": [{"type": "field", "subject": "amount", "operator": ">", "value": 1000}]}], "priority": 0},
 				{"id": "b2", "label": "Default", "isDefault": true, "priority": 1}
 			]}},
 			{"id": "approval1", "type": "approval", "data": {"label": "High Amount", "passRule": "all", "assignees": [{"kind": "user", "ids": ["u1"], "sortOrder": 0}]}},
@@ -1289,7 +1289,7 @@ func (s *InstanceServiceTestSuite) TestDeployFlowConditionsStoredOnNodeBranches(
 
 	// Verify the first branch has conditions
 	s.Equal("b1", condNode.Branches[0].ID)
-	s.Len(condNode.Branches[0].Conditions, 1, "first branch should have one condition")
+	s.Len(condNode.Branches[0].ConditionGroups, 1, "first branch should have one condition group")
 	s.False(condNode.Branches[0].IsDefault, "first branch should not be default")
 
 	// Verify the second branch is default
@@ -3267,8 +3267,10 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestDeployFlowWithNodeBranchCondition
 			{ID: "cond", Type: "condition", Data: map[string]any{
 				"label": "Condition",
 				"branches": []any{
-					map[string]any{"id": "b1", "label": "High", "conditions": []any{
-						map[string]any{"type": "field", "subject": "amount", "operator": ">", "value": 100},
+					map[string]any{"id": "b1", "label": "High", "conditionGroups": []any{
+						map[string]any{"conditions": []any{
+							map[string]any{"type": "field", "subject": "amount", "operator": ">", "value": 100},
+						}},
 					}, "priority": 0},
 					map[string]any{"id": "b2", "label": "Default", "isDefault": true, "priority": 1},
 				},
@@ -3306,7 +3308,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestDeployFlowWithNodeBranchCondition
 	}).Scan(s.ctx)
 	s.Require().NoError(err, "Should find condition node")
 	s.Require().Len(condNode.Branches, 2, "Condition node should have two branches")
-	s.Len(condNode.Branches[0].Conditions, 1, "First branch should have one condition")
+	s.Len(condNode.Branches[0].ConditionGroups, 1, "First branch should have one condition group")
 
 	// Verify edges were created
 	var edges []approval.FlowEdge

@@ -9,14 +9,20 @@ type Condition struct {
 	Expression string        `json:"expression"`
 }
 
+// ConditionGroup represents a group of conditions evaluated with AND logic.
+// Multiple groups in a branch are evaluated with OR logic.
+type ConditionGroup struct {
+	Conditions []Condition `json:"conditions"`
+}
+
 // ConditionBranch represents a branch in a condition node.
-// Each branch has its own conditions and can be linked to an edge via its ID.
+// Each branch has its own condition groups and can be linked to an edge via its ID.
 type ConditionBranch struct {
-	ID         string      `json:"id"`
-	Label      string      `json:"label"`
-	Conditions []Condition `json:"conditions,omitempty"`
-	IsDefault  bool        `json:"isDefault,omitempty"`
-	Priority   int         `json:"priority"`
+	ID              string           `json:"id"`
+	Label           string           `json:"label"`
+	ConditionGroups []ConditionGroup `json:"conditionGroups,omitempty"`
+	IsDefault       bool             `json:"isDefault,omitempty"`
+	Priority        int              `json:"priority"`
 }
 
 // FlowDefinition represents the structure of a flow definition JSON (React Flow compatible).

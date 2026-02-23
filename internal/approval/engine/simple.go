@@ -72,7 +72,7 @@ func (p *ConditionProcessor) Process(ctx context.Context, pc *ProcessContext) (*
 			continue
 		}
 
-		match, err := evaluateBranchConditions(pc.Registry, ctx, evalCtx, b.Conditions)
+		match, err := evaluateConditionGroups(pc.Registry, ctx, evalCtx, b.ConditionGroups)
 		if err != nil {
 			return nil, fmt.Errorf("evaluate branch %q: %w", b.Label, err)
 		}
@@ -89,8 +89,25 @@ func (p *ConditionProcessor) Process(ctx context.Context, pc *ProcessContext) (*
 	return nil, errors.New("no matching branch and no default branch")
 }
 
-// evaluateBranchConditions evaluates a set of conditions using AND logic.
-func evaluateBranchConditions(registry *strategy.StrategyRegistry, ctx context.Context, evalCtx *approval.EvalContext, conditions []approval.Condition) (bool, error) {
+// evaluateConditionGroups evaluates condition groups using OR between groups, AND within each group.
+func evaluateConditionGroups(registry *strategy.StrategyRegistry, ctx context.Context, evalCtx *approval.EvalContext, groups []approval.ConditionGroup) (bool, error) {
+	if len(groups) == 0 {
+		return true, nil
+	}
+	for _, group := range groups {
+		match, err := evaluateGroupConditions(registry, ctx, evalCtx, group.Conditions)
+		if err != nil {
+			return false, err
+		}
+		if match {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// evaluateGroupConditions evaluates a set of conditions using AND logic.
+func evaluateGroupConditions(registry *strategy.StrategyRegistry, ctx context.Context, evalCtx *approval.EvalContext, conditions []approval.Condition) (bool, error) {
 	if len(conditions) == 0 {
 		return true, nil
 	}

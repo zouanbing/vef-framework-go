@@ -303,8 +303,10 @@ func buildBranchFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		{
 			ID:    highBranchID,
 			Label: "High Value",
-			Conditions: []approval.Condition{
-				{Type: approval.ConditionField, Subject: "amount", Operator: ">", Value: float64(1000)},
+			ConditionGroups: []approval.ConditionGroup{
+				{Conditions: []approval.Condition{
+					{Type: approval.ConditionField, Subject: "amount", Operator: ">", Value: float64(1000)},
+				}},
 			},
 			Priority: 0,
 		},
