@@ -601,6 +601,10 @@ func (s *InstanceService) handleNodeCompletion(
 
 	switch completionResult {
 	case approval.PassRulePassed:
+		if err := s.triggerNodeCC(ctx, tx, instance, node, approval.PassRulePassed); err != nil {
+			return nil, fmt.Errorf("trigger node cc: %w", err)
+		}
+
 		if err := s.engine.AdvanceToNextNode(ctx, tx, instance, node, ""); err != nil {
 			return nil, fmt.Errorf("advance to next node: %w", err)
 		}
@@ -612,6 +616,10 @@ func (s *InstanceService) handleNodeCompletion(
 		return nil, nil
 
 	case approval.PassRuleRejected:
+		if err := s.triggerNodeCC(ctx, tx, instance, node, approval.PassRuleRejected); err != nil {
+			return nil, fmt.Errorf("trigger node cc: %w", err)
+		}
+
 		instance.Status = approval.InstanceRejected
 		instance.FinishedAt = null.DateTimeFrom(timex.Now())
 
@@ -630,6 +638,66 @@ func (s *InstanceService) handleNodeCompletion(
 	default:
 		return nil, nil
 	}
+}
+
+// triggerNodeCC creates CC records when a node completes, based on CCTiming configuration.
+// completionResult determines which CC timings are triggered:
+//   - PassRulePassed: triggers CCTimingAlways + CCTimingOnApprove
+//   - PassRuleRejected: triggers CCTimingAlways + CCTimingOnReject
+func (s *InstanceService) triggerNodeCC(ctx context.Context, tx orm.DB, instance *approval.Instance, node *approval.FlowNode, completionResult approval.PassRuleResult) error {
+	var ccConfigs []approval.FlowNodeCC
+
+	if err := tx.NewSelect().Model(&ccConfigs).Where(func(c orm.ConditionBuilder) {
+		c.Equals("node_id", node.ID)
+	}).Scan(ctx); err != nil {
+		return fmt.Errorf("load cc configs for node %s: %w", node.ID, err)
+	}
+
+	if len(ccConfigs) == 0 {
+		return nil
+	}
+
+	var ccUserIDs []string
+	for _, cfg := range ccConfigs {
+		switch cfg.CCTiming {
+		case approval.CCTimingAlways:
+			ccUserIDs = append(ccUserIDs, cfg.CCIDs...)
+		case approval.CCTimingOnApprove:
+			if completionResult == approval.PassRulePassed {
+				ccUserIDs = append(ccUserIDs, cfg.CCIDs...)
+			}
+		case approval.CCTimingOnReject:
+			if completionResult == approval.PassRuleRejected {
+				ccUserIDs = append(ccUserIDs, cfg.CCIDs...)
+			}
+		default:
+			ccUserIDs = append(ccUserIDs, cfg.CCIDs...)
+		}
+	}
+
+	if len(ccUserIDs) == 0 {
+		return nil
+	}
+
+	records := make([]approval.CCRecord, 0, len(ccUserIDs))
+	for _, userID := range ccUserIDs {
+		record := approval.CCRecord{
+			InstanceID: instance.ID,
+			NodeID:     null.StringFrom(node.ID),
+			CCUserID:   userID,
+			IsManual:   false,
+		}
+		record.ID = id.Generate()
+		records = append(records, record)
+	}
+
+	if _, err := tx.NewInsert().Model(&records).Exec(ctx); err != nil {
+		return fmt.Errorf("insert cc records: %w", err)
+	}
+
+	return s.publisher.PublishAll(ctx, tx, []approval.DomainEvent{
+		approval.NewCcNotifiedEvent(instance.ID, node.ID, ccUserIDs, false),
+	})
 }
 
 // Withdraw withdraws an instance.
@@ -748,6 +816,95 @@ func (s *InstanceService) AddCC(ctx context.Context, instanceID string, ccUserID
 			approval.NewCcNotifiedEvent(instanceID, "", ccUserIDs, true),
 		})
 	})
+}
+
+// MarkCCRead marks all unread CC records as read for the given user in the given instance.
+// If the CC records belong to a CC node with IsReadConfirmRequired=true and all records are now read,
+// the node is advanced to continue the flow.
+func (s *InstanceService) MarkCCRead(ctx context.Context, instanceID string, userID string) error {
+	return s.db.RunInTX(ctx, func(ctx context.Context, tx orm.DB) error {
+		// 1. Query unread CC records for this user in this instance
+		var records []approval.CCRecord
+		if err := tx.NewSelect().Model(&records).Where(func(c orm.ConditionBuilder) {
+			c.Equals("instance_id", instanceID)
+			c.Equals("cc_user_id", userID)
+			c.IsNull("read_at")
+		}).Scan(ctx); err != nil {
+			return fmt.Errorf("query unread cc records: %w", err)
+		}
+
+		if len(records) == 0 {
+			return nil
+		}
+
+		// 2. Batch update read_at
+		now := time.Now()
+		recordIDs := make([]string, 0, len(records))
+		for _, r := range records {
+			recordIDs = append(recordIDs, r.ID)
+		}
+
+		if _, err := tx.NewUpdate().Model((*approval.CCRecord)(nil)).
+			Set("read_at = ?", now).
+			Where(func(c orm.ConditionBuilder) {
+				c.In("id", recordIDs)
+			}).Exec(ctx); err != nil {
+			return fmt.Errorf("update cc records read_at: %w", err)
+		}
+
+		// 3. Check if any CC node should advance
+		return s.checkCCNodeCompletion(ctx, tx, instanceID, records)
+	})
+}
+
+// checkCCNodeCompletion checks if all CC records for CC nodes are read and advances the flow.
+func (s *InstanceService) checkCCNodeCompletion(ctx context.Context, tx orm.DB, instanceID string, records []approval.CCRecord) error {
+	// Collect unique CC node IDs
+	nodeIDs := make(map[string]struct{})
+	for _, r := range records {
+		if r.NodeID.Valid {
+			nodeIDs[r.NodeID.String] = struct{}{}
+		}
+	}
+
+	for nodeID := range nodeIDs {
+		var node approval.FlowNode
+		if err := tx.NewSelect().Model(&node).Where(func(c orm.ConditionBuilder) {
+			c.Equals("id", nodeID)
+		}).Scan(ctx); err != nil {
+			continue
+		}
+
+		// Only process CC nodes with read confirmation required
+		if node.NodeKind != approval.NodeCC || !node.IsReadConfirmRequired {
+			continue
+		}
+
+		// Count remaining unread records for this node
+		unreadCount, err := tx.NewSelect().Model((*approval.CCRecord)(nil)).Where(func(c orm.ConditionBuilder) {
+			c.Equals("node_id", nodeID)
+			c.IsNull("read_at")
+		}).Count(ctx)
+		if err != nil {
+			return fmt.Errorf("count unread cc records: %w", err)
+		}
+
+		if unreadCount == 0 {
+			// All read — advance the flow
+			var instance approval.Instance
+			if err := tx.NewSelect().Model(&instance).Where(func(c orm.ConditionBuilder) {
+				c.Equals("id", instanceID)
+			}).Scan(ctx); err != nil {
+				return fmt.Errorf("find instance for cc advance: %w", err)
+			}
+
+			if err := s.engine.AdvanceToNextNode(ctx, tx, &instance, &node, ""); err != nil {
+				return fmt.Errorf("advance cc node: %w", err)
+			}
+		}
+	}
+
+	return nil
 }
 
 // AddAssignee dynamically adds assignees to a task.
