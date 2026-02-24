@@ -131,7 +131,7 @@ func (s *FlowService) DeployFlow(ctx context.Context, cmd DeployFlowCmd) (*appro
 			node := approval.FlowNode{
 				FlowVersionID: version.ID,
 				NodeKey:       nd.ID,
-				NodeKind:      approval.NodeKind(nd.Type),
+				NodeKind:      nd.Type,
 				Name:          name,
 			}
 			node.ID = id.Generate()
@@ -450,12 +450,11 @@ func validateFlowDefinition(def *approval.FlowDefinition) error {
 
 		nodeIDs[nd.ID] = struct{}{}
 
-		kind := approval.NodeKind(nd.Type)
-		if _, ok := validNodeKinds[kind]; !ok {
+		if _, ok := validNodeKinds[nd.Type]; !ok {
 			return fmt.Errorf("invalid node kind %q for node %q", nd.Type, nd.ID)
 		}
 
-		switch kind {
+		switch nd.Type {
 		case approval.NodeStart:
 			startCount++
 		case approval.NodeEnd:

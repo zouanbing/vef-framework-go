@@ -40,7 +40,7 @@ type Position struct {
 // NodeDefinition represents a node in the flow definition.
 type NodeDefinition struct {
 	ID       string         `json:"id"`
-	Type     string         `json:"type"`
+	Type     NodeKind       `json:"type"`
 	Position Position       `json:"position"`
 	Data     map[string]any `json:"data,omitempty"`
 }
