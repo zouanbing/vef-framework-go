@@ -20,8 +20,9 @@ const (
 // ProcessResult contains the outcome of node processing.
 type ProcessResult struct {
 	Action      NodeAction
-	FinalStatus approval.InstanceStatus // Only used when Action == NodeActionComplete
-	BranchID    string               // Condition node: the matched branch ID
+	FinalStatus approval.InstanceStatus   // Only used when Action == NodeActionComplete
+	BranchID    string                    // Condition node: the matched branch ID
+	Events      []approval.DomainEvent    // Events to publish after processing
 }
 
 // ProcessContext provides context for node processing.

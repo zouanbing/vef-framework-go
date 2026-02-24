@@ -112,6 +112,11 @@ func (e *FlowEngine) ProcessNode(ctx context.Context, db orm.DB, instance *appro
 }
 
 func (e *FlowEngine) handleProcessResult(ctx context.Context, db orm.DB, instance *approval.Instance, node *approval.FlowNode, result *ProcessResult) error {
+	// Publish any events collected during processing
+	if err := e.publishEvents(ctx, db, result.Events...); err != nil {
+		return fmt.Errorf("publish processor events: %w", err)
+	}
+
 	switch result.Action {
 	case NodeActionWait:
 		instance.CurrentNodeID = null.StringFrom(node.ID)

@@ -880,8 +880,9 @@ func (s *InstanceService) checkCCNodeCompletion(ctx context.Context, tx orm.DB, 
 			continue
 		}
 
-		// Count remaining unread records for this node
+		// Count remaining unread records for this node in this instance
 		unreadCount, err := tx.NewSelect().Model((*approval.CCRecord)(nil)).Where(func(c orm.ConditionBuilder) {
+			c.Equals("instance_id", instanceID)
 			c.Equals("node_id", nodeID)
 			c.IsNull("read_at")
 		}).Count(ctx)
