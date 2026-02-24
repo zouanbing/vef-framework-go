@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ilxqx/vef-framework-go/config"
@@ -112,7 +111,7 @@ func (suite *InsertTestSuite) TestCTE() {
 	suite.Run("InsertWithSimpleCTE", func() {
 		category := &Category{
 			Name:        "CTE Category",
-			Description: lo.ToPtr("Category created via CTE"),
+			Description: new("Category created via CTE"),
 		}
 
 		_, err := suite.db.NewInsert().
@@ -914,7 +913,7 @@ func (suite *InsertTestSuite) TestBulkInsert() {
 			{
 				Title:       "Bulk Post 1",
 				Content:     "Content for bulk post 1",
-				Description: lo.ToPtr("Description 1"),
+				Description: new("Description 1"),
 				UserID:      users[0].ID,
 				CategoryID:  suite.getCategoryID(),
 				Status:      "published",

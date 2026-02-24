@@ -184,11 +184,11 @@ func (b *QueryExprBuilder) NotBetween(expr, lower, upper any) schema.QueryAppend
 }
 
 func (b *QueryExprBuilder) In(expr any, values ...any) schema.QueryAppender {
-	return b.Expr("? IN (?)", expr, bun.In(values))
+	return b.Expr("? IN ?", expr, bun.Tuple(values))
 }
 
 func (b *QueryExprBuilder) NotIn(expr any, values ...any) schema.QueryAppender {
-	return b.Expr("? NOT IN (?)", expr, bun.In(values))
+	return b.Expr("? NOT IN ?", expr, bun.Tuple(values))
 }
 
 func (b *QueryExprBuilder) IsTrue(expr any) schema.QueryAppender {
