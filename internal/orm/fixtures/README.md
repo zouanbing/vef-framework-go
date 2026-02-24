@@ -8,30 +8,36 @@ This document describes the test fixture data used by the ORM test suite. All ti
 
 ```
 User (test_user)
-├── 1:N → Post (test_post)          via user_id
-├── 1:N → Comment (test_comment)    via user_id
+├── 1:N → Post (test_post)              via user_id
+├── 1:N → Comment (test_comment)        via user_id
+├── 1:N → UserFavorite (test_user_favorite) via user_id
 │
 Post (test_post)
-├── N:1 → User (test_user)          via user_id
-├── N:1 → Category (test_category)  via category_id
-├── N:M → Tag (test_tag)            via PostTag (test_post_tag)
-├── 1:N → Comment (test_comment)    via post_id
+├── N:1 → User (test_user)              via user_id
+├── N:1 → Category (test_category)      via category_id
+├── N:M → Tag (test_tag)                via PostTag (test_post_tag)
+├── 1:N → Comment (test_comment)        via post_id
+├── 1:N → UserFavorite (test_user_favorite) via post_id
 │
 Category (test_category)
-├── self-ref → parent_id            (tree structure)
-├── 1:N → Post (test_post)          via category_id
+├── self-ref → parent_id                (tree structure)
+├── 1:N → Post (test_post)              via category_id
 │
 Comment (test_comment)
-├── N:1 → Post (test_post)          via post_id
-├── N:1 → User (test_user)          via user_id
-├── self-ref → parent_id            (tree structure, max depth 4)
+├── N:1 → Post (test_post)              via post_id
+├── N:1 → User (test_user)              via user_id
+├── self-ref → parent_id                (tree structure, max depth 4)
 │
 Tag (test_tag)
-├── N:M → Post (test_post)          via PostTag (test_post_tag)
+├── N:M → Post (test_post)              via PostTag (test_post_tag)
 │
 PostTag (test_post_tag)
-├── N:1 → Post (test_post)          via post_id
-├── N:1 → Tag (test_tag)            via tag_id
+├── N:1 → Post (test_post)              via post_id
+├── N:1 → Tag (test_tag)                via tag_id
+│
+UserFavorite (test_user_favorite)        ★ composite PK (user_id, post_id)
+├── N:1 → User (test_user)              via user_id
+├── N:1 → Post (test_post)              via post_id
 ```
 
 ---
@@ -238,3 +244,31 @@ Post "Neural Network Architectures" (post019) — 4 comments, max depth 1:
 - **Posts with comments**: post001(6), post002(8), post010(4), post013(3), post019(4)
 - **Most active commenter**: usr001 (Alice) with 5 comments
 - **Likes range**: 3–22
+
+---
+
+## UserFavorites (12 records) — Composite Primary Key
+
+This table uses a composite primary key `(user_id, post_id)` for testing composite PK condition methods.
+
+| UserID | PostID | Created |
+|---|---|---|
+| usr001 | post001 | 2025-06-01 |
+| usr001 | post002 | 2025-06-01 |
+| usr001 | post003 | 2025-06-01 |
+| usr002 | post001 | 2025-06-02 |
+| usr002 | post004 | 2025-06-02 |
+| usr002 | post005 | 2025-06-02 |
+| usr003 | post002 | 2025-06-03 |
+| usr003 | post006 | 2025-06-03 |
+| usr004 | post003 | 2025-06-04 |
+| usr004 | post007 | 2025-06-04 |
+| usr005 | post001 | 2025-06-05 |
+| usr005 | post008 | 2025-06-05 |
+
+### UserFavorite Statistics
+
+- **Total**: 12
+- **Users with favorites**: 5 (usr001–usr005)
+- **By user**: usr001 has 3, usr002 has 3, usr003 has 2, usr004 has 2, usr005 has 2
+- **Most favorited post**: post001 (favorited by usr001, usr002, usr005)

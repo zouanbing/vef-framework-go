@@ -39,6 +39,7 @@ func setupTestFixtures(t *testing.T, _ context.Context, db orm.DB, rawDB *sql.DB
 		(*PostTag)(nil),
 		(*Category)(nil),
 		(*Comment)(nil),
+		(*UserFavorite)(nil),
 	}
 
 	db.RegisterModel(models...)

@@ -12,6 +12,19 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 )
 
+// UserFavorite represents a user's favorite post with composite primary key (user_id, post_id).
+type UserFavorite struct {
+	bun.BaseModel `bun:"table:test_user_favorite,alias:uf"`
+
+	UserID    string    `json:"userId"    bun:"user_id,pk,notnull"`
+	PostID    string    `json:"postId"    bun:"post_id,pk,notnull"`
+	CreatedAt time.Time `json:"createdAt" bun:"created_at,notnull,default:CURRENT_TIMESTAMP"`
+
+	// Relations
+	User *User `json:"user" bun:"rel:belongs-to,join:user_id=id"`
+	Post *Post `json:"post" bun:"rel:belongs-to,join:post_id=id"`
+}
+
 // User represents a user in the system.
 type User struct {
 	bun.BaseModel `bun:"table:test_user,alias:u"`
@@ -134,4 +147,9 @@ func (suite *BaseTestSuite) selectPosts() orm.SelectQuery {
 // selectCategories returns a Category select query scoped to fixture data.
 func (suite *BaseTestSuite) selectCategories() orm.SelectQuery {
 	return suite.db.NewSelect().Model((*Category)(nil)).Where(fixtureScope)
+}
+
+// selectUserFavorites returns a UserFavorite select query scoped to fixture data.
+func (suite *BaseTestSuite) selectUserFavorites() orm.SelectQuery {
+	return suite.db.NewSelect().Model((*UserFavorite)(nil)).Where(fixtureScope)
 }

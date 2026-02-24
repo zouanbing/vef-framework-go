@@ -434,12 +434,12 @@ func (cb *CriteriaBuilder) OrNotBetweenExpr(column string, startB, endB func(Exp
 }
 
 func (cb *CriteriaBuilder) In(column string, values any) ConditionBuilder {
-	cb.and("? IN (?)", cb.eb.Column(column), bun.In(values))
+	cb.and("? IN ?", cb.eb.Column(column), bun.Tuple(values))
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrIn(column string, values any) ConditionBuilder {
-	cb.or("? IN (?)", cb.eb.Column(column), bun.In(values))
+	cb.or("? IN ?", cb.eb.Column(column), bun.Tuple(values))
 	return cb
 }
 
@@ -464,12 +464,12 @@ func (cb *CriteriaBuilder) OrInExpr(column string, builder func(ExprBuilder) any
 }
 
 func (cb *CriteriaBuilder) NotIn(column string, values any) ConditionBuilder {
-	cb.and("? NOT IN (?)", cb.eb.Column(column), bun.In(values))
+	cb.and("? NOT IN ?", cb.eb.Column(column), bun.Tuple(values))
 	return cb
 }
 
 func (cb *CriteriaBuilder) OrNotIn(column string, values any) ConditionBuilder {
-	cb.or("? NOT IN (?)", cb.eb.Column(column), bun.In(values))
+	cb.or("? NOT IN ?", cb.eb.Column(column), bun.Tuple(values))
 	return cb
 }
 
@@ -988,27 +988,27 @@ func (cb *CriteriaBuilder) OrGroup(builder func(ConditionBuilder)) ConditionBuil
 
 // auditUserCompare adds a comparison condition for an audit user column.
 func (cb *CriteriaBuilder) auditUserCompare(addFn func(string, ...any), op string, col string, value string, alias ...string) {
-	addFn("? "+op+" ?", buildColumnExpr(col, alias...), value)
+	addFn("? ? ?", buildColumnExpr(col, alias...), bun.Safe(op), value)
 }
 
 // auditUserCompareSubQuery adds a comparison condition with a subquery for an audit user column.
 func (cb *CriteriaBuilder) auditUserCompareSubQuery(addFn func(string, ...any), op string, col string, builder func(SelectQuery), alias ...string) {
-	addFn("? "+op+" (?)", buildColumnExpr(col, alias...), cb.qb.BuildSubQuery(builder))
+	addFn("? ? (?)", buildColumnExpr(col, alias...), bun.Safe(op), cb.qb.BuildSubQuery(builder))
 }
 
 // auditUserCompareCurrent adds a comparison condition against the current operator for an audit user column.
 func (cb *CriteriaBuilder) auditUserCompareCurrent(addFn func(string, ...any), op string, col string, alias ...string) {
-	addFn("? "+op+" ?Operator", buildColumnExpr(col, alias...))
+	addFn("? ? ?Operator", buildColumnExpr(col, alias...), bun.Safe(op))
 }
 
 // auditUserIn adds an IN/NOT IN condition for an audit user column.
 func (cb *CriteriaBuilder) auditUserIn(addFn func(string, ...any), op string, col string, values []string, alias ...string) {
-	addFn("? "+op+" (?)", buildColumnExpr(col, alias...), bun.In(values))
+	addFn("? ? ?", buildColumnExpr(col, alias...), bun.Safe(op), bun.Tuple(values))
 }
 
 // auditUserInSubQuery adds an IN/NOT IN subquery condition for an audit user column.
 func (cb *CriteriaBuilder) auditUserInSubQuery(addFn func(string, ...any), op string, col string, builder func(SelectQuery), alias ...string) {
-	addFn("? "+op+" (?)", buildColumnExpr(col, alias...), cb.qb.BuildSubQuery(builder))
+	addFn("? ? (?)", buildColumnExpr(col, alias...), bun.Safe(op), cb.qb.BuildSubQuery(builder))
 }
 
 func (cb *CriteriaBuilder) CreatedByEquals(createdBy string, alias ...string) ConditionBuilder {

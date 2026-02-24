@@ -26,3 +26,13 @@ func (suite *ConditionBuilderTestSuite) assertQueryReturnsPosts(query orm.Select
 
 	return posts
 }
+
+// assertQueryReturnsUserFavorites executes a query and returns user favorites, scoped to fixture data.
+func (suite *ConditionBuilderTestSuite) assertQueryReturnsUserFavorites(query orm.SelectQuery) []UserFavorite {
+	var favorites []UserFavorite
+
+	err := query.Where(fixtureScope).Scan(suite.ctx, &favorites)
+	suite.NoError(err, "Should execute query successfully")
+
+	return favorites
+}

@@ -112,29 +112,31 @@ func NewPKField(field *schema.Field) *PKField {
 }
 
 // parsePKColumnsAndValues parses the primary key columns and values from the given table and primary key value.
+//
+// For single-column PKs: pk is a scalar for equals, or a slice for IN operations.
+// For composite PKs: pk is a slice matching the PK column count for equals (e.g. []any{"uid", "pid"}),
+// or a slice of slices for IN operations (e.g. [][]any{{"uid1", "pid1"}, {"uid2", "pid2"}}).
 func parsePKColumnsAndValues(method string, table *schema.Table, pk any, alias ...string) (*pkColumns, *pkValues) {
 	if table == nil {
 		panic(fmt.Sprintf(
-			"method %s failed: table schema is nil. "+
+			"method %q failed: table schema is nil. "+
 				"This usually happens when: "+
-				"1) Model() method was not called before %s, "+
+				"1) Model() method was not called before %q, "+
 				"2) Model() was called with plain nil or a value that is not a struct pointer (or slice pointer of struct), "+
 				"3) Table()/TableExpr() was used without binding a model via Model(). "+
-				"Please ensure you call Model() with a valid struct pointer (or slice pointer of struct) before using %s.",
+				"Please ensure you call Model() with a valid struct pointer (or slice pointer of struct) before using %q.",
 			method, method, method,
 		))
 	}
 
 	pks := table.PKs
 	if len(pks) == 0 {
-		panic(
-			fmt.Sprintf("table %s has no primary key", table.Name),
-		)
+		panic(fmt.Sprintf("table %q has no primary key", table.Name))
 	}
 
-	aliasToUse := table.SQLAlias
+	tableAlias := table.SQLAlias
 	if len(alias) > 0 {
-		aliasToUse = bun.Safe(alias[0])
+		tableAlias = bun.Safe(alias[0])
 	}
 
 	columns := make([]bun.Safe, len(pks))
@@ -142,19 +144,38 @@ func parsePKColumnsAndValues(method string, table *schema.Table, pk any, alias .
 		columns[i] = p.SQLName
 	}
 
-	var values []any
+	values := parsePKValues(method, pk, len(pks))
 
+	return &pkColumns{alias: tableAlias, columns: columns}, &pkValues{values: values}
+}
+
+// parsePKValues converts a primary key value into a normalized slice of values.
+// A scalar or a composite-PK tuple (slice whose length matches pkCount and whose
+// elements are not slices) is wrapped as a single-element slice.
+// A slice of tuples is expanded element-by-element.
+func parsePKValues(method string, pk any, pkCount int) []any {
 	pkv := reflect.ValueOf(pk)
-	if pkv.Kind() == reflect.Slice {
-		values = make([]any, 0, pkv.Len())
-		for i := range pkv.Len() {
-			values = append(values, pkv.Index(i).Interface())
-		}
-	} else {
-		values = []any{pk}
+	if pkv.Kind() != reflect.Slice {
+		return []any{pk}
 	}
 
-	return &pkColumns{alias: aliasToUse, columns: columns}, &pkValues{values: values}
+	n := pkv.Len()
+	if n == 0 {
+		panic(fmt.Sprintf("method %q failed: primary key value is empty", method))
+	}
+
+	// A slice whose length matches the composite PK column count and whose first
+	// element is not itself a slice represents a single composite-PK tuple.
+	if n == pkCount && pkv.Index(0).Kind() != reflect.Slice {
+		return []any{pk}
+	}
+
+	values := make([]any, n)
+	for i := range n {
+		values[i] = pkv.Index(i).Interface()
+	}
+
+	return values
 }
 
 type pkColumns struct {
@@ -200,16 +221,5 @@ type pkValues struct {
 }
 
 func (p *pkValues) AppendQuery(gen schema.QueryGen, b []byte) ([]byte, error) {
-	vLen := len(p.values)
-	if vLen == 0 {
-		return dialect.AppendNull(b), nil
-	}
-
-	if vLen == 1 {
-		b = gen.AppendValue(b, reflect.ValueOf(p.values[0]))
-
-		return b, nil
-	}
-
-	return bun.In(p.values).AppendQuery(gen, b)
+	return bun.List(p.values).AppendQuery(gen, b)
 }
