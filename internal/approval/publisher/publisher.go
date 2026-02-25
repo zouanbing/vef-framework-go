@@ -2,11 +2,11 @@ package publisher
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/id"
+	"github.com/ilxqx/vef-framework-go/mapx"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
 
@@ -27,7 +27,7 @@ func (p *EventPublisher) PublishAll(ctx context.Context, db orm.DB, events []app
 	outboxRecords := make([]approval.EventOutbox, 0, len(events))
 
 	for _, evt := range events {
-		payloadMap, err := toMap(evt)
+		payloadMap, err := mapx.ToMap(evt)
 		if err != nil {
 			return fmt.Errorf("marshal event %s: %w", evt.EventName(), err)
 		}
@@ -43,19 +43,4 @@ func (p *EventPublisher) PublishAll(ctx context.Context, db orm.DB, events []app
 	_, err := db.NewInsert().Model(&outboxRecords).Exec(ctx)
 
 	return err
-}
-
-// toMap converts a struct to map[string]any via JSON round-trip.
-func toMap(v any) (map[string]any, error) {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return nil, err
-	}
-
-	var m map[string]any
-	if err := json.Unmarshal(b, &m); err != nil {
-		return nil, err
-	}
-
-	return m, nil
 }

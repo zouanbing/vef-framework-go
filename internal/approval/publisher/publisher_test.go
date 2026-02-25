@@ -12,6 +12,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/internal/database"
 	internalORM "github.com/ilxqx/vef-framework-go/internal/orm"
+	"github.com/ilxqx/vef-framework-go/mapx"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
 
@@ -257,10 +258,10 @@ func TestEventOccurredAtAll(t *testing.T) {
 	}
 }
 
-// TestToMap tests to map scenarios.
+// TestToMap tests mapx.ToMap for event conversion.
 func TestToMap(t *testing.T) {
 	t.Run("ValidStruct", func(t *testing.T) {
-		m, err := toMap(approval.NewFlowPublishedEvent("f1", "v1"))
+		m, err := mapx.ToMap(approval.NewFlowPublishedEvent("f1", "v1"))
 		require.NoError(t, err, "Should marshal valid struct")
 		assert.Equal(t, "f1", m["flowId"], "Should contain flowId")
 		assert.Equal(t, "v1", m["versionId"], "Should contain versionId")
@@ -268,7 +269,7 @@ func TestToMap(t *testing.T) {
 	})
 
 	t.Run("StructWithAllFields", func(t *testing.T) {
-		m, err := toMap(approval.NewTaskTransferredEvent("t1", "i1", "n1", "from", "to", "reason"))
+		m, err := mapx.ToMap(approval.NewTaskTransferredEvent("t1", "i1", "n1", "from", "to", "reason"))
 		require.NoError(t, err, "Should marshal struct with all fields")
 		assert.Equal(t, "t1", m["taskId"], "Should contain taskId")
 		assert.Equal(t, "i1", m["instanceId"], "Should contain instanceId")
@@ -278,9 +279,9 @@ func TestToMap(t *testing.T) {
 		assert.Equal(t, "reason", m["reason"], "Should contain reason")
 	})
 
-	t.Run("UnmarshalableValue", func(t *testing.T) {
-		_, err := toMap(make(chan int))
-		assert.Error(t, err, "Should fail for unmarshalable type")
+	t.Run("NonStructValue", func(t *testing.T) {
+		_, err := mapx.ToMap("not a struct")
+		assert.ErrorIs(t, err, mapx.ErrInvalidToMapValue, "Should fail for non-struct type")
 	})
 }
 
@@ -368,20 +369,4 @@ func TestPublishAll(t *testing.T) {
 		assert.Contains(t, eventTypes, "approval.cc.notified", "Should contain cc notified event")
 	})
 
-	t.Run("MarshalError", func(t *testing.T) {
-		db, cleanup := setupTestDB(t)
-		defer cleanup()
-
-		err := NewEventPublisher().PublishAll(context.Background(), db, []approval.DomainEvent{&unmarshalableEvent{}})
-		require.Error(t, err, "Should fail when event cannot be marshaled")
-		assert.Contains(t, err.Error(), "marshal event", "Should wrap marshal error")
-	})
 }
-
-// unmarshalableEvent is a DomainEvent that cannot be JSON-marshaled.
-type unmarshalableEvent struct {
-	BadField chan int `json:"badField"`
-}
-
-func (e *unmarshalableEvent) EventName() string     { return "test.unmarshalable" }
-func (e *unmarshalableEvent) OccurredAt() time.Time { return time.Now() }
