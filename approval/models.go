@@ -1,8 +1,9 @@
 package approval
 
 import (
+	"time"
+
 	"github.com/ilxqx/vef-framework-go/decimal"
-	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/timex"
 )
@@ -23,19 +24,19 @@ type Flow struct {
 	// Name is the display name of the flow.
 	Name string `json:"name" bun:"name"`
 	// Icon is the optional icon for the flow.
-	Icon null.String `json:"icon" bun:"icon,nullzero"`
+	Icon *string `json:"icon" bun:"icon,nullzero"`
 	// Description is an optional description of the flow.
-	Description null.String `json:"description" bun:"description,nullzero"`
+	Description *string `json:"description" bun:"description,nullzero"`
 	// BindingMode specifies the data binding mode (standalone or bound).
 	BindingMode BindingMode `json:"bindingMode" bun:"binding_mode"`
 	// BusinessTable is the bound business table name when in bound mode.
-	BusinessTable null.String `json:"businessTable" bun:"business_table,nullzero"`
+	BusinessTable *string `json:"businessTable" bun:"business_table,nullzero"`
 	// BusinessPkField is the primary key field of the business table.
-	BusinessPkField null.String `json:"businessPkField" bun:"business_pk_field,nullzero"`
+	BusinessPkField *string `json:"businessPkField" bun:"business_pk_field,nullzero"`
 	// BusinessTitleField is the title field mapping of the business table.
-	BusinessTitleField null.String `json:"businessTitleField" bun:"business_title_field,nullzero"`
+	BusinessTitleField *string `json:"businessTitleField" bun:"business_title_field,nullzero"`
 	// BusinessStatusField is the status field mapping of the business table.
-	BusinessStatusField null.String `json:"businessStatusField" bun:"business_status_field,nullzero"`
+	BusinessStatusField *string `json:"businessStatusField" bun:"business_status_field,nullzero"`
 	// AdminUserIDs is the list of flow administrator user IDs.
 	AdminUserIDs []string `json:"adminUserIds" bun:"admin_user_ids,type:jsonb,nullzero"`
 	// IsAllInitiateAllowed indicates whether all users can initiate this flow.
@@ -53,20 +54,22 @@ type FlowCategory struct {
 	orm.BaseModel `bun:"table:apv_flow_category,alias:afc"`
 	orm.Model
 
+	// TenantID is the tenant identifier for multi-tenancy support.
+	TenantID string `json:"tenantId" bun:"tenant_id"`
 	// Code is the unique identifier code for the category.
 	Code string `json:"code" bun:"code"`
 	// Name is the display name of the category.
 	Name string `json:"name" bun:"name"`
 	// Icon is the optional icon for the category.
-	Icon null.String `json:"icon" bun:"icon,nullzero"`
+	Icon *string `json:"icon" bun:"icon,nullzero"`
 	// ParentID is the ID of the parent category for hierarchical structure.
-	ParentID null.String `json:"parentId" bun:"parent_id,nullzero"`
+	ParentID *string `json:"parentId" bun:"parent_id,nullzero"`
 	// SortOrder determines the display order of categories.
 	SortOrder int `json:"sortOrder" bun:"sort_order"`
 	// IsActive indicates whether the category is enabled.
 	IsActive bool `json:"isActive" bun:"is_active"`
 	// Remark is an optional description or note for the category.
-	Remark null.String `json:"remark" bun:"remark,nullzero"`
+	Remark *string `json:"remark" bun:"remark,nullzero"`
 }
 
 // FlowVersion represents a flow version.
@@ -87,9 +90,9 @@ type FlowVersion struct {
 	// FormSchema contains the form structure definition.
 	FormSchema *FormDefinition `json:"formSchema" bun:"form_schema,type:jsonb,nullzero"`
 	// PublishedAt is the timestamp when this version was published.
-	PublishedAt null.DateTime `json:"publishedAt" bun:"published_at,nullzero"`
+	PublishedAt *timex.DateTime `json:"publishedAt" bun:"published_at,nullzero"`
 	// PublishedBy is the user ID who published this version.
-	PublishedBy null.String `json:"publishedBy" bun:"published_by,nullzero"`
+	PublishedBy *string `json:"publishedBy" bun:"published_by,nullzero"`
 }
 
 // FlowNode represents a flow node.
@@ -101,7 +104,7 @@ type FlowNode struct {
 	NodeKey                  string                 `json:"nodeKey" bun:"node_key"`
 	NodeKind                 NodeKind               `json:"nodeKind" bun:"node_kind"`
 	Name                     string                 `json:"name" bun:"name"`
-	Description              null.String            `json:"description" bun:"description,nullzero"`
+	Description              *string                `json:"description" bun:"description,nullzero"`
 	ExecutionType            ExecutionType          `json:"executionType" bun:"execution_type"`
 	ApprovalMethod           ApprovalMethod         `json:"approvalMethod" bun:"approval_method"`
 	PassRule                 PassRule               `json:"passRule" bun:"pass_rule"`
@@ -125,6 +128,7 @@ type FlowNode struct {
 	TimeoutNotifyBeforeHours int                    `json:"timeoutNotifyBeforeHours" bun:"timeout_notify_before_hours"`
 	UrgeCooldownMinutes      int                    `json:"urgeCooldownMinutes" bun:"urge_cooldown_minutes"`
 	DuplicateHandlerAction   DuplicateHandlerAction `json:"duplicateHandlerAction" bun:"duplicate_handler_action"`
+	IsReadConfirmRequired    bool                   `json:"isReadConfirmRequired" bun:"is_read_confirm_required"`
 	SubFlowConfig            map[string]any         `json:"subFlowConfig" bun:"sub_flow_config,type:jsonb,nullzero"`
 	Branches                 []ConditionBranch      `json:"branches" bun:"branches,type:jsonb,nullzero"`
 }
@@ -134,10 +138,10 @@ type FlowEdge struct {
 	orm.BaseModel `bun:"table:apv_flow_edge,alias:afe"`
 	orm.IDModel
 
-	FlowVersionID string      `json:"flowVersionId" bun:"flow_version_id"`
-	SourceNodeID  string      `json:"sourceNodeId" bun:"source_node_id"`
-	TargetNodeID  string      `json:"targetNodeId" bun:"target_node_id"`
-	SourceHandle  null.String `json:"sourceHandle" bun:"source_handle,nullzero"`
+	FlowVersionID string  `json:"flowVersionId" bun:"flow_version_id"`
+	SourceNodeID  string  `json:"sourceNodeId" bun:"source_node_id"`
+	TargetNodeID  string  `json:"targetNodeId" bun:"target_node_id"`
+	SourceHandle  *string `json:"sourceHandle" bun:"source_handle,nullzero"`
 }
 
 // FlowNodeAssignee represents a node assignee configuration.
@@ -145,11 +149,11 @@ type FlowNodeAssignee struct {
 	orm.BaseModel `bun:"table:apv_flow_node_assignee,alias:afna"`
 	orm.IDModel
 
-	NodeID       string       `json:"nodeId" bun:"node_id"`
-	AssigneeKind AssigneeKind `json:"assigneeKind" bun:"assignee_kind"`
-	AssigneeIDs  []string     `json:"assigneeIds" bun:"assignee_ids,type:jsonb,nullzero"`
-	FormField    null.String  `json:"formField" bun:"form_field,nullzero"`
-	SortOrder    int          `json:"sortOrder" bun:"sort_order"`
+	NodeID    string       `json:"nodeId" bun:"node_id"`
+	Kind      AssigneeKind `json:"kind" bun:"kind"`
+	IDs       []string     `json:"ids" bun:"ids,type:jsonb,nullzero"`
+	FormField *string      `json:"formField" bun:"form_field,nullzero"`
+	SortOrder int          `json:"sortOrder" bun:"sort_order"`
 }
 
 // FlowNodeCC represents a node CC configuration.
@@ -157,10 +161,11 @@ type FlowNodeCC struct {
 	orm.BaseModel `bun:"table:apv_flow_node_cc,alias:afnc"`
 	orm.IDModel
 
-	NodeID    string      `json:"nodeId" bun:"node_id"`
-	CCKind    CCKind      `json:"ccKind" bun:"cc_kind"`
-	CCIDs     []string    `json:"ccIds" bun:"cc_ids,type:jsonb,nullzero"`
-	FormField null.String `json:"formField" bun:"form_field,nullzero"`
+	NodeID   string   `json:"nodeId" bun:"node_id"`
+	Kind     CCKind   `json:"kind" bun:"kind"`
+	IDs      []string `json:"ids" bun:"ids,type:jsonb,nullzero"`
+	FormField *string `json:"formField" bun:"form_field,nullzero"`
+	Timing   CCTiming `json:"timing" bun:"timing"`
 }
 
 // FlowFormField represents a flow form field definition.
@@ -172,10 +177,10 @@ type FlowFormField struct {
 	Name          string         `json:"name" bun:"name"`
 	Kind          FieldKind      `json:"kind" bun:"kind"`
 	Label         string         `json:"label" bun:"label"`
-	Placeholder   null.String    `json:"placeholder" bun:"placeholder,nullzero"`
-	DefaultValue  null.String    `json:"defaultValue" bun:"default_value,nullzero"`
-	IsRequired    null.Bool      `json:"isRequired" bun:"is_required,nullzero"`
-	IsReadonly    null.Bool      `json:"isReadonly" bun:"is_readonly,nullzero"`
+	Placeholder   *string        `json:"placeholder" bun:"placeholder,nullzero"`
+	DefaultValue  *string        `json:"defaultValue" bun:"default_value,nullzero"`
+	IsRequired    *bool          `json:"isRequired" bun:"is_required,nullzero"`
+	IsReadonly    *bool          `json:"isReadonly" bun:"is_readonly,nullzero"`
 	Validation    map[string]any `json:"validation" bun:"validation,type:jsonb,nullzero"`
 	SortOrder     int            `json:"sortOrder" bun:"sort_order"`
 	Meta          map[string]any `json:"meta" bun:"meta,type:jsonb,nullzero"`
@@ -198,19 +203,20 @@ type Instance struct {
 	orm.BaseModel `bun:"table:apv_instance,alias:ai"`
 	orm.Model
 
-	FlowID           string         `json:"flowId" bun:"flow_id"`
-	FlowVersionID    string         `json:"flowVersionId" bun:"flow_version_id"`
-	ParentInstanceID null.String    `json:"parentInstanceId" bun:"parent_instance_id,nullzero"`
-	ParentNodeID     null.String    `json:"parentNodeId" bun:"parent_node_id,nullzero"`
-	Title            string         `json:"title" bun:"title"`
-	SerialNo         string         `json:"serialNo" bun:"serial_no"`
-	ApplicantID      string         `json:"applicantId" bun:"applicant_id"`
-	ApplicantDeptID  null.String    `json:"applicantDeptId" bun:"applicant_dept_id,nullzero"`
-	Status           InstanceStatus `json:"status" bun:"status"`
-	CurrentNodeID    null.String    `json:"currentNodeId" bun:"current_node_id,nullzero"`
-	FinishedAt       null.DateTime  `json:"finishedAt" bun:"finished_at,nullzero"`
-	BusinessRecordID null.String    `json:"businessRecordId" bun:"business_record_id,nullzero"`
-	FormData         map[string]any `json:"formData" bun:"form_data,type:jsonb,nullzero"`
+	TenantID         string          `json:"tenantId" bun:"tenant_id"`
+	FlowID           string          `json:"flowId" bun:"flow_id"`
+	FlowVersionID    string          `json:"flowVersionId" bun:"flow_version_id"`
+	ParentInstanceID *string         `json:"parentInstanceId" bun:"parent_instance_id,nullzero"`
+	ParentNodeID     *string         `json:"parentNodeId" bun:"parent_node_id,nullzero"`
+	Title            string          `json:"title" bun:"title"`
+	InstanceNo       string          `json:"instanceNo" bun:"instance_no"`
+	ApplicantID      string          `json:"applicantId" bun:"applicant_id"`
+	ApplicantDeptID  *string         `json:"applicantDeptId" bun:"applicant_dept_id,nullzero"`
+	Status           InstanceStatus  `json:"status" bun:"status"`
+	CurrentNodeID    *string         `json:"currentNodeId" bun:"current_node_id,nullzero"`
+	FinishedAt       *timex.DateTime `json:"finishedAt" bun:"finished_at,nullzero"`
+	BusinessRecordID *string         `json:"businessRecordId" bun:"business_record_id,nullzero"`
+	FormData         map[string]any  `json:"formData" bun:"form_data,type:jsonb,nullzero"`
 }
 
 // Task represents an approval task.
@@ -218,18 +224,19 @@ type Task struct {
 	orm.BaseModel `bun:"table:apv_task,alias:at"`
 	orm.Model
 
-	InstanceID      string        `json:"instanceId" bun:"instance_id"`
-	NodeID          string        `json:"nodeId" bun:"node_id"`
-	AssigneeID      string        `json:"assigneeId" bun:"assignee_id"`
-	DelegateFromID  null.String   `json:"delegateFromId" bun:"delegate_from_id,nullzero"`
-	SortOrder       int           `json:"sortOrder" bun:"sort_order"`
-	Status          TaskStatus    `json:"status" bun:"status"`
-	ReadAt          null.DateTime `json:"readAt" bun:"read_at,nullzero"`
-	ParentTaskID    null.String   `json:"parentTaskId" bun:"parent_task_id,nullzero"`
-	AddAssigneeType null.String   `json:"addAssigneeType" bun:"add_assignee_type,nullzero"`
-	Deadline        null.DateTime `json:"deadline" bun:"deadline,nullzero"`
-	IsTimeout       bool          `json:"isTimeout" bun:"is_timeout"`
-	FinishedAt      null.DateTime `json:"finishedAt" bun:"finished_at,nullzero"`
+	TenantID        string          `json:"tenantId" bun:"tenant_id"`
+	InstanceID      string          `json:"instanceId" bun:"instance_id"`
+	NodeID          string          `json:"nodeId" bun:"node_id"`
+	AssigneeID      string          `json:"assigneeId" bun:"assignee_id"`
+	DelegateFromID  *string         `json:"delegateFromId" bun:"delegate_from_id,nullzero"`
+	SortOrder       int             `json:"sortOrder" bun:"sort_order"`
+	Status          TaskStatus      `json:"status" bun:"status"`
+	ReadAt          *timex.DateTime `json:"readAt" bun:"read_at,nullzero"`
+	ParentTaskID    *string         `json:"parentTaskId" bun:"parent_task_id,nullzero"`
+	AddAssigneeType *string         `json:"addAssigneeType" bun:"add_assignee_type,nullzero"`
+	Deadline        *timex.DateTime `json:"deadline" bun:"deadline,nullzero"`
+	IsTimeout       bool            `json:"isTimeout" bun:"is_timeout"`
+	FinishedAt      *timex.DateTime `json:"finishedAt" bun:"finished_at,nullzero"`
 }
 
 // FormSnapshot represents a form snapshot for rollback strategies.
@@ -252,19 +259,19 @@ type ActionLog struct {
 	orm.CreatedModel
 
 	InstanceID        string         `json:"instanceId" bun:"instance_id"`
-	NodeID            null.String    `json:"nodeId" bun:"node_id,nullzero"`
-	TaskID            null.String    `json:"taskId" bun:"task_id,nullzero"`
+	NodeID            *string        `json:"nodeId" bun:"node_id,nullzero"`
+	TaskID            *string        `json:"taskId" bun:"task_id,nullzero"`
 	Action            ActionType     `json:"action" bun:"action"`
 	OperatorID        string         `json:"operatorId" bun:"operator_id"`
-	OperatorName      null.String    `json:"operatorName" bun:"operator_name,nullzero"`
-	OperatorDept      null.String    `json:"operatorDept" bun:"operator_dept,nullzero"`
-	IPAddress         null.String    `json:"ipAddress" bun:"ip_address,nullzero"`
-	UserAgent         null.String    `json:"userAgent" bun:"user_agent,nullzero"`
-	Opinion           null.String    `json:"opinion" bun:"opinion,nullzero"`
+	OperatorName      *string        `json:"operatorName" bun:"operator_name,nullzero"`
+	OperatorDept      *string        `json:"operatorDept" bun:"operator_dept,nullzero"`
+	IPAddress         *string        `json:"ipAddress" bun:"ip_address,nullzero"`
+	UserAgent         *string        `json:"userAgent" bun:"user_agent,nullzero"`
+	Opinion           *string        `json:"opinion" bun:"opinion,nullzero"`
 	Meta              map[string]any `json:"meta" bun:"meta,type:jsonb,nullzero"`
-	TransferToID      null.String    `json:"transferToId" bun:"transfer_to_id,nullzero"`
-	RollbackToNodeID  null.String    `json:"rollbackToNodeId" bun:"rollback_to_node_id,nullzero"`
-	AddAssigneeType   null.String    `json:"addAssigneeType" bun:"add_assignee_type,nullzero"`
+	TransferToID      *string        `json:"transferToId" bun:"transfer_to_id,nullzero"`
+	RollbackToNodeID  *string        `json:"rollbackToNodeId" bun:"rollback_to_node_id,nullzero"`
+	AddAssigneeType   *string        `json:"addAssigneeType" bun:"add_assignee_type,nullzero"`
 	AddAssigneeToIDs  []string       `json:"addAssigneeToIds" bun:"add_assignee_to_ids,type:jsonb"`
 	RemoveAssigneeIDs []string       `json:"removeAssigneeIds" bun:"remove_assignee_ids,type:jsonb"`
 	CCUserIDs         []string       `json:"ccUserIds" bun:"cc_user_ids,type:jsonb"`
@@ -277,12 +284,12 @@ type CCRecord struct {
 	orm.IDModel
 	orm.CreatedModel
 
-	InstanceID string      `json:"instanceId" bun:"instance_id"`
-	NodeID     null.String `json:"nodeId" bun:"node_id,nullzero"`
-	TaskID     null.String `json:"taskId" bun:"task_id,nullzero"`
-	CCUserID   string      `json:"ccUserId" bun:"cc_user_id"`
-	IsManual   bool        `json:"isManual" bun:"is_manual"`
-	ReadAt     null.Time   `json:"readAt" bun:"read_at,nullzero"`
+	InstanceID string     `json:"instanceId" bun:"instance_id"`
+	NodeID     *string    `json:"nodeId" bun:"node_id,nullzero"`
+	TaskID     *string    `json:"taskId" bun:"task_id,nullzero"`
+	CCUserID   string     `json:"ccUserId" bun:"cc_user_id"`
+	IsManual   bool       `json:"isManual" bun:"is_manual"`
+	ReadAt     *time.Time `json:"readAt" bun:"read_at,nullzero"`
 }
 
 // ParallelRecord represents a parallel approval record.
@@ -291,12 +298,12 @@ type ParallelRecord struct {
 	orm.IDModel
 	orm.CreatedModel
 
-	InstanceID string      `json:"instanceId" bun:"instance_id"`
-	NodeID     string      `json:"nodeId" bun:"node_id"`
-	TaskID     string      `json:"taskId" bun:"task_id"`
-	AssigneeID string      `json:"assigneeId" bun:"assignee_id"`
-	Result     null.String `json:"result" bun:"result,nullzero"`
-	Opinion    null.String `json:"opinion" bun:"opinion,nullzero"`
+	InstanceID string  `json:"instanceId" bun:"instance_id"`
+	NodeID     string  `json:"nodeId" bun:"node_id"`
+	TaskID     string  `json:"taskId" bun:"task_id"`
+	AssigneeID string  `json:"assigneeId" bun:"assignee_id"`
+	Result     *string `json:"result" bun:"result,nullzero"`
+	Opinion    *string `json:"opinion" bun:"opinion,nullzero"`
 }
 
 // Delegation represents an approval delegation.
@@ -304,28 +311,29 @@ type Delegation struct {
 	orm.BaseModel `bun:"table:apv_delegation,alias:ad"`
 	orm.Model
 
-	DelegatorID    string      `json:"delegatorId" bun:"delegator_id"`
-	DelegateeID    string      `json:"delegateeId" bun:"delegatee_id"`
-	FlowCategoryID null.String `json:"flowCategoryId" bun:"flow_category_id,nullzero"`
-	FlowID         null.String `json:"flowId" bun:"flow_id,nullzero"`
+	DelegatorID    string         `json:"delegatorId" bun:"delegator_id"`
+	DelegateeID    string         `json:"delegateeId" bun:"delegatee_id"`
+	FlowCategoryID *string        `json:"flowCategoryId" bun:"flow_category_id,nullzero"`
+	FlowID         *string        `json:"flowId" bun:"flow_id,nullzero"`
 	StartTime      timex.DateTime `json:"startTime" bun:"start_time"`
 	EndTime        timex.DateTime `json:"endTime" bun:"end_time"`
-	IsActive       bool        `json:"isActive" bun:"is_active"`
-	Reason         null.String `json:"reason" bun:"reason,nullzero"`
+	IsActive       bool           `json:"isActive" bun:"is_active"`
+	Reason         *string        `json:"reason" bun:"reason,nullzero"`
 }
 
 // EventOutbox represents an event outbox for transactional event publishing.
 type EventOutbox struct {
 	orm.BaseModel `bun:"table:apv_event_outbox,alias:aeo"`
-	orm.Model
+	orm.IDModel
+	orm.CreatedModel
 
 	EventID     string            `json:"eventId" bun:"event_id"`
 	EventType   string            `json:"eventType" bun:"event_type"`
 	Payload     map[string]any    `json:"payload" bun:"payload,type:jsonb"`
 	Status      EventOutboxStatus `json:"status" bun:"status"`
 	RetryCount  int               `json:"retryCount" bun:"retry_count"`
-	LastError   null.String       `json:"lastError" bun:"last_error,nullzero"`
-	ProcessedAt null.Time         `json:"processedAt" bun:"processed_at,nullzero"`
+	LastError   *string           `json:"lastError" bun:"last_error,nullzero"`
+	ProcessedAt *time.Time        `json:"processedAt" bun:"processed_at,nullzero"`
 }
 
 // UrgeRecord represents an urge/reminder record.
@@ -334,12 +342,12 @@ type UrgeRecord struct {
 	orm.IDModel
 	orm.CreatedModel
 
-	InstanceID   string      `json:"instanceId" bun:"instance_id"`
-	NodeID       string      `json:"nodeId" bun:"node_id"`
-	TaskID       null.String `json:"taskId" bun:"task_id,nullzero"`
-	UrgerID      string      `json:"urgerId" bun:"urger_id"`
-	TargetUserID string      `json:"targetUserId" bun:"target_user_id"`
-	Message      string      `json:"message" bun:"message"`
+	InstanceID   string  `json:"instanceId" bun:"instance_id"`
+	NodeID       string  `json:"nodeId" bun:"node_id"`
+	TaskID       *string `json:"taskId" bun:"task_id,nullzero"`
+	UrgerID      string  `json:"urgerId" bun:"urger_id"`
+	TargetUserID string  `json:"targetUserId" bun:"target_user_id"`
+	Message      string  `json:"message" bun:"message"`
 }
 
 // TimeoutNotify records sent timeout notifications to prevent duplicates.

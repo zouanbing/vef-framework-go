@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS apv_flow_category (
     updated_at TIMESTAMP NOT NULL DEFAULT LOCALTIMESTAMP,
     created_by VARCHAR(32) NOT NULL DEFAULT 'system',
     updated_by VARCHAR(32) NOT NULL DEFAULT 'system',
+    tenant_id VARCHAR(32) NOT NULL,
     code VARCHAR(64) NOT NULL,
     name VARCHAR(128) NOT NULL,
     icon VARCHAR(128),
@@ -16,8 +17,8 @@ CREATE TABLE IF NOT EXISTS apv_flow_category (
     sort_order INTEGER NOT NULL DEFAULT 0,
     is_active BOOLEAN NOT NULL DEFAULT true,
     remark VARCHAR(256),
-    CONSTRAINT uk_apv_flow_category__code UNIQUE (code),
-    CONSTRAINT fk_apv_flow_category__parent FOREIGN KEY (parent_id) 
+    CONSTRAINT uk_apv_flow_category__tenant_id_code UNIQUE (tenant_id, code),
+    CONSTRAINT fk_apv_flow_category__parent_id FOREIGN KEY (parent_id) 
         REFERENCES apv_flow_category(id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
@@ -27,6 +28,7 @@ COMMENT ON COLUMN apv_flow_category.created_at IS '创建时间';
 COMMENT ON COLUMN apv_flow_category.updated_at IS '更新时间';
 COMMENT ON COLUMN apv_flow_category.created_by IS '创建人ID';
 COMMENT ON COLUMN apv_flow_category.updated_by IS '更新人ID';
+COMMENT ON COLUMN apv_flow_category.tenant_id IS '租户ID';
 COMMENT ON COLUMN apv_flow_category.code IS '分类编码';
 COMMENT ON COLUMN apv_flow_category.name IS '分类名称';
 COMMENT ON COLUMN apv_flow_category.icon IS '分类图标';
@@ -35,6 +37,7 @@ COMMENT ON COLUMN apv_flow_category.sort_order IS '排序';
 COMMENT ON COLUMN apv_flow_category.is_active IS '是否启用';
 COMMENT ON COLUMN apv_flow_category.remark IS '备注';
 
+CREATE INDEX idx_apv_flow_category__tenant_id ON apv_flow_category(tenant_id);
 CREATE INDEX idx_apv_flow_category__parent_id ON apv_flow_category(parent_id);
 
 -- Flow definition
@@ -60,11 +63,11 @@ CREATE TABLE IF NOT EXISTS apv_flow (
     admin_user_ids JSONB NOT NULL DEFAULT '[]',
     is_all_initiate_allowed BOOLEAN NOT NULL DEFAULT true,
     -- Other
-    instance_title_template VARCHAR(256) NOT NULL DEFAULT '{{.ApplicantName}}的{{.FlowName}}',
+    instance_title_template VARCHAR(256) NOT NULL DEFAULT '{{.flowName}}-{{.instanceNo}}',
     is_active BOOLEAN NOT NULL DEFAULT false,
     current_version INTEGER NOT NULL DEFAULT 0,
-    CONSTRAINT uk_apv_flow__code UNIQUE (code),
-    CONSTRAINT fk_apv_flow__apv_flow_category FOREIGN KEY (category_id) 
+    CONSTRAINT uk_apv_flow__tenant_id_code UNIQUE (tenant_id, code),
+    CONSTRAINT fk_apv_flow__category_id FOREIGN KEY (category_id) 
         REFERENCES apv_flow_category(id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
@@ -100,7 +103,7 @@ CREATE TABLE IF NOT EXISTS apv_flow_initiator (
     flow_id VARCHAR(32) NOT NULL,
     initiator_kind VARCHAR(16) NOT NULL,
     initiator_ids JSONB NOT NULL DEFAULT '[]',
-    CONSTRAINT fk_apv_flow_initiator__apv_flow FOREIGN KEY (flow_id) REFERENCES apv_flow(id) ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT fk_apv_flow_initiator__flow_id FOREIGN KEY (flow_id) REFERENCES apv_flow(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 COMMENT ON TABLE apv_flow_initiator IS '流程发起人';
@@ -129,7 +132,7 @@ CREATE TABLE IF NOT EXISTS apv_flow_version (
     published_at TIMESTAMP,
     published_by VARCHAR(32),
     CONSTRAINT uk_apv_flow_version__flow_id_version UNIQUE (flow_id, version),
-    CONSTRAINT fk_apv_flow_version__apv_flow FOREIGN KEY (flow_id) REFERENCES apv_flow(id) ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT fk_apv_flow_version__flow_id FOREIGN KEY (flow_id) REFERENCES apv_flow(id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 COMMENT ON TABLE apv_flow_version IS '流程版本';
@@ -148,6 +151,8 @@ COMMENT ON COLUMN apv_flow_version.published_at IS '发布时间';
 COMMENT ON COLUMN apv_flow_version.published_by IS '发布人ID';
 
 CREATE INDEX idx_apv_flow_version__flow_id_status ON apv_flow_version(flow_id, status);
+-- Ensure at most one published version per flow
+CREATE UNIQUE INDEX uk_apv_flow_version__flow_id_published ON apv_flow_version(flow_id) WHERE status = 'published';
 
 -- Flow node
 CREATE TABLE IF NOT EXISTS apv_flow_node (
@@ -194,10 +199,11 @@ CREATE TABLE IF NOT EXISTS apv_flow_node (
     urge_cooldown_minutes INTEGER NOT NULL DEFAULT 0 CONSTRAINT ck_apv_flow_node__urge_cooldown_minutes CHECK (urge_cooldown_minutes >= 0),
     -- Advanced config
     duplicate_handler_action VARCHAR(32) NOT NULL DEFAULT 'none',
+    is_read_confirm_required BOOLEAN NOT NULL DEFAULT false,
     branches JSONB,
     sub_flow_config JSONB,
     CONSTRAINT uk_apv_flow_node__flow_version_id_node_key UNIQUE (flow_version_id, node_key),
-    CONSTRAINT fk_apv_flow_node__apv_flow_version FOREIGN KEY (flow_version_id) REFERENCES apv_flow_version(id) ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT fk_apv_flow_node__flow_version_id FOREIGN KEY (flow_version_id) REFERENCES apv_flow_version(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 COMMENT ON TABLE apv_flow_node IS '流程节点';
@@ -234,6 +240,7 @@ COMMENT ON COLUMN apv_flow_node.timeout_action IS '超时动作';
 COMMENT ON COLUMN apv_flow_node.timeout_notify_before_hours IS '超时通知的提前小时数';
 COMMENT ON COLUMN apv_flow_node.urge_cooldown_minutes IS '催办冷却时间';
 COMMENT ON COLUMN apv_flow_node.duplicate_handler_action IS '连续审批人重复时处理方式';
+COMMENT ON COLUMN apv_flow_node.is_read_confirm_required IS '是否需要全员已阅后才继续';
 COMMENT ON COLUMN apv_flow_node.branches IS '条件分支配置';
 COMMENT ON COLUMN apv_flow_node.sub_flow_config IS '子流程配置';
 
@@ -241,18 +248,18 @@ COMMENT ON COLUMN apv_flow_node.sub_flow_config IS '子流程配置';
 CREATE TABLE IF NOT EXISTS apv_flow_node_assignee (
     id VARCHAR(32) PRIMARY KEY,
     node_id VARCHAR(32) NOT NULL,
-    assignee_kind VARCHAR(16) NOT NULL,
-    assignee_ids JSONB NOT NULL DEFAULT '[]',
+    kind VARCHAR(16) NOT NULL,
+    ids JSONB NOT NULL DEFAULT '[]',
     form_field VARCHAR(64),
     sort_order INTEGER NOT NULL DEFAULT 0,
-    CONSTRAINT fk_apv_flow_node_assignee__apv_flow_node FOREIGN KEY (node_id) REFERENCES apv_flow_node(id) ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT fk_apv_flow_node_assignee__node_id FOREIGN KEY (node_id) REFERENCES apv_flow_node(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 COMMENT ON TABLE apv_flow_node_assignee IS '节点处理人';
 COMMENT ON COLUMN apv_flow_node_assignee.id IS '主键';
 COMMENT ON COLUMN apv_flow_node_assignee.node_id IS '节点ID';
-COMMENT ON COLUMN apv_flow_node_assignee.assignee_kind IS '处理人类型';
-COMMENT ON COLUMN apv_flow_node_assignee.assignee_ids IS '处理人ID';
+COMMENT ON COLUMN apv_flow_node_assignee.kind IS '处理人类型';
+COMMENT ON COLUMN apv_flow_node_assignee.ids IS '处理人ID';
 COMMENT ON COLUMN apv_flow_node_assignee.form_field IS '表单字段';
 COMMENT ON COLUMN apv_flow_node_assignee.sort_order IS '排序';
 
@@ -262,18 +269,20 @@ CREATE INDEX idx_apv_flow_node_assignee__node_id ON apv_flow_node_assignee(node_
 CREATE TABLE IF NOT EXISTS apv_flow_node_cc (
     id VARCHAR(32) PRIMARY KEY,
     node_id VARCHAR(32) NOT NULL,
-    cc_kind VARCHAR(16) NOT NULL,
-    cc_ids JSONB NOT NULL DEFAULT '[]',
+    kind VARCHAR(16) NOT NULL,
+    ids JSONB NOT NULL DEFAULT '[]',
     form_field VARCHAR(64),
-    CONSTRAINT fk_apv_flow_node_cc__apv_flow_node FOREIGN KEY (node_id) REFERENCES apv_flow_node(id) ON DELETE CASCADE ON UPDATE CASCADE
+    timing VARCHAR(16) NOT NULL DEFAULT 'always',
+    CONSTRAINT fk_apv_flow_node_cc__node_id FOREIGN KEY (node_id) REFERENCES apv_flow_node(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 COMMENT ON TABLE apv_flow_node_cc IS '节点抄送人';
 COMMENT ON COLUMN apv_flow_node_cc.id IS '主键';
 COMMENT ON COLUMN apv_flow_node_cc.node_id IS '节点ID';
-COMMENT ON COLUMN apv_flow_node_cc.cc_kind IS '抄送人类型';
-COMMENT ON COLUMN apv_flow_node_cc.cc_ids IS '抄送人ID';
+COMMENT ON COLUMN apv_flow_node_cc.kind IS '抄送人类型';
+COMMENT ON COLUMN apv_flow_node_cc.ids IS '抄送人ID';
 COMMENT ON COLUMN apv_flow_node_cc.form_field IS '表单字段';
+COMMENT ON COLUMN apv_flow_node_cc.timing IS '抄送时机';
 
 CREATE INDEX idx_apv_flow_node_cc__node_id ON apv_flow_node_cc(node_id);
 
@@ -284,9 +293,9 @@ CREATE TABLE IF NOT EXISTS apv_flow_edge (
     source_node_id VARCHAR(32) NOT NULL,
     target_node_id VARCHAR(32) NOT NULL,
     source_handle VARCHAR(32),
-    CONSTRAINT fk_apv_flow_edge__apv_flow_version FOREIGN KEY (flow_version_id) REFERENCES apv_flow_version(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_apv_flow_edge__source_apv_flow_node FOREIGN KEY (source_node_id) REFERENCES apv_flow_node(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_apv_flow_edge__target_apv_flow_node FOREIGN KEY (target_node_id) REFERENCES apv_flow_node(id) ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT fk_apv_flow_edge__flow_version_id FOREIGN KEY (flow_version_id) REFERENCES apv_flow_version(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_apv_flow_edge__source_node_id FOREIGN KEY (source_node_id) REFERENCES apv_flow_node(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_apv_flow_edge__target_node_id FOREIGN KEY (target_node_id) REFERENCES apv_flow_node(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 COMMENT ON TABLE apv_flow_edge IS '流程连线';
@@ -298,6 +307,7 @@ COMMENT ON COLUMN apv_flow_edge.source_handle IS '来源节点句柄';
 
 CREATE INDEX idx_apv_flow_edge__flow_version_id_source_node_id ON apv_flow_edge(flow_version_id, source_node_id);
 CREATE INDEX idx_apv_flow_edge__source_node_id ON apv_flow_edge(source_node_id);
+CREATE INDEX idx_apv_flow_edge__target_node_id ON apv_flow_edge(target_node_id);
 
 --------------------------------------------------------------------------------
 -- Form Field Definition
@@ -311,13 +321,13 @@ CREATE TABLE IF NOT EXISTS apv_flow_form_field (
     label VARCHAR(128) NOT NULL,
     placeholder VARCHAR(256),
     default_value TEXT,
-    is_required BOOLEAN DEFAULT false,
-    is_readonly BOOLEAN DEFAULT false,
+    is_required BOOLEAN NOT NULL DEFAULT false,
+    is_readonly BOOLEAN NOT NULL DEFAULT false,
     validation JSONB,
     sort_order INTEGER NOT NULL DEFAULT 0,
     meta JSONB,
-    CONSTRAINT uk_apv_flow_form_field__flow_version_id_name UNIQUE(flow_version_id, name),
-    CONSTRAINT fk_apv_flow_form_field__apv_flow_version FOREIGN KEY (flow_version_id) REFERENCES apv_flow_version(id) ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT uk_apv_flow_form_field__flow_version_id_name UNIQUE (flow_version_id, name),
+    CONSTRAINT fk_apv_flow_form_field__flow_version_id FOREIGN KEY (flow_version_id) REFERENCES apv_flow_version(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 COMMENT ON TABLE apv_flow_form_field IS '流程表单字段';
@@ -334,8 +344,6 @@ COMMENT ON COLUMN apv_flow_form_field.validation IS '校验规则';
 COMMENT ON COLUMN apv_flow_form_field.sort_order IS '显示顺序';
 COMMENT ON COLUMN apv_flow_form_field.meta IS '元信息';
 
--- Note: UNIQUE(flow_version_id, name) already covers flow_version_id prefix queries
-
 --------------------------------------------------------------------------------
 -- Runtime Tables
 --------------------------------------------------------------------------------
@@ -347,13 +355,14 @@ CREATE TABLE IF NOT EXISTS apv_instance (
     updated_at TIMESTAMP NOT NULL DEFAULT LOCALTIMESTAMP,
     created_by VARCHAR(32) NOT NULL DEFAULT 'system',
     updated_by VARCHAR(32) NOT NULL DEFAULT 'system',
+    tenant_id VARCHAR(32) NOT NULL,
     flow_id VARCHAR(32) NOT NULL,
     flow_version_id VARCHAR(32) NOT NULL,
     parent_instance_id VARCHAR(32),
     parent_node_id VARCHAR(32),
     -- Application info
     title VARCHAR(256) NOT NULL,
-    serial_no VARCHAR(64) NOT NULL,
+    instance_no VARCHAR(64) NOT NULL,
     applicant_id VARCHAR(32) NOT NULL,
     applicant_dept_id VARCHAR(32),
     -- Status info
@@ -364,11 +373,11 @@ CREATE TABLE IF NOT EXISTS apv_instance (
     business_record_id VARCHAR(128),
     -- Form data
     form_data JSONB,
-    CONSTRAINT fk_apv_instance__apv_flow FOREIGN KEY (flow_id) REFERENCES apv_flow(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_apv_instance__apv_flow_version FOREIGN KEY (flow_version_id) REFERENCES apv_flow_version(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT uk_apv_instance__serial_no UNIQUE (serial_no),
-    CONSTRAINT fk_apv_instance__parent_instance FOREIGN KEY (parent_instance_id) REFERENCES apv_instance(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_apv_instance__parent_node FOREIGN KEY (parent_node_id) REFERENCES apv_flow_node(id) ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT fk_apv_instance__flow_id FOREIGN KEY (flow_id) REFERENCES apv_flow(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_apv_instance__flow_version_id FOREIGN KEY (flow_version_id) REFERENCES apv_flow_version(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT uk_apv_instance__instance_no UNIQUE (instance_no),
+    CONSTRAINT fk_apv_instance__parent_instance_id FOREIGN KEY (parent_instance_id) REFERENCES apv_instance(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_apv_instance__parent_node_id FOREIGN KEY (parent_node_id) REFERENCES apv_flow_node(id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 COMMENT ON TABLE apv_instance IS '流程实例';
@@ -377,12 +386,13 @@ COMMENT ON COLUMN apv_instance.created_at IS '创建时间';
 COMMENT ON COLUMN apv_instance.updated_at IS '更新时间';
 COMMENT ON COLUMN apv_instance.created_by IS '创建人ID';
 COMMENT ON COLUMN apv_instance.updated_by IS '更新人ID';
+COMMENT ON COLUMN apv_instance.tenant_id IS '租户ID';
 COMMENT ON COLUMN apv_instance.flow_id IS '流程ID';
 COMMENT ON COLUMN apv_instance.flow_version_id IS '流程版本ID';
 COMMENT ON COLUMN apv_instance.parent_instance_id IS '父流程实例ID';
 COMMENT ON COLUMN apv_instance.parent_node_id IS '父流程节点ID';
 COMMENT ON COLUMN apv_instance.title IS '申请标题';
-COMMENT ON COLUMN apv_instance.serial_no IS '流水号';
+COMMENT ON COLUMN apv_instance.instance_no IS '实例编号';
 COMMENT ON COLUMN apv_instance.applicant_id IS '申请人ID';
 COMMENT ON COLUMN apv_instance.applicant_dept_id IS '申请人部门ID';
 COMMENT ON COLUMN apv_instance.status IS '实例状态';
@@ -391,8 +401,12 @@ COMMENT ON COLUMN apv_instance.finished_at IS '完成时间';
 COMMENT ON COLUMN apv_instance.business_record_id IS '业务记录ID';
 COMMENT ON COLUMN apv_instance.form_data IS '表单数据';
 
+CREATE INDEX idx_apv_instance__tenant_id ON apv_instance(tenant_id);
+CREATE INDEX idx_apv_instance__tenant_id_status_created_at ON apv_instance(tenant_id, status, created_at DESC);
+CREATE INDEX idx_apv_instance__tenant_id_applicant_id_status ON apv_instance(tenant_id, applicant_id, status);
 CREATE INDEX idx_apv_instance__flow_id_status_created_at ON apv_instance(flow_id, status, created_at);
 CREATE INDEX idx_apv_instance__applicant_id_status_created_at ON apv_instance(applicant_id, status, created_at DESC);
+CREATE INDEX idx_apv_instance__current_node_id ON apv_instance(current_node_id);
 CREATE INDEX idx_apv_instance__parent_instance_id ON apv_instance(parent_instance_id);
 
 --------------------------------------------------------------------------------
@@ -409,6 +423,7 @@ CREATE TABLE IF NOT EXISTS apv_task (
     updated_at TIMESTAMP NOT NULL DEFAULT LOCALTIMESTAMP,
     created_by VARCHAR(32) NOT NULL DEFAULT 'system',
     updated_by VARCHAR(32) NOT NULL DEFAULT 'system',
+    tenant_id VARCHAR(32) NOT NULL,
     instance_id VARCHAR(32) NOT NULL,
     node_id VARCHAR(32) NOT NULL,
     -- Assignee info
@@ -426,9 +441,9 @@ CREATE TABLE IF NOT EXISTS apv_task (
     is_timeout BOOLEAN NOT NULL DEFAULT false,
     -- Time record
     finished_at TIMESTAMP,
-    CONSTRAINT fk_apv_task__apv_instance FOREIGN KEY (instance_id) REFERENCES apv_instance(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_apv_task__apv_flow_node FOREIGN KEY (node_id) REFERENCES apv_flow_node(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_apv_task__parent_task FOREIGN KEY (parent_task_id) REFERENCES apv_task(id) ON DELETE SET NULL ON UPDATE CASCADE
+    CONSTRAINT fk_apv_task__instance_id FOREIGN KEY (instance_id) REFERENCES apv_instance(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_apv_task__node_id FOREIGN KEY (node_id) REFERENCES apv_flow_node(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_apv_task__parent_task_id FOREIGN KEY (parent_task_id) REFERENCES apv_task(id) ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 COMMENT ON TABLE apv_task IS '审批任务';
@@ -437,6 +452,7 @@ COMMENT ON COLUMN apv_task.created_at IS '创建时间';
 COMMENT ON COLUMN apv_task.updated_at IS '更新时间';
 COMMENT ON COLUMN apv_task.created_by IS '创建人ID';
 COMMENT ON COLUMN apv_task.updated_by IS '更新人ID';
+COMMENT ON COLUMN apv_task.tenant_id IS '租户ID';
 COMMENT ON COLUMN apv_task.instance_id IS '流程实例ID';
 COMMENT ON COLUMN apv_task.node_id IS '节点ID';
 COMMENT ON COLUMN apv_task.assignee_id IS '审批人ID';
@@ -450,6 +466,8 @@ COMMENT ON COLUMN apv_task.deadline IS '截止时间';
 COMMENT ON COLUMN apv_task.is_timeout IS '是否已超时';
 COMMENT ON COLUMN apv_task.finished_at IS '完成时间';
 
+CREATE INDEX idx_apv_task__tenant_id ON apv_task(tenant_id);
+CREATE INDEX idx_apv_task__tenant_id_assignee_id_status ON apv_task(tenant_id, assignee_id, status);
 CREATE INDEX idx_apv_task__instance_id_node_id_status ON apv_task(instance_id, node_id, status);
 CREATE INDEX idx_apv_task__assignee_id_status_created_at ON apv_task(assignee_id, status, created_at);
 CREATE INDEX idx_apv_task__instance_id_status_assignee_id ON apv_task(instance_id, status, assignee_id);
@@ -477,13 +495,15 @@ CREATE TABLE IF NOT EXISTS apv_action_log (
     rollback_to_node_id VARCHAR(32),
     -- Dynamic assignee info
     add_assignee_type VARCHAR(16),
-    add_assignee_to_ids JSONB DEFAULT '[]',
-    remove_assignee_ids JSONB DEFAULT '[]',
+    add_assignee_to_ids JSONB NOT NULL DEFAULT '[]',
+    remove_assignee_ids JSONB NOT NULL DEFAULT '[]',
     -- CC info
-    cc_user_ids JSONB DEFAULT '[]',
+    cc_user_ids JSONB NOT NULL DEFAULT '[]',
     -- Attachments
-    attachments JSONB DEFAULT '[]',
-    CONSTRAINT fk_apv_action_log__apv_instance FOREIGN KEY (instance_id) REFERENCES apv_instance(id) ON DELETE CASCADE ON UPDATE CASCADE
+    attachments JSONB NOT NULL DEFAULT '[]',
+    CONSTRAINT fk_apv_action_log__instance_id FOREIGN KEY (instance_id) REFERENCES apv_instance(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_apv_action_log__node_id FOREIGN KEY (node_id) REFERENCES apv_flow_node(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_apv_action_log__task_id FOREIGN KEY (task_id) REFERENCES apv_task(id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 COMMENT ON TABLE apv_action_log IS '操作日志';
@@ -523,7 +543,7 @@ CREATE TABLE IF NOT EXISTS apv_parallel_record (
     assignee_id VARCHAR(32) NOT NULL,
     result VARCHAR(16),
     opinion TEXT,
-    CONSTRAINT fk_apv_parallel_record__apv_instance FOREIGN KEY (instance_id) REFERENCES apv_instance(id) ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT fk_apv_parallel_record__instance_id FOREIGN KEY (instance_id) REFERENCES apv_instance(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 COMMENT ON TABLE apv_parallel_record IS '并行审批记录';
@@ -553,7 +573,7 @@ CREATE TABLE IF NOT EXISTS apv_cc_record (
     cc_user_id VARCHAR(32) NOT NULL,
     is_manual BOOLEAN NOT NULL DEFAULT false,
     read_at TIMESTAMP,
-    CONSTRAINT fk_apv_cc_record__apv_instance FOREIGN KEY (instance_id) REFERENCES apv_instance(id) ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT fk_apv_cc_record__instance_id FOREIGN KEY (instance_id) REFERENCES apv_instance(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 COMMENT ON TABLE apv_cc_record IS '抄送记录';
@@ -589,9 +609,9 @@ CREATE TABLE IF NOT EXISTS apv_delegation (
     end_time TIMESTAMP NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT true,
     reason VARCHAR(256),
-    CONSTRAINT fk_apv_delegation__apv_flow_category FOREIGN KEY (flow_category_id)
+    CONSTRAINT fk_apv_delegation__flow_category_id FOREIGN KEY (flow_category_id)
         REFERENCES apv_flow_category(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_apv_delegation__apv_flow FOREIGN KEY (flow_id)
+    CONSTRAINT fk_apv_delegation__flow_id FOREIGN KEY (flow_id)
         REFERENCES apv_flow(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT ck_apv_delegation__time_range CHECK (start_time < end_time),
     CONSTRAINT ck_apv_delegation__no_self CHECK (delegator_id != delegatee_id)
@@ -625,7 +645,7 @@ CREATE TABLE IF NOT EXISTS apv_form_snapshot (
     instance_id VARCHAR(32) NOT NULL,
     node_id VARCHAR(32) NOT NULL,
     form_data JSONB NOT NULL,
-    CONSTRAINT fk_apv_form_snapshot__apv_instance FOREIGN KEY (instance_id) REFERENCES apv_instance(id) ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT fk_apv_form_snapshot__instance_id FOREIGN KEY (instance_id) REFERENCES apv_instance(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 COMMENT ON TABLE apv_form_snapshot IS '表单快照'; -- Use for rollback strategies: snapshot/merge
@@ -646,9 +666,7 @@ CREATE INDEX idx_apv_form_snapshot__instance_id_node_id ON apv_form_snapshot(ins
 CREATE TABLE IF NOT EXISTS apv_event_outbox (
     id VARCHAR(32) PRIMARY KEY,
     created_at TIMESTAMP NOT NULL DEFAULT LOCALTIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT LOCALTIMESTAMP,
     created_by VARCHAR(32) NOT NULL DEFAULT 'system',
-    updated_by VARCHAR(32) NOT NULL DEFAULT 'system',
     event_id VARCHAR(64) NOT NULL,
     event_type VARCHAR(128) NOT NULL,
     payload JSONB NOT NULL,
@@ -662,9 +680,7 @@ CREATE TABLE IF NOT EXISTS apv_event_outbox (
 COMMENT ON TABLE apv_event_outbox IS '事件发件箱';
 COMMENT ON COLUMN apv_event_outbox.id IS '主键';
 COMMENT ON COLUMN apv_event_outbox.created_at IS '创建时间';
-COMMENT ON COLUMN apv_event_outbox.updated_at IS '更新时间';
 COMMENT ON COLUMN apv_event_outbox.created_by IS '创建人ID';
-COMMENT ON COLUMN apv_event_outbox.updated_by IS '更新人ID';
 COMMENT ON COLUMN apv_event_outbox.event_id IS '事件唯一标识';
 COMMENT ON COLUMN apv_event_outbox.event_type IS '事件类型';
 COMMENT ON COLUMN apv_event_outbox.payload IS '事件载荷';
@@ -686,7 +702,7 @@ CREATE TABLE IF NOT EXISTS apv_urge_record (
     urger_id VARCHAR(32) NOT NULL,
     target_user_id VARCHAR(32) NOT NULL,
     message TEXT NOT NULL,
-    CONSTRAINT fk_apv_urge_record__apv_instance FOREIGN KEY (instance_id) REFERENCES apv_instance(id) ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT fk_apv_urge_record__instance_id FOREIGN KEY (instance_id) REFERENCES apv_instance(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 COMMENT ON TABLE apv_urge_record IS '催办记录';
@@ -711,7 +727,7 @@ CREATE TABLE IF NOT EXISTS apv_timeout_notify (
     task_id VARCHAR(32) NOT NULL,
     notify_type VARCHAR(16) NOT NULL,
     CONSTRAINT uk_apv_timeout_notify__task_id_notify_type UNIQUE (task_id, notify_type),
-    CONSTRAINT fk_apv_timeout_notify__apv_task FOREIGN KEY (task_id) REFERENCES apv_task(id) ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT fk_apv_timeout_notify__task_id FOREIGN KEY (task_id) REFERENCES apv_task(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 COMMENT ON TABLE apv_timeout_notify IS '超时通知记录';

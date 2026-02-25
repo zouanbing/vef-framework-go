@@ -52,6 +52,7 @@ const (
 	NodeCondition NodeKind = "condition" // Condition node: branches the flow based on conditions
 	NodeSubFlow   NodeKind = "sub_flow"  // SubFlow node: invokes another workflow as a sub-process
 	NodeEnd       NodeKind = "end"       // End node: the terminal point of a workflow
+	NodeCC        NodeKind = "cc"        // CC node: sends notifications to specified users
 )
 
 // ExecutionType represents how a node is executed.
@@ -101,7 +102,6 @@ type SameApplicantAction string
 const (
 	SameApplicantAutoPass         SameApplicantAction = "auto_pass"
 	SameApplicantSelfApprove      SameApplicantAction = "self_approve"      // Default
-	SameApplicantTransferAdmin    SameApplicantAction = "transfer_admin"    // Transfer to admin
 	SameApplicantTransferSuperior SameApplicantAction = "transfer_superior" // Transfer to superior
 )
 
@@ -240,6 +240,15 @@ const (
 	CCRole      CCKind = "role"
 	CCDept      CCKind = "dept"
 	CCFormField CCKind = "form_field"
+)
+
+// CCTiming represents the timing of CC notification.
+type CCTiming string
+
+const (
+	CCTimingAlways    CCTiming = "always"     // Always: send CC regardless of result
+	CCTimingOnApprove CCTiming = "on_approve" // OnApprove: send CC only when approved
+	CCTimingOnReject  CCTiming = "on_reject"  // OnReject: send CC only when rejected
 )
 
 // EventOutboxStatus represents the processing status of an event outbox record.

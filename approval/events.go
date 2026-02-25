@@ -2,12 +2,6 @@ package approval
 
 import "time"
 
-// DomainEvent is the base interface for all approval domain events.
-type DomainEvent interface {
-	EventName() string
-	OccurredAt() time.Time
-}
-
 // ==================== Instance Events ====================
 
 // InstanceCreatedEvent fired when a new instance is created.
@@ -326,8 +320,8 @@ func (e *AssigneesRemovedEvent) OccurredAt() time.Time { return e.OccurredTime }
 
 // ==================== CC Events ====================
 
-// CcNotifiedEvent fired when users are carbon-copied.
-type CcNotifiedEvent struct {
+// CCNotifiedEvent fired when users are carbon-copied.
+type CCNotifiedEvent struct {
 	InstanceID   string    `json:"instanceId"`
 	NodeID       string    `json:"nodeId"`
 	CcUserIDs    []string  `json:"ccUserIds"`
@@ -335,8 +329,8 @@ type CcNotifiedEvent struct {
 	OccurredTime time.Time `json:"occurredTime"`
 }
 
-func NewCcNotifiedEvent(instanceID, nodeID string, ccUserIDs []string, isManual bool) *CcNotifiedEvent {
-	return &CcNotifiedEvent{
+func NewCcNotifiedEvent(instanceID, nodeID string, ccUserIDs []string, isManual bool) *CCNotifiedEvent {
+	return &CCNotifiedEvent{
 		InstanceID:   instanceID,
 		NodeID:       nodeID,
 		CcUserIDs:    ccUserIDs,
@@ -345,8 +339,8 @@ func NewCcNotifiedEvent(instanceID, nodeID string, ccUserIDs []string, isManual 
 	}
 }
 
-func (e *CcNotifiedEvent) EventName() string     { return "approval.cc.notified" }
-func (e *CcNotifiedEvent) OccurredAt() time.Time { return e.OccurredTime }
+func (e *CCNotifiedEvent) EventName() string     { return "approval.cc.notified" }
+func (e *CCNotifiedEvent) OccurredAt() time.Time { return e.OccurredTime }
 
 // ==================== SubFlow Events ====================
 

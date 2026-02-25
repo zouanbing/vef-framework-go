@@ -1,6 +1,9 @@
 package approval
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // OrganizationService provides org-related operations (implemented by host app).
 type OrganizationService interface {
@@ -53,4 +56,10 @@ type PassRuleContext struct {
 type PassRuleStrategy interface {
 	Rule() PassRule
 	Evaluate(ctx PassRuleContext) PassRuleResult
+}
+
+// DomainEvent is the base interface for all approval domain events.
+type DomainEvent interface {
+	EventName() string
+	OccurredAt() time.Time
 }

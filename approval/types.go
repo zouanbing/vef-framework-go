@@ -55,7 +55,7 @@ type AssigneeDefinition struct {
 
 // EdgeDefinition represents a connection between nodes.
 type EdgeDefinition struct {
-	ID           string         `json:"id,omitempty"`
+	ID           string         `json:"id"`
 	Source       string         `json:"source"`
 	Target       string         `json:"target"`
 	SourceHandle string         `json:"sourceHandle,omitempty"`
