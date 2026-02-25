@@ -236,7 +236,7 @@ func visitBreadthFirst(target reflect.Value, config VisitorConfig, visitor Visit
 
 		for current.Kind() == reflect.Pointer {
 			if current.IsNil() {
-				continue
+				break
 			}
 
 			current = current.Elem()
