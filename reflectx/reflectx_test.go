@@ -348,6 +348,17 @@ func TestFindMethod(t *testing.T) {
 		result := method.Call(nil)
 		assert.Equal(t, "base pointer method", result[0].String(), "Method should return expected value")
 	})
+
+	t.Run("PointerReceiverOnAddressableValue", func(t *testing.T) {
+		rv := reflect.New(reflect.TypeOf(BaseStruct{})).Elem()
+		rv.FieldByName("Value").SetString("test")
+
+		method := FindMethod(rv, "BasePointerMethod")
+		require.True(t, method.IsValid(), "Should find pointer receiver method on addressable value")
+
+		result := method.Call(nil)
+		assert.Equal(t, "base pointer method", result[0].String(), "Method should return expected value")
+	})
 }
 
 func BenchmarkFindMethod(b *testing.B) {
@@ -500,6 +511,8 @@ type AnotherStruct struct {
 	Data int
 }
 
+type namedSlice []int
+
 // TestIsTypeCompatible tests is type compatible functionality.
 func TestIsTypeCompatible(t *testing.T) {
 	t.Run("ExactTypeMatch", func(t *testing.T) {
@@ -649,6 +662,30 @@ func TestConvertValue(t *testing.T) {
 
 		assert.Error(t, err, "Should error for incompatible types")
 		assert.Contains(t, err.Error(), "cannot convert source type", "Error message should indicate incompatibility")
+	})
+
+	t.Run("PointerToNamedTypePointer", func(t *testing.T) {
+		src := []int{1, 2, 3}
+		srcVal := reflect.ValueOf(&src)
+		targetType := reflect.TypeFor[*namedSlice]()
+
+		result, err := ConvertValue(srcVal, targetType)
+
+		require.NoError(t, err, "Should convert *[]int to *namedSlice")
+		assert.Equal(t, reflect.Pointer, result.Kind(), "Result should be pointer")
+		ns := result.Interface().(*namedSlice)
+		assert.Len(t, *ns, 3, "Should preserve slice length")
+	})
+
+	t.Run("NilPointerToNamedTypePointer", func(t *testing.T) {
+		var src *[]int
+		srcVal := reflect.ValueOf(src)
+		targetType := reflect.TypeFor[*namedSlice]()
+
+		result, err := ConvertValue(srcVal, targetType)
+
+		require.NoError(t, err, "Should convert nil *[]int to nil *namedSlice")
+		assert.True(t, result.IsZero(), "Result should be zero value")
 	})
 
 	t.Run("StructConversion", func(t *testing.T) {
