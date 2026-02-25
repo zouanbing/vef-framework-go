@@ -12,7 +12,7 @@ type OrganizationService = approval.OrganizationService
 // UserService provides user-related operations (implemented by host app).
 type UserService = approval.UserService
 
-// SerialNoGenerator generates unique serial numbers for flow instances.
-type SerialNoGenerator interface {
+// InstanceNoGenerator generates unique instance numbers for flow instances.
+type InstanceNoGenerator interface {
 	Generate(ctx context.Context, flowCode string) (string, error)
 }

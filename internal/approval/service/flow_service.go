@@ -7,9 +7,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/decimal"
-	"github.com/ilxqx/vef-framework-go/id"
 	"github.com/ilxqx/vef-framework-go/internal/approval/publisher"
-	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/timex"
@@ -57,11 +55,17 @@ func (s *FlowService) DeployFlow(ctx context.Context, cmd DeployFlowCmd) (*appro
 
 	var resultFlow *approval.Flow
 
+	tenantID := cmd.TenantID
+	if tenantID == "" {
+		tenantID = "default"
+	}
+
 	err := s.db.RunInTX(ctx, func(ctx context.Context, tx orm.DB) error {
 		// Load or create flow
 		var flow approval.Flow
 
 		err := tx.NewSelect().Model(&flow).Where(func(c orm.ConditionBuilder) {
+			c.Equals("tenant_id", tenantID)
 			c.Equals("code", cmd.FlowCode)
 		}).Scan(ctx)
 		if err != nil && !result.IsRecordNotFound(err) {
@@ -69,11 +73,6 @@ func (s *FlowService) DeployFlow(ctx context.Context, cmd DeployFlowCmd) (*appro
 		}
 
 		isNewFlow := result.IsRecordNotFound(err)
-
-		tenantID := cmd.TenantID
-		if tenantID == "" {
-			tenantID = "default"
-		}
 
 		if isNewFlow {
 			flow = approval.Flow{
@@ -85,17 +84,12 @@ func (s *FlowService) DeployFlow(ctx context.Context, cmd DeployFlowCmd) (*appro
 				IsAllInitiateAllowed: true,
 				CurrentVersion:       1,
 			}
-			flow.ID = id.Generate()
-			flow.CreatedBy = cmd.OperatorID
-			flow.UpdatedBy = cmd.OperatorID
-
 			if _, err := tx.NewInsert().Model(&flow).Exec(ctx); err != nil {
 				return fmt.Errorf("insert flow: %w", err)
 			}
 		} else {
 			flow.CurrentVersion++
 			flow.Name = cmd.FlowName
-			flow.UpdatedBy = cmd.OperatorID
 
 			if _, err := tx.NewUpdate().Model(&flow).WherePK().Exec(ctx); err != nil {
 				return fmt.Errorf("update flow: %w", err)
@@ -108,10 +102,6 @@ func (s *FlowService) DeployFlow(ctx context.Context, cmd DeployFlowCmd) (*appro
 			Version: flow.CurrentVersion,
 			Status:  approval.VersionDraft,
 		}
-		version.ID = id.Generate()
-		version.CreatedBy = cmd.OperatorID
-		version.UpdatedBy = cmd.OperatorID
-
 		if _, err := tx.NewInsert().Model(&version).Exec(ctx); err != nil {
 			return fmt.Errorf("insert version: %w", err)
 		}
@@ -134,10 +124,6 @@ func (s *FlowService) DeployFlow(ctx context.Context, cmd DeployFlowCmd) (*appro
 				NodeKind:      nd.Type,
 				Name:          name,
 			}
-			node.ID = id.Generate()
-			node.CreatedBy = cmd.OperatorID
-			node.UpdatedBy = cmd.OperatorID
-
 			applyNodeData(&node, nd.Data)
 
 			if _, err := tx.NewInsert().Model(&node).Exec(ctx); err != nil {
@@ -151,14 +137,12 @@ func (s *FlowService) DeployFlow(ctx context.Context, cmd DeployFlowCmd) (*appro
 			for _, assigneeDef := range assignees {
 				assignee := approval.FlowNodeAssignee{
 					NodeID:       node.ID,
-					AssigneeKind: approval.AssigneeKind(assigneeDef.Kind),
-					AssigneeIDs:  assigneeDef.IDs,
+					Kind: approval.AssigneeKind(assigneeDef.Kind),
+					IDs:  assigneeDef.IDs,
 					SortOrder:    assigneeDef.SortOrder,
 				}
-				assignee.ID = id.Generate()
-
 				if assigneeDef.FormField != "" {
-					assignee.FormField = null.StringFrom(assigneeDef.FormField)
+					assignee.FormField = new(assigneeDef.FormField)
 				}
 
 				if _, err := tx.NewInsert().Model(&assignee).Exec(ctx); err != nil {
@@ -184,10 +168,8 @@ func (s *FlowService) DeployFlow(ctx context.Context, cmd DeployFlowCmd) (*appro
 				SourceNodeID:  sourceID,
 				TargetNodeID:  targetID,
 			}
-			edge.ID = id.Generate()
-
 			if edgeDef.SourceHandle != "" {
-				edge.SourceHandle = null.StringFrom(edgeDef.SourceHandle)
+				edge.SourceHandle = new(edgeDef.SourceHandle)
 			}
 
 			if _, err := tx.NewInsert().Model(&edge).Exec(ctx); err != nil {
@@ -234,8 +216,8 @@ func (s *FlowService) PublishVersion(ctx context.Context, versionID, operatorID 
 		// Publish this version
 		now := timex.Now()
 		version.Status = approval.VersionPublished
-		version.PublishedAt = null.DateTimeFrom(now)
-		version.PublishedBy = null.StringFrom(operatorID)
+		version.PublishedAt = &now
+		version.PublishedBy = new(operatorID)
 
 		if _, err := tx.NewUpdate().Model(&version).WherePK().Exec(ctx); err != nil {
 			return fmt.Errorf("publish version: %w", err)

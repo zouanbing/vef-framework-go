@@ -1,17 +1,17 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"maps"
 	"slices"
+	"text/template"
 	"time"
 
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/id"
 	"github.com/ilxqx/vef-framework-go/internal/approval/engine"
 	"github.com/ilxqx/vef-framework-go/internal/approval/publisher"
-	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/timex"
@@ -19,12 +19,24 @@ import (
 
 // StartInstanceCmd contains the parameters for starting a new instance.
 type StartInstanceCmd struct {
+	TenantID         string
 	FlowCode         string
-	Title            string
 	ApplicantID      string
-	ApplicantDeptID  string
-	BusinessRecordID string
+	ApplicantDeptID  *string
+	BusinessRecordID *string
 	FormData         map[string]any
+}
+
+// buildTitleTemplateData builds a camelCase map for rendering instance title templates.
+// Templates access fields via {{.flowName}}, {{.flowCode}}, {{.instanceNo}},
+// and form values via {{.formData.fieldName}}.
+func buildTitleTemplateData(flowName, flowCode, instanceNo string, formData map[string]any) map[string]any {
+	return map[string]any{
+		"flowName":   flowName,
+		"flowCode":   flowCode,
+		"instanceNo": instanceNo,
+		"formData":   formData,
+	}
 }
 
 // ProcessTaskCmd contains the parameters for processing a task.
@@ -58,21 +70,21 @@ type AddAssigneeCmd struct {
 
 // InstanceService manages instance lifecycle.
 type InstanceService struct {
-	db          orm.DB
-	engine      *engine.FlowEngine
-	serialGen   SerialNoGenerator
-	publisher   *publisher.EventPublisher
-	userService UserService
+	db            orm.DB
+	engine        *engine.FlowEngine
+	instanceNoGen InstanceNoGenerator
+	publisher     *publisher.EventPublisher
+	userService   UserService
 }
 
 // NewInstanceService creates a new InstanceService.
-func NewInstanceService(db orm.DB, eng *engine.FlowEngine, serialGen SerialNoGenerator, pub *publisher.EventPublisher, userSvc UserService) *InstanceService {
+func NewInstanceService(db orm.DB, eng *engine.FlowEngine, instanceNoGen InstanceNoGenerator, pub *publisher.EventPublisher, userSvc UserService) *InstanceService {
 	return &InstanceService{
-		db:          db,
-		engine:      eng,
-		serialGen:   serialGen,
-		publisher:   pub,
-		userService: userSvc,
+		db:            db,
+		engine:        eng,
+		instanceNoGen: instanceNoGen,
+		publisher:     pub,
+		userService:   userSvc,
 	}
 }
 
@@ -80,12 +92,16 @@ func NewInstanceService(db orm.DB, eng *engine.FlowEngine, serialGen SerialNoGen
 func (s *InstanceService) StartInstance(ctx context.Context, cmd StartInstanceCmd) (*approval.Instance, error) {
 	var result *approval.Instance
 
-	err := s.db.RunInTX(ctx, func(ctx context.Context, tx orm.DB) error {
+	if err := s.db.RunInTX(ctx, func(ctx context.Context, tx orm.DB) error {
 		var flow approval.Flow
 
-		if err := tx.NewSelect().Model(&flow).Where(func(c orm.ConditionBuilder) {
-			c.Equals("code", cmd.FlowCode)
-		}).Scan(ctx); err != nil {
+		if err := tx.NewSelect().
+			Model(&flow).
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Equals("tenant_id", cmd.TenantID)
+				cb.Equals("code", cmd.FlowCode)
+			}).
+			Scan(ctx); err != nil {
 			return ErrFlowNotFound
 		}
 
@@ -106,34 +122,38 @@ func (s *InstanceService) StartInstance(ctx context.Context, cmd StartInstanceCm
 
 		var version approval.FlowVersion
 
-		if err := tx.NewSelect().Model(&version).Where(func(c orm.ConditionBuilder) {
-			c.Equals("flow_id", flow.ID)
-			c.Equals("status", string(approval.VersionPublished))
-		}).Scan(ctx); err != nil {
+		if err := tx.NewSelect().
+			Model(&version).
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Equals("flow_id", flow.ID)
+				cb.Equals("status", string(approval.VersionPublished))
+			}).
+			Scan(ctx); err != nil {
 			return ErrNoPublishedVersion
 		}
 
-		serialNo, err := s.serialGen.Generate(ctx, cmd.FlowCode)
+		instanceNo, err := s.instanceNoGen.Generate(ctx, cmd.FlowCode)
 		if err != nil {
-			return fmt.Errorf("generate serial number: %w", err)
+			return fmt.Errorf("generate instance number: %w", err)
+		}
+
+		title, err := renderTitle(flow.InstanceTitleTemplate,
+			buildTitleTemplateData(flow.Name, flow.Code, instanceNo, cmd.FormData))
+		if err != nil {
+			return fmt.Errorf("render instance title: %w", err)
 		}
 
 		instance := &approval.Instance{
-			FlowID:          flow.ID,
-			FlowVersionID:   version.ID,
-			Title:           cmd.Title,
-			SerialNo:        serialNo,
-			ApplicantID:     cmd.ApplicantID,
-			ApplicantDeptID: null.NewString(cmd.ApplicantDeptID, cmd.ApplicantDeptID != ""),
-			Status:          approval.InstanceRunning,
-			FormData:        cmd.FormData,
-		}
-		instance.ID = id.Generate()
-		instance.CreatedBy = cmd.ApplicantID
-		instance.UpdatedBy = cmd.ApplicantID
-
-		if cmd.BusinessRecordID != "" {
-			instance.BusinessRecordID = null.StringFrom(cmd.BusinessRecordID)
+			TenantID:         flow.TenantID,
+			FlowID:           flow.ID,
+			FlowVersionID:    version.ID,
+			Title:            title,
+			InstanceNo:       instanceNo,
+			ApplicantID:      cmd.ApplicantID,
+			ApplicantDeptID:  cmd.ApplicantDeptID,
+			Status:           approval.InstanceRunning,
+			BusinessRecordID: cmd.BusinessRecordID,
+			FormData:         cmd.FormData,
 		}
 
 		if _, err := tx.NewInsert().Model(instance).Exec(ctx); err != nil {
@@ -145,15 +165,12 @@ func (s *InstanceService) StartInstance(ctx context.Context, cmd StartInstanceCm
 			Action:     approval.ActionSubmit,
 			OperatorID: cmd.ApplicantID,
 		}
-		submitLog.ID = id.Generate()
-		submitLog.CreatedBy = cmd.ApplicantID
-
 		if _, err := tx.NewInsert().Model(submitLog).Exec(ctx); err != nil {
 			return fmt.Errorf("insert submit log: %w", err)
 		}
 
 		if err := s.publisher.PublishAll(ctx, tx, []approval.DomainEvent{
-			approval.NewInstanceCreatedEvent(instance.ID, flow.ID, cmd.Title, cmd.ApplicantID),
+			approval.NewInstanceCreatedEvent(instance.ID, flow.ID, title, cmd.ApplicantID),
 		}); err != nil {
 			return fmt.Errorf("publish instance created event: %w", err)
 		}
@@ -169,8 +186,7 @@ func (s *InstanceService) StartInstance(ctx context.Context, cmd StartInstanceCm
 		result = instance
 
 		return nil
-	})
-	if err != nil {
+	}); err != nil {
 		return nil, err
 	}
 
@@ -252,21 +268,20 @@ func (s *InstanceService) ProcessTask(ctx context.Context, cmd ProcessTaskCmd) e
 
 		actionLog := &approval.ActionLog{
 			InstanceID: instance.ID,
-			NodeID:     null.StringFrom(task.NodeID),
-			TaskID:     null.StringFrom(task.ID),
+			NodeID:     new(task.NodeID),
+			TaskID:     new(task.ID),
 			Action:     approval.ActionType(cmd.Action),
 			OperatorID: cmd.OperatorID,
-			Opinion:    null.NewString(cmd.Opinion, cmd.Opinion != ""),
 		}
-		actionLog.ID = id.Generate()
-		actionLog.CreatedBy = cmd.OperatorID
-
+		if cmd.Opinion != "" {
+			actionLog.Opinion = new(cmd.Opinion)
+		}
 		if cmd.Action == string(approval.ActionTransfer) {
-			actionLog.TransferToID = null.StringFrom(cmd.TransferToID)
+			actionLog.TransferToID = new(cmd.TransferToID)
 		}
 
 		if cmd.Action == string(approval.ActionRollback) {
-			actionLog.RollbackToNodeID = null.StringFrom(cmd.TargetNodeID)
+			actionLog.RollbackToNodeID = new(cmd.TargetNodeID)
 		}
 
 		if _, err := tx.NewInsert().Model(actionLog).Exec(ctx); err != nil {
@@ -369,6 +384,7 @@ func (s *InstanceService) handleTransfer(
 	}
 
 	newTask := &approval.Task{
+		TenantID:   instance.TenantID,
 		InstanceID: instance.ID,
 		NodeID:     task.NodeID,
 		AssigneeID: cmd.TransferToID,
@@ -431,7 +447,7 @@ func (s *InstanceService) handleRollback(
 		}
 	}
 
-	instance.CurrentNodeID = null.StringFrom(cmd.TargetNodeID)
+	instance.CurrentNodeID = new(cmd.TargetNodeID)
 
 	var targetNode approval.FlowNode
 
@@ -466,7 +482,7 @@ func finishTask(ctx context.Context, tx orm.DB, task *approval.Task, status appr
 	}
 
 	task.Status = status
-	task.FinishedAt = null.DateTimeFrom(timex.Now())
+	task.FinishedAt = new(timex.Now())
 
 	if _, err := tx.NewUpdate().Model(task).WherePK().Exec(ctx); err != nil {
 		return fmt.Errorf("update task: %w", err)
@@ -621,7 +637,7 @@ func (s *InstanceService) handleNodeCompletion(
 		}
 
 		instance.Status = approval.InstanceRejected
-		instance.FinishedAt = null.DateTimeFrom(timex.Now())
+		instance.FinishedAt = new(timex.Now())
 
 		if err := s.cancelRemainingTasks(ctx, tx, instance.ID, node.ID); err != nil {
 			return nil, err
@@ -659,19 +675,19 @@ func (s *InstanceService) triggerNodeCC(ctx context.Context, tx orm.DB, instance
 
 	var ccUserIDs []string
 	for _, cfg := range ccConfigs {
-		switch cfg.CCTiming {
+		switch cfg.Timing {
 		case approval.CCTimingAlways:
-			ccUserIDs = append(ccUserIDs, cfg.CCIDs...)
+			ccUserIDs = append(ccUserIDs, cfg.IDs...)
 		case approval.CCTimingOnApprove:
 			if completionResult == approval.PassRulePassed {
-				ccUserIDs = append(ccUserIDs, cfg.CCIDs...)
+				ccUserIDs = append(ccUserIDs, cfg.IDs...)
 			}
 		case approval.CCTimingOnReject:
 			if completionResult == approval.PassRuleRejected {
-				ccUserIDs = append(ccUserIDs, cfg.CCIDs...)
+				ccUserIDs = append(ccUserIDs, cfg.IDs...)
 			}
 		default:
-			ccUserIDs = append(ccUserIDs, cfg.CCIDs...)
+			ccUserIDs = append(ccUserIDs, cfg.IDs...)
 		}
 	}
 
@@ -683,11 +699,10 @@ func (s *InstanceService) triggerNodeCC(ctx context.Context, tx orm.DB, instance
 	for _, userID := range ccUserIDs {
 		record := approval.CCRecord{
 			InstanceID: instance.ID,
-			NodeID:     null.StringFrom(node.ID),
+			NodeID:     new(node.ID),
 			CCUserID:   userID,
 			IsManual:   false,
 		}
-		record.ID = id.Generate()
 		records = append(records, record)
 	}
 
@@ -721,7 +736,7 @@ func (s *InstanceService) Withdraw(ctx context.Context, instanceID, operatorID, 
 
 		now := timex.Now()
 		instance.Status = approval.InstanceWithdrawn
-		instance.FinishedAt = null.DateTimeFrom(now)
+		instance.FinishedAt = &now
 
 		if _, err := tx.NewUpdate().Model(&instance).WherePK().Exec(ctx); err != nil {
 			return fmt.Errorf("update instance: %w", err)
@@ -735,11 +750,10 @@ func (s *InstanceService) Withdraw(ctx context.Context, instanceID, operatorID, 
 			InstanceID: instanceID,
 			Action:     approval.ActionWithdraw,
 			OperatorID: operatorID,
-			Opinion:    null.NewString(reason, reason != ""),
 		}
-		actionLog.ID = id.Generate()
-		actionLog.CreatedBy = operatorID
-
+		if reason != "" {
+			actionLog.Opinion = new(reason)
+		}
 		if _, err := tx.NewInsert().Model(actionLog).Exec(ctx); err != nil {
 			return fmt.Errorf("insert action log: %w", err)
 		}
@@ -762,11 +776,11 @@ func (s *InstanceService) AddCC(ctx context.Context, instanceID string, ccUserID
 		}
 
 		// Validate manual CC is allowed on current node
-		if instance.CurrentNodeID.Valid {
+		if instance.CurrentNodeID != nil {
 			var node approval.FlowNode
 
 			if err := tx.NewSelect().Model(&node).Where(func(c orm.ConditionBuilder) {
-				c.Equals("id", instance.CurrentNodeID.String)
+				c.Equals("id", *instance.CurrentNodeID)
 			}).Scan(ctx); err == nil && !node.IsManualCCAllowed {
 				return ErrManualCcNotAllowed
 			}
@@ -799,8 +813,6 @@ func (s *InstanceService) AddCC(ctx context.Context, instanceID string, ccUserID
 				CCUserID:   userID,
 				IsManual:   true,
 			}
-			record.ID = id.Generate()
-			record.CreatedBy = operatorID
 			records = append(records, record)
 		}
 
@@ -862,8 +874,8 @@ func (s *InstanceService) checkCCNodeCompletion(ctx context.Context, tx orm.DB, 
 	// Collect unique CC node IDs
 	nodeIDs := make(map[string]struct{})
 	for _, r := range records {
-		if r.NodeID.Valid {
-			nodeIDs[r.NodeID.String] = struct{}{}
+		if r.NodeID != nil {
+			nodeIDs[*r.NodeID] = struct{}{}
 		}
 	}
 
@@ -971,17 +983,14 @@ func (s *InstanceService) AddAssignee(ctx context.Context, cmd AddAssigneeCmd) e
 
 		for i, userID := range cmd.UserIDs {
 			newTask := &approval.Task{
+				TenantID:        instance.TenantID,
 				InstanceID:      instance.ID,
 				NodeID:          task.NodeID,
 				AssigneeID:      userID,
 				SortOrder:       baseSortOrder + i + 1,
-				ParentTaskID:    null.StringFrom(task.ID),
-				AddAssigneeType: null.StringFrom(string(addType)),
+				ParentTaskID:    new(task.ID),
+				AddAssigneeType: new(string(addType)),
 			}
-			newTask.ID = id.Generate()
-			newTask.CreatedBy = cmd.OperatorID
-			newTask.UpdatedBy = cmd.OperatorID
-
 			switch addType {
 			case approval.AddAssigneeBefore:
 				newTask.Status = approval.TaskPending
@@ -1008,16 +1017,13 @@ func (s *InstanceService) AddAssignee(ctx context.Context, cmd AddAssigneeCmd) e
 		// Action log
 		actionLog := &approval.ActionLog{
 			InstanceID:       instance.ID,
-			NodeID:           null.StringFrom(task.NodeID),
-			TaskID:           null.StringFrom(task.ID),
+			NodeID:           new(task.NodeID),
+			TaskID:           new(task.ID),
 			Action:           approval.ActionAddAssignee,
 			OperatorID:       cmd.OperatorID,
-			AddAssigneeType:  null.StringFrom(cmd.AddType),
+			AddAssigneeType:  new(cmd.AddType),
 			AddAssigneeToIDs: cmd.UserIDs,
 		}
-		actionLog.ID = id.Generate()
-		actionLog.CreatedBy = cmd.OperatorID
-
 		if _, err := tx.NewInsert().Model(actionLog).Exec(ctx); err != nil {
 			return fmt.Errorf("insert action log: %w", err)
 		}
@@ -1086,15 +1092,12 @@ func (s *InstanceService) RemoveAssignee(ctx context.Context, taskID, operatorID
 		// Action log
 		actionLog := &approval.ActionLog{
 			InstanceID:        task.InstanceID,
-			NodeID:            null.StringFrom(task.NodeID),
-			TaskID:            null.StringFrom(task.ID),
+			NodeID:            new(task.NodeID),
+			TaskID:            new(task.ID),
 			Action:            approval.ActionRemoveAssignee,
 			OperatorID:        operatorID,
 			RemoveAssigneeIDs: []string{task.AssigneeID},
 		}
-		actionLog.ID = id.Generate()
-		actionLog.CreatedBy = operatorID
-
 		if _, err := tx.NewInsert().Model(actionLog).Exec(ctx); err != nil {
 			return fmt.Errorf("insert action log: %w", err)
 		}
@@ -1190,7 +1193,7 @@ func (s *InstanceService) isAuthorizedForNodeOperation(ctx context.Context, tx o
 }
 
 // checkInitiationPermission checks if the applicant is allowed to initiate the flow.
-func (s *InstanceService) checkInitiationPermission(ctx context.Context, tx orm.DB, flowID, applicantID, applicantDeptID string) (bool, error) {
+func (s *InstanceService) checkInitiationPermission(ctx context.Context, tx orm.DB, flowID, applicantID string, applicantDeptID *string) (bool, error) {
 	var initiators []approval.FlowInitiator
 
 	if err := tx.NewSelect().Model(&initiators).Where(func(c orm.ConditionBuilder) {
@@ -1212,7 +1215,11 @@ func (s *InstanceService) checkInitiationPermission(ctx context.Context, tx orm.
 			}
 
 		case approval.InitiatorDept:
-			if slices.Contains(ini.InitiatorIDs, applicantDeptID) {
+			if applicantDeptID == nil {
+				continue
+			}
+
+			if slices.Contains(ini.InitiatorIDs, *applicantDeptID) {
 				return true, nil
 			}
 
@@ -1315,7 +1322,7 @@ func (s *InstanceService) UrgeTask(ctx context.Context, cmd UrgeTaskCmd) error {
 		record := &approval.UrgeRecord{
 			InstanceID:   cmd.InstanceID,
 			NodeID:       task.NodeID,
-			TaskID:       null.StringFrom(cmd.TaskID),
+			TaskID:       new(cmd.TaskID),
 			UrgerID:      cmd.UrgerID,
 			TargetUserID: task.AssigneeID,
 			Message:      cmd.Message,
@@ -1333,4 +1340,25 @@ func (s *InstanceService) UrgeTask(ctx context.Context, cmd UrgeTaskCmd) error {
 
 		return s.publisher.PublishAll(ctx, tx, []approval.DomainEvent{event})
 	})
+}
+
+// renderTitle renders an instance title from a Go text/template string.
+// Templates use camelCase keys: {{.flowName}}, {{.flowCode}}, {{.instanceNo}},
+// {{.applicantId}}, and form values via {{index .formData "fieldName"}}.
+func renderTitle(titleTemplate string, data map[string]any) (string, error) {
+	if titleTemplate == "" {
+		return data["flowName"].(string) + "-" + data["instanceNo"].(string), nil
+	}
+
+	tmpl, err := template.New("title").Parse(titleTemplate)
+	if err != nil {
+		return "", fmt.Errorf("parse title template: %w", err)
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return "", fmt.Errorf("execute title template: %w", err)
+	}
+
+	return buf.String(), nil
 }

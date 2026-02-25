@@ -126,9 +126,6 @@ func buildSimpleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		IsAllInitiateAllowed: true,
 		CurrentVersion:       1,
 	}
-	flow.ID = id.Generate()
-	flow.CreatedBy = "system"
-	flow.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(flow).Exec(ctx)
 	require.NoError(t, err, "Should insert flow")
 
@@ -137,9 +134,6 @@ func buildSimpleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		Version: 1,
 		Status:  approval.VersionPublished,
 	}
-	version.ID = id.Generate()
-	version.CreatedBy = "system"
-	version.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(version).Exec(ctx)
 	require.NoError(t, err, "Should insert version")
 
@@ -149,9 +143,6 @@ func buildSimpleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		NodeKind:      approval.NodeStart,
 		Name:          "Start",
 	}
-	startNode.ID = id.Generate()
-	startNode.CreatedBy = "system"
-	startNode.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(startNode).Exec(ctx)
 	require.NoError(t, err, "Should insert startNode")
 
@@ -171,9 +162,6 @@ func buildSimpleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		IsRemoveAssigneeAllowed: true,
 		DuplicateHandlerAction:  approval.DuplicateHandlerAutoPass,
 	}
-	approvalNode.ID = id.Generate()
-	approvalNode.CreatedBy = "system"
-	approvalNode.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(approvalNode).Exec(ctx)
 	require.NoError(t, err, "Should insert approvalNode")
 
@@ -183,9 +171,6 @@ func buildSimpleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		NodeKind:      approval.NodeEnd,
 		Name:          "End",
 	}
-	endNode.ID = id.Generate()
-	endNode.CreatedBy = "system"
-	endNode.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(endNode).Exec(ctx)
 	require.NoError(t, err, "Should insert endNode")
 
@@ -193,11 +178,10 @@ func buildSimpleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 	for i, uid := range []string{"user1", "user2"} {
 		assignee := &approval.FlowNodeAssignee{
 			NodeID:       approvalNode.ID,
-			AssigneeKind: approval.AssigneeUser,
-			AssigneeIDs:  []string{uid},
+			Kind: approval.AssigneeUser,
+			IDs:  []string{uid},
 			SortOrder:    i,
 		}
-		assignee.ID = id.Generate()
 		_, err = db.NewInsert().Model(assignee).Exec(ctx)
 		require.NoError(t, err, "Should insert assignee")
 	}
@@ -224,9 +208,6 @@ func buildAutoCompleteFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		IsAllInitiateAllowed: true,
 		CurrentVersion:       1,
 	}
-	flow.ID = id.Generate()
-	flow.CreatedBy = "system"
-	flow.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(flow).Exec(ctx)
 	require.NoError(t, err, "Should insert flow")
 
@@ -235,9 +216,6 @@ func buildAutoCompleteFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		Version: 1,
 		Status:  approval.VersionPublished,
 	}
-	version.ID = id.Generate()
-	version.CreatedBy = "system"
-	version.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(version).Exec(ctx)
 	require.NoError(t, err, "Should insert version")
 
@@ -247,9 +225,6 @@ func buildAutoCompleteFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		NodeKind:      approval.NodeStart,
 		Name:          "Start",
 	}
-	startNode.ID = id.Generate()
-	startNode.CreatedBy = "system"
-	startNode.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(startNode).Exec(ctx)
 	require.NoError(t, err, "Should insert startNode")
 
@@ -259,9 +234,6 @@ func buildAutoCompleteFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		NodeKind:      approval.NodeEnd,
 		Name:          "End",
 	}
-	endNode.ID = id.Generate()
-	endNode.CreatedBy = "system"
-	endNode.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(endNode).Exec(ctx)
 	require.NoError(t, err, "Should insert endNode")
 
@@ -285,9 +257,6 @@ func buildHandleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		IsAllInitiateAllowed: true,
 		CurrentVersion:       1,
 	}
-	flow.ID = id.Generate()
-	flow.CreatedBy = "system"
-	flow.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(flow).Exec(ctx)
 	require.NoError(t, err, "Should insert flow")
 
@@ -296,9 +265,6 @@ func buildHandleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		Version: 1,
 		Status:  approval.VersionPublished,
 	}
-	version.ID = id.Generate()
-	version.CreatedBy = "system"
-	version.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(version).Exec(ctx)
 	require.NoError(t, err, "Should insert version")
 
@@ -308,9 +274,6 @@ func buildHandleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		NodeKind:      approval.NodeStart,
 		Name:          "Start",
 	}
-	startNode.ID = id.Generate()
-	startNode.CreatedBy = "system"
-	startNode.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(startNode).Exec(ctx)
 	require.NoError(t, err, "Should insert startNode")
 
@@ -323,9 +286,6 @@ func buildHandleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		PassRule:               approval.PassAny,
 		DuplicateHandlerAction: approval.DuplicateHandlerAutoPass,
 	}
-	handleNode.ID = id.Generate()
-	handleNode.CreatedBy = "system"
-	handleNode.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(handleNode).Exec(ctx)
 	require.NoError(t, err, "Should insert handleNode")
 
@@ -335,9 +295,6 @@ func buildHandleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		NodeKind:      approval.NodeEnd,
 		Name:          "End",
 	}
-	endNode.ID = id.Generate()
-	endNode.CreatedBy = "system"
-	endNode.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(endNode).Exec(ctx)
 	require.NoError(t, err, "Should insert endNode")
 
@@ -364,9 +321,6 @@ func buildParallelFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		IsAllInitiateAllowed: true,
 		CurrentVersion:       1,
 	}
-	flow.ID = id.Generate()
-	flow.CreatedBy = "system"
-	flow.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(flow).Exec(ctx)
 	require.NoError(t, err, "Should insert flow")
 
@@ -375,9 +329,6 @@ func buildParallelFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		Version: 1,
 		Status:  approval.VersionPublished,
 	}
-	version.ID = id.Generate()
-	version.CreatedBy = "system"
-	version.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(version).Exec(ctx)
 	require.NoError(t, err, "Should insert version")
 
@@ -387,9 +338,6 @@ func buildParallelFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		NodeKind:      approval.NodeStart,
 		Name:          "Start",
 	}
-	startNode.ID = id.Generate()
-	startNode.CreatedBy = "system"
-	startNode.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(startNode).Exec(ctx)
 	require.NoError(t, err, "Should insert startNode")
 
@@ -403,9 +351,6 @@ func buildParallelFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		PassRatio:              decimal.Zero,
 		DuplicateHandlerAction: approval.DuplicateHandlerAutoPass,
 	}
-	approvalNode.ID = id.Generate()
-	approvalNode.CreatedBy = "system"
-	approvalNode.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(approvalNode).Exec(ctx)
 	require.NoError(t, err, "Should insert approvalNode")
 
@@ -415,20 +360,16 @@ func buildParallelFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		NodeKind:      approval.NodeEnd,
 		Name:          "End",
 	}
-	endNode.ID = id.Generate()
-	endNode.CreatedBy = "system"
-	endNode.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(endNode).Exec(ctx)
 	require.NoError(t, err, "Should insert endNode")
 
 	// Single assignee config with 3 users
 	assignee := &approval.FlowNodeAssignee{
 		NodeID:       approvalNode.ID,
-		AssigneeKind: approval.AssigneeUser,
-		AssigneeIDs:  []string{"user1", "user2", "user3"},
+		Kind: approval.AssigneeUser,
+		IDs:  []string{"user1", "user2", "user3"},
 		SortOrder:    0,
 	}
-	assignee.ID = id.Generate()
 	_, err = db.NewInsert().Model(assignee).Exec(ctx)
 	require.NoError(t, err, "Should insert assignee")
 
@@ -453,9 +394,6 @@ func buildMultiStageFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		IsAllInitiateAllowed: true,
 		CurrentVersion:       1,
 	}
-	flow.ID = id.Generate()
-	flow.CreatedBy = "system"
-	flow.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(flow).Exec(ctx)
 	require.NoError(t, err, "Should insert flow")
 
@@ -464,9 +402,6 @@ func buildMultiStageFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		Version: 1,
 		Status:  approval.VersionPublished,
 	}
-	version.ID = id.Generate()
-	version.CreatedBy = "system"
-	version.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(version).Exec(ctx)
 	require.NoError(t, err, "Should insert version")
 
@@ -504,10 +439,6 @@ func createNode(t *testing.T, ctx context.Context, db orm.DB, versionID, key str
 		PassRatio:              decimal.Zero,
 		DuplicateHandlerAction: approval.DuplicateHandlerAutoPass,
 	}
-	node.ID = id.Generate()
-	node.CreatedBy = "system"
-	node.UpdatedBy = "system"
-
 	_, err := db.NewInsert().Model(node).Exec(ctx)
 	require.NoError(t, err, "Should insert node")
 
@@ -519,12 +450,10 @@ func insertAssignee(t *testing.T, ctx context.Context, db orm.DB, nodeID string,
 
 	assignee := &approval.FlowNodeAssignee{
 		NodeID:       nodeID,
-		AssigneeKind: kind,
-		AssigneeIDs:  ids,
+		Kind: kind,
+		IDs:  ids,
 		SortOrder:    sortOrder,
 	}
-	assignee.ID = id.Generate()
-
 	_, err := db.NewInsert().Model(assignee).Exec(ctx)
 	require.NoError(t, err, "Should insert assignee")
 }
@@ -537,8 +466,6 @@ func insertEdge(t *testing.T, ctx context.Context, db orm.DB, versionID, sourceI
 		SourceNodeID:  sourceID,
 		TargetNodeID:  targetID,
 	}
-	edge.ID = id.Generate()
-
 	_, err := db.NewInsert().Model(edge).Exec(ctx)
 	require.NoError(t, err, "Should insert edge")
 }

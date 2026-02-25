@@ -11,6 +11,7 @@ import (
 
 // InstanceQuery contains parameters for querying instances.
 type InstanceQuery struct {
+	TenantID    string
 	ApplicantID string
 	Status      string
 	FlowID      string
@@ -20,6 +21,7 @@ type InstanceQuery struct {
 
 // TaskQuery contains parameters for querying tasks.
 type TaskQuery struct {
+	TenantID   string
 	AssigneeID string
 	InstanceID string
 	Status     string
@@ -49,6 +51,12 @@ func (s *QueryService) FindInstances(ctx context.Context, q InstanceQuery) ([]ap
 	var instances []approval.Instance
 
 	sq := s.db.NewSelect().Model(&instances)
+
+	if q.TenantID != "" {
+		sq = sq.Where(func(c orm.ConditionBuilder) {
+			c.Equals("tenant_id", q.TenantID)
+		})
+	}
 
 	if q.ApplicantID != "" {
 		sq = sq.Where(func(c orm.ConditionBuilder) {
@@ -92,6 +100,12 @@ func (s *QueryService) FindTasks(ctx context.Context, q TaskQuery) ([]approval.T
 	var tasks []approval.Task
 
 	sq := s.db.NewSelect().Model(&tasks)
+
+	if q.TenantID != "" {
+		sq = sq.Where(func(c orm.ConditionBuilder) {
+			c.Equals("tenant_id", q.TenantID)
+		})
+	}
 
 	if q.AssigneeID != "" {
 		sq = sq.Where(func(c orm.ConditionBuilder) {

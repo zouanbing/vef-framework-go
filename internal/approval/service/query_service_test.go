@@ -39,7 +39,7 @@ func (s *QueryServiceTestSuite) SetupTest() {
 	mockOrg := &MockOrganizationService{}
 	mockUser := &MockUserService{}
 	eng := setupEngine(mockOrg, mockUser, pub)
-	s.instSvc = NewInstanceService(s.db, eng, NewMockSerialNoGenerator(), pub, mockUser)
+	s.instSvc = NewInstanceService(s.db, eng, NewMockInstanceNoGenerator(), pub, mockUser)
 	s.flowSvc = NewFlowService(s.db, pub)
 }
 
@@ -47,12 +47,12 @@ func (s *QueryServiceTestSuite) TearDownTest() {
 	s.cleanup()
 }
 
-func (s *QueryServiceTestSuite) startFlowAndGetInstance(applicantID, title string) *approval.Instance {
+func (s *QueryServiceTestSuite) startFlowAndGetInstance(applicantID string) *approval.Instance {
 	buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.instSvc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       title,
 		ApplicantID: applicantID,
 		FormData:    map[string]any{"reason": "test"},
 	})
@@ -62,7 +62,7 @@ func (s *QueryServiceTestSuite) startFlowAndGetInstance(applicantID, title strin
 }
 
 func (s *QueryServiceTestSuite) TestFindInstancesNoFilter() {
-	instance := s.startFlowAndGetInstance("applicant1", "Test Instance")
+	instance := s.startFlowAndGetInstance("applicant1")
 
 	results, count, err := s.svc.FindInstances(s.ctx, InstanceQuery{
 		Pageable: page.Pageable{Page: 1, Size: 10},
@@ -74,7 +74,7 @@ func (s *QueryServiceTestSuite) TestFindInstancesNoFilter() {
 }
 
 func (s *QueryServiceTestSuite) TestFindInstancesFilterByApplicantID() {
-	s.startFlowAndGetInstance("applicant1", "Instance A")
+	s.startFlowAndGetInstance("applicant1")
 
 	results, count, err := s.svc.FindInstances(s.ctx, InstanceQuery{
 		ApplicantID: "applicant1",
@@ -95,7 +95,7 @@ func (s *QueryServiceTestSuite) TestFindInstancesFilterByApplicantID() {
 }
 
 func (s *QueryServiceTestSuite) TestFindInstancesFilterByStatus() {
-	s.startFlowAndGetInstance("applicant1", "Running Instance")
+	s.startFlowAndGetInstance("applicant1")
 
 	results, count, err := s.svc.FindInstances(s.ctx, InstanceQuery{
 		Status:   string(approval.InstanceRunning),
@@ -115,7 +115,7 @@ func (s *QueryServiceTestSuite) TestFindInstancesFilterByStatus() {
 }
 
 func (s *QueryServiceTestSuite) TestFindInstancesFilterByFlowID() {
-	instance := s.startFlowAndGetInstance("applicant1", "Flow Filter Test")
+	instance := s.startFlowAndGetInstance("applicant1")
 
 	results, count, err := s.svc.FindInstances(s.ctx, InstanceQuery{
 		FlowID:   instance.FlowID,
@@ -134,15 +134,15 @@ func (s *QueryServiceTestSuite) TestFindInstancesFilterByFlowID() {
 }
 
 func (s *QueryServiceTestSuite) TestFindInstancesFilterByKeyword() {
-	s.startFlowAndGetInstance("applicant1", "Leave Application")
+	s.startFlowAndGetInstance("applicant1")
 
 	results, count, err := s.svc.FindInstances(s.ctx, InstanceQuery{
-		Keyword:  "Leave",
+		Keyword:  "Simple Flow",
 		Pageable: page.Pageable{Page: 1, Size: 10},
 	})
 	s.Require().NoError(err, "Should not return error")
 	s.Equal(1, count)
-	s.Contains(results[0].Title, "Leave")
+	s.Contains(results[0].Title, "Simple Flow")
 
 	_, count, err = s.svc.FindInstances(s.ctx, InstanceQuery{
 		Keyword:  "zzz_nonexistent",
@@ -153,7 +153,7 @@ func (s *QueryServiceTestSuite) TestFindInstancesFilterByKeyword() {
 }
 
 func (s *QueryServiceTestSuite) TestFindInstancesPagination() {
-	s.startFlowAndGetInstance("applicant1", "Page Test")
+	s.startFlowAndGetInstance("applicant1")
 
 	results, count, err := s.svc.FindInstances(s.ctx, InstanceQuery{
 		Pageable: page.Pageable{Page: 1, Size: 1},
@@ -179,7 +179,7 @@ func (s *QueryServiceTestSuite) TestFindInstancesEmptyResult() {
 }
 
 func (s *QueryServiceTestSuite) TestFindTasksNoFilter() {
-	s.startFlowAndGetInstance("applicant1", "Task Query Test")
+	s.startFlowAndGetInstance("applicant1")
 
 	results, count, err := s.svc.FindTasks(s.ctx, TaskQuery{
 		Pageable: page.Pageable{Page: 1, Size: 10},
@@ -190,7 +190,7 @@ func (s *QueryServiceTestSuite) TestFindTasksNoFilter() {
 }
 
 func (s *QueryServiceTestSuite) TestFindTasksFilterByAssigneeID() {
-	s.startFlowAndGetInstance("applicant1", "Assignee Filter")
+	s.startFlowAndGetInstance("applicant1")
 
 	results, count, err := s.svc.FindTasks(s.ctx, TaskQuery{
 		AssigneeID: "user1",
@@ -211,7 +211,7 @@ func (s *QueryServiceTestSuite) TestFindTasksFilterByAssigneeID() {
 }
 
 func (s *QueryServiceTestSuite) TestFindTasksFilterByInstanceID() {
-	instance := s.startFlowAndGetInstance("applicant1", "Instance Filter")
+	instance := s.startFlowAndGetInstance("applicant1")
 
 	results, count, err := s.svc.FindTasks(s.ctx, TaskQuery{
 		InstanceID: instance.ID,
@@ -225,7 +225,7 @@ func (s *QueryServiceTestSuite) TestFindTasksFilterByInstanceID() {
 }
 
 func (s *QueryServiceTestSuite) TestFindTasksFilterByStatus() {
-	s.startFlowAndGetInstance("applicant1", "Status Filter")
+	s.startFlowAndGetInstance("applicant1")
 
 	results, count, err := s.svc.FindTasks(s.ctx, TaskQuery{
 		Status:   string(approval.TaskPending),
@@ -248,14 +248,14 @@ func (s *QueryServiceTestSuite) TestFindTasksEmptyResult() {
 }
 
 func (s *QueryServiceTestSuite) TestGetInstanceDetailSuccess() {
-	instance := s.startFlowAndGetInstance("applicant1", "Detail Test")
+	instance := s.startFlowAndGetInstance("applicant1")
 
 	detail, err := s.svc.GetInstanceDetail(s.ctx, instance.ID)
 	s.Require().NoError(err, "GetInstanceDetail should succeed")
 	s.Require().NotNil(detail, "Should not be nil")
 
 	s.Equal(instance.ID, detail.Instance.ID)
-	s.Equal("Detail Test", detail.Instance.Title)
+	s.Equal("Simple Flow-simple_flow-0001", detail.Instance.Title)
 
 	s.NotEmpty(detail.Tasks, "Should have tasks")
 	s.NotEmpty(detail.ActionLogs, "Should have action logs")
@@ -269,7 +269,7 @@ func (s *QueryServiceTestSuite) TestGetInstanceDetailNonexistentInstance() {
 }
 
 func (s *QueryServiceTestSuite) TestGetActionLogsSuccess() {
-	instance := s.startFlowAndGetInstance("applicant1", "Action Log Test")
+	instance := s.startFlowAndGetInstance("applicant1")
 
 	logs, err := s.svc.GetActionLogs(s.ctx, instance.ID)
 	s.Require().NoError(err, "GetActionLogs should succeed")

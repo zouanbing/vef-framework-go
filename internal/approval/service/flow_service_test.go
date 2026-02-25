@@ -195,8 +195,8 @@ func (s *FlowServiceTestSuite) TestPublishVersionSuccess() {
 	}).Scan(s.ctx)
 	s.Require().NoError(err, "Should not return error")
 	s.Equal(approval.VersionPublished, version.Status)
-	s.True(version.PublishedAt.Valid)
-	s.Equal("admin", version.PublishedBy.String)
+	s.NotNil(version.PublishedAt)
+	s.Equal("admin", *version.PublishedBy)
 
 	// Verify event was published
 	events := queryEvents(s.T(), s.ctx, s.db)
@@ -917,6 +917,6 @@ func TestDeployFlowExtendedNodeProperties(t *testing.T) {
 	}).Scan(ctx)
 	require.NoError(t, err, "Should query assignees")
 	require.Len(t, assignees, 1, "Should have one assignee config")
-	assert.True(t, assignees[0].FormField.Valid, "FormField should be valid")
-	assert.Equal(t, "assignee_field", assignees[0].FormField.String, "FormField should match")
+	assert.NotNil(t, assignees[0].FormField, "FormField should be set")
+	assert.Equal(t, "assignee_field", *assignees[0].FormField, "FormField should match")
 }

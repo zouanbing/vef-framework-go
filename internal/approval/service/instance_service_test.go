@@ -12,7 +12,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/id"
 	"github.com/ilxqx/vef-framework-go/internal/approval/engine"
 	"github.com/ilxqx/vef-framework-go/internal/approval/publisher"
-	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
 
@@ -25,7 +24,7 @@ type InstanceServiceTestSuite struct {
 	flowSvc   *FlowService
 	mockOrg   *MockOrganizationService
 	mockUser  *MockUserService
-	serialGen *MockSerialNoGenerator
+	instanceNoGen *MockInstanceNoGenerator
 	cleanup   func()
 }
 
@@ -45,11 +44,11 @@ func (s *InstanceServiceTestSuite) SetupTest() {
 	s.mockUser = &MockUserService{
 		roleUsers: map[string][]string{"role_admin": {"admin1", "admin2"}},
 	}
-	s.serialGen = NewMockSerialNoGenerator()
+	s.instanceNoGen = NewMockInstanceNoGenerator()
 
 	pub := publisher.NewEventPublisher()
 	s.eng = setupEngine(s.mockOrg, s.mockUser, pub)
-	s.svc = NewInstanceService(s.db, s.eng, s.serialGen, pub, s.mockUser)
+	s.svc = NewInstanceService(s.db, s.eng, s.instanceNoGen, pub, s.mockUser)
 	s.flowSvc = NewFlowService(s.db, pub)
 }
 
@@ -63,8 +62,8 @@ func (s *InstanceServiceTestSuite) TestStartInstanceSuccess() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Test Leave",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{"reason": "vacation"},
 	})
@@ -72,9 +71,9 @@ func (s *InstanceServiceTestSuite) TestStartInstanceSuccess() {
 	s.Require().NotNil(instance, "Should not be nil")
 
 	s.Equal(approval.InstanceRunning, instance.Status)
-	s.Equal("simple_flow-0001", instance.SerialNo)
+	s.Equal("simple_flow-0001", instance.InstanceNo)
 	s.Equal("applicant1", instance.ApplicantID)
-	s.Equal(approvalNode.ID, instance.CurrentNodeID.String)
+	s.Equal(approvalNode.ID, *instance.CurrentNodeID)
 
 	// Verify tasks were created (sequential: first=pending, second=waiting)
 	tasks := queryTasks(s.T(), s.ctx, s.db, instance.ID)
@@ -93,8 +92,8 @@ func (s *InstanceServiceTestSuite) TestSequentialApprovalHappyPath() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Sequential Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{"amount": 1000},
 	})
@@ -137,8 +136,8 @@ func (s *InstanceServiceTestSuite) TestParallelApprovalAllPass() {
 	_, _, _, approvalNode, _ := buildParallelFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "parallel_flow",
-		Title:       "Parallel Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -170,8 +169,8 @@ func (s *InstanceServiceTestSuite) TestRejectionOneRejectStrategy() {
 	_, _, _, approvalNode, _ := buildParallelFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "parallel_flow",
-		Title:       "Rejection Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -206,8 +205,8 @@ func (s *InstanceServiceTestSuite) TestWithdraw() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Withdraw Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -218,7 +217,7 @@ func (s *InstanceServiceTestSuite) TestWithdraw() {
 
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
 	s.Equal(approval.InstanceWithdrawn, inst.Status)
-	s.True(inst.FinishedAt.Valid)
+	s.True(inst.FinishedAt != nil)
 
 	// All tasks should be canceled
 	tasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
@@ -233,8 +232,8 @@ func (s *InstanceServiceTestSuite) TestTransfer() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Transfer Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -278,8 +277,8 @@ func (s *InstanceServiceTestSuite) TestRollback() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Rollback Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{"amount": 1000},
 	})
@@ -326,8 +325,8 @@ func (s *InstanceServiceTestSuite) TestAddAssigneeBefore() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Add Before Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -369,8 +368,8 @@ func (s *InstanceServiceTestSuite) TestAddAssigneeAfter() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Add After Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -402,8 +401,8 @@ func (s *InstanceServiceTestSuite) TestAddAssigneeParallel() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Add Parallel Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -435,8 +434,8 @@ func (s *InstanceServiceTestSuite) TestRemoveAssignee() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Remove Assignee Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -464,8 +463,8 @@ func (s *InstanceServiceTestSuite) TestProcessTaskExecuteOnHandleNode() {
 	_, _, _, handleNode, _ := buildHandleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "handle_flow",
-		Title:       "Handle Execute Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -502,8 +501,8 @@ func (s *InstanceServiceTestSuite) TestRemoveAssigneeLastActionableTaskBlocked()
 	buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Last Actionable Remove",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -543,8 +542,8 @@ func (s *InstanceServiceTestSuite) TestRemoveAssigneeSequentialPromotesWaitingTa
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Sequential Remove Promotion",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -587,8 +586,8 @@ func (s *InstanceServiceTestSuite) TestMultiStageApproval() {
 	approval2 := nodes[2]
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "multi_stage_flow",
-		Title:       "Multi Stage Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -629,8 +628,8 @@ func (s *InstanceServiceTestSuite) TestMultiStageApproval() {
 
 func (s *InstanceServiceTestSuite) TestStartInstanceFlowNotFound() {
 	_, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "nonexistent",
-		Title:       "Test",
 		ApplicantID: "user1",
 	})
 	s.Require().Error(err, "Should return error")
@@ -647,8 +646,8 @@ func (s *InstanceServiceTestSuite) TestStartInstanceFlowNotActive() {
 	s.Require().NoError(err, "Should not return error")
 
 	_, err = s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Test",
 		ApplicantID: "applicant1",
 	})
 	s.Require().Error(err, "Should return error")
@@ -666,8 +665,8 @@ func (s *InstanceServiceTestSuite) TestStartInstanceNoPublishedVersion() {
 	s.Require().NoError(err, "Should not return error")
 
 	_, err = s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Test",
 		ApplicantID: "applicant1",
 	})
 	s.Require().Error(err, "Should return error")
@@ -689,8 +688,8 @@ func (s *InstanceServiceTestSuite) TestProcessTaskInstanceCompleted() {
 	_, _, _, approvalNode, _ := buildParallelFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "parallel_flow",
-		Title:       "Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -721,8 +720,8 @@ func (s *InstanceServiceTestSuite) TestProcessTaskNotAssignee() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -745,8 +744,8 @@ func (s *InstanceServiceTestSuite) TestProcessTaskTransferNotAllowed() {
 	_, _, _, approvalNode, _ := buildParallelFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "parallel_flow",
-		Title:       "Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -770,8 +769,8 @@ func (s *InstanceServiceTestSuite) TestProcessTaskRollbackNotAllowed() {
 	_, _, _, approvalNode, _ := buildParallelFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "parallel_flow",
-		Title:       "Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -797,8 +796,8 @@ func (s *InstanceServiceTestSuite) TestEventsStartInstance() {
 	buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	_, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Event Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -820,8 +819,8 @@ func (s *InstanceServiceTestSuite) TestEventsStartInstanceCreatedBeforeCompleted
 	buildAutoCompleteFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "auto_complete_flow",
-		Title:       "Auto Complete Event Order",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -855,8 +854,8 @@ func (s *InstanceServiceTestSuite) TestEventsWithdraw() {
 	buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Withdraw Event Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -883,8 +882,8 @@ func (s *InstanceServiceTestSuite) TestWithdrawNotApplicant() {
 	buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Withdraw Not Applicant",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -904,8 +903,8 @@ func (s *InstanceServiceTestSuite) TestTransferThenApprovePassAll() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Transfer PassAll Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -979,8 +978,8 @@ func (s *InstanceServiceTestSuite) TestAddCCManualNotAllowed() {
 	s.Require().NoError(err, "Should not return error")
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "CC Not Allowed Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -996,8 +995,8 @@ func (s *InstanceServiceTestSuite) TestAddAssigneeInvalidType() {
 	buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Invalid AddType Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -1030,8 +1029,8 @@ func (s *InstanceServiceTestSuite) TestAddAssigneeTypeNotInNodeAllowedList() {
 	s.Require().NoError(err, "Should not return error")
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Restricted AddType Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -1070,14 +1069,13 @@ func (s *InstanceServiceTestSuite) TestStartInstanceNotAllowedInitiate() {
 		InitiatorKind: approval.InitiatorUser,
 		InitiatorIDs:  []string{"Other_user"},
 	}
-	initiator.ID = id.Generate()
 	_, err = s.db.NewInsert().Model(initiator).Exec(s.ctx)
 	s.Require().NoError(err, "Should not return error")
 
 	// Attempt to start instance as non-allowed user
 	_, err = s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -1100,13 +1098,12 @@ func (s *InstanceServiceTestSuite) TestStartInstanceAllowedInitiateByUser() {
 		InitiatorKind: approval.InitiatorUser,
 		InitiatorIDs:  []string{"applicant1"},
 	}
-	initiator.ID = id.Generate()
 	_, err = s.db.NewInsert().Model(initiator).Exec(s.ctx)
 	s.Require().NoError(err, "Should not return error")
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -1120,8 +1117,8 @@ func (s *InstanceServiceTestSuite) TestRemoveAssigneeNotAuthorized() {
 	buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -1184,10 +1181,10 @@ func (s *InstanceServiceTestSuite) TestDeployFlowAssigneesPersisted() {
 	}).OrderBy("sort_order").Scan(s.ctx)
 	s.Require().NoError(err, "Should not return error")
 	s.Len(assignees, 2)
-	s.Equal(approval.AssigneeUser, assignees[0].AssigneeKind)
-	s.Equal([]string{"u1", "u2"}, assignees[0].AssigneeIDs)
-	s.Equal(approval.AssigneeRole, assignees[1].AssigneeKind)
-	s.Equal([]string{"r1"}, assignees[1].AssigneeIDs)
+	s.Equal(approval.AssigneeUser, assignees[0].Kind)
+	s.Equal([]string{"u1", "u2"}, assignees[0].IDs)
+	s.Equal(approval.AssigneeRole, assignees[1].Kind)
+	s.Equal([]string{"r1"}, assignees[1].IDs)
 }
 
 // TestAddAssigneeNonAssigneeBlocked verifies that a user who is not the task
@@ -1196,8 +1193,8 @@ func (s *InstanceServiceTestSuite) TestAddAssigneeNonAssigneeBlocked() {
 	buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -1222,8 +1219,8 @@ func (s *InstanceServiceTestSuite) TestWithdrawNotRunning() {
 	buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -1303,8 +1300,8 @@ func (s *InstanceServiceTestSuite) TestRemoveAssigneeTriggersCompletion() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Remove Triggers Completion",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -1363,7 +1360,7 @@ func (s *InstanceServiceTestSuite) TestRemoveAssigneeTriggersCompletion() {
 	// Flow should advance to End and complete as approved
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
 	s.Equal(approval.InstanceApproved, inst.Status)
-	s.True(inst.FinishedAt.Valid, "finished_at should be set")
+	s.True(inst.FinishedAt != nil, "finished_at should be set")
 }
 
 // TestSubFlowParentRejectedStateConvergence verifies that when a sub-flow is rejected,
@@ -1379,9 +1376,6 @@ func (s *InstanceServiceTestSuite) TestSubFlowParentRejectedStateConvergence() {
 		IsAllInitiateAllowed: true,
 		CurrentVersion:       1,
 	}
-	parentFlow.ID = id.Generate()
-	parentFlow.CreatedBy = "system"
-	parentFlow.UpdatedBy = "system"
 	_, err := s.db.NewInsert().Model(parentFlow).Exec(s.ctx)
 	s.Require().NoError(err, "Should not return error")
 
@@ -1390,16 +1384,10 @@ func (s *InstanceServiceTestSuite) TestSubFlowParentRejectedStateConvergence() {
 		Version: 1,
 		Status:  approval.VersionPublished,
 	}
-	parentVersion.ID = id.Generate()
-	parentVersion.CreatedBy = "system"
-	parentVersion.UpdatedBy = "system"
 	_, err = s.db.NewInsert().Model(parentVersion).Exec(s.ctx)
 	s.Require().NoError(err, "Should not return error")
 
 	startNode := &approval.FlowNode{FlowVersionID: parentVersion.ID, NodeKey: "start", NodeKind: approval.NodeStart, Name: "Start"}
-	startNode.ID = id.Generate()
-	startNode.CreatedBy = "system"
-	startNode.UpdatedBy = "system"
 	_, err = s.db.NewInsert().Model(startNode).Exec(s.ctx)
 	s.Require().NoError(err, "Should not return error")
 
@@ -1413,9 +1401,6 @@ func (s *InstanceServiceTestSuite) TestSubFlowParentRejectedStateConvergence() {
 		IsAllInitiateAllowed: true,
 		CurrentVersion:       1,
 	}
-	childFlow.ID = id.Generate()
-	childFlow.CreatedBy = "system"
-	childFlow.UpdatedBy = "system"
 	_, err = s.db.NewInsert().Model(childFlow).Exec(s.ctx)
 	s.Require().NoError(err, "Should not return error")
 
@@ -1424,16 +1409,10 @@ func (s *InstanceServiceTestSuite) TestSubFlowParentRejectedStateConvergence() {
 		Version: 1,
 		Status:  approval.VersionPublished,
 	}
-	childVersion.ID = id.Generate()
-	childVersion.CreatedBy = "system"
-	childVersion.UpdatedBy = "system"
 	_, err = s.db.NewInsert().Model(childVersion).Exec(s.ctx)
 	s.Require().NoError(err, "Should not return error")
 
 	childStart := &approval.FlowNode{FlowVersionID: childVersion.ID, NodeKey: "start", NodeKind: approval.NodeStart, Name: "Start"}
-	childStart.ID = id.Generate()
-	childStart.CreatedBy = "system"
-	childStart.UpdatedBy = "system"
 	_, err = s.db.NewInsert().Model(childStart).Exec(s.ctx)
 	s.Require().NoError(err, "Should not return error")
 
@@ -1446,26 +1425,19 @@ func (s *InstanceServiceTestSuite) TestSubFlowParentRejectedStateConvergence() {
 		PassRule:               approval.PassAll,
 		DuplicateHandlerAction: approval.DuplicateHandlerAutoPass,
 	}
-	childApproval.ID = id.Generate()
-	childApproval.CreatedBy = "system"
-	childApproval.UpdatedBy = "system"
 	_, err = s.db.NewInsert().Model(childApproval).Exec(s.ctx)
 	s.Require().NoError(err, "Should not return error")
 
 	childEnd := &approval.FlowNode{FlowVersionID: childVersion.ID, NodeKey: "end", NodeKind: approval.NodeEnd, Name: "End"}
-	childEnd.ID = id.Generate()
-	childEnd.CreatedBy = "system"
-	childEnd.UpdatedBy = "system"
 	_, err = s.db.NewInsert().Model(childEnd).Exec(s.ctx)
 	s.Require().NoError(err, "Should not return error")
 
 	childAssignee := &approval.FlowNodeAssignee{
 		NodeID:       childApproval.ID,
-		AssigneeKind: approval.AssigneeUser,
-		AssigneeIDs:  []string{"user1"},
+		Kind: approval.AssigneeUser,
+		IDs:  []string{"user1"},
 		SortOrder:    0,
 	}
-	childAssignee.ID = id.Generate()
 	_, err = s.db.NewInsert().Model(childAssignee).Exec(s.ctx)
 	s.Require().NoError(err, "Should not return error")
 
@@ -1480,16 +1452,10 @@ func (s *InstanceServiceTestSuite) TestSubFlowParentRejectedStateConvergence() {
 		Name:          "SubFlow",
 		SubFlowConfig: map[string]any{"flowId": childFlow.ID},
 	}
-	subFlowNode.ID = id.Generate()
-	subFlowNode.CreatedBy = "system"
-	subFlowNode.UpdatedBy = "system"
 	_, err = s.db.NewInsert().Model(subFlowNode).Exec(s.ctx)
 	s.Require().NoError(err, "Should not return error")
 
 	endNode := &approval.FlowNode{FlowVersionID: parentVersion.ID, NodeKey: "end", NodeKind: approval.NodeEnd, Name: "End"}
-	endNode.ID = id.Generate()
-	endNode.CreatedBy = "system"
-	endNode.UpdatedBy = "system"
 	_, err = s.db.NewInsert().Model(endNode).Exec(s.ctx)
 	s.Require().NoError(err, "Should not return error")
 
@@ -1498,8 +1464,8 @@ func (s *InstanceServiceTestSuite) TestSubFlowParentRejectedStateConvergence() {
 
 	// Start parent flow
 	parentInstance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "parent_flow",
-		Title:       "Parent Instance",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -1530,12 +1496,12 @@ func (s *InstanceServiceTestSuite) TestSubFlowParentRejectedStateConvergence() {
 	// Verify child instance is rejected with finished_at
 	childInst := queryInstance(s.T(), s.ctx, s.db, childInstance.ID)
 	s.Equal(approval.InstanceRejected, childInst.Status)
-	s.True(childInst.FinishedAt.Valid, "child finished_at should be set")
+	s.True(childInst.FinishedAt != nil, "child finished_at should be set")
 
 	// Verify parent instance is rejected with finished_at
 	parentInst := queryInstance(s.T(), s.ctx, s.db, parentInstance.ID)
 	s.Equal(approval.InstanceRejected, parentInst.Status)
-	s.True(parentInst.FinishedAt.Valid, "parent finished_at should be set")
+	s.True(parentInst.FinishedAt != nil, "parent finished_at should be set")
 
 	// Verify sub-flow events were published
 	events := queryEvents(s.T(), s.ctx, s.db)
@@ -1553,8 +1519,8 @@ func (s *InstanceServiceTestSuite) TestMainFlowApprovedPublishesCompletionEvent(
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Completion Event Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -1591,7 +1557,7 @@ func (s *InstanceServiceTestSuite) TestMainFlowApprovedPublishesCompletionEvent(
 	// Instance should be approved
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
 	s.Equal(approval.InstanceApproved, inst.Status)
-	s.True(inst.FinishedAt.Valid)
+	s.True(inst.FinishedAt != nil)
 
 	// Verify approval.instance.completed event was published
 	events := queryEvents(s.T(), s.ctx, s.db)
@@ -1623,7 +1589,8 @@ func (s *InstanceServiceTestSuite) TestRollbackPreviousTypeValidTarget() {
 	_ = version
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
-		FlowCode: "multi_stage_flow", Title: "Rollback Previous Test",
+		TenantID:    "default",
+		FlowCode:    "multi_stage_flow",
 		ApplicantID: "applicant1", FormData: map[string]any{},
 	})
 	s.Require().NoError(err, "Should not return error")
@@ -1664,7 +1631,8 @@ func (s *InstanceServiceTestSuite) TestRollbackPreviousTypeInvalidTarget() {
 	s.Require().NoError(err, "Should not return error")
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
-		FlowCode: "multi_stage_flow", Title: "Rollback Invalid Test",
+		TenantID:    "default",
+		FlowCode:    "multi_stage_flow",
 		ApplicantID: "applicant1", FormData: map[string]any{},
 	})
 	s.Require().NoError(err, "Should not return error")
@@ -1701,18 +1669,12 @@ func (s *InstanceServiceTestSuite) TestSubFlowCycleDetection() {
 		Code: "flow_cycle_a", Name: "Cycle A",
 		IsActive: true, IsAllInitiateAllowed: true, CurrentVersion: 1,
 	}
-	flowA.ID = id.Generate()
-	flowA.CreatedBy = "system"
-	flowA.UpdatedBy = "system"
 	_, err := s.db.NewInsert().Model(flowA).Exec(s.ctx)
 	s.Require().NoError(err, "Should not return error")
 
 	versionA := &approval.FlowVersion{
 		FlowID: flowA.ID, Version: 1, Status: approval.VersionPublished,
 	}
-	versionA.ID = id.Generate()
-	versionA.CreatedBy = "system"
-	versionA.UpdatedBy = "system"
 	_, err = s.db.NewInsert().Model(versionA).Exec(s.ctx)
 	s.Require().NoError(err, "Should not return error")
 
@@ -1726,9 +1688,6 @@ func (s *InstanceServiceTestSuite) TestSubFlowCycleDetection() {
 		Name:          "Self SubFlow",
 		SubFlowConfig: map[string]any{"flowId": flowA.ID},
 	}
-	sfNode.ID = id.Generate()
-	sfNode.CreatedBy = "system"
-	sfNode.UpdatedBy = "system"
 	_, err = s.db.NewInsert().Model(sfNode).Exec(s.ctx)
 	s.Require().NoError(err, "Should not return error")
 
@@ -1739,7 +1698,8 @@ func (s *InstanceServiceTestSuite) TestSubFlowCycleDetection() {
 
 	// Start an instance - should fail with cycle detection
 	_, err = s.svc.StartInstance(s.ctx, StartInstanceCmd{
-		FlowCode: "flow_cycle_a", Title: "Cycle Test",
+		TenantID:    "default",
+		FlowCode:    "flow_cycle_a",
 		ApplicantID: "applicant1", FormData: map[string]any{},
 	})
 	s.Require().Error(err, "Should return error")
@@ -1755,18 +1715,12 @@ func (s *InstanceServiceTestSuite) TestSubFlowInstanceHasAuditFields() {
 		Code: "flow_child_b", Name: "Child B",
 		IsActive: true, IsAllInitiateAllowed: true, CurrentVersion: 1,
 	}
-	flowB.ID = id.Generate()
-	flowB.CreatedBy = "system"
-	flowB.UpdatedBy = "system"
 	_, err := s.db.NewInsert().Model(flowB).Exec(s.ctx)
 	s.Require().NoError(err, "Should not return error")
 
 	versionB := &approval.FlowVersion{
 		FlowID: flowB.ID, Version: 1, Status: approval.VersionPublished,
 	}
-	versionB.ID = id.Generate()
-	versionB.CreatedBy = "system"
-	versionB.UpdatedBy = "system"
 	_, err = s.db.NewInsert().Model(versionB).Exec(s.ctx)
 	s.Require().NoError(err, "Should not return error")
 
@@ -1780,18 +1734,12 @@ func (s *InstanceServiceTestSuite) TestSubFlowInstanceHasAuditFields() {
 		Code: "flow_parent_a", Name: "Parent A",
 		IsActive: true, IsAllInitiateAllowed: true, CurrentVersion: 1,
 	}
-	flowA.ID = id.Generate()
-	flowA.CreatedBy = "system"
-	flowA.UpdatedBy = "system"
 	_, err = s.db.NewInsert().Model(flowA).Exec(s.ctx)
 	s.Require().NoError(err, "Should not return error")
 
 	versionA := &approval.FlowVersion{
 		FlowID: flowA.ID, Version: 1, Status: approval.VersionPublished,
 	}
-	versionA.ID = id.Generate()
-	versionA.CreatedBy = "system"
-	versionA.UpdatedBy = "system"
 	_, err = s.db.NewInsert().Model(versionA).Exec(s.ctx)
 	s.Require().NoError(err, "Should not return error")
 
@@ -1803,9 +1751,6 @@ func (s *InstanceServiceTestSuite) TestSubFlowInstanceHasAuditFields() {
 		Name:          "SubFlow",
 		SubFlowConfig: map[string]any{"flowId": flowB.ID},
 	}
-	sfNode.ID = id.Generate()
-	sfNode.CreatedBy = "system"
-	sfNode.UpdatedBy = "system"
 	_, err = s.db.NewInsert().Model(sfNode).Exec(s.ctx)
 	s.Require().NoError(err, "Should not return error")
 
@@ -1815,7 +1760,8 @@ func (s *InstanceServiceTestSuite) TestSubFlowInstanceHasAuditFields() {
 
 	// Start parent flow
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
-		FlowCode: "flow_parent_a", Title: "Audit Fields Test",
+		TenantID:    "default",
+		FlowCode:    "flow_parent_a",
 		ApplicantID: "applicant1", FormData: map[string]any{},
 	})
 	s.Require().NoError(err, "Should not return error")
@@ -1831,8 +1777,8 @@ func (s *InstanceServiceTestSuite) TestSubFlowInstanceHasAuditFields() {
 	s.NotEmpty(childInstance.ID, "child instance ID should be set")
 	s.NotEmpty(childInstance.CreatedBy, "child instance CreatedBy should not be empty")
 	s.Equal(flowB.ID, childInstance.FlowID)
-	s.True(childInstance.ParentInstanceID.Valid)
-	s.Equal(instance.ID, childInstance.ParentInstanceID.String)
+	s.NotNil(childInstance.ParentInstanceID)
+	s.Equal(instance.ID, *childInstance.ParentInstanceID)
 }
 
 // TestFilterEditableFormData tests filter editable form data scenarios.
@@ -1909,7 +1855,7 @@ type InstanceServiceEdgeCaseTestSuite struct {
 	flowSvc   *FlowService
 	mockOrg   *MockOrganizationService
 	mockUser  *MockUserService
-	serialGen *MockSerialNoGenerator
+	instanceNoGen *MockInstanceNoGenerator
 	cleanup   func()
 }
 
@@ -1929,11 +1875,11 @@ func (s *InstanceServiceEdgeCaseTestSuite) SetupTest() {
 	s.mockUser = &MockUserService{
 		roleUsers: map[string][]string{"role_admin": {"admin1", "admin2"}},
 	}
-	s.serialGen = NewMockSerialNoGenerator()
+	s.instanceNoGen = NewMockInstanceNoGenerator()
 
 	pub := publisher.NewEventPublisher()
 	eng := setupEngine(s.mockOrg, s.mockUser, pub)
-	s.svc = NewInstanceService(s.db, eng, s.serialGen, pub, s.mockUser)
+	s.svc = NewInstanceService(s.db, eng, s.instanceNoGen, pub, s.mockUser)
 	s.flowSvc = NewFlowService(s.db, pub)
 }
 
@@ -1950,8 +1896,6 @@ func (s *InstanceServiceEdgeCaseTestSuite) insertInitiator(flowID string, kind a
 		InitiatorKind: kind,
 		InitiatorIDs:  ids,
 	}
-	initiator.ID = id.Generate()
-
 	_, err := s.db.NewInsert().Model(initiator).Exec(s.ctx)
 	s.Require().NoError(err, "Should insert initiator")
 }
@@ -1966,12 +1910,12 @@ func (s *InstanceServiceEdgeCaseTestSuite) disableAllInitiate(flow *approval.Flo
 }
 
 // startSimpleInstance starts an instance on simple_flow with defaults.
-func (s *InstanceServiceEdgeCaseTestSuite) startSimpleInstance(title string) *approval.Instance {
+func (s *InstanceServiceEdgeCaseTestSuite) startSimpleInstance() *approval.Instance {
 	s.T().Helper()
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
-		FlowCode:    "simple_flow",
-		Title:       title,
+		TenantID:      "default",
+		FlowCode:      "simple_flow",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -2007,7 +1951,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) deployAndPublishMinimalFlow(flowCode,
 
 // advanceMultiStageToSecondApproval builds a multi-stage flow, starts an instance,
 // and approves the first stage, returning the instance and second-stage tasks.
-func (s *InstanceServiceEdgeCaseTestSuite) advanceMultiStageToSecondApproval(title string) (*approval.Instance, []*approval.FlowNode, []approval.Task) {
+func (s *InstanceServiceEdgeCaseTestSuite) advanceMultiStageToSecondApproval() (*approval.Instance, []*approval.FlowNode, []approval.Task) {
 	s.T().Helper()
 
 	_, _, nodes := buildMultiStageFlow(s.T(), s.ctx, s.db)
@@ -2015,8 +1959,8 @@ func (s *InstanceServiceEdgeCaseTestSuite) advanceMultiStageToSecondApproval(tit
 	approval2 := nodes[2]
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
-		FlowCode:    "multi_stage_flow",
-		Title:       title,
+		TenantID:      "default",
+		FlowCode:      "multi_stage_flow",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -2042,7 +1986,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) advanceMultiStageToSecondApproval(tit
 func (s *InstanceServiceEdgeCaseTestSuite) TestProcessTaskUnsupportedAction() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
 
-	instance := s.startSimpleInstance("Unsupported Action")
+	instance := s.startSimpleInstance()
 
 	tasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	s.Require().NotEmpty(tasks, "Should have tasks")
@@ -2065,8 +2009,8 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestProcessTaskOpinionRequired() {
 	s.Require().NoError(err, "Should update node")
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Opinion Required",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -2099,8 +2043,8 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestProcessTaskFormDataMerge() {
 	s.Require().NoError(err, "Should update node permissions")
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Form Data Merge",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{"amount": 100, "status": "draft"},
 	})
@@ -2126,7 +2070,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestProcessTaskFormDataMerge() {
 func (s *InstanceServiceEdgeCaseTestSuite) TestProcessTaskTransferMissingTarget() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
 
-	instance := s.startSimpleInstance("Transfer No Target")
+	instance := s.startSimpleInstance()
 
 	tasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	s.Require().NotEmpty(tasks, "Should have tasks")
@@ -2145,7 +2089,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestProcessTaskTransferMissingTarget(
 func (s *InstanceServiceEdgeCaseTestSuite) TestRollbackMissingTargetNodeID() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
 
-	instance := s.startSimpleInstance("Rollback No Target")
+	instance := s.startSimpleInstance()
 
 	tasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	s.Require().NotEmpty(tasks, "Should have tasks")
@@ -2172,8 +2116,8 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRollbackTargetNoneType() {
 	s.Require().NoError(err, "Should update rollback type")
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "multi_stage_flow",
-		Title:       "Rollback None",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -2204,7 +2148,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRollbackTargetNoneType() {
 }
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestRollbackTargetStartType() {
-	instance, nodes, _ := s.advanceMultiStageToSecondApproval("Rollback Start")
+	instance, nodes, _ := s.advanceMultiStageToSecondApproval()
 	startNode := nodes[0]
 	approval2 := nodes[2]
 
@@ -2231,7 +2175,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRollbackTargetStartType() {
 }
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestRollbackTargetStartTypeInvalidTarget() {
-	instance, nodes, _ := s.advanceMultiStageToSecondApproval("Rollback Start Invalid")
+	instance, nodes, _ := s.advanceMultiStageToSecondApproval()
 	approval1 := nodes[1]
 	approval2 := nodes[2]
 
@@ -2259,10 +2203,10 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestCheckInitiationPermissionByDept()
 	s.insertInitiator(flow.ID, approval.InitiatorDept, []string{"dept_engineering"})
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:        "simple_flow",
-		Title:           "Dept Allowed",
 		ApplicantID:     "applicant1",
-		ApplicantDeptID: "dept_engineering",
+		ApplicantDeptID: new("dept_engineering"),
 		FormData:        map[string]any{},
 	})
 	s.Require().NoError(err, "Dept initiator should allow start")
@@ -2275,8 +2219,8 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestCheckInitiationPermissionByRole()
 	s.insertInitiator(flow.ID, approval.InitiatorRole, []string{"role_admin"})
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Role Allowed",
 		ApplicantID: "admin1",
 		FormData:    map[string]any{},
 	})
@@ -2289,8 +2233,8 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestCheckInitiationPermissionNoInitia
 	s.disableAllInitiate(flow)
 
 	_, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "No Initiators",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -2300,13 +2244,13 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestCheckInitiationPermissionNoInitia
 func (s *InstanceServiceEdgeCaseTestSuite) TestAddCCSuccess() {
 	buildSimpleFlow(s.T(), s.ctx, s.db)
 
-	instance := s.startSimpleInstance("CC Success")
+	instance := s.startSimpleInstance()
 
-	if instance.CurrentNodeID.Valid {
+	if instance.CurrentNodeID != nil {
 		_, err := s.db.NewUpdate().Model((*approval.FlowNode)(nil)).
 			Set("is_manual_cc_allowed", true).
 			Where(func(c orm.ConditionBuilder) {
-				c.Equals("id", instance.CurrentNodeID.String)
+				c.Equals("id", *instance.CurrentNodeID)
 			}).Exec(s.ctx)
 		s.Require().NoError(err, "Should enable manual CC")
 	}
@@ -2331,8 +2275,8 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestAddCCCompletedInstance() {
 	buildAutoCompleteFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "auto_complete_flow",
-		Title:       "Completed CC",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -2344,7 +2288,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestAddCCCompletedInstance() {
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestProcessTaskTaskNotFound() {
 	buildSimpleFlow(s.T(), s.ctx, s.db)
-	instance := s.startSimpleInstance("Task Not Found")
+	instance := s.startSimpleInstance()
 
 	err := s.svc.ProcessTask(s.ctx, ProcessTaskCmd{
 		InstanceID: instance.ID,
@@ -2357,7 +2301,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestProcessTaskTaskNotFound() {
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestProcessTaskTaskNotPending() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
-	instance := s.startSimpleInstance("Task Not Pending")
+	instance := s.startSimpleInstance()
 
 	tasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	err := s.svc.ProcessTask(s.ctx, ProcessTaskCmd{
@@ -2389,8 +2333,8 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestAddAssigneeInstanceCompleted() {
 	buildAutoCompleteFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "auto_complete_flow",
-		Title:       "Completed AddAssignee",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -2410,8 +2354,8 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestAddAssigneeNodeNotAllowed() {
 	_, _, _, approvalNode, _ := buildParallelFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "parallel_flow",
-		Title:       "Node Not Allowed",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -2439,8 +2383,8 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRemoveAssigneeNodeNotAllowed() {
 	_, _, _, approvalNode, _ := buildParallelFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "parallel_flow",
-		Title:       "Remove Not Allowed",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -2457,34 +2401,34 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestStartInstanceWithBusinessRecordID
 	buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:         "simple_flow",
-		Title:            "Business Record",
 		ApplicantID:      "applicant1",
-		BusinessRecordID: "biz_record_001",
+		BusinessRecordID: new("biz_record_001"),
 		FormData:         map[string]any{},
 	})
 	s.Require().NoError(err, "Should start instance with business record ID")
 
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
-	s.True(inst.BusinessRecordID.Valid, "BusinessRecordID should be set")
-	s.Equal("biz_record_001", inst.BusinessRecordID.String, "BusinessRecordID should match")
+	s.NotNil(inst.BusinessRecordID, "BusinessRecordID should be set")
+	s.Equal("biz_record_001", *inst.BusinessRecordID, "BusinessRecordID should match")
 }
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestStartInstanceWithApplicantDeptID() {
 	buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:        "simple_flow",
-		Title:           "Dept ID",
 		ApplicantID:     "applicant1",
-		ApplicantDeptID: "dept_001",
+		ApplicantDeptID: new("dept_001"),
 		FormData:        map[string]any{},
 	})
 	s.Require().NoError(err, "Should start instance with dept ID")
 
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
-	s.True(inst.ApplicantDeptID.Valid, "ApplicantDeptID should be set")
-	s.Equal("dept_001", inst.ApplicantDeptID.String, "ApplicantDeptID should match")
+	s.NotNil(inst.ApplicantDeptID, "ApplicantDeptID should be set")
+	s.Equal("dept_001", *inst.ApplicantDeptID, "ApplicantDeptID should match")
 }
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestRollbackDataKeepStrategy() {
@@ -2499,8 +2443,8 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRollbackDataKeepStrategy() {
 	s.Require().NoError(err, "Should update rollback strategy")
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "multi_stage_flow",
-		Title:       "Rollback Data Keep",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{"amount": 1000},
 	})
@@ -2522,8 +2466,6 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRollbackDataKeepStrategy() {
 		NodeID:     approval1.ID,
 		FormData:   map[string]any{"amount": 500},
 	}
-	snapshot.ID = id.Generate()
-	snapshot.CreatedBy = "system"
 	_, err = s.db.NewInsert().Model(snapshot).Exec(s.ctx)
 	s.Require().NoError(err, "Should insert form snapshot")
 
@@ -2551,8 +2493,8 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestProcessTaskFormDataWithNilInstanc
 	s.Require().NoError(err, "Should update node permissions")
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Nil FormData Merge",
 		ApplicantID: "applicant1",
 		FormData:    nil,
 	})
@@ -2560,7 +2502,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestProcessTaskFormDataWithNilInstanc
 
 	// Force instance form_data to NULL
 	_, err = s.db.NewUpdate().Model((*approval.Instance)(nil)).
-		Set("form_data", null.String{}).
+		Set("form_data", nil).
 		Where(func(c orm.ConditionBuilder) {
 			c.Equals("id", instance.ID)
 		}).Exec(s.ctx)
@@ -2586,7 +2528,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestPublishVersionVersionNotFound() {
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestGetInstanceDetailTaskQueryError() {
 	buildSimpleFlow(s.T(), s.ctx, s.db)
-	instance := s.startSimpleInstance("Detail Task Error")
+	instance := s.startSimpleInstance()
 
 	_, err := s.db.NewRaw("DROP TABLE apv_task").Exec(s.ctx)
 	s.Require().NoError(err, "Should drop task table")
@@ -2598,7 +2540,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestGetInstanceDetailTaskQueryError()
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestGetInstanceDetailActionLogQueryError() {
 	buildSimpleFlow(s.T(), s.ctx, s.db)
-	instance := s.startSimpleInstance("Detail ActionLog Error")
+	instance := s.startSimpleInstance()
 
 	_, err := s.db.NewRaw("DROP TABLE apv_action_log").Exec(s.ctx)
 	s.Require().NoError(err, "Should drop action log table")
@@ -2610,7 +2552,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestGetInstanceDetailActionLogQueryEr
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestGetInstanceDetailFlowNodesQueryError() {
 	buildSimpleFlow(s.T(), s.ctx, s.db)
-	instance := s.startSimpleInstance("Detail FlowNodes Error")
+	instance := s.startSimpleInstance()
 
 	_, err := s.db.NewRaw("DROP TABLE apv_flow_node").Exec(s.ctx)
 	s.Require().NoError(err, "Should drop flow node table")
@@ -2641,8 +2583,8 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRollbackDataKeepNoSnapshot() {
 	s.Require().NoError(err, "Should update rollback strategy")
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "multi_stage_flow",
-		Title:       "Rollback No Snapshot",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{"amount": 1000},
 	})
@@ -2677,7 +2619,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRollbackDataKeepNoSnapshot() {
 }
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestRollbackTargetAnyTypeInvalidTarget() {
-	instance, nodes, _ := s.advanceMultiStageToSecondApproval("Rollback Any Invalid")
+	instance, nodes, _ := s.advanceMultiStageToSecondApproval()
 	approval2 := nodes[2]
 
 	approval2.IsRollbackAllowed = true
@@ -2705,8 +2647,8 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestCheckInitiationPermissionRoleNotM
 
 	// "applicant1" is not in role_admin users (admin1, admin2)
 	_, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Role Not Matched",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -2720,11 +2662,11 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestCheckInitiationPermissionNilUserS
 
 	pub := publisher.NewEventPublisher()
 	eng := setupEngine(s.mockOrg, s.mockUser, pub)
-	svcNoUser := NewInstanceService(s.db, eng, s.serialGen, pub, nil)
+	svcNoUser := NewInstanceService(s.db, eng, s.instanceNoGen, pub, nil)
 
 	_, err := svcNoUser.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Nil UserService",
 		ApplicantID: "admin1",
 		FormData:    map[string]any{},
 	})
@@ -2733,7 +2675,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestCheckInitiationPermissionNilUserS
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestProcessTaskRollbackActionLogFields() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
-	instance := s.startSimpleInstance("Rollback ActionLog")
+	instance := s.startSimpleInstance()
 
 	tasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	s.Require().NotEmpty(tasks, "Should have tasks")
@@ -2755,13 +2697,13 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestProcessTaskRollbackActionLogField
 	}).Scan(s.ctx)
 	s.Require().NoError(err, "Should query rollback logs")
 	s.Require().Len(logs, 1, "Should have one rollback log")
-	s.True(logs[0].RollbackToNodeID.Valid, "RollbackToNodeID should be set")
-	s.Equal(approvalNode.ID, logs[0].RollbackToNodeID.String, "RollbackToNodeID should match target")
+	s.NotNil(logs[0].RollbackToNodeID, "RollbackToNodeID should be set")
+	s.Equal(approvalNode.ID, *logs[0].RollbackToNodeID, "RollbackToNodeID should match target")
 }
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestProcessTaskTransferActionLogFields() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
-	instance := s.startSimpleInstance("Transfer ActionLog")
+	instance := s.startSimpleInstance()
 
 	tasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	s.Require().NotEmpty(tasks, "Should have tasks")
@@ -2783,13 +2725,13 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestProcessTaskTransferActionLogField
 	}).Scan(s.ctx)
 	s.Require().NoError(err, "Should query transfer logs")
 	s.Require().Len(logs, 1, "Should have one transfer log")
-	s.True(logs[0].TransferToID.Valid, "TransferToID should be set")
-	s.Equal("user3", logs[0].TransferToID.String, "TransferToID should match target user")
+	s.NotNil(logs[0].TransferToID, "TransferToID should be set")
+	s.Equal("user3", *logs[0].TransferToID, "TransferToID should match target user")
 }
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestWithdrawWithEmptyReason() {
 	buildSimpleFlow(s.T(), s.ctx, s.db)
-	instance := s.startSimpleInstance("Withdraw Empty Reason")
+	instance := s.startSimpleInstance()
 
 	err := s.svc.Withdraw(s.ctx, instance.ID, "applicant1", "")
 	s.Require().NoError(err, "Withdraw with empty reason should succeed")
@@ -2804,7 +2746,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestWithdrawWithEmptyReason() {
 	}).Scan(s.ctx)
 	s.Require().NoError(err, "Should query withdraw logs")
 	s.Require().Len(logs, 1, "Should have one withdraw log")
-	s.False(logs[0].Opinion.Valid, "Opinion should not be valid when reason is empty")
+	s.Nil(logs[0].Opinion, "Opinion should be nil when reason is empty")
 }
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestRemoveAssigneeFlowAdmin() {
@@ -2820,7 +2762,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRemoveAssigneeFlowAdmin() {
 	_, err = s.db.NewUpdate().Model(&flow).WherePK().Exec(s.ctx)
 	s.Require().NoError(err, "Should update flow admin")
 
-	instance := s.startSimpleInstance("Flow Admin Remove")
+	instance := s.startSimpleInstance()
 
 	tasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	s.Require().Len(tasks, 2, "Should have two tasks")
@@ -2847,8 +2789,8 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRemoveAssigneeNonSequentialNoProm
 	s.Require().NoError(err, "Should enable remove assignee")
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "parallel_flow",
-		Title:       "Parallel Remove",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -2872,7 +2814,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRemoveAssigneeNonSequentialNoProm
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestAddAssigneeTaskNotFound() {
 	buildSimpleFlow(s.T(), s.ctx, s.db)
-	instance := s.startSimpleInstance("AddAssignee TaskNotFound")
+	instance := s.startSimpleInstance()
 
 	err := s.svc.AddAssignee(s.ctx, AddAssigneeCmd{
 		InstanceID: instance.ID,
@@ -2888,8 +2830,8 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestHandleApproveHandleNodeStatus() {
 	_, _, _, handleNode, _ := buildHandleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "handle_flow",
-		Title:       "Handle Status",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -2918,8 +2860,8 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRejectTriggersPassRuleRejected() 
 	_, _, _, approvalNode, _ := buildParallelFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "parallel_flow",
-		Title:       "Reject PassRuleRejected",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -2939,7 +2881,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRejectTriggersPassRuleRejected() 
 
 	inst := queryInstance(s.T(), s.ctx, s.db, instance.ID)
 	s.Equal(approval.InstanceRejected, inst.Status, "Instance should be rejected via PassAnyReject")
-	s.True(inst.FinishedAt.Valid, "FinishedAt should be set after rejection")
+	s.True(inst.FinishedAt != nil, "FinishedAt should be set after rejection")
 }
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestStartInstanceFlowNotActive() {
@@ -2950,8 +2892,8 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestStartInstanceFlowNotActive() {
 	s.Require().NoError(err, "Should deactivate flow")
 
 	_, err = s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Flow Not Active",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -2966,8 +2908,8 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestStartInstanceNoPublishedVersion()
 	s.Require().NoError(err, "Should set version to draft")
 
 	_, err = s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "No Published Version",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -3050,8 +2992,8 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestDeployFlowEdgeWithSourceHandle() 
 	}).Scan(s.ctx)
 	s.Require().NoError(err, "Should query edges")
 	s.Require().Len(edges, 1, "Should have one edge")
-	s.True(edges[0].SourceHandle.Valid, "SourceHandle should be set")
-	s.Equal("branch_1", edges[0].SourceHandle.String, "SourceHandle should be branch_1")
+	s.NotNil(edges[0].SourceHandle, "SourceHandle should be set")
+	s.Equal("branch_1", *edges[0].SourceHandle, "SourceHandle should be branch_1")
 }
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestRemoveAssigneeLastAssignee() {
@@ -3061,7 +3003,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRemoveAssigneeLastAssignee() {
 	_, err := s.db.NewUpdate().Model(approvalNode).WherePK().Exec(s.ctx)
 	s.Require().NoError(err, "Should update pass rule")
 
-	instance := s.startSimpleInstance("Last Assignee")
+	instance := s.startSimpleInstance()
 
 	tasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	s.Require().Len(tasks, 2, "Should have two sequential tasks")
@@ -3075,7 +3017,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRemoveAssigneeLastAssignee() {
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestRemoveAssigneeSequentialPromotes() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
-	instance := s.startSimpleInstance("Sequential Promote")
+	instance := s.startSimpleInstance()
 
 	tasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	s.Require().Len(tasks, 2, "Should have two sequential tasks")
@@ -3095,7 +3037,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestRemoveAssigneeSequentialPromotes(
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestAddAssigneeBefore() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
-	instance := s.startSimpleInstance("AddAssignee Before")
+	instance := s.startSimpleInstance()
 
 	tasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	s.Require().NotEmpty(tasks, "Should have tasks")
@@ -3122,7 +3064,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestAddAssigneeBefore() {
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestAddAssigneeAfter() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
-	instance := s.startSimpleInstance("AddAssignee After")
+	instance := s.startSimpleInstance()
 
 	tasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	s.Require().NotEmpty(tasks, "Should have tasks")
@@ -3146,7 +3088,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestAddAssigneeAfter() {
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestAddAssigneeParallel() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
-	instance := s.startSimpleInstance("AddAssignee Parallel")
+	instance := s.startSimpleInstance()
 
 	tasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	s.Require().NotEmpty(tasks, "Should have tasks")
@@ -3170,7 +3112,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestAddAssigneeParallel() {
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestAddAssigneeInvalidAddType() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
-	instance := s.startSimpleInstance("AddAssignee Invalid Type")
+	instance := s.startSimpleInstance()
 
 	tasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	s.Require().NotEmpty(tasks, "Should have tasks")
@@ -3192,7 +3134,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestAddAssigneeRestrictedAddTypes() {
 	_, err := s.db.NewUpdate().Model(approvalNode).WherePK().Exec(s.ctx)
 	s.Require().NoError(err, "Should restrict add types")
 
-	instance := s.startSimpleInstance("Restricted AddTypes")
+	instance := s.startSimpleInstance()
 
 	tasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	s.Require().NotEmpty(tasks, "Should have tasks")
@@ -3209,7 +3151,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestAddAssigneeRestrictedAddTypes() {
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestAddAssigneeNotAssignee() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
-	instance := s.startSimpleInstance("Not Assignee")
+	instance := s.startSimpleInstance()
 
 	tasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	s.Require().NotEmpty(tasks, "Should have tasks")
@@ -3226,7 +3168,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestAddAssigneeNotAssignee() {
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestWithdrawNotApplicant() {
 	buildSimpleFlow(s.T(), s.ctx, s.db)
-	instance := s.startSimpleInstance("Not Applicant Withdraw")
+	instance := s.startSimpleInstance()
 
 	err := s.svc.Withdraw(s.ctx, instance.ID, "wrong_user", "reason")
 	s.ErrorIs(err, ErrNotApplicant, "Non-applicant should not be able to withdraw")
@@ -3236,8 +3178,8 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestWithdrawAlreadyCompleted() {
 	buildAutoCompleteFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "auto_complete_flow",
-		Title:       "Already Completed",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -3254,7 +3196,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestAddCCManualCCNotAllowed() {
 	_, err := s.db.NewUpdate().Model(approvalNode).WherePK().Exec(s.ctx)
 	s.Require().NoError(err, "Should disable manual CC")
 
-	instance := s.startSimpleInstance("CC Not Allowed")
+	instance := s.startSimpleInstance()
 
 	err = s.svc.AddCC(s.ctx, instance.ID, []string{"cc_user1"}, "applicant1")
 	s.ErrorIs(err, ErrManualCcNotAllowed, "Manual CC should be rejected when disabled")
@@ -3321,7 +3263,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestDeployFlowWithNodeBranchCondition
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestRemoveAssigneeNotAuthorized() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
-	instance := s.startSimpleInstance("Not Authorized Remove")
+	instance := s.startSimpleInstance()
 
 	tasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	s.Require().NotEmpty(tasks, "Should have tasks")
@@ -3336,8 +3278,8 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestCheckInitiationPermissionGetUsers
 	s.insertInitiator(flow.ID, approval.InitiatorRole, []string{"nonexistent_role"})
 
 	_, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Role Error",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -3348,8 +3290,8 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestProcessTaskInstanceCompleted() {
 	buildAutoCompleteFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "auto_complete_flow",
-		Title:       "Completed Instance",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{},
 	})
@@ -3366,7 +3308,7 @@ func (s *InstanceServiceEdgeCaseTestSuite) TestProcessTaskInstanceCompleted() {
 
 func (s *InstanceServiceEdgeCaseTestSuite) TestProcessTaskNotAssignee() {
 	_, _, _, approvalNode, _ := buildSimpleFlow(s.T(), s.ctx, s.db)
-	instance := s.startSimpleInstance("Not Assignee ProcessTask")
+	instance := s.startSimpleInstance()
 
 	tasks := queryTasksByNode(s.T(), s.ctx, s.db, instance.ID, approvalNode.ID)
 	s.Require().NotEmpty(tasks, "Should have tasks")
@@ -3437,8 +3379,8 @@ func (s *InstanceServiceTestSuite) TestUrgeTaskSuccess() {
 	buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Urge Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{"reason": "test"},
 	})
@@ -3495,8 +3437,8 @@ func (s *InstanceServiceTestSuite) TestUrgeTaskNotPending() {
 	buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Urge Not Pending Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{"reason": "test"},
 	})
@@ -3529,8 +3471,8 @@ func (s *InstanceServiceTestSuite) TestUrgeTaskCooldown() {
 	buildSimpleFlow(s.T(), s.ctx, s.db)
 
 	instance, err := s.svc.StartInstance(s.ctx, StartInstanceCmd{
+		TenantID:    "default",
 		FlowCode:    "simple_flow",
-		Title:       "Urge Cooldown Test",
 		ApplicantID: "applicant1",
 		FormData:    map[string]any{"reason": "test"},
 	})

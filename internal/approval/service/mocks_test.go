@@ -41,17 +41,17 @@ func (m *MockUserService) GetUsersByRole(_ context.Context, roleID string) ([]st
 	return nil, nil
 }
 
-// MockSerialNoGenerator provides a mock implementation of SerialNoGenerator.
-type MockSerialNoGenerator struct {
+// MockInstanceNoGenerator provides a mock implementation of InstanceNoGenerator.
+type MockInstanceNoGenerator struct {
 	mu      sync.Mutex
 	counter map[string]int
 }
 
-func NewMockSerialNoGenerator() *MockSerialNoGenerator {
-	return &MockSerialNoGenerator{counter: make(map[string]int)}
+func NewMockInstanceNoGenerator() *MockInstanceNoGenerator {
+	return &MockInstanceNoGenerator{counter: make(map[string]int)}
 }
 
-func (m *MockSerialNoGenerator) Generate(_ context.Context, flowCode string) (string, error) {
+func (m *MockInstanceNoGenerator) Generate(_ context.Context, flowCode string) (string, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
