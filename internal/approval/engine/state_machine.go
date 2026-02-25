@@ -9,6 +9,7 @@ import (
 // State represents a state that can be used in a state machine.
 type State interface {
 	comparable
+
 	String() string
 	IsFinal() bool
 }

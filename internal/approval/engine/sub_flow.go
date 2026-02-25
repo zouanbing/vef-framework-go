@@ -7,7 +7,6 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/id"
-	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
 
@@ -78,19 +77,15 @@ func (p *SubFlowProcessor) Process(ctx context.Context, pc *ProcessContext) (*Pr
 	subInstance := &approval.Instance{
 		FlowID:           subFlow.ID,
 		FlowVersionID:    subVersion.ID,
-		ParentInstanceID: null.StringFrom(pc.Instance.ID),
-		ParentNodeID:     null.StringFrom(pc.Node.ID),
+		ParentInstanceID: new(pc.Instance.ID),
+		ParentNodeID:     new(pc.Node.ID),
 		Title:            fmt.Sprintf("%s - SubFlow", pc.Instance.Title),
-		SerialNo:         id.Generate(),
+		InstanceNo:       id.Generate(),
 		ApplicantID:      pc.ApplicantID,
 		ApplicantDeptID:  pc.Instance.ApplicantDeptID,
 		Status:           approval.InstanceRunning,
 		FormData:         subFormData.ToMap(),
 	}
-	subInstance.ID = id.Generate()
-	subInstance.CreatedBy = pc.ApplicantID
-	subInstance.UpdatedBy = pc.ApplicantID
-
 	if _, err := pc.DB.NewInsert().Model(subInstance).Exec(ctx); err != nil {
 		return nil, fmt.Errorf("create sub-flow instance: %w", err)
 	}
@@ -127,14 +122,14 @@ func (p *SubFlowProcessor) detectSubFlowCycle(ctx context.Context, db orm.DB, cu
 	// Traverse upward through parent instances to prevent infinite loops from bad data
 	parentID := current.ParentInstanceID
 	for range maxSubFlowDepth {
-		if !parentID.Valid {
+		if parentID == nil {
 			break
 		}
 
 		var parent approval.Instance
 
 		if err := db.NewSelect().Model(&parent).Where(func(c orm.ConditionBuilder) {
-			c.Equals("id", parentID.String)
+			c.Equals("id", *parentID)
 		}).Scan(ctx); err != nil {
 			break
 		}
