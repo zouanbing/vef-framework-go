@@ -118,13 +118,4 @@ func TestPredictSameApplicant(t *testing.T) {
 		assert.Equal(t, []string{"boss1"}, ids, "Should return superior ID")
 	})
 
-	t.Run("TransferAdminFallsToDefault", func(t *testing.T) {
-		pc := &ProcessContext{
-			Node:        &approval.FlowNode{SameApplicantAction: approval.SameApplicantTransferAdmin},
-			ApplicantID: "u1",
-		}
-		ids, err := p.predictSameApplicant(t.Context(), pc)
-		require.NoError(t, err, "Should not return error for transfer_admin (falls to default)")
-		assert.Equal(t, []string{"u1"}, ids, "transfer_admin falls into default, returns applicant ID")
-	})
 }

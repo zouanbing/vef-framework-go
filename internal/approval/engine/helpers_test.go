@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/timex"
 )
 
@@ -125,7 +124,7 @@ func TestMatchDelegation(t *testing.T) {
 		{
 			name: "FlowSpecificMatch",
 			delegations: []approval.Delegation{
-				{DelegateeID: "d1", FlowID: null.StringFrom("flow1")},
+				{DelegateeID: "d1", FlowID: new("flow1")},
 			},
 			flowID:     "flow1",
 			expectedID: "d1",
@@ -133,7 +132,7 @@ func TestMatchDelegation(t *testing.T) {
 		{
 			name: "CategoryMatch",
 			delegations: []approval.Delegation{
-				{DelegateeID: "d1", FlowCategoryID: null.StringFrom("cat1")},
+				{DelegateeID: "d1", FlowCategoryID: new("cat1")},
 			},
 			flowCategoryID: "cat1",
 			expectedID:     "d1",
@@ -148,8 +147,8 @@ func TestMatchDelegation(t *testing.T) {
 		{
 			name: "FlowOverCategory",
 			delegations: []approval.Delegation{
-				{DelegateeID: "cat-match", FlowCategoryID: null.StringFrom("cat1")},
-				{DelegateeID: "flow-match", FlowID: null.StringFrom("flow1")},
+				{DelegateeID: "cat-match", FlowCategoryID: new("cat1")},
+				{DelegateeID: "flow-match", FlowID: new("flow1")},
 			},
 			flowID:         "flow1",
 			flowCategoryID: "cat1",
@@ -159,7 +158,7 @@ func TestMatchDelegation(t *testing.T) {
 			name: "CategoryOverGlobal",
 			delegations: []approval.Delegation{
 				{DelegateeID: "global-match"},
-				{DelegateeID: "cat-match", FlowCategoryID: null.StringFrom("cat1")},
+				{DelegateeID: "cat-match", FlowCategoryID: new("cat1")},
 			},
 			flowCategoryID: "cat1",
 			expectedID:     "cat-match",
@@ -181,7 +180,7 @@ func TestMatchDelegation(t *testing.T) {
 		{
 			name: "NoMatch",
 			delegations: []approval.Delegation{
-				{DelegateeID: "d1", FlowID: null.StringFrom("other-flow")},
+				{DelegateeID: "d1", FlowID: new("other-flow")},
 			},
 			flowID:     "flow1",
 			expectedID: "",
@@ -193,7 +192,7 @@ func TestMatchDelegation(t *testing.T) {
 		{
 			name: "WrongFlowID",
 			delegations: []approval.Delegation{
-				{DelegateeID: "d1", FlowID: null.StringFrom("wrong-flow")},
+				{DelegateeID: "d1", FlowID: new("wrong-flow")},
 			},
 			flowID:     "flow1",
 			expectedID: "",
@@ -201,7 +200,7 @@ func TestMatchDelegation(t *testing.T) {
 		{
 			name: "WrongCategoryID",
 			delegations: []approval.Delegation{
-				{DelegateeID: "d1", FlowCategoryID: null.StringFrom("wrong-cat")},
+				{DelegateeID: "d1", FlowCategoryID: new("wrong-cat")},
 			},
 			flowCategoryID: "cat1",
 			expectedID:     "",

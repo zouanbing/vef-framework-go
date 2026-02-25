@@ -7,7 +7,6 @@ import (
 	"slices"
 
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/null"
 )
 
 var ErrNoAssignee = errors.New("no assignee found")
@@ -98,6 +97,7 @@ func (p *ApprovalProcessor) createApprovalTasks(ctx context.Context, pc *Process
 		}
 
 		task := &approval.Task{
+			TenantID:   pc.Instance.TenantID,
 			InstanceID: pc.Instance.ID,
 			NodeID:     pc.Node.ID,
 			AssigneeID: assignee.UserID,
@@ -106,7 +106,7 @@ func (p *ApprovalProcessor) createApprovalTasks(ctx context.Context, pc *Process
 		}
 
 		if assignee.DelegateFromID != "" {
-			task.DelegateFromID = null.StringFrom(assignee.DelegateFromID)
+			task.DelegateFromID = new(assignee.DelegateFromID)
 		}
 
 		if _, err := pc.DB.NewInsert().Model(task).Exec(ctx); err != nil {
@@ -128,9 +128,6 @@ func (p *ApprovalProcessor) handleSameApplicant(ctx context.Context, pc *Process
 		}
 
 		return &ProcessResult{Action: NodeActionWait}, nil
-
-	case approval.SameApplicantTransferAdmin:
-		return createTasksForUsers(ctx, pc, pc.Node.AdminUserIDs)
 
 	case approval.SameApplicantTransferSuperior:
 		superiorID, err := getSuperior(ctx, p.orgService, pc.ApplicantID)

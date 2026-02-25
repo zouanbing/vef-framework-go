@@ -14,7 +14,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/approval/strategy"
 	"github.com/ilxqx/vef-framework-go/internal/database"
 	internalORM "github.com/ilxqx/vef-framework-go/internal/orm"
-	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/timex"
 )
@@ -179,9 +178,6 @@ func buildSimpleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		PassRatio:              decimal.Zero,
 		DuplicateHandlerAction: approval.DuplicateHandlerAutoPass,
 	}
-	approvalNode.ID = id.Generate()
-	approvalNode.CreatedBy = "system"
-	approvalNode.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(approvalNode).Exec(ctx)
 	require.NoError(t, err, "Should insert approvalNode")
 
@@ -232,9 +228,6 @@ func buildHandleFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		PassRule:               approval.PassAny,
 		DuplicateHandlerAction: approval.DuplicateHandlerAutoPass,
 	}
-	handleNode.ID = id.Generate()
-	handleNode.CreatedBy = "system"
-	handleNode.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(handleNode).Exec(ctx)
 	require.NoError(t, err, "Should insert handleNode")
 
@@ -269,9 +262,6 @@ func buildBranchFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		PassRatio:              decimal.Zero,
 		DuplicateHandlerAction: approval.DuplicateHandlerAutoPass,
 	}
-	approval1.ID = id.Generate()
-	approval1.CreatedBy = "system"
-	approval1.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(approval1).Exec(ctx)
 	require.NoError(t, err, "Should insert approval1")
 
@@ -285,9 +275,6 @@ func buildBranchFlow(t *testing.T, ctx context.Context, db orm.DB) (
 		PassRatio:              decimal.Zero,
 		DuplicateHandlerAction: approval.DuplicateHandlerAutoPass,
 	}
-	approval2.ID = id.Generate()
-	approval2.CreatedBy = "system"
-	approval2.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(approval2).Exec(ctx)
 	require.NoError(t, err, "Should insert approval2")
 
@@ -351,9 +338,6 @@ func buildFlowWithSameApplicant(t *testing.T, ctx context.Context, db orm.DB, sa
 		AdminUserIDs:           adminIDs,
 		DuplicateHandlerAction: approval.DuplicateHandlerAutoPass,
 	}
-	approvalNode.ID = id.Generate()
-	approvalNode.CreatedBy = "system"
-	approvalNode.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(approvalNode).Exec(ctx)
 	require.NoError(t, err, "Should insert approvalNode")
 
@@ -399,9 +383,6 @@ func buildEmptyAssigneeFlow(
 	for _, opt := range opts {
 		opt(node)
 	}
-	node.ID = id.Generate()
-	node.CreatedBy = "system"
-	node.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(node).Exec(ctx)
 	require.NoError(t, err, "Should insert node")
 
@@ -428,16 +409,10 @@ func createFlowAndVersion(t *testing.T, ctx context.Context, db orm.DB, code, na
 		IsAllInitiateAllowed: true,
 		CurrentVersion:       1,
 	}
-	flow.ID = id.Generate()
-	flow.CreatedBy = "system"
-	flow.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(flow).Exec(ctx)
 	require.NoError(t, err, "Should insert flow")
 
 	version := &approval.FlowVersion{FlowID: flow.ID, Version: 1, Status: approval.VersionPublished}
-	version.ID = id.Generate()
-	version.CreatedBy = "system"
-	version.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(version).Exec(ctx)
 	require.NoError(t, err, "Should insert version")
 
@@ -454,10 +429,6 @@ func createFlowNode(t *testing.T, ctx context.Context, db orm.DB, versionID, key
 		Name:          name,
 		PassRatio:     decimal.Zero,
 	}
-	node.ID = id.Generate()
-	node.CreatedBy = "system"
-	node.UpdatedBy = "system"
-
 	_, err := db.NewInsert().Model(node).Exec(ctx)
 	require.NoError(t, err, "Should insert node")
 
@@ -469,12 +440,10 @@ func insertAssignee(t *testing.T, ctx context.Context, db orm.DB, nodeID string,
 
 	assignee := &approval.FlowNodeAssignee{
 		NodeID:       nodeID,
-		AssigneeKind: kind,
-		AssigneeIDs:  ids,
+		Kind: kind,
+		IDs:  ids,
 		SortOrder:    sortOrder,
 	}
-	assignee.ID = id.Generate()
-
 	_, err := db.NewInsert().Model(assignee).Exec(ctx)
 	require.NoError(t, err, "Should insert assignee")
 }
@@ -487,10 +456,8 @@ func insertEdge(t *testing.T, ctx context.Context, db orm.DB, versionID, sourceI
 		SourceNodeID:  sourceID,
 		TargetNodeID:  targetID,
 	}
-	edge.ID = id.Generate()
-
 	if len(sourceHandle) > 0 && sourceHandle[0] != "" {
-		edge.SourceHandle = null.StringFrom(sourceHandle[0])
+		edge.SourceHandle = new(sourceHandle[0])
 	}
 
 	_, err := db.NewInsert().Model(edge).Exec(ctx)
@@ -504,15 +471,11 @@ func createInstance(t *testing.T, ctx context.Context, db orm.DB, flow *approval
 		FlowID:        flow.ID,
 		FlowVersionID: version.ID,
 		Title:         "Test Instance",
-		SerialNo:      id.Generate(),
+		InstanceNo:      id.Generate(),
 		ApplicantID:   applicantID,
 		Status:        approval.InstanceRunning,
 		FormData:      formData,
 	}
-	instance.ID = id.Generate()
-	instance.CreatedBy = applicantID
-	instance.UpdatedBy = applicantID
-
 	_, err := db.NewInsert().Model(instance).Exec(ctx)
 	require.NoError(t, err, "Should insert instance")
 
@@ -566,14 +529,10 @@ func createParentInstance(t *testing.T, ctx context.Context, db orm.DB, flow *ap
 		FlowID:        flow.ID,
 		FlowVersionID: version.ID,
 		Title:         "Parent Instance",
-		SerialNo:      id.Generate(),
+		InstanceNo:      id.Generate(),
 		ApplicantID:   applicantID,
 		Status:        approval.InstanceRunning,
 	}
-	instance.ID = id.Generate()
-	instance.CreatedBy = applicantID
-	instance.UpdatedBy = applicantID
-
 	_, err := db.NewInsert().Model(instance).Exec(ctx)
 	require.NoError(t, err, "Should insert instance")
 
@@ -587,15 +546,11 @@ func createRunningParentInstance(t *testing.T, ctx context.Context, db orm.DB, f
 		FlowID:        flow.ID,
 		FlowVersionID: version.ID,
 		Title:         "Parent Instance",
-		SerialNo:      id.Generate(),
+		InstanceNo:      id.Generate(),
 		ApplicantID:   "applicant1",
 		Status:        approval.InstanceRunning,
-		CurrentNodeID: null.StringFrom(currentNodeID),
+		CurrentNodeID: new(currentNodeID),
 	}
-	instance.ID = id.Generate()
-	instance.CreatedBy = "applicant1"
-	instance.UpdatedBy = "applicant1"
-
 	_, err := db.NewInsert().Model(instance).Exec(ctx)
 	require.NoError(t, err, "Should insert instance")
 
@@ -608,24 +563,20 @@ func createChildInstance(t *testing.T, ctx context.Context, db orm.DB, parentIns
 	instance := &approval.Instance{
 		FlowID:           id.Generate(),
 		FlowVersionID:    id.Generate(),
-		ParentInstanceID: null.StringFrom(parentInstanceID),
-		ParentNodeID:     null.StringFrom(parentNodeID),
+		ParentInstanceID: new(parentInstanceID),
+		ParentNodeID:     new(parentNodeID),
 		Title:            "Child Instance",
-		SerialNo:         id.Generate(),
+		InstanceNo:         id.Generate(),
 		ApplicantID:      "applicant1",
 		Status:           status,
 	}
-	instance.ID = id.Generate()
-	instance.CreatedBy = "applicant1"
-	instance.UpdatedBy = "applicant1"
-
 	_, err := db.NewInsert().Model(instance).Exec(ctx)
 	require.NoError(t, err, "Should insert instance")
 
 	return instance
 }
 
-func insertDelegation(t *testing.T, ctx context.Context, db orm.DB, delegatorID, delegateeID string, flowID null.String, isActive bool) {
+func insertDelegation(t *testing.T, ctx context.Context, db orm.DB, delegatorID, delegateeID string, flowID *string, isActive bool) {
 	t.Helper()
 
 	delegation := &approval.Delegation{
@@ -636,10 +587,6 @@ func insertDelegation(t *testing.T, ctx context.Context, db orm.DB, delegatorID,
 		EndTime:     timex.Now().AddYears(1),
 		IsActive:    isActive,
 	}
-	delegation.ID = id.Generate()
-	delegation.CreatedBy = "system"
-	delegation.UpdatedBy = "system"
-
 	_, err := db.NewInsert().Model(delegation).Exec(ctx)
 	require.NoError(t, err, "Should insert delegation")
 }

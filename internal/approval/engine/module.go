@@ -14,6 +14,7 @@ var Module = fx.Module(
 		fx.Annotate(NewApprovalProcessor, fx.As(new(NodeProcessor)), fx.ResultTags(`group:"vef:approval:node_processors"`)),
 		fx.Annotate(NewHandleProcessor, fx.As(new(NodeProcessor)), fx.ResultTags(`group:"vef:approval:node_processors"`)),
 		fx.Annotate(NewSubFlowProcessor, fx.As(new(NodeProcessor)), fx.ResultTags(`group:"vef:approval:node_processors"`)),
+		fx.Annotate(NewCCProcessor, fx.As(new(NodeProcessor)), fx.ResultTags(`group:"vef:approval:node_processors"`)),
 
 		// Flow engine
 		fx.Annotate(

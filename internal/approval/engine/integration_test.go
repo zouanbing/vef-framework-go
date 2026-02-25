@@ -12,7 +12,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/id"
 	"github.com/ilxqx/vef-framework-go/internal/approval/publisher"
-	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
 
@@ -32,7 +31,7 @@ func TestStartProcessAutoCompleteFlow(t *testing.T) {
 
 	inst := queryInstance(t, ctx, db, instance.ID)
 	assert.Equal(t, approval.InstanceApproved, inst.Status, "Instance should be approved after Start->End")
-	assert.True(t, inst.FinishedAt.Valid, "FinishedAt should be set")
+	assert.True(t, inst.FinishedAt != nil, "FinishedAt should be set")
 }
 
 // TestStartProcessSimpleApprovalFlow tests start process simple approval flow scenarios.
@@ -51,7 +50,7 @@ func TestStartProcessSimpleApprovalFlow(t *testing.T) {
 
 	inst := queryInstance(t, ctx, db, instance.ID)
 	assert.Equal(t, approval.InstanceRunning, inst.Status, "Instance should be running while waiting for approval")
-	assert.Equal(t, approvalNode.ID, inst.CurrentNodeID.String, "CurrentNodeID should point to approval node")
+	assert.Equal(t, approvalNode.ID, *inst.CurrentNodeID, "CurrentNodeID should point to approval node")
 
 	tasks := queryTasksByNode(t, ctx, db, instance.ID, approvalNode.ID)
 	require.Len(t, tasks, 2, "Should create 2 tasks for sequential approval")
@@ -80,7 +79,7 @@ func TestStartProcessHandleFlow(t *testing.T) {
 
 	inst := queryInstance(t, ctx, db, instance.ID)
 	assert.Equal(t, approval.InstanceRunning, inst.Status, "Instance should be running")
-	assert.Equal(t, handleNode.ID, inst.CurrentNodeID.String, "CurrentNodeID should point to handle node")
+	assert.Equal(t, handleNode.ID, *inst.CurrentNodeID, "CurrentNodeID should point to handle node")
 
 	tasks := queryTasksByNode(t, ctx, db, instance.ID, handleNode.ID)
 	require.Len(t, tasks, 2, "Should create 2 tasks for handle node")
@@ -107,7 +106,7 @@ func TestStartProcessBranchFlow(t *testing.T) {
 
 		inst := queryInstance(t, ctx, db, instance.ID)
 		assert.Equal(t, approval.InstanceRunning, inst.Status, "Instance should be running at high-value approval")
-		assert.Equal(t, approval1.ID, inst.CurrentNodeID.String, "Should route to high-value approval node")
+		assert.Equal(t, approval1.ID, *inst.CurrentNodeID, "Should route to high-value approval node")
 
 		tasks := queryTasksByNode(t, ctx, db, instance.ID, approval1.ID)
 		require.Len(t, tasks, 1, "Should create 1 task for high-value approval")
@@ -122,7 +121,7 @@ func TestStartProcessBranchFlow(t *testing.T) {
 		require.NoError(t, err, "StartProcess should succeed for branch flow with low value")
 
 		inst := queryInstance(t, ctx, db, instance.ID)
-		assert.Equal(t, approval2.ID, inst.CurrentNodeID.String, "Should route to low-value approval node")
+		assert.Equal(t, approval2.ID, *inst.CurrentNodeID, "Should route to low-value approval node")
 	})
 }
 
@@ -135,7 +134,6 @@ func TestProcessNodeProcessorNotFound(t *testing.T) {
 	eng := NewFlowEngine(nil, nil, nil)
 
 	node := &approval.FlowNode{NodeKind: approval.NodeApproval}
-	node.ID = id.Generate()
 	instance := &approval.Instance{ApplicantID: "u1"}
 
 	err := eng.ProcessNode(ctx, db, instance, node)
@@ -159,7 +157,7 @@ func TestAdvanceToNextNode(t *testing.T) {
 		require.NoError(t, err, "Should advance from start to approval")
 
 		inst := queryInstance(t, ctx, db, instance.ID)
-		assert.Equal(t, approvalNode.ID, inst.CurrentNodeID.String, "Should be at approval node after advance")
+		assert.Equal(t, approvalNode.ID, *inst.CurrentNodeID, "Should be at approval node after advance")
 	})
 
 	t.Run("ErrorWhenNoEdge", func(t *testing.T) {
@@ -191,9 +189,6 @@ func TestEvaluateNodeCompletion(t *testing.T) {
 			AssigneeID: uid,
 			Status:     approval.TaskPending,
 		}
-		task.ID = id.Generate()
-		task.CreatedBy = "system"
-		task.UpdatedBy = "system"
 		_, err := db.NewInsert().Model(task).Exec(ctx)
 		require.NoError(t, err, "Should insert task for %s", uid)
 	}
@@ -442,28 +437,6 @@ func TestApprovalProcessorSameApplicant(t *testing.T) {
 		assert.Equal(t, "user1", tasks[0].AssigneeID, "Task should be assigned to the applicant")
 	})
 
-	t.Run("TransferAdmin", func(t *testing.T) {
-		eng := setupEngine(nil, nil)
-		flow, version, _, approvalNode, _ := buildFlowWithSameApplicant(t, ctx, db, approval.SameApplicantTransferAdmin, []string{"admin_user"})
-		instance := createInstance(t, ctx, db, flow, version, "user1", nil)
-
-		err := eng.StartProcess(ctx, db, instance)
-		require.NoError(t, err, "StartProcess should succeed for transfer admin")
-
-		tasks := queryTasksByNode(t, ctx, db, instance.ID, approvalNode.ID)
-		require.Len(t, tasks, 1, "Should create 1 task for admin")
-		assert.Equal(t, "admin_user", tasks[0].AssigneeID, "Task should be assigned to admin")
-	})
-
-	t.Run("TransferAdminEmptyAdmins", func(t *testing.T) {
-		eng := setupEngine(nil, nil)
-		flow, version, _, _, _ := buildFlowWithSameApplicant(t, ctx, db, approval.SameApplicantTransferAdmin, nil)
-		instance := createInstance(t, ctx, db, flow, version, "user1", nil)
-
-		err := eng.StartProcess(ctx, db, instance)
-		require.ErrorIs(t, err, ErrNoAssignee, "Should return ErrNoAssignee when admin list is empty")
-	})
-
 	t.Run("TransferSuperior", func(t *testing.T) {
 		mockOrg := &MockOrganizationService{
 			superiors: map[string]struct{ id, name string }{
@@ -518,9 +491,6 @@ func TestApprovalProcessorSameApplicant(t *testing.T) {
 			SameApplicantAction:    "some_unknown_action",
 			DuplicateHandlerAction: approval.DuplicateHandlerAutoPass,
 		}
-		approvalNode.ID = id.Generate()
-		approvalNode.CreatedBy = "system"
-		approvalNode.UpdatedBy = "system"
 		_, err := db.NewInsert().Model(approvalNode).Exec(ctx)
 		require.NoError(t, err, "Should insert approval node")
 
@@ -663,9 +633,6 @@ func TestApprovalProcessorParallelApproval(t *testing.T) {
 		PassRatio:              decimal.Zero,
 		DuplicateHandlerAction: approval.DuplicateHandlerAutoPass,
 	}
-	approvalNode.ID = id.Generate()
-	approvalNode.CreatedBy = "system"
-	approvalNode.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(approvalNode).Exec(ctx)
 	require.NoError(t, err, "Should insert approval node")
 
@@ -710,9 +677,6 @@ func TestApprovalProcessorDuplicateHandlerNone(t *testing.T) {
 		PassRatio:              decimal.Zero,
 		DuplicateHandlerAction: approval.DuplicateHandlerNone,
 	}
-	approvalNode.ID = id.Generate()
-	approvalNode.CreatedBy = "system"
-	approvalNode.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(approvalNode).Exec(ctx)
 	require.NoError(t, err, "Should insert approval node")
 
@@ -748,9 +712,6 @@ func TestLoadFlowCategoryID(t *testing.T) {
 			Name:       "Test",
 			IsActive:   true,
 		}
-		flow.ID = id.Generate()
-		flow.CreatedBy = "system"
-		flow.UpdatedBy = "system"
 		_, err := db.NewInsert().Model(flow).Exec(ctx)
 		require.NoError(t, err, "Should insert flow")
 
@@ -778,7 +739,7 @@ func TestResolveDelegationChain(t *testing.T) {
 	})
 
 	t.Run("SingleDelegation", func(t *testing.T) {
-		insertDelegation(t, ctx, db, "delegator1", "delegatee1", null.String{}, true)
+		insertDelegation(t, ctx, db, "delegator1", "delegatee1", nil, true)
 
 		finalID, originalID := resolveDelegationChain(ctx, db, "delegator1", "flow_x", "cat_x")
 		assert.Equal(t, "delegatee1", finalID, "Should resolve to delegatee")
@@ -786,8 +747,8 @@ func TestResolveDelegationChain(t *testing.T) {
 	})
 
 	t.Run("ChainDelegation", func(t *testing.T) {
-		insertDelegation(t, ctx, db, "chain_a", "chain_b", null.String{}, true)
-		insertDelegation(t, ctx, db, "chain_b", "chain_c", null.String{}, true)
+		insertDelegation(t, ctx, db, "chain_a", "chain_b", nil, true)
+		insertDelegation(t, ctx, db, "chain_b", "chain_c", nil, true)
 
 		finalID, originalID := resolveDelegationChain(ctx, db, "chain_a", "flow_y", "cat_y")
 		assert.Equal(t, "chain_c", finalID, "Should resolve to end of chain")
@@ -795,8 +756,8 @@ func TestResolveDelegationChain(t *testing.T) {
 	})
 
 	t.Run("CycleDetection", func(t *testing.T) {
-		insertDelegation(t, ctx, db, "cycle_a", "cycle_b", null.String{}, true)
-		insertDelegation(t, ctx, db, "cycle_b", "cycle_a", null.String{}, true)
+		insertDelegation(t, ctx, db, "cycle_a", "cycle_b", nil, true)
+		insertDelegation(t, ctx, db, "cycle_b", "cycle_a", nil, true)
 
 		finalID, _ := resolveDelegationChain(ctx, db, "cycle_a", "flow_z", "cat_z")
 		assert.Equal(t, "cycle_b", finalID, "Should stop at cycle and return last resolved")
@@ -817,13 +778,10 @@ func TestApplyDelegation(t *testing.T) {
 		Name:       "Delegation Flow",
 		IsActive:   true,
 	}
-	flow.ID = id.Generate()
-	flow.CreatedBy = "system"
-	flow.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(flow).Exec(ctx)
 	require.NoError(t, err, "Should insert flow")
 
-	insertDelegation(t, ctx, db, "orig_user", "deleg_user", null.StringFrom(flow.ID), true)
+	insertDelegation(t, ctx, db, "orig_user", "deleg_user", new(flow.ID), true)
 
 	assignees := []approval.ResolvedAssignee{
 		{UserID: "orig_user"},
@@ -926,7 +884,7 @@ func TestCreateTasksWithDelegation(t *testing.T) {
 
 	var delegatedTask, normalTask *approval.Task
 	for i := range tasks {
-		if tasks[i].DelegateFromID.Valid {
+		if tasks[i].DelegateFromID != nil {
 			delegatedTask = &tasks[i]
 		} else {
 			normalTask = &tasks[i]
@@ -935,11 +893,11 @@ func TestCreateTasksWithDelegation(t *testing.T) {
 
 	require.NotNil(t, delegatedTask, "Should have a delegated task")
 	assert.Equal(t, "delegate1", delegatedTask.AssigneeID, "Delegated task should be assigned to delegate")
-	assert.Equal(t, "original1", delegatedTask.DelegateFromID.String, "DelegateFromID should reference original user")
+	assert.Equal(t, "original1", *delegatedTask.DelegateFromID, "DelegateFromID should reference original user")
 
 	require.NotNil(t, normalTask, "Should have a normal task")
 	assert.Equal(t, "normal_user", normalTask.AssigneeID, "Normal task should be assigned to normal_user")
-	assert.False(t, normalTask.DelegateFromID.Valid, "Normal task should not have delegation")
+	assert.Nil(t, normalTask.DelegateFromID, "Normal task should not have delegation")
 }
 
 // TestDelegation tests delegation scenarios.
@@ -952,7 +910,7 @@ func TestDelegation(t *testing.T) {
 	t.Run("ApprovalWithDelegation", func(t *testing.T) {
 		eng := setupEngine(nil, nil)
 		flow, version, _, approvalNode, _ := buildSimpleFlow(t, ctx, db)
-		insertDelegation(t, ctx, db, "user1", "delegatee1", null.StringFrom(flow.ID), true)
+		insertDelegation(t, ctx, db, "user1", "delegatee1", new(flow.ID), true)
 
 		instance := createInstance(t, ctx, db, flow, version, "applicant1", nil)
 
@@ -964,20 +922,20 @@ func TestDelegation(t *testing.T) {
 
 		var delegatedTask *approval.Task
 		for i := range tasks {
-			if tasks[i].DelegateFromID.Valid {
+			if tasks[i].DelegateFromID != nil {
 				delegatedTask = &tasks[i]
 			}
 		}
 
 		require.NotNil(t, delegatedTask, "Should have a delegated task")
 		assert.Equal(t, "delegatee1", delegatedTask.AssigneeID, "Delegated task should be assigned to delegatee")
-		assert.Equal(t, "user1", delegatedTask.DelegateFromID.String, "DelegateFromID should point to original user")
+		assert.Equal(t, "user1", *delegatedTask.DelegateFromID, "DelegateFromID should point to original user")
 	})
 
 	t.Run("SequentialWithDelegation", func(t *testing.T) {
 		eng := setupEngine(nil, nil)
 		flow, version, _, approvalNode, _ := buildSimpleFlow(t, ctx, db)
-		insertDelegation(t, ctx, db, "user1", "delegatee_seq", null.StringFrom(flow.ID), true)
+		insertDelegation(t, ctx, db, "user1", "delegatee_seq", new(flow.ID), true)
 
 		instance := createInstance(t, ctx, db, flow, version, "applicant1", nil)
 
@@ -988,7 +946,7 @@ func TestDelegation(t *testing.T) {
 		require.Len(t, tasks, 2, "Should create 2 sequential tasks")
 
 		assert.Equal(t, "delegatee_seq", tasks[0].AssigneeID, "First task should be assigned to delegate")
-		assert.Equal(t, "user1", tasks[0].DelegateFromID.String, "First task DelegateFromID should reference user1")
+		assert.Equal(t, "user1", *tasks[0].DelegateFromID, "First task DelegateFromID should reference user1")
 		assert.Equal(t, 1, tasks[0].SortOrder, "First task sort order should be 1")
 		assert.Equal(t, approval.TaskPending, tasks[0].Status, "First task should be pending")
 
@@ -1012,9 +970,6 @@ func TestDelegation(t *testing.T) {
 			PassRatio:              decimal.Zero,
 			DuplicateHandlerAction: approval.DuplicateHandlerAutoPass,
 		}
-		handleNode.ID = id.Generate()
-		handleNode.CreatedBy = "system"
-		handleNode.UpdatedBy = "system"
 		_, err := db.NewInsert().Model(handleNode).Exec(ctx)
 		require.NoError(t, err, "Should insert handle node")
 
@@ -1024,7 +979,7 @@ func TestDelegation(t *testing.T) {
 		insertEdge(t, ctx, db, version.ID, startNode.ID, handleNode.ID)
 		insertEdge(t, ctx, db, version.ID, handleNode.ID, endNode.ID)
 
-		insertDelegation(t, ctx, db, "handler1", "delegate1", null.StringFrom(flow.ID), true)
+		insertDelegation(t, ctx, db, "handler1", "delegate1", new(flow.ID), true)
 
 		instance := createInstance(t, ctx, db, flow, version, "applicant1", nil)
 
@@ -1034,7 +989,7 @@ func TestDelegation(t *testing.T) {
 		tasks := queryTasksByNode(t, ctx, db, instance.ID, handleNode.ID)
 		require.Len(t, tasks, 1, "Should create 1 task")
 		assert.Equal(t, "delegate1", tasks[0].AssigneeID, "Task should be assigned to delegate")
-		assert.Equal(t, "handler1", tasks[0].DelegateFromID.String, "DelegateFromID should reference original handler")
+		assert.Equal(t, "handler1", *tasks[0].DelegateFromID, "DelegateFromID should reference original handler")
 	})
 }
 
@@ -1059,9 +1014,6 @@ func TestHandleProcessorPredictWithAssignees(t *testing.T) {
 		PassRatio:              decimal.Zero,
 		DuplicateHandlerAction: approval.DuplicateHandlerAutoPass,
 	}
-	handleNode.ID = id.Generate()
-	handleNode.CreatedBy = "system"
-	handleNode.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(handleNode).Exec(ctx)
 	require.NoError(t, err, "Should insert handle node")
 
@@ -1098,22 +1050,6 @@ func TestStartProcessWithEventPublisher(t *testing.T) {
 	err = db.NewSelect().Model(&events).Scan(ctx)
 	require.NoError(t, err, "Should query events without error")
 	assert.True(t, len(events) > 0, "Should publish at least one event for auto-complete flow")
-}
-
-// TestPredictSameApplicantTransferAdmin tests predict same applicant transfer admin scenarios.
-func TestPredictSameApplicantTransferAdmin(t *testing.T) {
-	p := NewApprovalProcessor(nil, nil)
-
-	pc := &ProcessContext{
-		Node: &approval.FlowNode{
-			SameApplicantAction: approval.SameApplicantTransferAdmin,
-			AdminUserIDs:        []string{"admin1"},
-		},
-		ApplicantID: "u1",
-	}
-	ids, err := p.predictSameApplicant(context.Background(), pc)
-	require.NoError(t, err, "Should not return error for transfer_admin same applicant")
-	assert.Equal(t, []string{"u1"}, ids, "transfer_admin falls into default which returns applicant ID")
 }
 
 // TestPredictSameApplicantTransferSuperiorError tests predict same applicant transfer superior error scenarios.
@@ -1157,9 +1093,6 @@ func TestSubFlowProcessorProcess(t *testing.T) {
 			},
 		},
 	}
-	subFlowNode.ID = id.Generate()
-	subFlowNode.CreatedBy = "system"
-	subFlowNode.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(subFlowNode).Exec(ctx)
 	require.NoError(t, err, "Should insert sub-flow node")
 
@@ -1175,7 +1108,7 @@ func TestSubFlowProcessorProcess(t *testing.T) {
 
 	parentInst := queryInstance(t, ctx, db, parentInstance.ID)
 	assert.Equal(t, approval.InstanceRunning, parentInst.Status, "Parent should be running while sub-flow is pending")
-	assert.Equal(t, subFlowNode.ID, parentInst.CurrentNodeID.String, "Parent should wait at sub-flow node")
+	assert.Equal(t, subFlowNode.ID, *parentInst.CurrentNodeID, "Parent should wait at sub-flow node")
 
 	var subInstances []approval.Instance
 	err = db.NewSelect().Model(&subInstances).Where(func(c orm.ConditionBuilder) {
@@ -1186,8 +1119,8 @@ func TestSubFlowProcessorProcess(t *testing.T) {
 
 	subInst := subInstances[0]
 	assert.Equal(t, approval.InstanceRunning, subInst.Status, "Sub-flow should be running")
-	assert.Equal(t, parentInstance.ID, subInst.ParentInstanceID.String, "Sub-flow should reference parent")
-	assert.Equal(t, subFlowNode.ID, subInst.ParentNodeID.String, "Sub-flow should reference parent node")
+	assert.Equal(t, parentInstance.ID, *subInst.ParentInstanceID, "Sub-flow should reference parent")
+	assert.Equal(t, subFlowNode.ID, *subInst.ParentNodeID, "Sub-flow should reference parent node")
 	assert.Equal(t, "applicant1", subInst.ApplicantID, "Sub-flow should inherit applicant")
 
 	subTasks := queryTasksByNode(t, ctx, db, subInst.ID, subApprovalNode.ID)
@@ -1259,9 +1192,6 @@ func TestSubFlowProcessorCycleDetection(t *testing.T) {
 			Name:          "Cycle SubFlow",
 			SubFlowConfig: map[string]any{"flowId": flow.ID},
 		}
-		subflowNode.ID = id.Generate()
-		subflowNode.CreatedBy = "system"
-		subflowNode.UpdatedBy = "system"
 		_, err := db.NewInsert().Model(subflowNode).Exec(ctx)
 		require.NoError(t, err, "Should insert sub-flow node")
 
@@ -1289,16 +1219,13 @@ func TestSubFlowProcessorCycleDetection(t *testing.T) {
 		childInstance := &approval.Instance{
 			FlowID:           flowB.ID,
 			FlowVersionID:    versionB.ID,
-			ParentInstanceID: null.StringFrom(parentInstance.ID),
-			ParentNodeID:     null.StringFrom(id.Generate()),
+			ParentInstanceID: new(parentInstance.ID),
+			ParentNodeID:     new(id.Generate()),
 			Title:            "Child Instance",
-			SerialNo:         id.Generate(),
+			InstanceNo:         id.Generate(),
 			ApplicantID:      "applicant1",
 			Status:           approval.InstanceRunning,
 		}
-		childInstance.ID = id.Generate()
-		childInstance.CreatedBy = "applicant1"
-		childInstance.UpdatedBy = "applicant1"
 		_, err := db.NewInsert().Model(childInstance).Exec(ctx)
 		require.NoError(t, err, "Should insert child instance")
 
@@ -1360,7 +1287,7 @@ func TestResumeParentFlow(t *testing.T) {
 
 		parentInst := queryInstance(t, ctx, db, parentInstance.ID)
 		assert.Equal(t, approval.InstanceRejected, parentInst.Status, "Parent should be rejected when child is rejected")
-		assert.True(t, parentInst.FinishedAt.Valid, "Parent FinishedAt should be set")
+		assert.True(t, parentInst.FinishedAt != nil, "Parent FinishedAt should be set")
 	})
 
 	t.Run("ParentNotRunning", func(t *testing.T) {
@@ -1372,14 +1299,11 @@ func TestResumeParentFlow(t *testing.T) {
 			FlowID:        parentFlow.ID,
 			FlowVersionID: parentVersion.ID,
 			Title:         "Parent Instance",
-			SerialNo:      id.Generate(),
+			InstanceNo:      id.Generate(),
 			ApplicantID:   "applicant1",
 			Status:        approval.InstanceApproved,
-			CurrentNodeID: null.StringFrom(subFlowNode.ID),
+			CurrentNodeID: new(subFlowNode.ID),
 		}
-		parentInstance.ID = id.Generate()
-		parentInstance.CreatedBy = "applicant1"
-		parentInstance.UpdatedBy = "applicant1"
 		_, err := db.NewInsert().Model(parentInstance).Exec(ctx)
 		require.NoError(t, err, "Should insert parent instance")
 
@@ -1425,7 +1349,6 @@ func TestHandleProcessResultUnknownAction(t *testing.T) {
 	eng := NewFlowEngine(nil, nil, nil)
 	instance := &approval.Instance{ApplicantID: "u1"}
 	node := &approval.FlowNode{}
-	node.ID = id.Generate()
 
 	result := &ProcessResult{Action: NodeAction(99)}
 	err := eng.handleProcessResult(context.Background(), db, instance, node, result)

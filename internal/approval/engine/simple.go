@@ -57,10 +57,16 @@ func (p *ConditionProcessor) Process(ctx context.Context, pc *ProcessContext) (*
 	})
 
 	formData := approval.NewFormData(pc.Instance.FormData)
+
+	var deptID string
+	if pc.Instance.ApplicantDeptID != nil {
+		deptID = *pc.Instance.ApplicantDeptID
+	}
+
 	evalCtx := &approval.EvalContext{
 		FormData:    formData,
 		ApplicantID: pc.Instance.ApplicantID,
-		DeptID:      pc.Instance.ApplicantDeptID.String,
+		DeptID:      deptID,
 	}
 
 	var defaultBranch *approval.ConditionBranch

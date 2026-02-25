@@ -7,7 +7,6 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/internal/approval/strategy"
-	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/timex"
 )
@@ -25,10 +24,15 @@ func saveFormSnapshot(ctx context.Context, pc *ProcessContext) error {
 
 // resolveAssignees resolves assignees using the composite resolver from the strategy registry.
 func resolveAssignees(ctx context.Context, pc *ProcessContext, orgService approval.OrganizationService, userService approval.UserService) ([]approval.ResolvedAssignee, error) {
+	var deptID string
+	if pc.Instance.ApplicantDeptID != nil {
+		deptID = *pc.Instance.ApplicantDeptID
+	}
+
 	return pc.Registry.CompositeAssigneeResolver().ResolveAll(ctx, pc.Assignees, &strategy.ResolveContext{
 		DB:          pc.DB,
 		ApplicantID: pc.ApplicantID,
-		DeptID:      pc.Instance.ApplicantDeptID.String,
+		DeptID:      deptID,
 		FormData:    pc.FormData,
 		OrgService:  orgService,
 		UserService: userService,
@@ -88,6 +92,7 @@ func createTasksForUsers(ctx context.Context, pc *ProcessContext, userIDs []stri
 
 	for _, uid := range userIDs {
 		task := &approval.Task{
+			TenantID:   pc.Instance.TenantID,
 			InstanceID: pc.Instance.ID,
 			NodeID:     pc.Node.ID,
 			AssigneeID: uid,
@@ -159,6 +164,7 @@ func createTasksWithDelegation(ctx context.Context, pc *ProcessContext, assignee
 
 	for _, assignee := range assignees {
 		task := &approval.Task{
+			TenantID:   pc.Instance.TenantID,
 			InstanceID: pc.Instance.ID,
 			NodeID:     pc.Node.ID,
 			AssigneeID: assignee.UserID,
@@ -168,7 +174,7 @@ func createTasksWithDelegation(ctx context.Context, pc *ProcessContext, assignee
 		}
 
 		if assignee.DelegateFromID != "" {
-			task.DelegateFromID = null.StringFrom(assignee.DelegateFromID)
+			task.DelegateFromID = new(assignee.DelegateFromID)
 		}
 
 		if _, err := pc.DB.NewInsert().Model(task).Exec(ctx); err != nil {
@@ -191,13 +197,15 @@ func getSuperior(ctx context.Context, orgService approval.OrganizationService, u
 }
 
 // computeDeadline returns a deadline based on the node's TimeoutHours configuration.
-// Returns a zero-value null.DateTime if TimeoutHours is not set.
-func computeDeadline(node *approval.FlowNode) null.DateTime {
+// Returns nil if TimeoutHours is not set.
+func computeDeadline(node *approval.FlowNode) *timex.DateTime {
 	if node.TimeoutHours <= 0 {
-		return null.DateTime{}
+		return nil
 	}
 
-	return null.DateTimeFrom(timex.DateTime(timex.Now().Unwrap().Add(time.Duration(node.TimeoutHours) * time.Hour)))
+	d := timex.DateTime(timex.Now().Unwrap().Add(time.Duration(node.TimeoutHours) * time.Hour))
+
+	return &d
 }
 
 // extractUserIDs extracts user IDs from a slice of ResolvedAssignee.
@@ -286,23 +294,23 @@ func matchDelegation(delegations []approval.Delegation, now time.Time, flowID, f
 			continue
 		}
 
-		if d.FlowCategoryID.Valid && d.FlowCategoryID.String != flowCategoryID {
+		if d.FlowCategoryID != nil && *d.FlowCategoryID != flowCategoryID {
 			continue
 		}
 
-		if d.FlowID.Valid && d.FlowID.String != flowID {
+		if d.FlowID != nil && *d.FlowID != flowID {
 			continue
 		}
 
-		if d.FlowID.Valid {
+		if d.FlowID != nil {
 			return d
 		}
 
-		if d.FlowCategoryID.Valid && categoryMatch == nil {
+		if d.FlowCategoryID != nil && categoryMatch == nil {
 			categoryMatch = d
 		}
 
-		if !d.FlowID.Valid && !d.FlowCategoryID.Valid && globalMatch == nil {
+		if d.FlowID == nil && d.FlowCategoryID == nil && globalMatch == nil {
 			globalMatch = d
 		}
 	}

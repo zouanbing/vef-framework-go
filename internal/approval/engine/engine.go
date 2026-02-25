@@ -8,7 +8,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/internal/approval/publisher"
 	"github.com/ilxqx/vef-framework-go/internal/approval/strategy"
-	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/timex"
 )
@@ -119,7 +118,7 @@ func (e *FlowEngine) handleProcessResult(ctx context.Context, db orm.DB, instanc
 
 	switch result.Action {
 	case NodeActionWait:
-		instance.CurrentNodeID = null.StringFrom(node.ID)
+		instance.CurrentNodeID = new(node.ID)
 
 		_, err := db.NewUpdate().Model(instance).WherePK().Exec(ctx)
 
@@ -129,9 +128,9 @@ func (e *FlowEngine) handleProcessResult(ctx context.Context, db orm.DB, instanc
 		return e.AdvanceToNextNode(ctx, db, instance, node, result.BranchID)
 
 	case NodeActionComplete:
-		instance.CurrentNodeID = null.StringFrom(node.ID)
+		instance.CurrentNodeID = new(node.ID)
 		instance.Status = result.FinalStatus
-		instance.FinishedAt = null.DateTimeFrom(timex.Now())
+		instance.FinishedAt = new(timex.Now())
 
 		if _, err := db.NewUpdate().Model(instance).WherePK().Exec(ctx); err != nil {
 			return err
@@ -145,7 +144,7 @@ func (e *FlowEngine) handleProcessResult(ctx context.Context, db orm.DB, instanc
 		}
 
 		// If this is a sub-flow instance, resume the parent flow
-		if instance.ParentInstanceID.Valid && instance.ParentNodeID.Valid {
+		if instance.ParentInstanceID != nil && instance.ParentNodeID != nil {
 			return e.resumeParentFlow(ctx, db, instance, result.FinalStatus)
 		}
 
@@ -336,7 +335,7 @@ func (e *FlowEngine) predictAssignees(ctx context.Context, db orm.DB, instance *
 // It should be called when a child instance reaches a terminal status (approved/rejected).
 // If the child instance has no parent, this is a no-op.
 func (e *FlowEngine) ResumeParentFlow(ctx context.Context, db orm.DB, childInstance *approval.Instance, childStatus approval.InstanceStatus) error {
-	if !childInstance.ParentInstanceID.Valid || !childInstance.ParentNodeID.Valid {
+	if childInstance.ParentInstanceID == nil || childInstance.ParentNodeID == nil {
 		return nil
 	}
 
@@ -346,7 +345,7 @@ func (e *FlowEngine) ResumeParentFlow(ctx context.Context, db orm.DB, childInsta
 func (e *FlowEngine) resumeParentFlow(ctx context.Context, db orm.DB, childInstance *approval.Instance, childStatus approval.InstanceStatus) error {
 	// Publish sub-flow completed event
 	if err := e.publishEvents(ctx, db,
-		approval.NewSubFlowCompletedEvent(childInstance.ParentInstanceID.String, childInstance.ID, childInstance.ParentNodeID.String, childStatus),
+		approval.NewSubFlowCompletedEvent(*childInstance.ParentInstanceID, childInstance.ID, *childInstance.ParentNodeID, childStatus),
 	); err != nil {
 		return fmt.Errorf("publish sub-flow completed event: %w", err)
 	}
@@ -354,7 +353,7 @@ func (e *FlowEngine) resumeParentFlow(ctx context.Context, db orm.DB, childInsta
 	var parentInstance approval.Instance
 
 	if err := db.NewSelect().Model(&parentInstance).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", childInstance.ParentInstanceID.String)
+		c.Equals("id", *childInstance.ParentInstanceID)
 	}).Scan(ctx); err != nil {
 		return fmt.Errorf("find parent instance: %w", err)
 	}
@@ -367,7 +366,7 @@ func (e *FlowEngine) resumeParentFlow(ctx context.Context, db orm.DB, childInsta
 	var parentNode approval.FlowNode
 
 	if err := db.NewSelect().Model(&parentNode).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", childInstance.ParentNodeID.String)
+		c.Equals("id", *childInstance.ParentNodeID)
 	}).Scan(ctx); err != nil {
 		return fmt.Errorf("find parent node: %w", err)
 	}
@@ -379,7 +378,7 @@ func (e *FlowEngine) resumeParentFlow(ctx context.Context, db orm.DB, childInsta
 
 	// Sub-flow rejected: complete parent as rejected
 	parentInstance.Status = approval.InstanceRejected
-	parentInstance.FinishedAt = null.DateTimeFrom(timex.Now())
+	parentInstance.FinishedAt = new(timex.Now())
 
 	if _, err := db.NewUpdate().Model(&parentInstance).WherePK().Exec(ctx); err != nil {
 		return err
