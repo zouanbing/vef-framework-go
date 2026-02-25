@@ -40,9 +40,9 @@ func (s *stubUserService) GetUsersByRole(_ context.Context, _ string) ([]string,
 	return nil, nil
 }
 
-type stubSerialNoGenerator struct{ counter int }
+type stubInstanceNoGenerator struct{ counter int }
 
-func (s *stubSerialNoGenerator) Generate(_ context.Context, flowCode string) (string, error) {
+func (s *stubInstanceNoGenerator) Generate(_ context.Context, flowCode string) (string, error) {
 	s.counter++
 	return flowCode + "-" + strings.Repeat("0", 4) + string(rune('0'+s.counter)), nil
 }
@@ -75,13 +75,15 @@ func createApprovalTables(t *testing.T, bunDB *bun.DB) {
 			updated_at TIMESTAMP NOT NULL DEFAULT LOCALTIMESTAMP,
 			created_by VARCHAR(32) NOT NULL DEFAULT 'system',
 			updated_by VARCHAR(32) NOT NULL DEFAULT 'system',
-			code VARCHAR(64) NOT NULL UNIQUE,
+			tenant_id VARCHAR(32) NOT NULL,
+			code VARCHAR(64) NOT NULL,
 			name VARCHAR(128) NOT NULL,
 			icon VARCHAR(128),
 			parent_id VARCHAR(32),
 			sort_order INTEGER NOT NULL DEFAULT 0,
 			is_active BOOLEAN NOT NULL DEFAULT true,
-			remark VARCHAR(256)
+			remark VARCHAR(256),
+			CONSTRAINT uk_apv_flow_category__tenant_id_code UNIQUE (tenant_id, code)
 		)`,
 		`CREATE TABLE IF NOT EXISTS apv_flow (
 			id VARCHAR(32) PRIMARY KEY,
@@ -91,7 +93,7 @@ func createApprovalTables(t *testing.T, bunDB *bun.DB) {
 			updated_by VARCHAR(32) NOT NULL DEFAULT 'system',
 			tenant_id VARCHAR(32) NOT NULL,
 			category_id VARCHAR(32) NOT NULL,
-			code VARCHAR(64) NOT NULL UNIQUE,
+			code VARCHAR(64) NOT NULL,
 			name VARCHAR(128) NOT NULL,
 			icon VARCHAR(128),
 			description VARCHAR(512),
@@ -104,7 +106,8 @@ func createApprovalTables(t *testing.T, bunDB *bun.DB) {
 			is_all_initiate_allowed BOOLEAN NOT NULL DEFAULT true,
 			instance_title_template VARCHAR(256) NOT NULL DEFAULT '',
 			is_active BOOLEAN NOT NULL DEFAULT false,
-			current_version INTEGER NOT NULL DEFAULT 0
+			current_version INTEGER NOT NULL DEFAULT 0,
+			CONSTRAINT uk_apv_flow__tenant_id_code UNIQUE (tenant_id, code)
 		)`,
 		`CREATE TABLE IF NOT EXISTS apv_flow_initiator (
 			id VARCHAR(32) PRIMARY KEY,
@@ -165,6 +168,7 @@ func createApprovalTables(t *testing.T, bunDB *bun.DB) {
 			timeout_notify_before_hours INTEGER NOT NULL DEFAULT 0,
 			urge_cooldown_minutes INTEGER NOT NULL DEFAULT 60,
 			duplicate_handler_action VARCHAR(32) NOT NULL DEFAULT 'none',
+			is_read_confirm_required BOOLEAN NOT NULL DEFAULT false,
 			sub_flow_config JSONB,
 			branches JSONB
 		)`,
@@ -175,8 +179,8 @@ func createApprovalTables(t *testing.T, bunDB *bun.DB) {
 			created_by VARCHAR(32) NOT NULL DEFAULT 'system',
 			updated_by VARCHAR(32) NOT NULL DEFAULT 'system',
 			node_id VARCHAR(32) NOT NULL,
-			assignee_kind VARCHAR(16) NOT NULL,
-			assignee_ids JSONB NOT NULL DEFAULT '[]',
+			kind VARCHAR(16) NOT NULL,
+			ids JSONB NOT NULL DEFAULT '[]',
 			form_field VARCHAR(64),
 			sort_order INTEGER NOT NULL DEFAULT 0
 		)`,
@@ -187,9 +191,10 @@ func createApprovalTables(t *testing.T, bunDB *bun.DB) {
 			created_by VARCHAR(32) NOT NULL DEFAULT 'system',
 			updated_by VARCHAR(32) NOT NULL DEFAULT 'system',
 			node_id VARCHAR(32) NOT NULL,
-			cc_kind VARCHAR(16) NOT NULL,
-			cc_ids JSONB NOT NULL DEFAULT '[]',
-			form_field VARCHAR(64)
+			kind VARCHAR(16) NOT NULL,
+			ids JSONB NOT NULL DEFAULT '[]',
+			form_field VARCHAR(64),
+			timing VARCHAR(16) NOT NULL DEFAULT 'on_complete'
 		)`,
 		`CREATE TABLE IF NOT EXISTS apv_flow_edge (
 			id VARCHAR(32) PRIMARY KEY,
@@ -218,12 +223,13 @@ func createApprovalTables(t *testing.T, bunDB *bun.DB) {
 			updated_at TIMESTAMP NOT NULL DEFAULT LOCALTIMESTAMP,
 			created_by VARCHAR(32) NOT NULL DEFAULT 'system',
 			updated_by VARCHAR(32) NOT NULL DEFAULT 'system',
+			tenant_id VARCHAR(32) NOT NULL DEFAULT '',
 			flow_id VARCHAR(32) NOT NULL,
 			flow_version_id VARCHAR(32) NOT NULL,
 			parent_instance_id VARCHAR(32),
 			parent_node_id VARCHAR(32),
 			title VARCHAR(256) NOT NULL,
-			serial_no VARCHAR(64) NOT NULL UNIQUE,
+			instance_no VARCHAR(64) NOT NULL UNIQUE,
 			applicant_id VARCHAR(32) NOT NULL,
 			applicant_dept_id VARCHAR(32),
 			status VARCHAR(16) NOT NULL DEFAULT 'running',
@@ -238,6 +244,7 @@ func createApprovalTables(t *testing.T, bunDB *bun.DB) {
 			updated_at TIMESTAMP NOT NULL DEFAULT LOCALTIMESTAMP,
 			created_by VARCHAR(32) NOT NULL DEFAULT 'system',
 			updated_by VARCHAR(32) NOT NULL DEFAULT 'system',
+			tenant_id VARCHAR(32) NOT NULL DEFAULT '',
 			instance_id VARCHAR(32) NOT NULL,
 			node_id VARCHAR(32) NOT NULL,
 			assignee_id VARCHAR(32) NOT NULL,
@@ -330,9 +337,7 @@ func createApprovalTables(t *testing.T, bunDB *bun.DB) {
 		`CREATE TABLE IF NOT EXISTS apv_event_outbox (
 			id VARCHAR(32) PRIMARY KEY,
 			created_at TIMESTAMP NOT NULL DEFAULT LOCALTIMESTAMP,
-			updated_at TIMESTAMP NOT NULL DEFAULT LOCALTIMESTAMP,
 			created_by VARCHAR(32) NOT NULL DEFAULT 'system',
-			updated_by VARCHAR(32) NOT NULL DEFAULT 'system',
 			event_id VARCHAR(64) NOT NULL UNIQUE,
 			event_type VARCHAR(128) NOT NULL,
 			payload JSONB NOT NULL,
@@ -422,7 +427,7 @@ func (s *ApprovalSuite) SetupSuite() {
 
 	orgSvc := &stubOrgService{}
 	userSvc := &stubUserService{}
-	serialGen := &stubSerialNoGenerator{}
+	instanceNoGen := &stubInstanceNoGenerator{}
 	testUser := security.NewUser("test-user-001", "Test User", "admin")
 	userLoader := &stubUserLoader{principal: testUser}
 
@@ -443,7 +448,7 @@ func (s *ApprovalSuite) SetupSuite() {
 		fx.Supply(
 			fx.Annotate(orgSvc, fx.As(new(approvalPkg.OrganizationService))),
 			fx.Annotate(userSvc, fx.As(new(approvalPkg.UserService))),
-			fx.Annotate(serialGen, fx.As(new(service.SerialNoGenerator))),
+			fx.Annotate(instanceNoGen, fx.As(new(service.InstanceNoGenerator))),
 			fx.Annotate(userLoader, fx.As(new(security.UserLoader))),
 		),
 		approval.Module,
@@ -467,6 +472,7 @@ func (s *ApprovalSuite) TestCategoryCreate() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
+			"tenantId":  "tenant-001",
 			"code":      "cat-001",
 			"name":      "请假审批",
 			"sortOrder": 1,
@@ -490,7 +496,8 @@ func (s *ApprovalSuite) TestCategoryCreateValidation() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"code": "cat-missing-name",
+			"tenantId": "tenant-001",
+			"code":     "cat-missing-name",
 			// name is required but missing
 		},
 	}, s.authToken)
@@ -508,6 +515,7 @@ func (s *ApprovalSuite) TestCategoryFindAll() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
+			"tenantId": "tenant-001",
 			"code":     "cat-find-all",
 			"name":     "查找全部",
 			"isActive": true,
@@ -563,6 +571,7 @@ func (s *ApprovalSuite) TestCategoryUpdate() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
+			"tenantId": "tenant-001",
 			"code":     "cat-update",
 			"name":     "更新前",
 			"isActive": true,
@@ -580,6 +589,7 @@ func (s *ApprovalSuite) TestCategoryUpdate() {
 		},
 		Params: map[string]any{
 			"id":       id,
+			"tenantId": "tenant-001",
 			"code":     "cat-update",
 			"name":     "更新后",
 			"isActive": true,
@@ -599,6 +609,7 @@ func (s *ApprovalSuite) TestCategoryDelete() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
+			"tenantId": "tenant-001",
 			"code":     "cat-delete",
 			"name":     "待删除",
 			"isActive": false,
@@ -812,6 +823,7 @@ func (s *ApprovalSuite) TestFlowDeploy() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
+			"tenantId": "tenant-001",
 			"code":     "cat-flow-deploy",
 			"name":     "流程部署分类",
 			"isActive": true,
@@ -838,6 +850,7 @@ func (s *ApprovalSuite) TestFlowDeploy() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
+			"tenantId":   "tenant-001",
 			"flowCode":   "leave-apply",
 			"flowName":   "请假流程",
 			"categoryId": categoryID,
@@ -860,6 +873,7 @@ func (s *ApprovalSuite) TestFlowPublishVersionAndGetGraph() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
+			"tenantId": "tenant-001",
 			"code":     "cat-pub-ver",
 			"name":     "发布版本分类",
 			"isActive": true,
@@ -885,6 +899,7 @@ func (s *ApprovalSuite) TestFlowPublishVersionAndGetGraph() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
+			"tenantId":   "tenant-001",
 			"flowCode":   "pub-ver-flow",
 			"flowName":   "发布版本流程",
 			"categoryId": categoryID,
@@ -964,6 +979,7 @@ func (s *ApprovalSuite) TestFlowDeployInvalidDefinition() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
+			"tenantId": "tenant-001",
 			"code":     "cat-invalid-def",
 			"name":     "无效定义分类",
 			"isActive": true,
@@ -980,6 +996,7 @@ func (s *ApprovalSuite) TestFlowDeployInvalidDefinition() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
+			"tenantId":   "tenant-001",
 			"flowCode":   "invalid-def-flow",
 			"flowName":   "无效定义流程",
 			"categoryId": categoryID,
@@ -1004,6 +1021,7 @@ func (s *ApprovalSuite) TestInstanceStart() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
+			"tenantId": "tenant-001",
 			"code":     "cat-instance-start",
 			"name":     "实例启动分类",
 			"isActive": true,
@@ -1031,6 +1049,7 @@ func (s *ApprovalSuite) TestInstanceStart() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
+			"tenantId":   "tenant-001",
 			"flowCode":   "instance-start-flow",
 			"flowName":   "实例启动流程",
 			"categoryId": categoryID,
@@ -1048,8 +1067,8 @@ func (s *ApprovalSuite) TestInstanceStart() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
+			"tenantId":    "tenant-001",
 			"flowCode":    "instance-start-flow",
-			"title":       "测试请假申请",
 			"applicantId": "user-001",
 		},
 	}, s.authToken)
@@ -1253,6 +1272,7 @@ func (s *ApprovalSuite) deployAndPublishFlow(flowCode, categoryCode string) (str
 			Version:  "v1",
 		},
 		Params: map[string]any{
+			"tenantId": "tenant-001",
 			"code":     categoryCode,
 			"name":     "E2E测试分类-" + categoryCode,
 			"isActive": true,
@@ -1291,6 +1311,7 @@ func (s *ApprovalSuite) deployAndPublishFlow(flowCode, categoryCode string) (str
 			Version:  "v1",
 		},
 		Params: map[string]any{
+			"tenantId":   "tenant-001",
 			"flowCode":   flowCode,
 			"flowName":   "E2E测试流程-" + flowCode,
 			"categoryId": categoryID,
@@ -1343,8 +1364,8 @@ func (s *ApprovalSuite) startInstance(flowCode, applicantID string) string {
 			Version:  "v1",
 		},
 		Params: map[string]any{
+			"tenantId":    "tenant-001",
 			"flowCode":    flowCode,
-			"title":       "E2E测试申请-" + flowCode,
 			"applicantId": applicantID,
 		},
 	}, s.authToken)

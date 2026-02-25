@@ -1,25 +1,26 @@
 package resource
 
 import (
+	"time"
+
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/crud"
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/null"
+	"github.com/ilxqx/vef-framework-go/crud"
 )
 
 // DelegationParams contains the create/update parameters for delegation.
 type DelegationParams struct {
 	api.P
 
-	ID             string      `json:"id"`
-	DelegatorID    string      `json:"delegatorId" validate:"required"`
-	DelegateeID    string      `json:"delegateeId" validate:"required"`
-	FlowCategoryID null.String `json:"flowCategoryId"`
-	FlowID         null.String `json:"flowId"`
-	StartTime      null.Time   `json:"startTime"`
-	EndTime        null.Time   `json:"endTime"`
-	IsActive       bool        `json:"isActive"`
-	Reason         null.String `json:"reason"`
+	ID             string     `json:"id"`
+	DelegatorID    string     `json:"delegatorId" validate:"required"`
+	DelegateeID    string     `json:"delegateeId" validate:"required"`
+	FlowCategoryID *string    `json:"flowCategoryId"`
+	FlowID         *string    `json:"flowId"`
+	StartTime      *time.Time `json:"startTime"`
+	EndTime        *time.Time `json:"endTime"`
+	IsActive       bool       `json:"isActive"`
+	Reason         *string    `json:"reason"`
 }
 
 // DelegationSearch contains the search parameters for delegation.

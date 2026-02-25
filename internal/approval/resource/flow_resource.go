@@ -34,6 +34,7 @@ func NewFlowResource(svc *service.FlowService) *FlowResource {
 type DeployParams struct {
 	api.P
 
+	TenantID   string `json:"tenantId" validate:"required"`
 	FlowCode   string `json:"flowCode" validate:"required"`
 	FlowName   string `json:"flowName" validate:"required"`
 	CategoryID string `json:"categoryId" validate:"required"`
@@ -44,6 +45,7 @@ type DeployParams struct {
 // Deploy deploys a flow definition.
 func (r *FlowResource) Deploy(ctx fiber.Ctx, params DeployParams) error {
 	flow, err := r.flowService.DeployFlow(ctx.Context(), service.DeployFlowCmd{
+		TenantID:   params.TenantID,
 		FlowCode:   params.FlowCode,
 		FlowName:   params.FlowName,
 		CategoryID: params.CategoryID,

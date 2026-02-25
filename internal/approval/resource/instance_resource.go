@@ -29,6 +29,7 @@ func NewInstanceResource(instanceSvc *service.InstanceService, querySvc *service
 				api.OperationSpec{Action: "process_task"},
 				api.OperationSpec{Action: "withdraw"},
 				api.OperationSpec{Action: "add_cc"},
+				api.OperationSpec{Action: "mark_cc_read"},
 				api.OperationSpec{Action: "add_assignee"},
 				api.OperationSpec{Action: "remove_assignee"},
 				api.OperationSpec{Action: "find_instances"},
@@ -45,19 +46,19 @@ func NewInstanceResource(instanceSvc *service.InstanceService, querySvc *service
 type StartParams struct {
 	api.P
 
+	TenantID         string         `json:"tenantId" validate:"required"`
 	FlowCode         string         `json:"flowCode" validate:"required"`
-	Title            string         `json:"title" validate:"required"`
 	ApplicantID      string         `json:"applicantId" validate:"required"`
-	ApplicantDeptID  string         `json:"applicantDeptId"`
-	BusinessRecordID string         `json:"businessRecordId"`
+	ApplicantDeptID  *string        `json:"applicantDeptId"`
+	BusinessRecordID *string        `json:"businessRecordId"`
 	FormData         map[string]any `json:"formData"`
 }
 
 // Start creates a new flow instance.
 func (r *InstanceResource) Start(ctx fiber.Ctx, params StartParams) error {
 	instance, err := r.instanceService.StartInstance(ctx.Context(), service.StartInstanceCmd{
+		TenantID:         params.TenantID,
 		FlowCode:         params.FlowCode,
-		Title:            params.Title,
 		ApplicantID:      params.ApplicantID,
 		ApplicantDeptID:  params.ApplicantDeptID,
 		BusinessRecordID: params.BusinessRecordID,
@@ -138,6 +139,23 @@ func (r *InstanceResource) AddCc(ctx fiber.Ctx, params AddCcParams) error {
 	return result.Ok().Response(ctx)
 }
 
+// MarkCcReadParams contains the parameters for marking CC records as read.
+type MarkCcReadParams struct {
+	api.P
+
+	InstanceID string `json:"instanceId" validate:"required"`
+	UserID     string `json:"userId" validate:"required"`
+}
+
+// MarkCcRead marks CC records as read for the user.
+func (r *InstanceResource) MarkCcRead(ctx fiber.Ctx, params MarkCcReadParams) error {
+	if err := r.instanceService.MarkCCRead(ctx.Context(), params.InstanceID, params.UserID); err != nil {
+		return err
+	}
+
+	return result.Ok().Response(ctx)
+}
+
 // AddAssigneeParams contains the parameters for adding assignees.
 type AddAssigneeParams struct {
 	api.P
@@ -185,6 +203,7 @@ func (r *InstanceResource) RemoveAssignee(ctx fiber.Ctx, params RemoveAssigneePa
 type FindInstancesParams struct {
 	api.P
 
+	TenantID    string `json:"tenantId"`
 	ApplicantID string `json:"applicantId"`
 	Status      string `json:"status"`
 	FlowID      string `json:"flowId"`
@@ -196,6 +215,7 @@ type FindInstancesParams struct {
 // FindInstances queries instances with filtering and pagination.
 func (r *InstanceResource) FindInstances(ctx fiber.Ctx, params FindInstancesParams) error {
 	instances, total, err := r.queryService.FindInstances(ctx.Context(), service.InstanceQuery{
+		TenantID:    params.TenantID,
 		ApplicantID: params.ApplicantID,
 		Status:      params.Status,
 		FlowID:      params.FlowID,
@@ -216,6 +236,7 @@ func (r *InstanceResource) FindInstances(ctx fiber.Ctx, params FindInstancesPara
 type FindTasksParams struct {
 	api.P
 
+	TenantID   string `json:"tenantId"`
 	AssigneeID string `json:"assigneeId"`
 	InstanceID string `json:"instanceId"`
 	Status     string `json:"status"`
@@ -226,6 +247,7 @@ type FindTasksParams struct {
 // FindTasks queries tasks with filtering and pagination.
 func (r *InstanceResource) FindTasks(ctx fiber.Ctx, params FindTasksParams) error {
 	tasks, total, err := r.queryService.FindTasks(ctx.Context(), service.TaskQuery{
+		TenantID:   params.TenantID,
 		AssigneeID: params.AssigneeID,
 		InstanceID: params.InstanceID,
 		Status:     params.Status,

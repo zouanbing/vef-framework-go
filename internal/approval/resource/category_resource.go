@@ -2,23 +2,23 @@ package resource
 
 import (
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/crud"
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/null"
+	"github.com/ilxqx/vef-framework-go/crud"
 )
 
 // CategoryParams contains the create/update parameters for flow category.
 type CategoryParams struct {
 	api.P
 
-	ID        string      `json:"id"`
-	Code      string      `json:"code" validate:"required"`
-	Name      string      `json:"name" validate:"required"`
-	Icon      null.String `json:"icon"`
-	ParentID  null.String `json:"parentId"`
-	SortOrder int         `json:"sortOrder"`
-	IsActive  bool        `json:"isActive"`
-	Remark    null.String `json:"remark"`
+	ID       string `json:"id"`
+	TenantID string `json:"tenantId" validate:"required"`
+	Code     string `json:"code" validate:"required"`
+	Name     string `json:"name" validate:"required"`
+	Icon      *string `json:"icon"`
+	ParentID  *string `json:"parentId"`
+	SortOrder int     `json:"sortOrder"`
+	IsActive  bool    `json:"isActive"`
+	Remark    *string `json:"remark"`
 }
 
 // CategorySearch contains the search parameters for flow category.
