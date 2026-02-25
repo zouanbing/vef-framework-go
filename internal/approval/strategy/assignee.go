@@ -2,6 +2,10 @@ package strategy
 
 import (
 	"context"
+	"fmt"
+
+	streams "github.com/ilxqx/go-streams"
+	"github.com/spf13/cast"
 
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/orm"
@@ -9,13 +13,13 @@ import (
 
 // ResolveContext provides context for assignee resolution.
 type ResolveContext struct {
-	DB          orm.DB
-	ApplicantID string
-	DeptID      string
-	FormData    approval.FormData
-	Config      *approval.FlowNodeAssignee
-	OrgService  approval.OrganizationService
-	UserService approval.UserService
+	DB              orm.DB
+	ApplicantID     string
+	ApplicantDeptID string
+	FormData        approval.FormData
+
+	IDs       []string
+	FormField *string
 }
 
 // AssigneeResolver resolves assignees for a specific kind.
@@ -24,243 +28,240 @@ type AssigneeResolver interface {
 	Resolve(ctx context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error)
 }
 
-// NewUserResolver creates a new UserResolver.
-func NewUserResolver() AssigneeResolver {
-	return new(UserResolver)
+// NewUserAssigneeResolver creates a new UserAssigneeResolver.
+func NewUserAssigneeResolver() AssigneeResolver {
+	return new(UserAssigneeResolver)
 }
 
-// UserResolver resolves assignees from fixed user IDs.
-type UserResolver struct{}
+// UserAssigneeResolver resolves assignees from fixed user IDs.
+type UserAssigneeResolver struct{}
 
-func (r *UserResolver) Kind() approval.AssigneeKind { return approval.AssigneeUser }
+func (r *UserAssigneeResolver) Kind() approval.AssigneeKind { return approval.AssigneeUser }
 
-func (r *UserResolver) Resolve(_ context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error) {
-	result := make([]approval.ResolvedAssignee, 0, len(rc.Config.IDs))
-	for _, uid := range rc.Config.IDs {
-		result = append(result, approval.ResolvedAssignee{UserID: uid})
+func (r *UserAssigneeResolver) Resolve(_ context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error) {
+	result := make([]approval.ResolvedAssignee, len(rc.IDs))
+	for i, uid := range rc.IDs {
+		result[i] = approval.ResolvedAssignee{UserID: uid}
 	}
 
 	return result, nil
 }
 
-// NewRoleResolver creates a new RoleResolver.
-func NewRoleResolver() AssigneeResolver {
-	return new(RoleResolver)
+// NewRoleAssigneeResolver creates a new RoleAssigneeResolver.
+func NewRoleAssigneeResolver(svc approval.AssigneeService) AssigneeResolver {
+	return &RoleAssigneeResolver{svc: svc}
 }
 
-// RoleResolver resolves assignees from role IDs via UserService.
-type RoleResolver struct{}
+// RoleAssigneeResolver resolves assignees from role IDs via AssigneeService.
+type RoleAssigneeResolver struct {
+	svc approval.AssigneeService
+}
 
-func (r *RoleResolver) Kind() approval.AssigneeKind { return approval.AssigneeRole }
+func (r *RoleAssigneeResolver) Kind() approval.AssigneeKind { return approval.AssigneeRole }
 
-func (r *RoleResolver) Resolve(ctx context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error) {
-	if rc.UserService == nil {
-		return nil, nil
+func (r *RoleAssigneeResolver) Resolve(ctx context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error) {
+	if r.svc == nil {
+		return nil, ErrAssigneeServiceNil
 	}
 
-	var result []approval.ResolvedAssignee
-	for _, roleID := range rc.Config.IDs {
-		users, err := rc.UserService.GetUsersByRole(ctx, roleID)
+	return streams.CollectResults(streams.FlatMapErr(streams.FromSlice(rc.IDs), func(roleID string) (streams.Stream[approval.ResolvedAssignee], error) {
+		users, err := r.svc.GetRoleUsers(ctx, roleID)
 		if err != nil {
-			return nil, err
+			return streams.Empty[approval.ResolvedAssignee](), fmt.Errorf("role assignee resolver: %w", err)
 		}
 
-		for _, uid := range users {
-			result = append(result, approval.ResolvedAssignee{UserID: uid})
-		}
-	}
-
-	return result, nil
+		return streams.MapTo(streams.FromSlice(users), func(uid string) approval.ResolvedAssignee {
+			return approval.ResolvedAssignee{UserID: uid}
+		}), nil
+	}))
 }
 
-// NewDeptResolver creates a new DeptResolver.
-func NewDeptResolver() AssigneeResolver {
-	return new(DeptResolver)
+// NewDeptAssigneeResolver creates a new DeptAssigneeResolver.
+func NewDeptAssigneeResolver(svc approval.AssigneeService) AssigneeResolver {
+	return &DeptAssigneeResolver{svc: svc}
 }
 
-// DeptResolver resolves department leaders as assignees.
-type DeptResolver struct{}
+// DeptAssigneeResolver resolves department leaders as assignees.
+type DeptAssigneeResolver struct {
+	svc approval.AssigneeService
+}
 
-func (r *DeptResolver) Kind() approval.AssigneeKind { return approval.AssigneeDept }
+func (r *DeptAssigneeResolver) Kind() approval.AssigneeKind { return approval.AssigneeDept }
 
-func (r *DeptResolver) Resolve(ctx context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error) {
-	if rc.OrgService == nil {
-		return nil, nil
+func (r *DeptAssigneeResolver) Resolve(ctx context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error) {
+	if r.svc == nil {
+		return nil, ErrAssigneeServiceNil
 	}
 
-	var result []approval.ResolvedAssignee
-	for _, deptID := range rc.Config.IDs {
-		leaders, err := rc.OrgService.GetDeptLeaders(ctx, deptID)
+	return streams.CollectResults(streams.FlatMapErr(streams.FromSlice(rc.IDs), func(deptID string) (streams.Stream[approval.ResolvedAssignee], error) {
+		leaders, err := r.svc.GetDeptLeaders(ctx, deptID)
 		if err != nil {
-			return nil, err
+			return streams.Empty[approval.ResolvedAssignee](), fmt.Errorf("dept assignee resolver: %w", err)
 		}
 
-		for _, uid := range leaders {
-			result = append(result, approval.ResolvedAssignee{UserID: uid})
-		}
-	}
-
-	return result, nil
+		return streams.MapTo(streams.FromSlice(leaders), func(uid string) approval.ResolvedAssignee {
+			return approval.ResolvedAssignee{UserID: uid}
+		}), nil
+	}))
 }
 
-// NewSelfResolver creates a new SelfResolver.
-func NewSelfResolver() AssigneeResolver {
-	return new(SelfResolver)
+// NewSelfAssigneeResolver creates a new SelfAssigneeResolver.
+func NewSelfAssigneeResolver() AssigneeResolver {
+	return new(SelfAssigneeResolver)
 }
 
-// SelfResolver resolves the applicant as assignee.
-type SelfResolver struct{}
+// SelfAssigneeResolver resolves the applicant as assignee.
+type SelfAssigneeResolver struct{}
 
-func (r *SelfResolver) Kind() approval.AssigneeKind { return approval.AssigneeSelf }
+func (r *SelfAssigneeResolver) Kind() approval.AssigneeKind { return approval.AssigneeSelf }
 
-func (r *SelfResolver) Resolve(_ context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error) {
+func (r *SelfAssigneeResolver) Resolve(_ context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error) {
 	if rc.ApplicantID == "" {
-		return nil, nil
+		return nil, ErrApplicantIDEmpty
 	}
 
 	return []approval.ResolvedAssignee{{UserID: rc.ApplicantID}}, nil
 }
 
-// NewSuperiorResolver creates a new SuperiorResolver.
-func NewSuperiorResolver() AssigneeResolver {
-	return new(SuperiorResolver)
+// NewSuperiorAssigneeResolver creates a new SuperiorAssigneeResolver.
+func NewSuperiorAssigneeResolver(svc approval.AssigneeService) AssigneeResolver {
+	return &SuperiorAssigneeResolver{svc: svc}
 }
 
-// SuperiorResolver resolves the direct superior as assignee.
-type SuperiorResolver struct{}
+// SuperiorAssigneeResolver resolves the direct superior as assignee.
+type SuperiorAssigneeResolver struct {
+	svc approval.AssigneeService
+}
 
-func (r *SuperiorResolver) Kind() approval.AssigneeKind { return approval.AssigneeSuperior }
+func (r *SuperiorAssigneeResolver) Kind() approval.AssigneeKind { return approval.AssigneeSuperior }
 
-func (r *SuperiorResolver) Resolve(ctx context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error) {
-	if rc.OrgService == nil {
-		return nil, nil
+func (r *SuperiorAssigneeResolver) Resolve(ctx context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error) {
+	if r.svc == nil {
+		return nil, ErrAssigneeServiceNil
 	}
 
-	uid, _, err := rc.OrgService.GetSuperior(ctx, rc.ApplicantID)
+	uid, err := r.svc.GetSuperior(ctx, rc.ApplicantID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("superior assignee resolver: %w", err)
 	}
 
 	if uid == "" {
-		return nil, nil
+		return []approval.ResolvedAssignee{}, nil
 	}
 
 	return []approval.ResolvedAssignee{{UserID: uid}}, nil
 }
 
-// NewDeptLeaderResolver creates a new DeptLeaderResolver.
-func NewDeptLeaderResolver() AssigneeResolver {
-	return new(DeptLeaderResolver)
+// NewDeptLeaderAssigneeResolver creates a new DeptLeaderAssigneeResolver.
+func NewDeptLeaderAssigneeResolver(svc approval.AssigneeService) AssigneeResolver {
+	return &DeptLeaderAssigneeResolver{svc: svc}
 }
 
-// DeptLeaderResolver resolves department leaders as assignees.
-type DeptLeaderResolver struct{}
+// DeptLeaderAssigneeResolver resolves department leaders as assignees.
+type DeptLeaderAssigneeResolver struct {
+	svc approval.AssigneeService
+}
 
-func (r *DeptLeaderResolver) Kind() approval.AssigneeKind { return approval.AssigneeDeptLeader }
+func (r *DeptLeaderAssigneeResolver) Kind() approval.AssigneeKind { return approval.AssigneeDeptLeader }
 
-func (r *DeptLeaderResolver) Resolve(ctx context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error) {
-	if rc.OrgService == nil {
-		return nil, nil
+func (r *DeptLeaderAssigneeResolver) Resolve(ctx context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error) {
+	if r.svc == nil {
+		return nil, ErrAssigneeServiceNil
 	}
 
-	leaders, err := rc.OrgService.GetDeptLeaders(ctx, rc.DeptID)
+	leaders, err := r.svc.GetDeptLeaders(ctx, rc.ApplicantDeptID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("dept leader assignee resolver: %w", err)
 	}
 
-	result := make([]approval.ResolvedAssignee, 0, len(leaders))
-	for _, uid := range leaders {
-		result = append(result, approval.ResolvedAssignee{UserID: uid})
+	result := make([]approval.ResolvedAssignee, len(leaders))
+	for i, uid := range leaders {
+		result[i] = approval.ResolvedAssignee{UserID: uid}
 	}
 
 	return result, nil
 }
 
-// NewFormFieldResolver creates a new FormFieldResolver.
-func NewFormFieldResolver() AssigneeResolver {
-	return new(FormFieldResolver)
+// NewFormFieldAssigneeResolver creates a new FormFieldAssigneeResolver.
+func NewFormFieldAssigneeResolver() AssigneeResolver {
+	return new(FormFieldAssigneeResolver)
 }
 
-// FormFieldResolver resolves assignees from a form field value.
-type FormFieldResolver struct{}
+// FormFieldAssigneeResolver resolves assignees from a form field value.
+type FormFieldAssigneeResolver struct{}
 
-func (r *FormFieldResolver) Kind() approval.AssigneeKind { return approval.AssigneeFormField }
+func (r *FormFieldAssigneeResolver) Kind() approval.AssigneeKind { return approval.AssigneeFormField }
 
-func (r *FormFieldResolver) Resolve(_ context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error) {
-	if rc.Config.FormField == nil {
-		return nil, nil
+func (r *FormFieldAssigneeResolver) Resolve(_ context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error) {
+	if rc.FormField == nil || *rc.FormField == "" {
+		return nil, ErrFormFieldNameEmpty
 	}
 
-	fieldName := *rc.Config.FormField
-	if fieldName == "" {
-		return nil, nil
-	}
-
-	value := rc.FormData.Get(fieldName)
+	value := rc.FormData.Get(*rc.FormField)
 
 	switch v := value.(type) {
+	case nil:
+		return []approval.ResolvedAssignee{}, nil
 	case string:
 		if v == "" {
-			return nil, nil
+			return nil, ErrFormFieldValueEmpty
 		}
 
 		return []approval.ResolvedAssignee{{UserID: v}}, nil
 	case []string:
-		result := make([]approval.ResolvedAssignee, 0, len(v))
-		for _, uid := range v {
-			result = append(result, approval.ResolvedAssignee{UserID: uid})
+		result := make([]approval.ResolvedAssignee, len(v))
+		for i, uid := range v {
+			result[i] = approval.ResolvedAssignee{UserID: uid}
 		}
 
 		return result, nil
 	case []any:
-		result := make([]approval.ResolvedAssignee, 0, len(v))
-		for _, item := range v {
-			if uid, ok := item.(string); ok && uid != "" {
-				result = append(result, approval.ResolvedAssignee{UserID: uid})
+		result := make([]approval.ResolvedAssignee, len(v))
+		for i, item := range v {
+			if uid := cast.ToString(item); uid != "" {
+				result[i] = approval.ResolvedAssignee{UserID: uid}
+			} else {
+				return nil, ErrFormFieldValueEmpty
 			}
 		}
 
 		return result, nil
 	default:
-		return nil, nil
+		return nil, fmt.Errorf("%w: %T", ErrUnsupportedFieldValueType, value)
 	}
 }
 
-// CompositeResolver chains multiple resolvers and resolves assignees based on config kind.
-type CompositeResolver struct {
+// CompositeAssigneeResolver chains multiple resolvers and resolves assignees based on config kind.
+type CompositeAssigneeResolver struct {
 	resolvers map[approval.AssigneeKind]AssigneeResolver
 }
 
-// NewCompositeResolver creates a composite resolver from individual resolvers.
-func NewCompositeResolver(resolvers ...AssigneeResolver) *CompositeResolver {
-	m := make(map[approval.AssigneeKind]AssigneeResolver, len(resolvers))
-	for _, r := range resolvers {
-		m[r.Kind()] = r
+// NewCompositeAssigneeResolver creates a composite resolver from individual resolvers.
+func NewCompositeAssigneeResolver(resolvers ...AssigneeResolver) *CompositeAssigneeResolver {
+	return &CompositeAssigneeResolver{
+		resolvers: streams.AssociateBy(streams.FromSlice(resolvers), func(r AssigneeResolver) approval.AssigneeKind {
+			return r.Kind()
+		}),
 	}
-
-	return &CompositeResolver{resolvers: m}
 }
 
-// ResolveAll resolves assignees from multiple configs, deduplicating by user ID.
-func (c *CompositeResolver) ResolveAll(ctx context.Context, configs []*approval.FlowNodeAssignee, baseCtx *ResolveContext) ([]approval.ResolvedAssignee, error) {
-	var all []approval.ResolvedAssignee
-
-	for _, cfg := range configs {
-		resolver, ok := c.resolvers[cfg.Kind]
+// ResolveAll resolves assignees from multiple configs.
+func (c *CompositeAssigneeResolver) ResolveAll(ctx context.Context, assignees []*approval.FlowNodeAssignee, baseRC *ResolveContext) ([]approval.ResolvedAssignee, error) {
+	return streams.CollectResults(streams.FlatMapErr(streams.FromSlice(assignees), func(assignee *approval.FlowNodeAssignee) (streams.Stream[approval.ResolvedAssignee], error) {
+		resolver, ok := c.resolvers[assignee.Kind]
 		if !ok {
-			continue
+			return streams.Empty[approval.ResolvedAssignee](), fmt.Errorf("%w: %s", ErrAssigneeResolverNotFound, assignee.Kind)
 		}
 
-		rc := *baseCtx
-		rc.Config = cfg
+		rc := *baseRC
+		rc.IDs = assignee.IDs
+		rc.FormField = assignee.FormField
 
-		assignees, err := resolver.Resolve(ctx, &rc)
+		resolved, err := resolver.Resolve(ctx, &rc)
 		if err != nil {
-			return nil, err
+			return streams.Empty[approval.ResolvedAssignee](), fmt.Errorf("composite assignee resolver %q: %w", assignee.Kind, err)
 		}
 
-		all = append(all, assignees...)
-	}
-
-	return all, nil
+		return streams.FromSlice(resolved), nil
+	}))
 }

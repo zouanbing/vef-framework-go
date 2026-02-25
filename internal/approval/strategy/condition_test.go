@@ -8,16 +8,15 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/decimal"
 )
 
 // TestFieldConditionEvaluator tests field condition evaluator scenarios.
 func TestFieldConditionEvaluator(t *testing.T) {
 	e := NewFieldConditionEvaluator()
-	assert.Equal(t, approval.ConditionField, e.Type(), "Should return ConditionField type")
+	assert.Equal(t, approval.ConditionField, e.Kind(), "Should return ConditionField type")
 
 	ctx := context.Background()
-	ec := &approval.EvalContext{
+	ec := &approval.EvaluationContext{
 		FormData: approval.FormData{
 			"name":       "alice",
 			"amount":     5000,
@@ -28,8 +27,8 @@ func TestFieldConditionEvaluator(t *testing.T) {
 			"empty_str":  "",
 			"int_val":    int64(100),
 		},
-		ApplicantID: "user1",
-		DeptID:      "dept1",
+		ApplicantID:     "user1",
+		ApplicantDeptID: "dept1",
 	}
 
 	tests := []struct {
@@ -55,24 +54,33 @@ func TestFieldConditionEvaluator(t *testing.T) {
 		{"GtFloatTrue", approval.Condition{Type: approval.ConditionField, Subject: "amountF", Operator: "gt", Value: 5000.0}, true},
 		{"LtFloatTrue", approval.Condition{Type: approval.ConditionField, Subject: "amountF", Operator: "lt", Value: 5001.0}, true},
 
+		// cross-type numeric comparison (int field vs float value)
+		{"GtIntFieldFloatValue", approval.Condition{Type: approval.ConditionField, Subject: "amount", Operator: "gt", Value: 4999.9}, true},
+		{"LtFloatFieldIntValue", approval.Condition{Type: approval.ConditionField, Subject: "amountF", Operator: "lt", Value: 5001}, true},
+
 		// in / not_in
 		{"InStringArray", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "in", Value: []string{"alice", "bob"}}, true},
 		{"InStringArrayNotFound", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "in", Value: []string{"bob", "charlie"}}, false},
+		{"InEmptySlice", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "in", Value: []string{}}, false},
 		{"NotInStringArray", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "not_in", Value: []string{"bob", "charlie"}}, true},
 		{"NotInStringArrayFound", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "not_in", Value: []string{"alice", "bob"}}, false},
+		{"NotInEmptySlice", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "not_in", Value: []string{}}, true},
 		{"InWithAnySlice", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "in", Value: []any{"alice", "charlie"}}, true},
 
 		// contains / not_contains
 		{"ContainsTrue", approval.Condition{Type: approval.ConditionField, Subject: "greeting", Operator: "contains", Value: "world"}, true},
 		{"ContainsFalse", approval.Condition{Type: approval.ConditionField, Subject: "greeting", Operator: "contains", Value: "mars"}, false},
+		{"ContainsEmptyValue", approval.Condition{Type: approval.ConditionField, Subject: "greeting", Operator: "contains", Value: ""}, true},
 		{"NotContainsTrue", approval.Condition{Type: approval.ConditionField, Subject: "greeting", Operator: "not_contains", Value: "mars"}, true},
 		{"NotContainsFalse", approval.Condition{Type: approval.ConditionField, Subject: "greeting", Operator: "not_contains", Value: "world"}, false},
 
 		// starts_with / ends_with
 		{"StartsWithTrue", approval.Condition{Type: approval.ConditionField, Subject: "greeting", Operator: "starts_with", Value: "hello"}, true},
 		{"StartsWithFalse", approval.Condition{Type: approval.ConditionField, Subject: "greeting", Operator: "starts_with", Value: "world"}, false},
+		{"StartsWithEmptyValue", approval.Condition{Type: approval.ConditionField, Subject: "greeting", Operator: "starts_with", Value: ""}, true},
 		{"EndsWithTrue", approval.Condition{Type: approval.ConditionField, Subject: "greeting", Operator: "ends_with", Value: "world"}, true},
 		{"EndsWithFalse", approval.Condition{Type: approval.ConditionField, Subject: "greeting", Operator: "ends_with", Value: "hello"}, false},
+		{"EndsWithEmptyValue", approval.Condition{Type: approval.ConditionField, Subject: "greeting", Operator: "ends_with", Value: ""}, true},
 
 		// is_empty / is_not_empty
 		{"IsEmptyNil", approval.Condition{Type: approval.ConditionField, Subject: "nonexistent", Operator: "is_empty"}, true},
@@ -82,9 +90,8 @@ func TestFieldConditionEvaluator(t *testing.T) {
 		{"IsNotEmptyNil", approval.Condition{Type: approval.ConditionField, Subject: "nonexistent", Operator: "is_not_empty"}, false},
 
 		// Special subjects
-		{"ApplicantSubject", approval.Condition{Type: approval.ConditionField, Subject: "applicant", Operator: "eq", Value: "user1"}, true},
-		{"DeptSubject", approval.Condition{Type: approval.ConditionField, Subject: "dept", Operator: "eq", Value: "dept1"}, true},
-		{"DepartmentSubjectAlias", approval.Condition{Type: approval.ConditionField, Subject: "department", Operator: "eq", Value: "dept1"}, true},
+		{"ApplicantSubject", approval.Condition{Type: approval.ConditionField, Subject: "applicantId", Operator: "eq", Value: "user1"}, true},
+		{"DeptSubject", approval.Condition{Type: approval.ConditionField, Subject: "applicantDeptId", Operator: "eq", Value: "dept1"}, true},
 
 		// Unknown operator
 		{"UnknownOperator", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "unknown_op", Value: "x"}, false},
@@ -99,46 +106,36 @@ func TestFieldConditionEvaluator(t *testing.T) {
 	}
 }
 
-// TestFieldConditionEvaluatorSymbolOperators tests field condition evaluator symbol operators scenarios.
-func TestFieldConditionEvaluatorSymbolOperators(t *testing.T) {
+// TestFieldConditionEvaluatorIsEmptyOnNonStringField tests is_empty/is_not_empty on non-string fields.
+func TestFieldConditionEvaluatorIsEmptyOnNonStringField(t *testing.T) {
 	e := NewFieldConditionEvaluator()
 	ctx := context.Background()
-	ec := &approval.EvalContext{
-		FormData: approval.FormData{
-			"name":   "alice",
-			"amount": 5000,
-			"tags":   []string{"vip", "premium"},
-		},
+	ec := &approval.EvaluationContext{
+		FormData: approval.FormData{"amount": 5000},
 	}
 
 	tests := []struct {
 		name     string
-		cond     approval.Condition
-		expected bool
+		operator string
 	}{
-		{"GreaterThan", approval.Condition{Type: approval.ConditionField, Subject: "amount", Operator: ">", Value: 1000}, true},
-		{"GreaterEqual", approval.Condition{Type: approval.ConditionField, Subject: "amount", Operator: ">=", Value: 5000}, true},
-		{"LessThan", approval.Condition{Type: approval.ConditionField, Subject: "amount", Operator: "<", Value: 10000}, true},
-		{"LessEqual", approval.Condition{Type: approval.ConditionField, Subject: "amount", Operator: "<=", Value: 5000}, true},
-		{"EqualSymbol", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "==", Value: "alice"}, true},
-		{"NotEqualSymbol", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "!=", Value: "bob"}, true},
-		{"NotInWithSpace", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "not in", Value: []string{"bob"}}, true},
+		{"IsEmptyOnInt", "is_empty"},
+		{"IsNotEmptyOnInt", "is_not_empty"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := e.Evaluate(ctx, tt.cond, ec)
-			require.NoError(t, err, "Should evaluate without error")
-			assert.Equal(t, tt.expected, result, "Should return expected result")
+			_, err := e.Evaluate(ctx, approval.Condition{Subject: "amount", Operator: tt.operator}, ec)
+			require.Error(t, err, "Should fail for non-string/collection field")
+			assert.Contains(t, err.Error(), "run expression", "Should wrap runtime error")
 		})
 	}
 }
 
-// TestFieldConditionEvaluatorEmptyCollections tests field condition evaluator empty collections scenarios.
+// TestFieldConditionEvaluatorEmptyCollections tests is_empty with empty collections.
 func TestFieldConditionEvaluatorEmptyCollections(t *testing.T) {
 	e := NewFieldConditionEvaluator()
 	ctx := context.Background()
-	ec := &approval.EvalContext{
+	ec := &approval.EvaluationContext{
 		FormData: approval.FormData{
 			"empty_arr":     []string{},
 			"empty_any_arr": []any{},
@@ -167,145 +164,136 @@ func TestFieldConditionEvaluatorEmptyCollections(t *testing.T) {
 // TestExpressionConditionEvaluator tests expression condition evaluator scenarios.
 func TestExpressionConditionEvaluator(t *testing.T) {
 	e := NewExpressionConditionEvaluator()
-	assert.Equal(t, approval.ConditionExpression, e.Type(), "Should return ConditionExpression type")
+	assert.Equal(t, approval.ConditionExpression, e.Kind(), "Should return ConditionExpression type")
 
 	ctx := context.Background()
 
 	t.Run("SimpleComparison", func(t *testing.T) {
-		ec := &approval.EvalContext{
-			FormData:    approval.FormData{"amount": 5000},
-			ApplicantID: "user1",
-			DeptID:      "dept1",
+		ec := &approval.EvaluationContext{
+			FormData:        approval.FormData{"amount": 5000},
+			ApplicantID:     "user1",
+			ApplicantDeptID: "dept1",
 		}
 
-		result, err := e.Evaluate(ctx, approval.Condition{Expression: "form.amount > 3000"}, ec)
+		result, err := e.Evaluate(ctx, approval.Condition{Expression: "formData.amount > 3000"}, ec)
 		require.NoError(t, err, "Should evaluate greater-than expression")
 		assert.True(t, result, "Should be true for 5000 > 3000")
 
-		result, err = e.Evaluate(ctx, approval.Condition{Expression: "form.amount > 10000"}, ec)
+		result, err = e.Evaluate(ctx, approval.Condition{Expression: "formData.amount > 10000"}, ec)
 		require.NoError(t, err, "Should evaluate greater-than expression")
 		assert.False(t, result, "Should be false for 5000 > 10000")
 	})
 
 	t.Run("LogicalCombination", func(t *testing.T) {
-		ec := &approval.EvalContext{
-			FormData:    approval.FormData{"amount": 5000, "department": "sales"},
-			ApplicantID: "user1",
-			DeptID:      "dept1",
+		ec := &approval.EvaluationContext{
+			FormData:        approval.FormData{"amount": 5000, "department": "sales"},
+			ApplicantID:     "user1",
+			ApplicantDeptID: "dept1",
 		}
 
-		result, err := e.Evaluate(ctx, approval.Condition{Expression: `form.amount > 1000 && form.department == "sales"`}, ec)
+		result, err := e.Evaluate(ctx, approval.Condition{Expression: `formData.amount > 1000 && formData.department == "sales"`}, ec)
 		require.NoError(t, err, "Should evaluate AND expression")
 		assert.True(t, result, "Should be true when both conditions match")
 
-		result, err = e.Evaluate(ctx, approval.Condition{Expression: `form.amount > 1000 && form.department == "hr"`}, ec)
+		result, err = e.Evaluate(ctx, approval.Condition{Expression: `formData.amount > 1000 && formData.department == "hr"`}, ec)
 		require.NoError(t, err, "Should evaluate AND expression")
 		assert.False(t, result, "Should be false when department does not match")
 	})
 
 	t.Run("BuiltInVariables", func(t *testing.T) {
-		ec := &approval.EvalContext{
-			FormData:    approval.FormData{},
-			ApplicantID: "user1",
-			DeptID:      "dept_sales",
+		ec := &approval.EvaluationContext{
+			FormData:        approval.FormData{},
+			ApplicantID:     "user1",
+			ApplicantDeptID: "dept_sales",
 		}
 
-		result, err := e.Evaluate(ctx, approval.Condition{Expression: `applicant == "user1"`}, ec)
-		require.NoError(t, err, "Should evaluate applicant expression")
+		result, err := e.Evaluate(ctx, approval.Condition{Expression: `applicantId == "user1"`}, ec)
+		require.NoError(t, err, "Should evaluate applicantId expression")
 		assert.True(t, result, "Should match applicant ID")
 
-		result, err = e.Evaluate(ctx, approval.Condition{Expression: `dept == "dept_sales"`}, ec)
-		require.NoError(t, err, "Should evaluate dept expression")
-		assert.True(t, result, "Should match dept ID")
+		result, err = e.Evaluate(ctx, approval.Condition{Expression: `applicantDeptId == "dept_sales"`}, ec)
+		require.NoError(t, err, "Should evaluate applicantDeptId expression")
+		assert.True(t, result, "Should match applicant dept ID")
 	})
 
 	t.Run("SyntaxError", func(t *testing.T) {
-		ec := &approval.EvalContext{FormData: approval.FormData{}}
+		ec := &approval.EvaluationContext{FormData: approval.FormData{}}
 		_, err := e.Evaluate(ctx, approval.Condition{Expression: "invalid @@@ syntax"}, ec)
 		require.Error(t, err, "Should fail for invalid syntax")
 		assert.Contains(t, err.Error(), "compile expression", "Should wrap compile error")
 	})
 
+	t.Run("EmptyExpression", func(t *testing.T) {
+		ec := &approval.EvaluationContext{FormData: approval.FormData{}}
+		_, err := e.Evaluate(ctx, approval.Condition{Expression: ""}, ec)
+		require.Error(t, err, "Should fail for empty expression")
+	})
+
 	t.Run("RuntimeError", func(t *testing.T) {
-		ec := &approval.EvalContext{
-			FormData:    approval.FormData{"amount": "not_a_number"},
-			ApplicantID: "user1",
-			DeptID:      "dept1",
+		ec := &approval.EvaluationContext{
+			FormData:        approval.FormData{"amount": "not_a_number"},
+			ApplicantID:     "user1",
+			ApplicantDeptID: "dept1",
 		}
-		_, err := e.Evaluate(ctx, approval.Condition{Expression: "form.amount > 100"}, ec)
+		_, err := e.Evaluate(ctx, approval.Condition{Expression: "formData.amount > 100"}, ec)
 		require.Error(t, err, "Should fail when expression evaluation fails at runtime")
-		assert.Contains(t, err.Error(), "run expression", "Should wrap runtime error")
 	})
 }
 
-// TestToDecimal tests to decimal scenarios.
-func TestToDecimal(t *testing.T) {
+// TestBuildFieldExpression tests expression generation from structured conditions.
+func TestBuildFieldExpression(t *testing.T) {
+	tests := []struct {
+		name     string
+		cond     approval.Condition
+		expected string
+	}{
+		{"Eq", approval.Condition{Subject: "name", Operator: "eq", Value: "alice"}, `formData["name"] == "alice"`},
+		{"Ne", approval.Condition{Subject: "name", Operator: "ne", Value: "bob"}, `formData["name"] != "bob"`},
+		{"Gt", approval.Condition{Subject: "amount", Operator: "gt", Value: 100}, `formData["amount"] > 100`},
+		{"Gte", approval.Condition{Subject: "amount", Operator: "gte", Value: 100}, `formData["amount"] >= 100`},
+		{"Lt", approval.Condition{Subject: "amount", Operator: "lt", Value: 100}, `formData["amount"] < 100`},
+		{"Lte", approval.Condition{Subject: "amount", Operator: "lte", Value: 100}, `formData["amount"] <= 100`},
+		{"In", approval.Condition{Subject: "name", Operator: "in", Value: []string{"a", "b"}}, `formData["name"] in ["a", "b"]`},
+		{"NotIn", approval.Condition{Subject: "name", Operator: "not_in", Value: []string{"a"}}, `not (formData["name"] in ["a"])`},
+		{"Contains", approval.Condition{Subject: "name", Operator: "contains", Value: "li"}, `formData["name"] contains "li"`},
+		{"NotContains", approval.Condition{Subject: "name", Operator: "not_contains", Value: "x"}, `not (formData["name"] contains "x")`},
+		{"StartsWith", approval.Condition{Subject: "name", Operator: "starts_with", Value: "al"}, `formData["name"] startsWith "al"`},
+		{"EndsWith", approval.Condition{Subject: "name", Operator: "ends_with", Value: "ce"}, `formData["name"] endsWith "ce"`},
+		{"IsEmpty", approval.Condition{Subject: "field", Operator: "is_empty"}, `len(formData["field"] ?? "") == 0`},
+		{"IsNotEmpty", approval.Condition{Subject: "field", Operator: "is_not_empty"}, `len(formData["field"] ?? "") > 0`},
+		{"ApplicantSubject", approval.Condition{Subject: "applicantId", Operator: "eq", Value: "u1"}, `applicantId == "u1"`},
+		{"DeptSubject", approval.Condition{Subject: "applicantDeptId", Operator: "eq", Value: "d1"}, `applicantDeptId == "d1"`},
+		{"Unknown", approval.Condition{Subject: "x", Operator: "nope"}, "false"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, buildFieldExpression(tt.cond), "Should generate expected expression")
+		})
+	}
+}
+
+// TestFormatExprValue tests value formatting for expr-lang literals.
+func TestFormatExprValue(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    any
 		expected string
 	}{
-		{"Int", int(42), "42"},
-		{"Int32", int32(42), "42"},
-		{"Int64", int64(42), "42"},
-		{"Float32", float32(3.14), "3.14"},
-		{"Float64", float64(3.14), "3.14"},
-		{"String", "99.9", "99.9"},
-		{"Decimal", decimal.NewFromInt(7), "7"},
-		{"Default", struct{}{}, "0"},
+		{"Nil", nil, "nil"},
+		{"String", "hello", `"hello"`},
+		{"StringWithQuotes", `say "hi"`, `"say \"hi\""`},
+		{"Int", 42, "42"},
+		{"Float", 3.14, "3.14"},
+		{"Bool", true, "true"},
+		{"StringSlice", []string{"a", "b"}, `["a", "b"]`},
+		{"AnySlice", []any{"x", 1}, `["x", 1]`},
+		{"EmptySlice", []string{}, "[]"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, toDecimal(tt.input).String(), "Should convert to expected decimal")
-		})
-	}
-}
-
-// TestContainsAny tests contains any scenarios.
-func TestContainsAny(t *testing.T) {
-	tests := []struct {
-		name      string
-		container any
-		item      any
-		expected  bool
-	}{
-		{"IntSliceFound", []int{1, 2, 3}, 2, true},
-		{"IntSliceNotFound", []int{1, 2, 3}, 4, false},
-		{"IntSliceWrongType", []int{1, 2, 3}, "2", false},
-		{"Int64SliceFound", []int64{10, 20}, int64(10), true},
-		{"Int64SliceNotFound", []int64{10, 20}, int64(30), false},
-		{"Int64SliceWrongType", []int64{10, 20}, "10", false},
-		{"UnsupportedType", 42, "x", false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, containsAny(tt.container, tt.item), "Should return expected containment result")
-		})
-	}
-}
-
-// TestIsEmpty tests is empty scenarios.
-func TestIsEmpty(t *testing.T) {
-	assert.False(t, isEmpty(42), "Should return false for non-nil non-container type")
-}
-
-// TestToString tests to string scenarios.
-func TestToString(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    any
-		expected string
-	}{
-		{"StringValue", "hello", "hello"},
-		{"NonStringValue", 42, ""},
-		{"NilValue", nil, ""},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, toString(tt.input), "Should convert to expected string")
+			assert.Equal(t, tt.expected, formatExprValue(tt.input), "Should format value as expected")
 		})
 	}
 }

@@ -14,13 +14,13 @@ var Module = fx.Module(
 		fx.Annotate(NewOneRejectStrategy, fx.ResultTags(`group:"vef:approval:pass_rule_strategies"`)),
 
 		// Assignee resolvers
-		fx.Annotate(NewUserResolver, fx.ResultTags(`group:"vef:approval:assignee_resolvers"`)),
-		fx.Annotate(NewRoleResolver, fx.ResultTags(`group:"vef:approval:assignee_resolvers"`)),
-		fx.Annotate(NewDeptResolver, fx.ResultTags(`group:"vef:approval:assignee_resolvers"`)),
-		fx.Annotate(NewSelfResolver, fx.ResultTags(`group:"vef:approval:assignee_resolvers"`)),
-		fx.Annotate(NewSuperiorResolver, fx.ResultTags(`group:"vef:approval:assignee_resolvers"`)),
-		fx.Annotate(NewDeptLeaderResolver, fx.ResultTags(`group:"vef:approval:assignee_resolvers"`)),
-		fx.Annotate(NewFormFieldResolver, fx.ResultTags(`group:"vef:approval:assignee_resolvers"`)),
+		fx.Annotate(NewUserAssigneeResolver, fx.ResultTags(`group:"vef:approval:assignee_resolvers"`)),
+		fx.Annotate(NewRoleAssigneeResolver, fx.ResultTags(`group:"vef:approval:assignee_resolvers"`)),
+		fx.Annotate(NewDeptAssigneeResolver, fx.ResultTags(`group:"vef:approval:assignee_resolvers"`)),
+		fx.Annotate(NewSelfAssigneeResolver, fx.ResultTags(`group:"vef:approval:assignee_resolvers"`)),
+		fx.Annotate(NewSuperiorAssigneeResolver, fx.ResultTags(`group:"vef:approval:assignee_resolvers"`)),
+		fx.Annotate(NewDeptLeaderAssigneeResolver, fx.ResultTags(`group:"vef:approval:assignee_resolvers"`)),
+		fx.Annotate(NewFormFieldAssigneeResolver, fx.ResultTags(`group:"vef:approval:assignee_resolvers"`)),
 
 		// Condition evaluators
 		fx.Annotate(NewFieldConditionEvaluator, fx.ResultTags(`group:"vef:approval:condition_evaluators"`)),

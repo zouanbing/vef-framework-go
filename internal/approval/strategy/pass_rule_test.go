@@ -44,6 +44,7 @@ func TestOnePassStrategy(t *testing.T) {
 		expected approval.PassRuleResult
 	}{
 		{"OneApproved", approval.PassRuleContext{ApprovedCount: 1, RejectedCount: 0, TotalCount: 3}, approval.PassRulePassed},
+		{"ApprovedWithRejections", approval.PassRuleContext{ApprovedCount: 1, RejectedCount: 2, TotalCount: 3}, approval.PassRulePassed},
 		{"AllRejected", approval.PassRuleContext{ApprovedCount: 0, RejectedCount: 3, TotalCount: 3}, approval.PassRuleRejected},
 		{"NoCompleted", approval.PassRuleContext{ApprovedCount: 0, RejectedCount: 0, TotalCount: 3}, approval.PassRulePending},
 		{"PartialRejected", approval.PassRuleContext{ApprovedCount: 0, RejectedCount: 1, TotalCount: 3}, approval.PassRulePending},
@@ -101,6 +102,21 @@ func TestRatioPassStrategy(t *testing.T) {
 			"HundredPercentOneRejected",
 			approval.PassRuleContext{ApprovedCount: 2, RejectedCount: 1, TotalCount: 3, PassRatio: 100.0},
 			approval.PassRuleRejected,
+		},
+		{
+			"MaxRatioEqualsPassRatio",
+			approval.PassRuleContext{ApprovedCount: 0, RejectedCount: 2, TotalCount: 4, PassRatio: 50.0},
+			approval.PassRulePending,
+		},
+		{
+			"ZeroPassRatio",
+			approval.PassRuleContext{ApprovedCount: 0, RejectedCount: 0, TotalCount: 3, PassRatio: 0},
+			approval.PassRulePassed,
+		},
+		{
+			"FloatingPointPrecision",
+			approval.PassRuleContext{ApprovedCount: 2, RejectedCount: 0, TotalCount: 3, PassRatio: 66.67},
+			approval.PassRulePending,
 		},
 	}
 

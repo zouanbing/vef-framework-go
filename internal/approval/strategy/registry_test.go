@@ -14,7 +14,7 @@ func TestNewStrategyRegistry(t *testing.T) {
 	t.Run("RegistersAll", func(t *testing.T) {
 		r := NewStrategyRegistry(
 			[]approval.PassRuleStrategy{NewAllPassStrategy(), NewOnePassStrategy()},
-			[]AssigneeResolver{NewUserResolver(), NewSelfResolver()},
+			[]AssigneeResolver{NewUserAssigneeResolver(), NewSelfAssigneeResolver()},
 			[]approval.ConditionEvaluator{NewFieldConditionEvaluator()},
 		)
 
@@ -49,8 +49,7 @@ func TestGetPassRuleStrategy(t *testing.T) {
 
 	t.Run("NotFound", func(t *testing.T) {
 		_, err := r.GetPassRuleStrategy("nonexistent")
-		assert.Error(t, err, "Should return error for unknown pass rule")
-		assert.Contains(t, err.Error(), "pass rule strategy not found", "Error should describe missing strategy")
+		require.ErrorIs(t, err, ErrPassRuleNotFound, "Should return ErrPassRuleNotFound")
 	})
 }
 
@@ -69,16 +68,15 @@ func TestGetConditionEvaluator(t *testing.T) {
 
 	t.Run("NotFound", func(t *testing.T) {
 		_, err := r.GetConditionEvaluator("nonexistent")
-		assert.Error(t, err, "Should return error for unknown condition evaluator")
-		assert.Contains(t, err.Error(), "condition evaluator not found", "Error should describe missing evaluator")
+		require.ErrorIs(t, err, ErrConditionEvaluatorNotFound, "Should return ErrConditionEvaluatorNotFound")
 	})
 }
 
-// TestCompositeAssigneeResolver tests composite assignee resolver scenarios.
-func TestCompositeAssigneeResolver(t *testing.T) {
+// TestStrategyRegistry_CompositeAssigneeResolver tests registry composite resolver accessor.
+func TestStrategyRegistry_CompositeAssigneeResolver(t *testing.T) {
 	r := NewStrategyRegistry(
 		nil,
-		[]AssigneeResolver{NewUserResolver(), NewSelfResolver()},
+		[]AssigneeResolver{NewUserAssigneeResolver(), NewSelfAssigneeResolver()},
 		nil,
 	)
 
