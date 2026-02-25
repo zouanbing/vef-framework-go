@@ -35,8 +35,8 @@ type UserResolver struct{}
 func (r *UserResolver) Kind() approval.AssigneeKind { return approval.AssigneeUser }
 
 func (r *UserResolver) Resolve(_ context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error) {
-	result := make([]approval.ResolvedAssignee, 0, len(rc.Config.AssigneeIDs))
-	for _, uid := range rc.Config.AssigneeIDs {
+	result := make([]approval.ResolvedAssignee, 0, len(rc.Config.IDs))
+	for _, uid := range rc.Config.IDs {
 		result = append(result, approval.ResolvedAssignee{UserID: uid})
 	}
 
@@ -59,7 +59,7 @@ func (r *RoleResolver) Resolve(ctx context.Context, rc *ResolveContext) ([]appro
 	}
 
 	var result []approval.ResolvedAssignee
-	for _, roleID := range rc.Config.AssigneeIDs {
+	for _, roleID := range rc.Config.IDs {
 		users, err := rc.UserService.GetUsersByRole(ctx, roleID)
 		if err != nil {
 			return nil, err
@@ -89,7 +89,7 @@ func (r *DeptResolver) Resolve(ctx context.Context, rc *ResolveContext) ([]appro
 	}
 
 	var result []approval.ResolvedAssignee
-	for _, deptID := range rc.Config.AssigneeIDs {
+	for _, deptID := range rc.Config.IDs {
 		leaders, err := rc.OrgService.GetDeptLeaders(ctx, deptID)
 		if err != nil {
 			return nil, err
@@ -187,7 +187,11 @@ type FormFieldResolver struct{}
 func (r *FormFieldResolver) Kind() approval.AssigneeKind { return approval.AssigneeFormField }
 
 func (r *FormFieldResolver) Resolve(_ context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error) {
-	fieldName := rc.Config.FormField.String
+	if rc.Config.FormField == nil {
+		return nil, nil
+	}
+
+	fieldName := *rc.Config.FormField
 	if fieldName == "" {
 		return nil, nil
 	}
@@ -242,7 +246,7 @@ func (c *CompositeResolver) ResolveAll(ctx context.Context, configs []*approval.
 	var all []approval.ResolvedAssignee
 
 	for _, cfg := range configs {
-		resolver, ok := c.resolvers[cfg.AssigneeKind]
+		resolver, ok := c.resolvers[cfg.Kind]
 		if !ok {
 			continue
 		}

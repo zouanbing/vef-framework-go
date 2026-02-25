@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/null"
 )
 
 type mockOrgService struct {
@@ -68,7 +67,7 @@ func TestUserResolver(t *testing.T) {
 
 	t.Run("MultipleIDs", func(t *testing.T) {
 		rc := &ResolveContext{
-			Config: &approval.FlowNodeAssignee{AssigneeIDs: []string{"u1", "u2", "u3"}},
+			Config: &approval.FlowNodeAssignee{IDs: []string{"u1", "u2", "u3"}},
 		}
 		result, err := r.Resolve(context.Background(), rc)
 		require.NoError(t, err, "Should resolve without error")
@@ -120,7 +119,7 @@ func TestRoleResolver(t *testing.T) {
 			},
 		}
 		rc := &ResolveContext{
-			Config:      &approval.FlowNodeAssignee{AssigneeIDs: []string{"role_admin", "role_manager"}},
+			Config:      &approval.FlowNodeAssignee{IDs: []string{"role_admin", "role_manager"}},
 			UserService: svc,
 		}
 		result, err := r.Resolve(context.Background(), rc)
@@ -132,7 +131,7 @@ func TestRoleResolver(t *testing.T) {
 	})
 
 	t.Run("NilService", func(t *testing.T) {
-		rc := &ResolveContext{Config: &approval.FlowNodeAssignee{AssigneeIDs: []string{"r1"}}}
+		rc := &ResolveContext{Config: &approval.FlowNodeAssignee{IDs: []string{"r1"}}}
 		result, err := r.Resolve(context.Background(), rc)
 		require.NoError(t, err, "Should resolve without error")
 		assert.Nil(t, result, "Should return nil when UserService is nil")
@@ -140,7 +139,7 @@ func TestRoleResolver(t *testing.T) {
 
 	t.Run("ServiceError", func(t *testing.T) {
 		rc := &ResolveContext{
-			Config:      &approval.FlowNodeAssignee{AssigneeIDs: []string{"role1"}},
+			Config:      &approval.FlowNodeAssignee{IDs: []string{"role1"}},
 			UserService: &errUserService{},
 		}
 		_, err := r.Resolve(context.Background(), rc)
@@ -231,7 +230,7 @@ func TestDeptResolver(t *testing.T) {
 		rc := &ResolveContext{
 			DeptID:     "dept1",
 			OrgService: svc,
-			Config:     &approval.FlowNodeAssignee{AssigneeIDs: []string{"dept1"}},
+			Config:     &approval.FlowNodeAssignee{IDs: []string{"dept1"}},
 		}
 		result, err := r.Resolve(context.Background(), rc)
 		require.NoError(t, err, "Should resolve without error")
@@ -247,7 +246,7 @@ func TestDeptResolver(t *testing.T) {
 			},
 		}
 		rc := &ResolveContext{
-			Config:     &approval.FlowNodeAssignee{AssigneeIDs: []string{"dept1", "dept2"}},
+			Config:     &approval.FlowNodeAssignee{IDs: []string{"dept1", "dept2"}},
 			OrgService: svc,
 		}
 		result, err := r.Resolve(context.Background(), rc)
@@ -259,7 +258,7 @@ func TestDeptResolver(t *testing.T) {
 	})
 
 	t.Run("NilService", func(t *testing.T) {
-		rc := &ResolveContext{Config: &approval.FlowNodeAssignee{AssigneeIDs: []string{"dept1"}}}
+		rc := &ResolveContext{Config: &approval.FlowNodeAssignee{IDs: []string{"dept1"}}}
 		result, err := r.Resolve(context.Background(), rc)
 		require.NoError(t, err, "Should resolve without error")
 		assert.Nil(t, result, "Should return nil when OrgService is nil")
@@ -267,7 +266,7 @@ func TestDeptResolver(t *testing.T) {
 
 	t.Run("ServiceError", func(t *testing.T) {
 		rc := &ResolveContext{
-			Config:     &approval.FlowNodeAssignee{AssigneeIDs: []string{"dept1"}},
+			Config:     &approval.FlowNodeAssignee{IDs: []string{"dept1"}},
 			OrgService: &errOrgService{},
 		}
 		_, err := r.Resolve(context.Background(), rc)
@@ -297,7 +296,7 @@ func TestFormFieldResolver(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rc := &ResolveContext{
-				Config:   &approval.FlowNodeAssignee{FormField: null.StringFrom(tt.field)},
+				Config:   &approval.FlowNodeAssignee{FormField: new(tt.field)},
 				FormData: tt.formData,
 			}
 			result, err := r.Resolve(context.Background(), rc)
@@ -316,7 +315,7 @@ func TestFormFieldResolver(t *testing.T) {
 
 	t.Run("EmptyFieldName", func(t *testing.T) {
 		rc := &ResolveContext{
-			Config:   &approval.FlowNodeAssignee{FormField: null.String{}},
+			Config:   &approval.FlowNodeAssignee{},
 			FormData: approval.FormData{"approver": "user1"},
 		}
 		result, err := r.Resolve(context.Background(), rc)
@@ -326,7 +325,7 @@ func TestFormFieldResolver(t *testing.T) {
 
 	t.Run("AnySliceWithMixedValues", func(t *testing.T) {
 		rc := &ResolveContext{
-			Config:   &approval.FlowNodeAssignee{FormField: null.StringFrom("approvers")},
+			Config:   &approval.FlowNodeAssignee{FormField: new("approvers")},
 			FormData: approval.FormData{"approvers": []any{"user1", "", "user2", 42}},
 		}
 		result, err := r.Resolve(context.Background(), rc)
@@ -342,8 +341,8 @@ func TestCompositeResolver(t *testing.T) {
 	t.Run("ResolveAll", func(t *testing.T) {
 		composite := NewCompositeResolver(NewUserResolver(), NewSelfResolver())
 		configs := []*approval.FlowNodeAssignee{
-			{AssigneeKind: approval.AssigneeUser, AssigneeIDs: []string{"u1", "u2"}},
-			{AssigneeKind: approval.AssigneeSelf},
+			{Kind: approval.AssigneeUser, IDs: []string{"u1", "u2"}},
+			{Kind: approval.AssigneeSelf},
 		}
 		baseCtx := &ResolveContext{ApplicantID: "applicant1"}
 
@@ -358,7 +357,7 @@ func TestCompositeResolver(t *testing.T) {
 	t.Run("UnknownKindSkipped", func(t *testing.T) {
 		composite := NewCompositeResolver(NewUserResolver())
 		configs := []*approval.FlowNodeAssignee{
-			{AssigneeKind: approval.AssigneeRole, AssigneeIDs: []string{"r1"}},
+			{Kind: approval.AssigneeRole, IDs: []string{"r1"}},
 		}
 
 		result, err := composite.ResolveAll(context.Background(), configs, &ResolveContext{})
@@ -369,7 +368,7 @@ func TestCompositeResolver(t *testing.T) {
 	t.Run("ErrorPropagation", func(t *testing.T) {
 		composite := NewCompositeResolver(NewSuperiorResolver())
 		configs := []*approval.FlowNodeAssignee{
-			{AssigneeKind: approval.AssigneeSuperior},
+			{Kind: approval.AssigneeSuperior},
 		}
 		baseCtx := &ResolveContext{ApplicantID: "emp1", OrgService: &errOrgService{}}
 

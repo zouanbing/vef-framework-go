@@ -6,10 +6,8 @@ import (
 	"time"
 
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/id"
 	"github.com/ilxqx/vef-framework-go/internal/approval/publisher"
 	"github.com/ilxqx/vef-framework-go/internal/log"
-	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/timex"
 )
@@ -77,15 +75,12 @@ func (s *Scanner) processTimeout(ctx context.Context, task *approval.Task) error
 			TaskID:     task.ID,
 			NotifyType: approval.TimeoutNotifyTimeout,
 		}
-		notify.ID = id.Generate()
-		notify.CreatedBy = "system"
-
 		if _, err := tx.NewInsert().Model(notify).Exec(ctx); err != nil {
 			return fmt.Errorf("insert timeout notify: %w", err)
 		}
 
 		events := []approval.DomainEvent{
-			approval.NewTaskTimeoutEvent(task.ID, task.InstanceID, task.NodeID, task.AssigneeID, time.Time(task.Deadline.V)),
+			approval.NewTaskTimeoutEvent(task.ID, task.InstanceID, task.NodeID, task.AssigneeID, task.Deadline.Unwrap()),
 		}
 
 		// Execute timeout action
@@ -118,7 +113,7 @@ func (s *Scanner) executeTimeoutAction(ctx context.Context, tx orm.DB, task *app
 // autoFinishTask finishes a task with the given status and logs the action.
 func (s *Scanner) autoFinishTask(ctx context.Context, tx orm.DB, task *approval.Task, node *approval.FlowNode, status approval.TaskStatus) ([]approval.DomainEvent, error) {
 	task.Status = status
-	task.FinishedAt = null.DateTimeFrom(timex.Now())
+	task.FinishedAt = new(timex.Now())
 
 	if _, err := tx.NewUpdate().Model(task).WherePK().Select("status", "finished_at").Exec(ctx); err != nil {
 		return nil, fmt.Errorf("finish task: %w", err)
@@ -131,15 +126,12 @@ func (s *Scanner) autoFinishTask(ctx context.Context, tx orm.DB, task *approval.
 
 	actionLog := &approval.ActionLog{
 		InstanceID: task.InstanceID,
-		NodeID:     null.StringFrom(task.NodeID),
-		TaskID:     null.StringFrom(task.ID),
+		NodeID:     new(task.NodeID),
+		TaskID:     new(task.ID),
 		Action:     actionType,
 		OperatorID: "system",
-		Opinion:    null.StringFrom("系统超时自动处理"),
+		Opinion:    new("系统超时自动处理"),
 	}
-	actionLog.ID = id.Generate()
-	actionLog.CreatedBy = "system"
-
 	if _, err := tx.NewInsert().Model(actionLog).Exec(ctx); err != nil {
 		return nil, fmt.Errorf("insert action log: %w", err)
 	}
@@ -162,7 +154,7 @@ func (s *Scanner) transferToAdmin(ctx context.Context, tx orm.DB, task *approval
 
 	// Finish the original task as transferred
 	task.Status = approval.TaskTransferred
-	task.FinishedAt = null.DateTimeFrom(timex.Now())
+	task.FinishedAt = new(timex.Now())
 
 	if _, err := tx.NewUpdate().Model(task).WherePK().Select("status", "finished_at").Exec(ctx); err != nil {
 		return nil, fmt.Errorf("finish transferred task: %w", err)
@@ -177,16 +169,13 @@ func (s *Scanner) transferToAdmin(ctx context.Context, tx orm.DB, task *approval
 	// Create new tasks for admin users
 	for _, adminID := range node.AdminUserIDs {
 		newTask := &approval.Task{
+			TenantID:   task.TenantID,
 			InstanceID: task.InstanceID,
 			NodeID:     task.NodeID,
 			AssigneeID: adminID,
 			SortOrder:  0,
 			Status:     approval.TaskPending,
 		}
-		newTask.ID = id.Generate()
-		newTask.CreatedBy = "system"
-		newTask.UpdatedBy = "system"
-
 		if _, err := tx.NewInsert().Model(newTask).Exec(ctx); err != nil {
 			return nil, fmt.Errorf("create admin task: %w", err)
 		}
@@ -197,16 +186,13 @@ func (s *Scanner) transferToAdmin(ctx context.Context, tx orm.DB, task *approval
 	// Log the action
 	actionLog := &approval.ActionLog{
 		InstanceID:   task.InstanceID,
-		NodeID:       null.StringFrom(task.NodeID),
-		TaskID:       null.StringFrom(task.ID),
+		NodeID:       new(task.NodeID),
+		TaskID:       new(task.ID),
 		Action:       approval.ActionTransfer,
 		OperatorID:   "system",
-		TransferToID: null.StringFrom(node.AdminUserIDs[0]),
-		Opinion:      null.StringFrom("系统超时转交管理员"),
+		TransferToID: new(node.AdminUserIDs[0]),
+		Opinion:      new("系统超时转交管理员"),
 	}
-	actionLog.ID = id.Generate()
-	actionLog.CreatedBy = "system"
-
 	if _, err := tx.NewInsert().Model(actionLog).Exec(ctx); err != nil {
 		return nil, fmt.Errorf("insert transfer action log: %w", err)
 	}
@@ -246,7 +232,7 @@ func (s *Scanner) ScanPreWarnings(ctx context.Context) {
 	}
 
 	for _, r := range rows {
-		deadline := time.Time(r.Deadline.V)
+		deadline := r.Deadline.Unwrap()
 		warningTime := deadline.Add(-time.Duration(r.TimeoutNotifyBeforeHours) * time.Hour)
 
 		if now.Before(warningTime) {
@@ -271,16 +257,13 @@ func (s *Scanner) sendPreWarning(ctx context.Context, task *approval.Task, hours
 			TaskID:     task.ID,
 			NotifyType: approval.TimeoutNotifyPreWarning,
 		}
-		notify.ID = id.Generate()
-		notify.CreatedBy = "system"
-
 		if _, err := tx.NewInsert().Model(notify).Exec(ctx); err != nil {
 			return fmt.Errorf("insert pre-warning notify: %w", err)
 		}
 
 		event := approval.NewTaskDeadlineWarningEvent(
 			task.ID, task.InstanceID, task.NodeID, task.AssigneeID,
-			time.Time(task.Deadline.V), hoursLeft,
+			task.Deadline.Unwrap(), hoursLeft,
 		)
 
 		return s.publisher.PublishAll(ctx, tx, []approval.DomainEvent{event})

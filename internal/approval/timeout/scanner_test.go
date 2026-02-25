@@ -10,11 +10,9 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/id"
 	"github.com/ilxqx/vef-framework-go/internal/approval/publisher"
 	"github.com/ilxqx/vef-framework-go/internal/database"
 	internalORM "github.com/ilxqx/vef-framework-go/internal/orm"
-	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/timex"
 )
@@ -72,16 +70,13 @@ func insertNode(t *testing.T, ctx context.Context, db orm.DB, versionID string, 
 		TimeoutAction: action,
 		AdminUserIDs:  adminIDs,
 	}
-	node.ID = id.Generate()
-	node.CreatedBy = "system"
-	node.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(node).Exec(ctx)
 	require.NoError(t, err, "Should insert node")
 	return node
 }
 
 // insertTask inserts a Task for testing.
-func insertTask(t *testing.T, ctx context.Context, db orm.DB, instanceID, nodeID, assigneeID string, deadline null.DateTime) *approval.Task {
+func insertTask(t *testing.T, ctx context.Context, db orm.DB, instanceID, nodeID, assigneeID string, deadline *timex.DateTime) *approval.Task {
 	t.Helper()
 
 	task := &approval.Task{
@@ -91,9 +86,6 @@ func insertTask(t *testing.T, ctx context.Context, db orm.DB, instanceID, nodeID
 		Status:     approval.TaskPending,
 		Deadline:   deadline,
 	}
-	task.ID = id.Generate()
-	task.CreatedBy = "system"
-	task.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(task).Exec(ctx)
 	require.NoError(t, err, "Should insert task")
 	return task
@@ -124,7 +116,7 @@ func TestScanTimeouts_MarkTimeout(t *testing.T) {
 	node := insertNode(t, ctx, db, "v1", approval.TimeoutActionNone, nil)
 
 	// Create a task with deadline in the past
-	pastDeadline := null.DateTimeFrom(timex.DateTime(time.Now().Add(-1 * time.Hour)))
+	pastDeadline := new(timex.DateTime(time.Now().Add(-1 * time.Hour)))
 	task := insertTask(t, ctx, db, "inst1", node.ID, "user1", pastDeadline)
 
 	scanner.ScanTimeouts(ctx)
@@ -157,7 +149,7 @@ func TestScanTimeouts_AutoPass(t *testing.T) {
 	scanner := NewScanner(db, pub)
 
 	node := insertNode(t, ctx, db, "v1", approval.TimeoutActionAutoPass, nil)
-	pastDeadline := null.DateTimeFrom(timex.DateTime(time.Now().Add(-1 * time.Hour)))
+	pastDeadline := new(timex.DateTime(time.Now().Add(-1 * time.Hour)))
 	task := insertTask(t, ctx, db, "inst1", node.ID, "user1", pastDeadline)
 
 	scanner.ScanTimeouts(ctx)
@@ -169,7 +161,7 @@ func TestScanTimeouts_AutoPass(t *testing.T) {
 	}).Scan(ctx)
 	require.NoError(t, err, "Should query updated task")
 	assert.Equal(t, approval.TaskApproved, updated.Status, "Task should be auto-approved")
-	assert.True(t, updated.FinishedAt.Valid, "FinishedAt should be set")
+	assert.True(t, updated.FinishedAt != nil, "FinishedAt should be set")
 
 	// Verify action log
 	var logs []approval.ActionLog
@@ -192,7 +184,7 @@ func TestScanTimeouts_AutoReject(t *testing.T) {
 	scanner := NewScanner(db, pub)
 
 	node := insertNode(t, ctx, db, "v1", approval.TimeoutActionAutoReject, nil)
-	pastDeadline := null.DateTimeFrom(timex.DateTime(time.Now().Add(-1 * time.Hour)))
+	pastDeadline := new(timex.DateTime(time.Now().Add(-1 * time.Hour)))
 	task := insertTask(t, ctx, db, "inst1", node.ID, "user1", pastDeadline)
 
 	scanner.ScanTimeouts(ctx)
@@ -216,7 +208,7 @@ func TestScanTimeouts_TransferAdmin(t *testing.T) {
 
 	adminIDs := []string{"admin1", "admin2"}
 	node := insertNode(t, ctx, db, "v1", approval.TimeoutActionTransferAdmin, adminIDs)
-	pastDeadline := null.DateTimeFrom(timex.DateTime(time.Now().Add(-1 * time.Hour)))
+	pastDeadline := new(timex.DateTime(time.Now().Add(-1 * time.Hour)))
 	task := insertTask(t, ctx, db, "inst1", node.ID, "user1", pastDeadline)
 
 	scanner.ScanTimeouts(ctx)
@@ -256,7 +248,7 @@ func TestScanTimeouts_SkipsAlreadyTimedOut(t *testing.T) {
 	scanner := NewScanner(db, pub)
 
 	node := insertNode(t, ctx, db, "v1", approval.TimeoutActionAutoPass, nil)
-	pastDeadline := null.DateTimeFrom(timex.DateTime(time.Now().Add(-1 * time.Hour)))
+	pastDeadline := new(timex.DateTime(time.Now().Add(-1 * time.Hour)))
 
 	// Create a task already marked as timed out
 	task := &approval.Task{
@@ -267,9 +259,6 @@ func TestScanTimeouts_SkipsAlreadyTimedOut(t *testing.T) {
 		Deadline:   pastDeadline,
 		IsTimeout:  true,
 	}
-	task.ID = id.Generate()
-	task.CreatedBy = "system"
-	task.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(task).Exec(ctx)
 	require.NoError(t, err, "Should insert task")
 
@@ -292,7 +281,7 @@ func TestScanTimeouts_SkipsFutureDeadline(t *testing.T) {
 	scanner := NewScanner(db, pub)
 
 	node := insertNode(t, ctx, db, "v1", approval.TimeoutActionAutoPass, nil)
-	futureDeadline := null.DateTimeFrom(timex.DateTime(time.Now().Add(1 * time.Hour)))
+	futureDeadline := new(timex.DateTime(time.Now().Add(1 * time.Hour)))
 	insertTask(t, ctx, db, "inst1", node.ID, "user1", futureDeadline)
 
 	scanner.ScanTimeouts(ctx)
@@ -318,11 +307,8 @@ func TestSendPreWarning(t *testing.T) {
 		NodeID:     "node1",
 		AssigneeID: "user1",
 		Status:     approval.TaskPending,
-		Deadline:   null.DateTimeFrom(timex.DateTime(time.Now().Add(2 * time.Hour))),
+		Deadline:   new(timex.DateTime(time.Now().Add(2 * time.Hour))),
 	}
-	task.ID = id.Generate()
-	task.CreatedBy = "system"
-	task.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(task).Exec(ctx)
 	require.NoError(t, err, "Should insert task")
 
@@ -361,9 +347,6 @@ func TestScanPreWarnings(t *testing.T) {
 		Version: 1,
 		Status:  approval.VersionPublished,
 	}
-	version.ID = id.Generate()
-	version.CreatedBy = "system"
-	version.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(version).Exec(ctx)
 	require.NoError(t, err, "Should insert version")
 
@@ -375,15 +358,12 @@ func TestScanPreWarnings(t *testing.T) {
 		Name:                    "Approval",
 		TimeoutNotifyBeforeHours: 4,
 	}
-	node.ID = id.Generate()
-	node.CreatedBy = "system"
-	node.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(node).Exec(ctx)
 	require.NoError(t, err, "Should insert node")
 
 	// Create a task with deadline in 2 hours (within the 4-hour warning window)
 	deadline := time.Now().Add(2 * time.Hour)
-	task := insertTask(t, ctx, db, "inst1", node.ID, "user1", null.DateTimeFrom(timex.DateTime(deadline)))
+	task := insertTask(t, ctx, db, "inst1", node.ID, "user1", new(timex.DateTime(deadline)))
 
 	scanner.ScanPreWarnings(ctx)
 
@@ -411,9 +391,6 @@ func TestScanPreWarnings_OutsideWindow(t *testing.T) {
 		Version: 1,
 		Status:  approval.VersionPublished,
 	}
-	version.ID = id.Generate()
-	version.CreatedBy = "system"
-	version.UpdatedBy = "system"
 	_, err := db.NewInsert().Model(version).Exec(ctx)
 	require.NoError(t, err, "Should insert version")
 
@@ -424,15 +401,12 @@ func TestScanPreWarnings_OutsideWindow(t *testing.T) {
 		Name:                    "Approval",
 		TimeoutNotifyBeforeHours: 2,
 	}
-	node.ID = id.Generate()
-	node.CreatedBy = "system"
-	node.UpdatedBy = "system"
 	_, err = db.NewInsert().Model(node).Exec(ctx)
 	require.NoError(t, err, "Should insert node")
 
 	// Create a task with deadline in 24 hours (outside the 2-hour warning window)
 	deadline := time.Now().Add(24 * time.Hour)
-	insertTask(t, ctx, db, "inst1", node.ID, "user1", null.DateTimeFrom(timex.DateTime(deadline)))
+	insertTask(t, ctx, db, "inst1", node.ID, "user1", new(timex.DateTime(deadline)))
 
 	scanner.ScanPreWarnings(ctx)
 
