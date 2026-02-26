@@ -62,7 +62,7 @@ type DomainEvent interface {
 }
 
 // EventDispatcher dispatches outbox events to external systems.
-// Default implementation forwards to event.Bus
+// Default implementation forwards to event.Bus.
 type EventDispatcher interface {
 	Dispatch(ctx context.Context, record EventOutbox) error
 }

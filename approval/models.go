@@ -159,11 +159,11 @@ type FlowNodeCC struct {
 	orm.BaseModel `bun:"table:apv_flow_node_cc,alias:afnc"`
 	orm.IDModel
 
-	NodeID   string   `json:"nodeId" bun:"node_id"`
-	Kind     CCKind   `json:"kind" bun:"kind"`
-	IDs      []string `json:"ids" bun:"ids,type:jsonb,nullzero"`
-	FormField *string `json:"formField" bun:"form_field,nullzero"`
-	Timing   CCTiming `json:"timing" bun:"timing"`
+	NodeID    string   `json:"nodeId" bun:"node_id"`
+	Kind      CCKind   `json:"kind" bun:"kind"`
+	IDs       []string `json:"ids" bun:"ids,type:jsonb,nullzero"`
+	FormField *string  `json:"formField" bun:"form_field,nullzero"`
+	Timing    CCTiming `json:"timing" bun:"timing"`
 }
 
 // FlowFormField represents a flow form field definition.
@@ -222,17 +222,17 @@ type Task struct {
 	orm.BaseModel `bun:"table:apv_task,alias:at"`
 	orm.Model
 
-	TenantID        string          `json:"tenantId" bun:"tenant_id"`
-	InstanceID      string          `json:"instanceId" bun:"instance_id"`
-	NodeID          string          `json:"nodeId" bun:"node_id"`
-	AssigneeID      string          `json:"assigneeId" bun:"assignee_id"`
-	DelegateFromID  *string         `json:"delegateFromId" bun:"delegate_from_id,nullzero"`
-	SortOrder       int             `json:"sortOrder" bun:"sort_order"`
-	Status          TaskStatus      `json:"status" bun:"status"`
-	ReadAt          *timex.DateTime `json:"readAt" bun:"read_at,nullzero"`
-	ParentTaskID    *string         `json:"parentTaskId" bun:"parent_task_id,nullzero"`
-	AddAssigneeType *string         `json:"addAssigneeType" bun:"add_assignee_type,nullzero"`
-	Deadline        *timex.DateTime `json:"deadline" bun:"deadline,nullzero"`
+	TenantID         string          `json:"tenantId" bun:"tenant_id"`
+	InstanceID       string          `json:"instanceId" bun:"instance_id"`
+	NodeID           string          `json:"nodeId" bun:"node_id"`
+	AssigneeID       string          `json:"assigneeId" bun:"assignee_id"`
+	DelegateFromID   *string         `json:"delegateFromId" bun:"delegate_from_id,nullzero"`
+	SortOrder        int             `json:"sortOrder" bun:"sort_order"`
+	Status           TaskStatus      `json:"status" bun:"status"`
+	ReadAt           *timex.DateTime `json:"readAt" bun:"read_at,nullzero"`
+	ParentTaskID     *string         `json:"parentTaskId" bun:"parent_task_id,nullzero"`
+	AddAssigneeType  *string         `json:"addAssigneeType" bun:"add_assignee_type,nullzero"`
+	Deadline         *timex.DateTime `json:"deadline" bun:"deadline,nullzero"`
 	IsTimeout        bool            `json:"isTimeout" bun:"is_timeout"`
 	IsPreWarningSent bool            `json:"isPreWarningSent" bun:"is_pre_warning_sent"`
 	FinishedAt       *timex.DateTime `json:"finishedAt" bun:"finished_at,nullzero"`
@@ -283,11 +283,11 @@ type CCRecord struct {
 	orm.IDModel
 	orm.CreatedModel
 
-	InstanceID string     `json:"instanceId" bun:"instance_id"`
-	NodeID     *string    `json:"nodeId" bun:"node_id,nullzero"`
-	TaskID     *string    `json:"taskId" bun:"task_id,nullzero"`
-	CCUserID   string     `json:"ccUserId" bun:"cc_user_id"`
-	IsManual   bool       `json:"isManual" bun:"is_manual"`
+	InstanceID string          `json:"instanceId" bun:"instance_id"`
+	NodeID     *string         `json:"nodeId" bun:"node_id,nullzero"`
+	TaskID     *string         `json:"taskId" bun:"task_id,nullzero"`
+	CCUserID   string          `json:"ccUserId" bun:"cc_user_id"`
+	IsManual   bool            `json:"isManual" bun:"is_manual"`
 	ReadAt     *timex.DateTime `json:"readAt" bun:"read_at,nullzero"`
 }
 
@@ -332,8 +332,8 @@ type EventOutbox struct {
 	Status      EventOutboxStatus `json:"status" bun:"status"`
 	RetryCount  int               `json:"retryCount" bun:"retry_count"`
 	LastError   *string           `json:"lastError" bun:"last_error,nullzero"`
-	ProcessedAt *timex.DateTime    `json:"processedAt" bun:"processed_at,nullzero"`
-	RetryAfter  *timex.DateTime    `json:"retryAfter" bun:"retry_after,nullzero"`
+	ProcessedAt *timex.DateTime   `json:"processedAt" bun:"processed_at,nullzero"`
+	RetryAfter  *timex.DateTime   `json:"retryAfter" bun:"retry_after,nullzero"`
 }
 
 // UrgeRecord represents an urge/reminder record.
@@ -349,4 +349,3 @@ type UrgeRecord struct {
 	TargetUserID string  `json:"targetUserId" bun:"target_user_id"`
 	Message      string  `json:"message" bun:"message"`
 }
-
