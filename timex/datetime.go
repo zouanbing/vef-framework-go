@@ -197,6 +197,21 @@ func (dt DateTime) UnixNano() int64 {
 	return dt.Unwrap().UnixNano()
 }
 
+// Sub returns the duration dt-other.
+func (dt DateTime) Sub(other DateTime) time.Duration {
+	return dt.Unwrap().Sub(other.Unwrap())
+}
+
+// Since returns the time elapsed since dt (equivalent to time.Since).
+func (dt DateTime) Since() time.Duration {
+	return time.Since(dt.Unwrap())
+}
+
+// Until returns the duration until dt (equivalent to time.Until).
+func (dt DateTime) Until() time.Duration {
+	return time.Until(dt.Unwrap())
+}
+
 // IsZero reports whether dt represents the zero time instant, January 1, year 1, 00:00:00 UTC.
 func (dt DateTime) IsZero() bool {
 	return dt.Unwrap().IsZero()

@@ -141,6 +141,11 @@ func (t Time) AddMilliseconds(milliseconds int64) Time {
 	return TimeOf(t.Unwrap().Add(time.Duration(milliseconds) * time.Millisecond))
 }
 
+// Sub returns the duration t-other.
+func (t Time) Sub(other Time) time.Duration {
+	return t.Unwrap().Sub(other.Unwrap())
+}
+
 // IsZero reports whether t represents the zero time instant.
 func (t Time) IsZero() bool {
 	return t.Unwrap().IsZero()

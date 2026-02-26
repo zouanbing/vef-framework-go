@@ -10,7 +10,7 @@ import (
 
 // TestTimeOf tests time of functionality.
 func TestTimeOf(t *testing.T) {
-	now := testTime(2023, 12, 25, 14, 30, 45)
+	now := MakeTime(2023, 12, 25, 14, 30, 45)
 	timeOnly := TimeOf(now)
 
 	unwrapped := timeOnly.Unwrap()
@@ -199,6 +199,15 @@ func TestTimeAddMilliseconds(t *testing.T) {
 	assert.True(t, expected.Equal(result.Unwrap()), "AddMilliseconds should add milliseconds correctly")
 }
 
+// TestTimeSub tests time sub functionality.
+func TestTimeSub(t *testing.T) {
+	t1 := Time(time.Date(1970, 1, 1, 14, 30, 45, 0, time.Local))
+	t2 := Time(time.Date(1970, 1, 1, 12, 30, 45, 0, time.Local))
+
+	assert.Equal(t, 2*time.Hour, t1.Sub(t2), "Sub should return correct duration")
+	assert.Equal(t, -2*time.Hour, t2.Sub(t1), "Sub should return negative for earlier minus later")
+}
+
 // TestTimeComponents tests time components functionality.
 func TestTimeComponents(t *testing.T) {
 	timeOnly := Time(time.Date(1970, 1, 1, 14, 30, 45, 123456789, time.Local))
@@ -311,7 +320,7 @@ func TestTimeScan(t *testing.T) {
 	}{
 		{"String", "14:30:45", false},
 		{"ByteSlice", []byte("14:30:45"), false},
-		{"TimeTime", testTime(2023, 12, 25, 14, 30, 45), false},
+		{"TimeTime", MakeTime(2023, 12, 25, 14, 30, 45), false},
 		{"NilPointer", (*string)(nil), false},
 		{"InvalidString", "invalid", true},
 	}

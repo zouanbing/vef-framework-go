@@ -132,6 +132,21 @@ func (d Date) Location() *time.Location {
 	return d.Unwrap().Location()
 }
 
+// Sub returns the duration d-other.
+func (d Date) Sub(other Date) time.Duration {
+	return d.Unwrap().Sub(other.Unwrap())
+}
+
+// Since returns the time elapsed since d (equivalent to time.Since).
+func (d Date) Since() time.Duration {
+	return time.Since(d.Unwrap())
+}
+
+// Until returns the duration until d (equivalent to time.Until).
+func (d Date) Until() time.Duration {
+	return time.Until(d.Unwrap())
+}
+
 // IsZero reports whether d represents the zero time instant, January 1, year 1.
 func (d Date) IsZero() bool {
 	return d.Unwrap().IsZero()
