@@ -141,8 +141,7 @@ func embedsSentinelType(targetType, sentinelType reflect.Type) bool {
 			return true
 		}
 
-		for i := range current.NumField() {
-			field := current.Field(i)
+		for field := range current.Fields() {
 			if field.Anonymous {
 				types.PushBack(field.Type)
 			}
