@@ -136,6 +136,183 @@ func TestIsNotEmpty(t *testing.T) {
 	}
 }
 
+// TestIsNumeric tests IsNumeric for all numeric and non-numeric types.
+func TestIsNumeric(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    any
+		expected bool
+	}{
+		// nil and invalid
+		{"Nil", nil, false},
+		{"InvalidReflectValue", reflect.Value{}, false},
+
+		// signed integers
+		{"Int", 1, true},
+		{"Int8", int8(1), true},
+		{"Int16", int16(1), true},
+		{"Int32", int32(1), true},
+		{"Int64", int64(1), true},
+		{"ZeroInt", 0, true},
+
+		// unsigned integers
+		{"Uint", uint(1), true},
+		{"Uint8", uint8(1), true},
+		{"Uint16", uint16(1), true},
+		{"Uint32", uint32(1), true},
+		{"Uint64", uint64(1), true},
+		{"Uintptr", uintptr(1), true},
+
+		// floats
+		{"Float32", float32(1.5), true},
+		{"Float64", float64(1.5), true},
+		{"ZeroFloat", float64(0), true},
+
+		// non-numeric types
+		{"String", "hello", false},
+		{"Bool", true, false},
+		{"Slice", []int{1}, false},
+		{"Map", map[string]int{"a": 1}, false},
+		{"Struct", struct{}{}, false},
+		{"Pointer", new(int), false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, IsNumeric(tt.input), "IsNumeric result should match expected")
+		})
+	}
+}
+
+// TestIsInteger tests IsInteger for all integer and non-integer types.
+func TestIsInteger(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    any
+		expected bool
+	}{
+		{"Nil", nil, false},
+
+		// signed integers
+		{"Int", 42, true},
+		{"Int8", int8(42), true},
+		{"Int64", int64(42), true},
+
+		// unsigned integers
+		{"Uint", uint(42), true},
+		{"Uint8", uint8(42), true},
+		{"Uint64", uint64(42), true},
+		{"Uintptr", uintptr(42), true},
+
+		// non-integer types
+		{"Float32", float32(1.5), false},
+		{"Float64", float64(1.5), false},
+		{"String", "42", false},
+		{"Bool", true, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, IsInteger(tt.input), "IsInteger result should match expected")
+		})
+	}
+}
+
+// TestIsSignedInt tests IsSignedInt for signed integer and other types.
+func TestIsSignedInt(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    any
+		expected bool
+	}{
+		{"Nil", nil, false},
+
+		// signed integers
+		{"Int", 1, true},
+		{"Int8", int8(1), true},
+		{"Int16", int16(1), true},
+		{"Int32", int32(1), true},
+		{"Int64", int64(1), true},
+		{"NegativeInt", -1, true},
+
+		// unsigned integers
+		{"Uint", uint(1), false},
+		{"Uint64", uint64(1), false},
+
+		// other types
+		{"Float64", float64(1), false},
+		{"String", "1", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, IsSignedInt(tt.input), "IsSignedInt result should match expected")
+		})
+	}
+}
+
+// TestIsUnsignedInt tests IsUnsignedInt for unsigned integer and other types.
+func TestIsUnsignedInt(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    any
+		expected bool
+	}{
+		{"Nil", nil, false},
+
+		// unsigned integers
+		{"Uint", uint(1), true},
+		{"Uint8", uint8(1), true},
+		{"Uint16", uint16(1), true},
+		{"Uint32", uint32(1), true},
+		{"Uint64", uint64(1), true},
+		{"Uintptr", uintptr(1), true},
+
+		// signed integers
+		{"Int", 1, false},
+		{"Int64", int64(1), false},
+
+		// other types
+		{"Float64", float64(1), false},
+		{"String", "1", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, IsUnsignedInt(tt.input), "IsUnsignedInt result should match expected")
+		})
+	}
+}
+
+// TestIsFloat tests IsFloat for floating-point and other types.
+func TestIsFloat(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    any
+		expected bool
+	}{
+		{"Nil", nil, false},
+
+		// floats
+		{"Float32", float32(1.5), true},
+		{"Float64", float64(1.5), true},
+		{"ZeroFloat32", float32(0), true},
+		{"ZeroFloat64", float64(0), true},
+
+		// non-float types
+		{"Int", 1, false},
+		{"Uint", uint(1), false},
+		{"String", "1.5", false},
+		{"Bool", true, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, IsFloat(tt.input), "IsFloat result should match expected")
+		})
+	}
+}
+
 // TestEqual tests Equal for all supported comparison scenarios.
 func TestEqual(t *testing.T) {
 	type comparableStruct struct{ X int }

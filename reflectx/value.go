@@ -27,6 +27,31 @@ func IsNotEmpty(value any) bool {
 	return !IsEmpty(value)
 }
 
+// IsNumeric checks if a value is a numeric type (signed integer, unsigned integer, or float).
+func IsNumeric(value any) bool {
+	return kindMatches(value, isSignedInt, isUnsignedInt, isFloat)
+}
+
+// IsInteger checks if a value is any integer type (signed or unsigned).
+func IsInteger(value any) bool {
+	return kindMatches(value, isSignedInt, isUnsignedInt)
+}
+
+// IsSignedInt checks if a value is a signed integer type (int, int8, int16, int32, int64).
+func IsSignedInt(value any) bool {
+	return kindMatches(value, isSignedInt)
+}
+
+// IsUnsignedInt checks if a value is an unsigned integer type (uint, uint8, uint16, uint32, uint64, uintptr).
+func IsUnsignedInt(value any) bool {
+	return kindMatches(value, isUnsignedInt)
+}
+
+// IsFloat checks if a value is a floating-point type (float32, float64).
+func IsFloat(value any) bool {
+	return kindMatches(value, isFloat)
+}
+
 // Equal performs a shallow comparison of two values.
 // Numeric types of different kinds are compared within three categories:
 // signed integers (int64), unsigned integers (uint64), and floats (float64).
@@ -207,6 +232,28 @@ func isUnsignedInt(k reflect.Kind) bool {
 
 func isFloat(k reflect.Kind) bool {
 	return k == reflect.Float32 || k == reflect.Float64
+}
+
+// kindMatches returns true if the value's kind satisfies any of the given predicates.
+// Returns false for nil or invalid values.
+func kindMatches(value any, predicates ...func(reflect.Kind) bool) bool {
+	if value == nil {
+		return false
+	}
+
+	rv := toValue(value)
+	if !rv.IsValid() {
+		return false
+	}
+
+	k := rv.Kind()
+	for _, p := range predicates {
+		if p(k) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func canNil(k reflect.Kind) bool {
