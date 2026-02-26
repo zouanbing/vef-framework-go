@@ -7,7 +7,7 @@ import (
 
 	"github.com/samber/lo"
 
-	collections "github.com/ilxqx/go-collections"
+	"github.com/ilxqx/go-collections"
 )
 
 // Dispatcher is the type-erased interface used for map lookup.
