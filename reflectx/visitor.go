@@ -307,9 +307,7 @@ func visitTypeDepthFirst(targetType reflect.Type, config VisitorConfig, visitor 
 		}
 	}
 
-	for i := range targetType.NumField() {
-		field := targetType.Field(i)
-
+	for field := range targetType.Fields() {
 		if !field.IsExported() {
 			continue
 		}
@@ -374,9 +372,7 @@ func visitTypeBreadthFirst(targetType reflect.Type, config VisitorConfig, visito
 			}
 		}
 
-		for i := range current.NumField() {
-			field := current.Field(i)
-
+		for field := range current.Fields() {
 			if !field.IsExported() {
 				continue
 			}
@@ -433,8 +429,8 @@ func visitMethodTypes(targetType reflect.Type, visitor MethodTypeVisitor, depth 
 	}
 
 	ptrType := reflect.PointerTo(targetType)
-	for i := range ptrType.NumMethod() {
-		if visitor(ptrType.Method(i), ptrType, depth) == Stop {
+	for method := range ptrType.Methods() {
+		if visitor(method, ptrType, depth) == Stop {
 			return Stop
 		}
 	}

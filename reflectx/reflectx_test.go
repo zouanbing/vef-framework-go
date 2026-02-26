@@ -350,7 +350,7 @@ func TestFindMethod(t *testing.T) {
 	})
 
 	t.Run("PointerReceiverOnAddressableValue", func(t *testing.T) {
-		rv := reflect.New(reflect.TypeOf(BaseStruct{})).Elem()
+		rv := reflect.New(reflect.TypeFor[BaseStruct]()).Elem()
 		rv.FieldByName("Value").SetString("test")
 
 		method := FindMethod(rv, "BasePointerMethod")

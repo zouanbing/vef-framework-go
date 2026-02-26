@@ -1584,7 +1584,7 @@ func TestVisitTypeUnexportedFields(t *testing.T) {
 				},
 			}
 
-			VisitType(reflect.TypeOf(LocalStructWithPrivate{}), visitor, WithTraversalMode(m.mode))
+			VisitType(reflect.TypeFor[LocalStructWithPrivate](), visitor, WithTraversalMode(m.mode))
 
 			assert.Equal(t, []string{"Public"}, visitedFields, "Should only visit exported fields")
 		})
