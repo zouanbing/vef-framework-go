@@ -77,6 +77,7 @@ func TestNewFromAny(t *testing.T) {
 			got, err := NewFromAny(tt.input)
 			if tt.wantErr {
 				assert.Error(t, err, "Should return error")
+
 				return
 			}
 
@@ -92,6 +93,7 @@ func TestMustFromAny(t *testing.T) {
 
 	t.Run("ValidValue", func(t *testing.T) {
 		t.Parallel()
+
 		got := MustFromAny(42)
 		assert.True(t, NewFromInt(42).Equal(got), "Should convert int to Decimal")
 	})

@@ -14,16 +14,19 @@ import (
 
 type embeddedParams struct {
 	api.P
+
 	Name string
 }
 
 type embeddedMeta struct {
 	api.M
+
 	Page int
 }
 
 type deepEmbeddedParams struct {
 	embeddedParams
+
 	Extra string
 }
 
@@ -184,6 +187,7 @@ func TestSearchEmbeddedFields(t *testing.T) {
 
 	type WithEmbed struct {
 		Base
+
 		Name string
 	}
 

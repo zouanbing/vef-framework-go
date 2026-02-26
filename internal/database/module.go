@@ -33,6 +33,7 @@ var (
 								if err := db.PingContext(ctx); err != nil {
 									return wrapPingError(provider.Kind(), err)
 								}
+
 								if err := logDBVersion(provider, db, logger); err != nil {
 									return err
 								}

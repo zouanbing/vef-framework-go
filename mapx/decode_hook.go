@@ -4,9 +4,9 @@ import (
 	"mime/multipart"
 	"reflect"
 
-	"github.com/ilxqx/vef-framework-go/timex"
 	"github.com/ilxqx/vef-framework-go/decimal"
 	"github.com/ilxqx/vef-framework-go/null"
+	"github.com/ilxqx/vef-framework-go/timex"
 )
 
 // nullTypeMapping holds the type relationships for null type conversions.

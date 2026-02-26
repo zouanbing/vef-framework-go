@@ -19,9 +19,11 @@ var Module = fx.Module(
 		if cfg.RefreshNotBefore <= 0 {
 			cfg.RefreshNotBefore = AccessTokenExpires / 2
 		}
+
 		if cfg.LoginRateLimit <= 0 {
 			cfg.LoginRateLimit = 6
 		}
+
 		if cfg.RefreshRateLimit <= 0 {
 			cfg.RefreshRateLimit = 1
 		}

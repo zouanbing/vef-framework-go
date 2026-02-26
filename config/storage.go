@@ -12,9 +12,9 @@ const (
 
 // StorageConfig defines storage provider settings.
 type StorageConfig struct {
-	Provider   StorageProvider `config:"provider"`
-	MinIO      MinIOConfig               `config:"minio"`
-	Filesystem FilesystemConfig          `config:"filesystem"`
+	Provider   StorageProvider  `config:"provider"`
+	MinIO      MinIOConfig      `config:"minio"`
+	Filesystem FilesystemConfig `config:"filesystem"`
 }
 
 // MinIOConfig defines MinIO storage settings.

@@ -103,5 +103,6 @@ func buildOptionsWithDB(existingDB *bun.DB, options ...fx.Option) []fx.Option {
 
 func buildOptionsWith(dbOption fx.Option, extra ...fx.Option) []fx.Option {
 	opts := append(coreOptions(), dbOption)
+
 	return append(opts, extra...)
 }

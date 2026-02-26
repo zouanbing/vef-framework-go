@@ -28,6 +28,7 @@ var Module = fx.Module(
 		if cfg.SampleInterval > 0 {
 			cfgToUse.SampleInterval = cfg.SampleInterval
 		}
+
 		if cfg.SampleDuration > 0 {
 			cfgToUse.SampleDuration = cfg.SampleDuration
 		}
@@ -44,6 +45,7 @@ var Module = fx.Module(
 						GitCommit:  "-",
 					}
 				}
+
 				buildInfo.VEFVersion = version.VEFVersion
 
 				return buildInfo

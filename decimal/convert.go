@@ -15,6 +15,7 @@ func NewFromAny(v any) (Decimal, error) {
 		if val == nil {
 			return Zero, nil
 		}
+
 		return *val, nil
 
 	case int:
@@ -53,12 +54,14 @@ func NewFromAny(v any) (Decimal, error) {
 		if val {
 			return One, nil
 		}
+
 		return Zero, nil
 
 	default:
 		if s, ok := v.(fmt.Stringer); ok {
 			return NewFromString(s.String())
 		}
+
 		return Zero, fmt.Errorf("decimal: unsupported type %T", v)
 	}
 }
@@ -69,5 +72,6 @@ func MustFromAny(v any) Decimal {
 	if err != nil {
 		panic(err)
 	}
+
 	return d
 }
