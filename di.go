@@ -125,7 +125,6 @@ func SupplySPAConfigs(config *middleware.SPAConfig, configs ...*middleware.SPACo
 }
 
 // ProvideCQRSBehavior provides a CQRS behavior middleware to the dependency injection container.
-// The behavior will be registered in the "vef:cqrs:behaviors" group.
 func ProvideCQRSBehavior(constructor any, paramTags ...string) fx.Option {
 	return fx.Provide(
 		fx.Annotate(
