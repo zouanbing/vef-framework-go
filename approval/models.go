@@ -1,8 +1,6 @@
 package approval
 
 import (
-	"time"
-
 	"github.com/ilxqx/vef-framework-go/decimal"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/timex"
@@ -119,7 +117,7 @@ type FlowNode struct {
 	IsAddAssigneeAllowed     bool                   `json:"isAddAssigneeAllowed" bun:"is_add_assignee_allowed"`
 	AddAssigneeTypes         []string               `json:"addAssigneeTypes" bun:"add_assignee_types,type:jsonb,nullzero"`
 	IsRemoveAssigneeAllowed  bool                   `json:"isRemoveAssigneeAllowed" bun:"is_remove_assignee_allowed"`
-	FieldPermissions         map[string]any         `json:"fieldPermissions" bun:"field_permissions,type:jsonb,nullzero"`
+	FieldPermissions         map[string]Permission  `json:"fieldPermissions" bun:"field_permissions,type:jsonb,nullzero"`
 	IsManualCCAllowed        bool                   `json:"isManualCcAllowed" bun:"is_manual_cc_allowed"`
 	IsTransferAllowed        bool                   `json:"isTransferAllowed" bun:"is_transfer_allowed"`
 	IsOpinionRequired        bool                   `json:"isOpinionRequired" bun:"is_opinion_required"`
@@ -191,9 +189,9 @@ type FlowInitiator struct {
 	orm.BaseModel `bun:"table:apv_flow_initiator,alias:afi"`
 	orm.IDModel
 
-	FlowID        string        `json:"flowId" bun:"flow_id"`
-	InitiatorKind InitiatorKind `json:"initiatorKind" bun:"initiator_kind"`
-	InitiatorIDs  []string      `json:"initiatorIds" bun:"initiator_ids,type:jsonb,nullzero"`
+	FlowID string        `json:"flowId" bun:"flow_id"`
+	Kind   InitiatorKind `json:"kind" bun:"kind"`
+	IDs    []string      `json:"ids" bun:"ids,type:jsonb,nullzero"`
 }
 
 // ── Instance & Task ─────────────────────────────────────────────────────────
@@ -235,8 +233,9 @@ type Task struct {
 	ParentTaskID    *string         `json:"parentTaskId" bun:"parent_task_id,nullzero"`
 	AddAssigneeType *string         `json:"addAssigneeType" bun:"add_assignee_type,nullzero"`
 	Deadline        *timex.DateTime `json:"deadline" bun:"deadline,nullzero"`
-	IsTimeout       bool            `json:"isTimeout" bun:"is_timeout"`
-	FinishedAt      *timex.DateTime `json:"finishedAt" bun:"finished_at,nullzero"`
+	IsTimeout        bool            `json:"isTimeout" bun:"is_timeout"`
+	IsPreWarningSent bool            `json:"isPreWarningSent" bun:"is_pre_warning_sent"`
+	FinishedAt       *timex.DateTime `json:"finishedAt" bun:"finished_at,nullzero"`
 }
 
 // FormSnapshot represents a form snapshot for rollback strategies.
@@ -289,7 +288,7 @@ type CCRecord struct {
 	TaskID     *string    `json:"taskId" bun:"task_id,nullzero"`
 	CCUserID   string     `json:"ccUserId" bun:"cc_user_id"`
 	IsManual   bool       `json:"isManual" bun:"is_manual"`
-	ReadAt     *time.Time `json:"readAt" bun:"read_at,nullzero"`
+	ReadAt     *timex.DateTime `json:"readAt" bun:"read_at,nullzero"`
 }
 
 // ParallelRecord represents a parallel approval record.
@@ -333,7 +332,8 @@ type EventOutbox struct {
 	Status      EventOutboxStatus `json:"status" bun:"status"`
 	RetryCount  int               `json:"retryCount" bun:"retry_count"`
 	LastError   *string           `json:"lastError" bun:"last_error,nullzero"`
-	ProcessedAt *time.Time        `json:"processedAt" bun:"processed_at,nullzero"`
+	ProcessedAt *timex.DateTime    `json:"processedAt" bun:"processed_at,nullzero"`
+	RetryAfter  *timex.DateTime    `json:"retryAfter" bun:"retry_after,nullzero"`
 }
 
 // UrgeRecord represents an urge/reminder record.
@@ -350,12 +350,3 @@ type UrgeRecord struct {
 	Message      string  `json:"message" bun:"message"`
 }
 
-// TimeoutNotify records sent timeout notifications to prevent duplicates.
-type TimeoutNotify struct {
-	orm.BaseModel `bun:"table:apv_timeout_notify,alias:atn"`
-	orm.IDModel
-	orm.CreatedModel
-
-	TaskID     string            `json:"taskId" bun:"task_id"`
-	NotifyType TimeoutNotifyType `json:"notifyType" bun:"notify_type"`
-}

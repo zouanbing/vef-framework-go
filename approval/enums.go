@@ -284,14 +284,6 @@ const (
 	TimeoutActionTransferAdmin TimeoutAction = "transfer_admin" // Transfer to node admin
 )
 
-// TimeoutNotifyType represents the type of timeout notification.
-type TimeoutNotifyType string
-
-const (
-	TimeoutNotifyPreWarning TimeoutNotifyType = "pre_warning" // Pre-deadline warning
-	TimeoutNotifyTimeout    TimeoutNotifyType = "timeout"     // Actual timeout
-)
-
 // Permission represents the permission level.
 type Permission string
 

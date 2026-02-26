@@ -1,16 +1,16 @@
 package approval
 
-import "time"
+import "github.com/ilxqx/vef-framework-go/timex"
 
 // ==================== Instance Events ====================
 
 // InstanceCreatedEvent fired when a new instance is created.
 type InstanceCreatedEvent struct {
-	InstanceID   string    `json:"instanceId"`
-	FlowID       string    `json:"flowId"`
-	Title        string    `json:"title"`
-	ApplicantID  string    `json:"applicantId"`
-	OccurredTime time.Time `json:"occurredTime"`
+	InstanceID   string         `json:"instanceId"`
+	FlowID       string         `json:"flowId"`
+	Title        string         `json:"title"`
+	ApplicantID  string         `json:"applicantId"`
+	OccurredTime timex.DateTime `json:"occurredTime"`
 }
 
 func NewInstanceCreatedEvent(instanceID, flowID, title, applicantID string) *InstanceCreatedEvent {
@@ -19,23 +19,23 @@ func NewInstanceCreatedEvent(instanceID, flowID, title, applicantID string) *Ins
 		FlowID:       flowID,
 		Title:        title,
 		ApplicantID:  applicantID,
-		OccurredTime: time.Now(),
+		OccurredTime: timex.Now(),
 	}
 }
 
-func (e *InstanceCreatedEvent) EventName() string     { return "approval.instance.created" }
-func (e *InstanceCreatedEvent) OccurredAt() time.Time { return e.OccurredTime }
+func (e *InstanceCreatedEvent) EventName() string         { return "approval.instance.created" }
+func (e *InstanceCreatedEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
 
 // InstanceCompletedEvent fired when instance reaches a final status.
 type InstanceCompletedEvent struct {
 	InstanceID   string         `json:"instanceId"`
 	FinalStatus  InstanceStatus `json:"finalStatus"`
-	FinishedAt   time.Time      `json:"finishedAt"`
-	OccurredTime time.Time      `json:"occurredTime"`
+	FinishedAt   timex.DateTime `json:"finishedAt"`
+	OccurredTime timex.DateTime `json:"occurredTime"`
 }
 
 func NewInstanceCompletedEvent(instanceID string, finalStatus InstanceStatus) *InstanceCompletedEvent {
-	now := time.Now()
+	now := timex.Now()
 
 	return &InstanceCompletedEvent{
 		InstanceID:   instanceID,
@@ -45,34 +45,34 @@ func NewInstanceCompletedEvent(instanceID string, finalStatus InstanceStatus) *I
 	}
 }
 
-func (e *InstanceCompletedEvent) EventName() string     { return "approval.instance.completed" }
-func (e *InstanceCompletedEvent) OccurredAt() time.Time { return e.OccurredTime }
+func (e *InstanceCompletedEvent) EventName() string         { return "approval.instance.completed" }
+func (e *InstanceCompletedEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
 
 // InstanceWithdrawnEvent fired when applicant withdraws the instance.
 type InstanceWithdrawnEvent struct {
-	InstanceID   string    `json:"instanceId"`
-	OperatorID   string    `json:"operatorId"`
-	OccurredTime time.Time `json:"occurredTime"`
+	InstanceID   string         `json:"instanceId"`
+	OperatorID   string         `json:"operatorId"`
+	OccurredTime timex.DateTime `json:"occurredTime"`
 }
 
 func NewInstanceWithdrawnEvent(instanceID, operatorID string) *InstanceWithdrawnEvent {
 	return &InstanceWithdrawnEvent{
 		InstanceID:   instanceID,
 		OperatorID:   operatorID,
-		OccurredTime: time.Now(),
+		OccurredTime: timex.Now(),
 	}
 }
 
-func (e *InstanceWithdrawnEvent) EventName() string     { return "approval.instance.withdrawn" }
-func (e *InstanceWithdrawnEvent) OccurredAt() time.Time { return e.OccurredTime }
+func (e *InstanceWithdrawnEvent) EventName() string         { return "approval.instance.withdrawn" }
+func (e *InstanceWithdrawnEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
 
 // InstanceRolledBackEvent fired when instance is rolled back.
 type InstanceRolledBackEvent struct {
-	InstanceID   string    `json:"instanceId"`
-	FromNodeID   string    `json:"fromNodeId"`
-	ToNodeID     string    `json:"toNodeId"`
-	OperatorID   string    `json:"operatorId"`
-	OccurredTime time.Time `json:"occurredTime"`
+	InstanceID   string         `json:"instanceId"`
+	FromNodeID   string         `json:"fromNodeId"`
+	ToNodeID     string         `json:"toNodeId"`
+	OperatorID   string         `json:"operatorId"`
+	OccurredTime timex.DateTime `json:"occurredTime"`
 }
 
 func NewInstanceRolledBackEvent(instanceID, fromNodeID, toNodeID, operatorID string) *InstanceRolledBackEvent {
@@ -81,21 +81,21 @@ func NewInstanceRolledBackEvent(instanceID, fromNodeID, toNodeID, operatorID str
 		FromNodeID:   fromNodeID,
 		ToNodeID:     toNodeID,
 		OperatorID:   operatorID,
-		OccurredTime: time.Now(),
+		OccurredTime: timex.Now(),
 	}
 }
 
-func (e *InstanceRolledBackEvent) EventName() string     { return "approval.instance.rollback" }
-func (e *InstanceRolledBackEvent) OccurredAt() time.Time { return e.OccurredTime }
+func (e *InstanceRolledBackEvent) EventName() string         { return "approval.instance.rollback" }
+func (e *InstanceRolledBackEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
 
 // ==================== Node Events ====================
 
 // NodeEnteredEvent fired when instance enters a new node.
 type NodeEnteredEvent struct {
-	InstanceID   string    `json:"instanceId"`
-	NodeID       string    `json:"nodeId"`
-	NodeName     string    `json:"nodeName"`
-	OccurredTime time.Time `json:"occurredTime"`
+	InstanceID   string         `json:"instanceId"`
+	NodeID       string         `json:"nodeId"`
+	NodeName     string         `json:"nodeName"`
+	OccurredTime timex.DateTime `json:"occurredTime"`
 }
 
 func NewNodeEnteredEvent(instanceID, nodeID, nodeName string) *NodeEnteredEvent {
@@ -103,19 +103,19 @@ func NewNodeEnteredEvent(instanceID, nodeID, nodeName string) *NodeEnteredEvent 
 		InstanceID:   instanceID,
 		NodeID:       nodeID,
 		NodeName:     nodeName,
-		OccurredTime: time.Now(),
+		OccurredTime: timex.Now(),
 	}
 }
 
-func (e *NodeEnteredEvent) EventName() string     { return "approval.node.entered" }
-func (e *NodeEnteredEvent) OccurredAt() time.Time { return e.OccurredTime }
+func (e *NodeEnteredEvent) EventName() string         { return "approval.node.entered" }
+func (e *NodeEnteredEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
 
 // NodeAutoPassedEvent fired when a node is auto-passed.
 type NodeAutoPassedEvent struct {
-	InstanceID   string    `json:"instanceId"`
-	NodeID       string    `json:"nodeId"`
-	Reason       string    `json:"reason"`
-	OccurredTime time.Time `json:"occurredTime"`
+	InstanceID   string         `json:"instanceId"`
+	NodeID       string         `json:"nodeId"`
+	Reason       string         `json:"reason"`
+	OccurredTime timex.DateTime `json:"occurredTime"`
 }
 
 func NewNodeAutoPassedEvent(instanceID, nodeID, reason string) *NodeAutoPassedEvent {
@@ -123,65 +123,65 @@ func NewNodeAutoPassedEvent(instanceID, nodeID, reason string) *NodeAutoPassedEv
 		InstanceID:   instanceID,
 		NodeID:       nodeID,
 		Reason:       reason,
-		OccurredTime: time.Now(),
+		OccurredTime: timex.Now(),
 	}
 }
 
-func (e *NodeAutoPassedEvent) EventName() string     { return "approval.node.auto_passed" }
-func (e *NodeAutoPassedEvent) OccurredAt() time.Time { return e.OccurredTime }
+func (e *NodeAutoPassedEvent) EventName() string         { return "approval.node.auto_passed" }
+func (e *NodeAutoPassedEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
 
 // ParallelJoinedEvent fired when parallel branches are joined.
 type ParallelJoinedEvent struct {
-	InstanceID   string    `json:"instanceId"`
-	NodeID       string    `json:"nodeId"`
-	OccurredTime time.Time `json:"occurredTime"`
+	InstanceID   string         `json:"instanceId"`
+	NodeID       string         `json:"nodeId"`
+	OccurredTime timex.DateTime `json:"occurredTime"`
 }
 
 func NewParallelJoinedEvent(instanceID, nodeID string) *ParallelJoinedEvent {
 	return &ParallelJoinedEvent{
 		InstanceID:   instanceID,
 		NodeID:       nodeID,
-		OccurredTime: time.Now(),
+		OccurredTime: timex.Now(),
 	}
 }
 
-func (e *ParallelJoinedEvent) EventName() string     { return "approval.node.parallel_joined" }
-func (e *ParallelJoinedEvent) OccurredAt() time.Time { return e.OccurredTime }
+func (e *ParallelJoinedEvent) EventName() string         { return "approval.node.parallel_joined" }
+func (e *ParallelJoinedEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
 
 // ==================== Task Events ====================
 
 // TaskCreatedEvent fired when a new task is created.
 type TaskCreatedEvent struct {
-	TaskID       string     `json:"taskId"`
-	InstanceID   string     `json:"instanceId"`
-	NodeID       string     `json:"nodeId"`
-	AssigneeID   string     `json:"assigneeId"`
-	Deadline     *time.Time `json:"deadline,omitempty"`
-	OccurredTime time.Time  `json:"occurredTime"`
+	TaskID       string          `json:"taskId"`
+	InstanceID   string          `json:"instanceId"`
+	NodeID       string          `json:"nodeId"`
+	AssigneeID   string          `json:"assigneeId"`
+	Deadline     *timex.DateTime `json:"deadline,omitempty"`
+	OccurredTime timex.DateTime  `json:"occurredTime"`
 }
 
-func NewTaskCreatedEvent(taskID, instanceID, nodeID, assigneeID string, deadline *time.Time) *TaskCreatedEvent {
+func NewTaskCreatedEvent(taskID, instanceID, nodeID, assigneeID string, deadline *timex.DateTime) *TaskCreatedEvent {
 	return &TaskCreatedEvent{
 		TaskID:       taskID,
 		InstanceID:   instanceID,
 		NodeID:       nodeID,
 		AssigneeID:   assigneeID,
 		Deadline:     deadline,
-		OccurredTime: time.Now(),
+		OccurredTime: timex.Now(),
 	}
 }
 
-func (e *TaskCreatedEvent) EventName() string     { return "approval.task.created" }
-func (e *TaskCreatedEvent) OccurredAt() time.Time { return e.OccurredTime }
+func (e *TaskCreatedEvent) EventName() string         { return "approval.task.created" }
+func (e *TaskCreatedEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
 
 // TaskApprovedEvent fired when a task is approved.
 type TaskApprovedEvent struct {
-	TaskID       string    `json:"taskId"`
-	InstanceID   string    `json:"instanceId"`
-	NodeID       string    `json:"nodeId"`
-	OperatorID   string    `json:"operatorId"`
-	Opinion      string    `json:"opinion"`
-	OccurredTime time.Time `json:"occurredTime"`
+	TaskID       string         `json:"taskId"`
+	InstanceID   string         `json:"instanceId"`
+	NodeID       string         `json:"nodeId"`
+	OperatorID   string         `json:"operatorId"`
+	Opinion      string         `json:"opinion"`
+	OccurredTime timex.DateTime `json:"occurredTime"`
 }
 
 func NewTaskApprovedEvent(taskID, instanceID, nodeID, operatorID, opinion string) *TaskApprovedEvent {
@@ -191,21 +191,21 @@ func NewTaskApprovedEvent(taskID, instanceID, nodeID, operatorID, opinion string
 		NodeID:       nodeID,
 		OperatorID:   operatorID,
 		Opinion:      opinion,
-		OccurredTime: time.Now(),
+		OccurredTime: timex.Now(),
 	}
 }
 
-func (e *TaskApprovedEvent) EventName() string     { return "approval.task.approved" }
-func (e *TaskApprovedEvent) OccurredAt() time.Time { return e.OccurredTime }
+func (e *TaskApprovedEvent) EventName() string         { return "approval.task.approved" }
+func (e *TaskApprovedEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
 
 // TaskRejectedEvent fired when a task is rejected.
 type TaskRejectedEvent struct {
-	TaskID       string    `json:"taskId"`
-	InstanceID   string    `json:"instanceId"`
-	NodeID       string    `json:"nodeId"`
-	OperatorID   string    `json:"operatorId"`
-	Opinion      string    `json:"opinion"`
-	OccurredTime time.Time `json:"occurredTime"`
+	TaskID       string         `json:"taskId"`
+	InstanceID   string         `json:"instanceId"`
+	NodeID       string         `json:"nodeId"`
+	OperatorID   string         `json:"operatorId"`
+	Opinion      string         `json:"opinion"`
+	OccurredTime timex.DateTime `json:"occurredTime"`
 }
 
 func NewTaskRejectedEvent(taskID, instanceID, nodeID, operatorID, opinion string) *TaskRejectedEvent {
@@ -215,22 +215,22 @@ func NewTaskRejectedEvent(taskID, instanceID, nodeID, operatorID, opinion string
 		NodeID:       nodeID,
 		OperatorID:   operatorID,
 		Opinion:      opinion,
-		OccurredTime: time.Now(),
+		OccurredTime: timex.Now(),
 	}
 }
 
-func (e *TaskRejectedEvent) EventName() string     { return "approval.task.rejected" }
-func (e *TaskRejectedEvent) OccurredAt() time.Time { return e.OccurredTime }
+func (e *TaskRejectedEvent) EventName() string         { return "approval.task.rejected" }
+func (e *TaskRejectedEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
 
 // TaskTransferredEvent fired when a task is transferred.
 type TaskTransferredEvent struct {
-	TaskID       string    `json:"taskId"`
-	InstanceID   string    `json:"instanceId"`
-	NodeID       string    `json:"nodeId"`
-	FromUserID   string    `json:"fromUserId"`
-	ToUserID     string    `json:"toUserId"`
-	Reason       string    `json:"reason"`
-	OccurredTime time.Time `json:"occurredTime"`
+	TaskID       string         `json:"taskId"`
+	InstanceID   string         `json:"instanceId"`
+	NodeID       string         `json:"nodeId"`
+	FromUserID   string         `json:"fromUserId"`
+	ToUserID     string         `json:"toUserId"`
+	Reason       string         `json:"reason"`
+	OccurredTime timex.DateTime `json:"occurredTime"`
 }
 
 func NewTaskTransferredEvent(taskID, instanceID, nodeID, fromUserID, toUserID, reason string) *TaskTransferredEvent {
@@ -241,36 +241,36 @@ func NewTaskTransferredEvent(taskID, instanceID, nodeID, fromUserID, toUserID, r
 		FromUserID:   fromUserID,
 		ToUserID:     toUserID,
 		Reason:       reason,
-		OccurredTime: time.Now(),
+		OccurredTime: timex.Now(),
 	}
 }
 
-func (e *TaskTransferredEvent) EventName() string     { return "approval.task.transferred" }
-func (e *TaskTransferredEvent) OccurredAt() time.Time { return e.OccurredTime }
+func (e *TaskTransferredEvent) EventName() string         { return "approval.task.transferred" }
+func (e *TaskTransferredEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
 
 // TaskTimeoutEvent fired when a task times out.
 type TaskTimeoutEvent struct {
-	TaskID       string    `json:"taskId"`
-	InstanceID   string    `json:"instanceId"`
-	NodeID       string    `json:"nodeId"`
-	AssigneeID   string    `json:"assigneeId"`
-	Deadline     time.Time `json:"deadline"`
-	OccurredTime time.Time `json:"occurredTime"`
+	TaskID       string         `json:"taskId"`
+	InstanceID   string         `json:"instanceId"`
+	NodeID       string         `json:"nodeId"`
+	AssigneeID   string         `json:"assigneeId"`
+	Deadline     timex.DateTime `json:"deadline"`
+	OccurredTime timex.DateTime `json:"occurredTime"`
 }
 
-func NewTaskTimeoutEvent(taskID, instanceID, nodeID, assigneeID string, deadline time.Time) *TaskTimeoutEvent {
+func NewTaskTimeoutEvent(taskID, instanceID, nodeID, assigneeID string, deadline timex.DateTime) *TaskTimeoutEvent {
 	return &TaskTimeoutEvent{
 		TaskID:       taskID,
 		InstanceID:   instanceID,
 		NodeID:       nodeID,
 		AssigneeID:   assigneeID,
 		Deadline:     deadline,
-		OccurredTime: time.Now(),
+		OccurredTime: timex.Now(),
 	}
 }
 
-func (e *TaskTimeoutEvent) EventName() string     { return "approval.task.timeout" }
-func (e *TaskTimeoutEvent) OccurredAt() time.Time { return e.OccurredTime }
+func (e *TaskTimeoutEvent) EventName() string         { return "approval.task.timeout" }
+func (e *TaskTimeoutEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
 
 // AssigneesAddedEvent fired when assignees are dynamically added.
 type AssigneesAddedEvent struct {
@@ -279,7 +279,7 @@ type AssigneesAddedEvent struct {
 	TaskID       string          `json:"taskId"`
 	AddType      AddAssigneeType `json:"addType"`
 	AssigneeIDs  []string        `json:"assigneeIds"`
-	OccurredTime time.Time       `json:"occurredTime"`
+	OccurredTime timex.DateTime  `json:"occurredTime"`
 }
 
 func NewAssigneesAddedEvent(instanceID, nodeID, taskID string, addType AddAssigneeType, assigneeIDs []string) *AssigneesAddedEvent {
@@ -289,20 +289,20 @@ func NewAssigneesAddedEvent(instanceID, nodeID, taskID string, addType AddAssign
 		TaskID:       taskID,
 		AddType:      addType,
 		AssigneeIDs:  assigneeIDs,
-		OccurredTime: time.Now(),
+		OccurredTime: timex.Now(),
 	}
 }
 
-func (e *AssigneesAddedEvent) EventName() string     { return "approval.task.assignee_added" }
-func (e *AssigneesAddedEvent) OccurredAt() time.Time { return e.OccurredTime }
+func (e *AssigneesAddedEvent) EventName() string         { return "approval.task.assignee_added" }
+func (e *AssigneesAddedEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
 
 // AssigneesRemovedEvent fired when assignees are dynamically removed.
 type AssigneesRemovedEvent struct {
-	InstanceID   string    `json:"instanceId"`
-	NodeID       string    `json:"nodeId"`
-	TaskID       string    `json:"taskId"`
-	AssigneeIDs  []string  `json:"assigneeIds"`
-	OccurredTime time.Time `json:"occurredTime"`
+	InstanceID   string         `json:"instanceId"`
+	NodeID       string         `json:"nodeId"`
+	TaskID       string         `json:"taskId"`
+	AssigneeIDs  []string       `json:"assigneeIds"`
+	OccurredTime timex.DateTime `json:"occurredTime"`
 }
 
 func NewAssigneesRemovedEvent(instanceID, nodeID, taskID string, assigneeIDs []string) *AssigneesRemovedEvent {
@@ -311,22 +311,22 @@ func NewAssigneesRemovedEvent(instanceID, nodeID, taskID string, assigneeIDs []s
 		NodeID:       nodeID,
 		TaskID:       taskID,
 		AssigneeIDs:  assigneeIDs,
-		OccurredTime: time.Now(),
+		OccurredTime: timex.Now(),
 	}
 }
 
-func (e *AssigneesRemovedEvent) EventName() string     { return "approval.task.assignee_removed" }
-func (e *AssigneesRemovedEvent) OccurredAt() time.Time { return e.OccurredTime }
+func (e *AssigneesRemovedEvent) EventName() string         { return "approval.task.assignee_removed" }
+func (e *AssigneesRemovedEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
 
 // ==================== CC Events ====================
 
 // CCNotifiedEvent fired when users are carbon-copied.
 type CCNotifiedEvent struct {
-	InstanceID   string    `json:"instanceId"`
-	NodeID       string    `json:"nodeId"`
-	CcUserIDs    []string  `json:"ccUserIds"`
-	IsManual     bool      `json:"isManual"`
-	OccurredTime time.Time `json:"occurredTime"`
+	InstanceID   string         `json:"instanceId"`
+	NodeID       string         `json:"nodeId"`
+	CcUserIDs    []string       `json:"ccUserIds"`
+	IsManual     bool           `json:"isManual"`
+	OccurredTime timex.DateTime `json:"occurredTime"`
 }
 
 func NewCcNotifiedEvent(instanceID, nodeID string, ccUserIDs []string, isManual bool) *CCNotifiedEvent {
@@ -335,21 +335,21 @@ func NewCcNotifiedEvent(instanceID, nodeID string, ccUserIDs []string, isManual 
 		NodeID:       nodeID,
 		CcUserIDs:    ccUserIDs,
 		IsManual:     isManual,
-		OccurredTime: time.Now(),
+		OccurredTime: timex.Now(),
 	}
 }
 
-func (e *CCNotifiedEvent) EventName() string     { return "approval.cc.notified" }
-func (e *CCNotifiedEvent) OccurredAt() time.Time { return e.OccurredTime }
+func (e *CCNotifiedEvent) EventName() string         { return "approval.cc.notified" }
+func (e *CCNotifiedEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
 
 // ==================== SubFlow Events ====================
 
 // SubFlowStartedEvent fired when a sub-flow is started.
 type SubFlowStartedEvent struct {
-	ParentInstanceID string    `json:"parentInstanceId"`
-	SubInstanceID    string    `json:"subInstanceId"`
-	ParentNodeID     string    `json:"parentNodeId"`
-	OccurredTime     time.Time `json:"occurredTime"`
+	ParentInstanceID string         `json:"parentInstanceId"`
+	SubInstanceID    string         `json:"subInstanceId"`
+	ParentNodeID     string         `json:"parentNodeId"`
+	OccurredTime     timex.DateTime `json:"occurredTime"`
 }
 
 func NewSubFlowStartedEvent(parentInstanceID, subInstanceID, parentNodeID string) *SubFlowStartedEvent {
@@ -357,12 +357,12 @@ func NewSubFlowStartedEvent(parentInstanceID, subInstanceID, parentNodeID string
 		ParentInstanceID: parentInstanceID,
 		SubInstanceID:    subInstanceID,
 		ParentNodeID:     parentNodeID,
-		OccurredTime:     time.Now(),
+		OccurredTime:     timex.Now(),
 	}
 }
 
-func (e *SubFlowStartedEvent) EventName() string     { return "approval.subflow.started" }
-func (e *SubFlowStartedEvent) OccurredAt() time.Time { return e.OccurredTime }
+func (e *SubFlowStartedEvent) EventName() string         { return "approval.subflow.started" }
+func (e *SubFlowStartedEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
 
 // SubFlowCompletedEvent fired when a sub-flow completes.
 type SubFlowCompletedEvent struct {
@@ -370,7 +370,7 @@ type SubFlowCompletedEvent struct {
 	SubInstanceID    string         `json:"subInstanceId"`
 	ParentNodeID     string         `json:"parentNodeId"`
 	FinalStatus      InstanceStatus `json:"finalStatus"`
-	OccurredTime     time.Time      `json:"occurredTime"`
+	OccurredTime     timex.DateTime `json:"occurredTime"`
 }
 
 func NewSubFlowCompletedEvent(parentInstanceID, subInstanceID, parentNodeID string, finalStatus InstanceStatus) *SubFlowCompletedEvent {
@@ -379,47 +379,47 @@ func NewSubFlowCompletedEvent(parentInstanceID, subInstanceID, parentNodeID stri
 		SubInstanceID:    subInstanceID,
 		ParentNodeID:     parentNodeID,
 		FinalStatus:      finalStatus,
-		OccurredTime:     time.Now(),
+		OccurredTime:     timex.Now(),
 	}
 }
 
-func (e *SubFlowCompletedEvent) EventName() string     { return "approval.subflow.completed" }
-func (e *SubFlowCompletedEvent) OccurredAt() time.Time { return e.OccurredTime }
+func (e *SubFlowCompletedEvent) EventName() string         { return "approval.subflow.completed" }
+func (e *SubFlowCompletedEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
 
 // ==================== Flow Events ====================
 
 // FlowPublishedEvent fired when a flow version is published.
 type FlowPublishedEvent struct {
-	FlowID       string    `json:"flowId"`
-	VersionID    string    `json:"versionId"`
-	OccurredTime time.Time `json:"occurredTime"`
+	FlowID       string         `json:"flowId"`
+	VersionID    string         `json:"versionId"`
+	OccurredTime timex.DateTime `json:"occurredTime"`
 }
 
 func NewFlowPublishedEvent(flowID, versionID string) *FlowPublishedEvent {
 	return &FlowPublishedEvent{
 		FlowID:       flowID,
 		VersionID:    versionID,
-		OccurredTime: time.Now(),
+		OccurredTime: timex.Now(),
 	}
 }
 
-func (e *FlowPublishedEvent) EventName() string     { return "approval.flow.published" }
-func (e *FlowPublishedEvent) OccurredAt() time.Time { return e.OccurredTime }
+func (e *FlowPublishedEvent) EventName() string         { return "approval.flow.published" }
+func (e *FlowPublishedEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
 
 // ==================== Timeout & Urge Events ====================
 
 // TaskDeadlineWarningEvent fired when a task is approaching its deadline.
 type TaskDeadlineWarningEvent struct {
-	TaskID       string    `json:"taskId"`
-	InstanceID   string    `json:"instanceId"`
-	NodeID       string    `json:"nodeId"`
-	AssigneeID   string    `json:"assigneeId"`
-	Deadline     time.Time `json:"deadline"`
-	HoursLeft    int       `json:"hoursLeft"`
-	OccurredTime time.Time `json:"occurredTime"`
+	TaskID       string         `json:"taskId"`
+	InstanceID   string         `json:"instanceId"`
+	NodeID       string         `json:"nodeId"`
+	AssigneeID   string         `json:"assigneeId"`
+	Deadline     timex.DateTime `json:"deadline"`
+	HoursLeft    int            `json:"hoursLeft"`
+	OccurredTime timex.DateTime `json:"occurredTime"`
 }
 
-func NewTaskDeadlineWarningEvent(taskID, instanceID, nodeID, assigneeID string, deadline time.Time, hoursLeft int) *TaskDeadlineWarningEvent {
+func NewTaskDeadlineWarningEvent(taskID, instanceID, nodeID, assigneeID string, deadline timex.DateTime, hoursLeft int) *TaskDeadlineWarningEvent {
 	return &TaskDeadlineWarningEvent{
 		TaskID:       taskID,
 		InstanceID:   instanceID,
@@ -427,22 +427,22 @@ func NewTaskDeadlineWarningEvent(taskID, instanceID, nodeID, assigneeID string, 
 		AssigneeID:   assigneeID,
 		Deadline:     deadline,
 		HoursLeft:    hoursLeft,
-		OccurredTime: time.Now(),
+		OccurredTime: timex.Now(),
 	}
 }
 
-func (e *TaskDeadlineWarningEvent) EventName() string     { return "approval.task.deadline_warning" }
-func (e *TaskDeadlineWarningEvent) OccurredAt() time.Time { return e.OccurredTime }
+func (e *TaskDeadlineWarningEvent) EventName() string         { return "approval.task.deadline_warning" }
+func (e *TaskDeadlineWarningEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
 
 // TaskUrgedEvent fired when a task assignee is urged/reminded.
 type TaskUrgedEvent struct {
-	InstanceID   string    `json:"instanceId"`
-	NodeID       string    `json:"nodeId"`
-	TaskID       string    `json:"taskId"`
-	UrgerID      string    `json:"urgerId"`
-	TargetUserID string    `json:"targetUserId"`
-	Message      string    `json:"message"`
-	OccurredTime time.Time `json:"occurredTime"`
+	InstanceID   string         `json:"instanceId"`
+	NodeID       string         `json:"nodeId"`
+	TaskID       string         `json:"taskId"`
+	UrgerID      string         `json:"urgerId"`
+	TargetUserID string         `json:"targetUserId"`
+	Message      string         `json:"message"`
+	OccurredTime timex.DateTime `json:"occurredTime"`
 }
 
 func NewTaskUrgedEvent(instanceID, nodeID, taskID, urgerID, targetUserID, message string) *TaskUrgedEvent {
@@ -453,9 +453,9 @@ func NewTaskUrgedEvent(instanceID, nodeID, taskID, urgerID, targetUserID, messag
 		UrgerID:      urgerID,
 		TargetUserID: targetUserID,
 		Message:      message,
-		OccurredTime: time.Now(),
+		OccurredTime: timex.Now(),
 	}
 }
 
-func (e *TaskUrgedEvent) EventName() string     { return "approval.task.urged" }
-func (e *TaskUrgedEvent) OccurredAt() time.Time { return e.OccurredTime }
+func (e *TaskUrgedEvent) EventName() string         { return "approval.task.urged" }
+func (e *TaskUrgedEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
