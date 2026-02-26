@@ -9,6 +9,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/api"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/internal/config"
+	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/internal/cron"
 	"github.com/ilxqx/vef-framework-go/internal/database"
 	"github.com/ilxqx/vef-framework-go/internal/event"
@@ -47,6 +48,7 @@ func Run(options ...fx.Option) {
 		api.Module,
 		security.Module,
 		event.Module,
+		cqrs.Module,
 		cron.Module,
 		redis.Module,
 		mold.Module,

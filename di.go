@@ -1,11 +1,12 @@
 package vef
 
 import (
+	"github.com/ilxqx/go-streams"
 	"go.uber.org/fx"
 
-	"github.com/ilxqx/go-streams"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/internal/app"
+	cqrsImpl "github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/mcp"
 	"github.com/ilxqx/vef-framework-go/middleware"
 )
@@ -121,6 +122,19 @@ func SupplySPAConfigs(config *middleware.SPAConfig, configs ...*middleware.SPACo
 	}
 
 	return fx.Supply(spaConfigs...)
+}
+
+// ProvideCQRSBehavior provides a CQRS behavior middleware to the dependency injection container.
+// The behavior will be registered in the "vef:cqrs:behaviors" group.
+func ProvideCQRSBehavior(constructor any, paramTags ...string) fx.Option {
+	return fx.Provide(
+		fx.Annotate(
+			constructor,
+			fx.ParamTags(paramTags...),
+			fx.As(new(cqrsImpl.Behavior)),
+			fx.ResultTags(`group:"vef:cqrs:behaviors"`),
+		),
+	)
 }
 
 // ProvideMCPTools provides an MCP tool provider.
