@@ -47,7 +47,7 @@ func TestRegisterAndSend(t *testing.T) {
 		bus := NewBus(nil)
 
 		var called bool
-		Register(bus, HandlerFunc[DeleteUserCmd, Unit](func(_ context.Context, _ DeleteUserCmd) (Unit, error) {
+		Register(bus, HandlerFunc[DeleteUserCmd, Unit](func(context.Context, DeleteUserCmd) (Unit, error) {
 			called = true
 
 			return Unit{}, nil
@@ -80,7 +80,7 @@ func TestRegisterAndSend(t *testing.T) {
 
 	t.Run("HandlerReturnsError", func(t *testing.T) {
 		bus := NewBus(nil)
-		Register(bus, HandlerFunc[CreateUserCmd, CreateUserResult](func(_ context.Context, _ CreateUserCmd) (CreateUserResult, error) {
+		Register(bus, HandlerFunc[CreateUserCmd, CreateUserResult](func(context.Context, CreateUserCmd) (CreateUserResult, error) {
 			return CreateUserResult{}, errors.New("db error")
 		}))
 
@@ -138,14 +138,14 @@ func TestSendUnregisteredCommand(t *testing.T) {
 
 func TestRegisterDuplicatePanics(t *testing.T) {
 	bus := NewBus(nil)
-	Register(bus, HandlerFunc[CreateUserCmd, CreateUserResult](func(_ context.Context, _ CreateUserCmd) (CreateUserResult, error) {
+	Register(bus, HandlerFunc[CreateUserCmd, CreateUserResult](func(context.Context, CreateUserCmd) (CreateUserResult, error) {
 		return CreateUserResult{}, nil
 	}))
 
 	assert.PanicsWithValue(t,
 		"cqrs: handler already registered for cqrs.CreateUserCmd",
 		func() {
-			Register(bus, HandlerFunc[CreateUserCmd, CreateUserResult](func(_ context.Context, _ CreateUserCmd) (CreateUserResult, error) {
+			Register(bus, HandlerFunc[CreateUserCmd, CreateUserResult](func(context.Context, CreateUserCmd) (CreateUserResult, error) {
 				return CreateUserResult{}, nil
 			}))
 		},
@@ -195,7 +195,7 @@ func TestBehaviorPipeline(t *testing.T) {
 		}
 
 		bus := NewBus([]Behavior{makeBehavior("b1"), makeBehavior("b2")})
-		Register(bus, HandlerFunc[CreateUserCmd, Unit](func(_ context.Context, _ CreateUserCmd) (Unit, error) {
+		Register(bus, HandlerFunc[CreateUserCmd, Unit](func(context.Context, CreateUserCmd) (Unit, error) {
 			order = append(order, "handler")
 
 			return Unit{}, nil
@@ -209,14 +209,14 @@ func TestBehaviorPipeline(t *testing.T) {
 	})
 
 	t.Run("ShortCircuit", func(t *testing.T) {
-		shortCircuit := BehaviorFunc(func(_ context.Context, _ any, _ func(context.Context) (any, error)) (any, error) {
+		shortCircuit := BehaviorFunc(func(context.Context, any, func(context.Context) (any, error)) (any, error) {
 			return CreateUserResult{ID: "short-circuited"}, nil
 		})
 
 		var handlerCalled bool
 
 		bus := NewBus([]Behavior{shortCircuit})
-		Register(bus, HandlerFunc[CreateUserCmd, CreateUserResult](func(_ context.Context, _ CreateUserCmd) (CreateUserResult, error) {
+		Register(bus, HandlerFunc[CreateUserCmd, CreateUserResult](func(context.Context, CreateUserCmd) (CreateUserResult, error) {
 			handlerCalled = true
 
 			return CreateUserResult{}, nil
@@ -248,12 +248,12 @@ func TestBehaviorPipeline(t *testing.T) {
 	})
 
 	t.Run("BehaviorReturnsError", func(t *testing.T) {
-		b := BehaviorFunc(func(_ context.Context, _ any, _ func(context.Context) (any, error)) (any, error) {
+		b := BehaviorFunc(func(context.Context, any, func(context.Context) (any, error)) (any, error) {
 			return nil, errors.New("behavior error")
 		})
 
 		bus := NewBus([]Behavior{b})
-		Register(bus, HandlerFunc[CreateUserCmd, CreateUserResult](func(_ context.Context, _ CreateUserCmd) (CreateUserResult, error) {
+		Register(bus, HandlerFunc[CreateUserCmd, CreateUserResult](func(context.Context, CreateUserCmd) (CreateUserResult, error) {
 			return CreateUserResult{ID: "should-not-reach"}, nil
 		}))
 
@@ -282,6 +282,22 @@ func TestBehaviorPipeline(t *testing.T) {
 		require.NoError(t, err, "Should send without error")
 		assert.Equal(t, sent, receivedCmd, "Behavior should receive the original command")
 	})
+
+	t.Run("BehaviorReturnsNil", func(t *testing.T) {
+		b := BehaviorFunc(func(context.Context, any, func(context.Context) (any, error)) (any, error) {
+			return nil, nil
+		})
+
+		bus := NewBus([]Behavior{b})
+		Register(bus, HandlerFunc[CreateUserCmd, CreateUserResult](func(context.Context, CreateUserCmd) (CreateUserResult, error) {
+			return CreateUserResult{ID: "unreachable"}, nil
+		}))
+
+		got, err := Send[CreateUserCmd, CreateUserResult](context.Background(), bus, CreateUserCmd{})
+
+		require.NoError(t, err, "Should not return error when behavior returns nil")
+		assert.Empty(t, got.ID, "Should return zero value when behavior returns nil")
+	})
 }
 
 func TestConcurrentSend(t *testing.T) {
@@ -293,17 +309,14 @@ func TestConcurrentSend(t *testing.T) {
 	const n = 100
 
 	var wg sync.WaitGroup
-	wg.Add(n)
 
 	errs := make([]error, n)
 	results := make([]CreateUserResult, n)
 
 	for i := range n {
-		go func() {
-			defer wg.Done()
-
+		wg.Go(func() {
 			results[i], errs[i] = Send[CreateUserCmd, CreateUserResult](context.Background(), bus, CreateUserCmd{Name: "user"})
-		}()
+		})
 	}
 
 	wg.Wait()
@@ -332,7 +345,7 @@ func TestBehaviorFunc(t *testing.T) {
 		return next(ctx)
 	})
 
-	got, err := b.Handle(context.Background(), nil, func(_ context.Context) (any, error) {
+	got, err := b.Handle(context.Background(), nil, func(context.Context) (any, error) {
 		return "ok", nil
 	})
 

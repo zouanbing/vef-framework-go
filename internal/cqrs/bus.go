@@ -78,5 +78,9 @@ func Send[TCommand, TResult any](ctx context.Context, bus Bus, cmd TCommand) (TR
 		return lo.Empty[TResult](), err
 	}
 
+	if raw == nil {
+		return lo.Empty[TResult](), nil
+	}
+
 	return raw.(TResult), nil
 }
