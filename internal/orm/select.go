@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/dialect"
 	"github.com/uptrace/bun/schema"
 
 	"github.com/ilxqx/vef-framework-go/page"
@@ -519,6 +520,18 @@ func (q *BunSelectQuery) ForShareSkipLocked(tables ...string) SelectQuery {
 	return q.forLock("SHARE", "SKIP LOCKED", tables...)
 }
 
+func (q *BunSelectQuery) ForKeyShare(tables ...string) SelectQuery {
+	return q.forLock("KEY SHARE", "", tables...)
+}
+
+func (q *BunSelectQuery) ForKeyShareNoWait(tables ...string) SelectQuery {
+	return q.forLock("KEY SHARE", "NOWAIT", tables...)
+}
+
+func (q *BunSelectQuery) ForKeyShareSkipLocked(tables ...string) SelectQuery {
+	return q.forLock("KEY SHARE", "SKIP LOCKED", tables...)
+}
+
 func (q *BunSelectQuery) ForUpdate(tables ...string) SelectQuery {
 	return q.forLock("UPDATE", "", tables...)
 }
@@ -531,24 +544,55 @@ func (q *BunSelectQuery) ForUpdateSkipLocked(tables ...string) SelectQuery {
 	return q.forLock("UPDATE", "SKIP LOCKED", tables...)
 }
 
+func (q *BunSelectQuery) ForNoKeyUpdate(tables ...string) SelectQuery {
+	return q.forLock("NO KEY UPDATE", "", tables...)
+}
+
+func (q *BunSelectQuery) ForNoKeyUpdateNoWait(tables ...string) SelectQuery {
+	return q.forLock("NO KEY UPDATE", "NOWAIT", tables...)
+}
+
+func (q *BunSelectQuery) ForNoKeyUpdateSkipLocked(tables ...string) SelectQuery {
+	return q.forLock("NO KEY UPDATE", "SKIP LOCKED", tables...)
+}
+
+// postgresOnlyLockModes contains lock modes that are only supported by PostgreSQL.
+var postgresOnlyLockModes = map[string]bool{
+	"NO KEY UPDATE": true,
+	"KEY SHARE":     true,
+}
+
 // forLock builds a FOR lock clause with the given lock mode, optional suffix, and optional table names.
+// SQLite does not support row-level locking; calls are silently ignored with a warning log.
+// FOR NO KEY UPDATE and FOR KEY SHARE are PostgreSQL-only; on MySQL they are silently ignored with a warning log.
 func (q *BunSelectQuery) forLock(mode, suffix string, tables ...string) SelectQuery {
-	if len(tables) == 0 {
-		if suffix != "" {
-			q.query.For(mode + " " + suffix)
-		} else {
-			q.query.For(mode)
-		}
+	dialectName := q.dialect.Name()
+
+	if dialectName == dialect.SQLite {
+		logger.Warnf("Row-level locking is not supported by SQLite, FOR %q clause will be ignored", mode)
 
 		return q
 	}
 
-	clause := mode + " OF ?"
+	if dialectName == dialect.MySQL && postgresOnlyLockModes[mode] {
+		logger.Warnf("FOR %q is only supported by PostgreSQL, locking clause will be ignored", mode)
+
+		return q
+	}
+
+	clause := mode
+	if len(tables) > 0 {
+		clause += " OF ?"
+	}
 	if suffix != "" {
 		clause += " " + suffix
 	}
 
-	q.query.For(clause, Names(tables...))
+	if len(tables) > 0 {
+		q.query.For(clause, Names(tables...))
+	} else {
+		q.query.For(clause)
+	}
 
 	return q
 }

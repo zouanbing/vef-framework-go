@@ -1869,15 +1869,9 @@ func (suite *SelectTestSuite) TestPagination() {
 }
 
 // TestLocking tests ForShare and ForUpdate methods.
+// On SQLite, locking methods are silently ignored (no-op) and queries should still succeed.
 func (suite *SelectTestSuite) TestLocking() {
 	suite.T().Logf("Testing Locking methods for %s", suite.ds.Kind)
-
-	// SQLite doesn't support row-level locking (FOR SHARE/FOR UPDATE)
-	if suite.ds.Kind == config.SQLite {
-		suite.T().Skipf("Row-level locking (FOR SHARE/FOR UPDATE) not supported on %s", suite.ds.Kind)
-
-		return
-	}
 
 	suite.Run("ForShare", func() {
 		var users []User
@@ -2667,37 +2661,250 @@ func (suite *SelectTestSuite) TestSetOperationVariants() {
 }
 
 // TestForShareVariants tests ForShareNoWait and ForShareSkipLocked.
+// On SQLite, locking methods are silently ignored (no-op) and queries should still succeed.
 func (suite *SelectTestSuite) TestForShareVariants() {
-	if suite.ds.Kind == config.SQLite {
-		suite.T().Skipf("FOR SHARE not supported on %s", suite.ds.Kind)
-	}
-
 	suite.T().Logf("Testing ForShare variants for %s", suite.ds.Kind)
 
 	suite.Run("ForShareNoWait", func() {
 		var users []User
 
-		err := suite.selectUsers().
-			Limit(1).
+		err := suite.db.NewSelect().
+			Model(&users).
 			ForShareNoWait().
-			Scan(suite.ctx, &users)
+			Where(func(cb orm.ConditionBuilder) {
+				cb.IsTrue("is_active")
+			}).
+			Limit(2).
+			Scan(suite.ctx)
 
-		suite.NoError(err, "ForShareNoWait should work")
+		suite.NoError(err, "FOR SHARE NOWAIT should work")
+		suite.True(len(users) > 0, "Should return users with share NOWAIT lock")
 
-		suite.T().Logf("Found %d users", len(users))
+		for _, user := range users {
+			suite.T().Logf("User with share NOWAIT lock: %s", user.Name)
+		}
 	})
 
 	suite.Run("ForShareSkipLocked", func() {
 		var users []User
 
-		err := suite.selectUsers().
-			Limit(1).
+		err := suite.db.NewSelect().
+			Model(&users).
 			ForShareSkipLocked().
-			Scan(suite.ctx, &users)
+			Where(func(cb orm.ConditionBuilder) {
+				cb.IsTrue("is_active")
+			}).
+			Limit(2).
+			Scan(suite.ctx)
 
-		suite.NoError(err, "ForShareSkipLocked should work")
+		suite.NoError(err, "FOR SHARE SKIP LOCKED should work")
+		suite.True(len(users) > 0, "Should return users with share SKIP LOCKED")
 
-		suite.T().Logf("Found %d users", len(users))
+		for _, user := range users {
+			suite.T().Logf("User with share SKIP LOCKED: %s", user.Name)
+		}
+	})
+}
+
+// TestForKeyShareVariants tests ForKeyShare, ForKeyShareNoWait and ForKeyShareSkipLocked.
+// These are PostgreSQL-only; on MySQL and SQLite they are silently ignored.
+func (suite *SelectTestSuite) TestForKeyShareVariants() {
+	suite.T().Logf("Testing ForKeyShare variants for %s", suite.ds.Kind)
+
+	suite.Run("ForKeyShare", func() {
+		var users []User
+
+		err := suite.db.NewSelect().
+			Model(&users).
+			ForKeyShare().
+			Where(func(cb orm.ConditionBuilder) {
+				cb.IsTrue("is_active")
+			}).
+			Limit(2).
+			Scan(suite.ctx)
+
+		suite.NoError(err, "FOR KEY SHARE should work")
+		suite.True(len(users) > 0, "Should return users with key share lock")
+
+		for _, user := range users {
+			suite.T().Logf("User with key share lock: %s", user.Name)
+		}
+	})
+
+	suite.Run("ForKeyShareNoWait", func() {
+		var users []User
+
+		err := suite.db.NewSelect().
+			Model(&users).
+			ForKeyShareNoWait().
+			Where(func(cb orm.ConditionBuilder) {
+				cb.IsTrue("is_active")
+			}).
+			Limit(2).
+			Scan(suite.ctx)
+
+		suite.NoError(err, "FOR KEY SHARE NOWAIT should work")
+		suite.True(len(users) > 0, "Should return users with key share NOWAIT lock")
+
+		for _, user := range users {
+			suite.T().Logf("User with key share NOWAIT lock: %s", user.Name)
+		}
+	})
+
+	suite.Run("ForKeyShareSkipLocked", func() {
+		var users []User
+
+		err := suite.db.NewSelect().
+			Model(&users).
+			ForKeyShareSkipLocked().
+			Where(func(cb orm.ConditionBuilder) {
+				cb.IsTrue("is_active")
+			}).
+			Limit(2).
+			Scan(suite.ctx)
+
+		suite.NoError(err, "FOR KEY SHARE SKIP LOCKED should work")
+		suite.True(len(users) > 0, "Should return users with key share SKIP LOCKED")
+
+		for _, user := range users {
+			suite.T().Logf("User with key share SKIP LOCKED: %s", user.Name)
+		}
+	})
+}
+
+// TestForNoKeyUpdateVariants tests ForNoKeyUpdate, ForNoKeyUpdateNoWait and ForNoKeyUpdateSkipLocked.
+// These are PostgreSQL-only; on MySQL and SQLite they are silently ignored.
+func (suite *SelectTestSuite) TestForNoKeyUpdateVariants() {
+	suite.T().Logf("Testing ForNoKeyUpdate variants for %s", suite.ds.Kind)
+
+	suite.Run("ForNoKeyUpdate", func() {
+		var posts []Post
+
+		err := suite.db.NewSelect().
+			Model(&posts).
+			ForNoKeyUpdate().
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Equals("status", "draft")
+			}).
+			OrderBy("id").
+			Limit(1).
+			Scan(suite.ctx)
+
+		suite.NoError(err, "FOR NO KEY UPDATE should work")
+		suite.True(len(posts) > 0, "Should return posts with no key update lock")
+
+		for _, post := range posts {
+			suite.T().Logf("Post with no key update lock: %s", post.Title)
+		}
+	})
+
+	suite.Run("ForNoKeyUpdateNoWait", func() {
+		var posts []Post
+
+		err := suite.db.NewSelect().
+			Model(&posts).
+			ForNoKeyUpdateNoWait().
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Equals("status", "draft")
+			}).
+			OrderBy("id").
+			Limit(1).
+			Scan(suite.ctx)
+
+		suite.NoError(err, "FOR NO KEY UPDATE NOWAIT should work")
+		suite.True(len(posts) > 0, "Should return posts with no key update NOWAIT lock")
+
+		for _, post := range posts {
+			suite.T().Logf("Post with no key update NOWAIT lock: %s", post.Title)
+		}
+	})
+
+	suite.Run("ForNoKeyUpdateSkipLocked", func() {
+		var posts []Post
+
+		err := suite.db.NewSelect().
+			Model(&posts).
+			ForNoKeyUpdateSkipLocked().
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Equals("status", "published")
+			}).
+			OrderBy("id").
+			Limit(2).
+			Scan(suite.ctx)
+
+		suite.NoError(err, "FOR NO KEY UPDATE SKIP LOCKED should work")
+		suite.True(len(posts) > 0, "Should return posts with no key update SKIP LOCKED")
+
+		for _, post := range posts {
+			suite.T().Logf("Post with no key update SKIP LOCKED: %s", post.Title)
+		}
+	})
+}
+
+// TestForLockWithTables tests locking with explicit table names (FOR ... OF table_name).
+// SQLite ignores all locking; MySQL ignores PostgreSQL-only modes.
+func (suite *SelectTestSuite) TestForLockWithTables() {
+	suite.T().Logf("Testing FOR ... OF table_name for %s", suite.ds.Kind)
+
+	suite.Run("ForUpdateOfTable", func() {
+		var users []User
+
+		// OF clause requires table alias, not table name (e.g., "u" for test_user AS u)
+		err := suite.db.NewSelect().
+			Model(&users).
+			ForUpdate("u").
+			Where(func(cb orm.ConditionBuilder) {
+				cb.IsTrue("is_active")
+			}).
+			Limit(2).
+			Scan(suite.ctx)
+
+		suite.NoError(err, "FOR UPDATE OF table should work")
+		suite.True(len(users) > 0, "Should return users with table-scoped update lock")
+
+		for _, user := range users {
+			suite.T().Logf("User with table-scoped update lock: %s", user.Name)
+		}
+	})
+
+	suite.Run("ForShareOfTable", func() {
+		var users []User
+
+		err := suite.db.NewSelect().
+			Model(&users).
+			ForShare("u").
+			Where(func(cb orm.ConditionBuilder) {
+				cb.IsTrue("is_active")
+			}).
+			Limit(2).
+			Scan(suite.ctx)
+
+		suite.NoError(err, "FOR SHARE OF table should work")
+		suite.True(len(users) > 0, "Should return users with table-scoped share lock")
+
+		for _, user := range users {
+			suite.T().Logf("User with table-scoped share lock: %s", user.Name)
+		}
+	})
+
+	suite.Run("ForUpdateSkipLockedOfTable", func() {
+		var users []User
+
+		err := suite.db.NewSelect().
+			Model(&users).
+			ForUpdateSkipLocked("u").
+			Where(func(cb orm.ConditionBuilder) {
+				cb.IsTrue("is_active")
+			}).
+			Limit(2).
+			Scan(suite.ctx)
+
+		suite.NoError(err, "FOR UPDATE SKIP LOCKED OF table should work")
+		suite.True(len(users) > 0, "Should return users with table-scoped SKIP LOCKED")
+
+		for _, user := range users {
+			suite.T().Logf("User with table-scoped SKIP LOCKED: %s", user.Name)
+		}
 	})
 }
 

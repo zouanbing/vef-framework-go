@@ -468,9 +468,15 @@ type SelectQuery interface {
 	ForShare(tables ...string) SelectQuery
 	ForShareNoWait(tables ...string) SelectQuery
 	ForShareSkipLocked(tables ...string) SelectQuery
+	ForKeyShare(tables ...string) SelectQuery
+	ForKeyShareNoWait(tables ...string) SelectQuery
+	ForKeyShareSkipLocked(tables ...string) SelectQuery
 	ForUpdate(tables ...string) SelectQuery
 	ForUpdateNoWait(tables ...string) SelectQuery
 	ForUpdateSkipLocked(tables ...string) SelectQuery
+	ForNoKeyUpdate(tables ...string) SelectQuery
+	ForNoKeyUpdateNoWait(tables ...string) SelectQuery
+	ForNoKeyUpdateSkipLocked(tables ...string) SelectQuery
 	Union(func(query SelectQuery)) SelectQuery
 	UnionAll(func(query SelectQuery)) SelectQuery
 	Intersect(func(query SelectQuery)) SelectQuery
