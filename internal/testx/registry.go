@@ -30,6 +30,7 @@ func NewRegistry[B any]() *SuiteRegistry[B] {
 // suite type name, with "TestSuite" suffix stripped for cleaner test output.
 func (r *SuiteRegistry[B]) Add(factory SuiteFactory[B]) {
 	var zero B
+
 	s := factory(&zero)
 	typeName := reflect.TypeOf(s).Elem().Name()
 	name := strings.TrimSuffix(typeName, "TestSuite")

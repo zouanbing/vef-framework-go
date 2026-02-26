@@ -13,6 +13,7 @@ type mockBase struct {
 
 type MockFeatureTestSuite struct {
 	suite.Suite
+
 	base *mockBase
 }
 

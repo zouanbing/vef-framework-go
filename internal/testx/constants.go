@@ -13,7 +13,7 @@ const (
 // Database credentials.
 const (
 	TestDatabaseName = "testdb"
-	TestUsername      = "testuser"
+	TestUsername     = "testuser"
 	TestPassword     = "testpass"
 )
 
