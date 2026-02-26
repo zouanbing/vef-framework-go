@@ -9,6 +9,7 @@ const (
 	ErrCodeNoPublishedVersion = 40003
 	ErrCodeVersionNotDraft    = 40004
 	ErrCodeInvalidFlowDesign  = 40005
+	ErrCodeFlowCodeExists     = 40006
 
 	ErrCodeInstanceNotFound   = 40101
 	ErrCodeInstanceCompleted  = 40102
@@ -49,6 +50,7 @@ var (
 	ErrNoPublishedVersion = result.Err("无已发布版本", result.WithCode(ErrCodeNoPublishedVersion))
 	ErrVersionNotDraft    = result.Err("版本非草稿状态", result.WithCode(ErrCodeVersionNotDraft))
 	ErrInvalidFlowDesign  = result.Err("流程设计无效", result.WithCode(ErrCodeInvalidFlowDesign))
+	ErrFlowCodeExists     = result.Err("流程编码已存在", result.WithCode(ErrCodeFlowCodeExists))
 
 	ErrInstanceNotFound   = result.Err("审批实例不存在", result.WithCode(ErrCodeInstanceNotFound))
 	ErrInstanceCompleted  = result.Err("审批实例已结束", result.WithCode(ErrCodeInstanceCompleted))

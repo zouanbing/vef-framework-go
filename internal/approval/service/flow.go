@@ -7,20 +7,41 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/decimal"
-	"github.com/ilxqx/vef-framework-go/internal/approval/publisher"
+	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/timex"
 )
 
+// CreateFlowCmd contains the parameters for creating a new flow.
+type CreateFlowCmd struct {
+	TenantID              string
+	Code                  string
+	Name                  string
+	CategoryID            string
+	Icon                  *string
+	Description           *string
+	BindingMode           approval.BindingMode
+	BusinessTable         *string
+	BusinessPkField       *string
+	BusinessTitleField    *string
+	BusinessStatusField   *string
+	AdminUserIDs          []string
+	IsAllInitiateAllowed  bool
+	InstanceTitleTemplate string
+	Initiators            []CreateFlowInitiatorCmd
+}
+
+// CreateFlowInitiatorCmd contains the parameters for creating a flow initiator.
+type CreateFlowInitiatorCmd struct {
+	Kind approval.InitiatorKind
+	IDs  []string
+}
+
 // DeployFlowCmd contains the parameters for deploying a flow definition.
 type DeployFlowCmd struct {
-	FlowCode   string
-	FlowName   string
-	CategoryID string
-	TenantID   string
+	FlowID     string
 	Definition string // JSON of approval.FlowDefinition
-	OperatorID string
 }
 
 // FlowGraph contains the complete flow graph for a version.
@@ -34,16 +55,87 @@ type FlowGraph struct {
 // FlowService manages flow definitions and versions.
 type FlowService struct {
 	db        orm.DB
-	publisher *publisher.EventPublisher
+	publisher *dispatcher.EventPublisher
 }
 
 // NewFlowService creates a new FlowService.
-func NewFlowService(db orm.DB, pub *publisher.EventPublisher) *FlowService {
+func NewFlowService(db orm.DB, pub *dispatcher.EventPublisher) *FlowService {
 	return &FlowService{db: db, publisher: pub}
 }
 
-// DeployFlow deploys a flow definition (create/update flow + version + nodes + edges).
-func (s *FlowService) DeployFlow(ctx context.Context, cmd DeployFlowCmd) (*approval.Flow, error) {
+// CreateFlow creates a new flow with its initiator configurations.
+func (s *FlowService) CreateFlow(ctx context.Context, cmd CreateFlowCmd) (*approval.Flow, error) {
+	tenantID := cmd.TenantID
+	if tenantID == "" {
+		tenantID = "default"
+	}
+
+	var resultFlow *approval.Flow
+
+	err := s.db.RunInTX(ctx, func(ctx context.Context, tx orm.DB) error {
+		// Check code uniqueness within tenant
+		var existing approval.Flow
+
+		err := tx.NewSelect().Model(&existing).Where(func(c orm.ConditionBuilder) {
+			c.Equals("tenant_id", tenantID)
+			c.Equals("code", cmd.Code)
+		}).Scan(ctx)
+		if err == nil {
+			return ErrFlowCodeExists
+		}
+
+		if !result.IsRecordNotFound(err) {
+			return fmt.Errorf("query flow by code: %w", err)
+		}
+
+		flow := approval.Flow{
+			TenantID:              tenantID,
+			CategoryID:            cmd.CategoryID,
+			Code:                  cmd.Code,
+			Name:                  cmd.Name,
+			Icon:                  cmd.Icon,
+			Description:           cmd.Description,
+			BindingMode:           cmd.BindingMode,
+			BusinessTable:         cmd.BusinessTable,
+			BusinessPkField:       cmd.BusinessPkField,
+			BusinessTitleField:    cmd.BusinessTitleField,
+			BusinessStatusField:   cmd.BusinessStatusField,
+			AdminUserIDs:          cmd.AdminUserIDs,
+			IsAllInitiateAllowed:  cmd.IsAllInitiateAllowed,
+			InstanceTitleTemplate: cmd.InstanceTitleTemplate,
+			IsActive:              true,
+			CurrentVersion:        0,
+		}
+		if _, err := tx.NewInsert().Model(&flow).Exec(ctx); err != nil {
+			return fmt.Errorf("insert flow: %w", err)
+		}
+
+		// Insert initiators
+		for _, init := range cmd.Initiators {
+			initiator := approval.FlowInitiator{
+				FlowID: flow.ID,
+				Kind:   init.Kind,
+				IDs:    init.IDs,
+			}
+			if _, err := tx.NewInsert().Model(&initiator).Exec(ctx); err != nil {
+				return fmt.Errorf("insert flow initiator: %w", err)
+			}
+		}
+
+		resultFlow = &flow
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return resultFlow, nil
+}
+
+// DeployFlow deploys a flow definition to an existing flow.
+// It creates a new version with nodes and edges. The flow must already exist (use CreateFlow first).
+func (s *FlowService) DeployFlow(ctx context.Context, cmd DeployFlowCmd) (*approval.FlowVersion, error) {
 	var def approval.FlowDefinition
 	if err := json.Unmarshal([]byte(cmd.Definition), &def); err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrInvalidFlowDesign, err)
@@ -53,47 +145,22 @@ func (s *FlowService) DeployFlow(ctx context.Context, cmd DeployFlowCmd) (*appro
 		return nil, fmt.Errorf("%w: %v", ErrInvalidFlowDesign, err)
 	}
 
-	var resultFlow *approval.Flow
-
-	tenantID := cmd.TenantID
-	if tenantID == "" {
-		tenantID = "default"
-	}
+	var resultVersion *approval.FlowVersion
 
 	err := s.db.RunInTX(ctx, func(ctx context.Context, tx orm.DB) error {
-		// Load or create flow
+		// Load existing flow
 		var flow approval.Flow
 
-		err := tx.NewSelect().Model(&flow).Where(func(c orm.ConditionBuilder) {
-			c.Equals("tenant_id", tenantID)
-			c.Equals("code", cmd.FlowCode)
-		}).Scan(ctx)
-		if err != nil && !result.IsRecordNotFound(err) {
-			return fmt.Errorf("query flow by code: %w", err)
+		if err := tx.NewSelect().Model(&flow).Where(func(c orm.ConditionBuilder) {
+			c.Equals("id", cmd.FlowID)
+		}).Scan(ctx); err != nil {
+			return ErrFlowNotFound
 		}
 
-		isNewFlow := result.IsRecordNotFound(err)
-
-		if isNewFlow {
-			flow = approval.Flow{
-				TenantID:             tenantID,
-				CategoryID:           cmd.CategoryID,
-				Code:                 cmd.FlowCode,
-				Name:                 cmd.FlowName,
-				IsActive:             true,
-				IsAllInitiateAllowed: true,
-				CurrentVersion:       1,
-			}
-			if _, err := tx.NewInsert().Model(&flow).Exec(ctx); err != nil {
-				return fmt.Errorf("insert flow: %w", err)
-			}
-		} else {
-			flow.CurrentVersion++
-			flow.Name = cmd.FlowName
-
-			if _, err := tx.NewUpdate().Model(&flow).WherePK().Exec(ctx); err != nil {
-				return fmt.Errorf("update flow: %w", err)
-			}
+		// Bump version
+		flow.CurrentVersion++
+		if _, err := tx.NewUpdate().Model(&flow).WherePK().Exec(ctx); err != nil {
+			return fmt.Errorf("update flow version: %w", err)
 		}
 
 		// Create new version
@@ -136,10 +203,10 @@ func (s *FlowService) DeployFlow(ctx context.Context, cmd DeployFlowCmd) (*appro
 			assignees := extractFromData[approval.AssigneeDefinition](nd.Data, "assignees")
 			for _, assigneeDef := range assignees {
 				assignee := approval.FlowNodeAssignee{
-					NodeID:       node.ID,
-					Kind: approval.AssigneeKind(assigneeDef.Kind),
-					IDs:  assigneeDef.IDs,
-					SortOrder:    assigneeDef.SortOrder,
+					NodeID:    node.ID,
+					Kind:      approval.AssigneeKind(assigneeDef.Kind),
+					IDs:       assigneeDef.IDs,
+					SortOrder: assigneeDef.SortOrder,
 				}
 				if assigneeDef.FormField != "" {
 					assignee.FormField = new(assigneeDef.FormField)
@@ -177,7 +244,7 @@ func (s *FlowService) DeployFlow(ctx context.Context, cmd DeployFlowCmd) (*appro
 			}
 		}
 
-		resultFlow = &flow
+		resultVersion = &version
 
 		return nil
 	})
@@ -185,7 +252,7 @@ func (s *FlowService) DeployFlow(ctx context.Context, cmd DeployFlowCmd) (*appro
 		return nil, err
 	}
 
-	return resultFlow, nil
+	return resultVersion, nil
 }
 
 // PublishVersion publishes a flow version (set status to published, archive old published).
@@ -193,9 +260,12 @@ func (s *FlowService) PublishVersion(ctx context.Context, versionID, operatorID 
 	return s.db.RunInTX(ctx, func(ctx context.Context, tx orm.DB) error {
 		var version approval.FlowVersion
 
-		if err := tx.NewSelect().Model(&version).Where(func(c orm.ConditionBuilder) {
-			c.Equals("id", versionID)
-		}).Scan(ctx); err != nil {
+		version.ID = versionID
+		if err := tx.NewSelect().
+			Model(&version).
+			WherePK().
+			ForUpdate().
+			Scan(ctx); err != nil {
 			return ErrFlowNotFound
 		}
 
@@ -204,22 +274,26 @@ func (s *FlowService) PublishVersion(ctx context.Context, versionID, operatorID 
 		}
 
 		// Archive old published versions
-		if _, err := tx.NewUpdate().Model((*approval.FlowVersion)(nil)).
-			Set("status", string(approval.VersionArchived)).
-			Where(func(c orm.ConditionBuilder) {
-				c.Equals("flow_id", version.FlowID)
-				c.Equals("status", string(approval.VersionPublished))
-			}).Exec(ctx); err != nil {
+		if _, err := tx.NewUpdate().
+			Model((*approval.FlowVersion)(nil)).
+			Set("status", approval.VersionArchived).
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Equals("flow_id", version.FlowID).
+					Equals("status", approval.VersionPublished)
+			}).
+			Exec(ctx); err != nil {
 			return fmt.Errorf("archive old versions: %w", err)
 		}
 
 		// Publish this version
-		now := timex.Now()
 		version.Status = approval.VersionPublished
-		version.PublishedAt = &now
+		version.PublishedAt = new(timex.Now())
 		version.PublishedBy = new(operatorID)
 
-		if _, err := tx.NewUpdate().Model(&version).WherePK().Exec(ctx); err != nil {
+		if _, err := tx.NewUpdate().
+			Model(&version).
+			WherePK().
+			Exec(ctx); err != nil {
 			return fmt.Errorf("publish version: %w", err)
 		}
 
@@ -347,7 +421,14 @@ func applyNodeData(node *approval.FlowNode, data map[string]any) {
 	}
 
 	if v, ok := data["fieldPermissions"].(map[string]any); ok {
-		node.FieldPermissions = v
+		perms := make(map[string]approval.Permission, len(v))
+		for k, val := range v {
+			if s, ok := val.(string); ok {
+				perms[k] = approval.Permission(s)
+			}
+		}
+
+		node.FieldPermissions = perms
 	}
 
 	// Extract condition branches for condition nodes

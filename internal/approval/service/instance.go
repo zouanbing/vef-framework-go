@@ -11,7 +11,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/internal/approval/engine"
-	"github.com/ilxqx/vef-framework-go/internal/approval/publisher"
+	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/timex"
@@ -70,21 +70,21 @@ type AddAssigneeCmd struct {
 
 // InstanceService manages instance lifecycle.
 type InstanceService struct {
-	db            orm.DB
-	engine        *engine.FlowEngine
-	instanceNoGen InstanceNoGenerator
-	publisher     *publisher.EventPublisher
-	userService   UserService
+	db              orm.DB
+	engine          *engine.FlowEngine
+	instanceNoGen   InstanceNoGenerator
+	publisher       *dispatcher.EventPublisher
+	assigneeService AssigneeService
 }
 
 // NewInstanceService creates a new InstanceService.
-func NewInstanceService(db orm.DB, eng *engine.FlowEngine, instanceNoGen InstanceNoGenerator, pub *publisher.EventPublisher, userSvc UserService) *InstanceService {
+func NewInstanceService(db orm.DB, eng *engine.FlowEngine, instanceNoGen InstanceNoGenerator, pub *dispatcher.EventPublisher, assigneeSvc AssigneeService) *InstanceService {
 	return &InstanceService{
-		db:            db,
-		engine:        eng,
-		instanceNoGen: instanceNoGen,
-		publisher:     pub,
-		userService:   userSvc,
+		db:              db,
+		engine:          eng,
+		instanceNoGen:   instanceNoGen,
+		publisher:       pub,
+		assigneeService: assigneeSvc,
 	}
 }
 
@@ -137,8 +137,10 @@ func (s *InstanceService) StartInstance(ctx context.Context, cmd StartInstanceCm
 			return fmt.Errorf("generate instance number: %w", err)
 		}
 
-		title, err := renderTitle(flow.InstanceTitleTemplate,
-			buildTitleTemplateData(flow.Name, flow.Code, instanceNo, cmd.FormData))
+		title, err := renderTitle(
+			flow.InstanceTitleTemplate,
+			buildTitleTemplateData(flow.Name, flow.Code, instanceNo, cmd.FormData),
+		)
 		if err != nil {
 			return fmt.Errorf("render instance title: %w", err)
 		}
@@ -1208,9 +1210,9 @@ func (s *InstanceService) checkInitiationPermission(ctx context.Context, tx orm.
 	}
 
 	for _, ini := range initiators {
-		switch ini.InitiatorKind {
+		switch ini.Kind {
 		case approval.InitiatorUser:
-			if slices.Contains(ini.InitiatorIDs, applicantID) {
+			if slices.Contains(ini.IDs, applicantID) {
 				return true, nil
 			}
 
@@ -1219,17 +1221,17 @@ func (s *InstanceService) checkInitiationPermission(ctx context.Context, tx orm.
 				continue
 			}
 
-			if slices.Contains(ini.InitiatorIDs, *applicantDeptID) {
+			if slices.Contains(ini.IDs, *applicantDeptID) {
 				return true, nil
 			}
 
 		case approval.InitiatorRole:
-			if s.userService == nil {
+			if s.assigneeService == nil {
 				continue
 			}
 
-			for _, roleID := range ini.InitiatorIDs {
-				users, err := s.userService.GetUsersByRole(ctx, roleID)
+			for _, roleID := range ini.IDs {
+				users, err := s.assigneeService.GetRoleUsers(ctx, roleID)
 				if err != nil {
 					return false, fmt.Errorf("get users by role %s: %w", roleID, err)
 				}
@@ -1247,7 +1249,7 @@ func (s *InstanceService) checkInitiationPermission(ctx context.Context, tx orm.
 // filterEditableFormData filters form data to only include fields that are editable or required
 // based on the node's field permissions configuration.
 // Fields without explicit permission are rejected (deny-by-default).
-func filterEditableFormData(formData map[string]any, permissions map[string]any) map[string]any {
+func filterEditableFormData(formData map[string]any, permissions map[string]approval.Permission) map[string]any {
 	if len(permissions) == 0 {
 		return formData
 	}
@@ -1260,8 +1262,7 @@ func filterEditableFormData(formData map[string]any, permissions map[string]any)
 			continue
 		}
 
-		permStr, _ := perm.(string)
-		if permStr == string(approval.PermissionEditable) || permStr == string(approval.PermissionRequired) {
+		if perm == approval.PermissionEditable || perm == approval.PermissionRequired {
 			filtered[k] = v
 		}
 	}

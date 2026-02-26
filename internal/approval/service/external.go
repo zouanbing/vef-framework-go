@@ -6,11 +6,8 @@ import (
 	"github.com/ilxqx/vef-framework-go/approval"
 )
 
-// OrganizationService provides org-related operations (implemented by host app).
-type OrganizationService = approval.OrganizationService
-
-// UserService provides user-related operations (implemented by host app).
-type UserService = approval.UserService
+// AssigneeService provides organization-related operations for resolving assignees (implemented by host app).
+type AssigneeService = approval.AssigneeService
 
 // InstanceNoGenerator generates unique instance numbers for flow instances.
 type InstanceNoGenerator interface {
