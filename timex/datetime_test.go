@@ -451,22 +451,10 @@ func TestDateTimeScan(t *testing.T) {
 	}{
 		{"String", "2023-12-25 14:30:45", false},
 		{"ByteSlice", []byte("2023-12-25 14:30:45"), false},
-		{"StringPointer", func() *string {
-			s := "2023-12-25 14:30:45"
-
-			return &s
-		}(), false},
-		{"ByteSlicePointer", func() *[]byte {
-			b := []byte("2023-12-25 14:30:45")
-
-			return &b
-		}(), false},
+		{"StringPointer", new("2023-12-25 14:30:45"), false},
+		{"ByteSlicePointer", new([]byte("2023-12-25 14:30:45")), false},
 		{"TimeTime", MakeTime(2023, 12, 25, 14, 30, 45), false},
-		{"TimePointer", func() *time.Time {
-			t := MakeTime(2023, 12, 25, 14, 30, 45)
-
-			return &t
-		}(), false},
+		{"TimePointer", new(MakeTime(2023, 12, 25, 14, 30, 45)), false},
 		{"NilStringPointer", (*string)(nil), false},
 		{"NilByteSlicePointer", (*[]byte)(nil), false},
 		{"NilTimePointer", (*time.Time)(nil), false},
