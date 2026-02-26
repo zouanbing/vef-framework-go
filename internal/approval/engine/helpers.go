@@ -23,19 +23,17 @@ func saveFormSnapshot(ctx context.Context, pc *ProcessContext) error {
 }
 
 // resolveAssignees resolves assignees using the composite resolver from the strategy registry.
-func resolveAssignees(ctx context.Context, pc *ProcessContext, orgService approval.OrganizationService, userService approval.UserService) ([]approval.ResolvedAssignee, error) {
+func resolveAssignees(ctx context.Context, pc *ProcessContext) ([]approval.ResolvedAssignee, error) {
 	var deptID string
 	if pc.Instance.ApplicantDeptID != nil {
 		deptID = *pc.Instance.ApplicantDeptID
 	}
 
 	return pc.Registry.CompositeAssigneeResolver().ResolveAll(ctx, pc.Assignees, &strategy.ResolveContext{
-		DB:          pc.DB,
-		ApplicantID: pc.ApplicantID,
-		DeptID:      deptID,
-		FormData:    pc.FormData,
-		OrgService:  orgService,
-		UserService: userService,
+		DB:              pc.DB,
+		ApplicantID:     pc.ApplicantID,
+		ApplicantDeptID: deptID,
+		FormData:        pc.FormData,
 	})
 }
 
@@ -71,7 +69,7 @@ func applyDelegation(ctx context.Context, db orm.DB, flowID string, assignees []
 		if finalID != a.UserID {
 			result = append(result, approval.ResolvedAssignee{
 				UserID:         finalID,
-				DelegateFromID: originalID,
+				DelegateFromID: &originalID,
 			})
 		} else {
 			result = append(result, a)
@@ -111,7 +109,7 @@ func createTasksForUsers(ctx context.Context, pc *ProcessContext, userIDs []stri
 
 // handleEmptyAssignee handles the case when no assignees are resolved.
 // The behavior depends on the node's EmptyHandlerAction configuration.
-func handleEmptyAssignee(ctx context.Context, pc *ProcessContext, orgService approval.OrganizationService) (*ProcessResult, error) {
+func handleEmptyAssignee(ctx context.Context, pc *ProcessContext, assigneeService approval.AssigneeService) (*ProcessResult, error) {
 	switch pc.Node.EmptyHandlerAction {
 	case approval.EmptyHandlerAutoPass:
 		return &ProcessResult{Action: NodeActionContinue}, nil
@@ -126,7 +124,7 @@ func handleEmptyAssignee(ctx context.Context, pc *ProcessContext, orgService app
 		return createTasksForUsers(ctx, pc, pc.Node.FallbackUserIDs)
 
 	case approval.EmptyHandlerTransferSuperior:
-		superiorID, err := getSuperior(ctx, orgService, pc.ApplicantID)
+		superiorID, err := getSuperior(ctx, assigneeService, pc.ApplicantID)
 		if err != nil {
 			return nil, err
 		}
@@ -173,8 +171,8 @@ func createTasksWithDelegation(ctx context.Context, pc *ProcessContext, assignee
 			Deadline:   deadline,
 		}
 
-		if assignee.DelegateFromID != "" {
-			task.DelegateFromID = new(assignee.DelegateFromID)
+		if assignee.DelegateFromID != nil {
+			task.DelegateFromID = assignee.DelegateFromID
 		}
 
 		if _, err := pc.DB.NewInsert().Model(task).Exec(ctx); err != nil {
@@ -185,15 +183,13 @@ func createTasksWithDelegation(ctx context.Context, pc *ProcessContext, assignee
 	return nil
 }
 
-// getSuperior retrieves the superior user ID, returning empty string if orgService is nil.
-func getSuperior(ctx context.Context, orgService approval.OrganizationService, userID string) (string, error) {
-	if orgService == nil {
+// getSuperior retrieves the superior user ID, returning empty string if assigneeService is nil.
+func getSuperior(ctx context.Context, assigneeService approval.AssigneeService, userID string) (string, error) {
+	if assigneeService == nil {
 		return "", nil
 	}
 
-	uid, _, err := orgService.GetSuperior(ctx, userID)
-
-	return uid, err
+	return assigneeService.GetSuperior(ctx, userID)
 }
 
 // computeDeadline returns a deadline based on the node's TimeoutHours configuration.

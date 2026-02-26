@@ -2,7 +2,6 @@ package engine
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/approval"
@@ -11,11 +10,6 @@ import (
 )
 
 const maxSubFlowDepth = 20
-
-var (
-	ErrNoPublishedVersion = errors.New("no published version found for sub-flow")
-	ErrSubFlowCycle       = errors.New("circular sub-flow reference detected")
-)
 
 // SubFlowProcessor handles sub-flow nodes.
 type SubFlowProcessor struct {
@@ -36,17 +30,17 @@ func (p *SubFlowProcessor) NodeKind() approval.NodeKind { return approval.NodeSu
 
 func (p *SubFlowProcessor) Process(ctx context.Context, pc *ProcessContext) (*ProcessResult, error) {
 	if p.engine == nil {
-		return nil, errors.New("FlowEngine not initialized in SubFlowProcessor")
+		return nil, ErrEngineNotInitialized
 	}
 
 	config := pc.Node.SubFlowConfig
 	if config == nil {
-		return nil, errors.New("sub flow config is required")
+		return nil, ErrSubFlowConfigRequired
 	}
 
 	flowID, _ := config["flowId"].(string)
 	if flowID == "" {
-		return nil, errors.New("sub flow config missing flowId")
+		return nil, ErrSubFlowConfigNoFlowID
 	}
 
 	// 1. Detect circular sub-flow references by traversing the parent chain

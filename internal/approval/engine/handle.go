@@ -10,16 +10,12 @@ import (
 // Unlike approval nodes, handle nodes create all tasks with sortOrder=0,
 // allowing any candidate to claim and complete the task.
 type HandleProcessor struct {
-	orgService  approval.OrganizationService
-	userService approval.UserService
+	assigneeService approval.AssigneeService
 }
 
 // NewHandleProcessor creates a new handle processor.
-func NewHandleProcessor(orgService approval.OrganizationService, userService approval.UserService) *HandleProcessor {
-	return &HandleProcessor{
-		orgService:  orgService,
-		userService: userService,
-	}
+func NewHandleProcessor(assigneeService approval.AssigneeService) *HandleProcessor {
+	return &HandleProcessor{assigneeService: assigneeService}
 }
 
 func (p *HandleProcessor) NodeKind() approval.NodeKind { return approval.NodeHandle }
@@ -35,7 +31,7 @@ func (p *HandleProcessor) Process(ctx context.Context, pc *ProcessContext) (*Pro
 	}
 
 	if len(assignees) == 0 {
-		return handleEmptyAssignee(ctx, pc, p.orgService)
+		return handleEmptyAssignee(ctx, pc, p.assigneeService)
 	}
 
 	assignees = applyDelegation(ctx, pc.DB, pc.Instance.FlowID, assignees)
@@ -64,7 +60,7 @@ func (p *HandleProcessor) Predict(ctx context.Context, pc *ProcessContext) ([]st
 }
 
 func (p *HandleProcessor) resolveAndDeduplicateAssignees(ctx context.Context, pc *ProcessContext) ([]approval.ResolvedAssignee, error) {
-	assignees, err := resolveAssignees(ctx, pc, p.orgService, p.userService)
+	assignees, err := resolveAssignees(ctx, pc)
 	if err != nil {
 		return nil, err
 	}

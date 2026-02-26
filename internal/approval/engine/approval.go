@@ -2,27 +2,20 @@ package engine
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"slices"
 
 	"github.com/ilxqx/vef-framework-go/approval"
 )
 
-var ErrNoAssignee = errors.New("no assignee found")
-
 // ApprovalProcessor handles approval nodes.
 type ApprovalProcessor struct {
-	orgService  approval.OrganizationService
-	userService approval.UserService
+	assigneeService approval.AssigneeService
 }
 
 // NewApprovalProcessor creates a new approval processor.
-func NewApprovalProcessor(orgService approval.OrganizationService, userService approval.UserService) *ApprovalProcessor {
-	return &ApprovalProcessor{
-		orgService:  orgService,
-		userService: userService,
-	}
+func NewApprovalProcessor(assigneeService approval.AssigneeService) *ApprovalProcessor {
+	return &ApprovalProcessor{assigneeService: assigneeService}
 }
 
 func (p *ApprovalProcessor) NodeKind() approval.NodeKind { return approval.NodeApproval }
@@ -38,7 +31,7 @@ func (p *ApprovalProcessor) Process(ctx context.Context, pc *ProcessContext) (*P
 	}
 
 	if len(assignees) == 0 {
-		return handleEmptyAssignee(ctx, pc, p.orgService)
+		return handleEmptyAssignee(ctx, pc, p.assigneeService)
 	}
 
 	if p.isSameApplicant(assignees, pc.ApplicantID) {
@@ -71,7 +64,7 @@ func (p *ApprovalProcessor) Predict(ctx context.Context, pc *ProcessContext) ([]
 }
 
 func (p *ApprovalProcessor) resolveAndProcessAssignees(ctx context.Context, pc *ProcessContext) ([]approval.ResolvedAssignee, error) {
-	assignees, err := resolveAssignees(ctx, pc, p.orgService, p.userService)
+	assignees, err := resolveAssignees(ctx, pc)
 	if err != nil {
 		return nil, err
 	}
@@ -105,8 +98,8 @@ func (p *ApprovalProcessor) createApprovalTasks(ctx context.Context, pc *Process
 			Status:     status,
 		}
 
-		if assignee.DelegateFromID != "" {
-			task.DelegateFromID = new(assignee.DelegateFromID)
+		if assignee.DelegateFromID != nil {
+			task.DelegateFromID = assignee.DelegateFromID
 		}
 
 		if _, err := pc.DB.NewInsert().Model(task).Exec(ctx); err != nil {
@@ -130,7 +123,7 @@ func (p *ApprovalProcessor) handleSameApplicant(ctx context.Context, pc *Process
 		return &ProcessResult{Action: NodeActionWait}, nil
 
 	case approval.SameApplicantTransferSuperior:
-		superiorID, err := getSuperior(ctx, p.orgService, pc.ApplicantID)
+		superiorID, err := getSuperior(ctx, p.assigneeService, pc.ApplicantID)
 		if err != nil {
 			return nil, err
 		}
@@ -165,7 +158,7 @@ func (p *ApprovalProcessor) predictSameApplicant(ctx context.Context, pc *Proces
 	case approval.SameApplicantAutoPass:
 		return nil, nil
 	case approval.SameApplicantTransferSuperior:
-		superiorID, err := getSuperior(ctx, p.orgService, pc.ApplicantID)
+		superiorID, err := getSuperior(ctx, p.assigneeService, pc.ApplicantID)
 		if err != nil {
 			return nil, err
 		}

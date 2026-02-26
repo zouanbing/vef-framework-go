@@ -2,11 +2,10 @@ package engine
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/internal/approval/publisher"
+	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
 	"github.com/ilxqx/vef-framework-go/internal/approval/strategy"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/timex"
@@ -16,21 +15,15 @@ const maxNodeDepth = 100
 
 type nodeDepthKey struct{}
 
-var (
-	ErrNoMatchingEdge    = errors.New("no matching edge")
-	ErrProcessorNotFound = errors.New("processor not found")
-	ErrMaxNodeDepth      = errors.New("max node processing depth exceeded")
-)
-
 // FlowEngine is the core engine for processing approval workflows.
 type FlowEngine struct {
 	registry   *strategy.StrategyRegistry
 	processors map[approval.NodeKind]NodeProcessor
-	publisher  *publisher.EventPublisher
+	publisher  *dispatcher.EventPublisher
 }
 
 // NewFlowEngine creates a new flow engine.
-func NewFlowEngine(registry *strategy.StrategyRegistry, processors []NodeProcessor, pub *publisher.EventPublisher) *FlowEngine {
+func NewFlowEngine(registry *strategy.StrategyRegistry, processors []NodeProcessor, pub *dispatcher.EventPublisher) *FlowEngine {
 	engine := &FlowEngine{
 		registry:   registry,
 		processors: make(map[approval.NodeKind]NodeProcessor, len(processors)),

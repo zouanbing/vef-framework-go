@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,9 +10,43 @@ import (
 	"github.com/ilxqx/vef-framework-go/approval"
 )
 
+// MockAssigneeService provides a minimal mock for approval.AssigneeService used by unit tests.
+type MockAssigneeService struct {
+	superiors   map[string]string
+	deptLeaders map[string][]string
+	roleUsers   map[string][]string
+}
+
+func (m *MockAssigneeService) GetSuperior(_ context.Context, userID string) (string, error) {
+	if m != nil && m.superiors != nil {
+		if s, ok := m.superiors[userID]; ok {
+			return s, nil
+		}
+	}
+	return "", nil
+}
+
+func (m *MockAssigneeService) GetDeptLeaders(_ context.Context, deptID string) ([]string, error) {
+	if m != nil && m.deptLeaders != nil {
+		if leaders, ok := m.deptLeaders[deptID]; ok {
+			return leaders, nil
+		}
+	}
+	return nil, nil
+}
+
+func (m *MockAssigneeService) GetRoleUsers(_ context.Context, roleID string) ([]string, error) {
+	if m != nil && m.roleUsers != nil {
+		if users, ok := m.roleUsers[roleID]; ok {
+			return users, nil
+		}
+	}
+	return nil, nil
+}
+
 // TestNewApprovalProcessor tests new approval processor scenarios.
 func TestNewApprovalProcessor(t *testing.T) {
-	p := NewApprovalProcessor(nil, nil)
+	p := NewApprovalProcessor(nil)
 	require.NotNil(t, p, "Should return a non-nil processor")
 	assert.Equal(t, approval.NodeApproval, p.NodeKind(), "Should return NodeApproval kind")
 }
@@ -71,7 +106,7 @@ func TestIsSameApplicant(t *testing.T) {
 
 // TestPredictSameApplicant tests predict same applicant scenarios.
 func TestPredictSameApplicant(t *testing.T) {
-	p := NewApprovalProcessor(nil, nil)
+	p := NewApprovalProcessor(nil)
 
 	t.Run("AutoPass", func(t *testing.T) {
 		pc := &ProcessContext{
@@ -103,12 +138,12 @@ func TestPredictSameApplicant(t *testing.T) {
 	})
 
 	t.Run("TransferSuperiorFound", func(t *testing.T) {
-		mockOrg := &MockOrganizationService{
-			superiors: map[string]struct{ id, name string }{
-				"u1": {id: "boss1", name: "Boss"},
+		mockOrg := &MockAssigneeService{
+			superiors: map[string]string{
+				"u1": "boss1",
 			},
 		}
-		p2 := NewApprovalProcessor(mockOrg, nil)
+		p2 := NewApprovalProcessor(mockOrg)
 		pc := &ProcessContext{
 			Node:        &approval.FlowNode{SameApplicantAction: approval.SameApplicantTransferSuperior},
 			ApplicantID: "u1",
