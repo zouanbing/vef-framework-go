@@ -6,34 +6,45 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/ilxqx/vef-framework-go/cron"
+	"github.com/ilxqx/vef-framework-go/internal/log"
 )
 
-// Module provides the timeout scanner and cron job registration.
-var Module = fx.Module(
-	"vef:approval:timeout",
+var (
+	logger = log.Named("approval:timeout")
 
-	fx.Provide(NewScanner),
-	fx.Invoke(registerTimeoutJobs),
+	// Module provides the timeout scanner and cron job registration.
+	Module = fx.Module(
+		"vef:approval:timeout",
+
+		fx.Provide(NewScanner),
+		fx.Invoke(registerTimeoutJobs),
+	)
 )
 
 func registerTimeoutJobs(scheduler cron.Scheduler, scanner *Scanner) error {
-	if _, err := scheduler.NewJob(cron.NewDurationJob(
+	scanJob, err := scheduler.NewJob(cron.NewDurationJob(
 		1*time.Minute,
 		cron.WithName("approval:timeout:scan"),
 		cron.WithTags("approval", "timeout"),
 		cron.WithTask(scanner.ScanTimeouts),
-	)); err != nil {
+	))
+	if err != nil {
 		return err
 	}
 
-	if _, err := scheduler.NewJob(cron.NewDurationJob(
+	logger.Infof("Timeout scan job [%s] registered, polling every 1m", scanJob.Name())
+
+	preWarnJob, err := scheduler.NewJob(cron.NewDurationJob(
 		5*time.Minute,
-		cron.WithName("approval:timeout:pre-warning"),
+		cron.WithName("approval:timeout:pre_warning"),
 		cron.WithTags("approval", "timeout"),
 		cron.WithTask(scanner.ScanPreWarnings),
-	)); err != nil {
+	))
+	if err != nil {
 		return err
 	}
+
+	logger.Infof("Pre-warning scan job [%s] registered, polling every 5m", preWarnJob.Name())
 
 	return nil
 }

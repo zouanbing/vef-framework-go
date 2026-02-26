@@ -3,40 +3,38 @@ package timeout
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/internal/approval/publisher"
-	"github.com/ilxqx/vef-framework-go/internal/log"
+	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/timex"
 )
 
-var logger = log.Named("approval:timeout")
-
 // Scanner scans for timed-out tasks and processes them.
 type Scanner struct {
 	db        orm.DB
-	publisher *publisher.EventPublisher
+	publisher *dispatcher.EventPublisher
 }
 
 // NewScanner creates a new timeout scanner.
-func NewScanner(db orm.DB, pub *publisher.EventPublisher) *Scanner {
-	return &Scanner{db: db, publisher: pub}
+func NewScanner(db orm.DB, publisher *dispatcher.EventPublisher) *Scanner {
+	return &Scanner{db: db, publisher: publisher}
 }
 
 // ScanTimeouts finds tasks that have passed their deadline and processes them.
 func (s *Scanner) ScanTimeouts(ctx context.Context) {
 	var tasks []approval.Task
 
-	err := s.db.NewSelect().Model(&tasks).Where(func(c orm.ConditionBuilder) {
-		c.In("status", []string{string(approval.TaskPending), string(approval.TaskWaiting)})
-		c.IsNotNull("deadline")
-		c.LessThan("deadline", timex.Now())
-		c.Equals("is_timeout", false)
-	}).Scan(ctx)
-	if err != nil {
-		logger.Error("Failed to scan timeout tasks: " + err.Error())
+	if err := s.db.NewSelect().
+		Model(&tasks).
+		Where(func(cb orm.ConditionBuilder) {
+			cb.In("status", []string{string(approval.TaskPending), string(approval.TaskWaiting)}).
+				IsNotNull("deadline").
+				LessThan("deadline", timex.Now()).
+				IsFalse("is_timeout")
+		}).
+		Scan(ctx); err != nil {
+		logger.Errorf("Failed to scan timeout tasks: %v", err)
 		return
 	}
 
@@ -44,11 +42,11 @@ func (s *Scanner) ScanTimeouts(ctx context.Context) {
 		return
 	}
 
-	logger.Info(fmt.Sprintf("Found %d timed-out tasks", len(tasks)))
+	logger.Infof("Found %d timed-out tasks", len(tasks))
 
 	for i := range tasks {
 		if err := s.processTimeout(ctx, &tasks[i]); err != nil {
-			logger.Error(fmt.Sprintf("Failed to process timeout for task %s: %s", tasks[i].ID, err.Error()))
+			logger.Errorf("Failed to process timeout for task %s: %v", tasks[i].ID, err)
 		}
 	}
 }
@@ -57,39 +55,31 @@ func (s *Scanner) ScanTimeouts(ctx context.Context) {
 func (s *Scanner) processTimeout(ctx context.Context, task *approval.Task) error {
 	var node approval.FlowNode
 
-	if err := s.db.NewSelect().Model(&node).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", task.NodeID)
-	}).Scan(ctx); err != nil {
+	if err := s.db.NewSelect().
+		Model(&node).
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("id", task.NodeID)
+		}).
+		Scan(ctx); err != nil {
 		return fmt.Errorf("load node %s: %w", task.NodeID, err)
 	}
 
 	return s.db.RunInTX(ctx, func(ctx context.Context, tx orm.DB) error {
 		// Mark the task as timed out
 		task.IsTimeout = true
-		if _, err := tx.NewUpdate().Model(task).WherePK().Select("is_timeout").Exec(ctx); err != nil {
+		if _, err := tx.NewUpdate().
+			Model(task).
+			WherePK().
+			Select("is_timeout").
+			Exec(ctx); err != nil {
 			return fmt.Errorf("mark timeout: %w", err)
 		}
 
-		// Record timeout notification
-		notify := &approval.TimeoutNotify{
-			TaskID:     task.ID,
-			NotifyType: approval.TimeoutNotifyTimeout,
-		}
-		if _, err := tx.NewInsert().Model(notify).Exec(ctx); err != nil {
-			return fmt.Errorf("insert timeout notify: %w", err)
-		}
-
-		events := []approval.DomainEvent{
-			approval.NewTaskTimeoutEvent(task.ID, task.InstanceID, task.NodeID, task.AssigneeID, task.Deadline.Unwrap()),
-		}
-
 		// Execute timeout action
-		actionEvents, err := s.executeTimeoutAction(ctx, tx, task, &node)
+		events, err := s.executeTimeoutAction(ctx, tx, task, &node)
 		if err != nil {
 			return fmt.Errorf("execute timeout action: %w", err)
 		}
-
-		events = append(events, actionEvents...)
 
 		return s.publisher.PublishAll(ctx, tx, events)
 	})
@@ -98,6 +88,8 @@ func (s *Scanner) processTimeout(ctx context.Context, task *approval.Task) error
 // executeTimeoutAction executes the configured timeout action for the node.
 func (s *Scanner) executeTimeoutAction(ctx context.Context, tx orm.DB, task *approval.Task, node *approval.FlowNode) ([]approval.DomainEvent, error) {
 	switch node.TimeoutAction {
+	case approval.TimeoutActionNotify:
+		return s.recordTimeoutNotify(ctx, tx, task)
 	case approval.TimeoutActionAutoPass:
 		return s.autoFinishTask(ctx, tx, task, node, approval.TaskApproved)
 	case approval.TimeoutActionAutoReject:
@@ -105,9 +97,22 @@ func (s *Scanner) executeTimeoutAction(ctx context.Context, tx orm.DB, task *app
 	case approval.TimeoutActionTransferAdmin:
 		return s.transferToAdmin(ctx, tx, task, node)
 	default:
-		// TimeoutActionNone, TimeoutActionNotify: no further action
 		return nil, nil
 	}
+}
+
+// recordTimeoutNotify returns the timeout event for the timed-out task.
+// Deduplication is handled by the is_timeout flag set in processTimeout.
+func (s *Scanner) recordTimeoutNotify(_ context.Context, _ orm.DB, task *approval.Task) ([]approval.DomainEvent, error) {
+	return []approval.DomainEvent{
+		approval.NewTaskTimeoutEvent(
+			task.ID,
+			task.InstanceID,
+			task.NodeID,
+			task.AssigneeID,
+			*task.Deadline,
+		),
+	}, nil
 }
 
 // autoFinishTask finishes a task with the given status and logs the action.
@@ -115,7 +120,11 @@ func (s *Scanner) autoFinishTask(ctx context.Context, tx orm.DB, task *approval.
 	task.Status = status
 	task.FinishedAt = new(timex.Now())
 
-	if _, err := tx.NewUpdate().Model(task).WherePK().Select("status", "finished_at").Exec(ctx); err != nil {
+	if _, err := tx.NewUpdate().
+		Model(task).
+		WherePK().
+		Select("status", "finished_at").
+		Exec(ctx); err != nil {
 		return nil, fmt.Errorf("finish task: %w", err)
 	}
 
@@ -132,39 +141,63 @@ func (s *Scanner) autoFinishTask(ctx context.Context, tx orm.DB, task *approval.
 		OperatorID: "system",
 		Opinion:    new("系统超时自动处理"),
 	}
-	if _, err := tx.NewInsert().Model(actionLog).Exec(ctx); err != nil {
+	if _, err := tx.NewInsert().
+		Model(actionLog).
+		Exec(ctx); err != nil {
 		return nil, fmt.Errorf("insert action log: %w", err)
 	}
 
-	var events []approval.DomainEvent
 	if status == approval.TaskApproved {
-		events = append(events, approval.NewTaskApprovedEvent(task.ID, task.InstanceID, node.ID, "system", "系统超时自动处理"))
-	} else {
-		events = append(events, approval.NewTaskRejectedEvent(task.ID, task.InstanceID, node.ID, "system", "系统超时自动处理"))
+		return []approval.DomainEvent{
+			approval.NewTaskApprovedEvent(
+				task.ID,
+				task.InstanceID,
+				node.ID,
+				"system",
+				"任务处理超时，系统自动通过",
+			),
+		}, nil
 	}
 
-	return events, nil
+	return []approval.DomainEvent{
+		approval.NewTaskRejectedEvent(
+			task.ID,
+			task.InstanceID,
+			node.ID,
+			"system",
+			"任务处理超时，系统自动驳回",
+		),
+	}, nil
 }
 
 // transferToAdmin transfers a timed-out task to the node's admin users.
 func (s *Scanner) transferToAdmin(ctx context.Context, tx orm.DB, task *approval.Task, node *approval.FlowNode) ([]approval.DomainEvent, error) {
 	if len(node.AdminUserIDs) == 0 {
-		return nil, nil
+		return nil, fmt.Errorf("node %q configured TimeoutActionTransferAdmin but has no admin users", node.NodeKey)
 	}
 
 	// Finish the original task as transferred
 	task.Status = approval.TaskTransferred
 	task.FinishedAt = new(timex.Now())
 
-	if _, err := tx.NewUpdate().Model(task).WherePK().Select("status", "finished_at").Exec(ctx); err != nil {
+	if _, err := tx.NewUpdate().
+		Model(task).
+		WherePK().
+		Select("status", "finished_at").
+		Exec(ctx); err != nil {
 		return nil, fmt.Errorf("finish transferred task: %w", err)
 	}
 
-	var events []approval.DomainEvent
-
-	events = append(events, approval.NewTaskTransferredEvent(
-		task.ID, task.InstanceID, task.NodeID, task.AssigneeID, node.AdminUserIDs[0], "系统超时转交管理员",
-	))
+	events := []approval.DomainEvent{
+		approval.NewTaskTransferredEvent(
+			task.ID,
+			task.InstanceID,
+			task.NodeID,
+			task.AssigneeID,
+			node.AdminUserIDs[0],
+			"任务处理超时，系统自动转交管理员",
+		),
+	}
 
 	// Create new tasks for admin users
 	for _, adminID := range node.AdminUserIDs {
@@ -176,14 +209,22 @@ func (s *Scanner) transferToAdmin(ctx context.Context, tx orm.DB, task *approval
 			SortOrder:  0,
 			Status:     approval.TaskPending,
 		}
-		if _, err := tx.NewInsert().Model(newTask).Exec(ctx); err != nil {
+		if _, err := tx.NewInsert().
+			Model(newTask).
+			Exec(ctx); err != nil {
 			return nil, fmt.Errorf("create admin task: %w", err)
 		}
 
-		events = append(events, approval.NewTaskCreatedEvent(newTask.ID, task.InstanceID, task.NodeID, adminID, nil))
+		events = append(events, approval.NewTaskCreatedEvent(
+			newTask.ID,
+			task.InstanceID,
+			task.NodeID,
+			adminID,
+			nil,
+		))
 	}
 
-	// Log the action
+	// Record the action
 	actionLog := &approval.ActionLog{
 		InstanceID:   task.InstanceID,
 		NodeID:       new(task.NodeID),
@@ -191,81 +232,81 @@ func (s *Scanner) transferToAdmin(ctx context.Context, tx orm.DB, task *approval
 		Action:       approval.ActionTransfer,
 		OperatorID:   "system",
 		TransferToID: new(node.AdminUserIDs[0]),
-		Opinion:      new("系统超时转交管理员"),
+		Opinion:      new("任务处理超时，系统自动转交管理员"),
 	}
-	if _, err := tx.NewInsert().Model(actionLog).Exec(ctx); err != nil {
+	if _, err := tx.NewInsert().
+		Model(actionLog).
+		Exec(ctx); err != nil {
 		return nil, fmt.Errorf("insert transfer action log: %w", err)
 	}
 
 	return events, nil
 }
 
-// preWarningRow holds data from the pre-warning scan query.
-type preWarningRow struct {
+// PreWarningTask holds data from the pre-warning scan query.
+type PreWarningTask struct {
 	approval.Task
+
 	TimeoutNotifyBeforeHours int `bun:"timeout_notify_before_hours"`
 }
 
 // ScanPreWarnings finds tasks approaching their deadline and sends warning notifications.
 func (s *Scanner) ScanPreWarnings(ctx context.Context) {
-	now := time.Now()
+	var tasks []PreWarningTask
 
-	var rows []preWarningRow
-
-	err := s.db.NewRaw(`
-		SELECT at.*, afn.timeout_notify_before_hours
-		FROM apv_task AS at
-		JOIN apv_flow_node AS afn ON afn.id = at.node_id
-		WHERE at.status IN (?, ?)
-		  AND at.deadline IS NOT NULL
-		  AND at.is_timeout = ?
-		  AND afn.timeout_notify_before_hours > 0
-		  AND at.id NOT IN (
-		    SELECT task_id FROM apv_timeout_notify WHERE notify_type = ?
-		  )`,
-		string(approval.TaskPending), string(approval.TaskWaiting),
-		false, string(approval.TimeoutNotifyPreWarning),
-	).Scan(ctx, &rows)
-	if err != nil {
-		logger.Error("Failed to scan pre-warning tasks: " + err.Error())
+	if err := s.db.NewSelect().
+		Model(&tasks).
+		SelectModelColumns().
+		Select("afn.timeout_notify_before_hours").
+		Join((*approval.FlowNode)(nil), func(cb orm.ConditionBuilder) {
+			cb.EqualsColumn("afn.id", "at.node_id")
+		}).
+		Where(func(cb orm.ConditionBuilder) {
+			cb.In("status", []approval.TaskStatus{approval.TaskPending, approval.TaskWaiting}).
+				IsNotNull("deadline").
+				IsFalse("is_timeout").
+				GreaterThan("afn.timeout_notify_before_hours", 0).
+				// deadline - hours <= NOW(), equivalent to: deadline <= NOW() + hours
+				LessThanOrEqualExpr("at.deadline", func(eb orm.ExprBuilder) any {
+					return eb.DateAdd(eb.Now(), eb.Column("afn.timeout_notify_before_hours"), orm.UnitHour)
+				}).
+				IsFalse("is_pre_warning_sent")
+		}).
+		Scan(ctx); err != nil {
+		logger.Errorf("Failed to scan pre-warning tasks: %v", err)
 		return
 	}
 
-	for _, r := range rows {
-		deadline := r.Deadline.Unwrap()
-		warningTime := deadline.Add(-time.Duration(r.TimeoutNotifyBeforeHours) * time.Hour)
+	for _, task := range tasks {
+		hoursLeft := max(int(task.Deadline.Until().Hours()), 0)
 
-		if now.Before(warningTime) {
-			continue
-		}
-
-		hoursLeft := int(time.Until(deadline).Hours())
-		if hoursLeft < 0 {
-			hoursLeft = 0
-		}
-
-		if err := s.sendPreWarning(ctx, &r.Task, hoursLeft); err != nil {
-			logger.Error(fmt.Sprintf("Failed to send pre-warning for task %s: %s", r.ID, err.Error()))
+		if err := s.sendPreWarning(ctx, &task.Task, hoursLeft); err != nil {
+			logger.Errorf("Failed to send pre-warning for task %s: %v", task.ID, err)
 		}
 	}
 }
 
-// sendPreWarning sends a pre-deadline warning notification for a task.
+// sendPreWarning marks the task as pre-warning sent and publishes the warning event.
 func (s *Scanner) sendPreWarning(ctx context.Context, task *approval.Task, hoursLeft int) error {
 	return s.db.RunInTX(ctx, func(ctx context.Context, tx orm.DB) error {
-		notify := &approval.TimeoutNotify{
-			TaskID:     task.ID,
-			NotifyType: approval.TimeoutNotifyPreWarning,
-		}
-		if _, err := tx.NewInsert().Model(notify).Exec(ctx); err != nil {
-			return fmt.Errorf("insert pre-warning notify: %w", err)
+		task.IsPreWarningSent = true
+		if _, err := tx.NewUpdate().
+			Model(task).
+			WherePK().
+			Select("is_pre_warning_sent").
+			Exec(ctx); err != nil {
+			return fmt.Errorf("mark pre-warning sent: %w", err)
 		}
 
-		event := approval.NewTaskDeadlineWarningEvent(
-			task.ID, task.InstanceID, task.NodeID, task.AssigneeID,
-			task.Deadline.Unwrap(), hoursLeft,
+		evt := approval.NewTaskDeadlineWarningEvent(
+			task.ID,
+			task.InstanceID,
+			task.NodeID,
+			task.AssigneeID,
+			*task.Deadline,
+			hoursLeft,
 		)
 
-		return s.publisher.PublishAll(ctx, tx, []approval.DomainEvent{event})
+		return s.publisher.PublishAll(ctx, tx, []approval.DomainEvent{evt})
 	})
 }
