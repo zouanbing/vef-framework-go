@@ -316,14 +316,15 @@ func TestIsFloat(t *testing.T) {
 // TestEqual tests Equal for all supported comparison scenarios.
 func TestEqual(t *testing.T) {
 	type comparableStruct struct{ X int }
+
 	type nonComparableStruct struct{ Items []int }
 
 	var (
-		ptrA        = new(int)
-		ptrB        = new(int)
-		nilSliceA   []int
-		nilSliceB   []int
-		nilMapA     map[string]int
+		ptrA      = new(int)
+		ptrB      = new(int)
+		nilSliceA []int
+		nilSliceB []int
+		nilMapA   map[string]int
 	)
 
 	tests := []struct {

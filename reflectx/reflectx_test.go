@@ -679,6 +679,7 @@ func TestConvertValue(t *testing.T) {
 
 	t.Run("NilPointerToNamedTypePointer", func(t *testing.T) {
 		var src *[]int
+
 		srcVal := reflect.ValueOf(src)
 		targetType := reflect.TypeFor[*namedSlice]()
 

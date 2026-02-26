@@ -1315,6 +1315,7 @@ func TestVisitBreadthFirstStopAction(t *testing.T) {
 	visitor := Visitor{
 		VisitStruct: func(structType reflect.Type, _ reflect.Value, _ int) VisitAction {
 			visitedStructs = append(visitedStructs, structType.Name())
+
 			return Stop
 		},
 	}
@@ -1340,10 +1341,12 @@ func TestVisitBreadthFirstSkipChildrenAction(t *testing.T) {
 			if field.Name == "Services" {
 				return SkipChildren
 			}
+
 			return Continue
 		},
 		VisitStruct: func(structType reflect.Type, _ reflect.Value, _ int) VisitAction {
 			visitedStructs = append(visitedStructs, structType.Name())
+
 			return Continue
 		},
 	}
@@ -1370,6 +1373,7 @@ func TestVisitBreadthFirstMaxDepth(t *testing.T) {
 	visitor := Visitor{
 		VisitStruct: func(structType reflect.Type, _ reflect.Value, _ int) VisitAction {
 			visitedStructs = append(visitedStructs, structType.Name())
+
 			return Continue
 		},
 	}
@@ -1391,6 +1395,7 @@ func TestVisitBreadthFirstNilPointerField(t *testing.T) {
 	visitor := Visitor{
 		VisitStruct: func(structType reflect.Type, _ reflect.Value, _ int) VisitAction {
 			visitedStructs = append(visitedStructs, structType.Name())
+
 			return Continue
 		},
 	}
@@ -1415,6 +1420,7 @@ func TestVisitBreadthFirstUnexportedFields(t *testing.T) {
 	visitor := Visitor{
 		VisitField: func(field reflect.StructField, _ reflect.Value, _ int) VisitAction {
 			visitedFields = append(visitedFields, field.Name)
+
 			return Continue
 		},
 	}
@@ -1433,6 +1439,7 @@ func TestVisitBreadthFirstVisitedDedup(t *testing.T) {
 	visitor := Visitor{
 		VisitStruct: func(structType reflect.Type, _ reflect.Value, _ int) VisitAction {
 			visitedStructs = append(visitedStructs, structType.Name())
+
 			return Continue
 		},
 	}
@@ -1468,6 +1475,7 @@ func TestVisitMethodStopAction(t *testing.T) {
 			visitor := Visitor{
 				VisitMethod: func(method reflect.Method, _ reflect.Value, _ int) VisitAction {
 					visitedMethods = append(visitedMethods, method.Name)
+
 					return Stop
 				},
 			}
@@ -1488,6 +1496,7 @@ func TestVisitTypeBreadthFirstStopAction(t *testing.T) {
 	visitor := TypeVisitor{
 		VisitStructType: func(structType reflect.Type, _ int) VisitAction {
 			visitedTypes = append(visitedTypes, structType.Name())
+
 			return Stop
 		},
 	}
@@ -1506,10 +1515,12 @@ func TestVisitTypeBreadthFirstSkipChildrenAction(t *testing.T) {
 			if field.Name == "Services" {
 				return SkipChildren
 			}
+
 			return Continue
 		},
 		VisitStructType: func(structType reflect.Type, _ int) VisitAction {
 			visitedTypes = append(visitedTypes, structType.Name())
+
 			return Continue
 		},
 	}
@@ -1526,6 +1537,7 @@ func TestVisitTypeBreadthFirstMaxDepth(t *testing.T) {
 	visitor := TypeVisitor{
 		VisitStructType: func(structType reflect.Type, _ int) VisitAction {
 			visitedTypes = append(visitedTypes, structType.Name())
+
 			return Continue
 		},
 	}
@@ -1542,6 +1554,7 @@ func TestVisitTypeBreadthFirstVisitedDedup(t *testing.T) {
 	visitor := TypeVisitor{
 		VisitStructType: func(structType reflect.Type, _ int) VisitAction {
 			visitedTypes = append(visitedTypes, structType.Name())
+
 			return Continue
 		},
 	}
@@ -1580,6 +1593,7 @@ func TestVisitTypeUnexportedFields(t *testing.T) {
 			visitor := TypeVisitor{
 				VisitFieldType: func(field reflect.StructField, _ int) VisitAction {
 					visitedFields = append(visitedFields, field.Name)
+
 					return Continue
 				},
 			}
@@ -1608,6 +1622,7 @@ func TestVisitTypeMethodStopAction(t *testing.T) {
 			visitor := TypeVisitor{
 				VisitMethodType: func(method reflect.Method, _ reflect.Type, _ int) VisitAction {
 					visitedMethods = append(visitedMethods, method.Name)
+
 					return Stop
 				},
 			}

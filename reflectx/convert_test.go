@@ -3,14 +3,16 @@ package reflectx
 import (
 	"testing"
 
-	"github.com/ilxqx/vef-framework-go/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ilxqx/vef-framework-go/decimal"
 )
 
 // TestToDecimalE tests ToDecimalE for all supported types.
 func TestToDecimalE(t *testing.T) {
 	n := 42
+
 	var iface any = 99
 
 	tests := []struct {
@@ -38,6 +40,7 @@ func TestToDecimalE(t *testing.T) {
 			got, err := ToDecimalE(tt.input)
 			if tt.wantErr {
 				assert.Error(t, err, "Should return error")
+
 				return
 			}
 
