@@ -49,3 +49,7 @@ func newMonitorConfig(cfg config.Config) (*config.MonitorConfig, error) {
 func newMCPConfig(cfg config.Config) (*config.MCPConfig, error) {
 	return unmarshalConfig(cfg, "vef.mcp", new(config.MCPConfig))
 }
+
+func newApprovalConfig(cfg config.Config) (*config.ApprovalConfig, error) {
+	return unmarshalConfig(cfg, "vef.approval", new(config.ApprovalConfig))
+}

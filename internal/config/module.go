@@ -16,5 +16,6 @@ var Module = fx.Module(
 		newStorageConfig,
 		newMonitorConfig,
 		newMCPConfig,
+		newApprovalConfig,
 	),
 )

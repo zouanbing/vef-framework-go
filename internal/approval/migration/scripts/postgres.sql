@@ -101,16 +101,16 @@ CREATE INDEX idx_apv_flow__tenant_id ON apv_flow(tenant_id);
 CREATE TABLE IF NOT EXISTS apv_flow_initiator (
     id VARCHAR(32) PRIMARY KEY,
     flow_id VARCHAR(32) NOT NULL,
-    initiator_kind VARCHAR(16) NOT NULL,
-    initiator_ids JSONB NOT NULL DEFAULT '[]',
+    kind VARCHAR(16) NOT NULL,
+    ids JSONB NOT NULL DEFAULT '[]',
     CONSTRAINT fk_apv_flow_initiator__flow_id FOREIGN KEY (flow_id) REFERENCES apv_flow(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 COMMENT ON TABLE apv_flow_initiator IS '流程发起人';
 COMMENT ON COLUMN apv_flow_initiator.id IS '主键';
 COMMENT ON COLUMN apv_flow_initiator.flow_id IS '流程ID';
-COMMENT ON COLUMN apv_flow_initiator.initiator_kind IS '发起人类型';
-COMMENT ON COLUMN apv_flow_initiator.initiator_ids IS '发起人ID';
+COMMENT ON COLUMN apv_flow_initiator.kind IS '发起人类型';
+COMMENT ON COLUMN apv_flow_initiator.ids IS '发起人ID';
 
 CREATE INDEX idx_apv_flow_initiator__flow_id ON apv_flow_initiator(flow_id);
 
@@ -439,6 +439,7 @@ CREATE TABLE IF NOT EXISTS apv_task (
     -- Timeout info
     deadline TIMESTAMP,
     is_timeout BOOLEAN NOT NULL DEFAULT false,
+    is_pre_warning_sent BOOLEAN NOT NULL DEFAULT false,
     -- Time record
     finished_at TIMESTAMP,
     CONSTRAINT fk_apv_task__instance_id FOREIGN KEY (instance_id) REFERENCES apv_instance(id) ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -464,6 +465,7 @@ COMMENT ON COLUMN apv_task.parent_task_id IS '来源任务ID';
 COMMENT ON COLUMN apv_task.add_assignee_type IS '添加方式';
 COMMENT ON COLUMN apv_task.deadline IS '截止时间';
 COMMENT ON COLUMN apv_task.is_timeout IS '是否已超时';
+COMMENT ON COLUMN apv_task.is_pre_warning_sent IS '是否已发送预警通知';
 COMMENT ON COLUMN apv_task.finished_at IS '完成时间';
 
 CREATE INDEX idx_apv_task__tenant_id ON apv_task(tenant_id);
@@ -674,6 +676,7 @@ CREATE TABLE IF NOT EXISTS apv_event_outbox (
     retry_count INTEGER NOT NULL DEFAULT 0,
     last_error TEXT,
     processed_at TIMESTAMP,
+    retry_after TIMESTAMP,
     CONSTRAINT uk_apv_event_outbox__event_id UNIQUE (event_id)
 );
 
@@ -688,8 +691,9 @@ COMMENT ON COLUMN apv_event_outbox.status IS '状态';
 COMMENT ON COLUMN apv_event_outbox.retry_count IS '重试次数';
 COMMENT ON COLUMN apv_event_outbox.last_error IS '最后一次错误信息';
 COMMENT ON COLUMN apv_event_outbox.processed_at IS '处理时间';
+COMMENT ON COLUMN apv_event_outbox.retry_after IS '下次重试时间';
 
-CREATE INDEX idx_apv_event_outbox__status_created_at ON apv_event_outbox(status, created_at);
+CREATE INDEX idx_apv_event_outbox__relay ON apv_event_outbox(status, retry_after, created_at) WHERE status IN ('pending', 'failed');
 
 -- Urge record
 CREATE TABLE IF NOT EXISTS apv_urge_record (
@@ -718,25 +722,4 @@ COMMENT ON COLUMN apv_urge_record.message IS '催办消息';
 
 CREATE INDEX idx_apv_urge_record__task_id_urger_id_created_at ON apv_urge_record(task_id, urger_id, created_at);
 CREATE INDEX idx_apv_urge_record__instance_id ON apv_urge_record(instance_id);
-
--- Timeout notification deduplication record
-CREATE TABLE IF NOT EXISTS apv_timeout_notify (
-    id VARCHAR(32) PRIMARY KEY,
-    created_at TIMESTAMP NOT NULL DEFAULT LOCALTIMESTAMP,
-    created_by VARCHAR(32) NOT NULL DEFAULT 'system',
-    task_id VARCHAR(32) NOT NULL,
-    notify_type VARCHAR(16) NOT NULL,
-    CONSTRAINT uk_apv_timeout_notify__task_id_notify_type UNIQUE (task_id, notify_type),
-    CONSTRAINT fk_apv_timeout_notify__task_id FOREIGN KEY (task_id) REFERENCES apv_task(id) ON DELETE CASCADE ON UPDATE CASCADE
-);
-
-COMMENT ON TABLE apv_timeout_notify IS '超时通知记录';
-COMMENT ON COLUMN apv_timeout_notify.id IS '主键';
-COMMENT ON COLUMN apv_timeout_notify.created_at IS '通知时间';
-COMMENT ON COLUMN apv_timeout_notify.created_by IS '创建人ID';
-COMMENT ON COLUMN apv_timeout_notify.task_id IS '任务ID';
-COMMENT ON COLUMN apv_timeout_notify.notify_type IS '通知类型';
-
-CREATE INDEX idx_apv_timeout_notify__notify_type_task_id ON apv_timeout_notify(notify_type, task_id);
-
 
