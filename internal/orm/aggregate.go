@@ -279,8 +279,8 @@ var stringAggStrategy = &dialectStrategy{
 }
 
 // statisticalStrategy builds a dialectStrategy for statistical aggregates (STDDEV, VARIANCE).
-// pgPrefix is the PostgreSQL function prefix (e.g., "STDDEV", "VAR") used with "_POP"/"_SAMP" suffixes.
-// mysqlPrefix follows the same pattern. mysqlDefault is the fallback name when no mode is specified.
+// PgPrefix is the PostgreSQL function prefix (e.g., "STDDEV", "VAR") used with "_POP"/"_SAMP" suffixes.
+// MysqlPrefix follows the same pattern. mysqlDefault is the fallback name when no mode is specified.
 func statisticalStrategy(pgPrefix, mysqlPrefix, mysqlDefault string) *dialectStrategy {
 	return &dialectStrategy{
 		postgres: &dialectAggConfig{
@@ -809,14 +809,14 @@ func newGenericSimpleAggExpr[T any](self T, qb QueryBuilder, funcName string) *s
 
 func newMinExpr(qb QueryBuilder) *simpleAggExpr[MinBuilder] {
 	expr := newGenericSimpleAggExpr[MinBuilder](nil, qb, "MIN")
-	expr.baseAggregateBuilder.self = expr
+	expr.self = expr
 
 	return expr
 }
 
 func newMaxExpr(qb QueryBuilder) *simpleAggExpr[MaxBuilder] {
 	expr := newGenericSimpleAggExpr[MaxBuilder](nil, qb, "MAX")
-	expr.baseAggregateBuilder.self = expr
+	expr.self = expr
 
 	return expr
 }
@@ -844,7 +844,7 @@ func newGenericCountExpr[T any](self T, qb QueryBuilder) *countExpr[T] {
 
 func newCountExpr(qb QueryBuilder) *countExpr[CountBuilder] {
 	expr := newGenericCountExpr[CountBuilder](nil, qb)
-	expr.baseAggregateBuilder.self = expr
+	expr.self = expr
 
 	return expr
 }
@@ -872,14 +872,14 @@ func newGenericDistinctableAggExpr[T any](self T, qb QueryBuilder, funcName stri
 
 func newSumExpr(qb QueryBuilder) *distinctableAggExpr[SumBuilder] {
 	expr := newGenericDistinctableAggExpr[SumBuilder](nil, qb, "SUM")
-	expr.baseAggregateBuilder.self = expr
+	expr.self = expr
 
 	return expr
 }
 
 func newAvgExpr(qb QueryBuilder) *distinctableAggExpr[AvgBuilder] {
 	expr := newGenericDistinctableAggExpr[AvgBuilder](nil, qb, "AVG")
-	expr.baseAggregateBuilder.self = expr
+	expr.self = expr
 
 	return expr
 }
@@ -923,7 +923,7 @@ func newGenericStringAggExpr[T any](self T, qb QueryBuilder) *stringAggExpr[T] {
 
 func newStringAggExpr(qb QueryBuilder) *stringAggExpr[StringAggBuilder] {
 	expr := newGenericStringAggExpr[StringAggBuilder](nil, qb)
-	expr.baseAggregateBuilder.self = expr
+	expr.self = expr
 
 	return expr
 }
@@ -958,7 +958,7 @@ func newGenericArrayAggExpr[T any](self T, qb QueryBuilder) *arrayAggExpr[T] {
 
 func newArrayAggExpr(qb QueryBuilder) *arrayAggExpr[ArrayAggBuilder] {
 	expr := newGenericArrayAggExpr[ArrayAggBuilder](nil, qb)
-	expr.baseAggregateBuilder.self = expr
+	expr.self = expr
 
 	return expr
 }
@@ -996,7 +996,7 @@ func newGenericStdDevExpr[T any](self T, qb QueryBuilder) *stdDevExpr[T] {
 
 func newStdDevExpr(qb QueryBuilder) *stdDevExpr[StdDevBuilder] {
 	expr := newGenericStdDevExpr[StdDevBuilder](nil, qb)
-	expr.baseAggregateBuilder.self = expr
+	expr.self = expr
 
 	return expr
 }
@@ -1012,7 +1012,7 @@ func newGenericVarianceExpr[T any](self T, qb QueryBuilder) *varianceExpr[T] {
 
 func newVarianceExpr(qb QueryBuilder) *varianceExpr[VarianceBuilder] {
 	expr := newGenericVarianceExpr[VarianceBuilder](nil, qb)
-	expr.baseAggregateBuilder.self = expr
+	expr.self = expr
 
 	return expr
 }
@@ -1044,7 +1044,7 @@ func newGenericJSONObjectAggExpr[T any](self T, qb QueryBuilder) *jsonObjectAggE
 
 func newJSONObjectAggExpr(qb QueryBuilder) *jsonObjectAggExpr[JSONObjectAggBuilder] {
 	expr := newGenericJSONObjectAggExpr[JSONObjectAggBuilder](nil, qb)
-	expr.baseAggregateBuilder.self = expr
+	expr.self = expr
 
 	return expr
 }
@@ -1076,7 +1076,7 @@ func newGenericJSONArrayAggExpr[T any](self T, qb QueryBuilder) *jsonArrayAggExp
 
 func newJSONArrayAggExpr(qb QueryBuilder) *jsonArrayAggExpr[JSONArrayAggBuilder] {
 	expr := newGenericJSONArrayAggExpr[JSONArrayAggBuilder](nil, qb)
-	expr.baseAggregateBuilder.self = expr
+	expr.self = expr
 
 	return expr
 }
@@ -1102,28 +1102,28 @@ func newGenericDialectAggExpr[T any](self T, qb QueryBuilder, strategy *dialectS
 
 func newBitOrExpr(qb QueryBuilder) *dialectAggExpr[BitOrBuilder] {
 	expr := newGenericDialectAggExpr[BitOrBuilder](nil, qb, bitOrStrategy)
-	expr.baseAggregateBuilder.self = expr
+	expr.self = expr
 
 	return expr
 }
 
 func newBitAndExpr(qb QueryBuilder) *dialectAggExpr[BitAndBuilder] {
 	expr := newGenericDialectAggExpr[BitAndBuilder](nil, qb, bitAndStrategy)
-	expr.baseAggregateBuilder.self = expr
+	expr.self = expr
 
 	return expr
 }
 
 func newBoolOrExpr(qb QueryBuilder) *dialectAggExpr[BoolOrBuilder] {
 	expr := newGenericDialectAggExpr[BoolOrBuilder](nil, qb, boolOrStrategy)
-	expr.baseAggregateBuilder.self = expr
+	expr.self = expr
 
 	return expr
 }
 
 func newBoolAndExpr(qb QueryBuilder) *dialectAggExpr[BoolAndBuilder] {
 	expr := newGenericDialectAggExpr[BoolAndBuilder](nil, qb, boolAndStrategy)
-	expr.baseAggregateBuilder.self = expr
+	expr.self = expr
 
 	return expr
 }

@@ -582,10 +582,12 @@ func (q *BunSelectQuery) forLock(mode, suffix string, tables ...any) SelectQuery
 	}
 
 	clause := mode
+
 	hasTables := len(tables) > 0
 	if hasTables {
 		clause += " OF ?"
 	}
+
 	if suffix != "" {
 		clause += " " + suffix
 	}

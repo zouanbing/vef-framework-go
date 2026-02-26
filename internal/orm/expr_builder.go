@@ -1161,10 +1161,12 @@ func (b *QueryExprBuilder) dateArith(op string, expr, interval any, unit DateTim
 			if op == "-" {
 				fn = "DATE_SUB"
 			}
+
 			return b.Expr(fn+"(?, INTERVAL ? ?)", expr, interval, b.Expr(unit.ForMySQL()))
 		},
 		SQLite: func() schema.QueryAppender {
 			modifier := b.Concat(op, b.Paren(interval), " ", unit.ForSQLite())
+
 			return b.Expr("DATETIME(?, ?)", b.sqliteNormalizeTS(expr), modifier)
 		},
 		Default: func() schema.QueryAppender {

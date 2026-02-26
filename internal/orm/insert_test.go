@@ -1359,6 +1359,7 @@ func (suite *InsertTestSuite) TestConflictAdvanced() {
 		suite.NoError(err, "Should handle conflict with SetExpr")
 
 		var result Tag
+
 		err = suite.db.NewSelect().
 			Model(&result).
 			Where(func(cb orm.ConditionBuilder) {

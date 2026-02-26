@@ -161,10 +161,12 @@ func (b *InsertQueryConflictBuilder) buildPostgresSQLite(query *bun.InsertQuery)
 	}
 
 	sb.WriteString("? ")
+
 	args := []any{target}
 
 	if b.targetWhere != nil {
 		sb.WriteString("WHERE ? ")
+
 		args = append(args, b.targetWhere)
 	}
 
