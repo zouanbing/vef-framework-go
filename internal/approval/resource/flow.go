@@ -1,0 +1,149 @@
+package resource
+
+import (
+	"github.com/gofiber/fiber/v3"
+
+	"github.com/ilxqx/vef-framework-go/api"
+	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/internal/approval/service"
+	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/ilxqx/vef-framework-go/security"
+)
+
+// FlowResource handles flow definition management.
+type FlowResource struct {
+	api.Resource
+
+	flowService *service.FlowService
+}
+
+// NewFlowResource creates a new flow resource.
+func NewFlowResource(svc *service.FlowService) *FlowResource {
+	return &FlowResource{
+		flowService: svc,
+		Resource: api.NewRPCResource(
+			"approval/flow",
+			api.WithOperations(
+				api.OperationSpec{Action: "create"},
+				api.OperationSpec{Action: "deploy"},
+				api.OperationSpec{Action: "publish_version"},
+				api.OperationSpec{Action: "get_graph"},
+			),
+		),
+	}
+}
+
+// CreateFlowParams contains the parameters for creating a flow.
+type CreateFlowParams struct {
+	api.P
+
+	TenantID              string                  `json:"tenantId" validate:"required"`
+	Code                  string                  `json:"code" validate:"required"`
+	Name                  string                  `json:"name" validate:"required"`
+	CategoryID            string                  `json:"categoryId" validate:"required"`
+	Icon                  *string                 `json:"icon"`
+	Description           *string                 `json:"description"`
+	BindingMode           approval.BindingMode    `json:"bindingMode" validate:"required"`
+	BusinessTable         *string                 `json:"businessTable"`
+	BusinessPkField       *string                 `json:"businessPkField"`
+	BusinessTitleField    *string                 `json:"businessTitleField"`
+	BusinessStatusField   *string                 `json:"businessStatusField"`
+	AdminUserIDs          []string                `json:"adminUserIds"`
+	IsAllInitiateAllowed  bool                    `json:"isAllInitiateAllowed"`
+	InstanceTitleTemplate string                  `json:"instanceTitleTemplate"`
+	Initiators            []CreateInitiatorParams `json:"initiators"`
+}
+
+// CreateInitiatorParams contains the parameters for a flow initiator.
+type CreateInitiatorParams struct {
+	Kind approval.InitiatorKind `json:"kind" validate:"required"`
+	IDs  []string               `json:"ids" validate:"required"`
+}
+
+// Create creates a new flow.
+func (r *FlowResource) Create(ctx fiber.Ctx, params CreateFlowParams) error {
+	initiators := make([]service.CreateFlowInitiatorCmd, len(params.Initiators))
+	for i, initiator := range params.Initiators {
+		initiators[i] = service.CreateFlowInitiatorCmd{
+			Kind: initiator.Kind,
+			IDs:  initiator.IDs,
+		}
+	}
+
+	flow, err := r.flowService.CreateFlow(ctx.Context(), service.CreateFlowCmd{
+		TenantID:              params.TenantID,
+		Code:                  params.Code,
+		Name:                  params.Name,
+		CategoryID:            params.CategoryID,
+		Icon:                  params.Icon,
+		Description:           params.Description,
+		BindingMode:           params.BindingMode,
+		BusinessTable:         params.BusinessTable,
+		BusinessPkField:       params.BusinessPkField,
+		BusinessTitleField:    params.BusinessTitleField,
+		BusinessStatusField:   params.BusinessStatusField,
+		AdminUserIDs:          params.AdminUserIDs,
+		IsAllInitiateAllowed:  params.IsAllInitiateAllowed,
+		InstanceTitleTemplate: params.InstanceTitleTemplate,
+		Initiators:            initiators,
+	})
+	if err != nil {
+		return err
+	}
+
+	return result.Ok(flow).Response(ctx)
+}
+
+// DeployFlowParams contains the parameters for deploying a flow definition.
+type DeployFlowParams struct {
+	api.P
+
+	FlowID     string `json:"flowId" validate:"required"`
+	Definition string `json:"definition" validate:"required"`
+}
+
+// Deploy deploys a flow definition.
+func (r *FlowResource) Deploy(ctx fiber.Ctx, params DeployFlowParams) error {
+	version, err := r.flowService.DeployFlow(ctx.Context(), service.DeployFlowCmd{
+		FlowID:     params.FlowID,
+		Definition: params.Definition,
+	})
+	if err != nil {
+		return err
+	}
+
+	return result.Ok(version).Response(ctx)
+}
+
+// PublishVersionParams contains the parameters for publishing a version.
+type PublishVersionParams struct {
+	api.P
+
+	VersionID string `json:"versionId" validate:"required"`
+}
+
+// PublishVersion publishes a flow version.
+func (r *FlowResource) PublishVersion(ctx fiber.Ctx, principal security.Principal, params PublishVersionParams) error {
+	if err := r.flowService.PublishVersion(ctx.Context(), params.VersionID, principal.ID); err != nil {
+		return err
+	}
+
+	return result.Ok().Response(ctx)
+}
+
+// GetGraphParams contains the parameters for getting a flow graph.
+type GetGraphParams struct {
+	api.P
+
+	FlowID string `json:"flowId" validate:"required"`
+}
+
+// GetGraph returns the flow graph for the published version.
+func (r *FlowResource) GetGraph(ctx fiber.Ctx, params GetGraphParams) error {
+	graph, err := r.flowService.GetFlowGraph(ctx.Context(), params.FlowID)
+	if err != nil {
+		return err
+	}
+
+	return result.Ok(graph).Response(ctx)
+}
