@@ -803,7 +803,7 @@ func (b *QueryExprBuilder) Length(expr any) schema.QueryAppender {
 func (b *QueryExprBuilder) CharLength(expr any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		SQLite: func() schema.QueryAppender {
-			return b.Expr("LENGTH(?)", expr)
+			return b.Length(expr)
 		},
 		Default: func() schema.QueryAppender {
 			return b.Expr("CHAR_LENGTH(?)", expr)
@@ -847,7 +847,11 @@ func (b *QueryExprBuilder) Right(expr, length any) schema.QueryAppender {
 func (b *QueryExprBuilder) Repeat(expr, count any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		SQLite: func() schema.QueryAppender {
-			return b.Expr("REPLACE(SUBSTR(QUOTE(ZEROBLOB(?)), 3, ?), ?, ?)", b.Divide(b.Paren(b.Add(count, 1)), 2), count, "0", expr)
+			return b.Replace(
+				b.SubString(b.Expr("QUOTE(ZEROBLOB(?))", b.Divide(b.Paren(b.Add(count, 1)), 2)), 3, count),
+				"0",
+				expr,
+			)
 		},
 		Default: func() schema.QueryAppender {
 			return b.Expr("REPEAT(?, ?)", expr, count)
@@ -973,10 +977,16 @@ func (b *QueryExprBuilder) Now() schema.QueryAppender {
 // Use this for arithmetic operations (DateTrunc, DateAdd, DateSubtract, DateDiff, Age, ToDate, ToTime, ToTimestamp)
 // that require correct absolute-time semantics.
 func (b *QueryExprBuilder) sqliteNormalizeTS(expr any) schema.QueryAppender {
-	return b.Expr(
-		"CASE WHEN LENGTH(?) > 19 THEN SUBSTR(?, 1, 19) || SUBSTR(?, 21, 3) || ':' || SUBSTR(?, 24, 2) ELSE ? END",
-		expr, expr, expr, expr, expr,
-	)
+	return b.Case(func(cb CaseBuilder) {
+		cb.WhenExpr(b.GreaterThan(b.Length(expr), 19)).
+			Then(b.Concat(
+				b.SubString(expr, 1, 19),
+				b.SubString(expr, 21, 3),
+				":",
+				b.SubString(expr, 24, 2),
+			))
+		cb.Else(expr)
+	})
 }
 
 // sqliteLocalTS strips the timezone suffix from the Go driver's timestamp
@@ -984,7 +994,7 @@ func (b *QueryExprBuilder) sqliteNormalizeTS(expr any) schema.QueryAppender {
 // Use this for extraction functions (ExtractYear/Month/Day/Hour/Minute/Second)
 // where the caller expects local-time component values matching Go's time.Time accessors.
 func (b *QueryExprBuilder) sqliteLocalTS(expr any) schema.QueryAppender {
-	return b.Expr("SUBSTR(?, 1, 19)", expr)
+	return b.SubString(expr, 1, 19)
 }
 
 // extractPart builds a dialect-aware EXTRACT expression.
@@ -1090,6 +1100,12 @@ func (b *QueryExprBuilder) DateTrunc(unit DateTimeUnit, expr any) schema.QueryAp
 }
 
 func (b *QueryExprBuilder) DateAdd(expr, interval any, unit DateTimeUnit) schema.QueryAppender {
+	// Dynamic expression (e.g., column reference): use multiplication-based approach
+	// because PostgreSQL's INTERVAL '...' and SQLite's modifiers require string literals.
+	if _, isDynamic := interval.(schema.QueryAppender); isDynamic {
+		return b.dateArith("+", expr, interval, unit)
+	}
+
 	return b.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
 			return b.Expr("? + INTERVAL '? ?'", expr, interval, b.Expr(unit.ForPostgres()))
@@ -1107,6 +1123,12 @@ func (b *QueryExprBuilder) DateAdd(expr, interval any, unit DateTimeUnit) schema
 }
 
 func (b *QueryExprBuilder) DateSubtract(expr, interval any, unit DateTimeUnit) schema.QueryAppender {
+	// Dynamic expression (e.g., column reference): use multiplication-based approach
+	// because PostgreSQL's INTERVAL '...' and SQLite's modifiers require string literals.
+	if _, isDynamic := interval.(schema.QueryAppender); isDynamic {
+		return b.dateArith("-", expr, interval, unit)
+	}
+
 	return b.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
 			return b.Expr("? - INTERVAL '? ?'", expr, interval, b.Expr(unit.ForPostgres()))
@@ -1119,6 +1141,34 @@ func (b *QueryExprBuilder) DateSubtract(expr, interval any, unit DateTimeUnit) s
 		},
 		Default: func() schema.QueryAppender {
 			return b.Expr("DATE_SUB(?, INTERVAL ? ?)", expr, interval, b.Expr(unit.String()))
+		},
+	})
+}
+
+// dateArith handles date add/subtract when interval is a dynamic expression (column, subquery, etc.).
+//   - PostgreSQL: expr +/- interval * INTERVAL '1 unit'
+//   - MySQL: DATE_ADD/DATE_SUB(expr, INTERVAL interval unit) — natively supports expressions
+//   - SQLite: DATETIME(expr, '+'/'-' || interval || ' unit') — modifier built via string concatenation
+func (b *QueryExprBuilder) dateArith(op string, expr, interval any, unit DateTimeUnit) schema.QueryAppender {
+	unitInterval := b.Multiply(interval, b.Expr("INTERVAL '1 ?'", b.Expr(unit.ForPostgres())))
+
+	return b.ExprByDialect(DialectExprs{
+		Postgres: func() schema.QueryAppender {
+			return b.Expr("? ? ?", expr, b.Expr(op), unitInterval)
+		},
+		MySQL: func() schema.QueryAppender {
+			fn := "DATE_ADD"
+			if op == "-" {
+				fn = "DATE_SUB"
+			}
+			return b.Expr(fn+"(?, INTERVAL ? ?)", expr, interval, b.Expr(unit.ForMySQL()))
+		},
+		SQLite: func() schema.QueryAppender {
+			modifier := b.Concat(op, b.Paren(interval), " ", unit.ForSQLite())
+			return b.Expr("DATETIME(?, ?)", b.sqliteNormalizeTS(expr), modifier)
+		},
+		Default: func() schema.QueryAppender {
+			return b.Expr("? ? ?", expr, b.Expr(op), unitInterval)
 		},
 	})
 }
@@ -1158,7 +1208,7 @@ func (b *QueryExprBuilder) DateDiff(start, end any, unit DateTimeUnit) schema.Qu
 			}
 		},
 		SQLite: func() schema.QueryAppender {
-			// Compute julianday difference once; scale by unit-specific factor
+			// Compute Julian day difference once; scale by unit-specific factor
 			dayDiff := b.Subtract(
 				b.Expr("JULIANDAY(?)", b.sqliteNormalizeTS(end)),
 				b.Expr("JULIANDAY(?)", b.sqliteNormalizeTS(start)),
@@ -1226,43 +1276,50 @@ func (b *QueryExprBuilder) Age(start, end any) schema.QueryAppender {
 		},
 		SQLite: func() schema.QueryAppender {
 			// SQLite doesn't have AGE function, so we emulate it
-			nStart := b.sqliteNormalizeTS(start)
 			nEnd := b.sqliteNormalizeTS(end)
 
 			approxYears := b.Subtract(
-				b.ToInteger(b.ExtractYear(end)),
-				b.ToInteger(b.ExtractYear(start)),
+				b.ExtractYear(end),
+				b.ExtractYear(start),
 			)
 
-			// Dynamic value requires raw expression
-			startPlusYears := b.Expr(`DATE(?, '+' || CAST(? AS TEXT) || ' years')`, nStart, approxYears)
-			actualYears := b.Expr(`CASE WHEN ? > ? THEN (?) - 1 ELSE ? END`, startPlusYears, nEnd, approxYears, approxYears)
-			startPlusActualYears := b.Expr(`DATE(?, '+' || CAST(? AS TEXT) || ' years')`, nStart, actualYears)
+			startPlusYears := b.DateAdd(start, approxYears, UnitYear)
+			actualYears := b.Case(func(cb CaseBuilder) {
+				cb.WhenExpr(b.GreaterThan(startPlusYears, nEnd)).
+					Then(b.Subtract(approxYears, 1)).
+					Else(approxYears)
+			})
+			startPlusActualYears := b.DateAdd(start, actualYears, UnitYear)
 
 			approxMonths := b.Add(
 				b.Multiply(
 					b.Paren(b.Subtract(
-						b.ToInteger(b.ExtractYear(end)),
-						b.ToInteger(b.ExtractYear(startPlusActualYears)),
+						b.ExtractYear(end),
+						b.ExtractYear(startPlusActualYears),
 					)),
 					12,
 				),
 				b.Subtract(
-					b.ToInteger(b.ExtractMonth(end)),
-					b.ToInteger(b.ExtractMonth(startPlusActualYears)),
+					b.ExtractMonth(end),
+					b.ExtractMonth(startPlusActualYears),
 				),
 			)
 
-			startPlusYearsMonths := b.Expr(`DATE(?, '+' || CAST(? AS TEXT) || ' months')`, startPlusActualYears, approxMonths)
-			actualMonths := b.Expr(`CASE WHEN ? > ? THEN (?) - 1 ELSE ? END`, startPlusYearsMonths, nEnd, approxMonths, approxMonths)
-			startPlusActualYearsMonths := b.Expr(`DATE(?, '+' || CAST(? AS TEXT) || ' years', '+' || CAST(? AS TEXT) || ' months')`,
-				nStart, actualYears, actualMonths)
+			startPlusYearsMonths := b.DateAdd(startPlusActualYears, approxMonths, UnitMonth)
+			actualMonths := b.Case(func(cb CaseBuilder) {
+				cb.WhenExpr(b.GreaterThan(startPlusYearsMonths, nEnd)).
+					Then(b.Subtract(approxMonths, 1)).
+					Else(approxMonths)
+			})
+			startPlusActualYearsMonths := b.DateAdd(
+				b.DateAdd(start, actualYears, UnitYear),
+				actualMonths,
+				UnitMonth,
+			)
 
-			days := b.ToInteger(
-				b.Subtract(
-					b.Expr("JULIANDAY(?)", nEnd),
-					b.Expr("JULIANDAY(?)", startPlusActualYearsMonths),
-				),
+			days := b.Subtract(
+				b.Expr("JULIANDAY(?)", nEnd),
+				b.Expr("JULIANDAY(?)", startPlusActualYearsMonths),
 			)
 
 			return b.Concat(

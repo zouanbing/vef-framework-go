@@ -544,6 +544,69 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateAdd() {
 				result.CreatedAt, result.AddedSeconds, result.AddedMinutes, result.AddedHours)
 		}
 	})
+
+	suite.Run("AddDynamicColumnInterval", func() {
+		type DynamicAddResult struct {
+			CreatedAt time.Time `bun:"created_at"`
+			ViewCount int       `bun:"view_count"`
+			AddedDays time.Time `bun:"added_days"`
+		}
+
+		var results []DynamicAddResult
+
+		err := suite.selectPosts().
+			Select("created_at", "view_count").
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateAdd(eb.Column("created_at"), eb.Column("view_count"), orm.UnitDay)
+			}, "added_days").
+			OrderBy("created_at").
+			Limit(5).
+			Scan(suite.ctx, &results)
+
+		suite.Require().NoError(err, "DateAdd with column interval should execute successfully")
+		suite.Require().NotEmpty(results, "Should return results")
+
+		for _, r := range results {
+			expected := r.CreatedAt.Add(time.Duration(r.ViewCount) * 24 * time.Hour)
+			suite.InDelta(expected.Unix(), r.AddedDays.Unix(), 1,
+				"DateAdd with column interval should produce correct result (view_count=%d)", r.ViewCount)
+
+			suite.T().Logf("Original: %v | ViewCount: %d | +%d days: %v",
+				r.CreatedAt, r.ViewCount, r.ViewCount, r.AddedDays)
+		}
+	})
+
+	suite.Run("AddComputedExpressionInterval", func() {
+		type ComputedAddResult struct {
+			CreatedAt  time.Time `bun:"created_at"`
+			ViewCount  int       `bun:"view_count"`
+			AddedHours time.Time `bun:"added_hours"`
+		}
+
+		var results []ComputedAddResult
+
+		err := suite.selectPosts().
+			Select("created_at", "view_count").
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				// Use a computed expression: Abs(view_count) as dynamic interval
+				return eb.DateAdd(eb.Column("created_at"), eb.Abs(eb.Column("view_count")), orm.UnitHour)
+			}, "added_hours").
+			OrderBy("created_at").
+			Limit(5).
+			Scan(suite.ctx, &results)
+
+		suite.Require().NoError(err, "DateAdd with computed expression interval should execute successfully")
+		suite.Require().NotEmpty(results, "Should return results")
+
+		for _, r := range results {
+			expected := r.CreatedAt.Add(time.Duration(r.ViewCount) * time.Hour)
+			suite.InDelta(expected.Unix(), r.AddedHours.Unix(), 1,
+				"DateAdd with Abs(column) interval should produce correct result (view_count=%d)", r.ViewCount)
+
+			suite.T().Logf("Original: %v | Abs(ViewCount): %d | +%d hours: %v",
+				r.CreatedAt, r.ViewCount, r.ViewCount, r.AddedHours)
+		}
+	})
 }
 
 // TestDateSubtract tests the DateSubtract function.
@@ -623,6 +686,68 @@ func (suite *EBDateTimeFunctionsTestSuite) TestDateSubtract() {
 
 			suite.T().Logf("Original: %v | -45s: %v | -30m: %v | -3h: %v",
 				result.CreatedAt, result.SubtractedSeconds, result.SubtractedMinutes, result.SubtractedHours)
+		}
+	})
+
+	suite.Run("SubtractDynamicColumnInterval", func() {
+		type DynamicSubResult struct {
+			CreatedAt      time.Time `bun:"created_at"`
+			ViewCount      int       `bun:"view_count"`
+			SubtractedDays time.Time `bun:"subtracted_days"`
+		}
+
+		var results []DynamicSubResult
+
+		err := suite.selectPosts().
+			Select("created_at", "view_count").
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateSubtract(eb.Column("created_at"), eb.Column("view_count"), orm.UnitDay)
+			}, "subtracted_days").
+			OrderBy("created_at").
+			Limit(5).
+			Scan(suite.ctx, &results)
+
+		suite.Require().NoError(err, "DateSubtract with column interval should execute successfully")
+		suite.Require().NotEmpty(results, "Should return results")
+
+		for _, r := range results {
+			expected := r.CreatedAt.Add(-time.Duration(r.ViewCount) * 24 * time.Hour)
+			suite.InDelta(expected.Unix(), r.SubtractedDays.Unix(), 1,
+				"DateSubtract with column interval should produce correct result (view_count=%d)", r.ViewCount)
+
+			suite.T().Logf("Original: %v | ViewCount: %d | -%d days: %v",
+				r.CreatedAt, r.ViewCount, r.ViewCount, r.SubtractedDays)
+		}
+	})
+
+	suite.Run("SubtractComputedExpressionInterval", func() {
+		type ComputedSubResult struct {
+			CreatedAt       time.Time `bun:"created_at"`
+			ViewCount       int       `bun:"view_count"`
+			SubtractedHours time.Time `bun:"subtracted_hours"`
+		}
+
+		var results []ComputedSubResult
+
+		err := suite.selectPosts().
+			Select("created_at", "view_count").
+			SelectExpr(func(eb orm.ExprBuilder) any {
+				return eb.DateSubtract(eb.Column("created_at"), eb.Abs(eb.Column("view_count")), orm.UnitHour)
+			}, "subtracted_hours").
+			OrderBy("created_at").
+			Limit(5).
+			Scan(suite.ctx, &results)
+
+		suite.Require().NoError(err, "DateSubtract with computed expression interval should execute successfully")
+		suite.Require().NotEmpty(results, "Should return results")
+
+		for _, r := range results {
+			expected := r.CreatedAt.Add(-time.Duration(r.ViewCount) * time.Hour)
+			suite.InDelta(expected.Unix(), r.SubtractedHours.Unix(), 1,
+				"DateSubtract with Abs(column) interval should produce correct result (view_count=%d)", r.ViewCount)
+
+			suite.T().Logf("Original: %v | Abs(ViewCount): %d | -%d hours: %v",
+				r.CreatedAt, r.ViewCount, r.ViewCount, r.SubtractedHours)
 		}
 	})
 }
