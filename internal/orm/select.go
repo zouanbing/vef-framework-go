@@ -508,51 +508,51 @@ func (q *BunSelectQuery) Paginate(pageable page.Pageable) SelectQuery {
 	return q.Offset(pageable.Offset()).Limit(pageable.Size)
 }
 
-func (q *BunSelectQuery) ForShare(tables ...string) SelectQuery {
+func (q *BunSelectQuery) ForShare(tables ...any) SelectQuery {
 	return q.forLock("SHARE", "", tables...)
 }
 
-func (q *BunSelectQuery) ForShareNoWait(tables ...string) SelectQuery {
+func (q *BunSelectQuery) ForShareNoWait(tables ...any) SelectQuery {
 	return q.forLock("SHARE", "NOWAIT", tables...)
 }
 
-func (q *BunSelectQuery) ForShareSkipLocked(tables ...string) SelectQuery {
+func (q *BunSelectQuery) ForShareSkipLocked(tables ...any) SelectQuery {
 	return q.forLock("SHARE", "SKIP LOCKED", tables...)
 }
 
-func (q *BunSelectQuery) ForKeyShare(tables ...string) SelectQuery {
+func (q *BunSelectQuery) ForKeyShare(tables ...any) SelectQuery {
 	return q.forLock("KEY SHARE", "", tables...)
 }
 
-func (q *BunSelectQuery) ForKeyShareNoWait(tables ...string) SelectQuery {
+func (q *BunSelectQuery) ForKeyShareNoWait(tables ...any) SelectQuery {
 	return q.forLock("KEY SHARE", "NOWAIT", tables...)
 }
 
-func (q *BunSelectQuery) ForKeyShareSkipLocked(tables ...string) SelectQuery {
+func (q *BunSelectQuery) ForKeyShareSkipLocked(tables ...any) SelectQuery {
 	return q.forLock("KEY SHARE", "SKIP LOCKED", tables...)
 }
 
-func (q *BunSelectQuery) ForUpdate(tables ...string) SelectQuery {
+func (q *BunSelectQuery) ForUpdate(tables ...any) SelectQuery {
 	return q.forLock("UPDATE", "", tables...)
 }
 
-func (q *BunSelectQuery) ForUpdateNoWait(tables ...string) SelectQuery {
+func (q *BunSelectQuery) ForUpdateNoWait(tables ...any) SelectQuery {
 	return q.forLock("UPDATE", "NOWAIT", tables...)
 }
 
-func (q *BunSelectQuery) ForUpdateSkipLocked(tables ...string) SelectQuery {
+func (q *BunSelectQuery) ForUpdateSkipLocked(tables ...any) SelectQuery {
 	return q.forLock("UPDATE", "SKIP LOCKED", tables...)
 }
 
-func (q *BunSelectQuery) ForNoKeyUpdate(tables ...string) SelectQuery {
+func (q *BunSelectQuery) ForNoKeyUpdate(tables ...any) SelectQuery {
 	return q.forLock("NO KEY UPDATE", "", tables...)
 }
 
-func (q *BunSelectQuery) ForNoKeyUpdateNoWait(tables ...string) SelectQuery {
+func (q *BunSelectQuery) ForNoKeyUpdateNoWait(tables ...any) SelectQuery {
 	return q.forLock("NO KEY UPDATE", "NOWAIT", tables...)
 }
 
-func (q *BunSelectQuery) ForNoKeyUpdateSkipLocked(tables ...string) SelectQuery {
+func (q *BunSelectQuery) ForNoKeyUpdateSkipLocked(tables ...any) SelectQuery {
 	return q.forLock("NO KEY UPDATE", "SKIP LOCKED", tables...)
 }
 
@@ -562,10 +562,11 @@ var postgresOnlyLockModes = map[string]bool{
 	"KEY SHARE":     true,
 }
 
-// forLock builds a FOR lock clause with the given lock mode, optional suffix, and optional table names.
+// forLock builds a FOR lock clause with the given lock mode, optional suffix, and optional table references.
+// Each table can be a string (alias/name) or a model pointer (resolved to its table alias via TableOf).
 // SQLite does not support row-level locking; calls are silently ignored with a warning log.
 // FOR NO KEY UPDATE and FOR KEY SHARE are PostgreSQL-only; on MySQL they are silently ignored with a warning log.
-func (q *BunSelectQuery) forLock(mode, suffix string, tables ...string) SelectQuery {
+func (q *BunSelectQuery) forLock(mode, suffix string, tables ...any) SelectQuery {
 	dialectName := q.dialect.Name()
 
 	if dialectName == dialect.SQLite {
@@ -581,20 +582,36 @@ func (q *BunSelectQuery) forLock(mode, suffix string, tables ...string) SelectQu
 	}
 
 	clause := mode
-	if len(tables) > 0 {
+	hasTables := len(tables) > 0
+	if hasTables {
 		clause += " OF ?"
 	}
 	if suffix != "" {
 		clause += " " + suffix
 	}
 
-	if len(tables) > 0 {
-		q.query.For(clause, Names(tables...))
+	if hasTables {
+		q.query.For(clause, Names(q.resolveTableAliases(tables)...))
 	} else {
 		q.query.For(clause)
 	}
 
 	return q
+}
+
+// resolveTableAliases converts a mix of string aliases and model pointers into string aliases.
+func (q *BunSelectQuery) resolveTableAliases(tables []any) []string {
+	aliases := make([]string, len(tables))
+
+	for i, t := range tables {
+		if s, ok := t.(string); ok {
+			aliases[i] = s
+		} else {
+			aliases[i] = q.db.TableOf(t).Alias
+		}
+	}
+
+	return aliases
 }
 
 func (q *BunSelectQuery) Union(builder func(query SelectQuery)) SelectQuery {

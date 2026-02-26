@@ -2841,15 +2841,15 @@ func (suite *SelectTestSuite) TestForNoKeyUpdateVariants() {
 	})
 }
 
-// TestForLockWithTables tests locking with explicit table names (FOR ... OF table_name).
+// TestForLockWithTables tests locking with explicit table references (FOR ... OF table).
+// Tables can be specified as string aliases or model pointers.
 // SQLite ignores all locking; MySQL ignores PostgreSQL-only modes.
 func (suite *SelectTestSuite) TestForLockWithTables() {
-	suite.T().Logf("Testing FOR ... OF table_name for %s", suite.ds.Kind)
+	suite.T().Logf("Testing FOR ... OF table for %s", suite.ds.Kind)
 
-	suite.Run("ForUpdateOfTable", func() {
+	suite.Run("ForUpdateOfStringAlias", func() {
 		var users []User
 
-		// OF clause requires table alias, not table name (e.g., "u" for test_user AS u)
 		err := suite.db.NewSelect().
 			Model(&users).
 			ForUpdate("u").
@@ -2859,51 +2859,71 @@ func (suite *SelectTestSuite) TestForLockWithTables() {
 			Limit(2).
 			Scan(suite.ctx)
 
-		suite.NoError(err, "FOR UPDATE OF table should work")
+		suite.NoError(err, "FOR UPDATE OF string alias should work")
 		suite.True(len(users) > 0, "Should return users with table-scoped update lock")
 
 		for _, user := range users {
-			suite.T().Logf("User with table-scoped update lock: %s", user.Name)
+			suite.T().Logf("User with table-scoped update lock (string): %s", user.Name)
 		}
 	})
 
-	suite.Run("ForShareOfTable", func() {
+	suite.Run("ForUpdateOfModel", func() {
 		var users []User
 
 		err := suite.db.NewSelect().
 			Model(&users).
-			ForShare("u").
+			ForUpdate((*User)(nil)).
 			Where(func(cb orm.ConditionBuilder) {
 				cb.IsTrue("is_active")
 			}).
 			Limit(2).
 			Scan(suite.ctx)
 
-		suite.NoError(err, "FOR SHARE OF table should work")
-		suite.True(len(users) > 0, "Should return users with table-scoped share lock")
+		suite.NoError(err, "FOR UPDATE OF model should work")
+		suite.True(len(users) > 0, "Should return users with model-resolved update lock")
 
 		for _, user := range users {
-			suite.T().Logf("User with table-scoped share lock: %s", user.Name)
+			suite.T().Logf("User with table-scoped update lock (model): %s", user.Name)
 		}
 	})
 
-	suite.Run("ForUpdateSkipLockedOfTable", func() {
+	suite.Run("ForShareOfModel", func() {
 		var users []User
 
 		err := suite.db.NewSelect().
 			Model(&users).
-			ForUpdateSkipLocked("u").
+			ForShare((*User)(nil)).
 			Where(func(cb orm.ConditionBuilder) {
 				cb.IsTrue("is_active")
 			}).
 			Limit(2).
 			Scan(suite.ctx)
 
-		suite.NoError(err, "FOR UPDATE SKIP LOCKED OF table should work")
-		suite.True(len(users) > 0, "Should return users with table-scoped SKIP LOCKED")
+		suite.NoError(err, "FOR SHARE OF model should work")
+		suite.True(len(users) > 0, "Should return users with model-resolved share lock")
 
 		for _, user := range users {
-			suite.T().Logf("User with table-scoped SKIP LOCKED: %s", user.Name)
+			suite.T().Logf("User with table-scoped share lock (model): %s", user.Name)
+		}
+	})
+
+	suite.Run("ForUpdateSkipLockedOfModel", func() {
+		var users []User
+
+		err := suite.db.NewSelect().
+			Model(&users).
+			ForUpdateSkipLocked((*User)(nil)).
+			Where(func(cb orm.ConditionBuilder) {
+				cb.IsTrue("is_active")
+			}).
+			Limit(2).
+			Scan(suite.ctx)
+
+		suite.NoError(err, "FOR UPDATE SKIP LOCKED OF model should work")
+		suite.True(len(users) > 0, "Should return users with model-resolved SKIP LOCKED")
+
+		for _, user := range users {
+			suite.T().Logf("User with table-scoped SKIP LOCKED (model): %s", user.Name)
 		}
 	})
 }

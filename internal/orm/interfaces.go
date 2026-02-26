@@ -465,18 +465,18 @@ type SelectQuery interface {
 	Having(func(ConditionBuilder)) SelectQuery
 	Offset(offset int) SelectQuery
 	Paginate(pageable page.Pageable) SelectQuery
-	ForShare(tables ...string) SelectQuery
-	ForShareNoWait(tables ...string) SelectQuery
-	ForShareSkipLocked(tables ...string) SelectQuery
-	ForKeyShare(tables ...string) SelectQuery
-	ForKeyShareNoWait(tables ...string) SelectQuery
-	ForKeyShareSkipLocked(tables ...string) SelectQuery
-	ForUpdate(tables ...string) SelectQuery
-	ForUpdateNoWait(tables ...string) SelectQuery
-	ForUpdateSkipLocked(tables ...string) SelectQuery
-	ForNoKeyUpdate(tables ...string) SelectQuery
-	ForNoKeyUpdateNoWait(tables ...string) SelectQuery
-	ForNoKeyUpdateSkipLocked(tables ...string) SelectQuery
+	ForShare(tables ...any) SelectQuery
+	ForShareNoWait(tables ...any) SelectQuery
+	ForShareSkipLocked(tables ...any) SelectQuery
+	ForKeyShare(tables ...any) SelectQuery
+	ForKeyShareNoWait(tables ...any) SelectQuery
+	ForKeyShareSkipLocked(tables ...any) SelectQuery
+	ForUpdate(tables ...any) SelectQuery
+	ForUpdateNoWait(tables ...any) SelectQuery
+	ForUpdateSkipLocked(tables ...any) SelectQuery
+	ForNoKeyUpdate(tables ...any) SelectQuery
+	ForNoKeyUpdateNoWait(tables ...any) SelectQuery
+	ForNoKeyUpdateSkipLocked(tables ...any) SelectQuery
 	Union(func(query SelectQuery)) SelectQuery
 	UnionAll(func(query SelectQuery)) SelectQuery
 	Intersect(func(query SelectQuery)) SelectQuery
