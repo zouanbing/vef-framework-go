@@ -40,19 +40,8 @@ var Module = fx.Module(
 			fx.ParamTags(`optional:"true"`),
 		),
 	),
-	fx.Decorate(
-		fx.Annotate(
-			func(encoder password.Encoder) password.Encoder {
-				if encoder == nil {
-					return password.NewBcryptEncoder()
-				}
-
-				return encoder
-			},
-			fx.ParamTags(`optional:"true"`),
-		),
-	),
 	fx.Provide(
+		password.NewBcryptEncoder,
 		fx.Annotate(
 			func(config *config.AppConfig) (*security.JWT, error) {
 				return security.NewJWT(&security.JWTConfig{
