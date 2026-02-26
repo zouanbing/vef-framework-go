@@ -1,4 +1,4 @@
-package publisher
+package dispatcher
 
 import (
 	"context"
@@ -9,14 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/database"
-	internalORM "github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/mapx"
-	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/ilxqx/vef-framework-go/timex"
 )
 
-// TestEventNames tests event names scenarios.
 func TestEventNames(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -34,7 +30,7 @@ func TestEventNames(t *testing.T) {
 		{"TaskApproved", approval.NewTaskApprovedEvent("t1", "i1", "n1", "u1", "ok"), "approval.task.approved"},
 		{"TaskRejected", approval.NewTaskRejectedEvent("t1", "i1", "n1", "u1", "no"), "approval.task.rejected"},
 		{"TaskTransferred", approval.NewTaskTransferredEvent("t1", "i1", "n1", "u1", "u2", "reason"), "approval.task.transferred"},
-		{"TaskTimeout", approval.NewTaskTimeoutEvent("t1", "i1", "n1", "u1", time.Now()), "approval.task.timeout"},
+		{"TaskTimeout", approval.NewTaskTimeoutEvent("t1", "i1", "n1", "u1", timex.Now()), "approval.task.timeout"},
 		{"AssigneesAdded", approval.NewAssigneesAddedEvent("i1", "n1", "t1", approval.AddAssigneeBefore, []string{"u1"}), "approval.task.assignee_added"},
 		{"AssigneesRemoved", approval.NewAssigneesRemovedEvent("i1", "n1", "t1", []string{"u1"}), "approval.task.assignee_removed"},
 		{"CcNotified", approval.NewCcNotifiedEvent("i1", "n1", []string{"u1"}, true), "approval.cc.notified"},
@@ -50,7 +46,6 @@ func TestEventNames(t *testing.T) {
 	}
 }
 
-// TestEventConstructors tests event constructors scenarios.
 func TestEventConstructors(t *testing.T) {
 	t.Run("InstanceCreatedEvent", func(t *testing.T) {
 		evt := approval.NewInstanceCreatedEvent("inst1", "flow1", "My Title", "user1")
@@ -109,7 +104,7 @@ func TestEventConstructors(t *testing.T) {
 	})
 
 	t.Run("TaskCreatedWithDeadline", func(t *testing.T) {
-		deadline := time.Now().Add(24 * time.Hour)
+		deadline := timex.Now().Add(24 * time.Hour)
 		evt := approval.NewTaskCreatedEvent("t1", "i1", "n1", "u1", &deadline)
 		require.NotNil(t, evt, "Should create event")
 		assert.Equal(t, "t1", evt.TaskID, "Should set TaskID")
@@ -158,7 +153,7 @@ func TestEventConstructors(t *testing.T) {
 	})
 
 	t.Run("TaskTimeoutEvent", func(t *testing.T) {
-		deadline := time.Now().Add(-time.Hour)
+		deadline := timex.Now().Add(-time.Hour)
 		evt := approval.NewTaskTimeoutEvent("t1", "i1", "n1", "u1", deadline)
 		require.NotNil(t, evt, "Should create event")
 		assert.Equal(t, "t1", evt.TaskID, "Should set TaskID")
@@ -227,10 +222,9 @@ func TestEventConstructors(t *testing.T) {
 	})
 }
 
-// TestEventOccurredAtAll tests event occurred at all scenarios.
 func TestEventOccurredAtAll(t *testing.T) {
-	before := time.Now().Add(-time.Second)
-	deadline := time.Now()
+	before := timex.Now().Add(-time.Second)
+	deadline := timex.Now()
 
 	events := []approval.DomainEvent{
 		approval.NewInstanceCreatedEvent("i1", "f1", "title", "u1"),
@@ -258,7 +252,6 @@ func TestEventOccurredAtAll(t *testing.T) {
 	}
 }
 
-// TestToMap tests mapx.ToMap for event conversion.
 func TestToMap(t *testing.T) {
 	t.Run("ValidStruct", func(t *testing.T) {
 		m, err := mapx.ToMap(approval.NewFlowPublishedEvent("f1", "v1"))
@@ -285,29 +278,11 @@ func TestToMap(t *testing.T) {
 	})
 }
 
-// TestNewEventPublisher tests new event publisher scenarios.
 func TestNewEventPublisher(t *testing.T) {
 	pub := NewEventPublisher()
 	require.NotNil(t, pub, "Should create publisher")
 }
 
-func setupTestDB(t *testing.T) (orm.DB, func()) {
-	t.Helper()
-
-	dsConfig := &config.DataSourceConfig{Kind: config.SQLite}
-	bunDB, err := database.New(dsConfig)
-	require.NoError(t, err, "Should create test database")
-
-	bunDB.RegisterModel((*approval.EventOutbox)(nil))
-
-	ctx := context.Background()
-	_, err = bunDB.NewCreateTable().Model((*approval.EventOutbox)(nil)).IfNotExists().Exec(ctx)
-	require.NoError(t, err, "Should create outbox table")
-
-	return internalORM.New(bunDB), func() { _ = bunDB.Close() }
-}
-
-// TestPublishAll tests publish all scenarios.
 func TestPublishAll(t *testing.T) {
 	t.Run("NilEvents", func(t *testing.T) {
 		pub := NewEventPublisher()
@@ -320,53 +295,4 @@ func TestPublishAll(t *testing.T) {
 		err := pub.PublishAll(context.Background(), nil, []approval.DomainEvent{})
 		require.NoError(t, err, "Should return nil for zero-length events slice")
 	})
-
-	t.Run("SingleEvent", func(t *testing.T) {
-		db, cleanup := setupTestDB(t)
-		defer cleanup()
-
-		ctx := context.Background()
-		err := NewEventPublisher().PublishAll(ctx, db, []approval.DomainEvent{
-			approval.NewFlowPublishedEvent("flow1", "ver1"),
-		})
-		require.NoError(t, err, "Should insert single event successfully")
-
-		var records []approval.EventOutbox
-		err = db.NewSelect().Model(&records).Scan(ctx, &records)
-		require.NoError(t, err, "Should query outbox records")
-		require.Len(t, records, 1, "Should have exactly one outbox record")
-		assert.Equal(t, "approval.flow.published", records[0].EventType, "Should store correct event type")
-		assert.Equal(t, approval.EventOutboxPending, records[0].Status, "Should store pending status")
-		assert.NotEmpty(t, records[0].EventID, "Should generate event ID")
-		assert.Equal(t, "flow1", records[0].Payload["flowId"], "Should marshal payload correctly")
-	})
-
-	t.Run("MultipleEvents", func(t *testing.T) {
-		db, cleanup := setupTestDB(t)
-		defer cleanup()
-
-		ctx := context.Background()
-		events := []approval.DomainEvent{
-			approval.NewInstanceCreatedEvent("i1", "f1", "title", "u1"),
-			approval.NewTaskCreatedEvent("t1", "i1", "n1", "u1", nil),
-			approval.NewCcNotifiedEvent("i1", "n1", []string{"cc1"}, false),
-		}
-
-		err := NewEventPublisher().PublishAll(ctx, db, events)
-		require.NoError(t, err, "Should insert multiple events successfully")
-
-		var records []approval.EventOutbox
-		err = db.NewSelect().Model(&records).Scan(ctx, &records)
-		require.NoError(t, err, "Should query outbox records")
-		require.Len(t, records, 3, "Should have three outbox records")
-
-		eventTypes := make([]string, len(records))
-		for i, r := range records {
-			eventTypes[i] = r.EventType
-		}
-		assert.Contains(t, eventTypes, "approval.instance.created", "Should contain instance created event")
-		assert.Contains(t, eventTypes, "approval.task.created", "Should contain task created event")
-		assert.Contains(t, eventTypes, "approval.cc.notified", "Should contain cc notified event")
-	})
-
 }

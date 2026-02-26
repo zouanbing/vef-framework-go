@@ -1,4 +1,4 @@
-package publisher
+package dispatcher
 
 import (
 	"context"
@@ -10,12 +10,12 @@ import (
 	"github.com/ilxqx/vef-framework-go/orm"
 )
 
-// EventPublisher publishes events to EventOutbox table.
+// EventPublisher publishes domain events to the EventOutbox table.
 type EventPublisher struct{}
 
 // NewEventPublisher creates a new EventPublisher.
 func NewEventPublisher() *EventPublisher {
-	return &EventPublisher{}
+	return new(EventPublisher)
 }
 
 // PublishAll marshals each event and inserts into the event outbox table.
@@ -24,23 +24,22 @@ func (p *EventPublisher) PublishAll(ctx context.Context, db orm.DB, events []app
 		return nil
 	}
 
-	outboxRecords := make([]approval.EventOutbox, 0, len(events))
+	outboxRecords := make([]approval.EventOutbox, len(events))
 
-	for _, evt := range events {
+	for i, evt := range events {
 		payloadMap, err := mapx.ToMap(evt)
 		if err != nil {
-			return fmt.Errorf("marshal event %s: %w", evt.EventName(), err)
+			return fmt.Errorf("failed to convert event %q to map: %w", evt.EventName(), err)
 		}
 
-		outboxRecords = append(outboxRecords, approval.EventOutbox{
-			EventID:   id.Generate(),
+		outboxRecords[i] = approval.EventOutbox{
+			EventID:   id.GenerateUUID(),
 			EventType: evt.EventName(),
 			Payload:   payloadMap,
 			Status:    approval.EventOutboxPending,
-		})
+		}
 	}
 
 	_, err := db.NewInsert().Model(&outboxRecords).Exec(ctx)
-
 	return err
 }
