@@ -52,7 +52,7 @@ func (e *FlowEngine) StartProcess(ctx context.Context, db orm.DB, instance *appr
 
 	err := db.NewSelect().Model(&startNode).Where(func(c orm.ConditionBuilder) {
 		c.Equals("flow_version_id", instance.FlowVersionID)
-		c.Equals("node_kind", string(approval.NodeStart))
+		c.Equals("kind", string(approval.NodeStart))
 	}).Scan(ctx)
 	if err != nil {
 		return fmt.Errorf("find start node: %w", err)
@@ -70,9 +70,9 @@ func (e *FlowEngine) ProcessNode(ctx context.Context, db orm.DB, instance *appro
 
 	ctx = context.WithValue(ctx, nodeDepthKey{}, depth+1)
 
-	processor, ok := e.processors[node.NodeKind]
+	processor, ok := e.processors[node.Kind]
 	if !ok {
-		return fmt.Errorf("%w: %s", ErrProcessorNotFound, node.NodeKind)
+		return fmt.Errorf("%w: %s", ErrProcessorNotFound, node.Kind)
 	}
 
 	// Load assignee configs for the node
@@ -286,7 +286,7 @@ func (e *FlowEngine) PredictNextNode(ctx context.Context, db orm.DB, instance *a
 }
 
 func (e *FlowEngine) predictAssignees(ctx context.Context, db orm.DB, instance *approval.Instance, node *approval.FlowNode) []string {
-	processor, ok := e.processors[node.NodeKind]
+	processor, ok := e.processors[node.Kind]
 	if !ok {
 		return nil
 	}

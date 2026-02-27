@@ -54,7 +54,7 @@ func (s *ValidationService) ValidateRollbackTarget(ctx context.Context, db orm.D
 
 		if err := db.NewSelect().Model(&startNode).Where(func(c orm.ConditionBuilder) {
 			c.Equals("flow_version_id", instance.FlowVersionID)
-			c.Equals("node_kind", string(approval.NodeStart))
+			c.Equals("kind", string(approval.NodeStart))
 		}).Scan(ctx); err != nil {
 			return fmt.Errorf("find start node: %w", err)
 		}

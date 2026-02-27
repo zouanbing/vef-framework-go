@@ -173,7 +173,7 @@ func (s *Scanner) autoFinishTask(ctx context.Context, tx orm.DB, task *approval.
 // transferToAdmin transfers a timed-out task to the node's admin users.
 func (s *Scanner) transferToAdmin(ctx context.Context, tx orm.DB, task *approval.Task, node *approval.FlowNode) ([]approval.DomainEvent, error) {
 	if len(node.AdminUserIDs) == 0 {
-		return nil, fmt.Errorf("node %q configured TimeoutActionTransferAdmin but has no admin users", node.NodeKey)
+		return nil, fmt.Errorf("node %q configured TimeoutActionTransferAdmin but has no admin users", node.Key)
 	}
 
 	// Finish the original task as transferred

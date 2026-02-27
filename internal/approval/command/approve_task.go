@@ -59,7 +59,7 @@ func (h *ApproveTaskHandler) Handle(ctx context.Context, cmd ApproveTaskCmd) (cq
 	instance, task, node := tc.Instance, tc.Task, tc.Node
 
 	targetStatus := approval.TaskApproved
-	if node.NodeKind == approval.NodeHandle {
+	if node.Kind == approval.NodeHandle {
 		targetStatus = approval.TaskHandled
 	}
 

@@ -81,8 +81,8 @@ func (h *DeployFlowHandler) Handle(ctx context.Context, cmd DeployFlowCmd) (*app
 
 		node := approval.FlowNode{
 			FlowVersionID: version.ID,
-			NodeKey:       nd.ID,
-			NodeKind:      nd.Type,
+			Key:           nd.ID,
+			Kind:          nd.Type,
 		}
 		nodeData.ApplyTo(&node)
 
@@ -125,6 +125,7 @@ func (h *DeployFlowHandler) Handle(ctx context.Context, cmd DeployFlowCmd) (*app
 
 		edge := approval.FlowEdge{
 			FlowVersionID: version.ID,
+			Key:           edgeDef.ID,
 			SourceNodeID:  sourceID,
 			TargetNodeID:  targetID,
 		}

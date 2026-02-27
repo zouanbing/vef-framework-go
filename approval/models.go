@@ -99,8 +99,8 @@ type FlowNode struct {
 	orm.Model
 
 	FlowVersionID            string                 `json:"flowVersionId" bun:"flow_version_id"`
-	NodeKey                  string                 `json:"nodeKey" bun:"node_key"`
-	NodeKind                 NodeKind               `json:"nodeKind" bun:"node_kind"`
+	Key                      string                 `json:"key" bun:"key"`
+	Kind                     NodeKind               `json:"kind" bun:"kind"`
 	Name                     string                 `json:"name" bun:"name"`
 	Description              *string                `json:"description" bun:"description,nullzero"`
 	ExecutionType            ExecutionType          `json:"executionType" bun:"execution_type"`
@@ -136,6 +136,7 @@ type FlowEdge struct {
 	orm.IDModel
 
 	FlowVersionID string  `json:"flowVersionId" bun:"flow_version_id"`
+	Key           string  `json:"key" bun:"key,nullzero"`
 	SourceNodeID  string  `json:"sourceNodeId" bun:"source_node_id"`
 	TargetNodeID  string  `json:"targetNodeId" bun:"target_node_id"`
 	SourceHandle  *string `json:"sourceHandle" bun:"source_handle,nullzero"`

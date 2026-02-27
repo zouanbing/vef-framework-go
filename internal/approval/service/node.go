@@ -147,7 +147,7 @@ func (s *NodeService) CheckCCNodeCompletion(ctx context.Context, db orm.DB, inst
 			continue
 		}
 
-		if node.NodeKind != approval.NodeCC || !node.IsReadConfirmRequired {
+		if node.Kind != approval.NodeCC || !node.IsReadConfirmRequired {
 			continue
 		}
 

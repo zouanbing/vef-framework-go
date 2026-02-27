@@ -164,8 +164,8 @@ CREATE TABLE IF NOT EXISTS apv_flow_node (
     updated_by VARCHAR(32) NOT NULL DEFAULT 'system',
 
     flow_version_id VARCHAR(32) NOT NULL,
-    node_key VARCHAR(64) NOT NULL,
-    node_kind VARCHAR(16) NOT NULL,
+    key VARCHAR(64) NOT NULL,
+    kind VARCHAR(16) NOT NULL,
     name VARCHAR(128) NOT NULL,
     description VARCHAR(512),
     -- Execution type config
@@ -202,7 +202,7 @@ CREATE TABLE IF NOT EXISTS apv_flow_node (
     duplicate_handler_action VARCHAR(32) NOT NULL DEFAULT 'none',
     is_read_confirm_required BOOLEAN NOT NULL DEFAULT false,
     branches JSONB,
-    CONSTRAINT uk_apv_flow_node__flow_version_id_node_key UNIQUE (flow_version_id, node_key),
+    CONSTRAINT uk_apv_flow_node__flow_version_id_key UNIQUE (flow_version_id, key),
     CONSTRAINT fk_apv_flow_node__flow_version_id FOREIGN KEY (flow_version_id) REFERENCES apv_flow_version(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -213,8 +213,8 @@ COMMENT ON COLUMN apv_flow_node.updated_at IS '更新时间';
 COMMENT ON COLUMN apv_flow_node.created_by IS '创建人ID';
 COMMENT ON COLUMN apv_flow_node.updated_by IS '更新人ID';
 COMMENT ON COLUMN apv_flow_node.flow_version_id IS '流程版本ID';
-COMMENT ON COLUMN apv_flow_node.node_key IS '节点标识';
-COMMENT ON COLUMN apv_flow_node.node_kind IS '节点类型';
+COMMENT ON COLUMN apv_flow_node.key IS '节点标识';
+COMMENT ON COLUMN apv_flow_node.kind IS '节点类型';
 COMMENT ON COLUMN apv_flow_node.name IS '节点名称';
 COMMENT ON COLUMN apv_flow_node.description IS '节点描述';
 COMMENT ON COLUMN apv_flow_node.execution_type IS '执行类型';
@@ -289,6 +289,7 @@ CREATE INDEX idx_apv_flow_node_cc__node_id ON apv_flow_node_cc(node_id);
 CREATE TABLE IF NOT EXISTS apv_flow_edge (
     id VARCHAR(32) PRIMARY KEY,
     flow_version_id VARCHAR(32) NOT NULL,
+    key VARCHAR(64),
     source_node_id VARCHAR(32) NOT NULL,
     target_node_id VARCHAR(32) NOT NULL,
     source_handle VARCHAR(32),
@@ -300,6 +301,7 @@ CREATE TABLE IF NOT EXISTS apv_flow_edge (
 COMMENT ON TABLE apv_flow_edge IS '流程连线';
 COMMENT ON COLUMN apv_flow_edge.id IS '主键';
 COMMENT ON COLUMN apv_flow_edge.flow_version_id IS '流程版本ID';
+COMMENT ON COLUMN apv_flow_edge.key IS '连线标识';
 COMMENT ON COLUMN apv_flow_edge.source_node_id IS '来源节点ID';
 COMMENT ON COLUMN apv_flow_edge.target_node_id IS '目标节点ID';
 COMMENT ON COLUMN apv_flow_edge.source_handle IS '来源节点句柄';
