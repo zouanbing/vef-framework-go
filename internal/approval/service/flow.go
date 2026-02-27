@@ -17,7 +17,6 @@ var validNodeKinds = collections.NewHashSetFrom(
 	approval.NodeHandle,
 	approval.NodeCondition,
 	approval.NodeCC,
-	approval.NodeSubFlow,
 )
 
 // FlowService provides flow-level domain operations.
@@ -58,16 +57,6 @@ func (s *FlowService) ValidateFlowDefinition(def *approval.FlowDefinition) error
 			startCount++
 		case approval.NodeEnd:
 			endCount++
-		case approval.NodeSubFlow:
-			data, err := nd.ParseData()
-			if err != nil {
-				return fmt.Errorf("parse sub_flow node %q data: %w", nd.ID, err)
-			}
-
-			sfData := data.(*approval.SubFlowNodeData)
-			if sfData.SubFlowConfig == nil || sfData.SubFlowConfig.FlowID == "" {
-				return fmt.Errorf("sub_flow node %q missing flowId in subFlowConfig", nd.ID)
-			}
 		}
 	}
 

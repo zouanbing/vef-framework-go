@@ -50,7 +50,6 @@ const (
 	NodeApproval  NodeKind = "approval"  // Approval node: requires approval action from assignees
 	NodeHandle    NodeKind = "handle"    // Handle node: requires processing/handling action from assignees
 	NodeCondition NodeKind = "condition" // Condition node: branches the flow based on conditions
-	NodeSubFlow   NodeKind = "sub_flow"  // SubFlow node: invokes another workflow as a sub-process
 	NodeEnd       NodeKind = "end"       // End node: the terminal point of a workflow
 	NodeCC        NodeKind = "cc"        // CC node: sends notifications to specified users
 )

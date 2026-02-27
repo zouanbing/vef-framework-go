@@ -60,11 +60,11 @@ func TestNewFlowEngine(t *testing.T) {
 // TestBuildPassRuleContext tests build pass rule context scenarios.
 func TestBuildPassRuleContext(t *testing.T) {
 	tests := []struct {
-		name          string
-		tasks         []approval.Task
-		wantTotal     int
-		wantApproved  int
-		wantRejected  int
+		name         string
+		tasks        []approval.Task
+		wantTotal    int
+		wantApproved int
+		wantRejected int
 	}{
 		{
 			name: "AllPending",
@@ -351,7 +351,6 @@ func TestEvaluateBranchConditions(t *testing.T) {
 	})
 }
 
-
 // TestPublishEventsNilPublisher tests publish events nil publisher scenarios.
 func TestPublishEventsNilPublisher(t *testing.T) {
 	engine := NewFlowEngine(nil, nil, nil)
@@ -364,18 +363,6 @@ func TestPublishEventsNilPublisher(t *testing.T) {
 	t.Run("NilPublisherWithEvents", func(t *testing.T) {
 		err := engine.publishEvents(t.Context(), nil, nil)
 		assert.NoError(t, err, "Should return nil when publisher is nil even with events")
-	})
-}
-
-
-// TestResumeParentFlowNoOp tests resume parent flow no op scenarios.
-func TestResumeParentFlowNoOp(t *testing.T) {
-	engine := NewFlowEngine(nil, nil, nil)
-
-	t.Run("NoParentInstance", func(t *testing.T) {
-		child := &approval.Instance{ApplicantID: "u1"}
-		err := engine.ResumeParentFlow(t.Context(), nil, child, approval.InstanceApproved)
-		assert.NoError(t, err, "Should be no-op when child has no parent")
 	})
 }
 
@@ -423,17 +410,15 @@ func TestFlowEngineProcessorRegistration(t *testing.T) {
 			NewConditionProcessor(),
 			NewApprovalProcessor(nil),
 			NewHandleProcessor(nil),
-			NewSubFlowProcessor(),
 		}
 		engine := NewFlowEngine(nil, processors, nil)
 
-		assert.Len(t, engine.processors, 6, "Should register all 6 processor types")
+		assert.Len(t, engine.processors, 5, "Should register all 5 processor types")
 		assert.IsType(t, &StartProcessor{}, engine.processors[approval.NodeStart], "Should register StartProcessor")
 		assert.IsType(t, &EndProcessor{}, engine.processors[approval.NodeEnd], "Should register EndProcessor")
 		assert.IsType(t, &ConditionProcessor{}, engine.processors[approval.NodeCondition], "Should register ConditionProcessor")
 		assert.IsType(t, &ApprovalProcessor{}, engine.processors[approval.NodeApproval], "Should register ApprovalProcessor")
 		assert.IsType(t, &HandleProcessor{}, engine.processors[approval.NodeHandle], "Should register HandleProcessor")
-		assert.IsType(t, &SubFlowProcessor{}, engine.processors[approval.NodeSubFlow], "Should register SubFlowProcessor")
 	})
 
 	t.Run("DuplicateOverrides", func(t *testing.T) {
@@ -445,7 +430,6 @@ func TestFlowEngineProcessorRegistration(t *testing.T) {
 		assert.Same(t, p2, engine.processors[approval.NodeStart], "Should use the last registered processor for duplicate kinds")
 	})
 }
-
 
 // TestEvaluateBranchConditionsExpressionWithDept tests evaluate branch conditions expression with dept scenarios.
 func TestEvaluateBranchConditionsExpressionWithDept(t *testing.T) {

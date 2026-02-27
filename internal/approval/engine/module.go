@@ -13,27 +13,12 @@ var Module = fx.Module(
 		fx.Annotate(NewConditionProcessor, fx.ResultTags(`group:"vef:approval:node_processors"`)),
 		fx.Annotate(NewApprovalProcessor, fx.As(new(NodeProcessor)), fx.ResultTags(`group:"vef:approval:node_processors"`)),
 		fx.Annotate(NewHandleProcessor, fx.As(new(NodeProcessor)), fx.ResultTags(`group:"vef:approval:node_processors"`)),
-		fx.Annotate(NewSubFlowProcessor, fx.As(new(NodeProcessor)), fx.ResultTags(`group:"vef:approval:node_processors"`)),
 		fx.Annotate(NewCCProcessor, fx.As(new(NodeProcessor)), fx.ResultTags(`group:"vef:approval:node_processors"`)),
 
 		// Flow engine
 		fx.Annotate(
 			NewFlowEngine,
 			fx.ParamTags(``, `group:"vef:approval:node_processors"`, ``),
-		),
-	),
-
-	// Wire SubFlowProcessor with FlowEngine after construction
-	fx.Invoke(
-		fx.Annotate(
-			func(engine *FlowEngine, processors []NodeProcessor) {
-				for _, p := range processors {
-					if sfp, ok := p.(*SubFlowProcessor); ok {
-						sfp.SetFlowEngine(engine)
-					}
-				}
-			},
-			fx.ParamTags(``, `group:"vef:approval:node_processors"`),
 		),
 	),
 )

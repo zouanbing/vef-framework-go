@@ -202,7 +202,6 @@ CREATE TABLE IF NOT EXISTS apv_flow_node (
     duplicate_handler_action VARCHAR(32) NOT NULL DEFAULT 'none',
     is_read_confirm_required BOOLEAN NOT NULL DEFAULT false,
     branches JSONB,
-    sub_flow_config JSONB,
     CONSTRAINT uk_apv_flow_node__flow_version_id_node_key UNIQUE (flow_version_id, node_key),
     CONSTRAINT fk_apv_flow_node__flow_version_id FOREIGN KEY (flow_version_id) REFERENCES apv_flow_version(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
@@ -243,7 +242,6 @@ COMMENT ON COLUMN apv_flow_node.urge_cooldown_minutes IS '催办冷却时间';
 COMMENT ON COLUMN apv_flow_node.duplicate_handler_action IS '连续审批人重复时处理方式';
 COMMENT ON COLUMN apv_flow_node.is_read_confirm_required IS '是否需要全员已阅后才继续';
 COMMENT ON COLUMN apv_flow_node.branches IS '条件分支配置';
-COMMENT ON COLUMN apv_flow_node.sub_flow_config IS '子流程配置';
 
 -- Node assignee config
 CREATE TABLE IF NOT EXISTS apv_flow_node_assignee (
@@ -359,8 +357,6 @@ CREATE TABLE IF NOT EXISTS apv_instance (
     tenant_id VARCHAR(32) NOT NULL,
     flow_id VARCHAR(32) NOT NULL,
     flow_version_id VARCHAR(32) NOT NULL,
-    parent_instance_id VARCHAR(32),
-    parent_node_id VARCHAR(32),
     -- Application info
     title VARCHAR(256) NOT NULL,
     instance_no VARCHAR(64) NOT NULL,
@@ -376,9 +372,7 @@ CREATE TABLE IF NOT EXISTS apv_instance (
     form_data JSONB,
     CONSTRAINT fk_apv_instance__flow_id FOREIGN KEY (flow_id) REFERENCES apv_flow(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_apv_instance__flow_version_id FOREIGN KEY (flow_version_id) REFERENCES apv_flow_version(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT uk_apv_instance__instance_no UNIQUE (instance_no),
-    CONSTRAINT fk_apv_instance__parent_instance_id FOREIGN KEY (parent_instance_id) REFERENCES apv_instance(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_apv_instance__parent_node_id FOREIGN KEY (parent_node_id) REFERENCES apv_flow_node(id) ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT uk_apv_instance__instance_no UNIQUE (instance_no)
 );
 
 COMMENT ON TABLE apv_instance IS '流程实例';
@@ -390,8 +384,6 @@ COMMENT ON COLUMN apv_instance.updated_by IS '更新人ID';
 COMMENT ON COLUMN apv_instance.tenant_id IS '租户ID';
 COMMENT ON COLUMN apv_instance.flow_id IS '流程ID';
 COMMENT ON COLUMN apv_instance.flow_version_id IS '流程版本ID';
-COMMENT ON COLUMN apv_instance.parent_instance_id IS '父流程实例ID';
-COMMENT ON COLUMN apv_instance.parent_node_id IS '父流程节点ID';
 COMMENT ON COLUMN apv_instance.title IS '申请标题';
 COMMENT ON COLUMN apv_instance.instance_no IS '实例编号';
 COMMENT ON COLUMN apv_instance.applicant_id IS '申请人ID';
@@ -408,8 +400,6 @@ CREATE INDEX idx_apv_instance__tenant_id_applicant_id_status ON apv_instance(ten
 CREATE INDEX idx_apv_instance__flow_id_status_created_at ON apv_instance(flow_id, status, created_at);
 CREATE INDEX idx_apv_instance__applicant_id_status_created_at ON apv_instance(applicant_id, status, created_at DESC);
 CREATE INDEX idx_apv_instance__current_node_id ON apv_instance(current_node_id);
-CREATE INDEX idx_apv_instance__parent_instance_id ON apv_instance(parent_instance_id);
-
 --------------------------------------------------------------------------------
 -- Form Data Storage (GIN index for JSON hybrid mode)
 --------------------------------------------------------------------------------

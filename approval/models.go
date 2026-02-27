@@ -127,7 +127,6 @@ type FlowNode struct {
 	UrgeCooldownMinutes      int                    `json:"urgeCooldownMinutes" bun:"urge_cooldown_minutes"`
 	DuplicateHandlerAction   DuplicateHandlerAction `json:"duplicateHandlerAction" bun:"duplicate_handler_action"`
 	IsReadConfirmRequired    bool                   `json:"isReadConfirmRequired" bun:"is_read_confirm_required"`
-	SubFlowConfig            map[string]any         `json:"subFlowConfig" bun:"sub_flow_config,type:jsonb,nullzero"`
 	Branches                 []ConditionBranch      `json:"branches" bun:"branches,type:jsonb,nullzero"`
 }
 
@@ -204,8 +203,6 @@ type Instance struct {
 	TenantID         string          `json:"tenantId" bun:"tenant_id"`
 	FlowID           string          `json:"flowId" bun:"flow_id"`
 	FlowVersionID    string          `json:"flowVersionId" bun:"flow_version_id"`
-	ParentInstanceID *string         `json:"parentInstanceId" bun:"parent_instance_id,nullzero"`
-	ParentNodeID     *string         `json:"parentNodeId" bun:"parent_node_id,nullzero"`
 	Title            string          `json:"title" bun:"title"`
 	InstanceNo       string          `json:"instanceNo" bun:"instance_no"`
 	ApplicantID      string          `json:"applicantId" bun:"applicant_id"`

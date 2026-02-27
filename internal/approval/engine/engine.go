@@ -129,16 +129,11 @@ func (e *FlowEngine) handleProcessResult(ctx context.Context, db orm.DB, instanc
 			return err
 		}
 
-		// Publish completion event for all instances (main flow and sub-flow)
+		// Publish completion event
 		if err := e.publishEvents(ctx, db,
 			approval.NewInstanceCompletedEvent(instance.ID, result.FinalStatus),
 		); err != nil {
 			return fmt.Errorf("publish instance completed event: %w", err)
-		}
-
-		// If this is a sub-flow instance, resume the parent flow
-		if instance.ParentInstanceID != nil && instance.ParentNodeID != nil {
-			return e.resumeParentFlow(ctx, db, instance, result.FinalStatus)
 		}
 
 		return nil
@@ -322,60 +317,4 @@ func (e *FlowEngine) predictAssignees(ctx context.Context, db orm.DB, instance *
 	}
 
 	return ids
-}
-
-// ResumeParentFlow resumes the parent flow when a sub-flow instance completes.
-// It should be called when a child instance reaches a terminal status (approved/rejected).
-// If the child instance has no parent, this is a no-op.
-func (e *FlowEngine) ResumeParentFlow(ctx context.Context, db orm.DB, childInstance *approval.Instance, childStatus approval.InstanceStatus) error {
-	if childInstance.ParentInstanceID == nil || childInstance.ParentNodeID == nil {
-		return nil
-	}
-
-	return e.resumeParentFlow(ctx, db, childInstance, childStatus)
-}
-
-func (e *FlowEngine) resumeParentFlow(ctx context.Context, db orm.DB, childInstance *approval.Instance, childStatus approval.InstanceStatus) error {
-	// Publish sub-flow completed event
-	if err := e.publishEvents(ctx, db,
-		approval.NewSubFlowCompletedEvent(*childInstance.ParentInstanceID, childInstance.ID, *childInstance.ParentNodeID, childStatus),
-	); err != nil {
-		return fmt.Errorf("publish sub-flow completed event: %w", err)
-	}
-
-	var parentInstance approval.Instance
-
-	if err := db.NewSelect().Model(&parentInstance).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", *childInstance.ParentInstanceID)
-	}).Scan(ctx); err != nil {
-		return fmt.Errorf("find parent instance: %w", err)
-	}
-
-	// Only resume if parent is still running
-	if parentInstance.Status != approval.InstanceRunning {
-		return nil
-	}
-
-	var parentNode approval.FlowNode
-
-	if err := db.NewSelect().Model(&parentNode).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", *childInstance.ParentNodeID)
-	}).Scan(ctx); err != nil {
-		return fmt.Errorf("find parent node: %w", err)
-	}
-
-	if childStatus == approval.InstanceApproved {
-		// Sub-flow approved: advance parent to next node
-		return e.AdvanceToNextNode(ctx, db, &parentInstance, &parentNode, "")
-	}
-
-	// Sub-flow rejected: complete parent as rejected
-	parentInstance.Status = approval.InstanceRejected
-	parentInstance.FinishedAt = new(timex.Now())
-
-	if _, err := db.NewUpdate().Model(&parentInstance).WherePK().Exec(ctx); err != nil {
-		return err
-	}
-
-	return e.publishEvents(ctx, db, approval.NewInstanceCompletedEvent(parentInstance.ID, approval.InstanceRejected))
 }

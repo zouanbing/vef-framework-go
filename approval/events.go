@@ -342,50 +342,6 @@ func NewCcNotifiedEvent(instanceID, nodeID string, ccUserIDs []string, isManual 
 func (e *CCNotifiedEvent) EventName() string          { return "approval.cc.notified" }
 func (e *CCNotifiedEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
 
-// ==================== SubFlow Events ====================
-
-// SubFlowStartedEvent fired when a sub-flow is started.
-type SubFlowStartedEvent struct {
-	ParentInstanceID string         `json:"parentInstanceId"`
-	SubInstanceID    string         `json:"subInstanceId"`
-	ParentNodeID     string         `json:"parentNodeId"`
-	OccurredTime     timex.DateTime `json:"occurredTime"`
-}
-
-func NewSubFlowStartedEvent(parentInstanceID, subInstanceID, parentNodeID string) *SubFlowStartedEvent {
-	return &SubFlowStartedEvent{
-		ParentInstanceID: parentInstanceID,
-		SubInstanceID:    subInstanceID,
-		ParentNodeID:     parentNodeID,
-		OccurredTime:     timex.Now(),
-	}
-}
-
-func (e *SubFlowStartedEvent) EventName() string          { return "approval.subflow.started" }
-func (e *SubFlowStartedEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
-
-// SubFlowCompletedEvent fired when a sub-flow completes.
-type SubFlowCompletedEvent struct {
-	ParentInstanceID string         `json:"parentInstanceId"`
-	SubInstanceID    string         `json:"subInstanceId"`
-	ParentNodeID     string         `json:"parentNodeId"`
-	FinalStatus      InstanceStatus `json:"finalStatus"`
-	OccurredTime     timex.DateTime `json:"occurredTime"`
-}
-
-func NewSubFlowCompletedEvent(parentInstanceID, subInstanceID, parentNodeID string, finalStatus InstanceStatus) *SubFlowCompletedEvent {
-	return &SubFlowCompletedEvent{
-		ParentInstanceID: parentInstanceID,
-		SubInstanceID:    subInstanceID,
-		ParentNodeID:     parentNodeID,
-		FinalStatus:      finalStatus,
-		OccurredTime:     timex.Now(),
-	}
-}
-
-func (e *SubFlowCompletedEvent) EventName() string          { return "approval.subflow.completed" }
-func (e *SubFlowCompletedEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
-
 // ==================== Flow Events ====================
 
 // FlowPublishedEvent fired when a flow version is published.

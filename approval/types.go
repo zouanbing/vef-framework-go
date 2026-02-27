@@ -67,8 +67,6 @@ func (nd *NodeDefinition) ParseData() (NodeData, error) {
 		target = &CCNodeData{}
 	case NodeCondition:
 		target = &ConditionNodeData{}
-	case NodeSubFlow:
-		target = &SubFlowNodeData{}
 	default:
 		return nil, fmt.Errorf("unknown node kind %q", nd.Type)
 	}

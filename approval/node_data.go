@@ -221,31 +221,6 @@ func (d *ConditionNodeData) ApplyTo(node *FlowNode) {
 	node.Branches = d.Branches
 }
 
-// --- SubFlowNodeData ---
-
-// SubFlowNodeData contains data specific to sub-flow nodes.
-type SubFlowNodeData struct {
-	BaseNodeData
-
-	SubFlowConfig *SubFlowConfig `json:"subFlowConfig,omitempty"`
-}
-
-// Kind returns the node kind.
-func (d *SubFlowNodeData) Kind() NodeKind { return NodeSubFlow }
-
-// ApplyTo applies sub-flow node data to a FlowNode.
-func (d *SubFlowNodeData) ApplyTo(node *FlowNode) {
-	applyBaseNodeData(node, &d.BaseNodeData)
-
-	if d.SubFlowConfig != nil {
-		node.SubFlowConfig = map[string]any{
-			"flowId":   d.SubFlowConfig.FlowID,
-			"flowCode": d.SubFlowConfig.FlowCode,
-			"flowName": d.SubFlowConfig.FlowName,
-		}
-	}
-}
-
 // --- Supporting types ---
 
 // CCDefinition represents a CC recipient in node data.
@@ -254,11 +229,4 @@ type CCDefinition struct {
 	IDs       []string `json:"ids,omitempty"`
 	FormField string   `json:"formField,omitempty"`
 	CCTiming  CCTiming `json:"ccTiming,omitempty"`
-}
-
-// SubFlowConfig represents a sub-flow reference configuration.
-type SubFlowConfig struct {
-	FlowID   string `json:"flowId"`
-	FlowCode string `json:"flowCode,omitempty"`
-	FlowName string `json:"flowName,omitempty"`
 }

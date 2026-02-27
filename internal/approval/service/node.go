@@ -65,10 +65,6 @@ func (s *NodeService) HandleNodeCompletion(
 			return nil, err
 		}
 
-		if err := s.engine.ResumeParentFlow(ctx, db, instance, approval.InstanceRejected); err != nil {
-			return nil, fmt.Errorf("resume parent flow: %w", err)
-		}
-
 		return []approval.DomainEvent{
 			approval.NewInstanceCompletedEvent(instance.ID, approval.InstanceRejected),
 		}, nil

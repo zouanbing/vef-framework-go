@@ -35,8 +35,6 @@ func TestEventNames(t *testing.T) {
 		{"AssigneesAdded", approval.NewAssigneesAddedEvent("i1", "n1", "t1", approval.AddAssigneeBefore, []string{"u1"}), "approval.task.assignee_added"},
 		{"AssigneesRemoved", approval.NewAssigneesRemovedEvent("i1", "n1", "t1", []string{"u1"}), "approval.task.assignee_removed"},
 		{"CcNotified", approval.NewCcNotifiedEvent("i1", "n1", []string{"u1"}, true), "approval.cc.notified"},
-		{"SubFlowStarted", approval.NewSubFlowStartedEvent("i1", "s1", "n1"), "approval.subflow.started"},
-		{"SubFlowCompleted", approval.NewSubFlowCompletedEvent("i1", "s1", "n1", approval.InstanceApproved), "approval.subflow.completed"},
 		{"FlowPublished", approval.NewFlowPublishedEvent("f1", "v1"), "approval.flow.published"},
 	}
 
@@ -198,23 +196,6 @@ func TestEventConstructors(t *testing.T) {
 		assert.False(t, evt.IsManual, "Should be automatic CC")
 	})
 
-	t.Run("SubFlowStartedEvent", func(t *testing.T) {
-		evt := approval.NewSubFlowStartedEvent("parent1", "sub1", "node1")
-		require.NotNil(t, evt, "Should create event")
-		assert.Equal(t, "parent1", evt.ParentInstanceID, "Should set ParentInstanceID")
-		assert.Equal(t, "sub1", evt.SubInstanceID, "Should set SubInstanceID")
-		assert.Equal(t, "node1", evt.ParentNodeID, "Should set ParentNodeID")
-	})
-
-	t.Run("SubFlowCompletedEvent", func(t *testing.T) {
-		evt := approval.NewSubFlowCompletedEvent("parent1", "sub1", "node1", approval.InstanceApproved)
-		require.NotNil(t, evt, "Should create event")
-		assert.Equal(t, "parent1", evt.ParentInstanceID, "Should set ParentInstanceID")
-		assert.Equal(t, "sub1", evt.SubInstanceID, "Should set SubInstanceID")
-		assert.Equal(t, "node1", evt.ParentNodeID, "Should set ParentNodeID")
-		assert.Equal(t, approval.InstanceApproved, evt.FinalStatus, "Should set FinalStatus")
-	})
-
 	t.Run("FlowPublishedEvent", func(t *testing.T) {
 		evt := approval.NewFlowPublishedEvent("f1", "v1")
 		require.NotNil(t, evt, "Should create event")
@@ -243,8 +224,6 @@ func TestEventOccurredAtAll(t *testing.T) {
 		approval.NewAssigneesAddedEvent("i1", "n1", "t1", approval.AddAssigneeBefore, []string{"u1"}),
 		approval.NewAssigneesRemovedEvent("i1", "n1", "t1", []string{"u1"}),
 		approval.NewCcNotifiedEvent("i1", "n1", []string{"u1"}, false),
-		approval.NewSubFlowStartedEvent("i1", "s1", "n1"),
-		approval.NewSubFlowCompletedEvent("i1", "s1", "n1", approval.InstanceApproved),
 		approval.NewFlowPublishedEvent("f1", "v1"),
 	}
 
@@ -282,7 +261,7 @@ func TestToMap(t *testing.T) {
 // BadEvent is a non-struct DomainEvent that causes mapx.ToMap to fail.
 type BadEvent string
 
-func (e BadEvent) EventName() string        { return "bad.event" }
+func (e BadEvent) EventName() string          { return "bad.event" }
 func (e BadEvent) OccurredAt() timex.DateTime { return timex.Now() }
 
 func TestNewEventPublisher(t *testing.T) {
