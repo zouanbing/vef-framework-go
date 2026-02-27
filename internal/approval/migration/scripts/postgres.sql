@@ -121,6 +121,7 @@ CREATE TABLE IF NOT EXISTS apv_flow_version (
     updated_at TIMESTAMP NOT NULL DEFAULT LOCALTIMESTAMP,
     created_by VARCHAR(32) NOT NULL DEFAULT 'system',
     updated_by VARCHAR(32) NOT NULL DEFAULT 'system',
+    
     flow_id VARCHAR(32) NOT NULL,
     version INTEGER NOT NULL,
     status VARCHAR(16) NOT NULL DEFAULT 'draft',
