@@ -1,5 +1,10 @@
 package approval
 
+import (
+	"encoding/json"
+	"fmt"
+)
+
 // Condition represents a branch condition evaluated by condition nodes.
 type Condition struct {
 	Type       ConditionKind `json:"type"`
@@ -39,10 +44,42 @@ type Position struct {
 
 // NodeDefinition represents a node in the flow definition.
 type NodeDefinition struct {
-	ID       string         `json:"id"`
-	Type     NodeKind       `json:"type"`
-	Position Position       `json:"position"`
-	Data     map[string]any `json:"data,omitempty"`
+	ID       string          `json:"id"`
+	Type     NodeKind        `json:"type"`
+	Position Position        `json:"position"`
+	Data     json.RawMessage `json:"data,omitempty"`
+}
+
+// ParseData parses Data into the appropriate typed struct based on Type.
+func (nd *NodeDefinition) ParseData() (NodeData, error) {
+	var target NodeData
+
+	switch nd.Type {
+	case NodeStart:
+		target = &StartNodeData{}
+	case NodeEnd:
+		target = &EndNodeData{}
+	case NodeApproval:
+		target = &ApprovalNodeData{}
+	case NodeHandle:
+		target = &HandleNodeData{}
+	case NodeCC:
+		target = &CCNodeData{}
+	case NodeCondition:
+		target = &ConditionNodeData{}
+	case NodeSubFlow:
+		target = &SubFlowNodeData{}
+	default:
+		return nil, fmt.Errorf("unknown node kind %q", nd.Type)
+	}
+
+	if len(nd.Data) > 0 {
+		if err := json.Unmarshal(nd.Data, target); err != nil {
+			return nil, fmt.Errorf("unmarshal %s node data: %w", nd.Type, err)
+		}
+	}
+
+	return target, nil
 }
 
 // AssigneeDefinition represents an assignee configuration in the flow definition.

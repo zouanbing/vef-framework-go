@@ -7,6 +7,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
+	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
@@ -18,6 +19,11 @@ type DeployFlowCmd struct {
 	FlowID         string
 	FlowDefinition approval.FlowDefinition
 	FormDefinition *approval.FormDefinition
+}
+
+// AssigneeProvider is the interface for accessing assignees from typed node data.
+type AssigneeProvider interface {
+	GetAssignees() []approval.AssigneeDefinition
 }
 
 // DeployFlowHandler handles the DeployFlowCmd command.
@@ -33,7 +39,7 @@ func NewDeployFlowHandler(db orm.DB, flowSvc *service.FlowService) *DeployFlowHa
 
 func (h *DeployFlowHandler) Handle(ctx context.Context, cmd DeployFlowCmd) (*approval.FlowVersion, error) {
 	if err := h.flowSvc.ValidateFlowDefinition(&cmd.FlowDefinition); err != nil {
-		return nil, fmt.Errorf("%w: %v", service.ErrInvalidFlowDesign, err)
+		return nil, fmt.Errorf("%w: %v", shared.ErrInvalidFlowDesign, err)
 	}
 
 	db := contextx.DB(ctx, h.db)
@@ -43,7 +49,7 @@ func (h *DeployFlowHandler) Handle(ctx context.Context, cmd DeployFlowCmd) (*app
 	if err := db.NewSelect().Model(&flow).Where(func(c orm.ConditionBuilder) {
 		c.Equals("id", cmd.FlowID)
 	}).Scan(ctx); err != nil {
-		return nil, service.ErrFlowNotFound
+		return nil, shared.ErrFlowNotFound
 	}
 
 	// Bump version
@@ -68,20 +74,17 @@ func (h *DeployFlowHandler) Handle(ctx context.Context, cmd DeployFlowCmd) (*app
 	nodeKeyToID := make(map[string]string, len(cmd.FlowDefinition.Nodes))
 
 	for _, nd := range cmd.FlowDefinition.Nodes {
-		var name string
-		if nd.Data != nil {
-			if v, ok := nd.Data["label"].(string); ok {
-				name = v
-			}
+		nodeData, err := nd.ParseData()
+		if err != nil {
+			return nil, fmt.Errorf("parse node %q data: %w", nd.ID, err)
 		}
 
 		node := approval.FlowNode{
 			FlowVersionID: version.ID,
 			NodeKey:       nd.ID,
 			NodeKind:      nd.Type,
-			Name:          name,
 		}
-		h.flowSvc.ApplyNodeData(&node, nd.Data)
+		nodeData.ApplyTo(&node)
 
 		if _, err := db.NewInsert().Model(&node).Exec(ctx); err != nil {
 			return nil, fmt.Errorf("insert node: %w", err)
@@ -89,20 +92,21 @@ func (h *DeployFlowHandler) Handle(ctx context.Context, cmd DeployFlowCmd) (*app
 
 		nodeKeyToID[nd.ID] = node.ID
 
-		assignees := service.ExtractFromData[approval.AssigneeDefinition](nd.Data, "assignees")
-		for _, assigneeDef := range assignees {
-			assignee := approval.FlowNodeAssignee{
-				NodeID:    node.ID,
-				Kind:      approval.AssigneeKind(assigneeDef.Kind),
-				IDs:       assigneeDef.IDs,
-				SortOrder: assigneeDef.SortOrder,
-			}
-			if assigneeDef.FormField != "" {
-				assignee.FormField = new(assigneeDef.FormField)
-			}
+		if ap, ok := nodeData.(AssigneeProvider); ok {
+			for _, assigneeDef := range ap.GetAssignees() {
+				assignee := approval.FlowNodeAssignee{
+					NodeID:    node.ID,
+					Kind:      approval.AssigneeKind(assigneeDef.Kind),
+					IDs:       assigneeDef.IDs,
+					SortOrder: assigneeDef.SortOrder,
+				}
+				if assigneeDef.FormField != "" {
+					assignee.FormField = new(assigneeDef.FormField)
+				}
 
-			if _, err := db.NewInsert().Model(&assignee).Exec(ctx); err != nil {
-				return nil, fmt.Errorf("insert node assignee: %w", err)
+				if _, err := db.NewInsert().Model(&assignee).Exec(ctx); err != nil {
+					return nil, fmt.Errorf("insert node assignee: %w", err)
+				}
 			}
 		}
 	}
@@ -111,12 +115,12 @@ func (h *DeployFlowHandler) Handle(ctx context.Context, cmd DeployFlowCmd) (*app
 	for _, edgeDef := range cmd.FlowDefinition.Edges {
 		sourceID, ok := nodeKeyToID[edgeDef.Source]
 		if !ok {
-			return nil, fmt.Errorf("%w: unknown source node key %q", service.ErrInvalidFlowDesign, edgeDef.Source)
+			return nil, fmt.Errorf("%w: unknown source node key %q", shared.ErrInvalidFlowDesign, edgeDef.Source)
 		}
 
 		targetID, ok := nodeKeyToID[edgeDef.Target]
 		if !ok {
-			return nil, fmt.Errorf("%w: unknown target node key %q", service.ErrInvalidFlowDesign, edgeDef.Target)
+			return nil, fmt.Errorf("%w: unknown target node key %q", shared.ErrInvalidFlowDesign, edgeDef.Target)
 		}
 
 		edge := approval.FlowEdge{

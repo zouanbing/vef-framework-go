@@ -2,13 +2,11 @@ package service
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"text/template"
 
 	"github.com/ilxqx/go-collections"
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/decimal"
 )
 
 // validNodeKinds defines the set of valid node kinds for flow validation.
@@ -61,17 +59,13 @@ func (s *FlowService) ValidateFlowDefinition(def *approval.FlowDefinition) error
 		case approval.NodeEnd:
 			endCount++
 		case approval.NodeSubFlow:
-			var config map[string]any
-			if nd.Data != nil {
-				config, _ = nd.Data["subFlowConfig"].(map[string]any)
+			data, err := nd.ParseData()
+			if err != nil {
+				return fmt.Errorf("parse sub_flow node %q data: %w", nd.ID, err)
 			}
 
-			if config == nil {
-				return fmt.Errorf("sub_flow node %q missing subFlowConfig", nd.ID)
-			}
-
-			flowID, _ := config["flowId"].(string)
-			if flowID == "" {
+			sfData := data.(*approval.SubFlowNodeData)
+			if sfData.SubFlowConfig == nil || sfData.SubFlowConfig.FlowID == "" {
 				return fmt.Errorf("sub_flow node %q missing flowId in subFlowConfig", nd.ID)
 			}
 		}
@@ -96,190 +90,6 @@ func (s *FlowService) ValidateFlowDefinition(def *approval.FlowDefinition) error
 	}
 
 	return nil
-}
-
-// ApplyNodeData maps design-time data to FlowNode fields.
-func (s *FlowService) ApplyNodeData(node *approval.FlowNode, data map[string]any) {
-	if len(data) == 0 {
-		return
-	}
-
-	if v, ok := data["description"].(string); ok {
-		node.Description = &v
-	}
-
-	if v, ok := data["isReadConfirmRequired"].(bool); ok {
-		node.IsReadConfirmRequired = v
-	}
-
-	if v, ok := data["approvalMethod"].(string); ok {
-		node.ApprovalMethod = approval.ApprovalMethod(v)
-	}
-
-	if v, ok := data["passRule"].(string); ok {
-		node.PassRule = approval.PassRule(v)
-	}
-
-	if v, ok := data["executionType"].(string); ok {
-		node.ExecutionType = approval.ExecutionType(v)
-	}
-
-	if v, ok := data["emptyHandlerAction"].(string); ok {
-		node.EmptyHandlerAction = approval.EmptyHandlerAction(v)
-	}
-
-	if v, ok := data["sameApplicantAction"].(string); ok {
-		node.SameApplicantAction = approval.SameApplicantAction(v)
-	}
-
-	if v, ok := data["duplicateHandlerAction"].(string); ok {
-		node.DuplicateHandlerAction = approval.DuplicateHandlerAction(v)
-	}
-
-	if v, ok := data["rollbackType"].(string); ok {
-		node.RollbackType = approval.RollbackType(v)
-	}
-
-	if v, ok := data["rollbackDataStrategy"].(string); ok {
-		node.RollbackDataStrategy = approval.RollbackDataStrategy(v)
-	}
-
-	if v, ok := data["isRollbackAllowed"].(bool); ok {
-		node.IsRollbackAllowed = v
-	}
-
-	if v, ok := data["isAddAssigneeAllowed"].(bool); ok {
-		node.IsAddAssigneeAllowed = v
-	}
-
-	if v, ok := data["isRemoveAssigneeAllowed"].(bool); ok {
-		node.IsRemoveAssigneeAllowed = v
-	}
-
-	if v, ok := data["isTransferAllowed"].(bool); ok {
-		node.IsTransferAllowed = v
-	}
-
-	if v, ok := data["isOpinionRequired"].(bool); ok {
-		node.IsOpinionRequired = v
-	}
-
-	if v, ok := data["isManualCcAllowed"].(bool); ok {
-		node.IsManualCCAllowed = v
-	}
-
-	if v, ok := data["passRatio"]; ok {
-		switch r := v.(type) {
-		case float64:
-			node.PassRatio = decimal.NewFromFloat(r)
-		case string:
-			if d, err := decimal.NewFromString(r); err == nil {
-				node.PassRatio = d
-			}
-		}
-	}
-
-	if v, ok := data["timeoutHours"]; ok {
-		if f, ok := v.(float64); ok {
-			node.TimeoutHours = int(f)
-		}
-	}
-
-	if v, ok := data["timeoutAction"].(string); ok {
-		node.TimeoutAction = approval.TimeoutAction(v)
-	}
-
-	if v, ok := data["timeoutNotifyBeforeHours"]; ok {
-		if f, ok := v.(float64); ok {
-			node.TimeoutNotifyBeforeHours = int(f)
-		}
-	}
-
-	if v, ok := data["urgeCooldownMinutes"]; ok {
-		if f, ok := v.(float64); ok {
-			node.UrgeCooldownMinutes = int(f)
-		}
-	}
-
-	if v, ok := data["adminUserIds"]; ok {
-		if ids, ok := ToStringSlice(v); ok {
-			node.AdminUserIDs = ids
-		}
-	}
-
-	if v, ok := data["fallbackUserIds"]; ok {
-		if ids, ok := ToStringSlice(v); ok {
-			node.FallbackUserIDs = ids
-		}
-	}
-
-	if v, ok := data["addAssigneeTypes"]; ok {
-		if ids, ok := ToStringSlice(v); ok {
-			node.AddAssigneeTypes = ids
-		}
-	}
-
-	if v, ok := data["subFlowConfig"].(map[string]any); ok {
-		node.SubFlowConfig = v
-	}
-
-	if v, ok := data["fieldPermissions"].(map[string]any); ok {
-		perms := make(map[string]approval.Permission, len(v))
-		for k, val := range v {
-			if s, ok := val.(string); ok {
-				perms[k] = approval.Permission(s)
-			}
-		}
-
-		node.FieldPermissions = perms
-	}
-
-	branches := ExtractFromData[approval.ConditionBranch](data, "branches")
-	if len(branches) > 0 {
-		node.Branches = branches
-	}
-}
-
-// ExtractFromData extracts a typed slice from a map key via JSON round-trip.
-func ExtractFromData[T any](data map[string]any, key string) []T {
-	if data == nil {
-		return nil
-	}
-
-	raw, ok := data[key]
-	if !ok {
-		return nil
-	}
-
-	b, err := json.Marshal(raw)
-	if err != nil {
-		return nil
-	}
-
-	var result []T
-	if err := json.Unmarshal(b, &result); err != nil {
-		return nil
-	}
-
-	return result
-}
-
-// ToStringSlice converts a JSON-decoded []any to []string.
-func ToStringSlice(v any) ([]string, bool) {
-	arr, ok := v.([]any)
-	if !ok {
-		return nil, false
-	}
-
-	result := make([]string, 0, len(arr))
-
-	for _, item := range arr {
-		if s, ok := item.(string); ok {
-			result = append(result, s)
-		}
-	}
-
-	return result, len(result) > 0
 }
 
 // BuildTitleTemplateData builds a camelCase map for rendering instance title templates.

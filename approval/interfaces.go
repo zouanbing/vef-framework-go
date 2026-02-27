@@ -66,3 +66,16 @@ type DomainEvent interface {
 type EventDispatcher interface {
 	Dispatch(ctx context.Context, record EventOutbox) error
 }
+
+// NodeData is the interface implemented by all node data types.
+type NodeData interface {
+	Kind() NodeKind
+	GetName() string
+	GetDescription() *string
+	ApplyTo(node *FlowNode)
+}
+
+// InstanceNoGenerator generates unique instance numbers for flow instances.
+type InstanceNoGenerator interface {
+	Generate(ctx context.Context, flowCode string) (string, error)
+}
