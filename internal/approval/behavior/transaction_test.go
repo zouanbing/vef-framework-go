@@ -13,13 +13,9 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/testx"
 )
 
-type TestCmd struct {
-	cqrs.BaseCommand
-}
+type TestCmd struct{ cqrs.BaseCommand }
 
-type TestQuery struct {
-	cqrs.BaseQuery
-}
+type TestQuery struct{ cqrs.BaseQuery }
 
 func TestTransactionBehavior(t *testing.T) {
 	db := testx.NewTestDB(t)
