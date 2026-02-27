@@ -78,7 +78,7 @@ func (suite *DBTestSuite) TestBeginTx() {
 func (suite *DBTestSuite) TestConn() {
 	suite.T().Logf("Testing Conn for %s", suite.ds.Kind)
 
-	conn, err := suite.db.Conn(suite.ctx)
+	conn, err := suite.db.Connection(suite.ctx)
 	suite.NoError(err, "Conn should work")
 	suite.NotNil(conn, "Conn should return non-nil")
 
@@ -150,7 +150,7 @@ func (suite *DBTestSuite) TestScanRowsAndScanRow() {
 
 		var results []NameResult
 
-		conn, err := suite.db.Conn(suite.ctx)
+		conn, err := suite.db.Connection(suite.ctx)
 		suite.Require().NoError(err, "Conn should work")
 
 		defer conn.Close()
@@ -172,7 +172,7 @@ func (suite *DBTestSuite) TestScanRowsAndScanRow() {
 
 		var result CountResult
 
-		conn, err := suite.db.Conn(suite.ctx)
+		conn, err := suite.db.Connection(suite.ctx)
 		suite.Require().NoError(err, "Conn should work")
 
 		defer conn.Close()

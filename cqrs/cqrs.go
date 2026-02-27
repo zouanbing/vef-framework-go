@@ -10,14 +10,14 @@ type (
 	ActionKind = icqrs.ActionKind
 	Action     = icqrs.Action
 
-	CommandBase = icqrs.CommandBase
-	QueryBase   = icqrs.QueryBase
+	BaseCommand = icqrs.BaseCommand
+	BaseQuery   = icqrs.BaseQuery
 
 	Unit = icqrs.Unit
 	Bus  = icqrs.Bus
 
-	Handler[C icqrs.Action, R any]     = icqrs.Handler[C, R]
-	HandlerFunc[C icqrs.Action, R any] = icqrs.HandlerFunc[C, R]
+	Handler[TAction icqrs.Action, TResult any]     = icqrs.Handler[TAction, TResult]
+	HandlerFunc[TAction icqrs.Action, TResult any] = icqrs.HandlerFunc[TAction, TResult]
 
 	Behavior     = icqrs.Behavior
 	BehaviorFunc = icqrs.BehaviorFunc
@@ -32,11 +32,11 @@ var ErrHandlerNotFound = icqrs.ErrHandlerNotFound
 
 // Register registers a type-safe handler for command type C.
 // Panics if a handler is already registered for the same command type.
-func Register[TCommand icqrs.Action, TResult any](bus Bus, handler Handler[TCommand, TResult]) {
+func Register[TAction icqrs.Action, TResult any](bus Bus, handler Handler[TAction, TResult]) {
 	icqrs.Register(bus, handler)
 }
 
 // Send dispatches a command through the behavior pipeline to its registered handler.
-func Send[TCommand icqrs.Action, TResult any](ctx context.Context, bus Bus, cmd TCommand) (TResult, error) {
-	return icqrs.Send[TCommand, TResult](ctx, bus, cmd)
+func Send[TAction icqrs.Action, TResult any](ctx context.Context, bus Bus, action TAction) (TResult, error) {
+	return icqrs.Send[TAction, TResult](ctx, bus, action)
 }

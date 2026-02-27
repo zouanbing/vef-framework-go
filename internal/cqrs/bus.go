@@ -16,12 +16,12 @@ type Dispatcher interface {
 }
 
 // TypedHandler wraps a generic Handler and provides a type-erased dispatch method.
-type TypedHandler[TCommand Action, TResult any] struct {
-	handler Handler[TCommand, TResult]
+type TypedHandler[TAction Action, TResult any] struct {
+	handler Handler[TAction, TResult]
 }
 
-func (h *TypedHandler[TCommand, TResult]) dispatch(ctx context.Context, cmd any) (any, error) {
-	return h.handler.Handle(ctx, cmd.(TCommand))
+func (h *TypedHandler[TAction, TResult]) dispatch(ctx context.Context, action any) (any, error) {
+	return h.handler.Handle(ctx, action.(TAction))
 }
 
 // CommandQueryBus is the concrete Bus implementation.
@@ -44,7 +44,7 @@ func (b *CommandQueryBus) register(key reflect.Type, d Dispatcher) {
 	}
 }
 
-func (b *CommandQueryBus) send(ctx context.Context, key reflect.Type, cmd any) (any, error) {
+func (b *CommandQueryBus) send(ctx context.Context, key reflect.Type, action Action) (any, error) {
 	h, ok := b.handlers.Get(key)
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", ErrHandlerNotFound, key)
@@ -52,13 +52,13 @@ func (b *CommandQueryBus) send(ctx context.Context, key reflect.Type, cmd any) (
 
 	// Wrap behaviors in reverse order so behaviors[0] is the outermost.
 	execute := func(ctx context.Context) (any, error) {
-		return h.dispatch(ctx, cmd)
+		return h.dispatch(ctx, action)
 	}
 	for i := len(b.behaviors) - 1; i >= 0; i-- {
 		bh := b.behaviors[i]
 		next := execute
 		execute = func(ctx context.Context) (any, error) {
-			return bh.Handle(ctx, cmd.(Action), next)
+			return bh.Handle(ctx, action, next)
 		}
 	}
 
@@ -67,13 +67,13 @@ func (b *CommandQueryBus) send(ctx context.Context, key reflect.Type, cmd any) (
 
 // Register registers a type-safe handler for command type C.
 // Panics if a handler is already registered for the same command type.
-func Register[TCommand Action, TResult any](bus Bus, handler Handler[TCommand, TResult]) {
-	bus.register(reflect.TypeFor[TCommand](), &TypedHandler[TCommand, TResult]{handler: handler})
+func Register[TAction Action, TResult any](bus Bus, handler Handler[TAction, TResult]) {
+	bus.register(reflect.TypeFor[TAction](), &TypedHandler[TAction, TResult]{handler: handler})
 }
 
 // Send dispatches a command through the behavior pipeline to its registered handler.
-func Send[TCommand Action, TResult any](ctx context.Context, bus Bus, cmd TCommand) (TResult, error) {
-	raw, err := bus.send(ctx, reflect.TypeFor[TCommand](), cmd)
+func Send[TAction Action, TResult any](ctx context.Context, bus Bus, action TAction) (TResult, error) {
+	raw, err := bus.send(ctx, reflect.TypeFor[TAction](), action)
 	if err != nil {
 		return lo.Empty[TResult](), err
 	}

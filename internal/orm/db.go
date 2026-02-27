@@ -98,7 +98,7 @@ func (d *BunDB) BeginTx(ctx context.Context, opts *sql.TxOptions) (Tx, error) {
 	return &BunTx{BunDB{db: tx}}, nil
 }
 
-func (d *BunDB) Conn(ctx context.Context) (*sql.Conn, error) {
+func (d *BunDB) Connection(ctx context.Context) (*sql.Conn, error) {
 	return d.getBunDB().DB.Conn(ctx)
 }
 

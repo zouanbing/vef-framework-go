@@ -692,7 +692,7 @@ type DB interface {
 	RunInTX(ctx context.Context, fn func(ctx context.Context, tx DB) error) error
 	RunInReadOnlyTX(ctx context.Context, fn func(ctx context.Context, tx DB) error) error
 	BeginTx(ctx context.Context, opts *sql.TxOptions) (Tx, error)
-	Conn(ctx context.Context) (*sql.Conn, error)
+	Connection(ctx context.Context) (*sql.Conn, error)
 	RegisterModel(models ...any)
 	ResetModel(ctx context.Context, models ...any) error
 	// ScanRows scans all rows and closes *sql.Rows when done.

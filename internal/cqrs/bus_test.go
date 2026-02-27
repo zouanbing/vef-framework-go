@@ -11,7 +11,7 @@ import (
 )
 
 type CreateUserCmd struct {
-	CommandBase
+	BaseCommand
 	Name string
 }
 
@@ -20,12 +20,12 @@ type CreateUserResult struct {
 }
 
 type DeleteUserCmd struct {
-	CommandBase
+	BaseCommand
 	ID string
 }
 
 type GetUserQuery struct {
-	QueryBase
+	BaseQuery
 	ID string
 }
 
@@ -357,14 +357,14 @@ func TestBehaviorFunc(t *testing.T) {
 }
 
 func TestActionKind(t *testing.T) {
-	t.Run("CommandBase", func(t *testing.T) {
+	t.Run("BaseCommand", func(t *testing.T) {
 		cmd := CreateUserCmd{Name: "test"}
-		assert.Equal(t, Command, cmd.Kind(), "CommandBase should return Command kind")
+		assert.Equal(t, Command, cmd.Kind(), "BaseCommand should return Command kind")
 	})
 
-	t.Run("QueryBase", func(t *testing.T) {
+	t.Run("BaseQuery", func(t *testing.T) {
 		q := GetUserQuery{ID: "1"}
-		assert.Equal(t, Query, q.Kind(), "QueryBase should return Query kind")
+		assert.Equal(t, Query, q.Kind(), "BaseQuery should return Query kind")
 	})
 
 	t.Run("BehaviorReceivesActionKind", func(t *testing.T) {
