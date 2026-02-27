@@ -219,12 +219,6 @@ var (
 
 	// DataType is the factory for creating type-safe SQL data type definitions.
 	DataType = orm.DataType
-
-	// ContextWithDB returns a new context with the given DB stored in it.
-	ContextWithDB = orm.ContextWithDB
-
-	// DBFromContext extracts the DB from the context.
-	DBFromContext = orm.DBFromContext
 )
 
 // DDL constraint constructors.
