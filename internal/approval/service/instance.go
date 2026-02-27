@@ -547,8 +547,6 @@ func cancelInstanceTasks(ctx context.Context, tx orm.DB, instanceID string) erro
 	return err
 }
 
-var cancelableTaskStatuses = []string{string(approval.TaskPending), string(approval.TaskWaiting)}
-
 // validateRollbackTarget validates the rollback target node based on the node's RollbackType.
 func (s *InstanceService) validateRollbackTarget(ctx context.Context, tx orm.DB, instance *approval.Instance, currentNode *approval.FlowNode, targetNodeID string) error {
 	switch currentNode.RollbackType {
