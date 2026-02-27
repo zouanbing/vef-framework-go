@@ -6,9 +6,10 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/approval/engine"
-	"github.com/ilxqx/vef-framework-go/internal/approval/migration"
 	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
+	"github.com/ilxqx/vef-framework-go/internal/approval/engine"
+	"github.com/ilxqx/vef-framework-go/internal/approval/handler"
+	"github.com/ilxqx/vef-framework-go/internal/approval/migration"
 	"github.com/ilxqx/vef-framework-go/internal/approval/resource"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
 	"github.com/ilxqx/vef-framework-go/internal/approval/strategy"
@@ -24,6 +25,7 @@ var Module = fx.Module(
 	engine.Module,
 	dispatcher.Module,
 	service.Module,
+	handler.Module,
 	resource.Module,
 	timeout.Module,
 
