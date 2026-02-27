@@ -1074,7 +1074,7 @@ func (suite *FindAllTestSuite) TestFindAllDynamicSortNullsLast() {
 
 // TestSetupErrModelNoPrimaryKey covers find.go:60-62 - auditUserModel on model with no PK.
 func TestSetupErrModelNoPrimaryKey(t *testing.T) {
-	db := newTestDB(t)
+	db := testx.NewTestDB(t)
 
 	fa := crud.NewFindAll[NoPKModel, struct{}]()
 	fa.WithAuditUserNames((*struct{})(nil))
@@ -1088,7 +1088,7 @@ func TestSetupErrModelNoPrimaryKey(t *testing.T) {
 
 // TestSetupErrAuditUserCompositePK covers find.go:64-66 - auditUserModel on composite PK model.
 func TestSetupErrAuditUserCompositePK(t *testing.T) {
-	db := newTestDB(t)
+	db := testx.NewTestDB(t)
 
 	fa := crud.NewFindAll[CompositePKModel, struct{}]()
 	fa.WithAuditUserNames((*struct{})(nil))

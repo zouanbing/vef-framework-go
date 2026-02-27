@@ -2,18 +2,13 @@ package crud_test
 
 import (
 	"context"
-	"database/sql"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/guregu/null/v6"
-	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
-	"github.com/uptrace/bun/dialect/sqlitedialect"
 	"go.uber.org/fx"
-
-	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/ilxqx/vef-framework-go"
 	"github.com/ilxqx/vef-framework-go/api"
@@ -155,21 +150,6 @@ type CompositePKModel struct {
 	Key1 string `json:"key1" bun:",pk"`
 	Key2 string `json:"key2" bun:",pk"`
 	Name string `json:"name"`
-}
-
-// newTestDB creates a minimal SQLite in-memory DB for unit testing.
-func newTestDB(t *testing.T) orm.DB {
-	t.Helper()
-
-	sqliteDB, err := sql.Open("sqlite3", ":memory:")
-	require.NoError(t, err, "Should not return error")
-
-	t.Cleanup(func() { _ = sqliteDB.Close() })
-
-	bunDB := bun.NewDB(sqliteDB, sqlitedialect.New())
-	t.Cleanup(func() { bunDB.Close() })
-
-	return orm.New(bunDB)
 }
 
 // callHandlerFactory invokes the handler factory function via reflection with the given DB.

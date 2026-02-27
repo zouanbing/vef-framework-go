@@ -585,7 +585,7 @@ func (suite *FindPageTestSuite) TestFindPageErrorQueryApplier() {
 
 // TestSetupErrFindPageNoPK covers find_page.go:41-43 - FindPage Setup error with no PK model.
 func TestSetupErrFindPageNoPK(t *testing.T) {
-	db := newTestDB(t)
+	db := testx.NewTestDB(t)
 
 	fp := crud.NewFindPage[NoPKModel, struct{}]()
 	fp.WithAuditUserNames((*struct{})(nil))

@@ -7,14 +7,14 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type mockBase struct {
+type BaseMock struct {
 	value string
 }
 
 type MockFeatureTestSuite struct {
 	suite.Suite
 
-	base *mockBase
+	base *BaseMock
 }
 
 func (s *MockFeatureTestSuite) TestPlaceholder() {
@@ -23,9 +23,9 @@ func (s *MockFeatureTestSuite) TestPlaceholder() {
 
 // TestRegistryAdd tests registry add functionality.
 func TestRegistryAdd(t *testing.T) {
-	r := NewRegistry[mockBase]()
+	r := NewRegistry[BaseMock]()
 
-	r.Add(func(base *mockBase) suite.TestingSuite {
+	r.Add(func(base *BaseMock) suite.TestingSuite {
 		return &MockFeatureTestSuite{base: base}
 	})
 
@@ -34,9 +34,9 @@ func TestRegistryAdd(t *testing.T) {
 
 // TestRegistryAddNamed tests registry add named functionality.
 func TestRegistryAddNamed(t *testing.T) {
-	r := NewRegistry[mockBase]()
+	r := NewRegistry[BaseMock]()
 
-	r.AddNamed("CustomName", func(base *mockBase) suite.TestingSuite {
+	r.AddNamed("CustomName", func(base *BaseMock) suite.TestingSuite {
 		return &MockFeatureTestSuite{base: base}
 	})
 
@@ -45,9 +45,9 @@ func TestRegistryAddNamed(t *testing.T) {
 
 // TestRegistryNameExtraction tests registry name extraction functionality.
 func TestRegistryNameExtraction(t *testing.T) {
-	r := NewRegistry[mockBase]()
+	r := NewRegistry[BaseMock]()
 
-	r.Add(func(base *mockBase) suite.TestingSuite {
+	r.Add(func(base *BaseMock) suite.TestingSuite {
 		return &MockFeatureTestSuite{base: base}
 	})
 

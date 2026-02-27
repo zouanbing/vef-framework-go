@@ -571,7 +571,7 @@ func (suite *FindOneTestSuite) TestFindOneErrorQueryApplier() {
 
 // TestSetupErrFindOneNoPK covers find_one.go:27-29 - FindOne Setup error with no PK model.
 func TestSetupErrFindOneNoPK(t *testing.T) {
-	db := newTestDB(t)
+	db := testx.NewTestDB(t)
 
 	fo := crud.NewFindOne[NoPKModel, struct{}]()
 	fo.WithAuditUserNames((*struct{})(nil))

@@ -2,14 +2,12 @@ package contextx
 
 import (
 	"context"
-	"database/sql"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/uptrace/bun/schema"
 
 	"github.com/ilxqx/vef-framework-go/log"
 	"github.com/ilxqx/vef-framework-go/orm"
@@ -33,56 +31,11 @@ func RunInFiber(t *testing.T, fn func(t *testing.T, ctx fiber.Ctx)) {
 	assert.Equal(t, 200, resp.StatusCode, "Should return 200 status code")
 }
 
-type MockLogger struct{}
+type MockLogger struct{ log.Logger }
 
-func (*MockLogger) Named(string) log.Logger       { return nil }
-func (*MockLogger) WithCallerSkip(int) log.Logger { return nil }
-func (*MockLogger) Enabled(log.Level) bool        { return false }
-func (*MockLogger) Sync()                         {}
-func (*MockLogger) Debug(string)                  {}
-func (*MockLogger) Debugf(string, ...any)         {}
-func (*MockLogger) Info(string)                   {}
-func (*MockLogger) Infof(string, ...any)          {}
-func (*MockLogger) Warn(string)                   {}
-func (*MockLogger) Warnf(string, ...any)          {}
-func (*MockLogger) Error(string)                  {}
-func (*MockLogger) Errorf(string, ...any)         {}
-func (*MockLogger) Panic(string)                  {}
-func (*MockLogger) Panicf(string, ...any)         {}
+type MockDB struct{ orm.DB }
 
-type MockDB struct{}
-
-func (*MockDB) NewSelect() orm.SelectQuery                                         { return nil }
-func (*MockDB) NewInsert() orm.InsertQuery                                         { return nil }
-func (*MockDB) NewUpdate() orm.UpdateQuery                                         { return nil }
-func (*MockDB) NewDelete() orm.DeleteQuery                                         { return nil }
-func (*MockDB) NewMerge() orm.MergeQuery                                           { return nil }
-func (*MockDB) NewRaw(string, ...any) orm.RawQuery                                 { return nil }
-func (*MockDB) NewCreateTable() orm.CreateTableQuery                               { return nil }
-func (*MockDB) NewDropTable() orm.DropTableQuery                                   { return nil }
-func (*MockDB) NewCreateIndex() orm.CreateIndexQuery                               { return nil }
-func (*MockDB) NewDropIndex() orm.DropIndexQuery                                   { return nil }
-func (*MockDB) NewTruncateTable() orm.TruncateTableQuery                           { return nil }
-func (*MockDB) NewAddColumn() orm.AddColumnQuery                                   { return nil }
-func (*MockDB) NewDropColumn() orm.DropColumnQuery                                 { return nil }
-func (*MockDB) RunInTX(context.Context, func(context.Context, orm.DB) error) error { return nil }
-func (*MockDB) RunInReadOnlyTX(context.Context, func(context.Context, orm.DB) error) error {
-	return nil
-}
-func (*MockDB) BeginTx(context.Context, *sql.TxOptions) (orm.Tx, error) { return nil, nil }
-func (*MockDB) Conn(context.Context) (*sql.Conn, error)                 { return nil, nil }
-func (*MockDB) RegisterModel(...any)                                    {}
-func (*MockDB) ResetModel(context.Context, ...any) error                { return nil }
-func (*MockDB) ScanRows(context.Context, *sql.Rows, ...any) error       { return nil }
-func (*MockDB) ScanRow(context.Context, *sql.Rows, ...any) error        { return nil }
-func (*MockDB) WithNamedArg(string, any) orm.DB                         { return nil }
-func (*MockDB) ModelPKs(any) (map[string]any, error)                    { return nil, nil }
-func (*MockDB) ModelPKFields(any) []*orm.PKField                        { return nil }
-func (*MockDB) TableOf(any) *schema.Table                               { return nil }
-
-type MockDataPermApplier struct{}
-
-func (*MockDataPermApplier) Apply(orm.SelectQuery) error { return nil }
+type MockDataPermApplier struct{ security.DataPermissionApplier }
 
 // --- Tests ---
 
