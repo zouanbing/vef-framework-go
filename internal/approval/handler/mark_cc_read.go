@@ -1,0 +1,70 @@
+package handler
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/internal/approval/service"
+	"github.com/ilxqx/vef-framework-go/internal/cqrs"
+	"github.com/ilxqx/vef-framework-go/orm"
+)
+
+// MarkCCReadCmd marks CC records as read for a user.
+type MarkCCReadCmd struct {
+	cqrs.CommandBase
+	InstanceID string
+	UserID     string
+}
+
+// MarkCCReadHandler handles the MarkCCReadCmd command.
+type MarkCCReadHandler struct {
+	db      orm.DB
+	nodeSvc *service.NodeService
+}
+
+// NewMarkCCReadHandler creates a new MarkCCReadHandler.
+func NewMarkCCReadHandler(db orm.DB, nodeSvc *service.NodeService) *MarkCCReadHandler {
+	return &MarkCCReadHandler{db: db, nodeSvc: nodeSvc}
+}
+
+func (h *MarkCCReadHandler) Handle(ctx context.Context, cmd MarkCCReadCmd) (cqrs.Unit, error) {
+	db := dbFromCtx(ctx, h.db)
+
+	// Query unread CC records for this user in this instance
+	var records []approval.CCRecord
+	if err := db.NewSelect().Model(&records).Where(func(c orm.ConditionBuilder) {
+		c.Equals("instance_id", cmd.InstanceID)
+		c.Equals("cc_user_id", cmd.UserID)
+		c.IsNull("read_at")
+	}).Scan(ctx); err != nil {
+		return cqrs.Unit{}, fmt.Errorf("query unread cc records: %w", err)
+	}
+
+	if len(records) == 0 {
+		return cqrs.Unit{}, nil
+	}
+
+	// Batch update read_at
+	now := time.Now()
+	recordIDs := make([]string, 0, len(records))
+	for _, r := range records {
+		recordIDs = append(recordIDs, r.ID)
+	}
+
+	if _, err := db.NewUpdate().Model((*approval.CCRecord)(nil)).
+		Set("read_at = ?", now).
+		Where(func(c orm.ConditionBuilder) {
+			c.In("id", recordIDs)
+		}).Exec(ctx); err != nil {
+		return cqrs.Unit{}, fmt.Errorf("update cc records read_at: %w", err)
+	}
+
+	// Check if any CC node should advance
+	if err := h.nodeSvc.CheckCCNodeCompletion(ctx, db, cmd.InstanceID, records); err != nil {
+		return cqrs.Unit{}, err
+	}
+
+	return cqrs.Unit{}, nil
+}
