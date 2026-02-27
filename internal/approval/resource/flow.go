@@ -5,7 +5,9 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/internal/approval/handler"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
+	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
 )
@@ -14,13 +16,13 @@ import (
 type FlowResource struct {
 	api.Resource
 
-	flowService *service.FlowService
+	bus cqrs.Bus
 }
 
 // NewFlowResource creates a new flow resource.
-func NewFlowResource(svc *service.FlowService) *FlowResource {
+func NewFlowResource(bus cqrs.Bus) *FlowResource {
 	return &FlowResource{
-		flowService: svc,
+		bus: bus,
 		Resource: api.NewRPCResource(
 			"approval/flow",
 			api.WithOperations(
@@ -70,7 +72,7 @@ func (r *FlowResource) Create(ctx fiber.Ctx, params CreateFlowParams) error {
 		}
 	}
 
-	flow, err := r.flowService.CreateFlow(ctx.Context(), service.CreateFlowCmd{
+	flow, err := cqrs.Send[handler.CreateFlowCmd, *approval.Flow](ctx.Context(), r.bus, handler.CreateFlowCmd{
 		TenantID:              params.TenantID,
 		Code:                  params.Code,
 		Name:                  params.Name,
@@ -104,7 +106,7 @@ type DeployFlowParams struct {
 
 // Deploy deploys a flow definition.
 func (r *FlowResource) Deploy(ctx fiber.Ctx, params DeployFlowParams) error {
-	version, err := r.flowService.DeployFlow(ctx.Context(), service.DeployFlowCmd{
+	version, err := cqrs.Send[handler.DeployFlowCmd, *approval.FlowVersion](ctx.Context(), r.bus, handler.DeployFlowCmd{
 		FlowID:     params.FlowID,
 		Definition: params.Definition,
 	})
@@ -124,7 +126,10 @@ type PublishVersionParams struct {
 
 // PublishVersion publishes a flow version.
 func (r *FlowResource) PublishVersion(ctx fiber.Ctx, principal security.Principal, params PublishVersionParams) error {
-	if err := r.flowService.PublishVersion(ctx.Context(), params.VersionID, principal.ID); err != nil {
+	if _, err := cqrs.Send[handler.PublishVersionCmd, cqrs.Unit](ctx.Context(), r.bus, handler.PublishVersionCmd{
+		VersionID:  params.VersionID,
+		OperatorID: principal.ID,
+	}); err != nil {
 		return err
 	}
 
@@ -140,7 +145,9 @@ type GetGraphParams struct {
 
 // GetGraph returns the flow graph for the published version.
 func (r *FlowResource) GetGraph(ctx fiber.Ctx, params GetGraphParams) error {
-	graph, err := r.flowService.GetFlowGraph(ctx.Context(), params.FlowID)
+	graph, err := cqrs.Send[handler.GetFlowGraphQuery, *service.FlowGraph](ctx.Context(), r.bus, handler.GetFlowGraphQuery{
+		FlowID: params.FlowID,
+	})
 	if err != nil {
 		return err
 	}

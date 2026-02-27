@@ -1,10 +1,15 @@
 package resource
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
+	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/internal/approval/handler"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
+	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/page"
 	"github.com/ilxqx/vef-framework-go/result"
 )
@@ -13,15 +18,13 @@ import (
 type InstanceResource struct {
 	api.Resource
 
-	instanceService *service.InstanceService
-	queryService    *service.QueryService
+	bus cqrs.Bus
 }
 
 // NewInstanceResource creates a new instance resource.
-func NewInstanceResource(instanceSvc *service.InstanceService, querySvc *service.QueryService) *InstanceResource {
+func NewInstanceResource(bus cqrs.Bus) *InstanceResource {
 	return &InstanceResource{
-		instanceService: instanceSvc,
-		queryService:    querySvc,
+		bus: bus,
 		Resource: api.NewRPCResource(
 			"approval/instance",
 			api.WithOperations(
@@ -56,7 +59,7 @@ type StartParams struct {
 
 // Start creates a new flow instance.
 func (r *InstanceResource) Start(ctx fiber.Ctx, params StartParams) error {
-	instance, err := r.instanceService.StartInstance(ctx.Context(), service.StartInstanceCmd{
+	instance, err := cqrs.Send[handler.StartInstanceCmd, *approval.Instance](ctx.Context(), r.bus, handler.StartInstanceCmd{
 		TenantID:         params.TenantID,
 		FlowCode:         params.FlowCode,
 		ApplicantID:      params.ApplicantID,
@@ -87,16 +90,48 @@ type ProcessTaskParams struct {
 
 // ProcessTask handles task actions (approve/reject/transfer/rollback/handle).
 func (r *InstanceResource) ProcessTask(ctx fiber.Ctx, params ProcessTaskParams) error {
-	if err := r.instanceService.ProcessTask(ctx.Context(), service.ProcessTaskCmd{
-		InstanceID:   params.InstanceID,
-		TaskID:       params.TaskID,
-		Action:       params.Action,
-		OperatorID:   params.OperatorID,
-		Opinion:      params.Opinion,
-		FormData:     params.FormData,
-		TransferToID: params.TransferToID,
-		TargetNodeID: params.TargetNodeID,
-	}); err != nil {
+	var err error
+
+	switch params.Action {
+	case "approve", "handle":
+		_, err = cqrs.Send[handler.ApproveTaskCmd, cqrs.Unit](ctx.Context(), r.bus, handler.ApproveTaskCmd{
+			InstanceID: params.InstanceID,
+			TaskID:     params.TaskID,
+			OperatorID: params.OperatorID,
+			Opinion:    params.Opinion,
+			FormData:   params.FormData,
+		})
+	case "reject":
+		_, err = cqrs.Send[handler.RejectTaskCmd, cqrs.Unit](ctx.Context(), r.bus, handler.RejectTaskCmd{
+			InstanceID: params.InstanceID,
+			TaskID:     params.TaskID,
+			OperatorID: params.OperatorID,
+			Opinion:    params.Opinion,
+			FormData:   params.FormData,
+		})
+	case "transfer":
+		_, err = cqrs.Send[handler.TransferTaskCmd, cqrs.Unit](ctx.Context(), r.bus, handler.TransferTaskCmd{
+			InstanceID:   params.InstanceID,
+			TaskID:       params.TaskID,
+			OperatorID:   params.OperatorID,
+			Opinion:      params.Opinion,
+			FormData:     params.FormData,
+			TransferToID: params.TransferToID,
+		})
+	case "rollback":
+		_, err = cqrs.Send[handler.RollbackTaskCmd, cqrs.Unit](ctx.Context(), r.bus, handler.RollbackTaskCmd{
+			InstanceID:   params.InstanceID,
+			TaskID:       params.TaskID,
+			OperatorID:   params.OperatorID,
+			Opinion:      params.Opinion,
+			FormData:     params.FormData,
+			TargetNodeID: params.TargetNodeID,
+		})
+	default:
+		return fmt.Errorf("unsupported action: %s", params.Action)
+	}
+
+	if err != nil {
 		return err
 	}
 
@@ -114,7 +149,11 @@ type WithdrawParams struct {
 
 // Withdraw withdraws an instance.
 func (r *InstanceResource) Withdraw(ctx fiber.Ctx, params WithdrawParams) error {
-	if err := r.instanceService.Withdraw(ctx.Context(), params.InstanceID, params.OperatorID, params.Reason); err != nil {
+	if _, err := cqrs.Send[handler.WithdrawCmd, cqrs.Unit](ctx.Context(), r.bus, handler.WithdrawCmd{
+		InstanceID: params.InstanceID,
+		OperatorID: params.OperatorID,
+		Reason:     params.Reason,
+	}); err != nil {
 		return err
 	}
 
@@ -132,7 +171,11 @@ type AddCcParams struct {
 
 // AddCc adds CC records for an instance.
 func (r *InstanceResource) AddCc(ctx fiber.Ctx, params AddCcParams) error {
-	if err := r.instanceService.AddCC(ctx.Context(), params.InstanceID, params.CcUserIDs, params.OperatorID); err != nil {
+	if _, err := cqrs.Send[handler.AddCCCmd, cqrs.Unit](ctx.Context(), r.bus, handler.AddCCCmd{
+		InstanceID: params.InstanceID,
+		CCUserIDs:  params.CcUserIDs,
+		OperatorID: params.OperatorID,
+	}); err != nil {
 		return err
 	}
 
@@ -149,7 +192,10 @@ type MarkCcReadParams struct {
 
 // MarkCcRead marks CC records as read for the user.
 func (r *InstanceResource) MarkCcRead(ctx fiber.Ctx, params MarkCcReadParams) error {
-	if err := r.instanceService.MarkCCRead(ctx.Context(), params.InstanceID, params.UserID); err != nil {
+	if _, err := cqrs.Send[handler.MarkCCReadCmd, cqrs.Unit](ctx.Context(), r.bus, handler.MarkCCReadCmd{
+		InstanceID: params.InstanceID,
+		UserID:     params.UserID,
+	}); err != nil {
 		return err
 	}
 
@@ -169,7 +215,7 @@ type AddAssigneeParams struct {
 
 // AddAssignee dynamically adds assignees to a task.
 func (r *InstanceResource) AddAssignee(ctx fiber.Ctx, params AddAssigneeParams) error {
-	if err := r.instanceService.AddAssignee(ctx.Context(), service.AddAssigneeCmd{
+	if _, err := cqrs.Send[handler.AddAssigneeCmd, cqrs.Unit](ctx.Context(), r.bus, handler.AddAssigneeCmd{
 		InstanceID: params.InstanceID,
 		TaskID:     params.TaskID,
 		UserIDs:    params.UserIDs,
@@ -192,7 +238,10 @@ type RemoveAssigneeParams struct {
 
 // RemoveAssignee removes an assignee by canceling their task.
 func (r *InstanceResource) RemoveAssignee(ctx fiber.Ctx, params RemoveAssigneeParams) error {
-	if err := r.instanceService.RemoveAssignee(ctx.Context(), params.TaskID, params.OperatorID); err != nil {
+	if _, err := cqrs.Send[handler.RemoveAssigneeCmd, cqrs.Unit](ctx.Context(), r.bus, handler.RemoveAssigneeCmd{
+		TaskID:     params.TaskID,
+		OperatorID: params.OperatorID,
+	}); err != nil {
 		return err
 	}
 
@@ -214,7 +263,7 @@ type FindInstancesParams struct {
 
 // FindInstances queries instances with filtering and pagination.
 func (r *InstanceResource) FindInstances(ctx fiber.Ctx, params FindInstancesParams) error {
-	instances, total, err := r.queryService.FindInstances(ctx.Context(), service.InstanceQuery{
+	res, err := cqrs.Send[handler.FindInstancesQuery, *service.PagedResult[approval.Instance]](ctx.Context(), r.bus, handler.FindInstancesQuery{
 		TenantID:    params.TenantID,
 		ApplicantID: params.ApplicantID,
 		Status:      params.Status,
@@ -227,8 +276,8 @@ func (r *InstanceResource) FindInstances(ctx fiber.Ctx, params FindInstancesPara
 	}
 
 	return result.Ok(fiber.Map{
-		"list":  instances,
-		"total": total,
+		"list":  res.List,
+		"total": res.Total,
 	}).Response(ctx)
 }
 
@@ -246,7 +295,7 @@ type FindTasksParams struct {
 
 // FindTasks queries tasks with filtering and pagination.
 func (r *InstanceResource) FindTasks(ctx fiber.Ctx, params FindTasksParams) error {
-	tasks, total, err := r.queryService.FindTasks(ctx.Context(), service.TaskQuery{
+	res, err := cqrs.Send[handler.FindTasksQuery, *service.PagedResult[approval.Task]](ctx.Context(), r.bus, handler.FindTasksQuery{
 		TenantID:   params.TenantID,
 		AssigneeID: params.AssigneeID,
 		InstanceID: params.InstanceID,
@@ -258,8 +307,8 @@ func (r *InstanceResource) FindTasks(ctx fiber.Ctx, params FindTasksParams) erro
 	}
 
 	return result.Ok(fiber.Map{
-		"list":  tasks,
-		"total": total,
+		"list":  res.List,
+		"total": res.Total,
 	}).Response(ctx)
 }
 
@@ -272,7 +321,9 @@ type GetDetailParams struct {
 
 // GetDetail returns the full detail of an instance.
 func (r *InstanceResource) GetDetail(ctx fiber.Ctx, params GetDetailParams) error {
-	detail, err := r.queryService.GetInstanceDetail(ctx.Context(), params.InstanceID)
+	detail, err := cqrs.Send[handler.GetInstanceDetailQuery, *service.InstanceDetail](ctx.Context(), r.bus, handler.GetInstanceDetailQuery{
+		InstanceID: params.InstanceID,
+	})
 	if err != nil {
 		return err
 	}
@@ -289,7 +340,9 @@ type GetActionLogsParams struct {
 
 // GetActionLogs returns action logs for an instance.
 func (r *InstanceResource) GetActionLogs(ctx fiber.Ctx, params GetActionLogsParams) error {
-	logs, err := r.queryService.GetActionLogs(ctx.Context(), params.InstanceID)
+	logs, err := cqrs.Send[handler.GetActionLogsQuery, []approval.ActionLog](ctx.Context(), r.bus, handler.GetActionLogsQuery{
+		InstanceID: params.InstanceID,
+	})
 	if err != nil {
 		return err
 	}
@@ -309,7 +362,7 @@ type UrgeTaskParams struct {
 
 // UrgeTask sends an urge notification for a pending task.
 func (r *InstanceResource) UrgeTask(ctx fiber.Ctx, params UrgeTaskParams) error {
-	if err := r.instanceService.UrgeTask(ctx.Context(), service.UrgeTaskCmd{
+	if _, err := cqrs.Send[handler.UrgeTaskCmd, cqrs.Unit](ctx.Context(), r.bus, handler.UrgeTaskCmd{
 		InstanceID: params.InstanceID,
 		TaskID:     params.TaskID,
 		UrgerID:    params.UrgerID,
