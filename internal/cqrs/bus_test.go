@@ -11,6 +11,7 @@ import (
 )
 
 type CreateUserCmd struct {
+	CommandBase
 	Name string
 }
 
@@ -19,10 +20,12 @@ type CreateUserResult struct {
 }
 
 type DeleteUserCmd struct {
+	CommandBase
 	ID string
 }
 
 type GetUserQuery struct {
+	QueryBase
 	ID string
 }
 
@@ -157,7 +160,7 @@ func TestBehaviorPipeline(t *testing.T) {
 	t.Run("SingleBehavior", func(t *testing.T) {
 		var order []string
 
-		b := BehaviorFunc(func(ctx context.Context, _ any, next func(context.Context) (any, error)) (any, error) {
+		b := BehaviorFunc(func(ctx context.Context, _ Action, next func(context.Context) (any, error)) (any, error) {
 			order = append(order, "before")
 			res, err := next(ctx)
 
@@ -184,7 +187,7 @@ func TestBehaviorPipeline(t *testing.T) {
 		var order []string
 
 		makeBehavior := func(name string) Behavior {
-			return BehaviorFunc(func(ctx context.Context, _ any, next func(context.Context) (any, error)) (any, error) {
+			return BehaviorFunc(func(ctx context.Context, _ Action, next func(context.Context) (any, error)) (any, error) {
 				order = append(order, name+"-before")
 				res, err := next(ctx)
 
@@ -209,7 +212,7 @@ func TestBehaviorPipeline(t *testing.T) {
 	})
 
 	t.Run("ShortCircuit", func(t *testing.T) {
-		shortCircuit := BehaviorFunc(func(context.Context, any, func(context.Context) (any, error)) (any, error) {
+		shortCircuit := BehaviorFunc(func(context.Context, Action, func(context.Context) (any, error)) (any, error) {
 			return CreateUserResult{ID: "short-circuited"}, nil
 		})
 
@@ -232,7 +235,7 @@ func TestBehaviorPipeline(t *testing.T) {
 	t.Run("ModifyContext", func(t *testing.T) {
 		type ctxKey struct{}
 
-		b := BehaviorFunc(func(ctx context.Context, _ any, next func(context.Context) (any, error)) (any, error) {
+		b := BehaviorFunc(func(ctx context.Context, _ Action, next func(context.Context) (any, error)) (any, error) {
 			return next(context.WithValue(ctx, ctxKey{}, "injected"))
 		})
 
@@ -248,7 +251,7 @@ func TestBehaviorPipeline(t *testing.T) {
 	})
 
 	t.Run("BehaviorReturnsError", func(t *testing.T) {
-		b := BehaviorFunc(func(context.Context, any, func(context.Context) (any, error)) (any, error) {
+		b := BehaviorFunc(func(context.Context, Action, func(context.Context) (any, error)) (any, error) {
 			return nil, errors.New("behavior error")
 		})
 
@@ -265,8 +268,8 @@ func TestBehaviorPipeline(t *testing.T) {
 	t.Run("BehaviorReceivesCommand", func(t *testing.T) {
 		var receivedCmd any
 
-		b := BehaviorFunc(func(ctx context.Context, cmd any, next func(context.Context) (any, error)) (any, error) {
-			receivedCmd = cmd
+		b := BehaviorFunc(func(ctx context.Context, action Action, next func(context.Context) (any, error)) (any, error) {
+			receivedCmd = action
 
 			return next(ctx)
 		})
@@ -284,7 +287,7 @@ func TestBehaviorPipeline(t *testing.T) {
 	})
 
 	t.Run("BehaviorReturnsNil", func(t *testing.T) {
-		b := BehaviorFunc(func(context.Context, any, func(context.Context) (any, error)) (any, error) {
+		b := BehaviorFunc(func(context.Context, Action, func(context.Context) (any, error)) (any, error) {
 			return nil, nil
 		})
 
@@ -341,14 +344,44 @@ func TestHandlerFunc(t *testing.T) {
 }
 
 func TestBehaviorFunc(t *testing.T) {
-	var b Behavior = BehaviorFunc(func(ctx context.Context, _ any, next func(context.Context) (any, error)) (any, error) {
+	var b Behavior = BehaviorFunc(func(ctx context.Context, _ Action, next func(context.Context) (any, error)) (any, error) {
 		return next(ctx)
 	})
 
-	got, err := b.Handle(context.Background(), nil, func(context.Context) (any, error) {
+	got, err := b.Handle(context.Background(), CreateUserCmd{}, func(context.Context) (any, error) {
 		return "ok", nil
 	})
 
 	require.NoError(t, err, "BehaviorFunc should pass through without error")
 	assert.Equal(t, "ok", got, "BehaviorFunc should return next handler's result")
+}
+
+func TestActionKind(t *testing.T) {
+	t.Run("CommandBase", func(t *testing.T) {
+		cmd := CreateUserCmd{Name: "test"}
+		assert.Equal(t, Command, cmd.Kind(), "CommandBase should return Command kind")
+	})
+
+	t.Run("QueryBase", func(t *testing.T) {
+		q := GetUserQuery{ID: "1"}
+		assert.Equal(t, Query, q.Kind(), "QueryBase should return Query kind")
+	})
+
+	t.Run("BehaviorReceivesActionKind", func(t *testing.T) {
+		var receivedKind ActionKind
+
+		b := BehaviorFunc(func(ctx context.Context, action Action, next func(context.Context) (any, error)) (any, error) {
+			receivedKind = action.Kind()
+			return next(ctx)
+		})
+
+		bus := NewBus([]Behavior{b})
+		Register(bus, HandlerFunc[CreateUserCmd, Unit](func(context.Context, CreateUserCmd) (Unit, error) {
+			return Unit{}, nil
+		}))
+
+		_, err := Send[CreateUserCmd, Unit](context.Background(), bus, CreateUserCmd{})
+		require.NoError(t, err)
+		assert.Equal(t, Command, receivedKind, "Behavior should receive Command kind for command type")
+	})
 }
