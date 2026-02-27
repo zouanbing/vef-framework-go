@@ -1,10 +1,11 @@
-package handler
+package command
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
@@ -14,7 +15,7 @@ import (
 
 // PublishVersionCmd publishes a flow version.
 type PublishVersionCmd struct {
-	cqrs.CommandBase
+	cqrs.BaseCommand
 	VersionID  string
 	OperatorID string
 }
@@ -31,7 +32,7 @@ func NewPublishVersionHandler(db orm.DB, pub *dispatcher.EventPublisher) *Publis
 }
 
 func (h *PublishVersionHandler) Handle(ctx context.Context, cmd PublishVersionCmd) (cqrs.Unit, error) {
-	db := dbFromCtx(ctx, h.db)
+	db := contextx.DB(ctx, h.db)
 
 	var version approval.FlowVersion
 	version.ID = cmd.VersionID

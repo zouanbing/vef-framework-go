@@ -1,4 +1,4 @@
-package handler
+package behavior
 
 import (
 	"context"
@@ -15,7 +15,7 @@ type TransactionBehavior struct {
 }
 
 // NewTransactionBehavior creates a new TransactionBehavior.
-func NewTransactionBehavior(db orm.DB) *TransactionBehavior {
+func NewTransactionBehavior(db orm.DB) cqrs.Behavior {
 	return &TransactionBehavior{db: db}
 }
 
@@ -24,13 +24,12 @@ func (b *TransactionBehavior) Handle(ctx context.Context, action cqrs.Action, ne
 		return next(ctx)
 	}
 
-	var res any
-	err := b.db.RunInTX(ctx, func(txCtx context.Context, tx orm.DB) error {
-		txCtx = contextx.SetDB(txCtx, tx)
-		var txErr error
-		res, txErr = next(txCtx)
-		return txErr
+	var result any
+	err := b.db.RunInTX(ctx, func(ctx context.Context, tx orm.DB) (err error) {
+		ctx = contextx.SetDB(ctx, tx)
+		result, err = next(ctx)
+		return
 	})
 
-	return res, err
+	return result, err
 }

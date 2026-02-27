@@ -1,10 +1,11 @@
-package handler
+package query
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/orm"
@@ -13,7 +14,7 @@ import (
 
 // FindTasksQuery queries tasks with filtering and pagination.
 type FindTasksQuery struct {
-	cqrs.QueryBase
+	cqrs.BaseQuery
 	TenantID   string
 	AssigneeID string
 	InstanceID string
@@ -31,27 +32,29 @@ func NewFindTasksHandler(db orm.DB) *FindTasksHandler {
 	return &FindTasksHandler{db: db}
 }
 
-func (h *FindTasksHandler) Handle(ctx context.Context, q FindTasksQuery) (*service.PagedResult[approval.Task], error) {
+func (h *FindTasksHandler) Handle(ctx context.Context, query FindTasksQuery) (*service.PagedResult[approval.Task], error) {
+	db := contextx.DB(ctx, h.db)
+
 	var tasks []approval.Task
 
-	sq := h.db.NewSelect().Model(&tasks)
+	sq := db.NewSelect().Model(&tasks)
 
-	if q.TenantID != "" {
-		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("tenant_id", q.TenantID) })
+	if query.TenantID != "" {
+		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("tenant_id", query.TenantID) })
 	}
-	if q.AssigneeID != "" {
-		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("assignee_id", q.AssigneeID) })
+	if query.AssigneeID != "" {
+		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("assignee_id", query.AssigneeID) })
 	}
-	if q.InstanceID != "" {
-		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("instance_id", q.InstanceID) })
+	if query.InstanceID != "" {
+		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("instance_id", query.InstanceID) })
 	}
-	if q.Status != "" {
-		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("status", q.Status) })
+	if query.Status != "" {
+		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("status", query.Status) })
 	}
 
 	sq = sq.OrderByDesc("created_at")
-	q.Normalize(20)
-	sq = sq.Limit(q.Size).Offset(q.Offset())
+	query.Normalize(20)
+	sq = sq.Limit(query.Size).Offset(query.Offset())
 
 	count, err := sq.ScanAndCount(ctx)
 	if err != nil {

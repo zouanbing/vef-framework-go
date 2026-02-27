@@ -7,6 +7,7 @@ var Module = fx.Module(
 	"vef:approval:service",
 
 	fx.Provide(
+		NewFlowService,
 		NewTaskService,
 		NewNodeService,
 		NewValidationService,

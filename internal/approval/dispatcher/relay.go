@@ -38,7 +38,7 @@ func (r *Relay) RelayPending(ctx context.Context) {
 			}).OrGroup(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", string(approval.EventOutboxFailed)).
 					LessThan("retry_count", maxRetries).
-					LessThanOrEqual("retry_after", time.Now())
+					LessThanOrEqual("retry_after", timex.Now())
 			})
 		}).
 		OrderBy("created_at").

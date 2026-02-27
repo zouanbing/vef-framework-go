@@ -1,10 +1,11 @@
-package handler
+package command
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/orm"
@@ -13,7 +14,8 @@ import (
 
 // CreateFlowCmd creates a new flow with its initiator configurations.
 type CreateFlowCmd struct {
-	cqrs.CommandBase
+	cqrs.BaseCommand
+
 	TenantID              string
 	Code                  string
 	Name                  string
@@ -42,7 +44,7 @@ func NewCreateFlowHandler(db orm.DB) *CreateFlowHandler {
 }
 
 func (h *CreateFlowHandler) Handle(ctx context.Context, cmd CreateFlowCmd) (*approval.Flow, error) {
-	db := dbFromCtx(ctx, h.db)
+	db := contextx.DB(ctx, h.db)
 
 	tenantID := cmd.TenantID
 	if tenantID == "" {

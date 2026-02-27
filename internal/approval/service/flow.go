@@ -6,22 +6,32 @@ import (
 	"fmt"
 	"text/template"
 
+	"github.com/ilxqx/go-collections"
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/decimal"
 )
 
 // validNodeKinds defines the set of valid node kinds for flow validation.
-var validNodeKinds = map[approval.NodeKind]struct{}{
-	approval.NodeStart:     {},
-	approval.NodeEnd:       {},
-	approval.NodeApproval:  {},
-	approval.NodeHandle:    {},
-	approval.NodeCondition: {},
-	approval.NodeSubFlow:   {},
+var validNodeKinds = collections.NewHashSetFrom(
+	approval.NodeStart,
+	approval.NodeEnd,
+	approval.NodeApproval,
+	approval.NodeHandle,
+	approval.NodeCondition,
+	approval.NodeCC,
+	approval.NodeSubFlow,
+)
+
+// FlowService provides flow-level domain operations.
+type FlowService struct{}
+
+// NewFlowService creates a new FlowService.
+func NewFlowService() *FlowService {
+	return &FlowService{}
 }
 
 // ValidateFlowDefinition validates the structural integrity of a flow definition.
-func ValidateFlowDefinition(def *approval.FlowDefinition) error {
+func (s *FlowService) ValidateFlowDefinition(def *approval.FlowDefinition) error {
 	if len(def.Nodes) == 0 {
 		return fmt.Errorf("flow must have at least one node")
 	}
@@ -41,7 +51,7 @@ func ValidateFlowDefinition(def *approval.FlowDefinition) error {
 
 		nodeIDs[nd.ID] = struct{}{}
 
-		if _, ok := validNodeKinds[nd.Type]; !ok {
+		if !validNodeKinds.Contains(nd.Type) {
 			return fmt.Errorf("invalid node kind %q for node %q", nd.Type, nd.ID)
 		}
 
@@ -88,12 +98,18 @@ func ValidateFlowDefinition(def *approval.FlowDefinition) error {
 	return nil
 }
 
-// PLACEHOLDER_APPLY_NODE_DATA
-
 // ApplyNodeData maps design-time data to FlowNode fields.
-func ApplyNodeData(node *approval.FlowNode, data map[string]any) {
+func (s *FlowService) ApplyNodeData(node *approval.FlowNode, data map[string]any) {
 	if len(data) == 0 {
 		return
+	}
+
+	if v, ok := data["description"].(string); ok {
+		node.Description = &v
+	}
+
+	if v, ok := data["isReadConfirmRequired"].(bool); ok {
+		node.IsReadConfirmRequired = v
 	}
 
 	if v, ok := data["approvalMethod"].(string); ok {
@@ -151,8 +167,6 @@ func ApplyNodeData(node *approval.FlowNode, data map[string]any) {
 	if v, ok := data["isManualCcAllowed"].(bool); ok {
 		node.IsManualCCAllowed = v
 	}
-
-// PLACEHOLDER_APPLY_NODE_DATA_2
 
 	if v, ok := data["passRatio"]; ok {
 		switch r := v.(type) {
@@ -269,7 +283,7 @@ func ToStringSlice(v any) ([]string, bool) {
 }
 
 // BuildTitleTemplateData builds a camelCase map for rendering instance title templates.
-func BuildTitleTemplateData(flowName, flowCode, instanceNo string, formData map[string]any) map[string]any {
+func (s *FlowService) BuildTitleTemplateData(flowName, flowCode, instanceNo string, formData map[string]any) map[string]any {
 	return map[string]any{
 		"flowName":   flowName,
 		"flowCode":   flowCode,
@@ -279,7 +293,7 @@ func BuildTitleTemplateData(flowName, flowCode, instanceNo string, formData map[
 }
 
 // RenderTitle renders an instance title from a Go text/template string.
-func RenderTitle(titleTemplate string, data map[string]any) (string, error) {
+func (s *FlowService) RenderTitle(titleTemplate string, data map[string]any) (string, error) {
 	if titleTemplate == "" {
 		return data["flowName"].(string) + "-" + data["instanceNo"].(string), nil
 	}

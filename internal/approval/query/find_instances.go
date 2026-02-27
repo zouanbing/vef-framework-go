@@ -1,10 +1,11 @@
-package handler
+package query
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/orm"
@@ -13,7 +14,7 @@ import (
 
 // FindInstancesQuery queries instances with filtering and pagination.
 type FindInstancesQuery struct {
-	cqrs.QueryBase
+	cqrs.BaseQuery
 	TenantID    string
 	ApplicantID string
 	Status      string
@@ -32,30 +33,32 @@ func NewFindInstancesHandler(db orm.DB) *FindInstancesHandler {
 	return &FindInstancesHandler{db: db}
 }
 
-func (h *FindInstancesHandler) Handle(ctx context.Context, q FindInstancesQuery) (*service.PagedResult[approval.Instance], error) {
+func (h *FindInstancesHandler) Handle(ctx context.Context, query FindInstancesQuery) (*service.PagedResult[approval.Instance], error) {
+	db := contextx.DB(ctx, h.db)
+
 	var instances []approval.Instance
 
-	sq := h.db.NewSelect().Model(&instances)
+	sq := db.NewSelect().Model(&instances)
 
-	if q.TenantID != "" {
-		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("tenant_id", q.TenantID) })
+	if query.TenantID != "" {
+		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("tenant_id", query.TenantID) })
 	}
-	if q.ApplicantID != "" {
-		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("applicant_id", q.ApplicantID) })
+	if query.ApplicantID != "" {
+		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("applicant_id", query.ApplicantID) })
 	}
-	if q.Status != "" {
-		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("status", q.Status) })
+	if query.Status != "" {
+		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("status", query.Status) })
 	}
-	if q.FlowID != "" {
-		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("flow_id", q.FlowID) })
+	if query.FlowID != "" {
+		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("flow_id", query.FlowID) })
 	}
-	if q.Keyword != "" {
-		sq = sq.Where(func(c orm.ConditionBuilder) { c.Contains("title", q.Keyword) })
+	if query.Keyword != "" {
+		sq = sq.Where(func(c orm.ConditionBuilder) { c.Contains("title", query.Keyword) })
 	}
 
 	sq = sq.OrderByDesc("created_at")
-	q.Normalize(20)
-	sq = sq.Limit(q.Size).Offset(q.Offset())
+	query.Normalize(20)
+	sq = sq.Limit(query.Size).Offset(query.Offset())
 
 	count, err := sq.ScanAndCount(ctx)
 	if err != nil {

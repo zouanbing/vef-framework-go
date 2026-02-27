@@ -7,11 +7,13 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/internal/approval/handler"
+	"github.com/ilxqx/vef-framework-go/internal/approval/command"
+	"github.com/ilxqx/vef-framework-go/internal/approval/query"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/page"
 	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/ilxqx/vef-framework-go/security"
 )
 
 // InstanceResource handles instance lifecycle and queries.
@@ -51,18 +53,17 @@ type StartParams struct {
 
 	TenantID         string         `json:"tenantId" validate:"required"`
 	FlowCode         string         `json:"flowCode" validate:"required"`
-	ApplicantID      string         `json:"applicantId" validate:"required"`
 	ApplicantDeptID  *string        `json:"applicantDeptId"`
 	BusinessRecordID *string        `json:"businessRecordId"`
 	FormData         map[string]any `json:"formData"`
 }
 
 // Start creates a new flow instance.
-func (r *InstanceResource) Start(ctx fiber.Ctx, params StartParams) error {
-	instance, err := cqrs.Send[handler.StartInstanceCmd, *approval.Instance](ctx.Context(), r.bus, handler.StartInstanceCmd{
+func (r *InstanceResource) Start(ctx fiber.Ctx, principal security.Principal, params StartParams) error {
+	instance, err := cqrs.Send[command.StartInstanceCmd, *approval.Instance](ctx.Context(), r.bus, command.StartInstanceCmd{
 		TenantID:         params.TenantID,
 		FlowCode:         params.FlowCode,
-		ApplicantID:      params.ApplicantID,
+		ApplicantID:      principal.ID,
 		ApplicantDeptID:  params.ApplicantDeptID,
 		BusinessRecordID: params.BusinessRecordID,
 		FormData:         params.FormData,
@@ -81,7 +82,6 @@ type ProcessTaskParams struct {
 	InstanceID   string         `json:"instanceId" validate:"required"`
 	TaskID       string         `json:"taskId" validate:"required"`
 	Action       string         `json:"action" validate:"required,oneof=approve reject transfer rollback handle"`
-	OperatorID   string         `json:"operatorId" validate:"required"`
 	Opinion      string         `json:"opinion"`
 	FormData     map[string]any `json:"formData"`
 	TransferToID string         `json:"transferToId"`
@@ -89,40 +89,40 @@ type ProcessTaskParams struct {
 }
 
 // ProcessTask handles task actions (approve/reject/transfer/rollback/handle).
-func (r *InstanceResource) ProcessTask(ctx fiber.Ctx, params ProcessTaskParams) error {
+func (r *InstanceResource) ProcessTask(ctx fiber.Ctx, principal security.Principal, params ProcessTaskParams) error {
 	var err error
 
 	switch params.Action {
 	case "approve", "handle":
-		_, err = cqrs.Send[handler.ApproveTaskCmd, cqrs.Unit](ctx.Context(), r.bus, handler.ApproveTaskCmd{
+		_, err = cqrs.Send[command.ApproveTaskCmd, cqrs.Unit](ctx.Context(), r.bus, command.ApproveTaskCmd{
 			InstanceID: params.InstanceID,
 			TaskID:     params.TaskID,
-			OperatorID: params.OperatorID,
+			OperatorID: principal.ID,
 			Opinion:    params.Opinion,
 			FormData:   params.FormData,
 		})
 	case "reject":
-		_, err = cqrs.Send[handler.RejectTaskCmd, cqrs.Unit](ctx.Context(), r.bus, handler.RejectTaskCmd{
+		_, err = cqrs.Send[command.RejectTaskCmd, cqrs.Unit](ctx.Context(), r.bus, command.RejectTaskCmd{
 			InstanceID: params.InstanceID,
 			TaskID:     params.TaskID,
-			OperatorID: params.OperatorID,
+			OperatorID: principal.ID,
 			Opinion:    params.Opinion,
 			FormData:   params.FormData,
 		})
 	case "transfer":
-		_, err = cqrs.Send[handler.TransferTaskCmd, cqrs.Unit](ctx.Context(), r.bus, handler.TransferTaskCmd{
+		_, err = cqrs.Send[command.TransferTaskCmd, cqrs.Unit](ctx.Context(), r.bus, command.TransferTaskCmd{
 			InstanceID:   params.InstanceID,
 			TaskID:       params.TaskID,
-			OperatorID:   params.OperatorID,
+			OperatorID:   principal.ID,
 			Opinion:      params.Opinion,
 			FormData:     params.FormData,
 			TransferToID: params.TransferToID,
 		})
 	case "rollback":
-		_, err = cqrs.Send[handler.RollbackTaskCmd, cqrs.Unit](ctx.Context(), r.bus, handler.RollbackTaskCmd{
+		_, err = cqrs.Send[command.RollbackTaskCmd, cqrs.Unit](ctx.Context(), r.bus, command.RollbackTaskCmd{
 			InstanceID:   params.InstanceID,
 			TaskID:       params.TaskID,
-			OperatorID:   params.OperatorID,
+			OperatorID:   principal.ID,
 			Opinion:      params.Opinion,
 			FormData:     params.FormData,
 			TargetNodeID: params.TargetNodeID,
@@ -143,15 +143,14 @@ type WithdrawParams struct {
 	api.P
 
 	InstanceID string `json:"instanceId" validate:"required"`
-	OperatorID string `json:"operatorId" validate:"required"`
 	Reason     string `json:"reason"`
 }
 
 // Withdraw withdraws an instance.
-func (r *InstanceResource) Withdraw(ctx fiber.Ctx, params WithdrawParams) error {
-	if _, err := cqrs.Send[handler.WithdrawCmd, cqrs.Unit](ctx.Context(), r.bus, handler.WithdrawCmd{
+func (r *InstanceResource) Withdraw(ctx fiber.Ctx, principal security.Principal, params WithdrawParams) error {
+	if _, err := cqrs.Send[command.WithdrawCmd, cqrs.Unit](ctx.Context(), r.bus, command.WithdrawCmd{
 		InstanceID: params.InstanceID,
-		OperatorID: params.OperatorID,
+		OperatorID: principal.ID,
 		Reason:     params.Reason,
 	}); err != nil {
 		return err
@@ -166,15 +165,14 @@ type AddCcParams struct {
 
 	InstanceID string   `json:"instanceId" validate:"required"`
 	CcUserIDs  []string `json:"ccUserIds" validate:"required,min=1"`
-	OperatorID string   `json:"operatorId" validate:"required"`
 }
 
 // AddCc adds CC records for an instance.
-func (r *InstanceResource) AddCc(ctx fiber.Ctx, params AddCcParams) error {
-	if _, err := cqrs.Send[handler.AddCCCmd, cqrs.Unit](ctx.Context(), r.bus, handler.AddCCCmd{
+func (r *InstanceResource) AddCc(ctx fiber.Ctx, principal security.Principal, params AddCcParams) error {
+	if _, err := cqrs.Send[command.AddCCCmd, cqrs.Unit](ctx.Context(), r.bus, command.AddCCCmd{
 		InstanceID: params.InstanceID,
 		CCUserIDs:  params.CcUserIDs,
-		OperatorID: params.OperatorID,
+		OperatorID: principal.ID,
 	}); err != nil {
 		return err
 	}
@@ -187,14 +185,13 @@ type MarkCcReadParams struct {
 	api.P
 
 	InstanceID string `json:"instanceId" validate:"required"`
-	UserID     string `json:"userId" validate:"required"`
 }
 
 // MarkCcRead marks CC records as read for the user.
-func (r *InstanceResource) MarkCcRead(ctx fiber.Ctx, params MarkCcReadParams) error {
-	if _, err := cqrs.Send[handler.MarkCCReadCmd, cqrs.Unit](ctx.Context(), r.bus, handler.MarkCCReadCmd{
+func (r *InstanceResource) MarkCcRead(ctx fiber.Ctx, principal security.Principal, params MarkCcReadParams) error {
+	if _, err := cqrs.Send[command.MarkCCReadCmd, cqrs.Unit](ctx.Context(), r.bus, command.MarkCCReadCmd{
 		InstanceID: params.InstanceID,
-		UserID:     params.UserID,
+		UserID:     principal.ID,
 	}); err != nil {
 		return err
 	}
@@ -210,17 +207,16 @@ type AddAssigneeParams struct {
 	TaskID     string   `json:"taskId" validate:"required"`
 	UserIDs    []string `json:"userIds" validate:"required,min=1,max=50"`
 	AddType    string   `json:"addType" validate:"required,oneof=before after parallel"`
-	OperatorID string   `json:"operatorId" validate:"required"`
 }
 
 // AddAssignee dynamically adds assignees to a task.
-func (r *InstanceResource) AddAssignee(ctx fiber.Ctx, params AddAssigneeParams) error {
-	if _, err := cqrs.Send[handler.AddAssigneeCmd, cqrs.Unit](ctx.Context(), r.bus, handler.AddAssigneeCmd{
+func (r *InstanceResource) AddAssignee(ctx fiber.Ctx, principal security.Principal, params AddAssigneeParams) error {
+	if _, err := cqrs.Send[command.AddAssigneeCmd, cqrs.Unit](ctx.Context(), r.bus, command.AddAssigneeCmd{
 		InstanceID: params.InstanceID,
 		TaskID:     params.TaskID,
 		UserIDs:    params.UserIDs,
 		AddType:    params.AddType,
-		OperatorID: params.OperatorID,
+		OperatorID: principal.ID,
 	}); err != nil {
 		return err
 	}
@@ -232,15 +228,14 @@ func (r *InstanceResource) AddAssignee(ctx fiber.Ctx, params AddAssigneeParams) 
 type RemoveAssigneeParams struct {
 	api.P
 
-	TaskID     string `json:"taskId" validate:"required"`
-	OperatorID string `json:"operatorId" validate:"required"`
+	TaskID string `json:"taskId" validate:"required"`
 }
 
 // RemoveAssignee removes an assignee by canceling their task.
-func (r *InstanceResource) RemoveAssignee(ctx fiber.Ctx, params RemoveAssigneeParams) error {
-	if _, err := cqrs.Send[handler.RemoveAssigneeCmd, cqrs.Unit](ctx.Context(), r.bus, handler.RemoveAssigneeCmd{
+func (r *InstanceResource) RemoveAssignee(ctx fiber.Ctx, principal security.Principal, params RemoveAssigneeParams) error {
+	if _, err := cqrs.Send[command.RemoveAssigneeCmd, cqrs.Unit](ctx.Context(), r.bus, command.RemoveAssigneeCmd{
 		TaskID:     params.TaskID,
-		OperatorID: params.OperatorID,
+		OperatorID: principal.ID,
 	}); err != nil {
 		return err
 	}
@@ -263,7 +258,7 @@ type FindInstancesParams struct {
 
 // FindInstances queries instances with filtering and pagination.
 func (r *InstanceResource) FindInstances(ctx fiber.Ctx, params FindInstancesParams) error {
-	res, err := cqrs.Send[handler.FindInstancesQuery, *service.PagedResult[approval.Instance]](ctx.Context(), r.bus, handler.FindInstancesQuery{
+	res, err := cqrs.Send[query.FindInstancesQuery, *service.PagedResult[approval.Instance]](ctx.Context(), r.bus, query.FindInstancesQuery{
 		TenantID:    params.TenantID,
 		ApplicantID: params.ApplicantID,
 		Status:      params.Status,
@@ -295,7 +290,7 @@ type FindTasksParams struct {
 
 // FindTasks queries tasks with filtering and pagination.
 func (r *InstanceResource) FindTasks(ctx fiber.Ctx, params FindTasksParams) error {
-	res, err := cqrs.Send[handler.FindTasksQuery, *service.PagedResult[approval.Task]](ctx.Context(), r.bus, handler.FindTasksQuery{
+	res, err := cqrs.Send[query.FindTasksQuery, *service.PagedResult[approval.Task]](ctx.Context(), r.bus, query.FindTasksQuery{
 		TenantID:   params.TenantID,
 		AssigneeID: params.AssigneeID,
 		InstanceID: params.InstanceID,
@@ -321,7 +316,7 @@ type GetDetailParams struct {
 
 // GetDetail returns the full detail of an instance.
 func (r *InstanceResource) GetDetail(ctx fiber.Ctx, params GetDetailParams) error {
-	detail, err := cqrs.Send[handler.GetInstanceDetailQuery, *service.InstanceDetail](ctx.Context(), r.bus, handler.GetInstanceDetailQuery{
+	detail, err := cqrs.Send[query.GetInstanceDetailQuery, *service.InstanceDetail](ctx.Context(), r.bus, query.GetInstanceDetailQuery{
 		InstanceID: params.InstanceID,
 	})
 	if err != nil {
@@ -340,7 +335,7 @@ type GetActionLogsParams struct {
 
 // GetActionLogs returns action logs for an instance.
 func (r *InstanceResource) GetActionLogs(ctx fiber.Ctx, params GetActionLogsParams) error {
-	logs, err := cqrs.Send[handler.GetActionLogsQuery, []approval.ActionLog](ctx.Context(), r.bus, handler.GetActionLogsQuery{
+	logs, err := cqrs.Send[query.GetActionLogsQuery, []approval.ActionLog](ctx.Context(), r.bus, query.GetActionLogsQuery{
 		InstanceID: params.InstanceID,
 	})
 	if err != nil {
@@ -356,16 +351,15 @@ type UrgeTaskParams struct {
 
 	InstanceID string `json:"instanceId" validate:"required"`
 	TaskID     string `json:"taskId" validate:"required"`
-	UrgerID    string `json:"urgerId" validate:"required"`
 	Message    string `json:"message"`
 }
 
 // UrgeTask sends an urge notification for a pending task.
-func (r *InstanceResource) UrgeTask(ctx fiber.Ctx, params UrgeTaskParams) error {
-	if _, err := cqrs.Send[handler.UrgeTaskCmd, cqrs.Unit](ctx.Context(), r.bus, handler.UrgeTaskCmd{
+func (r *InstanceResource) UrgeTask(ctx fiber.Ctx, principal security.Principal, params UrgeTaskParams) error {
+	if _, err := cqrs.Send[command.UrgeTaskCmd, cqrs.Unit](ctx.Context(), r.bus, command.UrgeTaskCmd{
 		InstanceID: params.InstanceID,
 		TaskID:     params.TaskID,
-		UrgerID:    params.UrgerID,
+		UrgerID:    principal.ID,
 		Message:    params.Message,
 	}); err != nil {
 		return err

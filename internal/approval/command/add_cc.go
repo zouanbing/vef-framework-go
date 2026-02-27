@@ -1,10 +1,11 @@
-package handler
+package command
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
@@ -13,7 +14,7 @@ import (
 
 // AddCCCmd adds CC records for an instance.
 type AddCCCmd struct {
-	cqrs.CommandBase
+	cqrs.BaseCommand
 	InstanceID string
 	CCUserIDs  []string
 	OperatorID string
@@ -31,7 +32,7 @@ func NewAddCCHandler(db orm.DB, pub *dispatcher.EventPublisher) *AddCCHandler {
 }
 
 func (h *AddCCHandler) Handle(ctx context.Context, cmd AddCCCmd) (cqrs.Unit, error) {
-	db := dbFromCtx(ctx, h.db)
+	db := contextx.DB(ctx, h.db)
 
 	var instance approval.Instance
 	if err := db.NewSelect().Model(&instance).Where(func(c orm.ConditionBuilder) {

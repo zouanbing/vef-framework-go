@@ -1,10 +1,11 @@
-package handler
+package command
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
 	"github.com/ilxqx/vef-framework-go/internal/approval/engine"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
@@ -15,7 +16,7 @@ import (
 
 // WithdrawCmd withdraws an approval instance.
 type WithdrawCmd struct {
-	cqrs.CommandBase
+	cqrs.BaseCommand
 	InstanceID string
 	OperatorID string
 	Reason     string
@@ -38,7 +39,7 @@ func NewWithdrawHandler(
 }
 
 func (h *WithdrawHandler) Handle(ctx context.Context, cmd WithdrawCmd) (cqrs.Unit, error) {
-	db := dbFromCtx(ctx, h.db)
+	db := contextx.DB(ctx, h.db)
 
 	var instance approval.Instance
 	if err := db.NewSelect().Model(&instance).Where(func(c orm.ConditionBuilder) {

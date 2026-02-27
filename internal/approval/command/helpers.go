@@ -1,4 +1,4 @@
-package handler
+package command
 
 import (
 	"context"
@@ -9,6 +9,39 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
+
+// TaskContext holds the validated context for task processing operations.
+type TaskContext struct {
+	Instance *approval.Instance
+	Task     *approval.Task
+	Node     *approval.FlowNode
+}
+
+// prepareTaskOperation loads task context, validates the opinion, and merges editable form data.
+// This is the common preamble for approve, reject, transfer, and rollback handlers.
+func prepareTaskOperation(
+	ctx context.Context,
+	db orm.DB,
+	validSvc *service.ValidationService,
+	instanceID, taskID, operatorID string,
+	opinion string,
+	formData map[string]any,
+) (*TaskContext, error) {
+	instance, task, node, err := loadTaskContext(ctx, db, instanceID, taskID, operatorID)
+	if err != nil {
+		return nil, err
+	}
+
+	if validSvc != nil {
+		if err := validSvc.ValidateOpinion(node, opinion); err != nil {
+			return nil, err
+		}
+	}
+
+	mergeFormData(instance, formData, node.FieldPermissions)
+
+	return &TaskContext{Instance: instance, Task: task, Node: node}, nil
+}
 
 // loadTaskContext loads and validates the instance, task, and node for task processing.
 func loadTaskContext(ctx context.Context, db orm.DB, instanceID, taskID, operatorID string) (*approval.Instance, *approval.Task, *approval.FlowNode, error) {

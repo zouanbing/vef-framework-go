@@ -1,4 +1,4 @@
-package handler
+package command
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
 	"github.com/ilxqx/vef-framework-go/internal/approval/engine"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
@@ -15,7 +16,7 @@ import (
 
 // AddAssigneeCmd dynamically adds assignees to a task.
 type AddAssigneeCmd struct {
-	cqrs.CommandBase
+	cqrs.BaseCommand
 	InstanceID string
 	TaskID     string
 	UserIDs    []string
@@ -35,7 +36,7 @@ func NewAddAssigneeHandler(db orm.DB, pub *dispatcher.EventPublisher) *AddAssign
 }
 
 func (h *AddAssigneeHandler) Handle(ctx context.Context, cmd AddAssigneeCmd) (cqrs.Unit, error) {
-	db := dbFromCtx(ctx, h.db)
+	db := contextx.DB(ctx, h.db)
 
 	var instance approval.Instance
 	if err := db.NewSelect().Model(&instance).Where(func(c orm.ConditionBuilder) {

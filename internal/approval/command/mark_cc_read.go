@@ -1,19 +1,20 @@
-package handler
+package command
 
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/ilxqx/vef-framework-go/timex"
 )
 
 // MarkCCReadCmd marks CC records as read for a user.
 type MarkCCReadCmd struct {
-	cqrs.CommandBase
+	cqrs.BaseCommand
 	InstanceID string
 	UserID     string
 }
@@ -30,7 +31,7 @@ func NewMarkCCReadHandler(db orm.DB, nodeSvc *service.NodeService) *MarkCCReadHa
 }
 
 func (h *MarkCCReadHandler) Handle(ctx context.Context, cmd MarkCCReadCmd) (cqrs.Unit, error) {
-	db := dbFromCtx(ctx, h.db)
+	db := contextx.DB(ctx, h.db)
 
 	// Query unread CC records for this user in this instance
 	var records []approval.CCRecord
@@ -47,7 +48,7 @@ func (h *MarkCCReadHandler) Handle(ctx context.Context, cmd MarkCCReadCmd) (cqrs
 	}
 
 	// Batch update read_at
-	now := time.Now()
+	now := timex.Now()
 	recordIDs := make([]string, 0, len(records))
 	for _, r := range records {
 		recordIDs = append(recordIDs, r.ID)

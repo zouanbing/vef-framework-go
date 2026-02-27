@@ -1,10 +1,11 @@
-package handler
+package command
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
 	"github.com/ilxqx/vef-framework-go/internal/approval/engine"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
@@ -15,7 +16,7 @@ import (
 
 // RollbackTaskCmd rolls back a task to a previous node.
 type RollbackTaskCmd struct {
-	cqrs.CommandBase
+	cqrs.BaseCommand
 	InstanceID   string
 	TaskID       string
 	OperatorID   string
@@ -51,12 +52,14 @@ func NewRollbackTaskHandler(
 }
 
 func (h *RollbackTaskHandler) Handle(ctx context.Context, cmd RollbackTaskCmd) (cqrs.Unit, error) {
-	db := dbFromCtx(ctx, h.db)
+	db := contextx.DB(ctx, h.db)
 
-	instance, task, node, err := loadTaskContext(ctx, db, cmd.InstanceID, cmd.TaskID, cmd.OperatorID)
+	tc, err := prepareTaskOperation(ctx, db, nil, cmd.InstanceID, cmd.TaskID, cmd.OperatorID, "", cmd.FormData)
 	if err != nil {
 		return cqrs.Unit{}, err
 	}
+
+	instance, task, node := tc.Instance, tc.Task, tc.Node
 
 	if !node.IsRollbackAllowed {
 		return cqrs.Unit{}, service.ErrRollbackNotAllowed
@@ -69,8 +72,6 @@ func (h *RollbackTaskHandler) Handle(ctx context.Context, cmd RollbackTaskCmd) (
 	if err := h.validSvc.ValidateRollbackTarget(ctx, db, instance, node, cmd.TargetNodeID); err != nil {
 		return cqrs.Unit{}, err
 	}
-
-	mergeFormData(instance, cmd.FormData, node.FieldPermissions)
 
 	if err := h.taskSvc.FinishTask(ctx, db, task, approval.TaskRollback); err != nil {
 		return cqrs.Unit{}, err

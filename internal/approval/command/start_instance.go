@@ -1,10 +1,11 @@
-package handler
+package command
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
 	"github.com/ilxqx/vef-framework-go/internal/approval/engine"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
@@ -14,7 +15,7 @@ import (
 
 // StartInstanceCmd starts a new approval flow instance.
 type StartInstanceCmd struct {
-	cqrs.CommandBase
+	cqrs.BaseCommand
 	TenantID         string
 	FlowCode         string
 	ApplicantID      string
@@ -30,6 +31,7 @@ type StartInstanceHandler struct {
 	instanceNoGen service.InstanceNoGenerator
 	publisher     *dispatcher.EventPublisher
 	validSvc      *service.ValidationService
+	flowSvc       *service.FlowService
 }
 
 // NewStartInstanceHandler creates a new StartInstanceHandler.
@@ -39,6 +41,7 @@ func NewStartInstanceHandler(
 	instanceNoGen service.InstanceNoGenerator,
 	pub *dispatcher.EventPublisher,
 	validSvc *service.ValidationService,
+	flowSvc *service.FlowService,
 ) *StartInstanceHandler {
 	return &StartInstanceHandler{
 		db:            db,
@@ -46,11 +49,12 @@ func NewStartInstanceHandler(
 		instanceNoGen: instanceNoGen,
 		publisher:     pub,
 		validSvc:      validSvc,
+		flowSvc:       flowSvc,
 	}
 }
 
 func (h *StartInstanceHandler) Handle(ctx context.Context, cmd StartInstanceCmd) (*approval.Instance, error) {
-	db := dbFromCtx(ctx, h.db)
+	db := contextx.DB(ctx, h.db)
 
 	tenantID := cmd.TenantID
 	if tenantID == "" {
@@ -92,9 +96,9 @@ func (h *StartInstanceHandler) Handle(ctx context.Context, cmd StartInstanceCmd)
 		return nil, fmt.Errorf("generate instance number: %w", err)
 	}
 
-	title, err := service.RenderTitle(
+	title, err := h.flowSvc.RenderTitle(
 		flow.InstanceTitleTemplate,
-		service.BuildTitleTemplateData(flow.Name, flow.Code, instanceNo, cmd.FormData),
+		h.flowSvc.BuildTitleTemplateData(flow.Name, flow.Code, instanceNo, cmd.FormData),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("render instance title: %w", err)

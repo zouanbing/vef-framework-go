@@ -1,4 +1,4 @@
-package handler
+package command
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
@@ -16,7 +17,7 @@ import (
 
 // UrgeTaskCmd sends an urge notification for a pending task.
 type UrgeTaskCmd struct {
-	cqrs.CommandBase
+	cqrs.BaseCommand
 	InstanceID string
 	TaskID     string
 	UrgerID    string
@@ -35,7 +36,7 @@ func NewUrgeTaskHandler(db orm.DB, pub *dispatcher.EventPublisher) *UrgeTaskHand
 }
 
 func (h *UrgeTaskHandler) Handle(ctx context.Context, cmd UrgeTaskCmd) (cqrs.Unit, error) {
-	db := dbFromCtx(ctx, h.db)
+	db := contextx.DB(ctx, h.db)
 
 	// Load the task
 	var task approval.Task

@@ -1,10 +1,11 @@
-package handler
+package command
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
 	"github.com/ilxqx/vef-framework-go/internal/approval/engine"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
@@ -14,7 +15,7 @@ import (
 
 // RemoveAssigneeCmd removes an assignee by canceling their task.
 type RemoveAssigneeCmd struct {
-	cqrs.CommandBase
+	cqrs.BaseCommand
 	TaskID     string
 	OperatorID string
 }
@@ -42,7 +43,7 @@ func NewRemoveAssigneeHandler(
 }
 
 func (h *RemoveAssigneeHandler) Handle(ctx context.Context, cmd RemoveAssigneeCmd) (cqrs.Unit, error) {
-	db := dbFromCtx(ctx, h.db)
+	db := contextx.DB(ctx, h.db)
 
 	var task approval.Task
 	if err := db.NewSelect().Model(&task).Where(func(c orm.ConditionBuilder) {

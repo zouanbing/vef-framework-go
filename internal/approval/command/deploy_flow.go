@@ -1,11 +1,11 @@
-package handler
+package command
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/orm"
@@ -13,32 +13,30 @@ import (
 
 // DeployFlowCmd deploys a flow definition to an existing flow.
 type DeployFlowCmd struct {
-	cqrs.CommandBase
-	FlowID     string
-	Definition string
+	cqrs.BaseCommand
+
+	FlowID         string
+	FlowDefinition approval.FlowDefinition
+	FormDefinition *approval.FormDefinition
 }
 
 // DeployFlowHandler handles the DeployFlowCmd command.
 type DeployFlowHandler struct {
-	db orm.DB
+	db      orm.DB
+	flowSvc *service.FlowService
 }
 
 // NewDeployFlowHandler creates a new DeployFlowHandler.
-func NewDeployFlowHandler(db orm.DB) *DeployFlowHandler {
-	return &DeployFlowHandler{db: db}
+func NewDeployFlowHandler(db orm.DB, flowSvc *service.FlowService) *DeployFlowHandler {
+	return &DeployFlowHandler{db: db, flowSvc: flowSvc}
 }
 
 func (h *DeployFlowHandler) Handle(ctx context.Context, cmd DeployFlowCmd) (*approval.FlowVersion, error) {
-	var def approval.FlowDefinition
-	if err := json.Unmarshal([]byte(cmd.Definition), &def); err != nil {
+	if err := h.flowSvc.ValidateFlowDefinition(&cmd.FlowDefinition); err != nil {
 		return nil, fmt.Errorf("%w: %v", service.ErrInvalidFlowDesign, err)
 	}
 
-	if err := service.ValidateFlowDefinition(&def); err != nil {
-		return nil, fmt.Errorf("%w: %v", service.ErrInvalidFlowDesign, err)
-	}
-
-	db := dbFromCtx(ctx, h.db)
+	db := contextx.DB(ctx, h.db)
 
 	// Load existing flow
 	var flow approval.Flow
@@ -56,18 +54,20 @@ func (h *DeployFlowHandler) Handle(ctx context.Context, cmd DeployFlowCmd) (*app
 
 	// Create new version
 	version := approval.FlowVersion{
-		FlowID:  flow.ID,
-		Version: flow.CurrentVersion,
-		Status:  approval.VersionDraft,
+		FlowID:     flow.ID,
+		Version:    flow.CurrentVersion,
+		Status:     approval.VersionDraft,
+		FlowSchema: &cmd.FlowDefinition,
+		FormSchema: cmd.FormDefinition,
 	}
 	if _, err := db.NewInsert().Model(&version).Exec(ctx); err != nil {
 		return nil, fmt.Errorf("insert version: %w", err)
 	}
 
 	// Create nodes and build nodeKey -> nodeID mapping
-	nodeKeyToID := make(map[string]string, len(def.Nodes))
+	nodeKeyToID := make(map[string]string, len(cmd.FlowDefinition.Nodes))
 
-	for _, nd := range def.Nodes {
+	for _, nd := range cmd.FlowDefinition.Nodes {
 		var name string
 		if nd.Data != nil {
 			if v, ok := nd.Data["label"].(string); ok {
@@ -81,7 +81,7 @@ func (h *DeployFlowHandler) Handle(ctx context.Context, cmd DeployFlowCmd) (*app
 			NodeKind:      nd.Type,
 			Name:          name,
 		}
-		service.ApplyNodeData(&node, nd.Data)
+		h.flowSvc.ApplyNodeData(&node, nd.Data)
 
 		if _, err := db.NewInsert().Model(&node).Exec(ctx); err != nil {
 			return nil, fmt.Errorf("insert node: %w", err)
@@ -108,7 +108,7 @@ func (h *DeployFlowHandler) Handle(ctx context.Context, cmd DeployFlowCmd) (*app
 	}
 
 	// Create edges using real node IDs
-	for _, edgeDef := range def.Edges {
+	for _, edgeDef := range cmd.FlowDefinition.Edges {
 		sourceID, ok := nodeKeyToID[edgeDef.Source]
 		if !ok {
 			return nil, fmt.Errorf("%w: unknown source node key %q", service.ErrInvalidFlowDesign, edgeDef.Source)

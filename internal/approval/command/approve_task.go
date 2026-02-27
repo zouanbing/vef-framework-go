@@ -1,19 +1,20 @@
-package handler
+package command
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
 
-// RejectTaskCmd rejects a pending task.
-type RejectTaskCmd struct {
-	cqrs.CommandBase
+// ApproveTaskCmd approves (or handles) a pending task.
+type ApproveTaskCmd struct {
+	cqrs.BaseCommand
 	InstanceID string
 	TaskID     string
 	OperatorID string
@@ -21,8 +22,8 @@ type RejectTaskCmd struct {
 	FormData   map[string]any
 }
 
-// RejectTaskHandler handles the RejectTaskCmd command.
-type RejectTaskHandler struct {
+// ApproveTaskHandler handles the ApproveTaskCmd command.
+type ApproveTaskHandler struct {
 	db        orm.DB
 	taskSvc   *service.TaskService
 	nodeSvc   *service.NodeService
@@ -30,15 +31,15 @@ type RejectTaskHandler struct {
 	publisher *dispatcher.EventPublisher
 }
 
-// NewRejectTaskHandler creates a new RejectTaskHandler.
-func NewRejectTaskHandler(
+// NewApproveTaskHandler creates a new ApproveTaskHandler.
+func NewApproveTaskHandler(
 	db orm.DB,
 	taskSvc *service.TaskService,
 	nodeSvc *service.NodeService,
 	validSvc *service.ValidationService,
 	pub *dispatcher.EventPublisher,
-) *RejectTaskHandler {
-	return &RejectTaskHandler{
+) *ApproveTaskHandler {
+	return &ApproveTaskHandler{
 		db:        db,
 		taskSvc:   taskSvc,
 		nodeSvc:   nodeSvc,
@@ -47,26 +48,33 @@ func NewRejectTaskHandler(
 	}
 }
 
-func (h *RejectTaskHandler) Handle(ctx context.Context, cmd RejectTaskCmd) (cqrs.Unit, error) {
-	db := dbFromCtx(ctx, h.db)
+func (h *ApproveTaskHandler) Handle(ctx context.Context, cmd ApproveTaskCmd) (cqrs.Unit, error) {
+	db := contextx.DB(ctx, h.db)
 
-	instance, task, node, err := loadTaskContext(ctx, db, cmd.InstanceID, cmd.TaskID, cmd.OperatorID)
+	tc, err := prepareTaskOperation(ctx, db, h.validSvc, cmd.InstanceID, cmd.TaskID, cmd.OperatorID, cmd.Opinion, cmd.FormData)
 	if err != nil {
 		return cqrs.Unit{}, err
 	}
 
-	if err := h.validSvc.ValidateOpinion(node, cmd.Opinion); err != nil {
-		return cqrs.Unit{}, err
+	instance, task, node := tc.Instance, tc.Task, tc.Node
+
+	targetStatus := approval.TaskApproved
+	if node.NodeKind == approval.NodeHandle {
+		targetStatus = approval.TaskHandled
 	}
 
-	mergeFormData(instance, cmd.FormData, node.FieldPermissions)
-
-	if err := h.taskSvc.FinishTask(ctx, db, task, approval.TaskRejected); err != nil {
+	if err := h.taskSvc.FinishTask(ctx, db, task, targetStatus); err != nil {
 		return cqrs.Unit{}, err
 	}
 
 	events := []approval.DomainEvent{
-		approval.NewTaskRejectedEvent(task.ID, instance.ID, node.ID, cmd.OperatorID, cmd.Opinion),
+		approval.NewTaskApprovedEvent(task.ID, instance.ID, node.ID, cmd.OperatorID, cmd.Opinion),
+	}
+
+	if node.ApprovalMethod == approval.ApprovalSequential {
+		if err := h.taskSvc.ActivateNextSequentialTask(ctx, db, instance, node); err != nil {
+			return cqrs.Unit{}, err
+		}
 	}
 
 	completionEvents, err := h.nodeSvc.HandleNodeCompletion(ctx, db, instance, node)
@@ -75,7 +83,7 @@ func (h *RejectTaskHandler) Handle(ctx context.Context, cmd RejectTaskCmd) (cqrs
 	}
 	events = append(events, completionEvents...)
 
-	if err := insertActionLog(ctx, db, instance.ID, task, cmd.OperatorID, approval.ActionReject, cmd.Opinion, "", ""); err != nil {
+	if err := insertActionLog(ctx, db, instance.ID, task, cmd.OperatorID, approval.ActionApprove, cmd.Opinion, "", ""); err != nil {
 		return cqrs.Unit{}, err
 	}
 

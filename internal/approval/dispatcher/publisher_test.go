@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/internal/testx"
 	"github.com/ilxqx/vef-framework-go/mapx"
 	"github.com/ilxqx/vef-framework-go/timex"
 )
@@ -278,21 +279,89 @@ func TestToMap(t *testing.T) {
 	})
 }
 
+// BadEvent is a non-struct DomainEvent that causes mapx.ToMap to fail.
+type BadEvent string
+
+func (e BadEvent) EventName() string        { return "bad.event" }
+func (e BadEvent) OccurredAt() timex.DateTime { return timex.Now() }
+
 func TestNewEventPublisher(t *testing.T) {
 	pub := NewEventPublisher()
 	require.NotNil(t, pub, "Should create publisher")
 }
 
 func TestPublishAll(t *testing.T) {
+	ctx := context.Background()
+	pub := NewEventPublisher()
+
 	t.Run("NilEvents", func(t *testing.T) {
-		pub := NewEventPublisher()
-		err := pub.PublishAll(context.Background(), nil, nil)
+		err := pub.PublishAll(ctx, nil, nil)
 		require.NoError(t, err, "Should return nil for nil events slice")
 	})
 
 	t.Run("EmptySlice", func(t *testing.T) {
-		pub := NewEventPublisher()
-		err := pub.PublishAll(context.Background(), nil, []approval.DomainEvent{})
+		err := pub.PublishAll(ctx, nil, []approval.DomainEvent{})
 		require.NoError(t, err, "Should return nil for zero-length events slice")
+	})
+
+	t.Run("InsertsSingleEvent", func(t *testing.T) {
+		db := testx.NewTestDB(t)
+		_, err := db.NewCreateTable().Model((*approval.EventOutbox)(nil)).IfNotExists().Exec(ctx)
+		require.NoError(t, err, "Should create table")
+
+		evt := approval.NewFlowPublishedEvent("f1", "v1")
+		err = pub.PublishAll(ctx, db, []approval.DomainEvent{evt})
+		require.NoError(t, err, "Should insert event without error")
+
+		var records []approval.EventOutbox
+		err = db.NewSelect().Model(&records).Scan(ctx)
+		require.NoError(t, err, "Should query records")
+		require.Len(t, records, 1, "Should insert exactly one record")
+
+		rec := records[0]
+		assert.NotEmpty(t, rec.EventID, "Should generate EventID")
+		assert.Len(t, rec.EventID, 36, "EventID should be UUID format")
+		assert.Equal(t, "approval.flow.published", rec.EventType, "Should set EventType from event name")
+		assert.Equal(t, approval.EventOutboxPending, rec.Status, "Should set status to pending")
+		assert.Equal(t, "f1", rec.Payload["flowId"], "Should include flowId in payload")
+		assert.Equal(t, "v1", rec.Payload["versionId"], "Should include versionId in payload")
+	})
+
+	t.Run("InsertsBatchEvents", func(t *testing.T) {
+		db := testx.NewTestDB(t)
+		_, err := db.NewCreateTable().Model((*approval.EventOutbox)(nil)).IfNotExists().Exec(ctx)
+		require.NoError(t, err, "Should create table")
+
+		events := []approval.DomainEvent{
+			approval.NewInstanceCreatedEvent("i1", "f1", "Title", "u1"),
+			approval.NewTaskApprovedEvent("t1", "i1", "n1", "op1", "ok"),
+			approval.NewFlowPublishedEvent("f2", "v2"),
+		}
+		err = pub.PublishAll(ctx, db, events)
+		require.NoError(t, err, "Should insert batch events without error")
+
+		var records []approval.EventOutbox
+		err = db.NewSelect().Model(&records).OrderBy("event_type").Scan(ctx)
+		require.NoError(t, err, "Should query records")
+		require.Len(t, records, 3, "Should insert all three records")
+
+		assert.Equal(t, "approval.flow.published", records[0].EventType, "Should set correct event type")
+		assert.Equal(t, "approval.instance.created", records[1].EventType, "Should set correct event type")
+		assert.Equal(t, "approval.task.approved", records[2].EventType, "Should set correct event type")
+
+		for _, rec := range records {
+			assert.Equal(t, approval.EventOutboxPending, rec.Status, "Should set status to pending for all records")
+			assert.NotEmpty(t, rec.EventID, "Should generate EventID for all records")
+		}
+	})
+
+	t.Run("ReturnsErrorForNonStructEvent", func(t *testing.T) {
+		db := testx.NewTestDB(t)
+		_, err := db.NewCreateTable().Model((*approval.EventOutbox)(nil)).IfNotExists().Exec(ctx)
+		require.NoError(t, err, "Should create table")
+
+		err = pub.PublishAll(ctx, db, []approval.DomainEvent{BadEvent("test")})
+		require.Error(t, err, "Should return error for non-struct event")
+		assert.Contains(t, err.Error(), "bad.event", "Should include event name in error message")
 	})
 }

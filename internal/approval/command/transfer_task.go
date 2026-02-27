@@ -1,10 +1,11 @@
-package handler
+package command
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
@@ -13,7 +14,7 @@ import (
 
 // TransferTaskCmd transfers a pending task to another user.
 type TransferTaskCmd struct {
-	cqrs.CommandBase
+	cqrs.BaseCommand
 	InstanceID   string
 	TaskID       string
 	OperatorID   string
@@ -43,12 +44,14 @@ func NewTransferTaskHandler(
 }
 
 func (h *TransferTaskHandler) Handle(ctx context.Context, cmd TransferTaskCmd) (cqrs.Unit, error) {
-	db := dbFromCtx(ctx, h.db)
+	db := contextx.DB(ctx, h.db)
 
-	instance, task, node, err := loadTaskContext(ctx, db, cmd.InstanceID, cmd.TaskID, cmd.OperatorID)
+	tc, err := prepareTaskOperation(ctx, db, nil, cmd.InstanceID, cmd.TaskID, cmd.OperatorID, "", cmd.FormData)
 	if err != nil {
 		return cqrs.Unit{}, err
 	}
+
+	instance, task, node := tc.Instance, tc.Task, tc.Node
 
 	if !node.IsTransferAllowed {
 		return cqrs.Unit{}, service.ErrTransferNotAllowed
@@ -57,8 +60,6 @@ func (h *TransferTaskHandler) Handle(ctx context.Context, cmd TransferTaskCmd) (
 	if cmd.TransferToID == "" {
 		return cqrs.Unit{}, fmt.Errorf("transfer target user ID required")
 	}
-
-	mergeFormData(instance, cmd.FormData, node.FieldPermissions)
 
 	if err := h.taskSvc.FinishTask(ctx, db, task, approval.TaskTransferred); err != nil {
 		return cqrs.Unit{}, err
