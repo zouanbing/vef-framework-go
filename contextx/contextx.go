@@ -7,6 +7,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/log"
 	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/ilxqx/vef-framework-go/reflectx"
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
@@ -35,7 +36,6 @@ func setValue[T any](ctx context.Context, key contextKey, value T) context.Conte
 
 func RequestID(ctx context.Context) string {
 	id, _ := ctx.Value(KeyRequestID).(string)
-
 	return id
 }
 
@@ -45,7 +45,6 @@ func SetRequestID(ctx context.Context, requestID string) context.Context {
 
 func Principal(ctx context.Context) *security.Principal {
 	principal, _ := ctx.Value(KeyPrincipal).(*security.Principal)
-
 	return principal
 }
 
@@ -53,20 +52,36 @@ func SetPrincipal(ctx context.Context, principal *security.Principal) context.Co
 	return setValue(ctx, KeyPrincipal, principal)
 }
 
-func Logger(ctx context.Context) log.Logger {
-	logger, _ := ctx.Value(KeyLogger).(log.Logger)
+func Logger(ctx context.Context, fallbacks ...log.Logger) log.Logger {
+	if logger, ok := ctx.Value(KeyLogger).(log.Logger); ok {
+		return logger
+	}
 
-	return logger
+	for _, fallback := range fallbacks {
+		if reflectx.IsNotEmpty(fallback) {
+			return fallback
+		}
+	}
+
+	return nil
 }
 
 func SetLogger(ctx context.Context, logger log.Logger) context.Context {
 	return setValue(ctx, KeyLogger, logger)
 }
 
-func DB(ctx context.Context) orm.DB {
-	db, _ := ctx.Value(KeyDB).(orm.DB)
+func DB(ctx context.Context, fallbacks ...orm.DB) orm.DB {
+	if db, ok := ctx.Value(KeyDB).(orm.DB); ok {
+		return db
+	}
 
-	return db
+	for _, fallback := range fallbacks {
+		if reflectx.IsNotEmpty(fallback) {
+			return fallback
+		}
+	}
+
+	return nil
 }
 
 func SetDB(ctx context.Context, db orm.DB) context.Context {
@@ -75,7 +90,6 @@ func SetDB(ctx context.Context, db orm.DB) context.Context {
 
 func DataPermApplier(ctx context.Context) security.DataPermissionApplier {
 	applier, _ := ctx.Value(KeyDataPermApplier).(security.DataPermissionApplier)
-
 	return applier
 }
 
@@ -85,7 +99,6 @@ func SetDataPermApplier(ctx context.Context, applier security.DataPermissionAppl
 
 func RequestIP(ctx context.Context) string {
 	ip, _ := ctx.Value(KeyRequestIP).(string)
-
 	return ip
 }
 
