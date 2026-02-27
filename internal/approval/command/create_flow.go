@@ -6,10 +6,9 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/contextx"
-	"github.com/ilxqx/vef-framework-go/internal/approval/service"
+	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/orm"
-	"github.com/ilxqx/vef-framework-go/result"
 )
 
 // CreateFlowCmd creates a new flow with its initiator configurations.
@@ -30,7 +29,7 @@ type CreateFlowCmd struct {
 	AdminUserIDs          []string
 	IsAllInitiateAllowed  bool
 	InstanceTitleTemplate string
-	Initiators            []service.CreateFlowInitiatorCmd
+	Initiators            []shared.CreateFlowInitiatorCmd
 }
 
 // CreateFlowHandler handles the CreateFlowCmd command.
@@ -53,15 +52,18 @@ func (h *CreateFlowHandler) Handle(ctx context.Context, cmd CreateFlowCmd) (*app
 
 	// Check code uniqueness within tenant
 	var existing approval.Flow
-	err := db.NewSelect().Model(&existing).Where(func(c orm.ConditionBuilder) {
-		c.Equals("tenant_id", tenantID)
-		c.Equals("code", cmd.Code)
-	}).Scan(ctx)
-	if err == nil {
-		return nil, service.ErrFlowCodeExists
-	}
-	if !result.IsRecordNotFound(err) {
+	exists, err := db.NewSelect().
+		Model(&existing).
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("tenant_id", tenantID).
+				Equals("code", cmd.Code)
+		}).
+		Exists(ctx)
+	if err != nil {
 		return nil, fmt.Errorf("query flow by code: %w", err)
+	}
+	if exists {
+		return nil, shared.ErrFlowCodeExists
 	}
 
 	flow := approval.Flow{
@@ -82,7 +84,9 @@ func (h *CreateFlowHandler) Handle(ctx context.Context, cmd CreateFlowCmd) (*app
 		IsActive:              true,
 		CurrentVersion:        0,
 	}
-	if _, err := db.NewInsert().Model(&flow).Exec(ctx); err != nil {
+	if _, err := db.NewInsert().
+		Model(&flow).
+		Exec(ctx); err != nil {
 		return nil, fmt.Errorf("insert flow: %w", err)
 	}
 
@@ -92,7 +96,9 @@ func (h *CreateFlowHandler) Handle(ctx context.Context, cmd CreateFlowCmd) (*app
 			Kind:   init.Kind,
 			IDs:    init.IDs,
 		}
-		if _, err := db.NewInsert().Model(&initiator).Exec(ctx); err != nil {
+		if _, err := db.NewInsert().
+			Model(&initiator).
+			Exec(ctx); err != nil {
 			return nil, fmt.Errorf("insert flow initiator: %w", err)
 		}
 	}

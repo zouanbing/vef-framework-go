@@ -7,6 +7,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
+	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
 
@@ -49,11 +50,11 @@ func loadTaskContext(ctx context.Context, db orm.DB, instanceID, taskID, operato
 	if err := db.NewSelect().Model(&instance).Where(func(c orm.ConditionBuilder) {
 		c.Equals("id", instanceID)
 	}).Scan(ctx); err != nil {
-		return nil, nil, nil, service.ErrInstanceNotFound
+		return nil, nil, nil, shared.ErrInstanceNotFound
 	}
 
 	if instance.Status != approval.InstanceRunning {
-		return nil, nil, nil, service.ErrInstanceCompleted
+		return nil, nil, nil, shared.ErrInstanceCompleted
 	}
 
 	var task approval.Task
@@ -61,15 +62,15 @@ func loadTaskContext(ctx context.Context, db orm.DB, instanceID, taskID, operato
 		c.Equals("id", taskID)
 		c.Equals("instance_id", instanceID)
 	}).Scan(ctx); err != nil {
-		return nil, nil, nil, service.ErrTaskNotFound
+		return nil, nil, nil, shared.ErrTaskNotFound
 	}
 
 	if task.AssigneeID != operatorID {
-		return nil, nil, nil, service.ErrNotAssignee
+		return nil, nil, nil, shared.ErrNotAssignee
 	}
 
 	if task.Status != approval.TaskPending {
-		return nil, nil, nil, service.ErrTaskNotPending
+		return nil, nil, nil, shared.ErrTaskNotPending
 	}
 
 	var node approval.FlowNode

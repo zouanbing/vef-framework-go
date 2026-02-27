@@ -6,7 +6,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/contextx"
-	"github.com/ilxqx/vef-framework-go/internal/approval/service"
+	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
@@ -27,7 +27,7 @@ func NewGetInstanceDetailHandler(db orm.DB) *GetInstanceDetailHandler {
 	return &GetInstanceDetailHandler{db: db}
 }
 
-func (h *GetInstanceDetailHandler) Handle(ctx context.Context, query GetInstanceDetailQuery) (*service.InstanceDetail, error) {
+func (h *GetInstanceDetailHandler) Handle(ctx context.Context, query GetInstanceDetailQuery) (*shared.InstanceDetail, error) {
 	db := contextx.DB(ctx, h.db)
 
 	var instance approval.Instance
@@ -58,7 +58,7 @@ func (h *GetInstanceDetailHandler) Handle(ctx context.Context, query GetInstance
 		return nil, fmt.Errorf("query flow nodes: %w", err)
 	}
 
-	return &service.InstanceDetail{
+	return &shared.InstanceDetail{
 		Instance:   instance,
 		Tasks:      tasks,
 		ActionLogs: actionLogs,

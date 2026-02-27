@@ -7,7 +7,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/internal/approval/command"
 	"github.com/ilxqx/vef-framework-go/internal/approval/query"
-	"github.com/ilxqx/vef-framework-go/internal/approval/service"
+	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
@@ -65,9 +65,9 @@ type CreateInitiatorParams struct {
 
 // Create creates a new flow.
 func (r *FlowResource) Create(ctx fiber.Ctx, params CreateFlowParams) error {
-	initiators := make([]service.CreateFlowInitiatorCmd, len(params.Initiators))
+	initiators := make([]shared.CreateFlowInitiatorCmd, len(params.Initiators))
 	for i, initiator := range params.Initiators {
-		initiators[i] = service.CreateFlowInitiatorCmd{
+		initiators[i] = shared.CreateFlowInitiatorCmd{
 			Kind: initiator.Kind,
 			IDs:  initiator.IDs,
 		}
@@ -148,7 +148,7 @@ type GetGraphParams struct {
 
 // GetGraph returns the flow graph for the published version.
 func (r *FlowResource) GetGraph(ctx fiber.Ctx, params GetGraphParams) error {
-	graph, err := cqrs.Send[query.GetFlowGraphQuery, *service.FlowGraph](ctx.Context(), r.bus, query.GetFlowGraphQuery{
+	graph, err := cqrs.Send[query.GetFlowGraphQuery, *shared.FlowGraph](ctx.Context(), r.bus, query.GetFlowGraphQuery{
 		FlowID: params.FlowID,
 	})
 	if err != nil {

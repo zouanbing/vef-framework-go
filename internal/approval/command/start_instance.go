@@ -9,6 +9,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
 	"github.com/ilxqx/vef-framework-go/internal/approval/engine"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
+	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
@@ -28,7 +29,7 @@ type StartInstanceCmd struct {
 type StartInstanceHandler struct {
 	db            orm.DB
 	engine        *engine.FlowEngine
-	instanceNoGen service.InstanceNoGenerator
+	instanceNoGen approval.InstanceNoGenerator
 	publisher     *dispatcher.EventPublisher
 	validSvc      *service.ValidationService
 	flowSvc       *service.FlowService
@@ -38,7 +39,7 @@ type StartInstanceHandler struct {
 func NewStartInstanceHandler(
 	db orm.DB,
 	eng *engine.FlowEngine,
-	instanceNoGen service.InstanceNoGenerator,
+	instanceNoGen approval.InstanceNoGenerator,
 	pub *dispatcher.EventPublisher,
 	validSvc *service.ValidationService,
 	flowSvc *service.FlowService,
@@ -66,11 +67,11 @@ func (h *StartInstanceHandler) Handle(ctx context.Context, cmd StartInstanceCmd)
 		cb.Equals("tenant_id", tenantID)
 		cb.Equals("code", cmd.FlowCode)
 	}).Scan(ctx); err != nil {
-		return nil, service.ErrFlowNotFound
+		return nil, shared.ErrFlowNotFound
 	}
 
 	if !flow.IsActive {
-		return nil, service.ErrFlowNotActive
+		return nil, shared.ErrFlowNotActive
 	}
 
 	if !flow.IsAllInitiateAllowed {
@@ -79,7 +80,7 @@ func (h *StartInstanceHandler) Handle(ctx context.Context, cmd StartInstanceCmd)
 			return nil, fmt.Errorf("check initiation permission: %w", err)
 		}
 		if !allowed {
-			return nil, service.ErrNotAllowedInitiate
+			return nil, shared.ErrNotAllowedInitiate
 		}
 	}
 
@@ -88,7 +89,7 @@ func (h *StartInstanceHandler) Handle(ctx context.Context, cmd StartInstanceCmd)
 		cb.Equals("flow_id", flow.ID)
 		cb.Equals("status", string(approval.VersionPublished))
 	}).Scan(ctx); err != nil {
-		return nil, service.ErrNoPublishedVersion
+		return nil, shared.ErrNoPublishedVersion
 	}
 
 	instanceNo, err := h.instanceNoGen.Generate(ctx, cmd.FlowCode)

@@ -6,7 +6,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/contextx"
-	"github.com/ilxqx/vef-framework-go/internal/approval/service"
+	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
@@ -27,14 +27,14 @@ func NewGetFlowGraphHandler(db orm.DB) *GetFlowGraphHandler {
 	return &GetFlowGraphHandler{db: db}
 }
 
-func (h *GetFlowGraphHandler) Handle(ctx context.Context, query GetFlowGraphQuery) (*service.FlowGraph, error) {
+func (h *GetFlowGraphHandler) Handle(ctx context.Context, query GetFlowGraphQuery) (*shared.FlowGraph, error) {
 	db := contextx.DB(ctx, h.db)
 
 	var flow approval.Flow
 	if err := db.NewSelect().Model(&flow).Where(func(c orm.ConditionBuilder) {
 		c.Equals("id", query.FlowID)
 	}).Scan(ctx); err != nil {
-		return nil, service.ErrFlowNotFound
+		return nil, shared.ErrFlowNotFound
 	}
 
 	var version approval.FlowVersion
@@ -42,7 +42,7 @@ func (h *GetFlowGraphHandler) Handle(ctx context.Context, query GetFlowGraphQuer
 		c.Equals("flow_id", query.FlowID)
 		c.Equals("status", string(approval.VersionPublished))
 	}).Scan(ctx); err != nil {
-		return nil, service.ErrNoPublishedVersion
+		return nil, shared.ErrNoPublishedVersion
 	}
 
 	var nodes []approval.FlowNode
@@ -59,7 +59,7 @@ func (h *GetFlowGraphHandler) Handle(ctx context.Context, query GetFlowGraphQuer
 		return nil, fmt.Errorf("query edges: %w", err)
 	}
 
-	return &service.FlowGraph{
+	return &shared.FlowGraph{
 		Flow:    &flow,
 		Version: &version,
 		Nodes:   nodes,

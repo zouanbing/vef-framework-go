@@ -9,6 +9,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
 	"github.com/ilxqx/vef-framework-go/internal/approval/engine"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
+	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
@@ -49,7 +50,7 @@ func (h *RemoveAssigneeHandler) Handle(ctx context.Context, cmd RemoveAssigneeCm
 	if err := db.NewSelect().Model(&task).Where(func(c orm.ConditionBuilder) {
 		c.Equals("id", cmd.TaskID)
 	}).Scan(ctx); err != nil {
-		return cqrs.Unit{}, service.ErrTaskNotFound
+		return cqrs.Unit{}, shared.ErrTaskNotFound
 	}
 
 	var node approval.FlowNode
@@ -60,11 +61,11 @@ func (h *RemoveAssigneeHandler) Handle(ctx context.Context, cmd RemoveAssigneeCm
 	}
 
 	if !node.IsRemoveAssigneeAllowed {
-		return cqrs.Unit{}, service.ErrRemoveAssigneeNotAllowed
+		return cqrs.Unit{}, shared.ErrRemoveAssigneeNotAllowed
 	}
 
 	if !h.taskSvc.IsAuthorizedForNodeOperation(ctx, db, task, cmd.OperatorID) {
-		return cqrs.Unit{}, service.ErrNotAssignee
+		return cqrs.Unit{}, shared.ErrNotAssignee
 	}
 
 	canRemove, err := h.taskSvc.CanRemoveAssigneeTask(ctx, db, h.engine, &node, task)
@@ -72,7 +73,7 @@ func (h *RemoveAssigneeHandler) Handle(ctx context.Context, cmd RemoveAssigneeCm
 		return cqrs.Unit{}, err
 	}
 	if !canRemove {
-		return cqrs.Unit{}, service.ErrLastAssigneeRemoval
+		return cqrs.Unit{}, shared.ErrLastAssigneeRemoval
 	}
 
 	originalStatus := task.Status

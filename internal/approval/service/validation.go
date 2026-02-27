@@ -6,23 +6,24 @@ import (
 	"slices"
 
 	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
 
 // ValidationService provides validation operations.
 type ValidationService struct {
-	assigneeService AssigneeService
+	assigneeService approval.AssigneeService
 }
 
 // NewValidationService creates a new ValidationService.
-func NewValidationService(assigneeSvc AssigneeService) *ValidationService {
+func NewValidationService(assigneeSvc approval.AssigneeService) *ValidationService {
 	return &ValidationService{assigneeService: assigneeSvc}
 }
 
 // ValidateOpinion checks if an opinion is required but missing.
 func (s *ValidationService) ValidateOpinion(node *approval.FlowNode, opinion string) error {
 	if node.IsOpinionRequired && opinion == "" {
-		return ErrOpinionRequired
+		return shared.ErrOpinionRequired
 	}
 
 	return nil
@@ -32,7 +33,7 @@ func (s *ValidationService) ValidateOpinion(node *approval.FlowNode, opinion str
 func (s *ValidationService) ValidateRollbackTarget(ctx context.Context, db orm.DB, instance *approval.Instance, currentNode *approval.FlowNode, targetNodeID string) error {
 	switch currentNode.RollbackType {
 	case approval.RollbackNone:
-		return ErrRollbackNotAllowed
+		return shared.ErrRollbackNotAllowed
 
 	case approval.RollbackPrevious:
 		count, err := db.NewSelect().Model((*approval.FlowEdge)(nil)).Where(func(c orm.ConditionBuilder) {
@@ -45,7 +46,7 @@ func (s *ValidationService) ValidateRollbackTarget(ctx context.Context, db orm.D
 		}
 
 		if count == 0 {
-			return ErrInvalidRollbackTarget
+			return shared.ErrInvalidRollbackTarget
 		}
 
 	case approval.RollbackStart:
@@ -59,7 +60,7 @@ func (s *ValidationService) ValidateRollbackTarget(ctx context.Context, db orm.D
 		}
 
 		if startNode.ID != targetNodeID {
-			return ErrInvalidRollbackTarget
+			return shared.ErrInvalidRollbackTarget
 		}
 
 	case approval.RollbackAny:
@@ -72,7 +73,7 @@ func (s *ValidationService) ValidateRollbackTarget(ctx context.Context, db orm.D
 		}
 
 		if count == 0 {
-			return ErrInvalidRollbackTarget
+			return shared.ErrInvalidRollbackTarget
 		}
 	}
 

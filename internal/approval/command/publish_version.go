@@ -7,7 +7,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
-	"github.com/ilxqx/vef-framework-go/internal/approval/service"
+	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/timex"
@@ -41,11 +41,11 @@ func (h *PublishVersionHandler) Handle(ctx context.Context, cmd PublishVersionCm
 		WherePK().
 		ForUpdate().
 		Scan(ctx); err != nil {
-		return cqrs.Unit{}, service.ErrFlowNotFound
+		return cqrs.Unit{}, shared.ErrFlowNotFound
 	}
 
 	if version.Status != approval.VersionDraft {
-		return cqrs.Unit{}, service.ErrVersionNotDraft
+		return cqrs.Unit{}, shared.ErrVersionNotDraft
 	}
 
 	// Archive old published versions

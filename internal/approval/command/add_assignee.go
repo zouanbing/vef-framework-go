@@ -9,7 +9,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
 	"github.com/ilxqx/vef-framework-go/internal/approval/engine"
-	"github.com/ilxqx/vef-framework-go/internal/approval/service"
+	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
@@ -42,11 +42,11 @@ func (h *AddAssigneeHandler) Handle(ctx context.Context, cmd AddAssigneeCmd) (cq
 	if err := db.NewSelect().Model(&instance).Where(func(c orm.ConditionBuilder) {
 		c.Equals("id", cmd.InstanceID)
 	}).Scan(ctx); err != nil {
-		return cqrs.Unit{}, service.ErrInstanceNotFound
+		return cqrs.Unit{}, shared.ErrInstanceNotFound
 	}
 
 	if instance.Status != approval.InstanceRunning {
-		return cqrs.Unit{}, service.ErrInstanceCompleted
+		return cqrs.Unit{}, shared.ErrInstanceCompleted
 	}
 
 	var task approval.Task
@@ -54,7 +54,7 @@ func (h *AddAssigneeHandler) Handle(ctx context.Context, cmd AddAssigneeCmd) (cq
 		c.Equals("id", cmd.TaskID)
 		c.Equals("instance_id", cmd.InstanceID)
 	}).Scan(ctx); err != nil {
-		return cqrs.Unit{}, service.ErrTaskNotFound
+		return cqrs.Unit{}, shared.ErrTaskNotFound
 	}
 
 	var node approval.FlowNode
@@ -65,20 +65,20 @@ func (h *AddAssigneeHandler) Handle(ctx context.Context, cmd AddAssigneeCmd) (cq
 	}
 
 	if !node.IsAddAssigneeAllowed {
-		return cqrs.Unit{}, service.ErrAddAssigneeNotAllowed
+		return cqrs.Unit{}, shared.ErrAddAssigneeNotAllowed
 	}
 
 	if task.AssigneeID != cmd.OperatorID {
-		return cqrs.Unit{}, service.ErrNotAssignee
+		return cqrs.Unit{}, shared.ErrNotAssignee
 	}
 
 	addType := approval.AddAssigneeType(cmd.AddType)
 	if !addType.IsValid() {
-		return cqrs.Unit{}, service.ErrInvalidAddAssigneeType
+		return cqrs.Unit{}, shared.ErrInvalidAddAssigneeType
 	}
 
 	if len(node.AddAssigneeTypes) > 0 && !slices.Contains(node.AddAssigneeTypes, cmd.AddType) {
-		return cqrs.Unit{}, service.ErrInvalidAddAssigneeType
+		return cqrs.Unit{}, shared.ErrInvalidAddAssigneeType
 	}
 
 	// Find current max sort_order for this node

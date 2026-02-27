@@ -9,6 +9,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
 	"github.com/ilxqx/vef-framework-go/internal/approval/engine"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
+	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/timex"
@@ -45,15 +46,15 @@ func (h *WithdrawHandler) Handle(ctx context.Context, cmd WithdrawCmd) (cqrs.Uni
 	if err := db.NewSelect().Model(&instance).Where(func(c orm.ConditionBuilder) {
 		c.Equals("id", cmd.InstanceID)
 	}).Scan(ctx); err != nil {
-		return cqrs.Unit{}, service.ErrInstanceNotFound
+		return cqrs.Unit{}, shared.ErrInstanceNotFound
 	}
 
 	if instance.ApplicantID != cmd.OperatorID {
-		return cqrs.Unit{}, service.ErrNotApplicant
+		return cqrs.Unit{}, shared.ErrNotApplicant
 	}
 
 	if !engine.InstanceStateMachine.CanTransition(instance.Status, approval.InstanceWithdrawn) {
-		return cqrs.Unit{}, service.ErrWithdrawNotAllowed
+		return cqrs.Unit{}, shared.ErrWithdrawNotAllowed
 	}
 
 	now := timex.Now()

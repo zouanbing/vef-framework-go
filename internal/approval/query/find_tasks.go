@@ -6,7 +6,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/contextx"
-	"github.com/ilxqx/vef-framework-go/internal/approval/service"
+	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/page"
@@ -32,7 +32,7 @@ func NewFindTasksHandler(db orm.DB) *FindTasksHandler {
 	return &FindTasksHandler{db: db}
 }
 
-func (h *FindTasksHandler) Handle(ctx context.Context, query FindTasksQuery) (*service.PagedResult[approval.Task], error) {
+func (h *FindTasksHandler) Handle(ctx context.Context, query FindTasksQuery) (*shared.PagedResult[approval.Task], error) {
 	db := contextx.DB(ctx, h.db)
 
 	var tasks []approval.Task
@@ -61,5 +61,5 @@ func (h *FindTasksHandler) Handle(ctx context.Context, query FindTasksQuery) (*s
 		return nil, fmt.Errorf("query tasks: %w", err)
 	}
 
-	return &service.PagedResult[approval.Task]{List: tasks, Total: int(count)}, nil
+	return &shared.PagedResult[approval.Task]{List: tasks, Total: int(count)}, nil
 }

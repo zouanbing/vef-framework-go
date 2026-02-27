@@ -1,4 +1,4 @@
-package service
+package shared
 
 import "github.com/ilxqx/vef-framework-go/result"
 

@@ -7,7 +7,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
-	"github.com/ilxqx/vef-framework-go/internal/approval/service"
+	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
@@ -38,7 +38,7 @@ func (h *AddCCHandler) Handle(ctx context.Context, cmd AddCCCmd) (cqrs.Unit, err
 	if err := db.NewSelect().Model(&instance).Where(func(c orm.ConditionBuilder) {
 		c.Equals("id", cmd.InstanceID)
 	}).Scan(ctx); err != nil {
-		return cqrs.Unit{}, service.ErrInstanceNotFound
+		return cqrs.Unit{}, shared.ErrInstanceNotFound
 	}
 
 	// Validate manual CC is allowed on current node
@@ -47,7 +47,7 @@ func (h *AddCCHandler) Handle(ctx context.Context, cmd AddCCCmd) (cqrs.Unit, err
 		if err := db.NewSelect().Model(&node).Where(func(c orm.ConditionBuilder) {
 			c.Equals("id", *instance.CurrentNodeID)
 		}).Scan(ctx); err == nil && !node.IsManualCCAllowed {
-			return cqrs.Unit{}, service.ErrManualCcNotAllowed
+			return cqrs.Unit{}, shared.ErrManualCcNotAllowed
 		}
 	}
 

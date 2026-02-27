@@ -9,6 +9,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
 	"github.com/ilxqx/vef-framework-go/internal/approval/engine"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
+	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
@@ -62,7 +63,7 @@ func (h *RollbackTaskHandler) Handle(ctx context.Context, cmd RollbackTaskCmd) (
 	instance, task, node := tc.Instance, tc.Task, tc.Node
 
 	if !node.IsRollbackAllowed {
-		return cqrs.Unit{}, service.ErrRollbackNotAllowed
+		return cqrs.Unit{}, shared.ErrRollbackNotAllowed
 	}
 
 	if cmd.TargetNodeID == "" {

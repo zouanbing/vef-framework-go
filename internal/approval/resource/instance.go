@@ -9,7 +9,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/internal/approval/command"
 	"github.com/ilxqx/vef-framework-go/internal/approval/query"
-	"github.com/ilxqx/vef-framework-go/internal/approval/service"
+	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/page"
 	"github.com/ilxqx/vef-framework-go/result"
@@ -258,7 +258,7 @@ type FindInstancesParams struct {
 
 // FindInstances queries instances with filtering and pagination.
 func (r *InstanceResource) FindInstances(ctx fiber.Ctx, params FindInstancesParams) error {
-	res, err := cqrs.Send[query.FindInstancesQuery, *service.PagedResult[approval.Instance]](ctx.Context(), r.bus, query.FindInstancesQuery{
+	res, err := cqrs.Send[query.FindInstancesQuery, *shared.PagedResult[approval.Instance]](ctx.Context(), r.bus, query.FindInstancesQuery{
 		TenantID:    params.TenantID,
 		ApplicantID: params.ApplicantID,
 		Status:      params.Status,
@@ -290,7 +290,7 @@ type FindTasksParams struct {
 
 // FindTasks queries tasks with filtering and pagination.
 func (r *InstanceResource) FindTasks(ctx fiber.Ctx, params FindTasksParams) error {
-	res, err := cqrs.Send[query.FindTasksQuery, *service.PagedResult[approval.Task]](ctx.Context(), r.bus, query.FindTasksQuery{
+	res, err := cqrs.Send[query.FindTasksQuery, *shared.PagedResult[approval.Task]](ctx.Context(), r.bus, query.FindTasksQuery{
 		TenantID:   params.TenantID,
 		AssigneeID: params.AssigneeID,
 		InstanceID: params.InstanceID,
@@ -316,7 +316,7 @@ type GetDetailParams struct {
 
 // GetDetail returns the full detail of an instance.
 func (r *InstanceResource) GetDetail(ctx fiber.Ctx, params GetDetailParams) error {
-	detail, err := cqrs.Send[query.GetInstanceDetailQuery, *service.InstanceDetail](ctx.Context(), r.bus, query.GetInstanceDetailQuery{
+	detail, err := cqrs.Send[query.GetInstanceDetailQuery, *shared.InstanceDetail](ctx.Context(), r.bus, query.GetInstanceDetailQuery{
 		InstanceID: params.InstanceID,
 	})
 	if err != nil {

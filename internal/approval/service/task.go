@@ -7,6 +7,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/internal/approval/engine"
+	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/timex"
@@ -26,7 +27,7 @@ func NewTaskService() *TaskService {
 // FinishTask transitions a task to the given status and sets its FinishedAt timestamp.
 func (s *TaskService) FinishTask(ctx context.Context, db orm.DB, task *approval.Task, status approval.TaskStatus) error {
 	if !engine.TaskStateMachine.CanTransition(task.Status, status) {
-		return ErrInvalidTaskTransition
+		return shared.ErrInvalidTaskTransition
 	}
 
 	task.Status = status

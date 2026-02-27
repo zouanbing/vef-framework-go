@@ -8,6 +8,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
 	"github.com/ilxqx/vef-framework-go/internal/approval/service"
+	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
@@ -54,7 +55,7 @@ func (h *TransferTaskHandler) Handle(ctx context.Context, cmd TransferTaskCmd) (
 	instance, task, node := tc.Instance, tc.Task, tc.Node
 
 	if !node.IsTransferAllowed {
-		return cqrs.Unit{}, service.ErrTransferNotAllowed
+		return cqrs.Unit{}, shared.ErrTransferNotAllowed
 	}
 
 	if cmd.TransferToID == "" {

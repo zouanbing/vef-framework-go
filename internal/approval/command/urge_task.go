@@ -8,7 +8,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
-	"github.com/ilxqx/vef-framework-go/internal/approval/service"
+	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
@@ -44,12 +44,12 @@ func (h *UrgeTaskHandler) Handle(ctx context.Context, cmd UrgeTaskCmd) (cqrs.Uni
 		c.Equals("id", cmd.TaskID)
 		c.Equals("instance_id", cmd.InstanceID)
 	}).Scan(ctx); err != nil {
-		return cqrs.Unit{}, service.ErrTaskNotFound
+		return cqrs.Unit{}, shared.ErrTaskNotFound
 	}
 
 	// Only pending or waiting tasks can be urged
 	if task.Status != approval.TaskPending && task.Status != approval.TaskWaiting {
-		return cqrs.Unit{}, service.ErrTaskNotPending
+		return cqrs.Unit{}, shared.ErrTaskNotPending
 	}
 
 	// Load node to check cooldown settings
@@ -80,7 +80,7 @@ func (h *UrgeTaskHandler) Handle(ctx context.Context, cmd UrgeTaskCmd) (cqrs.Uni
 	if existingCount > 0 {
 		return cqrs.Unit{}, result.Err(
 			fmt.Sprintf("催办操作过于频繁，请 %d 分钟后再试", cooldownMinutes),
-			result.WithCode(service.ErrCodeUrgeCooldown),
+			result.WithCode(shared.ErrCodeUrgeCooldown),
 		)
 	}
 
