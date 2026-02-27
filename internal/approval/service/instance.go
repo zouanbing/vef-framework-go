@@ -1,12 +1,10 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"maps"
 	"slices"
-	"text/template"
 	"time"
 
 	"github.com/ilxqx/vef-framework-go/approval"
@@ -25,18 +23,6 @@ type StartInstanceCmd struct {
 	ApplicantDeptID  *string
 	BusinessRecordID *string
 	FormData         map[string]any
-}
-
-// buildTitleTemplateData builds a camelCase map for rendering instance title templates.
-// Templates access fields via {{.flowName}}, {{.flowCode}}, {{.instanceNo}},
-// and form values via {{.formData.fieldName}}.
-func buildTitleTemplateData(flowName, flowCode, instanceNo string, formData map[string]any) map[string]any {
-	return map[string]any{
-		"flowName":   flowName,
-		"flowCode":   flowCode,
-		"instanceNo": instanceNo,
-		"formData":   formData,
-	}
 }
 
 // ProcessTaskCmd contains the parameters for processing a task.
@@ -137,9 +123,9 @@ func (s *InstanceService) StartInstance(ctx context.Context, cmd StartInstanceCm
 			return fmt.Errorf("generate instance number: %w", err)
 		}
 
-		title, err := renderTitle(
+		title, err := RenderTitle(
 			flow.InstanceTitleTemplate,
-			buildTitleTemplateData(flow.Name, flow.Code, instanceNo, cmd.FormData),
+			BuildTitleTemplateData(flow.Name, flow.Code, instanceNo, cmd.FormData),
 		)
 		if err != nil {
 			return fmt.Errorf("render instance title: %w", err)
@@ -1339,25 +1325,4 @@ func (s *InstanceService) UrgeTask(ctx context.Context, cmd UrgeTaskCmd) error {
 
 		return s.publisher.PublishAll(ctx, tx, []approval.DomainEvent{event})
 	})
-}
-
-// renderTitle renders an instance title from a Go text/template string.
-// Templates use camelCase keys: {{.flowName}}, {{.flowCode}}, {{.instanceNo}},
-// {{.applicantId}}, and form values via {{index .formData "fieldName"}}.
-func renderTitle(titleTemplate string, data map[string]any) (string, error) {
-	if titleTemplate == "" {
-		return data["flowName"].(string) + "-" + data["instanceNo"].(string), nil
-	}
-
-	tmpl, err := template.New("title").Parse(titleTemplate)
-	if err != nil {
-		return "", fmt.Errorf("parse title template: %w", err)
-	}
-
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, data); err != nil {
-		return "", fmt.Errorf("execute title template: %w", err)
-	}
-
-	return buf.String(), nil
 }
