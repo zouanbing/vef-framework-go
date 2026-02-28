@@ -91,16 +91,16 @@ func TestSignatureAuthenticatorSupports(t *testing.T) {
 	loader := new(MockExternalAppLoader)
 	auth := NewSignatureAuthenticator(loader, nil)
 
-	t.Run("SupportedKind", func(t *testing.T) {
-		assert.True(t, auth.Supports(AuthKindSignature), "Should support signature kind")
+	t.Run("SupportedType", func(t *testing.T) {
+		assert.True(t, auth.Supports(AuthTypeSignature), "Should support signature type")
 	})
 
-	t.Run("UnsupportedKinds", func(t *testing.T) {
-		unsupportedKinds := []string{"password", "token", "jwt", "openapi", "bearer", ""}
+	t.Run("UnsupportedTypes", func(t *testing.T) {
+		unsupportedTypes := []string{"password", "token", "jwt", "openapi", "bearer", ""}
 
-		for _, kind := range unsupportedKinds {
-			t.Run(kind, func(t *testing.T) {
-				assert.False(t, auth.Supports(kind), "Should not support %q kind", kind)
+		for _, authType := range unsupportedTypes {
+			t.Run(authType, func(t *testing.T) {
+				assert.False(t, auth.Supports(authType), "Should not support %q type", authType)
 			})
 		}
 	})
@@ -115,7 +115,7 @@ func TestSignatureAuthenticatorAuthenticate(t *testing.T) {
 		auth := NewSignatureAuthenticator(loader, nil)
 
 		_, err := auth.Authenticate(ctx, security.Authentication{
-			Kind:      AuthKindSignature,
+			Type:      AuthTypeSignature,
 			Principal: "",
 			Credentials: &security.SignatureCredentials{
 				Timestamp: time.Now().Unix(),
@@ -145,7 +145,7 @@ func TestSignatureAuthenticatorAuthenticate(t *testing.T) {
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
 				_, err := auth.Authenticate(ctx, security.Authentication{
-					Kind:        AuthKindSignature,
+					Type:        AuthTypeSignature,
 					Principal:   "app1",
 					Credentials: tc.credentials,
 				})
@@ -161,7 +161,7 @@ func TestSignatureAuthenticatorAuthenticate(t *testing.T) {
 		auth := NewSignatureAuthenticator(loader, nil)
 
 		_, err := auth.Authenticate(ctx, security.Authentication{
-			Kind:      AuthKindSignature,
+			Type:      AuthTypeSignature,
 			Principal: "app1",
 			Credentials: &security.SignatureCredentials{
 				Timestamp: time.Now().Unix(),
@@ -182,7 +182,7 @@ func TestSignatureAuthenticatorAuthenticate(t *testing.T) {
 		auth := NewSignatureAuthenticator(loader, nil)
 
 		_, err := auth.Authenticate(ctx, security.Authentication{
-			Kind:      AuthKindSignature,
+			Type:      AuthTypeSignature,
 			Principal: "app1",
 			Credentials: &security.SignatureCredentials{
 				Timestamp: time.Now().Unix(),
@@ -203,7 +203,7 @@ func TestSignatureAuthenticatorAuthenticate(t *testing.T) {
 		auth := NewSignatureAuthenticator(loader, nil)
 
 		_, err := auth.Authenticate(ctx, security.Authentication{
-			Kind:      AuthKindSignature,
+			Type:      AuthTypeSignature,
 			Principal: "app1",
 			Credentials: &security.SignatureCredentials{
 				Timestamp: time.Now().Unix(),
@@ -231,7 +231,7 @@ func TestSignatureAuthenticatorTimestampValidation(t *testing.T) {
 		oldTimestamp := time.Now().Add(-10 * time.Minute).Unix()
 
 		_, err := auth.Authenticate(ctx, security.Authentication{
-			Kind:      AuthKindSignature,
+			Type:      AuthTypeSignature,
 			Principal: "app1",
 			Credentials: &security.SignatureCredentials{
 				Timestamp: oldTimestamp,
@@ -254,7 +254,7 @@ func TestSignatureAuthenticatorTimestampValidation(t *testing.T) {
 		futureTimestamp := time.Now().Add(10 * time.Minute).Unix()
 
 		_, err := auth.Authenticate(ctx, security.Authentication{
-			Kind:      AuthKindSignature,
+			Type:      AuthTypeSignature,
 			Principal: "app1",
 			Credentials: &security.SignatureCredentials{
 				Timestamp: futureTimestamp,
@@ -281,7 +281,7 @@ func TestSignatureAuthenticatorTimestampValidation(t *testing.T) {
 		credentials := generateValidCredentials(t, "app1", testSecretHex)
 
 		result, err := auth.Authenticate(ctx, security.Authentication{
-			Kind:        AuthKindSignature,
+			Type:        AuthTypeSignature,
 			Principal:   "app1",
 			Credentials: credentials,
 		})
@@ -308,7 +308,7 @@ func TestSignatureAuthenticatorSignatureValidation(t *testing.T) {
 		auth := NewSignatureAuthenticator(loader, nonceStore)
 
 		_, err := auth.Authenticate(ctx, security.Authentication{
-			Kind:      AuthKindSignature,
+			Type:      AuthTypeSignature,
 			Principal: "app1",
 			Credentials: &security.SignatureCredentials{
 				Timestamp: time.Now().Unix(),
@@ -332,7 +332,7 @@ func TestSignatureAuthenticatorSignatureValidation(t *testing.T) {
 		auth := NewSignatureAuthenticator(loader, nonceStore)
 
 		_, err := auth.Authenticate(ctx, security.Authentication{
-			Kind:      AuthKindSignature,
+			Type:      AuthTypeSignature,
 			Principal: "app1",
 			Credentials: &security.SignatureCredentials{
 				Timestamp: time.Now().Unix(),
@@ -359,7 +359,7 @@ func TestSignatureAuthenticatorSignatureValidation(t *testing.T) {
 		credentials := generateValidCredentials(t, "app1", testSecretHex)
 
 		_, err := auth.Authenticate(ctx, security.Authentication{
-			Kind:        AuthKindSignature,
+			Type:        AuthTypeSignature,
 			Principal:   "app1",
 			Credentials: credentials,
 		})
@@ -386,7 +386,7 @@ func TestSignatureAuthenticatorNonceValidation(t *testing.T) {
 		credentials := generateValidCredentials(t, "app1", testSecretHex)
 
 		_, err := auth.Authenticate(ctx, security.Authentication{
-			Kind:        AuthKindSignature,
+			Type:        AuthTypeSignature,
 			Principal:   "app1",
 			Credentials: credentials,
 		})
@@ -409,7 +409,7 @@ func TestSignatureAuthenticatorNonceValidation(t *testing.T) {
 		credentials := generateValidCredentials(t, "app1", testSecretHex)
 
 		_, err := auth.Authenticate(ctx, security.Authentication{
-			Kind:        AuthKindSignature,
+			Type:        AuthTypeSignature,
 			Principal:   "app1",
 			Credentials: credentials,
 		})
@@ -433,7 +433,7 @@ func TestSignatureAuthenticatorNonceValidation(t *testing.T) {
 		credentials := generateValidCredentials(t, "app1", testSecretHex)
 
 		_, err := auth.Authenticate(ctx, security.Authentication{
-			Kind:        AuthKindSignature,
+			Type:        AuthTypeSignature,
 			Principal:   "app1",
 			Credentials: credentials,
 		})
@@ -460,7 +460,7 @@ func TestSignatureAuthenticatorIPWhitelist(t *testing.T) {
 		auth := NewSignatureAuthenticator(loader, nil)
 
 		_, err := auth.Authenticate(ctx, security.Authentication{
-			Kind:      AuthKindSignature,
+			Type:      AuthTypeSignature,
 			Principal: "app1",
 			Credentials: &security.SignatureCredentials{
 				Timestamp: time.Now().Unix(),
@@ -491,7 +491,7 @@ func TestSignatureAuthenticatorIPWhitelist(t *testing.T) {
 		credentials := generateValidCredentials(t, "app1", testSecretHex)
 
 		result, err := auth.Authenticate(ctx, security.Authentication{
-			Kind:        AuthKindSignature,
+			Type:        AuthTypeSignature,
 			Principal:   "app1",
 			Credentials: credentials,
 		})
@@ -516,7 +516,7 @@ func TestSignatureAuthenticatorIPWhitelist(t *testing.T) {
 		credentials := generateValidCredentials(t, "app1", testSecretHex)
 
 		result, err := auth.Authenticate(ctx, security.Authentication{
-			Kind:        AuthKindSignature,
+			Type:        AuthTypeSignature,
 			Principal:   "app1",
 			Credentials: credentials,
 		})
@@ -546,7 +546,7 @@ func TestSignatureAuthenticatorSuccessfulAuthentication(t *testing.T) {
 		credentials := generateValidCredentials(t, "app1", testSecretHex)
 
 		result, err := auth.Authenticate(ctx, security.Authentication{
-			Kind:        AuthKindSignature,
+			Type:        AuthTypeSignature,
 			Principal:   "app1",
 			Credentials: credentials,
 		})
@@ -571,7 +571,7 @@ func TestSignatureAuthenticatorSuccessfulAuthentication(t *testing.T) {
 		credentials := generateValidCredentials(t, "app1", testSecretHex)
 
 		result, err := auth.Authenticate(ctx, security.Authentication{
-			Kind:        AuthKindSignature,
+			Type:        AuthTypeSignature,
 			Principal:   "app1",
 			Credentials: credentials,
 		})
@@ -602,7 +602,7 @@ func TestSignatureAuthenticatorSuccessfulAuthentication(t *testing.T) {
 		// Authenticate app1
 		creds1 := generateValidCredentials(t, "app1", secret1)
 		result1, err := auth.Authenticate(ctx, security.Authentication{
-			Kind:        AuthKindSignature,
+			Type:        AuthTypeSignature,
 			Principal:   "app1",
 			Credentials: creds1,
 		})
@@ -613,7 +613,7 @@ func TestSignatureAuthenticatorSuccessfulAuthentication(t *testing.T) {
 		// Authenticate app2
 		creds2 := generateValidCredentials(t, "app2", secret2)
 		result2, err := auth.Authenticate(ctx, security.Authentication{
-			Kind:        AuthKindSignature,
+			Type:        AuthTypeSignature,
 			Principal:   "app2",
 			Credentials: creds2,
 		})

@@ -67,7 +67,7 @@ func (s *SignatureStrategy) Authenticate(ctx fiber.Ctx, _ map[string]any) (*secu
 	}
 
 	return s.authManager.Authenticate(ctx.Context(), security.Authentication{
-		Kind:      isecurity.AuthKindSignature,
+		Type:      isecurity.AuthTypeSignature,
 		Principal: appID,
 		Credentials: &security.SignatureCredentials{
 			Timestamp: timestamp,

@@ -12,8 +12,8 @@ import (
 // (e.g., JWT, password, OAuth). Each authenticator declares which authentication
 // kinds it supports via the Supports method.
 type Authenticator interface {
-	// Supports returns true if this authenticator can handle the given authentication kind.
-	Supports(kind string) bool
+	// Supports returns true if this authenticator can handle the given authentication type.
+	Supports(authType string) bool
 	// Authenticate validates the credentials and returns the authenticated Principal.
 	Authenticate(ctx context.Context, authentication Authentication) (*Principal, error)
 }

@@ -10,8 +10,8 @@ import (
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
-// AuthKindSignature is the authentication kind for signature-based authentication.
-const AuthKindSignature = "signature"
+// AuthTypeSignature is the authentication type for signature-based authentication.
+const AuthTypeSignature = "signature"
 
 // SignatureAuthenticator validates HMAC-based signatures for external app authentication.
 type SignatureAuthenticator struct {
@@ -35,8 +35,8 @@ func NewSignatureAuthenticator(
 	}
 }
 
-func (*SignatureAuthenticator) Supports(kind string) bool {
-	return kind == AuthKindSignature
+func (*SignatureAuthenticator) Supports(authType string) bool {
+	return authType == AuthTypeSignature
 }
 
 func (a *SignatureAuthenticator) Authenticate(ctx context.Context, authentication security.Authentication) (*security.Principal, error) {

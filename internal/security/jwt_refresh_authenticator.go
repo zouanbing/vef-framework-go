@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	AuthKindRefresh = "refresh"
+	AuthTypeRefresh = "refresh"
 )
 
 type JWTRefreshAuthenticator struct {
@@ -25,8 +25,8 @@ func NewJWTRefreshAuthenticator(jwt *security.JWT, userLoader security.UserLoade
 	}
 }
 
-func (*JWTRefreshAuthenticator) Supports(kind string) bool {
-	return kind == AuthKindRefresh
+func (*JWTRefreshAuthenticator) Supports(authType string) bool {
+	return authType == AuthTypeRefresh
 }
 
 func (j *JWTRefreshAuthenticator) Authenticate(ctx context.Context, authentication security.Authentication) (*security.Principal, error) {

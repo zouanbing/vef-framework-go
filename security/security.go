@@ -10,7 +10,7 @@ type AuthTokens struct {
 }
 
 type Authentication struct {
-	Kind        string `json:"kind"`
+	Type        string `json:"type"`
 	Principal   string `json:"principal"`
 	Credentials any    `json:"credentials"`
 }

@@ -207,7 +207,7 @@ func (suite *AuthResourceTestSuite) TestLoginSuccess() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"kind":        isecurity.AuthKindPassword,
+			"type":        isecurity.AuthTypePassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -240,7 +240,7 @@ func (suite *AuthResourceTestSuite) TestLoginInvalidCredentials() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"kind":        isecurity.AuthKindPassword,
+				"type":        isecurity.AuthTypePassword,
 				"principal":   "testuser",
 				"credentials": "wrongpassword",
 			},
@@ -261,7 +261,7 @@ func (suite *AuthResourceTestSuite) TestLoginInvalidCredentials() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"kind":        isecurity.AuthKindPassword,
+				"type":        isecurity.AuthTypePassword,
 				"principal":   "nonexistent",
 				"credentials": "password123",
 			},
@@ -287,7 +287,7 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"kind":        isecurity.AuthKindPassword,
+				"type":        isecurity.AuthTypePassword,
 				"credentials": "password123",
 			},
 		})
@@ -307,7 +307,7 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"kind":      isecurity.AuthKindPassword,
+				"type":      isecurity.AuthTypePassword,
 				"principal": "testuser",
 			},
 		})
@@ -327,7 +327,7 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"kind":        isecurity.AuthKindPassword,
+				"type":        isecurity.AuthTypePassword,
 				"principal":   "testuser",
 				"credentials": "",
 			},
@@ -353,7 +353,7 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"kind":        isecurity.AuthKindPassword,
+				"type":        isecurity.AuthTypePassword,
 				"principal":   username,
 				"credentials": "password123",
 			},
@@ -380,7 +380,7 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"kind":        isecurity.AuthKindPassword,
+				"type":        isecurity.AuthTypePassword,
 				"principal":   username,
 				"credentials": "password123",
 			},
@@ -406,7 +406,7 @@ func (suite *AuthResourceTestSuite) TestRefreshSuccess() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"kind":        isecurity.AuthKindPassword,
+			"type":        isecurity.AuthTypePassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -518,7 +518,7 @@ func (suite *AuthResourceTestSuite) TestRefreshWithAccessToken() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"kind":        isecurity.AuthKindPassword,
+			"type":        isecurity.AuthTypePassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -559,7 +559,7 @@ func (suite *AuthResourceTestSuite) TestRefreshUserNotFound() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"kind":        isecurity.AuthKindPassword,
+			"type":        isecurity.AuthTypePassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -610,7 +610,7 @@ func (suite *AuthResourceTestSuite) TestLogoutSuccess() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"kind":        isecurity.AuthKindPassword,
+			"type":        isecurity.AuthTypePassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -648,7 +648,7 @@ func (suite *AuthResourceTestSuite) TestLoginAndRefreshFlow() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"kind":        isecurity.AuthKindPassword,
+			"type":        isecurity.AuthTypePassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -720,7 +720,7 @@ func (suite *AuthResourceTestSuite) TestTokenDetails() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"kind":        isecurity.AuthKindPassword,
+			"type":        isecurity.AuthTypePassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -753,7 +753,7 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoSuccess() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"kind":        isecurity.AuthKindPassword,
+			"type":        isecurity.AuthTypePassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -868,7 +868,7 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoLoaderError() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"kind":        isecurity.AuthKindPassword,
+			"type":        isecurity.AuthTypePassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -911,7 +911,7 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoWithEmptyMenus() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"kind":        isecurity.AuthKindPassword,
+			"type":        isecurity.AuthTypePassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -979,7 +979,7 @@ func (suite *AuthResourceTestSuite) TestLoginEventPublished() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"kind":        isecurity.AuthKindPassword,
+				"type":        isecurity.AuthTypePassword,
 				"principal":   "testuser",
 				"credentials": "password123",
 			},
@@ -1020,7 +1020,7 @@ func (suite *AuthResourceTestSuite) TestLoginEventPublished() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"kind":        isecurity.AuthKindPassword,
+				"type":        isecurity.AuthTypePassword,
 				"principal":   "testuser",
 				"credentials": "wrongpassword",
 			},
@@ -1061,7 +1061,7 @@ func (suite *AuthResourceTestSuite) TestLoginEventPublished() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"kind":        isecurity.AuthKindPassword,
+				"type":        isecurity.AuthTypePassword,
 				"principal":   "nonexistent",
 				"credentials": "password123",
 			},

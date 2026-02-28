@@ -17,7 +17,7 @@ import (
 func CreateTokenVerifier(authManager security.AuthManager) auth.TokenVerifier {
 	return func(ctx context.Context, tokenString string, _ *http.Request) (*auth.TokenInfo, error) {
 		principal, err := authManager.Authenticate(ctx, security.Authentication{
-			Kind:      isecurity.AuthKindToken,
+			Type:      isecurity.AuthTypeToken,
 			Principal: tokenString,
 		})
 		if err != nil {

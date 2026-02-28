@@ -97,7 +97,7 @@ func (a *AuthResource) Login(ctx fiber.Ctx, params LoginParams) error {
 		}
 
 		loginEvent := security.NewLoginEvent(security.LoginEventParams{
-			AuthType:   params.Kind,
+			AuthType:   params.Type,
 			UserID:     "",
 			Username:   username,
 			LoginIP:    loginIP,
@@ -118,7 +118,7 @@ func (a *AuthResource) Login(ctx fiber.Ctx, params LoginParams) error {
 	}
 
 	loginEvent := security.NewLoginEvent(security.LoginEventParams{
-		AuthType:   params.Kind,
+		AuthType:   params.Type,
 		UserID:     principal.ID,
 		Username:   username,
 		LoginIP:    loginIP,
@@ -144,7 +144,7 @@ type RefreshParams struct {
 // User data reload logic is handled by JwtRefreshAuthenticator.
 func (a *AuthResource) Refresh(ctx fiber.Ctx, params RefreshParams) error {
 	principal, err := a.authManager.Authenticate(ctx.Context(), security.Authentication{
-		Kind:      AuthKindRefresh,
+		Type:      AuthTypeRefresh,
 		Principal: params.RefreshToken,
 	})
 	if err != nil {

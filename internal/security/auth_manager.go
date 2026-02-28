@@ -21,12 +21,12 @@ func NewAuthManager(authenticators []security.Authenticator) security.AuthManage
 }
 
 func (am *AuthenticatorAuthManager) Authenticate(ctx context.Context, authentication security.Authentication) (*security.Principal, error) {
-	authenticator := am.findAuthenticator(authentication.Kind)
+	authenticator := am.findAuthenticator(authentication.Type)
 	if authenticator == nil {
-		logger.Warnf("No authenticator found for authentication type: %s", authentication.Kind)
+		logger.Warnf("No authenticator found for authentication type: %s", authentication.Type)
 
 		return nil, result.Err(
-			i18n.T(result.ErrMessageUnsupportedAuthenticationType, map[string]any{"kind": authentication.Kind}),
+			i18n.T(result.ErrMessageUnsupportedAuthenticationType, map[string]any{"kind": authentication.Type}),
 			result.WithCode(result.ErrCodeUnsupportedAuthenticationType),
 			result.WithStatus(fiber.StatusBadRequest),
 		)
@@ -37,7 +37,7 @@ func (am *AuthenticatorAuthManager) Authenticate(ctx context.Context, authentica
 		if _, ok := result.AsErr(err); !ok {
 			maskedPrincipal := maskPrincipal(authentication.Principal)
 			logger.Warnf("Authentication failed: type=%s, principal=%s, authenticator=%T, error=%v",
-				authentication.Kind, maskedPrincipal, authenticator, err)
+				authentication.Type, maskedPrincipal, authenticator, err)
 		}
 
 		return nil, err

@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	AuthKindPassword = "password"
+	AuthTypePassword = "password"
 )
 
 // PasswordAuthenticator verifies username/password credentials with optional decryption support
@@ -31,7 +31,7 @@ func NewPasswordAuthenticator(
 	}
 }
 
-func (*PasswordAuthenticator) Supports(kind string) bool { return kind == AuthKindPassword }
+func (*PasswordAuthenticator) Supports(authType string) bool { return authType == AuthTypePassword }
 
 func (p *PasswordAuthenticator) Authenticate(ctx context.Context, authentication security.Authentication) (*security.Principal, error) {
 	if p.loader == nil {
