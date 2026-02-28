@@ -9,6 +9,7 @@ import (
 	cqrsImpl "github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/mcp"
 	"github.com/ilxqx/vef-framework-go/middleware"
+	"github.com/ilxqx/vef-framework-go/security"
 )
 
 var (
@@ -180,6 +181,19 @@ func ProvideMCPPrompts(constructor any, paramTags ...string) fx.Option {
 			fx.As(new(mcp.PromptProvider)),
 			fx.ParamTags(paramTags...),
 			fx.ResultTags(`group:"vef:mcp:prompts"`),
+		),
+	)
+}
+
+// ProvideChallengeProvider provides a login challenge provider to the dependency injection container.
+// The provider will be registered in the "vef:security:challenge_providers" group.
+func ProvideChallengeProvider(constructor any, paramTags ...string) fx.Option {
+	return fx.Provide(
+		fx.Annotate(
+			constructor,
+			fx.As(new(security.ChallengeProvider)),
+			fx.ParamTags(paramTags...),
+			fx.ResultTags(`group:"vef:security:challenge_providers"`),
 		),
 	)
 }

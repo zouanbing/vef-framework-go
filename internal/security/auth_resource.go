@@ -18,20 +18,22 @@ import (
 type AuthResourceParams struct {
 	fx.In
 
-	AuthManager    security.AuthManager
-	TokenGenerator security.TokenGenerator
-	UserInfoLoader security.UserInfoLoader `optional:"true"`
-	Publisher      event.Publisher
-	SecurityConfig *config.SecurityConfig
+	AuthManager        security.AuthManager
+	TokenGenerator     security.TokenGenerator
+	UserInfoLoader     security.UserInfoLoader     `optional:"true"`
+	ChallengeProviders []security.ChallengeProvider `group:"vef:security:challenge_providers"`
+	Publisher          event.Publisher
+	SecurityConfig     *config.SecurityConfig
 }
 
 // NewAuthResource creates a new authentication resource with the provided auth manager and token generator.
 func NewAuthResource(params AuthResourceParams) api.Resource {
 	return &AuthResource{
-		authManager:    params.AuthManager,
-		tokenGenerator: params.TokenGenerator,
-		userInfoLoader: params.UserInfoLoader,
-		publisher:      params.Publisher,
+		authManager:        params.AuthManager,
+		tokenGenerator:     params.TokenGenerator,
+		userInfoLoader:     params.UserInfoLoader,
+		challengeProviders: params.ChallengeProviders,
+		publisher:          params.Publisher,
 		Resource: api.NewRPCResource(
 			"security/auth",
 			api.WithOperations(
@@ -60,10 +62,11 @@ func NewAuthResource(params AuthResourceParams) api.Resource {
 type AuthResource struct {
 	api.Resource
 
-	authManager    security.AuthManager
-	tokenGenerator security.TokenGenerator
-	userInfoLoader security.UserInfoLoader
-	publisher      event.Publisher
+	authManager        security.AuthManager
+	tokenGenerator     security.TokenGenerator
+	userInfoLoader     security.UserInfoLoader
+	challengeProviders []security.ChallengeProvider
+	publisher          event.Publisher
 }
 
 // LoginParams represents the request parameters for user login.
