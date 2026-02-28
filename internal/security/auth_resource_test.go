@@ -192,7 +192,19 @@ func (suite *AuthResourceTestSuite) setupTestApp() {
 	)
 }
 
-// Helper methods for making API requests and reading responses
+// extractTokensFromLoginResult extracts the tokens map from a LoginResult response.
+func (suite *AuthResourceTestSuite) extractTokensFromLoginResult(data map[string]any) map[string]any {
+	suite.T().Helper()
+
+	tokensRaw, ok := data["tokens"]
+	suite.True(ok, "LoginResult should contain tokens field")
+	suite.NotNil(tokensRaw, "Tokens should not be nil")
+
+	tokens, ok := tokensRaw.(map[string]any)
+	suite.True(ok, "Tokens should be a map")
+
+	return tokens
+}
 
 // Test Cases
 
@@ -220,10 +232,12 @@ func (suite *AuthResourceTestSuite) TestLoginSuccess() {
 	suite.Equal(i18n.T(result.OkMessage), body.Message, "Should return success message")
 
 	data := suite.ReadDataAsMap(body.Data)
-	suite.Contains(data, "accessToken", "Response should contain access token")
-	suite.Contains(data, "refreshToken", "Response should contain refresh token")
-	suite.NotEmpty(data["accessToken"], "Access token should not be empty")
-	suite.NotEmpty(data["refreshToken"], "Refresh token should not be empty")
+	suite.Nil(data["challengeToken"], "No challenge token when no challenges")
+	suite.Nil(data["challenges"], "No challenges when no challenge providers")
+
+	tokens := suite.extractTokensFromLoginResult(data)
+	suite.NotEmpty(tokens["accessToken"], "Access token should not be empty")
+	suite.NotEmpty(tokens["refreshToken"], "Refresh token should not be empty")
 
 	suite.userLoader.AssertCalled(suite.T(), "LoadByUsername", mock.Anything, "testuser")
 }
@@ -415,7 +429,8 @@ func (suite *AuthResourceTestSuite) TestRefreshSuccess() {
 	loginBody := suite.ReadResult(loginResp)
 	suite.True(loginBody.IsOk(), "Login should succeed")
 
-	tokens := suite.ReadDataAsMap(loginBody.Data)
+	loginData := suite.ReadDataAsMap(loginBody.Data)
+	tokens := suite.extractTokensFromLoginResult(loginData)
 	refreshToken := tokens["refreshToken"].(string)
 
 	resp := suite.MakeRPCRequest(api.Request{
@@ -527,7 +542,8 @@ func (suite *AuthResourceTestSuite) TestRefreshWithAccessToken() {
 	loginBody := suite.ReadResult(loginResp)
 	suite.True(loginBody.IsOk(), "Login should succeed")
 
-	tokens := suite.ReadDataAsMap(loginBody.Data)
+	loginData := suite.ReadDataAsMap(loginBody.Data)
+	tokens := suite.extractTokensFromLoginResult(loginData)
 	accessToken := tokens["accessToken"].(string)
 
 	resp := suite.MakeRPCRequest(api.Request{
@@ -568,7 +584,8 @@ func (suite *AuthResourceTestSuite) TestRefreshUserNotFound() {
 	loginBody := suite.ReadResult(loginResp)
 	suite.True(loginBody.IsOk(), "Login should succeed")
 
-	tokens := suite.ReadDataAsMap(loginBody.Data)
+	loginData := suite.ReadDataAsMap(loginBody.Data)
+	tokens := suite.extractTokensFromLoginResult(loginData)
 	refreshToken := tokens["refreshToken"].(string)
 
 	prevExpected := append([]*mock.Call(nil), suite.userLoader.ExpectedCalls...)
@@ -619,7 +636,8 @@ func (suite *AuthResourceTestSuite) TestLogoutSuccess() {
 	loginBody := suite.ReadResult(loginResp)
 	suite.True(loginBody.IsOk(), "Login should succeed")
 
-	tokens := suite.ReadDataAsMap(loginBody.Data)
+	loginData := suite.ReadDataAsMap(loginBody.Data)
+	tokens := suite.extractTokensFromLoginResult(loginData)
 	accessToken := tokens["accessToken"].(string)
 
 	resp := suite.MakeRPCRequestWithToken(api.Request{
@@ -657,7 +675,8 @@ func (suite *AuthResourceTestSuite) TestLoginAndRefreshFlow() {
 	loginBody := suite.ReadResult(loginResp)
 	suite.True(loginBody.IsOk(), "Login should succeed")
 
-	tokens1 := suite.ReadDataAsMap(loginBody.Data)
+	loginData := suite.ReadDataAsMap(loginBody.Data)
+	tokens1 := suite.extractTokensFromLoginResult(loginData)
 
 	refreshResp1 := suite.MakeRPCRequest(api.Request{
 		Identifier: api.Identifier{
@@ -729,7 +748,8 @@ func (suite *AuthResourceTestSuite) TestTokenDetails() {
 	loginBody := suite.ReadResult(loginResp)
 	suite.True(loginBody.IsOk(), "Login should succeed")
 
-	tokens := suite.ReadDataAsMap(loginBody.Data)
+	loginData := suite.ReadDataAsMap(loginBody.Data)
+	tokens := suite.extractTokensFromLoginResult(loginData)
 	accessToken := tokens["accessToken"].(string)
 	refreshToken := tokens["refreshToken"].(string)
 
@@ -762,7 +782,8 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoSuccess() {
 	loginBody := suite.ReadResult(loginResp)
 	suite.True(loginBody.IsOk(), "Login should succeed")
 
-	tokens := suite.ReadDataAsMap(loginBody.Data)
+	loginData := suite.ReadDataAsMap(loginBody.Data)
+	tokens := suite.extractTokensFromLoginResult(loginData)
 	accessToken := tokens["accessToken"].(string)
 
 	avatarURL := "https://example.com/avatar.jpg"
@@ -877,7 +898,8 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoLoaderError() {
 	loginBody := suite.ReadResult(loginResp)
 	suite.True(loginBody.IsOk(), "Login should succeed")
 
-	tokens := suite.ReadDataAsMap(loginBody.Data)
+	loginData := suite.ReadDataAsMap(loginBody.Data)
+	tokens := suite.extractTokensFromLoginResult(loginData)
 	accessToken := tokens["accessToken"].(string)
 
 	suite.userInfoLoader.On("LoadUserInfo", mock.Anything, mock.MatchedBy(func(p *security.Principal) bool {
@@ -920,7 +942,8 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoWithEmptyMenus() {
 	loginBody := suite.ReadResult(loginResp)
 	suite.True(loginBody.IsOk(), "Login should succeed")
 
-	tokens := suite.ReadDataAsMap(loginBody.Data)
+	loginData := suite.ReadDataAsMap(loginBody.Data)
+	tokens := suite.extractTokensFromLoginResult(loginData)
 	accessToken := tokens["accessToken"].(string)
 
 	expectedUserInfo := &security.UserInfo{
