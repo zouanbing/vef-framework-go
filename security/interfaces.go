@@ -119,3 +119,16 @@ type NonceStore interface {
 	// nonces remain valid while their corresponding timestamps are accepted.
 	Store(ctx context.Context, appID, nonce string, ttl time.Duration) error
 }
+
+// ChallengeProvider evaluates and resolves a login challenge.
+// Register implementations via vef.ProvideChallengeProvider to inject
+// additional steps into the login flow (e.g., 2FA, department selection).
+type ChallengeProvider interface {
+	// Type returns the unique challenge type identifier (e.g. "totp", "select_department").
+	Type() string
+	// Evaluate checks whether this challenge applies to the given principal.
+	// Return nil to indicate the challenge is not needed.
+	Evaluate(ctx context.Context, principal *Principal) (*LoginChallenge, error)
+	// Resolve validates the user's response and returns an optionally updated Principal.
+	Resolve(ctx context.Context, principal *Principal, response any) (*Principal, error)
+}

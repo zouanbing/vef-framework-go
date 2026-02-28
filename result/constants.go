@@ -49,6 +49,11 @@ const (
 	ErrMessageUnsupportedAuthenticationType   = "unsupported_authentication_type"
 	ErrMessageUserLoaderNotImplemented        = "user_loader_not_implemented"
 	ErrMessageUserInfoLoaderNotImplemented    = "user_info_loader_not_implemented"
+	ErrMessageChallengeRequired               = "challenge_required"
+	ErrMessageChallengeTokenInvalid           = "challenge_token_invalid"
+	ErrMessageChallengeTokenExpired           = "challenge_token_expired"
+	ErrMessageChallengeTypeInvalid            = "challenge_type_invalid"
+	ErrMessageChallengeResolveFailed          = "challenge_resolve_failed"
 )
 
 // Response codes for API results.
@@ -83,6 +88,13 @@ const (
 	ErrCodeNonceAlreadyUsed              = 1023
 	ErrCodeAuthHeaderMissing             = 1024
 	ErrCodeAuthHeaderInvalid             = 1025
+
+	// Challenge errors (1030-1039).
+	ErrCodeChallengeRequired      = 1030
+	ErrCodeChallengeTokenInvalid  = 1031
+	ErrCodeChallengeTokenExpired  = 1032
+	ErrCodeChallengeTypeInvalid   = 1033
+	ErrCodeChallengeResolveFailed = 1034
 
 	// Authorization errors (1100-1199).
 	ErrCodeAccessDenied = 1100
