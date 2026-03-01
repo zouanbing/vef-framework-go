@@ -115,6 +115,18 @@ func (s *RedisNonceStoreTestSuite) TestStore() {
 		s.Require().NoError(err, "Should check existence without error")
 		s.True(exists, "Duplicate nonce should still exist")
 	})
+
+	s.Run("StoreWithZeroTTL", func() {
+		err := s.store.Store(ctx, "test-app", "zero-ttl-nonce", 0)
+
+		s.Require().NoError(err, "Should store nonce with zero TTL without error")
+	})
+
+	s.Run("StoreWithNegativeTTL", func() {
+		err := s.store.Store(ctx, "test-app", "neg-ttl-nonce", -1*time.Minute)
+
+		s.Require().NoError(err, "Should store nonce with negative TTL without error")
+	})
 }
 
 // --- DifferentApps ---

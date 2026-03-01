@@ -2,6 +2,7 @@ package security
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"testing"
@@ -158,6 +159,12 @@ func (s *RedisChallengeTokenStoreTestSuite) TestParse() {
 		s.Require().NotNil(state, "Should return non-nil state")
 
 		s.NotNil(state.Principal.Details, "Should preserve details")
+		data, err := json.Marshal(state.Principal.Details)
+		s.Require().NoError(err, "Should marshal details")
+
+		var details map[string]any
+		s.Require().NoError(json.Unmarshal(data, &details), "Should unmarshal details")
+		s.Equal("engineering", details["department"], "Should preserve detail values")
 	})
 
 	s.Run("SubjectWithAtSignInName", func() {
@@ -193,10 +200,29 @@ func (s *RedisChallengeTokenStoreTestSuite) TestParse() {
 	})
 }
 
+// --- Token Uniqueness ---
+
+func (s *RedisChallengeTokenStoreTestSuite) TestTokenUniqueness() {
+	s.Run("MultipleGeneratesProduceUniqueTokens", func() {
+		principal := NewUser("user1", "Alice", "admin")
+
+		tokens := make(map[string]struct{}, 100)
+		for range 100 {
+			token, err := s.store.Generate(principal, []string{"totp"}, nil)
+			s.Require().NoError(err, "Should generate token without error")
+
+			tokens[token] = struct{}{}
+		}
+
+		s.Len(tokens, 100, "All 100 tokens should be unique")
+	})
+}
+
 // --- TTL Expiration ---
 
+// ChallengeTokenExpires is 5 minutes, so we can only verify tokens are valid within the TTL window.
 func (s *RedisChallengeTokenStoreTestSuite) TestTTLExpiration() {
-	s.Run("TokenAvailableBeforeExpiry", func() {
+	s.Run("TokenAvailableWithinTTL", func() {
 		principal := NewUser("user1", "Alice", "admin")
 
 		token, err := s.store.Generate(principal, []string{"totp"}, nil)

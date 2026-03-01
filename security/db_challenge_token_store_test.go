@@ -1,6 +1,8 @@
 package security
 
 import (
+	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -139,6 +141,9 @@ func TestDBChallengeTokenStoreParse(t *testing.T) {
 			require.NotNil(t, state, "Should return non-nil state")
 
 			assert.NotNil(t, state.Principal.Details, "Should preserve details")
+			details, ok := state.Principal.Details.(map[string]any)
+			require.True(t, ok, "Details should be map[string]any")
+			assert.Equal(t, "engineering", details["department"], "Should preserve detail values")
 		})
 
 		t.Run("SubjectWithAtSignInName", func(t *testing.T) {
@@ -225,6 +230,62 @@ func TestDBChallengeTokenStoreExpiration(t *testing.T) {
 			assert.Equal(t, []string{"editor"}, state.Principal.Roles, "Should preserve roles")
 			assert.Equal(t, []string{"department"}, state.Pending, "Should preserve pending list")
 			assert.Equal(t, []string{"sms"}, state.Resolved, "Should preserve resolved list")
+		})
+	})
+}
+
+// TestDBChallengeTokenStoreTokenUniqueness tests that multiple generates produce unique tokens.
+func TestDBChallengeTokenStoreTokenUniqueness(t *testing.T) {
+	testx.ForEachDB(t, func(t *testing.T, env *testx.DBEnv) {
+		store, err := NewDBChallengeTokenStore(env.Ctx, env.DB)
+		require.NoError(t, err, "Should create store without error")
+
+		t.Run("MultipleGeneratesProduceUniqueTokens", func(t *testing.T) {
+			principal := NewUser("user1", "Alice", "admin")
+
+			tokens := make(map[string]struct{}, 50)
+			for range 50 {
+				token, genErr := store.Generate(principal, []string{"totp"}, nil)
+				require.NoError(t, genErr, "Should generate token without error")
+
+				tokens[token] = struct{}{}
+			}
+
+			assert.Len(t, tokens, 50, "All 50 tokens should be unique")
+		})
+	})
+}
+
+// TestDBChallengeTokenStoreConcurrency tests DBChallengeTokenStore concurrent access safety.
+func TestDBChallengeTokenStoreConcurrency(t *testing.T) {
+	testx.ForEachDB(t, func(t *testing.T, env *testx.DBEnv) {
+		store, err := NewDBChallengeTokenStore(env.Ctx, env.DB)
+		require.NoError(t, err, "Should create store without error")
+
+		t.Run("ConcurrentGenerateAndParse", func(t *testing.T) {
+			var wg sync.WaitGroup
+
+			numGoroutines := 50
+
+			for i := range numGoroutines {
+				wg.Go(func() {
+					principal := NewUser(
+						fmt.Sprintf("user-%d", i),
+						fmt.Sprintf("Name-%d", i),
+						"admin",
+					)
+
+					token, genErr := store.Generate(principal, []string{"totp"}, []string{"sms"})
+					assert.NoError(t, genErr, "Should generate token without error in goroutine %d", i)
+					assert.NotEmpty(t, token, "Should return non-empty token in goroutine %d", i)
+
+					state, parseErr := store.Parse(token)
+					assert.NoError(t, parseErr, "Should parse token without error in goroutine %d", i)
+					assert.NotNil(t, state, "Should return non-nil state in goroutine %d", i)
+				})
+			}
+
+			wg.Wait()
 		})
 	})
 }

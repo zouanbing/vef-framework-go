@@ -1,6 +1,8 @@
 package security
 
 import (
+	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -97,6 +99,18 @@ func TestDBNonceStoreStore(t *testing.T) {
 			require.NoError(t, err, "Should check existence without error")
 			assert.True(t, exists, "Duplicate nonce should still exist")
 		})
+
+		t.Run("StoreWithZeroTTL", func(t *testing.T) {
+			err := store.Store(env.Ctx, "zero-app", "zero-ttl-nonce", 0)
+
+			require.NoError(t, err, "Should store nonce with zero TTL without error")
+		})
+
+		t.Run("StoreWithNegativeTTL", func(t *testing.T) {
+			err := store.Store(env.Ctx, "neg-app", "neg-ttl-nonce", -1*time.Minute)
+
+			require.NoError(t, err, "Should store nonce with negative TTL without error")
+		})
 	})
 }
 
@@ -168,6 +182,35 @@ func TestDBNonceStoreExpiration(t *testing.T) {
 
 			require.NoError(t, err, "Should check existence without error")
 			assert.True(t, exists, "Non-expired nonce should be found")
+		})
+	})
+}
+
+// TestDBNonceStoreConcurrency tests DBNonceStore concurrent access safety.
+func TestDBNonceStoreConcurrency(t *testing.T) {
+	testx.ForEachDB(t, func(t *testing.T, env *testx.DBEnv) {
+		store, err := NewDBNonceStore(env.Ctx, env.DB)
+		require.NoError(t, err, "Should create store without error")
+
+		t.Run("ConcurrentStoreAndExists", func(t *testing.T) {
+			var wg sync.WaitGroup
+
+			numGoroutines := 50
+
+			for i := range numGoroutines {
+				wg.Go(func() {
+					appID := "conc-app"
+					nonce := fmt.Sprintf("conc-nonce-%d", i)
+
+					storeErr := store.Store(env.Ctx, appID, nonce, 5*time.Minute)
+					assert.NoError(t, storeErr, "Should store nonce without error in goroutine %d", i)
+
+					_, existsErr := store.Exists(env.Ctx, appID, nonce)
+					assert.NoError(t, existsErr, "Should check existence without error in goroutine %d", i)
+				})
+			}
+
+			wg.Wait()
 		})
 	})
 }

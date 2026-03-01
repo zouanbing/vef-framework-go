@@ -1,6 +1,7 @@
 package security
 
 import (
+	"fmt"
 	"sync"
 	"testing"
 
@@ -187,16 +188,34 @@ func TestMemoryChallengeTokenStoreParse(t *testing.T) {
 	})
 }
 
+// TestMemoryChallengeTokenStoreTokenUniqueness tests that multiple generates produce unique tokens.
+func TestMemoryChallengeTokenStoreTokenUniqueness(t *testing.T) {
+	t.Run("MultipleGeneratesProduceUniqueTokens", func(t *testing.T) {
+		store := NewMemoryChallengeTokenStore()
+		principal := NewUser("user1", "Alice", "admin")
+
+		tokens := make(map[string]struct{}, 100)
+		for range 100 {
+			token, err := store.Generate(principal, []string{"totp"}, nil)
+			require.NoError(t, err, "Should generate token without error")
+
+			tokens[token] = struct{}{}
+		}
+
+		assert.Len(t, tokens, 100, "All 100 tokens should be unique")
+	})
+}
+
 // TestMemoryChallengeTokenStoreTTLExpiration tests token TTL behavior.
+// ChallengeTokenExpires is 5 minutes, so we can only verify tokens are valid within the TTL window.
 func TestMemoryChallengeTokenStoreTTLExpiration(t *testing.T) {
-	t.Run("TokenExpiresAfterTTL", func(t *testing.T) {
+	t.Run("TokenAvailableWithinTTL", func(t *testing.T) {
 		store := NewMemoryChallengeTokenStore()
 		principal := NewUser("user1", "Alice", "admin")
 
 		token, err := store.Generate(principal, []string{"totp"}, nil)
 		require.NoError(t, err, "Should generate token without error")
 
-		// A freshly generated token should be parseable within the 5-minute TTL window.
 		state, err := store.Parse(token)
 		require.NoError(t, err, "Should parse freshly generated token without error")
 		assert.Equal(t, "user1", state.Principal.ID, "Should preserve principal ID")
@@ -214,7 +233,7 @@ func TestMemoryChallengeTokenStoreConcurrency(t *testing.T) {
 
 		for i := range numGoroutines {
 			wg.Go(func() {
-				principal := NewUser("user"+string(rune('0'+i%10)), "Name"+string(rune('A'+i%26)))
+				principal := NewUser(fmt.Sprintf("user-%d", i), fmt.Sprintf("Name-%d", i))
 
 				token, err := store.Generate(principal, []string{"totp"}, []string{"sms"})
 				assert.NoError(t, err, "Should generate token without error in goroutine %d", i)

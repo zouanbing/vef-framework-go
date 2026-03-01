@@ -331,8 +331,7 @@ func TestMemoryNonceStoreConcurrency(t *testing.T) {
 
 		numGoroutines := 100
 
-		for i := range numGoroutines {
-			id := i
+		for id := range numGoroutines {
 			wg.Go(func() {
 				appID := "test-app"
 				nonce := "nonce-" + string(rune('a'+id%26))
@@ -353,8 +352,7 @@ func TestMemoryNonceStoreConcurrency(t *testing.T) {
 
 		numApps := 50
 
-		for i := range numApps {
-			id := i
+		for id := range numApps {
 			wg.Go(func() {
 				appID := "app-" + string(rune('a'+id%26))
 				nonce := "nonce-" + string(rune('0'+id%10))
