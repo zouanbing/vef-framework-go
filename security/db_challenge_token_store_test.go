@@ -157,15 +157,21 @@ func TestDBChallengeTokenStoreParse(t *testing.T) {
 		t.Run("RejectsEmptyToken", func(t *testing.T) {
 			_, err := store.Parse("")
 
-			assert.Error(t, err, "Should reject empty token")
-			assert.ErrorIs(t, err, result.ErrTokenInvalid, "Should return token invalid error")
+			require.Error(t, err, "Should reject empty token")
+
+			resErr, ok := result.AsErr(err)
+			require.True(t, ok, "Should return a result.Error")
+			assert.Equal(t, result.ErrCodeTokenInvalid, resErr.Code, "Should return token invalid error code")
 		})
 
 		t.Run("RejectsNonExistentToken", func(t *testing.T) {
 			_, err := store.Parse("non-existent-token-value")
 
-			assert.Error(t, err, "Should reject non-existent token")
-			assert.ErrorIs(t, err, result.ErrTokenInvalid, "Should return token invalid error")
+			require.Error(t, err, "Should reject non-existent token")
+
+			resErr, ok := result.AsErr(err)
+			require.True(t, ok, "Should return a result.Error")
+			assert.Equal(t, result.ErrCodeTokenInvalid, resErr.Code, "Should return token invalid error code")
 		})
 	})
 }
@@ -190,8 +196,11 @@ func TestDBChallengeTokenStoreExpiration(t *testing.T) {
 
 			_, err = store.Parse("expired-challenge-token")
 
-			assert.Error(t, err, "Should reject expired token")
-			assert.ErrorIs(t, err, result.ErrTokenInvalid, "Should return token invalid error for expired token")
+			require.Error(t, err, "Should reject expired token")
+
+			resErr, ok := result.AsErr(err)
+			require.True(t, ok, "Should return a result.Error")
+			assert.Equal(t, result.ErrCodeTokenInvalid, resErr.Code, "Should return token invalid error code")
 		})
 
 		t.Run("NonExpiredTokenFound", func(t *testing.T) {

@@ -20,8 +20,8 @@ func TestNewMemoryChallengeTokenStore(t *testing.T) {
 		assert.True(t, ok, "Should return *MemoryChallengeTokenStore")
 	})
 
-	t.Run("ImplementsInterface", func(t *testing.T) {
-		var _ ChallengeTokenStore = NewMemoryChallengeTokenStore()
+	t.Run("ImplementsInterface", func(*testing.T) {
+		_ = NewMemoryChallengeTokenStore()
 	})
 }
 
@@ -207,6 +207,7 @@ func TestMemoryChallengeTokenStoreTTLExpiration(t *testing.T) {
 func TestMemoryChallengeTokenStoreConcurrency(t *testing.T) {
 	t.Run("ConcurrentGenerateAndParse", func(t *testing.T) {
 		store := NewMemoryChallengeTokenStore()
+
 		var wg sync.WaitGroup
 
 		numGoroutines := 100
