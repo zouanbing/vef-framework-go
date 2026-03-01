@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/storage/services/filesystem"
-	"github.com/ilxqx/vef-framework-go/internal/storage/services/memory"
-	"github.com/ilxqx/vef-framework-go/internal/storage/services/minio"
+	"github.com/ilxqx/vef-framework-go/internal/storage/filesystem"
+	"github.com/ilxqx/vef-framework-go/internal/storage/memory"
+	"github.com/ilxqx/vef-framework-go/internal/storage/minio"
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 

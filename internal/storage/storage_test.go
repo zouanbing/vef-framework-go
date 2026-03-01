@@ -8,7 +8,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/config"
 	istorage "github.com/ilxqx/vef-framework-go/internal/storage"
-	"github.com/ilxqx/vef-framework-go/internal/storage/services/memory"
+	"github.com/ilxqx/vef-framework-go/internal/storage/memory"
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 
