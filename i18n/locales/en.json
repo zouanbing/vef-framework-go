@@ -76,5 +76,17 @@
   "schema_table_not_found": "Table not found",
   "dangerous_sql": "Dangerous SQL detected, execution blocked",
   "unsupported_authentication_type": "Unsupported authentication type: {{.kind}}",
-  "processor_must_return_slice": "Processor must return a slice, got {{.type}}"
+  "processor_must_return_slice": "Processor must return a slice, got {{.type}}",
+  "auth_type": "Authentication type",
+  "auth_principal": "Principal",
+  "auth_credentials": "Credentials",
+  "auth_refresh_token": "Refresh token",
+  "auth_challenge_token": "Challenge token",
+  "auth_challenge_type": "Challenge type",
+  "auth_challenge_response": "Challenge response",
+  "challenge_required": "Challenge verification required",
+  "challenge_token_invalid": "Invalid challenge token",
+  "challenge_token_expired": "Challenge token has expired",
+  "challenge_type_invalid": "Invalid challenge type",
+  "challenge_resolve_failed": "Challenge verification failed"
 }

@@ -15,7 +15,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/internal/app"
-	isecurity "github.com/ilxqx/vef-framework-go/internal/security"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
 )
@@ -176,7 +175,7 @@ func (s *Suite) GenerateToken(principal *security.Principal) string {
 	claims := security.NewJWTClaimsBuilder().
 		WithSubject(principal.ID + "@" + principal.Name).
 		WithRoles(principal.Roles).
-		WithType(isecurity.TokenTypeAccess)
+		WithType(security.TokenTypeAccess)
 
 	token, err := jwtInstance.Generate(claims, 1*time.Hour, 0)
 	s.Require().NoError(err)

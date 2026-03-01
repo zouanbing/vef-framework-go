@@ -343,7 +343,7 @@ func (suite *RESTEngineTestSuite) login() string {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"kind":        "password",
+			"type":        "password",
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -352,7 +352,8 @@ func (suite *RESTEngineTestSuite) login() string {
 	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Login should succeed")
 
-	tokens := suite.ReadDataAsMap(body.Data)
+	data := suite.ReadDataAsMap(body.Data)
+	tokens := suite.ReadDataAsMap(data["tokens"])
 
 	return tokens["accessToken"].(string)
 }
@@ -641,7 +642,7 @@ func (suite *RESTEngineTestSuite) TestPutMissingRequiredID() {
 	// PUT without id in body
 	resp := suite.MakeRESTRequestWithToken(fiber.MethodPut, "/api/items", `{"name":"Test"}`, token)
 
-	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+	suite.Equal(400, resp.StatusCode, "Should return 400 Bad Request")
 
 	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should fail with validation error")
@@ -656,7 +657,7 @@ func (suite *RESTEngineTestSuite) TestDeleteMissingRequiredID() {
 	// DELETE without id - send empty JSON body
 	resp := suite.MakeRESTRequestWithToken(fiber.MethodDelete, "/api/items", `{}`, token)
 
-	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+	suite.Equal(400, resp.StatusCode, "Should return 400 Bad Request")
 
 	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should fail with validation error")
@@ -671,7 +672,7 @@ func (suite *RESTEngineTestSuite) TestPatchMissingRequiredID() {
 	// PATCH without id in body
 	resp := suite.MakeRESTRequestWithToken(fiber.MethodPatch, "/api/items", `{"status":"active"}`, token)
 
-	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+	suite.Equal(400, resp.StatusCode, "Should return 400 Bad Request")
 
 	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should fail with validation error")
@@ -733,7 +734,7 @@ func (suite *RESTEngineTestSuite) TestDeleteInvalidJSON() {
 
 	resp := suite.MakeRESTRequestWithToken(fiber.MethodDelete, "/api/items", "{invalid json}", token)
 
-	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+	suite.Equal(400, resp.StatusCode, "Should return 400 Bad Request")
 
 	body := suite.ReadResult(resp)
 	suite.False(body.IsOk(), "Should fail with invalid JSON")

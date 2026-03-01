@@ -148,6 +148,20 @@ var (
 	)
 )
 
+// Predefined challenge errors.
+var (
+	ErrChallengeTokenInvalid = Err(
+		i18n.T(ErrMessageChallengeTokenInvalid),
+		WithCode(ErrCodeChallengeTokenInvalid),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	ErrChallengeTypeInvalid = Err(
+		i18n.T(ErrMessageChallengeTypeInvalid),
+		WithCode(ErrCodeChallengeTypeInvalid),
+		WithStatus(fiber.StatusBadRequest),
+	)
+)
+
 // Predefined business errors (HTTP 200 with error code).
 var (
 	ErrRecordNotFound = Err(

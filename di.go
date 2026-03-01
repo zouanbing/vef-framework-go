@@ -4,12 +4,8 @@ import (
 	"github.com/ilxqx/go-streams"
 	"go.uber.org/fx"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/internal/app"
-	cqrsImpl "github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/mcp"
 	"github.com/ilxqx/vef-framework-go/middleware"
-	"github.com/ilxqx/vef-framework-go/security"
 )
 
 var (
@@ -59,11 +55,11 @@ func StartStopHook[T1, T2 HookFunc](start T1, stop T2) Hook {
 
 // ProvideAPIResource provides an API resource to the dependency injection container.
 // The resource will be registered in the "vef:api:resources" group.
+// The constructor must return api.Resource (not a concrete type).
 func ProvideAPIResource(constructor any, paramTags ...string) fx.Option {
 	return fx.Provide(
 		fx.Annotate(
 			constructor,
-			fx.As(new(api.Resource)),
 			fx.ParamTags(paramTags...),
 			fx.ResultTags(`group:"vef:api:resources"`),
 		),
@@ -72,12 +68,12 @@ func ProvideAPIResource(constructor any, paramTags ...string) fx.Option {
 
 // ProvideMiddleware provides a middleware to the dependency injection container.
 // The middleware will be registered in the "vef:app:middlewares" group.
+// The constructor must return app.Middleware (not a concrete type).
 func ProvideMiddleware(constructor any, paramTags ...string) fx.Option {
 	return fx.Provide(
 		fx.Annotate(
 			constructor,
 			fx.ParamTags(paramTags...),
-			fx.As(new(app.Middleware)),
 			fx.ResultTags(`group:"vef:app:middlewares"`),
 		),
 	)
@@ -126,23 +122,36 @@ func SupplySPAConfigs(config *middleware.SPAConfig, configs ...*middleware.SPACo
 }
 
 // ProvideCQRSBehavior provides a CQRS behavior middleware to the dependency injection container.
+// The constructor must return cqrs.Behavior (not a concrete type).
 func ProvideCQRSBehavior(constructor any, paramTags ...string) fx.Option {
 	return fx.Provide(
 		fx.Annotate(
 			constructor,
 			fx.ParamTags(paramTags...),
-			fx.As(new(cqrsImpl.Behavior)),
 			fx.ResultTags(`group:"vef:cqrs:behaviors"`),
 		),
 	)
 }
 
+// ProvideChallengeProvider provides a login challenge provider to the dependency injection container.
+// The provider will be registered in the "vef:security:challenge_providers" group.
+// The constructor must return security.ChallengeProvider (not a concrete type).
+func ProvideChallengeProvider(constructor any, paramTags ...string) fx.Option {
+	return fx.Provide(
+		fx.Annotate(
+			constructor,
+			fx.ParamTags(paramTags...),
+			fx.ResultTags(`group:"vef:security:challenge_providers"`),
+		),
+	)
+}
+
 // ProvideMCPTools provides an MCP tool provider.
+// The constructor must return mcp.ToolProvider (not a concrete type).
 func ProvideMCPTools(constructor any, paramTags ...string) fx.Option {
 	return fx.Provide(
 		fx.Annotate(
 			constructor,
-			fx.As(new(mcp.ToolProvider)),
 			fx.ParamTags(paramTags...),
 			fx.ResultTags(`group:"vef:mcp:tools"`),
 		),
@@ -150,11 +159,11 @@ func ProvideMCPTools(constructor any, paramTags ...string) fx.Option {
 }
 
 // ProvideMCPResources provides an MCP resource provider.
+// The constructor must return mcp.ResourceProvider (not a concrete type).
 func ProvideMCPResources(constructor any, paramTags ...string) fx.Option {
 	return fx.Provide(
 		fx.Annotate(
 			constructor,
-			fx.As(new(mcp.ResourceProvider)),
 			fx.ParamTags(paramTags...),
 			fx.ResultTags(`group:"vef:mcp:resources"`),
 		),
@@ -162,11 +171,11 @@ func ProvideMCPResources(constructor any, paramTags ...string) fx.Option {
 }
 
 // ProvideMCPResourceTemplates provides an MCP resource template provider.
+// The constructor must return mcp.ResourceTemplateProvider (not a concrete type).
 func ProvideMCPResourceTemplates(constructor any, paramTags ...string) fx.Option {
 	return fx.Provide(
 		fx.Annotate(
 			constructor,
-			fx.As(new(mcp.ResourceTemplateProvider)),
 			fx.ParamTags(paramTags...),
 			fx.ResultTags(`group:"vef:mcp:templates"`),
 		),
@@ -174,26 +183,13 @@ func ProvideMCPResourceTemplates(constructor any, paramTags ...string) fx.Option
 }
 
 // ProvideMCPPrompts provides an MCP prompt provider.
+// The constructor must return mcp.PromptProvider (not a concrete type).
 func ProvideMCPPrompts(constructor any, paramTags ...string) fx.Option {
 	return fx.Provide(
 		fx.Annotate(
 			constructor,
-			fx.As(new(mcp.PromptProvider)),
 			fx.ParamTags(paramTags...),
 			fx.ResultTags(`group:"vef:mcp:prompts"`),
-		),
-	)
-}
-
-// ProvideChallengeProvider provides a login challenge provider to the dependency injection container.
-// The provider will be registered in the "vef:security:challenge_providers" group.
-func ProvideChallengeProvider(constructor any, paramTags ...string) fx.Option {
-	return fx.Provide(
-		fx.Annotate(
-			constructor,
-			fx.As(new(security.ChallengeProvider)),
-			fx.ParamTags(paramTags...),
-			fx.ResultTags(`group:"vef:security:challenge_providers"`),
 		),
 	)
 }

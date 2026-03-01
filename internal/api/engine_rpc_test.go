@@ -301,7 +301,7 @@ func (suite *RPCEngineTestSuite) login() string {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"kind":        "password",
+			"type":        "password",
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -310,7 +310,8 @@ func (suite *RPCEngineTestSuite) login() string {
 	body := suite.ReadResult(resp)
 	suite.True(body.IsOk(), "Login should succeed")
 
-	tokens := suite.ReadDataAsMap(body.Data)
+	data := suite.ReadDataAsMap(body.Data)
+	tokens := suite.ReadDataAsMap(data["tokens"])
 
 	return tokens["accessToken"].(string)
 }
@@ -749,7 +750,7 @@ func (suite *RPCEngineTestSuite) TestNonexistentUserLogin() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"kind":        "password",
+			"type":        "password",
 			"principal":   "nonexistent",
 			"credentials": "password123",
 		},

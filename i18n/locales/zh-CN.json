@@ -76,5 +76,17 @@
   "schema_table_not_found": "表不存在",
   "dangerous_sql": "检测到危险 SQL 操作, 执行已阻止",
   "unsupported_authentication_type": "不支持的认证类型: {{.kind}}",
-  "processor_must_return_slice": "处理器必须返回切片类型, 实际返回 {{.type}}"
+  "processor_must_return_slice": "处理器必须返回切片类型, 实际返回 {{.type}}",
+  "auth_type": "认证类型",
+  "auth_principal": "用户标识",
+  "auth_credentials": "凭证",
+  "auth_refresh_token": "刷新令牌",
+  "auth_challenge_token": "挑战令牌",
+  "auth_challenge_type": "挑战类型",
+  "auth_challenge_response": "挑战响应",
+  "challenge_required": "需要完成挑战验证",
+  "challenge_token_invalid": "无效的挑战令牌",
+  "challenge_token_expired": "挑战令牌已过期",
+  "challenge_type_invalid": "无效的挑战类型",
+  "challenge_resolve_failed": "挑战验证失败"
 }

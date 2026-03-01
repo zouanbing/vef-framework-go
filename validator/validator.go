@@ -6,6 +6,7 @@ import (
 	"os"
 	"reflect"
 
+	"github.com/gofiber/fiber/v3"
 	"github.com/ilxqx/go-streams"
 	"github.com/samber/lo"
 
@@ -116,8 +117,16 @@ func Validate(value any) error {
 
 	var validationErrors v.ValidationErrors
 	if !errors.As(err, &validationErrors) || len(validationErrors) == 0 {
-		return result.Err(err.Error(), result.WithCode(result.ErrCodeBadRequest))
+		return result.Err(
+			err.Error(),
+			result.WithCode(result.ErrCodeBadRequest),
+			result.WithStatus(fiber.StatusBadRequest),
+		)
 	}
 
-	return result.Err(validationErrors[0].Translate(translator), result.WithCode(result.ErrCodeBadRequest))
+	return result.Err(
+		validationErrors[0].Translate(translator),
+		result.WithCode(result.ErrCodeBadRequest),
+		result.WithStatus(fiber.StatusBadRequest),
+	)
 }

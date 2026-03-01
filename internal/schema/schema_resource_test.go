@@ -3,24 +3,16 @@ package schema_test
 import (
 	"context"
 	"database/sql"
-	"io"
 	"net/http"
-	"net/http/httptest"
-	"strings"
 	"testing"
-	"time"
 
-	"github.com/gofiber/fiber/v3"
 	"github.com/stretchr/testify/suite"
 	"github.com/uptrace/bun"
 	"go.uber.org/fx"
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/encoding"
-	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/internal/apptest"
-	isecurity "github.com/ilxqx/vef-framework-go/internal/security"
 	"github.com/ilxqx/vef-framework-go/internal/testx"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
@@ -28,48 +20,44 @@ import (
 
 // SchemaResourceTestSuite tests the schema API resource functionality.
 type SchemaResourceTestSuite struct {
-	suite.Suite
+	apptest.Suite
 
 	ctx               context.Context
 	postgresContainer *testx.PostgresContainer
 	mysqlContainer    *testx.MySQLContainer
 }
 
-func (suite *SchemaResourceTestSuite) SetupSuite() {
-	suite.ctx = context.Background()
+func (s *SchemaResourceTestSuite) SetupSuite() {
+	s.ctx = context.Background()
 
-	suite.postgresContainer = testx.NewPostgresContainer(suite.ctx, suite.T())
-	suite.mysqlContainer = testx.NewMySQLContainer(suite.ctx, suite.T())
+	s.postgresContainer = testx.NewPostgresContainer(s.ctx, s.T())
+	s.mysqlContainer = testx.NewMySQLContainer(s.ctx, s.T())
 }
 
-func (suite *SchemaResourceTestSuite) TestPostgresResource() {
-	suite.T().Log("Testing Schema Resource for PostgreSQL")
-	suite.runResourceTests(suite.postgresContainer.DataSource, "PostgreSQL")
+func (s *SchemaResourceTestSuite) TestPostgresResource() {
+	s.T().Log("Testing Schema Resource for PostgreSQL")
+	s.runResourceTests(s.postgresContainer.DataSource, "PostgreSQL")
 }
 
-func (suite *SchemaResourceTestSuite) TestMySQLResource() {
-	suite.T().Log("Testing Schema Resource for MySQL")
-	suite.runResourceTests(suite.mysqlContainer.DataSource, "MySQL")
+func (s *SchemaResourceTestSuite) TestMySQLResource() {
+	s.T().Log("Testing Schema Resource for MySQL")
+	s.runResourceTests(s.mysqlContainer.DataSource, "MySQL")
 }
 
-func (suite *SchemaResourceTestSuite) TestSQLiteResource() {
-	suite.T().Log("Testing Schema Resource for SQLite")
+func (s *SchemaResourceTestSuite) TestSQLiteResource() {
+	s.T().Log("Testing Schema Resource for SQLite")
 
 	dsConfig := &config.DataSourceConfig{
 		Kind: config.SQLite,
 	}
 
-	suite.runResourceTests(dsConfig, "SQLite")
+	s.runResourceTests(dsConfig, "SQLite")
 }
 
-func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSourceConfig, dbKind string) {
-	var (
-		bunDB   *bun.DB
-		testApp *app.App
-	)
+func (s *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSourceConfig, dbKind string) {
+	var bunDB *bun.DB
 
-	testApp, stop := apptest.NewTestApp(
-		suite.T(),
+	s.SetupApp(
 		fx.Replace(
 			dsConfig,
 			&security.JWTConfig{
@@ -80,29 +68,28 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSour
 		fx.Populate(&bunDB),
 	)
 
-	defer stop()
+	defer s.TearDownApp()
 
-	token := suite.generateToken()
+	token := s.GenerateToken(security.NewUser("test-admin", "admin"))
 
-	suite.setupTestTables(bunDB.DB, dsConfig.Kind)
-	defer suite.cleanupTestTables(bunDB.DB, dsConfig.Kind)
+	s.setupTestTables(bunDB.DB, dsConfig.Kind)
+	defer s.cleanupTestTables(bunDB.DB, dsConfig.Kind)
 
-	suite.Run("ListTables", func() {
-		resp := suite.makeAPIRequest(testApp, token, api.Request{
+	s.Run("ListTables", func() {
+		resp := s.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/schema",
 				Action:   "list_tables",
 				Version:  "v1",
 			},
-		})
+		}, token)
 
-		suite.Equal(http.StatusOK, resp.StatusCode, "Should return 200 OK")
+		s.Equal(http.StatusOK, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.readBody(resp)
-		suite.True(body.IsOk(), "list_tables should succeed")
+		body := s.ReadResult(resp)
+		s.True(body.IsOk(), "list_tables should succeed")
 
-		tables, ok := body.Data.([]any)
-		suite.True(ok, "Data should be an array")
+		tables := s.ReadDataAsSlice(body.Data)
 
 		tableNames := make([]string, 0, len(tables))
 		for _, t := range tables {
@@ -114,13 +101,13 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSour
 			}
 		}
 
-		suite.T().Logf("%s tables found via API: %v", dbKind, tableNames)
-		suite.Contains(tableNames, "resource_test_orders", "Should find resource_test_orders table")
-		suite.Contains(tableNames, "resource_test_items", "Should find resource_test_items table")
+		s.T().Logf("%s tables found via API: %v", dbKind, tableNames)
+		s.Contains(tableNames, "resource_test_orders", "Should find resource_test_orders table")
+		s.Contains(tableNames, "resource_test_items", "Should find resource_test_items table")
 	})
 
-	suite.Run("GetTableSchemaSuccess", func() {
-		resp := suite.makeAPIRequest(testApp, token, api.Request{
+	s.Run("GetTableSchemaSuccess", func() {
+		resp := s.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/schema",
 				Action:   "get_table_schema",
@@ -129,21 +116,20 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSour
 			Params: map[string]any{
 				"name": "resource_test_orders",
 			},
-		})
+		}, token)
 
-		suite.Equal(http.StatusOK, resp.StatusCode, "Should return 200 OK")
+		s.Equal(http.StatusOK, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.readBody(resp)
-		suite.True(body.IsOk(), "get_table_schema should succeed")
+		body := s.ReadResult(resp)
+		s.True(body.IsOk(), "get_table_schema should succeed")
 
-		tableSchema, ok := body.Data.(map[string]any)
-		suite.True(ok, "Data should be a map")
+		tableSchema := s.ReadDataAsMap(body.Data)
 
-		suite.Equal("resource_test_orders", tableSchema["name"], "Table name should match")
+		s.Equal("resource_test_orders", tableSchema["name"], "Table name should match")
 
 		columns, ok := tableSchema["columns"].([]any)
-		suite.True(ok, "Columns should be an array")
-		suite.NotEmpty(columns, "Columns should not be empty")
+		s.True(ok, "Columns should be an array")
+		s.NotEmpty(columns, "Columns should not be empty")
 
 		columnNames := make([]string, 0, len(columns))
 		for _, col := range columns {
@@ -155,14 +141,14 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSour
 			}
 		}
 
-		suite.T().Logf("%s resource_test_orders columns via API: %v", dbKind, columnNames)
-		suite.Contains(columnNames, "id", "Should have id column")
-		suite.Contains(columnNames, "customer_name", "Should have customer_name column")
-		suite.Contains(columnNames, "total_amount", "Should have total_amount column")
+		s.T().Logf("%s resource_test_orders columns via API: %v", dbKind, columnNames)
+		s.Contains(columnNames, "id", "Should have id column")
+		s.Contains(columnNames, "customer_name", "Should have customer_name column")
+		s.Contains(columnNames, "total_amount", "Should have total_amount column")
 	})
 
-	suite.Run("GetTableSchemaWithPrimaryKey", func() {
-		resp := suite.makeAPIRequest(testApp, token, api.Request{
+	s.Run("GetTableSchemaWithPrimaryKey", func() {
+		resp := s.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/schema",
 				Action:   "get_table_schema",
@@ -171,27 +157,27 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSour
 			Params: map[string]any{
 				"name": "resource_test_orders",
 			},
-		})
+		}, token)
 
-		body := suite.readBody(resp)
-		tableSchema := body.Data.(map[string]any)
+		body := s.ReadResult(resp)
+		tableSchema := s.ReadDataAsMap(body.Data)
 
 		pk, hasPK := tableSchema["primaryKey"]
-		suite.True(hasPK, "Should have primaryKey")
-		suite.NotNil(pk, "PrimaryKey should not be nil")
+		s.True(hasPK, "Should have primaryKey")
+		s.NotNil(pk, "PrimaryKey should not be nil")
 
 		pkMap, ok := pk.(map[string]any)
-		suite.True(ok, "PrimaryKey should be a map")
+		s.True(ok, "PrimaryKey should be a map")
 
 		pkColumns, ok := pkMap["columns"].([]any)
-		suite.True(ok, "PrimaryKey columns should be an array")
-		suite.NotEmpty(pkColumns, "PrimaryKey columns should not be empty")
+		s.True(ok, "PrimaryKey columns should be an array")
+		s.NotEmpty(pkColumns, "PrimaryKey columns should not be empty")
 
-		suite.T().Logf("%s resource_test_orders primary key via API: %v", dbKind, pkColumns)
+		s.T().Logf("%s resource_test_orders primary key via API: %v", dbKind, pkColumns)
 	})
 
-	suite.Run("GetTableSchemaNotFound", func() {
-		resp := suite.makeAPIRequest(testApp, token, api.Request{
+	s.Run("GetTableSchemaNotFound", func() {
+		resp := s.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/schema",
 				Action:   "get_table_schema",
@@ -200,19 +186,19 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSour
 			Params: map[string]any{
 				"name": "nonexistent_table_xyz",
 			},
-		})
+		}, token)
 
-		suite.Equal(http.StatusOK, resp.StatusCode, "Should return 200 OK (error in body)")
+		s.Equal(http.StatusOK, resp.StatusCode, "Should return 200 OK (error in body)")
 
-		body := suite.readBody(resp)
-		suite.False(body.IsOk(), "get_table_schema should fail for nonexistent table")
-		suite.Equal(result.ErrCodeSchemaTableNotFound, body.Code, "Error code should be ErrCodeSchemaTableNotFound")
+		body := s.ReadResult(resp)
+		s.False(body.IsOk(), "get_table_schema should fail for nonexistent table")
+		s.Equal(result.ErrCodeSchemaTableNotFound, body.Code, "Error code should be ErrCodeSchemaTableNotFound")
 
-		suite.T().Logf("%s table not found error: code=%d, message=%s", dbKind, body.Code, body.Message)
+		s.T().Logf("%s table not found error: code=%d, message=%s", dbKind, body.Code, body.Message)
 	})
 
-	suite.Run("GetTableSchemaValidationError", func() {
-		resp := suite.makeAPIRequest(testApp, token, api.Request{
+	s.Run("GetTableSchemaValidationError", func() {
+		resp := s.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/schema",
 				Action:   "get_table_schema",
@@ -221,61 +207,16 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DataSour
 			Params: map[string]any{
 				// Missing required "name" parameter
 			},
-		})
+		}, token)
 
-		body := suite.readBody(resp)
-		suite.False(body.IsOk(), "get_table_schema should fail without name parameter")
+		body := s.ReadResult(resp)
+		s.False(body.IsOk(), "get_table_schema should fail without name parameter")
 
-		suite.T().Logf("%s validation error: code=%d, message=%s", dbKind, body.Code, body.Message)
+		s.T().Logf("%s validation error: code=%d, message=%s", dbKind, body.Code, body.Message)
 	})
 }
 
-func (suite *SchemaResourceTestSuite) generateToken() string {
-	jwtCfg := &security.JWTConfig{
-		Secret:   security.DefaultJWTSecret,
-		Audience: "test_app",
-	}
-
-	jwtInstance, err := security.NewJWT(jwtCfg)
-	suite.Require().NoError(err, "Should not return error")
-
-	claims := security.NewJWTClaimsBuilder().
-		WithSubject("test-admin@admin").
-		WithType(isecurity.TokenTypeAccess)
-
-	token, err := jwtInstance.Generate(claims, 1*time.Hour, 0)
-	suite.Require().NoError(err, "Should not return error")
-
-	return token
-}
-
-func (suite *SchemaResourceTestSuite) makeAPIRequest(testApp *app.App, token string, body api.Request) *http.Response {
-	jsonBody, err := encoding.ToJSON(body)
-	suite.Require().NoError(err, "Should encode request to JSON")
-
-	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
-	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-	req.Header.Set(fiber.HeaderAuthorization, security.AuthSchemeBearer+" "+token)
-
-	resp, err := testApp.Test(req)
-	suite.Require().NoError(err, "API request should not fail")
-
-	return resp
-}
-
-func (suite *SchemaResourceTestSuite) readBody(resp *http.Response) result.Result {
-	body, err := io.ReadAll(resp.Body)
-	defer resp.Body.Close()
-
-	suite.Require().NoError(err, "Should read response body")
-
-	res, err := encoding.FromJSON[result.Result](string(body))
-	suite.Require().NoError(err, "Should decode response JSON")
-
-	return *res
-}
-
-func (suite *SchemaResourceTestSuite) setupTestTables(db *sql.DB, dbKind config.DBKind) {
+func (s *SchemaResourceTestSuite) setupTestTables(db *sql.DB, dbKind config.DBKind) {
 	var ordersSQL, itemsSQL string
 
 	switch dbKind {
@@ -339,16 +280,16 @@ func (suite *SchemaResourceTestSuite) setupTestTables(db *sql.DB, dbKind config.
 			)`
 	}
 
-	_, err := db.ExecContext(suite.ctx, ordersSQL)
-	suite.Require().NoError(err, "Creating resource_test_orders table should succeed")
+	_, err := db.ExecContext(s.ctx, ordersSQL)
+	s.Require().NoError(err, "Creating resource_test_orders table should succeed")
 
-	_, err = db.ExecContext(suite.ctx, itemsSQL)
-	suite.Require().NoError(err, "Creating resource_test_items table should succeed")
+	_, err = db.ExecContext(s.ctx, itemsSQL)
+	s.Require().NoError(err, "Creating resource_test_items table should succeed")
 }
 
-func (suite *SchemaResourceTestSuite) cleanupTestTables(db *sql.DB, _ config.DBKind) {
-	_, _ = db.ExecContext(suite.ctx, "DROP TABLE IF EXISTS resource_test_items")
-	_, _ = db.ExecContext(suite.ctx, "DROP TABLE IF EXISTS resource_test_orders")
+func (s *SchemaResourceTestSuite) cleanupTestTables(db *sql.DB, _ config.DBKind) {
+	_, _ = db.ExecContext(s.ctx, "DROP TABLE IF EXISTS resource_test_items")
+	_, _ = db.ExecContext(s.ctx, "DROP TABLE IF EXISTS resource_test_orders")
 }
 
 // TestSchemaResourceTestSuite tests schema resource test suite functionality.
