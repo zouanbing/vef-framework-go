@@ -43,46 +43,46 @@ type StorageResourceTestSuite struct {
 }
 
 // SetupSuite runs once before all tests in the suite.
-func (suite *StorageResourceTestSuite) SetupSuite() {
-	suite.T().Log("Setting up StorageResourceTestSuite - starting MinIO container and test app")
+func (s *StorageResourceTestSuite) SetupSuite() {
+	s.T().Log("Setting up StorageResourceTestSuite - starting MinIO container and test app")
 
-	suite.ctx = context.Background()
-	suite.testBucketName = testx.TestMinIOBucket
-	suite.testObjectKey = "test-upload.txt"
-	suite.testObjectData = []byte("Hello, Storage API Test!")
-	suite.testContentType = "text/plain"
+	s.ctx = context.Background()
+	s.testBucketName = testx.TestMinIOBucket
+	s.testObjectKey = "test-upload.txt"
+	s.testObjectData = []byte("Hello, Storage API Test!")
+	s.testContentType = "text/plain"
 
-	suite.minioContainer = testx.NewMinIOContainer(suite.ctx, suite.T())
+	s.minioContainer = testx.NewMinIOContainer(s.ctx, s.T())
 
-	suite.setupTestApp()
+	s.setupTestApp()
 
-	reader := bytes.NewReader(suite.testObjectData)
-	_, err := suite.service.PutObject(suite.ctx, storage.PutObjectOptions{
-		Key:         suite.testObjectKey,
+	reader := bytes.NewReader(s.testObjectData)
+	_, err := s.service.PutObject(s.ctx, storage.PutObjectOptions{
+		Key:         s.testObjectKey,
 		Reader:      reader,
-		Size:        int64(len(suite.testObjectData)),
-		ContentType: suite.testContentType,
+		Size:        int64(len(s.testObjectData)),
+		ContentType: s.testContentType,
 		Metadata: map[string]string{
 			storage.MetadataKeyOriginalFilename: "test.txt",
 		},
 	})
-	suite.Require().NoError(err, "Should upload test object for read operations")
+	s.Require().NoError(err, "Should upload test object for read operations")
 
-	suite.T().Log("StorageResourceTestSuite setup complete - MinIO and test app ready")
+	s.T().Log("StorageResourceTestSuite setup complete - MinIO and test app ready")
 }
 
 // TearDownSuite runs once after all tests in the suite.
-func (suite *StorageResourceTestSuite) TearDownSuite() {
-	suite.T().Log("Tearing down StorageResourceTestSuite")
-	suite.TearDownApp()
-	suite.T().Log("StorageResourceTestSuite teardown complete")
+func (s *StorageResourceTestSuite) TearDownSuite() {
+	s.T().Log("Tearing down StorageResourceTestSuite")
+	s.TearDownApp()
+	s.T().Log("StorageResourceTestSuite teardown complete")
 }
 
-func (suite *StorageResourceTestSuite) setupTestApp() {
+func (s *StorageResourceTestSuite) setupTestApp() {
 	// Create MinIO config with bucket
-	minioConfig := *suite.minioContainer.MinIO
+	minioConfig := *s.minioContainer.MinIO
 
-	suite.SetupApp(
+	s.SetupApp(
 		// Replace storage config with test values
 		fx.Replace(
 			&config.DataSourceConfig{
@@ -97,10 +97,10 @@ func (suite *StorageResourceTestSuite) setupTestApp() {
 				Audience: "test_app",
 			},
 		),
-		fx.Populate(&suite.service),
+		fx.Populate(&s.service),
 	)
 
-	suite.token = suite.GenerateToken(&security.Principal{
+	s.token = s.GenerateToken(&security.Principal{
 		ID:   "test-admin",
 		Name: "admin",
 	})
@@ -108,7 +108,7 @@ func (suite *StorageResourceTestSuite) setupTestApp() {
 
 // Helper methods for making API requests and reading responses
 
-func (suite *StorageResourceTestSuite) makeMultipartRequest(params map[string]string, fieldName, fileName string, fileContent []byte) *http.Response {
+func (s *StorageResourceTestSuite) makeMultipartRequest(params map[string]string, fieldName, fileName string, fileContent []byte) *http.Response {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
@@ -118,31 +118,28 @@ func (suite *StorageResourceTestSuite) makeMultipartRequest(params map[string]st
 
 	if fieldName != "" && fileName != "" {
 		part, err := writer.CreateFormFile(fieldName, fileName)
-		suite.Require().NoError(err, "Should create form file")
+		s.Require().NoError(err, "Should create form file")
 		_, err = part.Write(fileContent)
-		suite.Require().NoError(err, "Should write file content")
+		s.Require().NoError(err, "Should write file content")
 	}
 
 	err := writer.Close()
-	suite.Require().NoError(err, "Should close multipart writer")
+	s.Require().NoError(err, "Should close multipart writer")
 
 	req := httptest.NewRequest(fiber.MethodPost, "/api", body)
 	req.Header.Set(fiber.HeaderContentType, writer.FormDataContentType())
-	req.Header.Set(fiber.HeaderAuthorization, security.AuthSchemeBearer+" "+suite.token)
+	req.Header.Set(fiber.HeaderAuthorization, security.AuthSchemeBearer+" "+s.token)
 
-	resp, err := suite.App.Test(req)
-	suite.Require().NoError(err, "API request should not fail")
+	resp, err := s.App.Test(req)
+	s.Require().NoError(err, "API request should not fail")
 
 	return resp
 }
 
 // Test Cases
 
-// TestUpload tests file upload functionality.
-func (suite *StorageResourceTestSuite) TestUpload() {
-	suite.T().Log("Testing file upload functionality")
-
-	suite.Run("Success", func() {
+func (s *StorageResourceTestSuite) TestUpload() {
+	s.Run("Success", func() {
 		uploadData := []byte("Uploaded via API")
 
 		params := map[string]string{
@@ -151,62 +148,62 @@ func (suite *StorageResourceTestSuite) TestUpload() {
 			"version":  "v1",
 		}
 
-		resp := suite.makeMultipartRequest(params, "file", "test.txt", uploadData)
+		resp := s.makeMultipartRequest(params, "file", "test.txt", uploadData)
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		s.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.ReadResult(resp)
-		suite.True(body.IsOk(), "Upload should succeed")
-		suite.Equal(i18n.T(result.OkMessage), body.Message, "Should return success message")
+		body := s.ReadResult(resp)
+		s.True(body.IsOk(), "Upload should succeed")
+		s.Equal(i18n.T(result.OkMessage), body.Message, "Should return success message")
 
-		data := suite.ReadDataAsMap(body.Data)
-		suite.Equal(suite.testBucketName, data["bucket"], "Bucket should match test bucket")
-		suite.NotEmpty(data["key"], "Key should not be empty")
-		suite.Contains(data["key"], ".txt", "Key should preserve file extension")
-		suite.NotEmpty(data["eTag"], "ETag should not be empty")
-		suite.NotZero(data["size"], "Size should not be zero")
+		data := s.ReadDataAsMap(body.Data)
+		s.Equal(s.testBucketName, data["bucket"], "Bucket should match test bucket")
+		s.NotEmpty(data["key"], "Key should not be empty")
+		s.Contains(data["key"], ".txt", "Key should preserve file extension")
+		s.NotEmpty(data["eTag"], "ETag should not be empty")
+		s.NotZero(data["size"], "Size should not be zero")
 
 		key := data["key"].(string)
 		parts := strings.Split(key, "/")
-		suite.GreaterOrEqual(len(parts), 4, "Key should have date-based path structure")
-		suite.True(strings.HasSuffix(key, ".txt"), "Key should end with .txt")
+		s.GreaterOrEqual(len(parts), 4, "Key should have date-based path structure")
+		s.True(strings.HasSuffix(key, ".txt"), "Key should end with .txt")
 
-		reader, err := suite.service.GetObject(suite.ctx, storage.GetObjectOptions{
+		reader, err := s.service.GetObject(s.ctx, storage.GetObjectOptions{
 			Key: key,
 		})
-		suite.Require().NoError(err, "Should retrieve uploaded file")
+		s.Require().NoError(err, "Should retrieve uploaded file")
 
 		defer reader.Close()
 
 		content, err := io.ReadAll(reader)
-		suite.Require().NoError(err, "Should read file content")
-		suite.Equal(uploadData, content, "File content should match uploaded data")
+		s.Require().NoError(err, "Should read file content")
+		s.Equal(uploadData, content, "File content should match uploaded data")
 
-		info, err := suite.service.StatObject(suite.ctx, storage.StatObjectOptions{
+		info, err := s.service.StatObject(s.ctx, storage.StatObjectOptions{
 			Key: key,
 		})
-		suite.Require().NoError(err, "Should get file metadata")
-		suite.NotNil(info.Metadata, "Metadata should not be nil")
-		suite.Equal("test.txt", info.Metadata[storage.MetadataKeyOriginalFilename], "Original filename should be preserved in metadata")
+		s.Require().NoError(err, "Should get file metadata")
+		s.NotNil(info.Metadata, "Metadata should not be nil")
+		s.Equal("test.txt", info.Metadata[storage.MetadataKeyOriginalFilename], "Original filename should be preserved in metadata")
 	})
 
-	suite.Run("MissingFile", func() {
+	s.Run("MissingFile", func() {
 		params := map[string]string{
 			"resource": "sys/storage",
 			"action":   "upload",
 			"version":  "v1",
 		}
 
-		resp := suite.makeMultipartRequest(params, "", "", nil)
+		resp := s.makeMultipartRequest(params, "", "", nil)
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		s.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.ReadResult(resp)
-		suite.False(body.IsOk(), "Upload should fail without file")
+		body := s.ReadResult(resp)
+		s.False(body.IsOk(), "Upload should fail without file")
 	})
 
-	suite.Run("WithJSON", func() {
-		resp := suite.MakeRPCRequestWithToken(api.Request{
+	s.Run("WithJSON", func() {
+		resp := s.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "upload",
@@ -215,61 +212,58 @@ func (suite *StorageResourceTestSuite) TestUpload() {
 			Params: map[string]any{
 				"key": "test.txt",
 			},
-		}, suite.token)
+		}, s.token)
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		s.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.ReadResult(resp)
-		suite.False(body.IsOk(), "Upload should fail with JSON request")
+		body := s.ReadResult(resp)
+		s.False(body.IsOk(), "Upload should fail with JSON request")
 	})
 }
 
-// TestGetPresignedURL tests presigned URL generation for various scenarios.
-func (suite *StorageResourceTestSuite) TestGetPresignedURL() {
-	suite.T().Log("Testing presigned URL generation")
-
-	suite.Run("ForDownload", func() {
-		resp := suite.MakeRPCRequestWithToken(api.Request{
+func (s *StorageResourceTestSuite) TestGetPresignedURL() {
+	s.Run("ForDownload", func() {
+		resp := s.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "get_presigned_url",
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"key":     suite.testObjectKey,
+				"key":     s.testObjectKey,
 				"expires": 3600,
 				"method":  "GET",
 			},
-		}, suite.token)
+		}, s.token)
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		s.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.ReadResult(resp)
-		suite.True(body.IsOk(), "Presigned URL generation should succeed")
+		body := s.ReadResult(resp)
+		s.True(body.IsOk(), "Presigned URL generation should succeed")
 
-		data := suite.ReadDataAsMap(body.Data)
+		data := s.ReadDataAsMap(body.Data)
 		url, ok := data["url"].(string)
-		suite.True(ok, "URL should be a string")
-		suite.NotEmpty(url, "URL should not be empty")
-		suite.Contains(url, suite.testBucketName, "URL should contain bucket name")
-		suite.Contains(url, suite.testObjectKey, "URL should contain object key")
+		s.True(ok, "URL should be a string")
+		s.NotEmpty(url, "URL should not be empty")
+		s.Contains(url, s.testBucketName, "URL should contain bucket name")
+		s.Contains(url, s.testObjectKey, "URL should contain object key")
 
-		downloadReq, err := http.NewRequestWithContext(suite.ctx, http.MethodGet, url, nil)
-		suite.Require().NoError(err, "Should create download request")
+		downloadReq, err := http.NewRequestWithContext(s.ctx, http.MethodGet, url, nil)
+		s.Require().NoError(err, "Should create download request")
 
 		downloadResp, err := http.DefaultClient.Do(downloadReq)
-		suite.Require().NoError(err, "Should execute download request")
+		s.Require().NoError(err, "Should execute download request")
 
 		defer downloadResp.Body.Close()
 
-		suite.Equal(http.StatusOK, downloadResp.StatusCode, "Download should succeed")
+		s.Equal(http.StatusOK, downloadResp.StatusCode, "Download should succeed")
 		content, err := io.ReadAll(downloadResp.Body)
-		suite.Require().NoError(err, "Should read downloaded content")
-		suite.Equal(suite.testObjectData, content, "Downloaded content should match original data")
+		s.Require().NoError(err, "Should read downloaded content")
+		s.Equal(s.testObjectData, content, "Downloaded content should match original data")
 	})
 
-	suite.Run("ForUpload", func() {
-		resp := suite.MakeRPCRequestWithToken(api.Request{
+	s.Run("ForUpload", func() {
+		resp := s.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "get_presigned_url",
@@ -280,113 +274,110 @@ func (suite *StorageResourceTestSuite) TestGetPresignedURL() {
 				"expires": 3600,
 				"method":  "PUT",
 			},
-		}, suite.token)
+		}, s.token)
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		s.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.ReadResult(resp)
-		suite.True(body.IsOk(), "Presigned URL generation should succeed")
+		body := s.ReadResult(resp)
+		s.True(body.IsOk(), "Presigned URL generation should succeed")
 
-		data := suite.ReadDataAsMap(body.Data)
+		data := s.ReadDataAsMap(body.Data)
 		url, ok := data["url"].(string)
-		suite.True(ok, "URL should be a string")
-		suite.NotEmpty(url, "URL should not be empty")
-		suite.Contains(url, suite.testBucketName, "URL should contain bucket name")
+		s.True(ok, "URL should be a string")
+		s.NotEmpty(url, "URL should not be empty")
+		s.Contains(url, s.testBucketName, "URL should contain bucket name")
 
 		uploadData := []byte("Uploaded via presigned URL")
-		uploadReq, err := http.NewRequestWithContext(suite.ctx, http.MethodPut, url, bytes.NewReader(uploadData))
-		suite.Require().NoError(err, "Should create upload request")
+		uploadReq, err := http.NewRequestWithContext(s.ctx, http.MethodPut, url, bytes.NewReader(uploadData))
+		s.Require().NoError(err, "Should create upload request")
 
 		uploadResp, err := http.DefaultClient.Do(uploadReq)
-		suite.Require().NoError(err, "Should execute upload request")
+		s.Require().NoError(err, "Should execute upload request")
 
 		defer uploadResp.Body.Close()
 
-		suite.Equal(http.StatusOK, uploadResp.StatusCode, "Upload should succeed")
+		s.Equal(http.StatusOK, uploadResp.StatusCode, "Upload should succeed")
 	})
 
-	suite.Run("DefaultExpires", func() {
-		resp := suite.MakeRPCRequestWithToken(api.Request{
+	s.Run("DefaultExpires", func() {
+		resp := s.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "get_presigned_url",
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"key": suite.testObjectKey,
+				"key": s.testObjectKey,
 			},
-		}, suite.token)
+		}, s.token)
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		s.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.ReadResult(resp)
-		suite.True(body.IsOk(), "Presigned URL generation should succeed with default expiration")
+		body := s.ReadResult(resp)
+		s.True(body.IsOk(), "Presigned URL generation should succeed with default expiration")
 
-		data := suite.ReadDataAsMap(body.Data)
-		suite.Contains(data, "url", "Response should contain URL")
-		suite.NotEmpty(data["url"], "URL should not be empty")
+		data := s.ReadDataAsMap(body.Data)
+		s.Contains(data, "url", "Response should contain URL")
+		s.NotEmpty(data["url"], "URL should not be empty")
 	})
 
-	suite.Run("CustomExpiration", func() {
+	s.Run("CustomExpiration", func() {
 		customExpires := 7200
 
-		resp := suite.MakeRPCRequestWithToken(api.Request{
+		resp := s.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "get_presigned_url",
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"key":     suite.testObjectKey,
+				"key":     s.testObjectKey,
 				"expires": float64(customExpires),
 			},
-		}, suite.token)
+		}, s.token)
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		s.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.ReadResult(resp)
-		suite.True(body.IsOk(), "Presigned URL generation with custom expiration should succeed")
+		body := s.ReadResult(resp)
+		s.True(body.IsOk(), "Presigned URL generation with custom expiration should succeed")
 
-		data := suite.ReadDataAsMap(body.Data)
+		data := s.ReadDataAsMap(body.Data)
 		url := data["url"].(string)
-		suite.NotEmpty(url, "URL should not be empty")
-		suite.Contains(url, "X-Amz-Expires", "URL should contain expiration parameter")
+		s.NotEmpty(url, "URL should not be empty")
+		s.Contains(url, "X-Amz-Expires", "URL should contain expiration parameter")
 	})
 }
 
-// TestStatObject tests getting object metadata.
-func (suite *StorageResourceTestSuite) TestStatObject() {
-	suite.T().Log("Testing stat object functionality")
-
-	suite.Run("Success", func() {
-		resp := suite.MakeRPCRequestWithToken(api.Request{
+func (s *StorageResourceTestSuite) TestStatObject() {
+	s.Run("Success", func() {
+		resp := s.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "stat",
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"key": suite.testObjectKey,
+				"key": s.testObjectKey,
 			},
-		}, suite.token)
+		}, s.token)
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		s.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.ReadResult(resp)
-		suite.True(body.IsOk(), "Stat should succeed")
+		body := s.ReadResult(resp)
+		s.True(body.IsOk(), "Stat should succeed")
 
-		data := suite.ReadDataAsMap(body.Data)
-		suite.Equal(suite.testBucketName, data["bucket"], "Bucket should match")
-		suite.Equal(suite.testObjectKey, data["key"], "Key should match")
-		suite.NotEmpty(data["eTag"], "ETag should not be empty")
-		suite.NotZero(data["size"], "Size should not be zero")
-		suite.Equal(suite.testContentType, data["contentType"], "Content type should match")
-		suite.NotZero(data["lastModified"], "Last modified should not be zero")
-		suite.Equal("test.txt", suite.ReadDataAsMap(data["metadata"])[storage.MetadataKeyOriginalFilename], "Original filename should be in metadata")
+		data := s.ReadDataAsMap(body.Data)
+		s.Equal(s.testBucketName, data["bucket"], "Bucket should match")
+		s.Equal(s.testObjectKey, data["key"], "Key should match")
+		s.NotEmpty(data["eTag"], "ETag should not be empty")
+		s.NotZero(data["size"], "Size should not be zero")
+		s.Equal(s.testContentType, data["contentType"], "Content type should match")
+		s.NotZero(data["lastModified"], "Last modified should not be zero")
+		s.Equal("test.txt", s.ReadDataAsMap(data["metadata"])[storage.MetadataKeyOriginalFilename], "Original filename should be in metadata")
 	})
 
-	suite.Run("NotFound", func() {
-		resp := suite.MakeRPCRequestWithToken(api.Request{
+	s.Run("NotFound", func() {
+		resp := s.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "stat",
@@ -395,20 +386,17 @@ func (suite *StorageResourceTestSuite) TestStatObject() {
 			Params: map[string]any{
 				"key": "non-existent-key.txt",
 			},
-		}, suite.token)
+		}, s.token)
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		s.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.ReadResult(resp)
-		suite.False(body.IsOk(), "Stat should fail for non-existent object")
+		body := s.ReadResult(resp)
+		s.False(body.IsOk(), "Stat should fail for non-existent object")
 	})
 }
 
-// TestListObjects tests listing objects with various filters.
-func (suite *StorageResourceTestSuite) TestListObjects() {
-	suite.T().Log("Testing list objects functionality")
-
-	suite.Run("Success", func() {
+func (s *StorageResourceTestSuite) TestListObjects() {
+	s.Run("Success", func() {
 		objects := map[string][]byte{
 			"folder1/file1.txt": []byte("content1"),
 			"folder1/file2.txt": []byte("content2"),
@@ -417,16 +405,16 @@ func (suite *StorageResourceTestSuite) TestListObjects() {
 
 		for key, content := range objects {
 			reader := bytes.NewReader(content)
-			_, err := suite.service.PutObject(suite.ctx, storage.PutObjectOptions{
+			_, err := s.service.PutObject(s.ctx, storage.PutObjectOptions{
 				Key:         key,
 				Reader:      reader,
 				Size:        int64(len(content)),
 				ContentType: "text/plain",
 			})
-			suite.Require().NoError(err, "Should upload test object")
+			s.Require().NoError(err, "Should upload test object")
 		}
 
-		resp := suite.MakeRPCRequestWithToken(api.Request{
+		resp := s.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "list",
@@ -435,19 +423,19 @@ func (suite *StorageResourceTestSuite) TestListObjects() {
 			Params: map[string]any{
 				"recursive": true,
 			},
-		}, suite.token)
+		}, s.token)
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		s.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.ReadResult(resp)
-		suite.True(body.IsOk(), "List should succeed")
+		body := s.ReadResult(resp)
+		s.True(body.IsOk(), "List should succeed")
 
 		dataSlice, ok := body.Data.([]any)
-		suite.True(ok, "Data should be a slice")
-		suite.GreaterOrEqual(len(dataSlice), 4, "Should have at least 4 objects")
+		s.True(ok, "Data should be a slice")
+		s.GreaterOrEqual(len(dataSlice), 4, "Should have at least 4 objects")
 	})
 
-	suite.Run("WithPrefix", func() {
+	s.Run("WithPrefix", func() {
 		objects := map[string][]byte{
 			"prefix-test/file1.txt": []byte("content1"),
 			"prefix-test/file2.txt": []byte("content2"),
@@ -456,16 +444,16 @@ func (suite *StorageResourceTestSuite) TestListObjects() {
 
 		for key, content := range objects {
 			reader := bytes.NewReader(content)
-			_, err := suite.service.PutObject(suite.ctx, storage.PutObjectOptions{
+			_, err := s.service.PutObject(s.ctx, storage.PutObjectOptions{
 				Key:         key,
 				Reader:      reader,
 				Size:        int64(len(content)),
 				ContentType: "text/plain",
 			})
-			suite.Require().NoError(err, "Should upload test object")
+			s.Require().NoError(err, "Should upload test object")
 		}
 
-		resp := suite.MakeRPCRequestWithToken(api.Request{
+		resp := s.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "list",
@@ -475,26 +463,26 @@ func (suite *StorageResourceTestSuite) TestListObjects() {
 				"prefix":    "prefix-test/",
 				"recursive": true,
 			},
-		}, suite.token)
+		}, s.token)
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		s.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.ReadResult(resp)
-		suite.True(body.IsOk(), "List with prefix should succeed")
+		body := s.ReadResult(resp)
+		s.True(body.IsOk(), "List with prefix should succeed")
 
 		dataSlice, ok := body.Data.([]any)
-		suite.True(ok, "Data should be a slice")
-		suite.GreaterOrEqual(len(dataSlice), 2, "Should have at least 2 objects with prefix")
+		s.True(ok, "Data should be a slice")
+		s.GreaterOrEqual(len(dataSlice), 2, "Should have at least 2 objects with prefix")
 
 		for _, item := range dataSlice {
 			obj := item.(map[string]any)
 			key := obj["key"].(string)
-			suite.Contains(key, "prefix-test/", "All keys should contain prefix")
+			s.Contains(key, "prefix-test/", "All keys should contain prefix")
 		}
 	})
 
-	suite.Run("WithMaxKeys", func() {
-		resp := suite.MakeRPCRequestWithToken(api.Request{
+	s.Run("WithMaxKeys", func() {
+		resp := s.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "list",
@@ -504,23 +492,20 @@ func (suite *StorageResourceTestSuite) TestListObjects() {
 				"recursive": true,
 				"maxKeys":   1,
 			},
-		}, suite.token)
+		}, s.token)
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		s.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.ReadResult(resp)
-		suite.True(body.IsOk(), "List with maxKeys should succeed")
+		body := s.ReadResult(resp)
+		s.True(body.IsOk(), "List with maxKeys should succeed")
 
 		dataSlice, ok := body.Data.([]any)
-		suite.True(ok, "Data should be a slice")
-		suite.Equal(1, len(dataSlice), "MaxKeys should limit results to 1")
+		s.True(ok, "Data should be a slice")
+		s.Equal(1, len(dataSlice), "MaxKeys should limit results to 1")
 	})
 }
 
-// TestUploadWithMetadata tests uploading file with custom metadata.
-func (suite *StorageResourceTestSuite) TestUploadWithMetadata() {
-	suite.T().Log("Testing upload with custom metadata")
-
+func (s *StorageResourceTestSuite) TestUploadWithMetadata() {
 	uploadData := []byte("Test with metadata")
 
 	params := map[string]string{
@@ -530,31 +515,28 @@ func (suite *StorageResourceTestSuite) TestUploadWithMetadata() {
 		"params":   `{"metadata":{"author":"test-suite","version":"1.0"}}`,
 	}
 
-	resp := suite.makeMultipartRequest(params, "file", "test-metadata.txt", uploadData)
+	resp := s.makeMultipartRequest(params, "file", "test-metadata.txt", uploadData)
 
-	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+	s.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.ReadResult(resp)
-	suite.True(body.IsOk(), "Upload with metadata should succeed")
+	body := s.ReadResult(resp)
+	s.True(body.IsOk(), "Upload with metadata should succeed")
 
-	data := suite.ReadDataAsMap(body.Data)
+	data := s.ReadDataAsMap(body.Data)
 	uploadKey := data["key"].(string)
 
-	info, err := suite.service.StatObject(suite.ctx, storage.StatObjectOptions{
+	info, err := s.service.StatObject(s.ctx, storage.StatObjectOptions{
 		Key: uploadKey,
 	})
-	suite.Require().NoError(err, "Should get object metadata")
-	suite.NotNil(info.Metadata, "Metadata should not be nil")
+	s.Require().NoError(err, "Should get object metadata")
+	s.NotNil(info.Metadata, "Metadata should not be nil")
 
-	suite.Equal("test-suite", info.Metadata["Author"], "Author metadata should match")
-	suite.Equal("1.0", info.Metadata["Version"], "Version metadata should match")
-	suite.Equal("test-metadata.txt", info.Metadata[storage.MetadataKeyOriginalFilename], "Original filename should be preserved")
+	s.Equal("test-suite", info.Metadata["Author"], "Author metadata should match")
+	s.Equal("1.0", info.Metadata["Version"], "Version metadata should match")
+	s.Equal("test-metadata.txt", info.Metadata[storage.MetadataKeyOriginalFilename], "Original filename should be preserved")
 }
 
-// TestUploadWithContentType tests uploading file with custom content type.
-func (suite *StorageResourceTestSuite) TestUploadWithContentType() {
-	suite.T().Log("Testing upload with custom content type")
-
+func (s *StorageResourceTestSuite) TestUploadWithContentType() {
 	uploadData := []byte(`{"test": "data"}`)
 
 	params := map[string]string{
@@ -564,29 +546,26 @@ func (suite *StorageResourceTestSuite) TestUploadWithContentType() {
 		"params":   `{"contentType":"application/json"}`,
 	}
 
-	resp := suite.makeMultipartRequest(params, "file", "test.json", uploadData)
+	resp := s.makeMultipartRequest(params, "file", "test.json", uploadData)
 
-	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+	s.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-	body := suite.ReadResult(resp)
-	suite.True(body.IsOk(), "Upload with content type should succeed")
+	body := s.ReadResult(resp)
+	s.True(body.IsOk(), "Upload with content type should succeed")
 
-	data := suite.ReadDataAsMap(body.Data)
+	data := s.ReadDataAsMap(body.Data)
 	uploadKey := data["key"].(string)
 
-	info, err := suite.service.StatObject(suite.ctx, storage.StatObjectOptions{
+	info, err := s.service.StatObject(s.ctx, storage.StatObjectOptions{
 		Key: uploadKey,
 	})
-	suite.Require().NoError(err, "Should get object metadata")
-	suite.Equal("application/json", info.ContentType, "Content type should match")
+	s.Require().NoError(err, "Should get object metadata")
+	s.Equal("application/json", info.ContentType, "Content type should match")
 }
 
-// TestDeleteTemp tests the delete_temp action for removing temporary uploaded files.
-// It covers successful deletion, rejection of non-temp keys, idempotent deletion, and missing parameter validation.
-func (suite *StorageResourceTestSuite) TestDeleteTemp() {
-	suite.T().Log("Testing delete temporary file functionality")
-
-	suite.Run("Success", func() {
+// TestDeleteTemp covers deletion, non-temp key rejection, idempotency, and missing key validation.
+func (s *StorageResourceTestSuite) TestDeleteTemp() {
+	s.Run("Success", func() {
 		uploadData := []byte("Temporary file to delete")
 		params := map[string]string{
 			"resource": "sys/storage",
@@ -594,23 +573,23 @@ func (suite *StorageResourceTestSuite) TestDeleteTemp() {
 			"version":  "v1",
 		}
 
-		uploadResp := suite.makeMultipartRequest(params, "file", "temp.txt", uploadData)
-		suite.Equal(200, uploadResp.StatusCode, "Upload should return 200 OK")
+		uploadResp := s.makeMultipartRequest(params, "file", "temp.txt", uploadData)
+		s.Equal(200, uploadResp.StatusCode, "Upload should return 200 OK")
 
-		uploadBody := suite.ReadResult(uploadResp)
-		suite.True(uploadBody.IsOk(), "Upload should succeed")
+		uploadBody := s.ReadResult(uploadResp)
+		s.True(uploadBody.IsOk(), "Upload should succeed")
 
-		uploadResult := suite.ReadDataAsMap(uploadBody.Data)
+		uploadResult := s.ReadDataAsMap(uploadBody.Data)
 		tempKey := uploadResult["key"].(string)
-		suite.True(strings.HasPrefix(tempKey, "temp/"), "Uploaded key should have temp/ prefix")
-		suite.T().Logf("Uploaded temp file: %s", tempKey)
+		s.True(strings.HasPrefix(tempKey, "temp/"), "Uploaded key should have temp/ prefix")
+		s.T().Logf("Uploaded temp file: %s", tempKey)
 
-		_, err := suite.service.StatObject(suite.ctx, storage.StatObjectOptions{
+		_, err := s.service.StatObject(s.ctx, storage.StatObjectOptions{
 			Key: tempKey,
 		})
-		suite.Require().NoError(err, "Uploaded file should exist")
+		s.Require().NoError(err, "Uploaded file should exist")
 
-		deleteResp := suite.MakeRPCRequestWithToken(api.Request{
+		deleteResp := s.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "delete_temp",
@@ -619,24 +598,24 @@ func (suite *StorageResourceTestSuite) TestDeleteTemp() {
 			Params: map[string]any{
 				"key": tempKey,
 			},
-		}, suite.token)
+		}, s.token)
 
-		suite.Equal(200, deleteResp.StatusCode, "Should return 200 OK")
+		s.Equal(200, deleteResp.StatusCode, "Should return 200 OK")
 
-		deleteBody := suite.ReadResult(deleteResp)
-		suite.True(deleteBody.IsOk(), "Delete temp should succeed")
-		suite.Equal(i18n.T(result.OkMessage), deleteBody.Message, "Should return success message")
-		suite.T().Logf("Deleted temp file: %s", tempKey)
+		deleteBody := s.ReadResult(deleteResp)
+		s.True(deleteBody.IsOk(), "Delete temp should succeed")
+		s.Equal(i18n.T(result.OkMessage), deleteBody.Message, "Should return success message")
+		s.T().Logf("Deleted temp file: %s", tempKey)
 
-		_, err = suite.service.StatObject(suite.ctx, storage.StatObjectOptions{
+		_, err = s.service.StatObject(s.ctx, storage.StatObjectOptions{
 			Key: tempKey,
 		})
-		suite.Error(err, "File should not exist after deletion")
+		s.Error(err, "File should not exist after deletion")
 	})
 
-	suite.Run("NonTempKeyRejected", func() {
+	s.Run("NonTempKeyRejected", func() {
 		nonTempKey := "permanent/file.txt"
-		resp := suite.MakeRPCRequestWithToken(api.Request{
+		resp := s.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "delete_temp",
@@ -645,19 +624,19 @@ func (suite *StorageResourceTestSuite) TestDeleteTemp() {
 			Params: map[string]any{
 				"key": nonTempKey,
 			},
-		}, suite.token)
+		}, s.token)
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		s.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.ReadResult(resp)
-		suite.False(body.IsOk(), "Delete temp should fail for non-temp key")
-		suite.Equal(body.Message, i18n.T("invalid_temp_key"), "Error message should indicate temp file restriction")
-		suite.T().Logf("Rejected non-temp key: %s (message: %s)", nonTempKey, body.Message)
+		body := s.ReadResult(resp)
+		s.False(body.IsOk(), "Delete temp should fail for non-temp key")
+		s.Equal(body.Message, i18n.T("invalid_temp_key"), "Error message should indicate temp file restriction")
+		s.T().Logf("Rejected non-temp key: %s (message: %s)", nonTempKey, body.Message)
 	})
 
-	suite.Run("NonExistentFile", func() {
+	s.Run("NonExistentFile", func() {
 		nonExistentKey := "temp/non-existent-file.txt"
-		resp := suite.MakeRPCRequestWithToken(api.Request{
+		resp := s.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "delete_temp",
@@ -666,37 +645,34 @@ func (suite *StorageResourceTestSuite) TestDeleteTemp() {
 			Params: map[string]any{
 				"key": nonExistentKey,
 			},
-		}, suite.token)
+		}, s.token)
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		s.Equal(200, resp.StatusCode, "Should return 200 OK")
 
-		body := suite.ReadResult(resp)
-		suite.True(body.IsOk(), "Delete temp should succeed even for non-existent file")
-		suite.T().Logf("Idempotent deletion for non-existent key: %s", nonExistentKey)
+		body := s.ReadResult(resp)
+		s.True(body.IsOk(), "Delete temp should succeed even for non-existent file")
+		s.T().Logf("Idempotent deletion for non-existent key: %s", nonExistentKey)
 	})
 
-	suite.Run("MissingKey", func() {
-		resp := suite.MakeRPCRequestWithToken(api.Request{
+	s.Run("MissingKey", func() {
+		resp := s.MakeRPCRequestWithToken(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
 				Action:   "delete_temp",
 				Version:  "v1",
 			},
 			Params: map[string]any{},
-		}, suite.token)
+		}, s.token)
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		s.Equal(400, resp.StatusCode, "Should return 400 Bad Request")
 
-		body := suite.ReadResult(resp)
-		suite.False(body.IsOk(), "Delete temp should fail without key")
-		suite.T().Logf("Rejected request without key (message: %s)", body.Message)
+		body := s.ReadResult(resp)
+		s.False(body.IsOk(), "Delete temp should fail without key")
+		s.T().Logf("Rejected request without key (message: %s)", body.Message)
 	})
 }
 
-// TestConcurrentUploads tests concurrent file uploads for thread safety.
-func (suite *StorageResourceTestSuite) TestConcurrentUploads() {
-	suite.T().Log("Testing concurrent uploads")
-
+func (s *StorageResourceTestSuite) TestConcurrentUploads() {
 	numUploads := 5
 	done := make(chan bool, numUploads)
 
@@ -711,11 +687,11 @@ func (suite *StorageResourceTestSuite) TestConcurrentUploads() {
 				"version":  "v1",
 			}
 
-			resp := suite.makeMultipartRequest(params, "file", fmt.Sprintf("test%d.txt", index), uploadData)
-			suite.Equal(200, resp.StatusCode, "Concurrent upload should return 200 OK")
+			resp := s.makeMultipartRequest(params, "file", fmt.Sprintf("test%d.txt", index), uploadData)
+			s.Equal(200, resp.StatusCode, "Concurrent upload should return 200 OK")
 
-			body := suite.ReadResult(resp)
-			suite.True(body.IsOk(), "Concurrent upload should succeed")
+			body := s.ReadResult(resp)
+			s.True(body.IsOk(), "Concurrent upload should succeed")
 		}(i)
 	}
 
@@ -725,7 +701,7 @@ func (suite *StorageResourceTestSuite) TestConcurrentUploads() {
 		select {
 		case <-done:
 		case <-timeout:
-			suite.Fail("Concurrent upload test timed out")
+			s.Fail("Concurrent upload test timed out")
 
 			return
 		}
