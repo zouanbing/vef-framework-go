@@ -334,7 +334,7 @@ func (suite *UpdateTestSuite) TestUpdateNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+		suite.Equal(400, resp.StatusCode, "Should return 400 status code for validation error")
 		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail when email format is invalid")
 
@@ -357,7 +357,7 @@ func (suite *UpdateTestSuite) TestUpdateNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+		suite.Equal(400, resp.StatusCode, "Should return 400 status code for validation error")
 		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail when age is less than 1")
 

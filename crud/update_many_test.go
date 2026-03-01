@@ -321,7 +321,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 			Params: map[string]any{"list": []any{}},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+		suite.Equal(400, resp.StatusCode, "Should return 400 status code for validation error")
 		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail when list is empty")
 
@@ -425,7 +425,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+		suite.Equal(400, resp.StatusCode, "Should return 400 status code for validation error")
 		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail when email format is invalid in batch")
 
@@ -459,7 +459,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+		suite.Equal(400, resp.StatusCode, "Should return 400 status code for validation error")
 		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail when age is less than 1 in batch")
 

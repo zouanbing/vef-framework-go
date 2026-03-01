@@ -315,7 +315,7 @@ func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+		suite.Equal(400, resp.StatusCode, "Should return 400 status code for validation error")
 		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail when list is empty")
 
@@ -347,7 +347,7 @@ func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+		suite.Equal(400, resp.StatusCode, "Should return 400 status code for validation error")
 		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail when required field 'name' is missing in batch")
 
@@ -379,7 +379,7 @@ func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+		suite.Equal(400, resp.StatusCode, "Should return 400 status code for validation error")
 		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail when email format is invalid in batch")
 
@@ -411,7 +411,7 @@ func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+		suite.Equal(400, resp.StatusCode, "Should return 400 status code for validation error")
 		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail when age is greater than 120 in batch")
 
@@ -443,7 +443,7 @@ func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+		suite.Equal(400, resp.StatusCode, "Should return 400 status code for validation error")
 		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail due to duplicate email in same batch")
 
@@ -495,7 +495,7 @@ func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+		suite.Equal(400, resp.StatusCode, "Should return 400 status code for validation error")
 		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail due to duplicate email with existing record")
 
@@ -533,7 +533,7 @@ func (suite *CreateManyTestSuite) TestCreateManyTransactionRollback() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+		suite.Equal(400, resp.StatusCode, "Should return 400 status code for validation error")
 		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail when one item in batch is invalid")
 
@@ -566,8 +566,8 @@ func (suite *CreateManyTestSuite) TestCreateManyEmptyList() {
 		},
 	})
 
-	// Empty list may return OK with empty result or fail validation
-	suite.Contains([]int{200, 500}, resp.StatusCode, "Should handle empty list")
+	// Empty list fails validation and returns 400
+	suite.Contains([]int{200, 400, 500}, resp.StatusCode, "Should handle empty list")
 
 	suite.T().Logf("CreateMany with empty list handled")
 }

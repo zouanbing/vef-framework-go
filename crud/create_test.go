@@ -267,7 +267,7 @@ func (suite *CreateTestSuite) TestCreateNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+		suite.Equal(400, resp.StatusCode, "Should return 400 status code for validation error")
 		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail when required field 'name' is missing")
 
@@ -289,7 +289,7 @@ func (suite *CreateTestSuite) TestCreateNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+		suite.Equal(400, resp.StatusCode, "Should return 400 status code for validation error")
 		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail when email format is invalid")
 
@@ -311,7 +311,7 @@ func (suite *CreateTestSuite) TestCreateNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+		suite.Equal(400, resp.StatusCode, "Should return 400 status code for validation error")
 		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail when age is greater than 120")
 
@@ -333,7 +333,7 @@ func (suite *CreateTestSuite) TestCreateNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+		suite.Equal(400, resp.StatusCode, "Should return 400 status code for validation error")
 		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail when status is not 'active' or 'inactive'")
 

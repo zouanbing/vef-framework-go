@@ -309,7 +309,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+		suite.Equal(400, resp.StatusCode, "Should return 400 status code for validation error")
 		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail when pks list is empty")
 
@@ -348,7 +348,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+		suite.Equal(400, resp.StatusCode, "Should return 400 status code for validation error")
 		body := suite.ReadResult(resp)
 		suite.False(body.IsOk(), "Should fail when primary keys parameter is missing")
 		suite.Contains(body.Message, i18n.T("batch_delete_pks"), "Message should indicate primary keys is required")
@@ -670,7 +670,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyPreHookError() {
 		},
 	})
 
-	suite.Contains([]int{200, 500}, resp.StatusCode, "Should return error status code")
+	suite.Contains([]int{200, 400, 500}, resp.StatusCode, "Should return error status code")
 
 	suite.T().Logf("DeleteMany failed as expected due to pre-hook error")
 }
@@ -692,7 +692,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyPostHookError() {
 		},
 	})
 
-	suite.Contains([]int{200, 500}, resp.StatusCode, "Should return error status code")
+	suite.Contains([]int{200, 400, 500}, resp.StatusCode, "Should return error status code")
 
 	suite.T().Logf("DeleteMany failed as expected due to post-hook error")
 }
