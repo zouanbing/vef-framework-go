@@ -1,8 +1,10 @@
 package command
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"text/template"
 
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/contextx"
@@ -12,61 +14,61 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/samber/lo"
 )
 
 // StartInstanceCmd starts a new approval flow instance.
 type StartInstanceCmd struct {
 	cqrs.BaseCommand
+
 	TenantID         string
 	FlowCode         string
-	ApplicantID      string
-	ApplicantDeptID  *string
+	Applicant        approval.OperatorInfo
 	BusinessRecordID *string
 	FormData         map[string]any
 }
 
 // StartInstanceHandler handles the StartInstanceCmd command.
 type StartInstanceHandler struct {
-	db            orm.DB
-	engine        *engine.FlowEngine
-	instanceNoGen approval.InstanceNoGenerator
-	publisher     *dispatcher.EventPublisher
-	validSvc      *service.ValidationService
-	flowSvc       *service.FlowService
+	db                  orm.DB
+	engine              *engine.FlowEngine
+	instanceNoGenerator approval.InstanceNoGenerator
+	publisher           *dispatcher.EventPublisher
+	validationSvc       *service.ValidationService
 }
 
 // NewStartInstanceHandler creates a new StartInstanceHandler.
 func NewStartInstanceHandler(
 	db orm.DB,
-	eng *engine.FlowEngine,
-	instanceNoGen approval.InstanceNoGenerator,
-	pub *dispatcher.EventPublisher,
-	validSvc *service.ValidationService,
-	flowSvc *service.FlowService,
+	engine *engine.FlowEngine,
+	instanceNoGenerator approval.InstanceNoGenerator,
+	publisher *dispatcher.EventPublisher,
+	validationSvc *service.ValidationService,
 ) *StartInstanceHandler {
 	return &StartInstanceHandler{
-		db:            db,
-		engine:        eng,
-		instanceNoGen: instanceNoGen,
-		publisher:     pub,
-		validSvc:      validSvc,
-		flowSvc:       flowSvc,
+		db:                  db,
+		engine:              engine,
+		instanceNoGenerator: instanceNoGenerator,
+		publisher:           publisher,
+		validationSvc:       validationSvc,
 	}
 }
 
 func (h *StartInstanceHandler) Handle(ctx context.Context, cmd StartInstanceCmd) (*approval.Instance, error) {
 	db := contextx.DB(ctx, h.db)
 
-	tenantID := cmd.TenantID
-	if tenantID == "" {
-		tenantID = "default"
-	}
+	var (
+		tenantID = lo.CoalesceOrEmpty(cmd.TenantID, "default")
+		flow     approval.Flow
+	)
 
-	var flow approval.Flow
-	if err := db.NewSelect().Model(&flow).Where(func(cb orm.ConditionBuilder) {
-		cb.Equals("tenant_id", tenantID)
-		cb.Equals("code", cmd.FlowCode)
-	}).Scan(ctx); err != nil {
+	if err := db.NewSelect().
+		Model(&flow).
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("tenant_id", tenantID).
+				Equals("code", cmd.FlowCode)
+		}).
+		Scan(ctx); err != nil {
 		return nil, shared.ErrFlowNotFound
 	}
 
@@ -75,7 +77,7 @@ func (h *StartInstanceHandler) Handle(ctx context.Context, cmd StartInstanceCmd)
 	}
 
 	if !flow.IsAllInitiateAllowed {
-		allowed, err := h.validSvc.CheckInitiationPermission(ctx, db, flow.ID, cmd.ApplicantID, cmd.ApplicantDeptID)
+		allowed, err := h.validationSvc.CheckInitiationPermission(ctx, db, flow.ID, cmd.Applicant.ID, cmd.Applicant.DeptID)
 		if err != nil {
 			return nil, fmt.Errorf("check initiation permission: %w", err)
 		}
@@ -85,21 +87,29 @@ func (h *StartInstanceHandler) Handle(ctx context.Context, cmd StartInstanceCmd)
 	}
 
 	var version approval.FlowVersion
-	if err := db.NewSelect().Model(&version).Where(func(cb orm.ConditionBuilder) {
-		cb.Equals("flow_id", flow.ID)
-		cb.Equals("status", string(approval.VersionPublished))
-	}).Scan(ctx); err != nil {
+	if err := db.NewSelect().
+		Model(&version).
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("flow_id", flow.ID).
+				Equals("status", approval.VersionPublished)
+		}).
+		Scan(ctx); err != nil {
 		return nil, shared.ErrNoPublishedVersion
 	}
 
-	instanceNo, err := h.instanceNoGen.Generate(ctx, cmd.FlowCode)
+	instanceNo, err := h.instanceNoGenerator.Generate(ctx, cmd.FlowCode)
 	if err != nil {
 		return nil, fmt.Errorf("generate instance number: %w", err)
 	}
 
-	title, err := h.flowSvc.RenderTitle(
+	title, err := renderInstanceTitle(
 		flow.InstanceTitleTemplate,
-		h.flowSvc.BuildTitleTemplateData(flow.Name, flow.Code, instanceNo, cmd.FormData),
+		map[string]any{
+			"flowName":   flow.Name,
+			"flowCode":   flow.Code,
+			"instanceNo": instanceNo,
+			"formData":   cmd.FormData,
+		},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("render instance title: %w", err)
@@ -111,29 +121,32 @@ func (h *StartInstanceHandler) Handle(ctx context.Context, cmd StartInstanceCmd)
 		FlowVersionID:    version.ID,
 		Title:            title,
 		InstanceNo:       instanceNo,
-		ApplicantID:      cmd.ApplicantID,
-		ApplicantDeptID:  cmd.ApplicantDeptID,
+		ApplicantID:      cmd.Applicant.ID,
+		ApplicantDeptID:  cmd.Applicant.DeptID,
 		Status:           approval.InstanceRunning,
 		BusinessRecordID: cmd.BusinessRecordID,
 		FormData:         cmd.FormData,
 	}
 
-	if _, err := db.NewInsert().Model(instance).Exec(ctx); err != nil {
+	if _, err := db.NewInsert().
+		Model(instance).
+		Exec(ctx); err != nil {
 		return nil, fmt.Errorf("insert instance: %w", err)
 	}
 
-	submitLog := &approval.ActionLog{
-		InstanceID: instance.ID,
-		Action:     approval.ActionSubmit,
-		OperatorID: cmd.ApplicantID,
-	}
-	if _, err := db.NewInsert().Model(submitLog).Exec(ctx); err != nil {
+	submitLog := cmd.Applicant.NewActionLog(instance.ID, approval.ActionSubmit)
+	if _, err := db.NewInsert().
+		Model(submitLog).
+		Exec(ctx); err != nil {
 		return nil, fmt.Errorf("insert submit log: %w", err)
 	}
 
-	if err := h.publisher.PublishAll(ctx, db, []approval.DomainEvent{
-		approval.NewInstanceCreatedEvent(instance.ID, flow.ID, title, cmd.ApplicantID),
-	}); err != nil {
+	if err := h.publisher.PublishAll(
+		ctx, db,
+		[]approval.DomainEvent{
+			approval.NewInstanceCreatedEvent(instance.ID, flow.ID, title, cmd.Applicant.ID),
+		},
+	); err != nil {
 		return nil, fmt.Errorf("publish instance created event: %w", err)
 	}
 
@@ -141,9 +154,31 @@ func (h *StartInstanceHandler) Handle(ctx context.Context, cmd StartInstanceCmd)
 		return nil, fmt.Errorf("start process: %w", err)
 	}
 
-	if _, err := db.NewUpdate().Model(instance).WherePK().Exec(ctx); err != nil {
+	if _, err := db.NewUpdate().
+		Model(instance).
+		WherePK().
+		Exec(ctx); err != nil {
 		return nil, fmt.Errorf("update instance after start: %w", err)
 	}
 
 	return instance, nil
+}
+
+// renderInstanceTitle renders an instance title from a Go text/template string.
+func renderInstanceTitle(titleTemplate string, data map[string]any) (string, error) {
+	if titleTemplate == "" {
+		return data["flowName"].(string) + "-" + data["instanceNo"].(string), nil
+	}
+
+	tmpl, err := template.New("title").Parse(titleTemplate)
+	if err != nil {
+		return "", fmt.Errorf("parse title template: %w", err)
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return "", fmt.Errorf("execute title template: %w", err)
+	}
+
+	return buf.String(), nil
 }

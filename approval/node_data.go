@@ -37,13 +37,18 @@ type TaskNodeData struct {
 	TimeoutAction            TimeoutAction         `json:"timeoutAction,omitempty"`
 	TimeoutNotifyBeforeHours int                   `json:"timeoutNotifyBeforeHours,omitempty"`
 	UrgeCooldownMinutes      int                   `json:"urgeCooldownMinutes,omitempty"`
-	CCList                   []CCDefinition        `json:"ccList,omitempty"`
+	CCs                      []CCDefinition        `json:"ccs,omitempty"`
 	FieldPermissions         map[string]Permission `json:"fieldPermissions,omitempty"`
 }
 
 // GetAssignees returns the assignee definitions from TaskNodeData.
 func (d *TaskNodeData) GetAssignees() []AssigneeDefinition {
 	return d.Assignees
+}
+
+// GetCCs returns the CC definitions from TaskNodeData.
+func (d *TaskNodeData) GetCCs() []CCDefinition {
+	return d.CCs
 }
 
 // applyTaskNodeData applies TaskNodeData fields to a FlowNode.
@@ -115,6 +120,7 @@ type ApprovalNodeData struct {
 	DuplicateHandlerAction  DuplicateHandlerAction `json:"duplicateHandlerAction,omitempty"`
 	RollbackType            RollbackType           `json:"rollbackType,omitempty"`
 	RollbackDataStrategy    RollbackDataStrategy   `json:"rollbackDataStrategy,omitempty"`
+	RollbackTargetKeys      []string               `json:"rollbackTargetKeys,omitempty"`
 	IsRollbackAllowed       bool                   `json:"isRollbackAllowed,omitempty"`
 	IsAddAssigneeAllowed    bool                   `json:"isAddAssigneeAllowed,omitempty"`
 	AddAssigneeTypes        []string               `json:"addAssigneeTypes,omitempty"`
@@ -158,6 +164,7 @@ func (d *ApprovalNodeData) ApplyTo(node *FlowNode) {
 		node.RollbackDataStrategy = d.RollbackDataStrategy
 	}
 
+	node.RollbackTargetKeys = d.RollbackTargetKeys
 	node.IsRollbackAllowed = d.IsRollbackAllowed
 	node.IsAddAssigneeAllowed = d.IsAddAssigneeAllowed
 	node.AddAssigneeTypes = d.AddAssigneeTypes
@@ -188,13 +195,18 @@ func (d *HandleNodeData) ApplyTo(node *FlowNode) {
 type CCNodeData struct {
 	BaseNodeData
 
-	CCList                []CCDefinition        `json:"ccList,omitempty"`
+	CCs                   []CCDefinition        `json:"ccs,omitempty"`
 	IsReadConfirmRequired bool                  `json:"isReadConfirmRequired,omitempty"`
 	FieldPermissions      map[string]Permission `json:"fieldPermissions,omitempty"`
 }
 
 // Kind returns the node kind.
 func (d *CCNodeData) Kind() NodeKind { return NodeCC }
+
+// GetCCs returns the CC definitions from CCNodeData.
+func (d *CCNodeData) GetCCs() []CCDefinition {
+	return d.CCs
+}
 
 // ApplyTo applies CC node data to a FlowNode.
 func (d *CCNodeData) ApplyTo(node *FlowNode) {
@@ -219,14 +231,4 @@ func (d *ConditionNodeData) Kind() NodeKind { return NodeCondition }
 func (d *ConditionNodeData) ApplyTo(node *FlowNode) {
 	applyBaseNodeData(node, &d.BaseNodeData)
 	node.Branches = d.Branches
-}
-
-// --- Supporting types ---
-
-// CCDefinition represents a CC recipient in node data.
-type CCDefinition struct {
-	Kind      CCKind   `json:"kind"`
-	IDs       []string `json:"ids,omitempty"`
-	FormField string   `json:"formField,omitempty"`
-	CCTiming  CCTiming `json:"ccTiming,omitempty"`
 }

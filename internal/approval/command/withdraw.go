@@ -19,7 +19,7 @@ import (
 type WithdrawCmd struct {
 	cqrs.BaseCommand
 	InstanceID string
-	OperatorID string
+	Operator   approval.OperatorInfo
 	Reason     string
 }
 
@@ -49,7 +49,7 @@ func (h *WithdrawHandler) Handle(ctx context.Context, cmd WithdrawCmd) (cqrs.Uni
 		return cqrs.Unit{}, shared.ErrInstanceNotFound
 	}
 
-	if instance.ApplicantID != cmd.OperatorID {
+	if instance.ApplicantID != cmd.Operator.ID {
 		return cqrs.Unit{}, shared.ErrNotApplicant
 	}
 
@@ -69,11 +69,7 @@ func (h *WithdrawHandler) Handle(ctx context.Context, cmd WithdrawCmd) (cqrs.Uni
 		return cqrs.Unit{}, fmt.Errorf("cancel tasks on withdraw: %w", err)
 	}
 
-	actionLog := &approval.ActionLog{
-		InstanceID: cmd.InstanceID,
-		Action:     approval.ActionWithdraw,
-		OperatorID: cmd.OperatorID,
-	}
+	actionLog := cmd.Operator.NewActionLog(cmd.InstanceID, approval.ActionWithdraw)
 	if cmd.Reason != "" {
 		actionLog.Opinion = new(cmd.Reason)
 	}
@@ -82,7 +78,7 @@ func (h *WithdrawHandler) Handle(ctx context.Context, cmd WithdrawCmd) (cqrs.Uni
 	}
 
 	if err := h.publisher.PublishAll(ctx, db, []approval.DomainEvent{
-		approval.NewInstanceWithdrawnEvent(cmd.InstanceID, cmd.OperatorID),
+		approval.NewInstanceWithdrawnEvent(cmd.InstanceID, cmd.Operator.ID),
 	}); err != nil {
 		return cqrs.Unit{}, err
 	}

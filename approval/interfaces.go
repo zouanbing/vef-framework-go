@@ -3,6 +3,7 @@ package approval
 import (
 	"context"
 
+	"github.com/ilxqx/vef-framework-go/security"
 	"github.com/ilxqx/vef-framework-go/timex"
 )
 
@@ -73,6 +74,12 @@ type NodeData interface {
 	GetName() string
 	GetDescription() *string
 	ApplyTo(node *FlowNode)
+}
+
+// PrincipalDeptResolver resolves department info from a security principal.
+// Implemented by host apps since Principal.Details is business-specific.
+type PrincipalDeptResolver interface {
+	Resolve(ctx context.Context, principal *security.Principal) (deptID *string, deptName *string, err error)
 }
 
 // InstanceNoGenerator generates unique instance numbers for flow instances.

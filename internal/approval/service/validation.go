@@ -75,6 +75,20 @@ func (s *ValidationService) ValidateRollbackTarget(ctx context.Context, db orm.D
 		if count == 0 {
 			return shared.ErrInvalidRollbackTarget
 		}
+
+	case approval.RollbackSpecified:
+		var targetNode approval.FlowNode
+		if err := db.NewSelect().Model(&targetNode).
+			Where(func(c orm.ConditionBuilder) {
+				c.Equals("id", targetNodeID)
+				c.Equals("flow_version_id", instance.FlowVersionID)
+			}).Scan(ctx); err != nil {
+			return shared.ErrInvalidRollbackTarget
+		}
+
+		if !slices.Contains(currentNode.RollbackTargetKeys, targetNode.Key) {
+			return shared.ErrInvalidRollbackTarget
+		}
 	}
 
 	return nil
@@ -107,9 +121,12 @@ func FilterEditableFormData(formData map[string]any, permissions map[string]appr
 func (s *ValidationService) CheckInitiationPermission(ctx context.Context, db orm.DB, flowID, applicantID string, applicantDeptID *string) (bool, error) {
 	var initiators []approval.FlowInitiator
 
-	if err := db.NewSelect().Model(&initiators).Where(func(c orm.ConditionBuilder) {
-		c.Equals("flow_id", flowID)
-	}).Scan(ctx); err != nil {
+	if err := db.NewSelect().
+		Model(&initiators).
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("flow_id", flowID)
+		}).
+		Scan(ctx); err != nil {
 		return false, fmt.Errorf("query flow initiators: %w", err)
 	}
 
@@ -117,10 +134,10 @@ func (s *ValidationService) CheckInitiationPermission(ctx context.Context, db or
 		return false, nil
 	}
 
-	for _, ini := range initiators {
-		switch ini.Kind {
+	for _, initiator := range initiators {
+		switch initiator.Kind {
 		case approval.InitiatorUser:
-			if slices.Contains(ini.IDs, applicantID) {
+			if slices.Contains(initiator.IDs, applicantID) {
 				return true, nil
 			}
 
@@ -129,7 +146,7 @@ func (s *ValidationService) CheckInitiationPermission(ctx context.Context, db or
 				continue
 			}
 
-			if slices.Contains(ini.IDs, *applicantDeptID) {
+			if slices.Contains(initiator.IDs, *applicantDeptID) {
 				return true, nil
 			}
 
@@ -138,7 +155,7 @@ func (s *ValidationService) CheckInitiationPermission(ctx context.Context, db or
 				continue
 			}
 
-			for _, roleID := range ini.IDs {
+			for _, roleID := range initiator.IDs {
 				users, err := s.assigneeService.GetRoleUsers(ctx, roleID)
 				if err != nil {
 					return false, fmt.Errorf("get users by role %s: %w", roleID, err)

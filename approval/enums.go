@@ -111,7 +111,8 @@ const (
 	RollbackNone     RollbackType = "none"
 	RollbackPrevious RollbackType = "previous" // To previous node
 	RollbackStart    RollbackType = "start"    // To start node (applicant)
-	RollbackAny      RollbackType = "any"      // To any node
+	RollbackAny       RollbackType = "any"       // To any node
+	RollbackSpecified RollbackType = "specified" // To specified nodes
 )
 
 // RollbackDataStrategy represents the strategy for handling form data during rollback.
@@ -228,7 +229,8 @@ const (
 	ActionRollback       ActionType = "rollback"
 	ActionAddAssignee    ActionType = "add_assignee"
 	ActionRemoveAssignee ActionType = "remove_assignee"
-	ActionExecute        ActionType = "execute" // System execution action
+	ActionExecute        ActionType = "execute"  // System execution action
+	ActionResubmit       ActionType = "resubmit" // Resubmit a returned instance
 )
 
 // CCKind represents the kind of CC recipient.

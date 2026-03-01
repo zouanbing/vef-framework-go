@@ -17,6 +17,7 @@ type DeployFlowCmd struct {
 	cqrs.BaseCommand
 
 	FlowID         string
+	Description    *string
 	FlowDefinition approval.FlowDefinition
 	FormDefinition *approval.FormDefinition
 }
@@ -26,92 +27,114 @@ type AssigneeProvider interface {
 	GetAssignees() []approval.AssigneeDefinition
 }
 
+// CCProvider is the interface for accessing CC list from typed node data.
+type CCProvider interface {
+	GetCCs() []approval.CCDefinition
+}
+
 // DeployFlowHandler handles the DeployFlowCmd command.
 type DeployFlowHandler struct {
-	db      orm.DB
-	flowSvc *service.FlowService
+	db         orm.DB
+	flowDefSvc *service.FlowDefinitionService
 }
 
 // NewDeployFlowHandler creates a new DeployFlowHandler.
-func NewDeployFlowHandler(db orm.DB, flowSvc *service.FlowService) *DeployFlowHandler {
-	return &DeployFlowHandler{db: db, flowSvc: flowSvc}
+func NewDeployFlowHandler(db orm.DB, flowDefSvc *service.FlowDefinitionService) *DeployFlowHandler {
+	return &DeployFlowHandler{db: db, flowDefSvc: flowDefSvc}
 }
 
 func (h *DeployFlowHandler) Handle(ctx context.Context, cmd DeployFlowCmd) (*approval.FlowVersion, error) {
-	if err := h.flowSvc.ValidateFlowDefinition(&cmd.FlowDefinition); err != nil {
+	if err := h.flowDefSvc.ValidateFlowDefinition(&cmd.FlowDefinition); err != nil {
 		return nil, fmt.Errorf("%w: %v", shared.ErrInvalidFlowDesign, err)
 	}
 
 	db := contextx.DB(ctx, h.db)
 
-	// Load existing flow
 	var flow approval.Flow
-	if err := db.NewSelect().Model(&flow).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", cmd.FlowID)
-	}).Scan(ctx); err != nil {
+	flow.ID = cmd.FlowID
+	if err := db.NewSelect().
+		Model(&flow).
+		Select("current_version").
+		WherePK().
+		Scan(ctx); err != nil {
 		return nil, shared.ErrFlowNotFound
 	}
 
-	// Bump version
-	flow.CurrentVersion++
-	if _, err := db.NewUpdate().Model(&flow).WherePK().Exec(ctx); err != nil {
-		return nil, fmt.Errorf("update flow version: %w", err)
-	}
-
-	// Create new version
 	version := approval.FlowVersion{
-		FlowID:     flow.ID,
-		Version:    flow.CurrentVersion,
-		Status:     approval.VersionDraft,
-		FlowSchema: &cmd.FlowDefinition,
-		FormSchema: cmd.FormDefinition,
+		FlowID:      flow.ID,
+		Version:     flow.CurrentVersion + 1,
+		Status:      approval.VersionDraft,
+		Description: cmd.Description,
+		FlowSchema:  &cmd.FlowDefinition,
+		FormSchema:  cmd.FormDefinition,
 	}
-	if _, err := db.NewInsert().Model(&version).Exec(ctx); err != nil {
+	if _, err := db.NewInsert().
+		Model(&version).
+		Exec(ctx); err != nil {
 		return nil, fmt.Errorf("insert version: %w", err)
 	}
 
 	// Create nodes and build nodeKey -> nodeID mapping
 	nodeKeyToID := make(map[string]string, len(cmd.FlowDefinition.Nodes))
 
-	for _, nd := range cmd.FlowDefinition.Nodes {
-		nodeData, err := nd.ParseData()
+	for _, nodeDef := range cmd.FlowDefinition.Nodes {
+		nodeData, err := nodeDef.ParseData()
 		if err != nil {
-			return nil, fmt.Errorf("parse node %q data: %w", nd.ID, err)
+			return nil, fmt.Errorf("parse node %q data: %w", nodeDef.ID, err)
 		}
 
 		node := approval.FlowNode{
 			FlowVersionID: version.ID,
-			Key:           nd.ID,
-			Kind:          nd.Type,
+			Key:           nodeDef.ID,
+			Kind:          nodeDef.Type,
 		}
 		nodeData.ApplyTo(&node)
 
-		if _, err := db.NewInsert().Model(&node).Exec(ctx); err != nil {
+		if _, err := db.NewInsert().
+			Model(&node).
+			Exec(ctx); err != nil {
 			return nil, fmt.Errorf("insert node: %w", err)
 		}
 
-		nodeKeyToID[nd.ID] = node.ID
+		nodeKeyToID[nodeDef.ID] = node.ID
 
 		if ap, ok := nodeData.(AssigneeProvider); ok {
 			for _, assigneeDef := range ap.GetAssignees() {
 				assignee := approval.FlowNodeAssignee{
 					NodeID:    node.ID,
-					Kind:      approval.AssigneeKind(assigneeDef.Kind),
+					Kind:      assigneeDef.Kind,
 					IDs:       assigneeDef.IDs,
+					FormField: assigneeDef.FormField,
 					SortOrder: assigneeDef.SortOrder,
 				}
-				if assigneeDef.FormField != "" {
-					assignee.FormField = new(assigneeDef.FormField)
+
+				if _, err := db.NewInsert().
+					Model(&assignee).
+					Exec(ctx); err != nil {
+					return nil, fmt.Errorf("insert node assignee: %w", err)
+				}
+			}
+		}
+
+		if cp, ok := nodeData.(CCProvider); ok {
+			for _, ccDef := range cp.GetCCs() {
+				cc := approval.FlowNodeCC{
+					NodeID:    node.ID,
+					Kind:      ccDef.Kind,
+					IDs:       ccDef.IDs,
+					FormField: ccDef.FormField,
+					Timing:    ccDef.Timing,
 				}
 
-				if _, err := db.NewInsert().Model(&assignee).Exec(ctx); err != nil {
-					return nil, fmt.Errorf("insert node assignee: %w", err)
+				if _, err := db.NewInsert().
+					Model(&cc).
+					Exec(ctx); err != nil {
+					return nil, fmt.Errorf("insert node cc: %w", err)
 				}
 			}
 		}
 	}
 
-	// Create edges using real node IDs
 	for _, edgeDef := range cmd.FlowDefinition.Edges {
 		sourceID, ok := nodeKeyToID[edgeDef.Source]
 		if !ok {
@@ -127,13 +150,15 @@ func (h *DeployFlowHandler) Handle(ctx context.Context, cmd DeployFlowCmd) (*app
 			FlowVersionID: version.ID,
 			Key:           edgeDef.ID,
 			SourceNodeID:  sourceID,
+			SourceNodeKey: edgeDef.Source,
 			TargetNodeID:  targetID,
-		}
-		if edgeDef.SourceHandle != "" {
-			edge.SourceHandle = new(edgeDef.SourceHandle)
+			TargetNodeKey: edgeDef.Target,
+			SourceHandle:  edgeDef.SourceHandle,
 		}
 
-		if _, err := db.NewInsert().Model(&edge).Exec(ctx); err != nil {
+		if _, err := db.NewInsert().
+			Model(&edge).
+			Exec(ctx); err != nil {
 			return nil, fmt.Errorf("insert edge: %w", err)
 		}
 	}

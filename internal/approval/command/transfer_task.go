@@ -18,7 +18,7 @@ type TransferTaskCmd struct {
 	cqrs.BaseCommand
 	InstanceID   string
 	TaskID       string
-	OperatorID   string
+	Operator     approval.OperatorInfo
 	Opinion      string
 	FormData     map[string]any
 	TransferToID string
@@ -47,7 +47,7 @@ func NewTransferTaskHandler(
 func (h *TransferTaskHandler) Handle(ctx context.Context, cmd TransferTaskCmd) (cqrs.Unit, error) {
 	db := contextx.DB(ctx, h.db)
 
-	tc, err := prepareTaskOperation(ctx, db, nil, cmd.InstanceID, cmd.TaskID, cmd.OperatorID, "", cmd.FormData)
+	tc, err := prepareTaskOperation(ctx, db, nil, cmd.InstanceID, cmd.TaskID, cmd.Operator.ID, "", cmd.FormData)
 	if err != nil {
 		return cqrs.Unit{}, err
 	}
@@ -80,11 +80,11 @@ func (h *TransferTaskHandler) Handle(ctx context.Context, cmd TransferTaskCmd) (
 	}
 
 	events := []approval.DomainEvent{
-		approval.NewTaskTransferredEvent(task.ID, instance.ID, node.ID, cmd.OperatorID, cmd.TransferToID, cmd.Opinion),
+		approval.NewTaskTransferredEvent(task.ID, instance.ID, node.ID, cmd.Operator.ID, cmd.TransferToID, cmd.Opinion),
 		approval.NewTaskCreatedEvent(newTask.ID, instance.ID, node.ID, cmd.TransferToID, nil),
 	}
 
-	if err := insertActionLog(ctx, db, instance.ID, task, cmd.OperatorID, approval.ActionTransfer, cmd.Opinion, cmd.TransferToID, ""); err != nil {
+	if err := insertActionLog(ctx, db, instance.ID, task, cmd.Operator, approval.ActionTransfer, cmd.Opinion, cmd.TransferToID, ""); err != nil {
 		return cqrs.Unit{}, err
 	}
 

@@ -21,7 +21,7 @@ type FlowResource struct {
 }
 
 // NewFlowResource creates a new flow resource.
-func NewFlowResource(bus cqrs.Bus) *FlowResource {
+func NewFlowResource(bus cqrs.Bus) api.Resource {
 	return &FlowResource{
 		bus: bus,
 		Resource: api.NewRPCResource(
@@ -73,23 +73,27 @@ func (r *FlowResource) Create(ctx fiber.Ctx, params CreateFlowParams) error {
 		}
 	}
 
-	flow, err := cqrs.Send[command.CreateFlowCmd, *approval.Flow](ctx.Context(), r.bus, command.CreateFlowCmd{
-		TenantID:              params.TenantID,
-		Code:                  params.Code,
-		Name:                  params.Name,
-		CategoryID:            params.CategoryID,
-		Icon:                  params.Icon,
-		Description:           params.Description,
-		BindingMode:           params.BindingMode,
-		BusinessTable:         params.BusinessTable,
-		BusinessPkField:       params.BusinessPkField,
-		BusinessTitleField:    params.BusinessTitleField,
-		BusinessStatusField:   params.BusinessStatusField,
-		AdminUserIDs:          params.AdminUserIDs,
-		IsAllInitiateAllowed:  params.IsAllInitiateAllowed,
-		InstanceTitleTemplate: params.InstanceTitleTemplate,
-		Initiators:            initiators,
-	})
+	flow, err := cqrs.Send[command.CreateFlowCmd, *approval.Flow](
+		ctx.Context(),
+		r.bus,
+		command.CreateFlowCmd{
+			TenantID:              params.TenantID,
+			Code:                  params.Code,
+			Name:                  params.Name,
+			CategoryID:            params.CategoryID,
+			Icon:                  params.Icon,
+			Description:           params.Description,
+			BindingMode:           params.BindingMode,
+			BusinessTable:         params.BusinessTable,
+			BusinessPkField:       params.BusinessPkField,
+			BusinessTitleField:    params.BusinessTitleField,
+			BusinessStatusField:   params.BusinessStatusField,
+			AdminUserIDs:          params.AdminUserIDs,
+			IsAllInitiateAllowed:  params.IsAllInitiateAllowed,
+			InstanceTitleTemplate: params.InstanceTitleTemplate,
+			Initiators:            initiators,
+		},
+	)
 	if err != nil {
 		return err
 	}
@@ -102,17 +106,23 @@ type DeployFlowParams struct {
 	api.P
 
 	FlowID         string                   `json:"flowId" validate:"required"`
+	Description    *string                  `json:"description"`
 	FlowDefinition approval.FlowDefinition  `json:"flowDefinition" validate:"required"`
 	FormDefinition *approval.FormDefinition `json:"formDefinition"`
 }
 
 // Deploy deploys a flow definition.
 func (r *FlowResource) Deploy(ctx fiber.Ctx, params DeployFlowParams) error {
-	version, err := cqrs.Send[command.DeployFlowCmd, *approval.FlowVersion](ctx.Context(), r.bus, command.DeployFlowCmd{
-		FlowID:         params.FlowID,
-		FlowDefinition: params.FlowDefinition,
-		FormDefinition: params.FormDefinition,
-	})
+	version, err := cqrs.Send[command.DeployFlowCmd, *approval.FlowVersion](
+		ctx.Context(),
+		r.bus,
+		command.DeployFlowCmd{
+			FlowID:         params.FlowID,
+			Description:    params.Description,
+			FlowDefinition: params.FlowDefinition,
+			FormDefinition: params.FormDefinition,
+		},
+	)
 	if err != nil {
 		return err
 	}
@@ -129,10 +139,14 @@ type PublishVersionParams struct {
 
 // PublishVersion publishes a flow version.
 func (r *FlowResource) PublishVersion(ctx fiber.Ctx, principal security.Principal, params PublishVersionParams) error {
-	if _, err := cqrs.Send[command.PublishVersionCmd, cqrs.Unit](ctx.Context(), r.bus, command.PublishVersionCmd{
-		VersionID:  params.VersionID,
-		OperatorID: principal.ID,
-	}); err != nil {
+	if _, err := cqrs.Send[command.PublishVersionCmd, cqrs.Unit](
+		ctx.Context(),
+		r.bus,
+		command.PublishVersionCmd{
+			VersionID:  params.VersionID,
+			OperatorID: principal.ID,
+		},
+	); err != nil {
 		return err
 	}
 
@@ -148,9 +162,13 @@ type GetGraphParams struct {
 
 // GetGraph returns the flow graph for the published version.
 func (r *FlowResource) GetGraph(ctx fiber.Ctx, params GetGraphParams) error {
-	graph, err := cqrs.Send[query.GetFlowGraphQuery, *shared.FlowGraph](ctx.Context(), r.bus, query.GetFlowGraphQuery{
-		FlowID: params.FlowID,
-	})
+	graph, err := cqrs.Send[query.GetFlowGraphQuery, *shared.FlowGraph](
+		ctx.Context(),
+		r.bus,
+		query.GetFlowGraphQuery{
+			FlowID: params.FlowID,
+		},
+	)
 	if err != nil {
 		return err
 	}

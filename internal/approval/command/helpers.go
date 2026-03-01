@@ -102,14 +102,10 @@ func mergeFormData(instance *approval.Instance, formData map[string]any, permiss
 }
 
 // insertActionLog creates and inserts an action log entry.
-func insertActionLog(ctx context.Context, db orm.DB, instanceID string, task *approval.Task, operatorID string, action approval.ActionType, opinion, transferToID, rollbackToNodeID string) error {
-	actionLog := &approval.ActionLog{
-		InstanceID: instanceID,
-		NodeID:     new(task.NodeID),
-		TaskID:     new(task.ID),
-		Action:     action,
-		OperatorID: operatorID,
-	}
+func insertActionLog(ctx context.Context, db orm.DB, instanceID string, task *approval.Task, operator approval.OperatorInfo, action approval.ActionType, opinion, transferToID, rollbackToNodeID string) error {
+	actionLog := operator.NewActionLog(instanceID, action)
+	actionLog.NodeID = new(task.NodeID)
+	actionLog.TaskID = new(task.ID)
 
 	if opinion != "" {
 		actionLog.Opinion = new(opinion)

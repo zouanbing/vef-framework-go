@@ -44,7 +44,7 @@ type DelegationResource struct {
 }
 
 // NewDelegationResource creates a new delegation resource with standard CRUD operations.
-func NewDelegationResource() *DelegationResource {
+func NewDelegationResource() api.Resource {
 	return &DelegationResource{
 		Resource: api.NewRPCResource("approval/delegation"),
 		FindAll:  crud.NewFindAll[approval.Delegation, DelegationSearch](),

@@ -73,7 +73,7 @@ func (nd *NodeDefinition) ParseData() (NodeData, error) {
 
 	if len(nd.Data) > 0 {
 		if err := json.Unmarshal(nd.Data, target); err != nil {
-			return nil, fmt.Errorf("unmarshal %s node data: %w", nd.Type, err)
+			return nil, fmt.Errorf("unmarshal %q node data: %w", nd.Type, err)
 		}
 	}
 
@@ -82,10 +82,18 @@ func (nd *NodeDefinition) ParseData() (NodeData, error) {
 
 // AssigneeDefinition represents an assignee configuration in the flow definition.
 type AssigneeDefinition struct {
-	Kind      string   `json:"kind"`
+	Kind      AssigneeKind `json:"kind"`
+	IDs       []string     `json:"ids,omitempty"`
+	FormField *string      `json:"formField,omitempty"`
+	SortOrder int          `json:"sortOrder"`
+}
+
+// CCDefinition represents a CC recipient in node data.
+type CCDefinition struct {
+	Kind      CCKind   `json:"kind"`
 	IDs       []string `json:"ids,omitempty"`
-	FormField string   `json:"formField,omitempty"`
-	SortOrder int      `json:"sortOrder"`
+	FormField *string  `json:"formField,omitempty"`
+	Timing    CCTiming `json:"timing,omitempty"`
 }
 
 // EdgeDefinition represents a connection between nodes.
@@ -93,7 +101,7 @@ type EdgeDefinition struct {
 	ID           string         `json:"id"`
 	Source       string         `json:"source"`
 	Target       string         `json:"target"`
-	SourceHandle string         `json:"sourceHandle,omitempty"`
+	SourceHandle *string        `json:"sourceHandle,omitempty"`
 	Data         map[string]any `json:"data,omitempty"`
 }
 
@@ -140,4 +148,24 @@ type ValidationRule struct {
 	Max       *float64 `json:"max,omitempty"`
 	Pattern   string   `json:"pattern,omitempty"`
 	Message   string   `json:"message,omitempty"`
+}
+
+// OperatorInfo bundles operator identity for action logging.
+type OperatorInfo struct {
+	ID       string  `json:"id"`
+	Name     string  `json:"name"`
+	DeptID   *string `json:"deptId,omitempty"`
+	DeptName *string `json:"deptName,omitempty"`
+}
+
+// NewActionLog creates an ActionLog with the operator fields pre-filled.
+func (o OperatorInfo) NewActionLog(instanceID string, action ActionType) *ActionLog {
+	return &ActionLog{
+		InstanceID:       instanceID,
+		Action:           action,
+		OperatorID:       o.ID,
+		OperatorName:     o.Name,
+		OperatorDeptID:   o.DeptID,
+		OperatorDeptName: o.DeptName,
+	}
 }

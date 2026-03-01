@@ -13,38 +13,22 @@ type Flow struct {
 	orm.BaseModel `bun:"table:apv_flow,alias:af"`
 	orm.Model
 
-	// TenantID is the tenant identifier for multi-tenancy support.
-	TenantID string `json:"tenantId" bun:"tenant_id"`
-	// CategoryID is the ID of the category this flow belongs to.
-	CategoryID string `json:"categoryId" bun:"category_id"`
-	// Code is the unique identifier code for the flow.
-	Code string `json:"code" bun:"code"`
-	// Name is the display name of the flow.
-	Name string `json:"name" bun:"name"`
-	// Icon is the optional icon for the flow.
-	Icon *string `json:"icon" bun:"icon,nullzero"`
-	// Description is an optional description of the flow.
-	Description *string `json:"description" bun:"description,nullzero"`
-	// BindingMode specifies the data binding mode (standalone or bound).
-	BindingMode BindingMode `json:"bindingMode" bun:"binding_mode"`
-	// BusinessTable is the bound business table name when in bound mode.
-	BusinessTable *string `json:"businessTable" bun:"business_table,nullzero"`
-	// BusinessPkField is the primary key field of the business table.
-	BusinessPkField *string `json:"businessPkField" bun:"business_pk_field,nullzero"`
-	// BusinessTitleField is the title field mapping of the business table.
-	BusinessTitleField *string `json:"businessTitleField" bun:"business_title_field,nullzero"`
-	// BusinessStatusField is the status field mapping of the business table.
-	BusinessStatusField *string `json:"businessStatusField" bun:"business_status_field,nullzero"`
-	// AdminUserIDs is the list of flow administrator user IDs.
-	AdminUserIDs []string `json:"adminUserIds" bun:"admin_user_ids,type:jsonb,nullzero"`
-	// IsAllInitiateAllowed indicates whether all users can initiate this flow.
-	IsAllInitiateAllowed bool `json:"isAllInitiateAllowed" bun:"is_all_initiate_allowed"`
-	// InstanceTitleTemplate is the Go text/template for generating instance titles.
-	InstanceTitleTemplate string `json:"instanceTitleTemplate" bun:"instance_title_template"`
-	// IsActive indicates whether the flow is enabled.
-	IsActive bool `json:"isActive" bun:"is_active"`
-	// CurrentVersion is the current published version number.
-	CurrentVersion int `json:"currentVersion" bun:"current_version"`
+	TenantID              string      `json:"tenantId" bun:"tenant_id"`
+	CategoryID            string      `json:"categoryId" bun:"category_id"`
+	Code                  string      `json:"code" bun:"code"`
+	Name                  string      `json:"name" bun:"name"`
+	Icon                  *string     `json:"icon" bun:"icon,nullzero"`
+	Description           *string     `json:"description" bun:"description,nullzero"`
+	BindingMode           BindingMode `json:"bindingMode" bun:"binding_mode"`
+	BusinessTable         *string     `json:"businessTable" bun:"business_table,nullzero"`
+	BusinessPkField       *string     `json:"businessPkField" bun:"business_pk_field,nullzero"`
+	BusinessTitleField    *string     `json:"businessTitleField" bun:"business_title_field,nullzero"`
+	BusinessStatusField   *string     `json:"businessStatusField" bun:"business_status_field,nullzero"`
+	AdminUserIDs          []string    `json:"adminUserIds" bun:"admin_user_ids,type:jsonb,nullzero"`
+	IsAllInitiateAllowed  bool        `json:"isAllInitiateAllowed" bun:"is_all_initiate_allowed"`
+	InstanceTitleTemplate string      `json:"instanceTitleTemplate" bun:"instance_title_template"`
+	IsActive              bool        `json:"isActive" bun:"is_active"`
+	CurrentVersion        int         `json:"currentVersion" bun:"current_version"`
 }
 
 // FlowCategory represents a category for grouping flows.
@@ -52,48 +36,33 @@ type FlowCategory struct {
 	orm.BaseModel `bun:"table:apv_flow_category,alias:afc"`
 	orm.Model
 
-	// TenantID is the tenant identifier for multi-tenancy support.
-	TenantID string `json:"tenantId" bun:"tenant_id"`
-	// Code is the unique identifier code for the category.
-	Code string `json:"code" bun:"code"`
-	// Name is the display name of the category.
-	Name string `json:"name" bun:"name"`
-	// Icon is the optional icon for the category.
-	Icon *string `json:"icon" bun:"icon,nullzero"`
-	// ParentID is the ID of the parent category for hierarchical structure.
-	ParentID *string `json:"parentId" bun:"parent_id,nullzero"`
-	// SortOrder determines the display order of categories.
-	SortOrder int `json:"sortOrder" bun:"sort_order"`
-	// IsActive indicates whether the category is enabled.
-	IsActive bool `json:"isActive" bun:"is_active"`
-	// Remark is an optional description or note for the category.
-	Remark *string `json:"remark" bun:"remark,nullzero"`
+	TenantID  string  `json:"tenantId" bun:"tenant_id"`
+	Code      string  `json:"code" bun:"code"`
+	Name      string  `json:"name" bun:"name"`
+	Icon      *string `json:"icon" bun:"icon,nullzero"`
+	ParentID  *string `json:"parentId" bun:"parent_id,nullzero"`
+	SortOrder int     `json:"sortOrder" bun:"sort_order"`
+	IsActive  bool    `json:"isActive" bun:"is_active"`
+	Remark    *string `json:"remark" bun:"remark,nullzero"`
 }
 
-// FlowVersion represents a flow version.
+// FlowVersion represents a versioned snapshot of a flow definition.
 type FlowVersion struct {
 	orm.BaseModel `bun:"table:apv_flow_version,alias:afv"`
 	orm.Model
 
-	// FlowID is the ID of the flow this version belongs to.
-	FlowID string `json:"flowId" bun:"flow_id"`
-	// Version is the version number.
-	Version int `json:"version" bun:"version"`
-	// Status is the version status (draft, published, archived).
-	Status VersionStatus `json:"status" bun:"status"`
-	// StorageMode specifies the form data storage mode.
-	StorageMode StorageMode `json:"storageMode" bun:"storage_mode"`
-	// FlowSchema contains the flow structure definition (React Flow compatible).
-	FlowSchema *FlowDefinition `json:"flowSchema" bun:"flow_schema,type:jsonb,nullzero"`
-	// FormSchema contains the form structure definition.
-	FormSchema *FormDefinition `json:"formSchema" bun:"form_schema,type:jsonb,nullzero"`
-	// PublishedAt is the timestamp when this version was published.
+	FlowID      string          `json:"flowId" bun:"flow_id"`
+	Version     int             `json:"version" bun:"version"`
+	Status      VersionStatus   `json:"status" bun:"status"`
+	Description *string         `json:"description" bun:"description,nullzero"`
+	StorageMode StorageMode     `json:"storageMode" bun:"storage_mode"`
+	FlowSchema  *FlowDefinition `json:"flowSchema" bun:"flow_schema,type:jsonb,nullzero"`
+	FormSchema  *FormDefinition `json:"formSchema" bun:"form_schema,type:jsonb,nullzero"`
 	PublishedAt *timex.DateTime `json:"publishedAt" bun:"published_at,nullzero"`
-	// PublishedBy is the user ID who published this version.
-	PublishedBy *string `json:"publishedBy" bun:"published_by,nullzero"`
+	PublishedBy *string         `json:"publishedBy" bun:"published_by,nullzero"`
 }
 
-// FlowNode represents a flow node.
+// FlowNode represents a node within a flow version.
 type FlowNode struct {
 	orm.BaseModel `bun:"table:apv_flow_node,alias:afn"`
 	orm.Model
@@ -114,6 +83,7 @@ type FlowNode struct {
 	IsRollbackAllowed        bool                   `json:"isRollbackAllowed" bun:"is_rollback_allowed"`
 	RollbackType             RollbackType           `json:"rollbackType" bun:"rollback_type"`
 	RollbackDataStrategy     RollbackDataStrategy   `json:"rollbackDataStrategy" bun:"rollback_data_strategy"`
+	RollbackTargetKeys       []string               `json:"rollbackTargetKeys" bun:"rollback_target_keys,type:jsonb,nullzero"`
 	IsAddAssigneeAllowed     bool                   `json:"isAddAssigneeAllowed" bun:"is_add_assignee_allowed"`
 	AddAssigneeTypes         []string               `json:"addAssigneeTypes" bun:"add_assignee_types,type:jsonb,nullzero"`
 	IsRemoveAssigneeAllowed  bool                   `json:"isRemoveAssigneeAllowed" bun:"is_remove_assignee_allowed"`
@@ -138,7 +108,9 @@ type FlowEdge struct {
 	FlowVersionID string  `json:"flowVersionId" bun:"flow_version_id"`
 	Key           string  `json:"key" bun:"key,nullzero"`
 	SourceNodeID  string  `json:"sourceNodeId" bun:"source_node_id"`
+	SourceNodeKey string  `json:"sourceNodeKey" bun:"source_node_key"`
 	TargetNodeID  string  `json:"targetNodeId" bun:"target_node_id"`
+	TargetNodeKey string  `json:"targetNodeKey" bun:"target_node_key"`
 	SourceHandle  *string `json:"sourceHandle" bun:"source_handle,nullzero"`
 }
 
@@ -249,7 +221,7 @@ type FormSnapshot struct {
 
 // ── Records & Logs ──────────────────────────────────────────────────────────
 
-// ActionLog represents an action log.
+// ActionLog represents an action log entry.
 type ActionLog struct {
 	orm.BaseModel `bun:"table:apv_action_log,alias:aal"`
 	orm.IDModel
@@ -260,22 +232,23 @@ type ActionLog struct {
 	TaskID            *string        `json:"taskId" bun:"task_id,nullzero"`
 	Action            ActionType     `json:"action" bun:"action"`
 	OperatorID        string         `json:"operatorId" bun:"operator_id"`
-	OperatorName      *string        `json:"operatorName" bun:"operator_name,nullzero"`
-	OperatorDept      *string        `json:"operatorDept" bun:"operator_dept,nullzero"`
+	OperatorName      string         `json:"operatorName" bun:"operator_name"`
+	OperatorDeptID    *string        `json:"operatorDeptId" bun:"operator_dept_id,nullzero"`
+	OperatorDeptName  *string        `json:"operatorDeptName" bun:"operator_dept_name,nullzero"`
 	IPAddress         *string        `json:"ipAddress" bun:"ip_address,nullzero"`
 	UserAgent         *string        `json:"userAgent" bun:"user_agent,nullzero"`
 	Opinion           *string        `json:"opinion" bun:"opinion,nullzero"`
-	Meta              map[string]any `json:"meta" bun:"meta,type:jsonb,nullzero"`
 	TransferToID      *string        `json:"transferToId" bun:"transfer_to_id,nullzero"`
 	RollbackToNodeID  *string        `json:"rollbackToNodeId" bun:"rollback_to_node_id,nullzero"`
 	AddAssigneeType   *string        `json:"addAssigneeType" bun:"add_assignee_type,nullzero"`
 	AddAssigneeToIDs  []string       `json:"addAssigneeToIds" bun:"add_assignee_to_ids,type:jsonb"`
 	RemoveAssigneeIDs []string       `json:"removeAssigneeIds" bun:"remove_assignee_ids,type:jsonb"`
 	CCUserIDs         []string       `json:"ccUserIds" bun:"cc_user_ids,type:jsonb"`
-	Attachments       []any          `json:"attachments" bun:"attachments,type:jsonb"`
+	Attachments       []string       `json:"attachments" bun:"attachments,type:jsonb,nullzero"`
+	Meta              map[string]any `json:"meta" bun:"meta,type:jsonb,nullzero"`
 }
 
-// CCRecord represents a CC record.
+// CCRecord represents a CC notification record.
 type CCRecord struct {
 	orm.BaseModel `bun:"table:apv_cc_record,alias:acr"`
 	orm.IDModel
@@ -289,7 +262,7 @@ type CCRecord struct {
 	ReadAt     *timex.DateTime `json:"readAt" bun:"read_at,nullzero"`
 }
 
-// ParallelRecord represents a parallel approval record.
+// ParallelRecord represents a parallel approval vote record.
 type ParallelRecord struct {
 	orm.BaseModel `bun:"table:apv_parallel_record,alias:apr"`
 	orm.IDModel
@@ -318,7 +291,7 @@ type Delegation struct {
 	Reason         *string        `json:"reason" bun:"reason,nullzero"`
 }
 
-// EventOutbox represents an event outbox for transactional event publishing.
+// EventOutbox represents an event outbox entry for transactional event publishing.
 type EventOutbox struct {
 	orm.BaseModel `bun:"table:apv_event_outbox,alias:aeo"`
 	orm.IDModel

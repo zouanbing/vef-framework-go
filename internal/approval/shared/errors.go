@@ -15,6 +15,7 @@ const (
 	ErrCodeInstanceCompleted  = 40102
 	ErrCodeNotAllowedInitiate = 40103
 	ErrCodeWithdrawNotAllowed = 40104
+	ErrCodeResubmitNotAllowed = 40105
 
 	ErrCodeTaskNotFound             = 40201
 	ErrCodeTaskNotPending           = 40202
@@ -56,6 +57,7 @@ var (
 	ErrInstanceCompleted  = result.Err("审批实例已结束", result.WithCode(ErrCodeInstanceCompleted))
 	ErrNotAllowedInitiate = result.Err("无权发起此流程", result.WithCode(ErrCodeNotAllowedInitiate))
 	ErrWithdrawNotAllowed = result.Err("当前状态不允许撤回", result.WithCode(ErrCodeWithdrawNotAllowed))
+	ErrResubmitNotAllowed = result.Err("当前状态不允许重新提交", result.WithCode(ErrCodeResubmitNotAllowed))
 
 	ErrTaskNotFound             = result.Err("任务不存在", result.WithCode(ErrCodeTaskNotFound))
 	ErrTaskNotPending           = result.Err("任务非待处理状态", result.WithCode(ErrCodeTaskNotPending))

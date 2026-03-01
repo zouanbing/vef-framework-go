@@ -16,6 +16,7 @@ import (
 // PublishVersionCmd publishes a flow version.
 type PublishVersionCmd struct {
 	cqrs.BaseCommand
+
 	VersionID  string
 	OperatorID string
 }
@@ -27,8 +28,8 @@ type PublishVersionHandler struct {
 }
 
 // NewPublishVersionHandler creates a new PublishVersionHandler.
-func NewPublishVersionHandler(db orm.DB, pub *dispatcher.EventPublisher) *PublishVersionHandler {
-	return &PublishVersionHandler{db: db, publisher: pub}
+func NewPublishVersionHandler(db orm.DB, publisher *dispatcher.EventPublisher) *PublishVersionHandler {
+	return &PublishVersionHandler{db: db, publisher: publisher}
 }
 
 func (h *PublishVersionHandler) Handle(ctx context.Context, cmd PublishVersionCmd) (cqrs.Unit, error) {
@@ -67,14 +68,29 @@ func (h *PublishVersionHandler) Handle(ctx context.Context, cmd PublishVersionCm
 
 	if _, err := db.NewUpdate().
 		Model(&version).
+		Select("status", "published_at", "published_by").
 		WherePK().
 		Exec(ctx); err != nil {
 		return cqrs.Unit{}, fmt.Errorf("publish version: %w", err)
 	}
 
-	if err := h.publisher.PublishAll(ctx, db, []approval.DomainEvent{
-		approval.NewFlowPublishedEvent(version.FlowID, cmd.VersionID),
-	}); err != nil {
+	// Update flow's current version number
+	if _, err := db.NewUpdate().
+		Model((*approval.Flow)(nil)).
+		Set("current_version", version.Version).
+		Where(func(cb orm.ConditionBuilder) {
+			cb.PKEquals(version.FlowID)
+		}).
+		Exec(ctx); err != nil {
+		return cqrs.Unit{}, fmt.Errorf("update flow current version: %w", err)
+	}
+
+	if err := h.publisher.PublishAll(
+		ctx, db,
+		[]approval.DomainEvent{
+			approval.NewFlowPublishedEvent(version.FlowID, cmd.VersionID),
+		},
+	); err != nil {
 		return cqrs.Unit{}, err
 	}
 

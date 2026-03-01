@@ -20,7 +20,7 @@ type RollbackTaskCmd struct {
 	cqrs.BaseCommand
 	InstanceID   string
 	TaskID       string
-	OperatorID   string
+	Operator     approval.OperatorInfo
 	Opinion      string
 	FormData     map[string]any
 	TargetNodeID string
@@ -55,7 +55,7 @@ func NewRollbackTaskHandler(
 func (h *RollbackTaskHandler) Handle(ctx context.Context, cmd RollbackTaskCmd) (cqrs.Unit, error) {
 	db := contextx.DB(ctx, h.db)
 
-	tc, err := prepareTaskOperation(ctx, db, nil, cmd.InstanceID, cmd.TaskID, cmd.OperatorID, "", cmd.FormData)
+	tc, err := prepareTaskOperation(ctx, db, nil, cmd.InstanceID, cmd.TaskID, cmd.Operator.ID, "", cmd.FormData)
 	if err != nil {
 		return cqrs.Unit{}, err
 	}
@@ -108,15 +108,25 @@ func (h *RollbackTaskHandler) Handle(ctx context.Context, cmd RollbackTaskCmd) (
 		return cqrs.Unit{}, fmt.Errorf("find target node: %w", err)
 	}
 
-	if err := h.engine.ProcessNode(ctx, db, instance, &targetNode); err != nil {
-		return cqrs.Unit{}, fmt.Errorf("process rollback target node: %w", err)
+	var events []approval.DomainEvent
+
+	if targetNode.Kind == approval.NodeStart {
+		// Return to initiator: pause instance as returned
+		instance.Status = approval.InstanceReturned
+		events = []approval.DomainEvent{
+			approval.NewInstanceReturnedEvent(instance.ID, node.ID, cmd.TargetNodeID, cmd.Operator.ID),
+		}
+	} else {
+		// Rollback to intermediate node: continue processing
+		if err := h.engine.ProcessNode(ctx, db, instance, &targetNode); err != nil {
+			return cqrs.Unit{}, fmt.Errorf("process rollback target node: %w", err)
+		}
+		events = []approval.DomainEvent{
+			approval.NewInstanceRolledBackEvent(instance.ID, node.ID, cmd.TargetNodeID, cmd.Operator.ID),
+		}
 	}
 
-	events := []approval.DomainEvent{
-		approval.NewInstanceRolledBackEvent(instance.ID, node.ID, cmd.TargetNodeID, cmd.OperatorID),
-	}
-
-	if err := insertActionLog(ctx, db, instance.ID, task, cmd.OperatorID, approval.ActionRollback, cmd.Opinion, "", cmd.TargetNodeID); err != nil {
+	if err := insertActionLog(ctx, db, instance.ID, task, cmd.Operator, approval.ActionRollback, cmd.Opinion, "", cmd.TargetNodeID); err != nil {
 		return cqrs.Unit{}, err
 	}
 

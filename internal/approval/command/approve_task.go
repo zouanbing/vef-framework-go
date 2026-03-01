@@ -17,7 +17,7 @@ type ApproveTaskCmd struct {
 	cqrs.BaseCommand
 	InstanceID string
 	TaskID     string
-	OperatorID string
+	Operator   approval.OperatorInfo
 	Opinion    string
 	FormData   map[string]any
 }
@@ -51,7 +51,7 @@ func NewApproveTaskHandler(
 func (h *ApproveTaskHandler) Handle(ctx context.Context, cmd ApproveTaskCmd) (cqrs.Unit, error) {
 	db := contextx.DB(ctx, h.db)
 
-	tc, err := prepareTaskOperation(ctx, db, h.validSvc, cmd.InstanceID, cmd.TaskID, cmd.OperatorID, cmd.Opinion, cmd.FormData)
+	tc, err := prepareTaskOperation(ctx, db, h.validSvc, cmd.InstanceID, cmd.TaskID, cmd.Operator.ID, cmd.Opinion, cmd.FormData)
 	if err != nil {
 		return cqrs.Unit{}, err
 	}
@@ -68,7 +68,7 @@ func (h *ApproveTaskHandler) Handle(ctx context.Context, cmd ApproveTaskCmd) (cq
 	}
 
 	events := []approval.DomainEvent{
-		approval.NewTaskApprovedEvent(task.ID, instance.ID, node.ID, cmd.OperatorID, cmd.Opinion),
+		approval.NewTaskApprovedEvent(task.ID, instance.ID, node.ID, cmd.Operator.ID, cmd.Opinion),
 	}
 
 	if node.ApprovalMethod == approval.ApprovalSequential {
@@ -83,7 +83,7 @@ func (h *ApproveTaskHandler) Handle(ctx context.Context, cmd ApproveTaskCmd) (cq
 	}
 	events = append(events, completionEvents...)
 
-	if err := insertActionLog(ctx, db, instance.ID, task, cmd.OperatorID, approval.ActionApprove, cmd.Opinion, "", ""); err != nil {
+	if err := insertActionLog(ctx, db, instance.ID, task, cmd.Operator, approval.ActionApprove, cmd.Opinion, "", ""); err != nil {
 		return cqrs.Unit{}, err
 	}
 

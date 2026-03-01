@@ -21,7 +21,7 @@ type AddAssigneeCmd struct {
 	TaskID     string
 	UserIDs    []string
 	AddType    string // "before", "after", "parallel"
-	OperatorID string
+	Operator   approval.OperatorInfo
 }
 
 // AddAssigneeHandler handles the AddAssigneeCmd command.
@@ -68,7 +68,7 @@ func (h *AddAssigneeHandler) Handle(ctx context.Context, cmd AddAssigneeCmd) (cq
 		return cqrs.Unit{}, shared.ErrAddAssigneeNotAllowed
 	}
 
-	if task.AssigneeID != cmd.OperatorID {
+	if task.AssigneeID != cmd.Operator.ID {
 		return cqrs.Unit{}, shared.ErrNotAssignee
 	}
 
@@ -121,16 +121,11 @@ func (h *AddAssigneeHandler) Handle(ctx context.Context, cmd AddAssigneeCmd) (cq
 		}
 	}
 
-	// Action log
-	actionLog := &approval.ActionLog{
-		InstanceID:       instance.ID,
-		NodeID:           new(task.NodeID),
-		TaskID:           new(task.ID),
-		Action:           approval.ActionAddAssignee,
-		OperatorID:       cmd.OperatorID,
-		AddAssigneeType:  new(cmd.AddType),
-		AddAssigneeToIDs: cmd.UserIDs,
-	}
+	actionLog := cmd.Operator.NewActionLog(instance.ID, approval.ActionAddAssignee)
+	actionLog.NodeID = new(task.NodeID)
+	actionLog.TaskID = new(task.ID)
+	actionLog.AddAssigneeType = new(cmd.AddType)
+	actionLog.AddAssigneeToIDs = cmd.UserIDs
 	if _, err := db.NewInsert().Model(actionLog).Exec(ctx); err != nil {
 		return cqrs.Unit{}, fmt.Errorf("insert action log: %w", err)
 	}

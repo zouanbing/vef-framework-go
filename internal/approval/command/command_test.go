@@ -1,10 +1,12 @@
 package command_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/internal/approval/migration"
 	"github.com/ilxqx/vef-framework-go/internal/testx"
@@ -12,6 +14,57 @@ import (
 
 // registry holds all command test suite factories, populated by init() in each suite file.
 var registry = testx.NewRegistry[testx.DBEnv]()
+
+// mustMarshal marshals v to json.RawMessage, panicking on error.
+func mustMarshal(v any) json.RawMessage {
+	data, err := json.Marshal(v)
+	if err != nil {
+		panic(err)
+	}
+	return data
+}
+
+// simpleFlowDef returns a minimal valid flow definition: Start → End.
+func simpleFlowDef() approval.FlowDefinition {
+	return approval.FlowDefinition{
+		Nodes: []approval.NodeDefinition{
+			{ID: "start-1", Type: approval.NodeStart, Data: mustMarshal(approval.StartNodeData{BaseNodeData: approval.BaseNodeData{Name: "开始"}})},
+			{ID: "end-1", Type: approval.NodeEnd, Data: mustMarshal(approval.EndNodeData{BaseNodeData: approval.BaseNodeData{Name: "结束"}})},
+		},
+		Edges: []approval.EdgeDefinition{
+			{ID: "edge-1", Source: "start-1", Target: "end-1"},
+		},
+	}
+}
+
+// approvalFlowDef returns a flow definition with an approval node: Start → Approval → End.
+func approvalFlowDef() approval.FlowDefinition {
+	return approval.FlowDefinition{
+		Nodes: []approval.NodeDefinition{
+			{ID: "start-1", Type: approval.NodeStart, Data: mustMarshal(approval.StartNodeData{BaseNodeData: approval.BaseNodeData{Name: "开始"}})},
+			{ID: "approval-1", Type: approval.NodeApproval, Data: mustMarshal(approval.ApprovalNodeData{
+				BaseNodeData: approval.BaseNodeData{Name: "审批"},
+				TaskNodeData: approval.TaskNodeData{
+					Assignees: []approval.AssigneeDefinition{
+						{Kind: approval.AssigneeUser, IDs: []string{"user-1", "user-2"}, SortOrder: 1},
+					},
+					CCs: []approval.CCDefinition{
+						{Kind: approval.CCUser, IDs: []string{"cc-user-1"}, Timing: approval.CCTimingAlways},
+					},
+					ExecutionType:      approval.ExecutionManual,
+					EmptyHandlerAction: approval.EmptyHandlerAutoPass,
+				},
+				ApprovalMethod: approval.ApprovalSequential,
+				PassRule:       approval.PassAll,
+			})},
+			{ID: "end-1", Type: approval.NodeEnd, Data: mustMarshal(approval.EndNodeData{BaseNodeData: approval.BaseNodeData{Name: "结束"}})},
+		},
+		Edges: []approval.EdgeDefinition{
+			{ID: "edge-1", Source: "start-1", Target: "approval-1"},
+			{ID: "edge-2", Source: "approval-1", Target: "end-1"},
+		},
+	}
+}
 
 // baseFactory runs approval migrations and returns the DBEnv.
 func baseFactory(env *testx.DBEnv) *testx.DBEnv {

@@ -125,6 +125,7 @@ CREATE TABLE IF NOT EXISTS apv_flow_version (
     flow_id VARCHAR(32) NOT NULL,
     version INTEGER NOT NULL,
     status VARCHAR(16) NOT NULL DEFAULT 'draft',
+    description VARCHAR(256),
     -- Design data
     storage_mode VARCHAR(8) NOT NULL DEFAULT 'json',
     flow_schema JSONB,
@@ -145,6 +146,7 @@ COMMENT ON COLUMN apv_flow_version.updated_by IS '更新人ID';
 COMMENT ON COLUMN apv_flow_version.flow_id IS '流程ID';
 COMMENT ON COLUMN apv_flow_version.version IS '版本号';
 COMMENT ON COLUMN apv_flow_version.status IS '版本状态';
+COMMENT ON COLUMN apv_flow_version.description IS '版本描述';
 COMMENT ON COLUMN apv_flow_version.storage_mode IS '表单存储模式';
 COMMENT ON COLUMN apv_flow_version.flow_schema IS '流程结构定义';
 COMMENT ON COLUMN apv_flow_version.form_schema IS '表单结构定义';
@@ -183,6 +185,7 @@ CREATE TABLE IF NOT EXISTS apv_flow_node (
     is_rollback_allowed BOOLEAN NOT NULL DEFAULT true,
     rollback_type VARCHAR(16) NOT NULL DEFAULT 'previous',
     rollback_data_strategy VARCHAR(16),
+    rollback_target_keys JSONB,
     -- Dynamic assignee config
     is_add_assignee_allowed BOOLEAN NOT NULL DEFAULT true,
     add_assignee_types JSONB NOT NULL DEFAULT '["before", "after", "parallel"]',
@@ -228,6 +231,7 @@ COMMENT ON COLUMN apv_flow_node.same_applicant_action IS '审批人与提交人�
 COMMENT ON COLUMN apv_flow_node.is_rollback_allowed IS '是否允许回退';
 COMMENT ON COLUMN apv_flow_node.rollback_type IS '回退方式';
 COMMENT ON COLUMN apv_flow_node.rollback_data_strategy IS '回退时表单数据策略';
+COMMENT ON COLUMN apv_flow_node.rollback_target_keys IS '指定回退目标节点Key列表';
 COMMENT ON COLUMN apv_flow_node.is_add_assignee_allowed IS '是否允许动态添加审批人';
 COMMENT ON COLUMN apv_flow_node.add_assignee_types IS '动态添加审批人的方式';
 COMMENT ON COLUMN apv_flow_node.is_remove_assignee_allowed IS '是否允许移除审批人';
@@ -291,7 +295,9 @@ CREATE TABLE IF NOT EXISTS apv_flow_edge (
     flow_version_id VARCHAR(32) NOT NULL,
     key VARCHAR(64),
     source_node_id VARCHAR(32) NOT NULL,
+    source_node_key VARCHAR(64) NOT NULL,
     target_node_id VARCHAR(32) NOT NULL,
+    target_node_key VARCHAR(64) NOT NULL,
     source_handle VARCHAR(32),
     CONSTRAINT fk_apv_flow_edge__flow_version_id FOREIGN KEY (flow_version_id) REFERENCES apv_flow_version(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_apv_flow_edge__source_node_id FOREIGN KEY (source_node_id) REFERENCES apv_flow_node(id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -303,7 +309,9 @@ COMMENT ON COLUMN apv_flow_edge.id IS '主键';
 COMMENT ON COLUMN apv_flow_edge.flow_version_id IS '流程版本ID';
 COMMENT ON COLUMN apv_flow_edge.key IS '连线标识';
 COMMENT ON COLUMN apv_flow_edge.source_node_id IS '来源节点ID';
+COMMENT ON COLUMN apv_flow_edge.source_node_key IS '来源节点标识';
 COMMENT ON COLUMN apv_flow_edge.target_node_id IS '目标节点ID';
+COMMENT ON COLUMN apv_flow_edge.target_node_key IS '目标节点标识';
 COMMENT ON COLUMN apv_flow_edge.source_handle IS '来源节点句柄';
 
 CREATE INDEX idx_apv_flow_edge__flow_version_id_source_node_id ON apv_flow_edge(flow_version_id, source_node_id);
@@ -479,8 +487,9 @@ CREATE TABLE IF NOT EXISTS apv_action_log (
     -- Action info
     action VARCHAR(16) NOT NULL,
     operator_id VARCHAR(32) NOT NULL,
-    operator_name VARCHAR(128),
-    operator_dept VARCHAR(128),
+    operator_name VARCHAR(128) NOT NULL,
+    operator_dept_id VARCHAR(32),
+    operator_dept_name VARCHAR(128),
     ip_address VARCHAR(64),
     user_agent VARCHAR(512),
     opinion TEXT,
@@ -495,7 +504,7 @@ CREATE TABLE IF NOT EXISTS apv_action_log (
     -- CC info
     cc_user_ids JSONB NOT NULL DEFAULT '[]',
     -- Attachments
-    attachments JSONB NOT NULL DEFAULT '[]',
+    attachments JSONB,
     CONSTRAINT fk_apv_action_log__instance_id FOREIGN KEY (instance_id) REFERENCES apv_instance(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_apv_action_log__node_id FOREIGN KEY (node_id) REFERENCES apv_flow_node(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_apv_action_log__task_id FOREIGN KEY (task_id) REFERENCES apv_task(id) ON DELETE RESTRICT ON UPDATE CASCADE
@@ -511,7 +520,8 @@ COMMENT ON COLUMN apv_action_log.task_id IS '任务ID';
 COMMENT ON COLUMN apv_action_log.action IS '操作类型';
 COMMENT ON COLUMN apv_action_log.operator_id IS '操作人ID';
 COMMENT ON COLUMN apv_action_log.operator_name IS '操作人姓名';
-COMMENT ON COLUMN apv_action_log.operator_dept IS '操作人部门';
+COMMENT ON COLUMN apv_action_log.operator_dept_id IS '操作人部门ID';
+COMMENT ON COLUMN apv_action_log.operator_dept_name IS '操作人部门名称';
 COMMENT ON COLUMN apv_action_log.ip_address IS '操作人IP地址';
 COMMENT ON COLUMN apv_action_log.user_agent IS '操作人用户代理';
 COMMENT ON COLUMN apv_action_log.opinion IS '审批意见';

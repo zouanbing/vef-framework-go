@@ -17,8 +17,8 @@ import (
 // RemoveAssigneeCmd removes an assignee by canceling their task.
 type RemoveAssigneeCmd struct {
 	cqrs.BaseCommand
-	TaskID     string
-	OperatorID string
+	TaskID   string
+	Operator approval.OperatorInfo
 }
 
 // RemoveAssigneeHandler handles the RemoveAssigneeCmd command.
@@ -64,7 +64,7 @@ func (h *RemoveAssigneeHandler) Handle(ctx context.Context, cmd RemoveAssigneeCm
 		return cqrs.Unit{}, shared.ErrRemoveAssigneeNotAllowed
 	}
 
-	if !h.taskSvc.IsAuthorizedForNodeOperation(ctx, db, task, cmd.OperatorID) {
+	if !h.taskSvc.IsAuthorizedForNodeOperation(ctx, db, task, cmd.Operator.ID) {
 		return cqrs.Unit{}, shared.ErrNotAssignee
 	}
 
@@ -94,15 +94,10 @@ func (h *RemoveAssigneeHandler) Handle(ctx context.Context, cmd RemoveAssigneeCm
 		}
 	}
 
-	// Action log
-	actionLog := &approval.ActionLog{
-		InstanceID:        task.InstanceID,
-		NodeID:            new(task.NodeID),
-		TaskID:            new(task.ID),
-		Action:            approval.ActionRemoveAssignee,
-		OperatorID:        cmd.OperatorID,
-		RemoveAssigneeIDs: []string{task.AssigneeID},
-	}
+	actionLog := cmd.Operator.NewActionLog(task.InstanceID, approval.ActionRemoveAssignee)
+	actionLog.NodeID = new(task.NodeID)
+	actionLog.TaskID = new(task.ID)
+	actionLog.RemoveAssigneeIDs = []string{task.AssigneeID}
 	if _, err := db.NewInsert().Model(actionLog).Exec(ctx); err != nil {
 		return cqrs.Unit{}, fmt.Errorf("insert action log: %w", err)
 	}

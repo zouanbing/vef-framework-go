@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/gofiber/fiber/v3"
@@ -20,19 +21,22 @@ import (
 type InstanceResource struct {
 	api.Resource
 
-	bus cqrs.Bus
+	bus          cqrs.Bus
+	deptResolver approval.PrincipalDeptResolver
 }
 
 // NewInstanceResource creates a new instance resource.
-func NewInstanceResource(bus cqrs.Bus) *InstanceResource {
+func NewInstanceResource(bus cqrs.Bus, deptResolver approval.PrincipalDeptResolver) api.Resource {
 	return &InstanceResource{
-		bus: bus,
+		bus:          bus,
+		deptResolver: deptResolver,
 		Resource: api.NewRPCResource(
 			"approval/instance",
 			api.WithOperations(
 				api.OperationSpec{Action: "start"},
 				api.OperationSpec{Action: "process_task"},
 				api.OperationSpec{Action: "withdraw"},
+				api.OperationSpec{Action: "resubmit"},
 				api.OperationSpec{Action: "add_cc"},
 				api.OperationSpec{Action: "mark_cc_read"},
 				api.OperationSpec{Action: "add_assignee"},
@@ -47,24 +51,27 @@ func NewInstanceResource(bus cqrs.Bus) *InstanceResource {
 	}
 }
 
-// StartParams contains the parameters for starting a new instance.
-type StartParams struct {
+// StartInstanceParams contains the parameters for starting a new instance.
+type StartInstanceParams struct {
 	api.P
 
 	TenantID         string         `json:"tenantId" validate:"required"`
 	FlowCode         string         `json:"flowCode" validate:"required"`
-	ApplicantDeptID  *string        `json:"applicantDeptId"`
 	BusinessRecordID *string        `json:"businessRecordId"`
 	FormData         map[string]any `json:"formData"`
 }
 
 // Start creates a new flow instance.
-func (r *InstanceResource) Start(ctx fiber.Ctx, principal security.Principal, params StartParams) error {
+func (r *InstanceResource) Start(ctx fiber.Ctx, principal security.Principal, params StartInstanceParams) error {
+	operator, err := r.resolveOperator(ctx.Context(), principal)
+	if err != nil {
+		return err
+	}
+
 	instance, err := cqrs.Send[command.StartInstanceCmd, *approval.Instance](ctx.Context(), r.bus, command.StartInstanceCmd{
 		TenantID:         params.TenantID,
 		FlowCode:         params.FlowCode,
-		ApplicantID:      principal.ID,
-		ApplicantDeptID:  params.ApplicantDeptID,
+		Applicant:        operator,
 		BusinessRecordID: params.BusinessRecordID,
 		FormData:         params.FormData,
 	})
@@ -90,14 +97,17 @@ type ProcessTaskParams struct {
 
 // ProcessTask handles task actions (approve/reject/transfer/rollback/handle).
 func (r *InstanceResource) ProcessTask(ctx fiber.Ctx, principal security.Principal, params ProcessTaskParams) error {
-	var err error
+	operator, err := r.resolveOperator(ctx.Context(), principal)
+	if err != nil {
+		return err
+	}
 
 	switch params.Action {
 	case "approve", "handle":
 		_, err = cqrs.Send[command.ApproveTaskCmd, cqrs.Unit](ctx.Context(), r.bus, command.ApproveTaskCmd{
 			InstanceID: params.InstanceID,
 			TaskID:     params.TaskID,
-			OperatorID: principal.ID,
+			Operator:   operator,
 			Opinion:    params.Opinion,
 			FormData:   params.FormData,
 		})
@@ -105,7 +115,7 @@ func (r *InstanceResource) ProcessTask(ctx fiber.Ctx, principal security.Princip
 		_, err = cqrs.Send[command.RejectTaskCmd, cqrs.Unit](ctx.Context(), r.bus, command.RejectTaskCmd{
 			InstanceID: params.InstanceID,
 			TaskID:     params.TaskID,
-			OperatorID: principal.ID,
+			Operator:   operator,
 			Opinion:    params.Opinion,
 			FormData:   params.FormData,
 		})
@@ -113,7 +123,7 @@ func (r *InstanceResource) ProcessTask(ctx fiber.Ctx, principal security.Princip
 		_, err = cqrs.Send[command.TransferTaskCmd, cqrs.Unit](ctx.Context(), r.bus, command.TransferTaskCmd{
 			InstanceID:   params.InstanceID,
 			TaskID:       params.TaskID,
-			OperatorID:   principal.ID,
+			Operator:     operator,
 			Opinion:      params.Opinion,
 			FormData:     params.FormData,
 			TransferToID: params.TransferToID,
@@ -122,7 +132,7 @@ func (r *InstanceResource) ProcessTask(ctx fiber.Ctx, principal security.Princip
 		_, err = cqrs.Send[command.RollbackTaskCmd, cqrs.Unit](ctx.Context(), r.bus, command.RollbackTaskCmd{
 			InstanceID:   params.InstanceID,
 			TaskID:       params.TaskID,
-			OperatorID:   principal.ID,
+			Operator:     operator,
 			Opinion:      params.Opinion,
 			FormData:     params.FormData,
 			TargetNodeID: params.TargetNodeID,
@@ -148,10 +158,41 @@ type WithdrawParams struct {
 
 // Withdraw withdraws an instance.
 func (r *InstanceResource) Withdraw(ctx fiber.Ctx, principal security.Principal, params WithdrawParams) error {
+	operator, err := r.resolveOperator(ctx.Context(), principal)
+	if err != nil {
+		return err
+	}
+
 	if _, err := cqrs.Send[command.WithdrawCmd, cqrs.Unit](ctx.Context(), r.bus, command.WithdrawCmd{
 		InstanceID: params.InstanceID,
-		OperatorID: principal.ID,
+		Operator:   operator,
 		Reason:     params.Reason,
+	}); err != nil {
+		return err
+	}
+
+	return result.Ok().Response(ctx)
+}
+
+// ResubmitParams contains the parameters for resubmitting a returned instance.
+type ResubmitParams struct {
+	api.P
+
+	InstanceID string         `json:"instanceId" validate:"required"`
+	FormData   map[string]any `json:"formData"`
+}
+
+// Resubmit resubmits a returned instance.
+func (r *InstanceResource) Resubmit(ctx fiber.Ctx, principal security.Principal, params ResubmitParams) error {
+	operator, err := r.resolveOperator(ctx.Context(), principal)
+	if err != nil {
+		return err
+	}
+
+	if _, err := cqrs.Send[command.ResubmitCmd, cqrs.Unit](ctx.Context(), r.bus, command.ResubmitCmd{
+		InstanceID: params.InstanceID,
+		Operator:   operator,
+		FormData:   params.FormData,
 	}); err != nil {
 		return err
 	}
@@ -211,12 +252,17 @@ type AddAssigneeParams struct {
 
 // AddAssignee dynamically adds assignees to a task.
 func (r *InstanceResource) AddAssignee(ctx fiber.Ctx, principal security.Principal, params AddAssigneeParams) error {
+	operator, err := r.resolveOperator(ctx.Context(), principal)
+	if err != nil {
+		return err
+	}
+
 	if _, err := cqrs.Send[command.AddAssigneeCmd, cqrs.Unit](ctx.Context(), r.bus, command.AddAssigneeCmd{
 		InstanceID: params.InstanceID,
 		TaskID:     params.TaskID,
 		UserIDs:    params.UserIDs,
 		AddType:    params.AddType,
-		OperatorID: principal.ID,
+		Operator:   operator,
 	}); err != nil {
 		return err
 	}
@@ -233,14 +279,34 @@ type RemoveAssigneeParams struct {
 
 // RemoveAssignee removes an assignee by canceling their task.
 func (r *InstanceResource) RemoveAssignee(ctx fiber.Ctx, principal security.Principal, params RemoveAssigneeParams) error {
+	operator, err := r.resolveOperator(ctx.Context(), principal)
+	if err != nil {
+		return err
+	}
+
 	if _, err := cqrs.Send[command.RemoveAssigneeCmd, cqrs.Unit](ctx.Context(), r.bus, command.RemoveAssigneeCmd{
-		TaskID:     params.TaskID,
-		OperatorID: principal.ID,
+		TaskID:   params.TaskID,
+		Operator: operator,
 	}); err != nil {
 		return err
 	}
 
 	return result.Ok().Response(ctx)
+}
+
+// resolveOperator builds an OperatorInfo from the authenticated principal.
+func (r *InstanceResource) resolveOperator(ctx context.Context, principal security.Principal) (approval.OperatorInfo, error) {
+	deptID, deptName, err := r.deptResolver.Resolve(ctx, &principal)
+	if err != nil {
+		return approval.OperatorInfo{}, fmt.Errorf("resolve operator dept: %w", err)
+	}
+
+	return approval.OperatorInfo{
+		ID:       principal.ID,
+		Name:     principal.Name,
+		DeptID:   deptID,
+		DeptName: deptName,
+	}, nil
 }
 
 // FindInstancesParams contains the query parameters for finding instances.

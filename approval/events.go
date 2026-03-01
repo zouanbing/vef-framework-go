@@ -88,6 +88,46 @@ func NewInstanceRolledBackEvent(instanceID, fromNodeID, toNodeID, operatorID str
 func (e *InstanceRolledBackEvent) EventName() string          { return "approval.instance.rollback" }
 func (e *InstanceRolledBackEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
 
+// InstanceReturnedEvent fired when instance is returned to the initiator.
+type InstanceReturnedEvent struct {
+	InstanceID   string         `json:"instanceId"`
+	FromNodeID   string         `json:"fromNodeId"`
+	ToNodeID     string         `json:"toNodeId"`
+	OperatorID   string         `json:"operatorId"`
+	OccurredTime timex.DateTime `json:"occurredTime"`
+}
+
+func NewInstanceReturnedEvent(instanceID, fromNodeID, toNodeID, operatorID string) *InstanceReturnedEvent {
+	return &InstanceReturnedEvent{
+		InstanceID:   instanceID,
+		FromNodeID:   fromNodeID,
+		ToNodeID:     toNodeID,
+		OperatorID:   operatorID,
+		OccurredTime: timex.Now(),
+	}
+}
+
+func (e *InstanceReturnedEvent) EventName() string          { return "approval.instance.returned" }
+func (e *InstanceReturnedEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
+
+// InstanceResubmittedEvent fired when the initiator resubmits a returned instance.
+type InstanceResubmittedEvent struct {
+	InstanceID   string         `json:"instanceId"`
+	OperatorID   string         `json:"operatorId"`
+	OccurredTime timex.DateTime `json:"occurredTime"`
+}
+
+func NewInstanceResubmittedEvent(instanceID, operatorID string) *InstanceResubmittedEvent {
+	return &InstanceResubmittedEvent{
+		InstanceID:   instanceID,
+		OperatorID:   operatorID,
+		OccurredTime: timex.Now(),
+	}
+}
+
+func (e *InstanceResubmittedEvent) EventName() string          { return "approval.instance.resubmitted" }
+func (e *InstanceResubmittedEvent) OccurredAt() timex.DateTime { return e.OccurredTime }
+
 // ==================== Node Events ====================
 
 // NodeEnteredEvent fired when instance enters a new node.

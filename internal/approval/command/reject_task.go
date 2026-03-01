@@ -17,7 +17,7 @@ type RejectTaskCmd struct {
 	cqrs.BaseCommand
 	InstanceID string
 	TaskID     string
-	OperatorID string
+	Operator   approval.OperatorInfo
 	Opinion    string
 	FormData   map[string]any
 }
@@ -51,7 +51,7 @@ func NewRejectTaskHandler(
 func (h *RejectTaskHandler) Handle(ctx context.Context, cmd RejectTaskCmd) (cqrs.Unit, error) {
 	db := contextx.DB(ctx, h.db)
 
-	tc, err := prepareTaskOperation(ctx, db, h.validSvc, cmd.InstanceID, cmd.TaskID, cmd.OperatorID, cmd.Opinion, cmd.FormData)
+	tc, err := prepareTaskOperation(ctx, db, h.validSvc, cmd.InstanceID, cmd.TaskID, cmd.Operator.ID, cmd.Opinion, cmd.FormData)
 	if err != nil {
 		return cqrs.Unit{}, err
 	}
@@ -63,7 +63,7 @@ func (h *RejectTaskHandler) Handle(ctx context.Context, cmd RejectTaskCmd) (cqrs
 	}
 
 	events := []approval.DomainEvent{
-		approval.NewTaskRejectedEvent(task.ID, instance.ID, node.ID, cmd.OperatorID, cmd.Opinion),
+		approval.NewTaskRejectedEvent(task.ID, instance.ID, node.ID, cmd.Operator.ID, cmd.Opinion),
 	}
 
 	completionEvents, err := h.nodeSvc.HandleNodeCompletion(ctx, db, instance, node)
@@ -72,7 +72,7 @@ func (h *RejectTaskHandler) Handle(ctx context.Context, cmd RejectTaskCmd) (cqrs
 	}
 	events = append(events, completionEvents...)
 
-	if err := insertActionLog(ctx, db, instance.ID, task, cmd.OperatorID, approval.ActionReject, cmd.Opinion, "", ""); err != nil {
+	if err := insertActionLog(ctx, db, instance.ID, task, cmd.Operator, approval.ActionReject, cmd.Opinion, "", ""); err != nil {
 		return cqrs.Unit{}, err
 	}
 

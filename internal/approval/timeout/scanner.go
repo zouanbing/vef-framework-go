@@ -16,6 +16,9 @@ type Scanner struct {
 	publisher *dispatcher.EventPublisher
 }
 
+// systemOperator is the operator identity used for system-initiated actions.
+var systemOperator = approval.OperatorInfo{ID: "system", Name: "系统"}
+
 // NewScanner creates a new timeout scanner.
 func NewScanner(db orm.DB, publisher *dispatcher.EventPublisher) *Scanner {
 	return &Scanner{db: db, publisher: publisher}
@@ -133,14 +136,10 @@ func (s *Scanner) autoFinishTask(ctx context.Context, tx orm.DB, task *approval.
 		actionType = approval.ActionReject
 	}
 
-	actionLog := &approval.ActionLog{
-		InstanceID: task.InstanceID,
-		NodeID:     new(task.NodeID),
-		TaskID:     new(task.ID),
-		Action:     actionType,
-		OperatorID: "system",
-		Opinion:    new("系统超时自动处理"),
-	}
+	actionLog := systemOperator.NewActionLog(task.InstanceID, actionType)
+	actionLog.NodeID = new(task.NodeID)
+	actionLog.TaskID = new(task.ID)
+	actionLog.Opinion = new("系统超时自动处理")
 	if _, err := tx.NewInsert().
 		Model(actionLog).
 		Exec(ctx); err != nil {
@@ -225,15 +224,11 @@ func (s *Scanner) transferToAdmin(ctx context.Context, tx orm.DB, task *approval
 	}
 
 	// Record the action
-	actionLog := &approval.ActionLog{
-		InstanceID:   task.InstanceID,
-		NodeID:       new(task.NodeID),
-		TaskID:       new(task.ID),
-		Action:       approval.ActionTransfer,
-		OperatorID:   "system",
-		TransferToID: new(node.AdminUserIDs[0]),
-		Opinion:      new("任务处理超时，系统自动转交管理员"),
-	}
+	actionLog := systemOperator.NewActionLog(task.InstanceID, approval.ActionTransfer)
+	actionLog.NodeID = new(task.NodeID)
+	actionLog.TaskID = new(task.ID)
+	actionLog.TransferToID = new(node.AdminUserIDs[0])
+	actionLog.Opinion = new("任务处理超时，系统自动转交管理员")
 	if _, err := tx.NewInsert().
 		Model(actionLog).
 		Exec(ctx); err != nil {

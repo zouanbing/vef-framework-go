@@ -10,10 +10,10 @@ import (
 type CategoryParams struct {
 	api.P
 
-	ID       string `json:"id"`
-	TenantID string `json:"tenantId" validate:"required"`
-	Code     string `json:"code" validate:"required"`
-	Name     string `json:"name" validate:"required"`
+	ID        string  `json:"id"`
+	TenantID  string  `json:"tenantId" validate:"required"`
+	Code      string  `json:"code" validate:"required"`
+	Name      string  `json:"name" validate:"required"`
 	Icon      *string `json:"icon"`
 	ParentID  *string `json:"parentId"`
 	SortOrder int     `json:"sortOrder"`
@@ -41,7 +41,7 @@ type CategoryResource struct {
 }
 
 // NewCategoryResource creates a new category resource with standard CRUD operations.
-func NewCategoryResource() *CategoryResource {
+func NewCategoryResource() api.Resource {
 	return &CategoryResource{
 		Resource: api.NewRPCResource("approval/category"),
 		FindAll:  crud.NewFindAll[approval.FlowCategory, CategorySearch](),
