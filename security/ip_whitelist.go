@@ -23,8 +23,7 @@ type IPWhitelistValidator struct {
 // An empty whitelist means all IPs are allowed.
 func NewIPWhitelistValidator(whitelist string) *IPWhitelistValidator {
 	validator := &IPWhitelistValidator{
-		networks: make([]*net.IPNet, 0),
-		ips:      collections.NewHashSet[string](),
+		ips: collections.NewHashSet[string](),
 	}
 
 	whitelist = strings.TrimSpace(whitelist)

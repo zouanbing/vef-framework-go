@@ -1,13 +1,14 @@
 package security
 
 import (
+	"cmp"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/samber/lo"
 
 	"github.com/ilxqx/vef-framework-go/result"
 )
@@ -37,12 +38,12 @@ type JWT struct {
 // Secret expects a hex-encoded string; invalid hex will cause an error.
 // Audience will be defaulted when empty.
 func NewJWT(config *JWTConfig) (*JWT, error) {
-	secret, err := hex.DecodeString(lo.CoalesceOrEmpty(config.Secret, DefaultJWTSecret))
+	secret, err := hex.DecodeString(cmp.Or(config.Secret, DefaultJWTSecret))
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrDecodeJWTSecretFailed, err)
 	}
 
-	config.Audience = lo.CoalesceOrEmpty(config.Audience, DefaultJWTAudience)
+	config.Audience = cmp.Or(config.Audience, DefaultJWTAudience)
 
 	return &JWT{
 		config: config,
@@ -70,9 +71,7 @@ func (j *JWT) Generate(claimsBuilder *JWTClaimsBuilder, expires, notBefore time.
 // Parse parses and validates a JWT token.
 // It returns a read-only claims accessor which performs safe conversions and never panics.
 func (j *JWT) Parse(tokenString string) (*JWTClaimsAccessor, error) {
-	options := make([]jwt.ParserOption, 0, len(jwtParseOptions)+1)
-	options = append(options, jwtParseOptions...)
-	options = append(options, jwt.WithAudience(j.config.Audience))
+	options := append(slices.Clone(jwtParseOptions), jwt.WithAudience(j.config.Audience))
 
 	token, err := jwt.NewParser(options...).
 		Parse(

@@ -232,6 +232,43 @@ func TestJWTErrorMapping(t *testing.T) {
 	}
 }
 
+// TestJWTClaimsAccessor tests JWT claims accessor functionality.
+func TestJWTClaimsAccessor(t *testing.T) {
+	config := &JWTConfig{
+		Secret:   DefaultJWTSecret,
+		Audience: "test_app",
+	}
+	jwt, err := NewJWT(config)
+	require.NoError(t, err, "Should not return error")
+
+	t.Run("IDReturnsJWTID", func(t *testing.T) {
+		builder := NewJWTClaimsBuilder().
+			WithID("my-jwt-id").
+			WithSubject("user1")
+
+		token, err := jwt.Generate(builder, 1*time.Hour, 0)
+		require.NoError(t, err, "Should not return error")
+
+		accessor, err := jwt.Parse(token)
+		require.NoError(t, err, "Should not return error")
+
+		assert.Equal(t, "my-jwt-id", accessor.ID(), "Should return the JWT ID")
+	})
+
+	t.Run("IDReturnsEmptyWhenMissing", func(t *testing.T) {
+		builder := NewJWTClaimsBuilder().
+			WithSubject("user1")
+
+		token, err := jwt.Generate(builder, 1*time.Hour, 0)
+		require.NoError(t, err, "Should not return error")
+
+		accessor, err := jwt.Parse(token)
+		require.NoError(t, err, "Should not return error")
+
+		assert.Empty(t, accessor.ID(), "Should return empty string when ID is missing")
+	})
+}
+
 // TestJWTClaimsBuilder tests JWT claims builder functionality.
 func TestJWTClaimsBuilder(t *testing.T) {
 	t.Run("BuildClaimsWithVariousTypes", func(t *testing.T) {
@@ -286,5 +323,18 @@ func TestJWTClaimsBuilder(t *testing.T) {
 		details, ok := builder.Details()
 		assert.True(t, ok, "Should be ok")
 		assert.Equal(t, map[string]any{"email": "test@example.com"}, details, "Should equal expected value")
+	})
+
+	t.Run("ClaimGetterReturnsValueAndPresence", func(t *testing.T) {
+		builder := NewJWTClaimsBuilder().
+			WithClaim("custom_key", "custom_value")
+
+		val, ok := builder.Claim("custom_key")
+		assert.True(t, ok, "Should return true for existing claim")
+		assert.Equal(t, "custom_value", val, "Should return the claim value")
+
+		val, ok = builder.Claim("missing_key")
+		assert.False(t, ok, "Should return false for missing claim")
+		assert.Nil(t, val, "Should return nil for missing claim")
 	})
 }

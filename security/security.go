@@ -35,3 +35,10 @@ type LoginResult struct {
 	ChallengeToken string           `json:"challengeToken,omitempty"`
 	Challenges     []LoginChallenge `json:"challenges,omitempty"`
 }
+
+// ChallengeState holds the state tracked by a challenge token.
+type ChallengeState struct {
+	Principal *Principal
+	Pending   []string
+	Resolved  []string
+}

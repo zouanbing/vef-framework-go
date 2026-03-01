@@ -6,29 +6,27 @@ import (
 	"github.com/ilxqx/vef-framework-go/event"
 )
 
-const (
-	eventTypeLogin = "vef.security.login"
-)
+const eventTypeLogin = "vef.security.login"
 
 // LoginEvent represents a user login event.
 type LoginEvent struct {
 	event.BaseEvent
 
-	AuthType   string `json:"authType"`
-	UserID     string `json:"userId"` // Populated on success
-	Username   string `json:"username"`
-	LoginIP    string `json:"loginIp"`
-	UserAgent  string `json:"userAgent"`
-	TraceID    string `json:"traceId"`
-	IsOk       bool   `json:"isOk"`
-	FailReason string `json:"failReason"` // Populated on failure
-	ErrorCode  int    `json:"errorCode"`
+	AuthType   string  `json:"authType"`
+	UserID     *string `json:"userId"` // Populated on success
+	Username   string  `json:"username"`
+	LoginIP    string  `json:"loginIp"`
+	UserAgent  string  `json:"userAgent"`
+	TraceID    string  `json:"traceId"`
+	IsOk       bool    `json:"isOk"`
+	FailReason string  `json:"failReason"` // Populated on failure
+	ErrorCode  int     `json:"errorCode"`
 }
 
 // LoginEventParams contains parameters for creating a LoginEvent.
 type LoginEventParams struct {
 	AuthType   string
-	UserID     string
+	UserID     *string
 	Username   string
 	LoginIP    string
 	UserAgent  string

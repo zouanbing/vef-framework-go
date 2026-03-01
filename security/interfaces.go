@@ -120,6 +120,17 @@ type NonceStore interface {
 	Store(ctx context.Context, appID, nonce string, ttl time.Duration) error
 }
 
+// ChallengeTokenStore manages the lifecycle of challenge tokens.
+// Challenge tokens carry the intermediate state between login steps,
+// allowing the login flow to pause for user input (e.g., 2FA code, department selection).
+// The default implementation uses JWT; alternatives (e.g., Redis) can be swapped via DI.
+type ChallengeTokenStore interface {
+	// Generate creates a challenge token encoding the principal and challenge state.
+	Generate(principal *Principal, pending, resolved []string) (string, error)
+	// Parse retrieves the challenge state from a token.
+	Parse(token string) (*ChallengeState, error)
+}
+
 // ChallengeProvider evaluates and resolves a login challenge.
 // Register implementations via vef.ProvideChallengeProvider to inject
 // additional steps into the login flow (e.g., 2FA, department selection).

@@ -23,10 +23,12 @@ func NewMemoryChallengeTokenStore() ChallengeTokenStore {
 
 func (s *MemoryChallengeTokenStore) Generate(principal *Principal, pending, resolved []string) (string, error) {
 	token := id.GenerateUUID()
+
 	state := ChallengeState{Principal: principal, Pending: pending, Resolved: resolved}
 	if err := s.cache.Set(context.Background(), token, state, ChallengeTokenExpires); err != nil {
 		return "", err
 	}
+
 	return token, nil
 }
 
@@ -34,9 +36,11 @@ func (s *MemoryChallengeTokenStore) Parse(token string) (*ChallengeState, error)
 	if token == "" {
 		return nil, result.ErrTokenInvalid
 	}
+
 	state, ok := s.cache.Get(context.Background(), token)
 	if !ok {
 		return nil, result.ErrTokenInvalid
 	}
+
 	return &state, nil
 }

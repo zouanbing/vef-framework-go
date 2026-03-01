@@ -9,11 +9,9 @@ import (
 	"github.com/ilxqx/vef-framework-go/log"
 )
 
-const (
-	// EventTypeRolePermissionsChanged is the event type for role permissions changes.
-	// When this event is published, the entire role permissions cache will be cleared.
-	eventTypeRolePermissionsChanged = "vef.security.role_permissions.changed"
-)
+// eventTypeRolePermissionsChanged is the event type for role permissions changes.
+// When this event is published, the entire role permissions cache will be cleared.
+const eventTypeRolePermissionsChanged = "vef.security.role_permissions.changed"
 
 // RolePermissionsChangedEvent is published when role permissions are modified.
 type RolePermissionsChangedEvent struct {

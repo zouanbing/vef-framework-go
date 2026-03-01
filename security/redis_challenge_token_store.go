@@ -46,11 +46,13 @@ func (s *RedisChallengeTokenStore) Parse(token string) (*ChallengeState, error) 
 	}
 
 	key := redisChallengePrefix + token
+
 	data, err := s.client.Get(context.Background(), key).Bytes()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			return nil, result.ErrTokenInvalid
 		}
+
 		return nil, err
 	}
 

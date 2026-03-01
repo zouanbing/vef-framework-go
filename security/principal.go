@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/samber/lo"
-
 	"github.com/ilxqx/vef-framework-go/mapx"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/reflectx"
@@ -124,20 +122,21 @@ func unmarshalDetails(data json.RawMessage, detailsType reflect.Type) any {
 
 // AttemptUnmarshalDetails attempts to unmarshal the details into the principal.
 func (p *Principal) AttemptUnmarshalDetails(details any) {
+	p.Details = details
+
 	// Non-user/external-app types keep details as-is
 	if p.Type != PrincipalTypeUser && p.Type != PrincipalTypeExternalApp {
-		p.Details = details
-
 		return
 	}
 
-	detailsType := lo.Ternary(p.Type == PrincipalTypeUser, userDetailsType, externalAppDetailsType)
+	detailsType := userDetailsType
+	if p.Type == PrincipalTypeExternalApp {
+		detailsType = externalAppDetailsType
+	}
 
 	// If details is not a map or target type is already map[string]any, keep as-is
 	detailsMap, isMap := details.(map[string]any)
 	if !isMap || detailsType.AssignableTo(reflect.TypeFor[map[string]any]()) {
-		p.Details = details
-
 		return
 	}
 
@@ -146,14 +145,10 @@ func (p *Principal) AttemptUnmarshalDetails(details any) {
 
 	decoder, err := mapx.NewDecoder(value)
 	if err != nil {
-		p.Details = details
-
 		return
 	}
 
 	if err := decoder.Decode(detailsMap); err != nil {
-		p.Details = details
-
 		return
 	}
 

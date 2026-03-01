@@ -1,6 +1,8 @@
 package security
 
 import (
+	"cmp"
+
 	"github.com/ilxqx/vef-framework-go/orm"
 )
 
@@ -65,12 +67,8 @@ type SelfDataScope struct {
 // The createdByColumn parameter specifies the database column name for the creator.
 // If empty, it defaults to "created_by".
 func NewSelfDataScope(createdByColumn string) DataScope {
-	if createdByColumn == "" {
-		createdByColumn = orm.ColumnCreatedBy
-	}
-
 	return &SelfDataScope{
-		createdByColumn: createdByColumn,
+		createdByColumn: cmp.Or(createdByColumn, orm.ColumnCreatedBy),
 	}
 }
 
