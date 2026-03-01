@@ -22,11 +22,7 @@ func (c *RbacPermissionChecker) HasPermission(
 	principal *security.Principal,
 	permissionToken string,
 ) (bool, error) {
-	if principal == nil {
-		return false, nil
-	}
-
-	if len(principal.Roles) == 0 {
+	if principal == nil || len(principal.Roles) == 0 {
 		return false, nil
 	}
 

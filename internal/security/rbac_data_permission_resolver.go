@@ -6,35 +6,30 @@ import (
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
-// RbacDataPermissionResolver implements role-based data permission resolution.
-// It delegates role permissions loading to a RolePermissionsLoader implementation.
-type RbacDataPermissionResolver struct {
+// RBACDataPermissionResolver implements role-based data permission resolution.
+type RBACDataPermissionResolver struct {
 	loader security.RolePermissionsLoader
 }
 
-// NewRbacDataPermissionResolver creates a new RBAC data permission resolver.
-// loader: The strategy for loading role permissions.
-func NewRbacDataPermissionResolver(loader security.RolePermissionsLoader) security.DataPermissionResolver {
-	return &RbacDataPermissionResolver{
+// NewRBACDataPermissionResolver creates a new RBAC data permission resolver.
+func NewRBACDataPermissionResolver(loader security.RolePermissionsLoader) security.DataPermissionResolver {
+	return &RBACDataPermissionResolver{
 		loader: loader,
 	}
 }
 
 // ResolveDataScope resolves the applicable DataScope for the given principal and permission token.
 // When a user has multiple roles with the same permission token but different data scopes,
-// this method collects all matching scopes and returns the one with the highest priority.
-// Returns nil if no matching permission is found.
-func (r *RbacDataPermissionResolver) ResolveDataScope(
+// the scope with the highest priority wins. Returns nil if no matching permission is found.
+func (r *RBACDataPermissionResolver) ResolveDataScope(
 	ctx context.Context,
 	principal *security.Principal,
 	permToken string,
 ) (security.DataScope, error) {
-	// If loader is nil, no data scope resolution is possible
 	if r.loader == nil {
 		return nil, nil
 	}
 
-	// If principal is nil or has no roles, they have no permissions
 	if principal == nil || len(principal.Roles) == 0 {
 		return nil, nil
 	}
@@ -44,16 +39,14 @@ func (r *RbacDataPermissionResolver) ResolveDataScope(
 		maxPriority   = -1
 	)
 
-	// Load permissions for each role and collect all matching DataScopes
-	// Using sequential loading for efficiency since most users have only 1-3 roles
+	// Sequential loading is sufficient since most users have only 1-3 roles.
 	for _, role := range principal.Roles {
 		permissions, err := r.loader.LoadPermissions(ctx, role)
 		if err != nil {
 			return nil, err
 		}
 
-		if dataScope, exists := permissions[permToken]; exists {
-			// Compare priorities and select the scope with the highest priority
+		if dataScope, exists := permissions[permToken]; exists && dataScope != nil {
 			if priority := dataScope.Priority(); priority > maxPriority {
 				maxPriority = priority
 				selectedScope = dataScope
@@ -61,6 +54,5 @@ func (r *RbacDataPermissionResolver) ResolveDataScope(
 		}
 	}
 
-	// Return the DataScope with the highest priority, or nil if none found
 	return selectedScope, nil
 }

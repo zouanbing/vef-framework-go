@@ -2,9 +2,12 @@ package security
 
 import (
 	"context"
+	"slices"
 
 	"github.com/gofiber/fiber/v3"
 	"go.uber.org/fx"
+
+	"github.com/ilxqx/go-streams"
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
@@ -20,22 +23,29 @@ import (
 type AuthResourceParams struct {
 	fx.In
 
-	AuthManager        security.AuthManager
-	TokenGenerator     security.TokenGenerator
-	UserInfoLoader     security.UserInfoLoader     `optional:"true"`
-	ChallengeProviders []security.ChallengeProvider `group:"vef:security:challenge_providers"`
-	Publisher          event.Publisher
-	SecurityConfig     *config.SecurityConfig
+	AuthManager         security.AuthManager
+	TokenGenerator      security.TokenGenerator
+	ChallengeTokenStore security.ChallengeTokenStore
+	UserInfoLoader      security.UserInfoLoader      `optional:"true"`
+	ChallengeProviders  []security.ChallengeProvider `group:"vef:security:challenge_providers"`
+	Publisher           event.Publisher
+	SecurityConfig      *config.SecurityConfig
 }
 
 // NewAuthResource creates a new authentication resource with the provided auth manager and token generator.
 func NewAuthResource(params AuthResourceParams) api.Resource {
 	return &AuthResource{
-		authManager:        params.AuthManager,
-		tokenGenerator:     params.TokenGenerator,
-		userInfoLoader:     params.UserInfoLoader,
-		challengeProviders: params.ChallengeProviders,
-		publisher:          params.Publisher,
+		authManager:         params.AuthManager,
+		tokenGenerator:      params.TokenGenerator,
+		challengeTokenStore: params.ChallengeTokenStore,
+		userInfoLoader:      params.UserInfoLoader,
+		challengeProviders: streams.ToMap(
+			streams.FromSlice(params.ChallengeProviders),
+			func(cp security.ChallengeProvider) string { return cp.Type() },
+			func(cp security.ChallengeProvider) security.ChallengeProvider { return cp },
+		),
+		publisher: params.Publisher,
+
 		Resource: api.NewRPCResource(
 			"security/auth",
 			api.WithOperations(
@@ -69,31 +79,32 @@ func NewAuthResource(params AuthResourceParams) api.Resource {
 type AuthResource struct {
 	api.Resource
 
-	authManager        security.AuthManager
-	tokenGenerator     security.TokenGenerator
-	userInfoLoader     security.UserInfoLoader
-	challengeProviders []security.ChallengeProvider
-	publisher          event.Publisher
+	authManager         security.AuthManager
+	tokenGenerator      security.TokenGenerator
+	challengeTokenStore security.ChallengeTokenStore
+	userInfoLoader      security.UserInfoLoader
+	challengeProviders  map[string]security.ChallengeProvider
+	publisher           event.Publisher
 }
 
 // LoginParams represents the request parameters for user login.
 type LoginParams struct {
 	api.P
 
-	// Authentication contains user credentials
-	security.Authentication
+	Type        string `json:"type" validate:"required" label_i18n:"auth_type"`
+	Principal   string `json:"principal" validate:"required" label_i18n:"auth_principal"`
+	Credentials any    `json:"credentials" validate:"required" label_i18n:"auth_credentials"`
 }
 
 // Login authenticates a user and returns a LoginResult.
 // When challenge providers are configured and applicable, the result contains
 // a challenge token and pending challenges instead of auth tokens.
 func (a *AuthResource) Login(ctx fiber.Ctx, params LoginParams) error {
-	loginIP := httpx.GetIP(ctx)
-	userAgent := ctx.Get(fiber.HeaderUserAgent)
-	traceID := contextx.RequestID(ctx)
-	username := params.Principal
-
-	principal, err := a.authManager.Authenticate(ctx.Context(), params.Authentication)
+	principal, err := a.authManager.Authenticate(ctx.Context(), security.Authentication{
+		Type:        params.Type,
+		Principal:   params.Principal,
+		Credentials: params.Credentials,
+	})
 	if err != nil {
 		var (
 			failReason string
@@ -110,11 +121,10 @@ func (a *AuthResource) Login(ctx fiber.Ctx, params LoginParams) error {
 
 		loginEvent := security.NewLoginEvent(security.LoginEventParams{
 			AuthType:   params.Type,
-			UserID:     "",
-			Username:   username,
-			LoginIP:    loginIP,
-			UserAgent:  userAgent,
-			TraceID:    traceID,
+			Username:   params.Principal,
+			LoginIP:    httpx.GetIP(ctx),
+			UserAgent:  ctx.Get(fiber.HeaderUserAgent),
+			TraceID:    contextx.RequestID(ctx),
 			IsOk:       false,
 			FailReason: failReason,
 			ErrorCode:  errorCode,
@@ -124,32 +134,18 @@ func (a *AuthResource) Login(ctx fiber.Ctx, params LoginParams) error {
 		return err
 	}
 
-	// Evaluate challenges after successful authentication
 	challenges, err := a.evaluateChallenges(ctx.Context(), principal)
 	if err != nil {
 		return err
 	}
 
-	// Publish login success event
-	loginEvent := security.NewLoginEvent(security.LoginEventParams{
-		AuthType:  params.Type,
-		UserID:    principal.ID,
-		Username:  username,
-		LoginIP:   loginIP,
-		UserAgent: userAgent,
-		TraceID:   traceID,
-		IsOk:      true,
-	})
-	a.publisher.Publish(loginEvent)
-
 	if len(challenges) > 0 {
-		pending := make([]string, len(challenges))
-		for i, c := range challenges {
-			pending[i] = c.Type
-		}
+		pending := streams.MapTo(
+			streams.FromSlice(challenges),
+			func(c security.LoginChallenge) string { return c.Type },
+		).Collect()
 
-		generator := a.tokenGenerator.(*JWTTokenGenerator)
-		challengeToken, err := generator.GenerateChallengeToken(principal, pending, nil)
+		challengeToken, err := a.challengeTokenStore.Generate(principal, pending, nil)
 		if err != nil {
 			return err
 		}
@@ -160,21 +156,30 @@ func (a *AuthResource) Login(ctx fiber.Ctx, params LoginParams) error {
 		}).Response(ctx)
 	}
 
-	credentials, err := a.tokenGenerator.Generate(principal)
+	tokens, err := a.tokenGenerator.Generate(principal)
 	if err != nil {
 		return err
 	}
 
-	return result.Ok(&security.LoginResult{
-		Tokens: credentials,
-	}).Response(ctx)
+	loginEvent := security.NewLoginEvent(security.LoginEventParams{
+		AuthType:  params.Type,
+		UserID:    &principal.ID,
+		Username:  params.Principal,
+		LoginIP:   httpx.GetIP(ctx),
+		UserAgent: ctx.Get(fiber.HeaderUserAgent),
+		TraceID:   contextx.RequestID(ctx),
+		IsOk:      true,
+	})
+	a.publisher.Publish(loginEvent)
+
+	return result.Ok(&security.LoginResult{Tokens: tokens}).Response(ctx)
 }
 
 // RefreshParams represents the request parameters for token refresh operation.
 type RefreshParams struct {
 	api.P
 
-	RefreshToken string `json:"refreshToken"`
+	RefreshToken string `json:"refreshToken" validate:"required" label_i18n:"auth_refresh_token"`
 }
 
 // Refresh refreshes the access token using a valid refresh token.
@@ -206,87 +211,60 @@ func (*AuthResource) Logout(ctx fiber.Ctx) error {
 type ResolveChallengeParams struct {
 	api.P
 
-	ChallengeToken string `json:"challengeToken"`
-	Type           string `json:"type"`
-	Response       any    `json:"response"`
+	ChallengeToken string `json:"challengeToken" validate:"required" label_i18n:"auth_challenge_token"`
+	Type           string `json:"type" validate:"required" label_i18n:"auth_challenge_type"`
+	Response       any    `json:"response" validate:"required" label_i18n:"auth_challenge_response"`
 }
 
 // ResolveChallenge validates a user's response to a login challenge.
 // On success, either issues real auth tokens (all challenges resolved)
 // or returns a new challenge token with remaining challenges.
 func (a *AuthResource) ResolveChallenge(ctx fiber.Ctx, params ResolveChallengeParams) error {
-	if params.ChallengeToken == "" {
-		return result.Err(
-			i18n.T(result.ErrMessageChallengeTokenInvalid),
-			result.WithCode(result.ErrCodeChallengeTokenInvalid),
-			result.WithStatus(fiber.StatusUnauthorized),
-		)
-	}
-
-	generator := a.tokenGenerator.(*JWTTokenGenerator)
-	claims, err := generator.ParseChallengeToken(params.ChallengeToken)
+	state, err := a.challengeTokenStore.Parse(params.ChallengeToken)
 	if err != nil {
-		return result.Err(
-			i18n.T(result.ErrMessageChallengeTokenInvalid),
-			result.WithCode(result.ErrCodeChallengeTokenInvalid),
-			result.WithStatus(fiber.StatusUnauthorized),
-		)
+		return result.ErrChallengeTokenInvalid
 	}
 
-	// Validate the challenge type is in the pending list
-	found := false
-	for _, p := range claims.Pending {
-		if p == params.Type {
-			found = true
-			break
-		}
+	if !slices.Contains(state.Pending, params.Type) {
+		return result.ErrChallengeTypeInvalid
 	}
 
-	if !found {
-		return result.Err(
-			i18n.T(result.ErrMessageChallengeTypeInvalid),
-			result.WithCode(result.ErrCodeChallengeTypeInvalid),
-			result.WithStatus(fiber.StatusBadRequest),
-		)
+	provider, ok := a.challengeProviders[params.Type]
+	if !ok {
+		return result.ErrChallengeTypeInvalid
 	}
 
-	provider := a.findChallengeProvider(params.Type)
-	if provider == nil {
-		return result.Err(
-			i18n.T(result.ErrMessageChallengeTypeInvalid),
-			result.WithCode(result.ErrCodeChallengeTypeInvalid),
-			result.WithStatus(fiber.StatusBadRequest),
-		)
-	}
-
-	principal, err := provider.Resolve(ctx.Context(), claims.Principal, params.Response)
+	principal, err := provider.Resolve(ctx.Context(), state.Principal, params.Response)
 	if err != nil {
 		return err
 	}
 
 	// Build updated pending list (remove resolved type)
-	resolved := append(claims.Resolved, params.Type)
-	var remaining []string
-	for _, p := range claims.Pending {
-		if p != params.Type {
-			remaining = append(remaining, p)
-		}
-	}
+	resolved := append(state.Resolved, params.Type)
+	remaining := streams.FromSlice(state.Pending).
+		Filter(func(p string) bool { return p != params.Type }).
+		Collect()
 
 	if len(remaining) == 0 {
-		// All challenges resolved — issue real tokens
 		credentials, err := a.tokenGenerator.Generate(principal)
 		if err != nil {
 			return err
 		}
 
-		return result.Ok(&security.LoginResult{
-			Tokens: credentials,
-		}).Response(ctx)
+		loginEvent := security.NewLoginEvent(security.LoginEventParams{
+			UserID:    &principal.ID,
+			LoginIP:   httpx.GetIP(ctx),
+			UserAgent: ctx.Get(fiber.HeaderUserAgent),
+			TraceID:   contextx.RequestID(ctx),
+			IsOk:      true,
+		})
+		a.publisher.Publish(loginEvent)
+
+		return result.Ok(&security.LoginResult{Tokens: credentials}).Response(ctx)
 	}
 
 	// More challenges remain — issue new ephemeral token
-	challengeToken, err := generator.GenerateChallengeToken(principal, remaining, resolved)
+	challengeToken, err := a.challengeTokenStore.Generate(principal, remaining, resolved)
 	if err != nil {
 		return err
 	}
@@ -294,12 +272,12 @@ func (a *AuthResource) ResolveChallenge(ctx fiber.Ctx, params ResolveChallengePa
 	// Re-evaluate remaining challenges to get fresh data
 	var remainingChallenges []security.LoginChallenge
 	for _, challengeType := range remaining {
-		p := a.findChallengeProvider(challengeType)
-		if p == nil {
+		provider, ok := a.challengeProviders[challengeType]
+		if !ok {
 			continue
 		}
 
-		challenge, err := p.Evaluate(ctx.Context(), principal)
+		challenge, err := provider.Evaluate(ctx.Context(), principal)
 		if err != nil {
 			return err
 		}
@@ -349,14 +327,4 @@ func (a *AuthResource) evaluateChallenges(ctx context.Context, principal *securi
 	}
 
 	return challenges, nil
-}
-
-func (a *AuthResource) findChallengeProvider(challengeType string) security.ChallengeProvider {
-	for _, provider := range a.challengeProviders {
-		if provider.Type() == challengeType {
-			return provider
-		}
-	}
-
-	return nil
 }

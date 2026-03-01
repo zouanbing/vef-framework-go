@@ -46,7 +46,7 @@ func (j *JWTRefreshAuthenticator) Authenticate(ctx context.Context, authenticati
 		return nil, err
 	}
 
-	if claimsAccessor.Type() != TokenTypeRefresh {
+	if claimsAccessor.Type() != security.TokenTypeRefresh {
 		return nil, result.ErrTokenInvalid
 	}
 

@@ -37,11 +37,15 @@ func (ja *JWTTokenAuthenticator) Authenticate(_ context.Context, authentication 
 		return nil, err
 	}
 
-	if claimsAccessor.Type() != TokenTypeAccess {
+	if claimsAccessor.Type() != security.TokenTypeAccess {
 		return nil, result.ErrTokenInvalid
 	}
 
 	subjectParts := strings.SplitN(claimsAccessor.Subject(), "@", 2)
+	if len(subjectParts) < 2 {
+		return nil, result.ErrTokenInvalid
+	}
+
 	principal := security.NewUser(subjectParts[0], subjectParts[1], claimsAccessor.Roles()...)
 	principal.AttemptUnmarshalDetails(claimsAccessor.Details())
 

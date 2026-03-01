@@ -44,13 +44,11 @@ var Module = fx.Module(
 	),
 	fx.Provide(
 		password.NewBcryptEncoder,
-		fx.Annotate(
-			func(config *config.AppConfig) (*security.JWT, error) {
-				return security.NewJWT(&security.JWTConfig{
-					Audience: lo.SnakeCase(config.Name),
-				})
-			},
-		),
+		func(config *config.AppConfig) (*security.JWT, error) {
+			return security.NewJWT(&security.JWTConfig{
+				Audience: lo.SnakeCase(config.Name),
+			})
+		},
 		fx.Annotate(
 			NewJWTAuthenticator,
 			fx.ResultTags(`group:"vef:security:authenticators"`),
@@ -61,6 +59,7 @@ var Module = fx.Module(
 			fx.ResultTags(`group:"vef:security:authenticators"`),
 		),
 		NewJWTTokenGenerator,
+		security.NewJWTChallengeTokenStore,
 		fx.Annotate(
 			NewSignatureAuthenticator,
 			fx.ParamTags(`optional:"true"`, `optional:"true"`),
@@ -80,7 +79,7 @@ var Module = fx.Module(
 			fx.ParamTags(`optional:"true"`),
 		),
 		fx.Annotate(
-			NewRbacDataPermissionResolver,
+			NewRBACDataPermissionResolver,
 			fx.ParamTags(`optional:"true"`),
 		),
 		fx.Annotate(

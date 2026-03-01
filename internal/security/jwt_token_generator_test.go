@@ -2,91 +2,165 @@ package security
 
 import (
 	"testing"
-	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
 type JWTTokenGeneratorTestSuite struct {
 	suite.Suite
+
+	jwt       *security.JWT
 	generator *JWTTokenGenerator
 }
 
 func (s *JWTTokenGeneratorTestSuite) SetupSuite() {
-	jwt, err := security.NewJWT(&security.JWTConfig{
-		Secret:   security.DefaultJWTSecret,
-		Audience: security.DefaultJWTAudience,
+	s.jwt = newTestJWT(s.T())
+	s.generator = newTestTokenGenerator(s.jwt).(*JWTTokenGenerator)
+}
+
+// TestGenerate verifies token pair generation.
+func (s *JWTTokenGeneratorTestSuite) TestGenerate() {
+	s.Run("WithRolesAndDetails", func() {
+		principal := security.NewUser("user1", "Alice", "admin", "editor")
+		principal.Details = map[string]any{"department": "engineering"}
+
+		tokens, err := s.generator.Generate(principal)
+		s.Require().NoError(err, "Should generate tokens without error")
+		s.Require().NotNil(tokens, "Should return non-nil tokens")
+		s.NotEmpty(tokens.AccessToken, "Should have non-empty access token")
+		s.NotEmpty(tokens.RefreshToken, "Should have non-empty refresh token")
 	})
-	require.NoError(s.T(), err, "Should create JWT instance without error")
 
-	tokenGen := NewJWTTokenGenerator(jwt, &config.SecurityConfig{
-		TokenExpires:     24 * time.Hour,
-		RefreshNotBefore: 20 * time.Minute,
+	s.Run("WithNoRoles", func() {
+		principal := security.NewUser("user2", "Bob")
+
+		tokens, err := s.generator.Generate(principal)
+		s.Require().NoError(err, "Should generate tokens without error")
+		s.Require().NotNil(tokens, "Should return non-nil tokens")
+		s.NotEmpty(tokens.AccessToken, "Should have non-empty access token")
+		s.NotEmpty(tokens.RefreshToken, "Should have non-empty refresh token")
 	})
 
-	var ok bool
-	s.generator, ok = tokenGen.(*JWTTokenGenerator)
-	require.True(s.T(), ok, "Should type-assert to *JWTTokenGenerator")
+	s.Run("WithNoDetails", func() {
+		principal := security.NewUser("user3", "Charlie", "viewer")
+
+		tokens, err := s.generator.Generate(principal)
+		s.Require().NoError(err, "Should generate tokens without error")
+		s.Require().NotNil(tokens, "Should return non-nil tokens")
+	})
+
+	s.Run("ExternalAppPrincipal", func() {
+		principal := security.NewExternalApp("app1", "MyApp", "api_access")
+
+		tokens, err := s.generator.Generate(principal)
+		s.Require().NoError(err, "Should generate tokens for external app")
+		s.Require().NotNil(tokens, "Should return non-nil tokens")
+		s.NotEmpty(tokens.AccessToken, "Should have non-empty access token")
+		s.NotEmpty(tokens.RefreshToken, "Should have non-empty refresh token")
+	})
+
+	s.Run("FailsWithNonSerializableDetails", func() {
+		principal := security.NewUser("user4", "Diana")
+		principal.Details = make(chan int) // channels cannot be JSON-marshaled
+
+		tokens, err := s.generator.Generate(principal)
+		s.Error(err, "Should fail when details cannot be serialized")
+		s.Nil(tokens, "Should return nil tokens on error")
+	})
 }
 
-// TestGenerateAndParseChallengeToken verifies round-trip generation and parsing of a challenge token.
-func (s *JWTTokenGeneratorTestSuite) TestGenerateAndParseChallengeToken() {
-	principal := security.NewUser("user123", "Alice", "admin", "editor")
-	pending := []string{"totp", "select_department"}
-	resolved := []string{}
+// TestAccessTokenClaims verifies claims encoded in the access token.
+func (s *JWTTokenGeneratorTestSuite) TestAccessTokenClaims() {
+	s.Run("SubjectAndType", func() {
+		principal := security.NewUser("user1", "Alice", "admin", "editor")
+		principal.Details = map[string]any{"department": "engineering"}
 
-	token, err := s.generator.GenerateChallengeToken(principal, pending, resolved)
-	require.NoError(s.T(), err, "Should generate challenge token without error")
-	require.NotEmpty(s.T(), token, "Should return a non-empty token string")
+		tokens, err := s.generator.Generate(principal)
+		s.Require().NoError(err, "Should generate tokens without error")
 
-	claims, err := s.generator.ParseChallengeToken(token)
-	require.NoError(s.T(), err, "Should parse challenge token without error")
-	require.NotNil(s.T(), claims, "Should return non-nil claims")
+		claims, err := s.jwt.Parse(tokens.AccessToken)
+		s.Require().NoError(err, "Should parse access token without error")
 
-	assert.Equal(s.T(), "user123", claims.Principal.ID, "Should preserve principal ID")
-	assert.Equal(s.T(), "Alice", claims.Principal.Name, "Should preserve principal name")
-	assert.Equal(s.T(), []string{"admin", "editor"}, claims.Principal.Roles, "Should preserve principal roles")
-	assert.Equal(s.T(), []string{"totp", "select_department"}, claims.Pending, "Should preserve pending challenges")
-	assert.Empty(s.T(), claims.Resolved, "Should have empty resolved list")
+		s.Equal("user1@Alice", claims.Subject(), "Should encode id@name in subject")
+		s.Equal(security.TokenTypeAccess, claims.Type(), "Should have access token type")
+		s.NotEmpty(claims.ID(), "Should have JWT ID")
+	})
+
+	s.Run("IncludesRolesAndDetails", func() {
+		principal := security.NewUser("user2", "Bob", "admin", "editor")
+		principal.Details = map[string]any{"level": 5}
+
+		tokens, err := s.generator.Generate(principal)
+		s.Require().NoError(err, "Should generate tokens without error")
+
+		claims, err := s.jwt.Parse(tokens.AccessToken)
+		s.Require().NoError(err, "Should parse access token without error")
+
+		s.Equal([]string{"admin", "editor"}, claims.Roles(), "Should include roles")
+		s.NotNil(claims.Details(), "Should include details")
+	})
+
+	s.Run("EmptyRolesAndNilDetails", func() {
+		principal := security.NewUser("user3", "Charlie")
+
+		tokens, err := s.generator.Generate(principal)
+		s.Require().NoError(err, "Should generate tokens without error")
+
+		claims, err := s.jwt.Parse(tokens.AccessToken)
+		s.Require().NoError(err, "Should parse access token without error")
+
+		s.Empty(claims.Roles(), "Should have empty roles")
+		s.Nil(claims.Details(), "Should have nil details")
+	})
 }
 
-// TestParseChallengeTokenWithResolvedState verifies parsing a token that has both pending and resolved challenges.
-func (s *JWTTokenGeneratorTestSuite) TestParseChallengeTokenWithResolvedState() {
-	principal := security.NewUser("user456", "Bob", "viewer")
-	pending := []string{"totp"}
-	resolved := []string{"select_department"}
-
-	token, err := s.generator.GenerateChallengeToken(principal, pending, resolved)
-	require.NoError(s.T(), err, "Should generate challenge token without error")
-
-	claims, err := s.generator.ParseChallengeToken(token)
-	require.NoError(s.T(), err, "Should parse challenge token without error")
-	require.NotNil(s.T(), claims, "Should return non-nil claims")
-
-	assert.Equal(s.T(), []string{"totp"}, claims.Pending, "Should have one pending challenge")
-	assert.Equal(s.T(), []string{"select_department"}, claims.Resolved, "Should have one resolved challenge")
-}
-
-// TestParseChallengeTokenRejectsAccessToken verifies that an access token cannot be parsed as a challenge token.
-func (s *JWTTokenGeneratorTestSuite) TestParseChallengeTokenRejectsAccessToken() {
-	principal := security.NewUser("user789", "Charlie", "admin")
+// TestRefreshTokenClaims verifies refresh token carries only essential claims.
+func (s *JWTTokenGeneratorTestSuite) TestRefreshTokenClaims() {
+	principal := security.NewUser("user1", "Alice", "admin")
+	principal.Details = map[string]any{"department": "engineering"}
 
 	tokens, err := s.generator.Generate(principal)
-	require.NoError(s.T(), err, "Should generate access/refresh tokens without error")
+	s.Require().NoError(err, "Should generate tokens without error")
 
-	_, err = s.generator.ParseChallengeToken(tokens.AccessToken)
-	assert.Error(s.T(), err, "Should reject access token as challenge token")
+	claims, err := s.jwt.Parse(tokens.RefreshToken)
+	s.Require().NoError(err, "Should parse refresh token without error")
+
+	s.Equal("user1@Alice", claims.Subject(), "Should encode id@name in subject")
+	s.Equal(security.TokenTypeRefresh, claims.Type(), "Should have refresh token type")
+	s.NotEmpty(claims.ID(), "Should have JWT ID")
+	s.Empty(claims.Roles(), "Should not include roles in refresh token")
+	s.Nil(claims.Details(), "Should not include details in refresh token")
 }
 
-// TestParseChallengeTokenRejectsInvalidToken verifies that a malformed token string is rejected.
-func (s *JWTTokenGeneratorTestSuite) TestParseChallengeTokenRejectsInvalidToken() {
-	_, err := s.generator.ParseChallengeToken("invalid.token.here")
-	assert.Error(s.T(), err, "Should reject invalid token string")
+// TestSharedJWTID verifies that access and refresh tokens share the same JWT ID.
+func (s *JWTTokenGeneratorTestSuite) TestSharedJWTID() {
+	principal := security.NewUser("user1", "Alice", "admin")
+
+	tokens, err := s.generator.Generate(principal)
+	s.Require().NoError(err, "Should generate tokens without error")
+
+	accessClaims, err := s.jwt.Parse(tokens.AccessToken)
+	s.Require().NoError(err, "Should parse access token without error")
+
+	refreshClaims, err := s.jwt.Parse(tokens.RefreshToken)
+	s.Require().NoError(err, "Should parse refresh token without error")
+
+	s.Equal(accessClaims.ID(), refreshClaims.ID(), "Should share JWT ID between access and refresh tokens")
+}
+
+// TestSubjectWithAtSignInName verifies SplitN-compatible subject encoding.
+func (s *JWTTokenGeneratorTestSuite) TestSubjectWithAtSignInName() {
+	principal := security.NewUser("user1", "user@example.com", "admin")
+
+	tokens, err := s.generator.Generate(principal)
+	s.Require().NoError(err, "Should generate tokens without error")
+
+	claims, err := s.jwt.Parse(tokens.AccessToken)
+	s.Require().NoError(err, "Should parse access token without error")
+
+	s.Equal("user1@user@example.com", claims.Subject(), "Should encode full id@name in subject")
 }
 
 func TestJWTTokenGeneratorTestSuite(t *testing.T) {

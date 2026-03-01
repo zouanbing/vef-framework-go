@@ -6,54 +6,29 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 
+	"github.com/ilxqx/vef-framework-go/contextx"
+	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
-type MockExternalAppLoader struct {
-	mock.Mock
-}
-
-func (m *MockExternalAppLoader) LoadByID(ctx context.Context, id string) (*security.Principal, string, error) {
-	args := m.Called(ctx, id)
-
-	if args.Get(0) == nil {
-		return nil, args.String(1), args.Error(2)
-	}
-
-	return args.Get(0).(*security.Principal), args.String(1), args.Error(2)
-}
-
-type MockNonceStore struct {
-	mock.Mock
-}
-
-func (m *MockNonceStore) Exists(ctx context.Context, appID, nonce string) (bool, error) {
-	args := m.Called(ctx, appID, nonce)
-
-	return args.Bool(0), args.Error(1)
-}
-
-func (m *MockNonceStore) Store(ctx context.Context, appID, nonce string, ttl time.Duration) error {
-	args := m.Called(ctx, appID, nonce, ttl)
-
-	return args.Error(0)
-}
-
 const testSecretHex = security.DefaultJWTSecret
 
+type SignatureAuthenticatorTestSuite struct {
+	suite.Suite
+}
+
 // generateValidCredentials creates valid signature credentials for testing.
-func generateValidCredentials(t *testing.T, appID, secret string) *security.SignatureCredentials {
-	t.Helper()
+func (s *SignatureAuthenticatorTestSuite) generateValidCredentials(appID, secret string) *security.SignatureCredentials {
+	s.T().Helper()
 
 	sig, err := security.NewSignature(secret, security.WithNonceStore(nil))
-	require.NoError(t, err, "Should not return error")
+	s.Require().NoError(err, "Should create signature instance")
 
 	result, err := sig.Sign(appID)
-	require.NoError(t, err, "Should not return error")
+	s.Require().NoError(err, "Should sign successfully")
 
 	return &security.SignatureCredentials{
 		Timestamp: result.Timestamp,
@@ -62,57 +37,43 @@ func generateValidCredentials(t *testing.T, appID, secret string) *security.Sign
 	}
 }
 
-// TestNewSignatureAuthenticator tests new signature authenticator functionality.
-func TestNewSignatureAuthenticator(t *testing.T) {
-	t.Run("WithLoader", func(t *testing.T) {
-		loader := new(MockExternalAppLoader)
-		auth := NewSignatureAuthenticator(loader, nil)
-
-		assert.NotNil(t, auth, "Authenticator should not be nil")
+// TestNew verifies constructor variants.
+func (s *SignatureAuthenticatorTestSuite) TestNew() {
+	s.Run("WithLoader", func() {
+		auth := NewSignatureAuthenticator(new(MockExternalAppLoader), nil)
+		s.NotNil(auth, "Authenticator should not be nil")
 	})
 
-	t.Run("WithoutLoader", func(t *testing.T) {
+	s.Run("WithoutLoader", func() {
 		auth := NewSignatureAuthenticator(nil, nil)
-
-		assert.NotNil(t, auth, "Authenticator should not be nil even without loader")
+		s.NotNil(auth, "Authenticator should not be nil even without loader")
 	})
 
-	t.Run("WithNonceStore", func(t *testing.T) {
-		loader := new(MockExternalAppLoader)
-		nonceStore := new(MockNonceStore)
-		auth := NewSignatureAuthenticator(loader, nonceStore)
-
-		assert.NotNil(t, auth, "Authenticator should not be nil")
+	s.Run("WithNonceStore", func() {
+		auth := NewSignatureAuthenticator(new(MockExternalAppLoader), new(MockNonceStore))
+		s.NotNil(auth, "Authenticator should not be nil")
 	})
 }
 
-// TestSignatureAuthenticatorSupports tests SignatureAuthenticator Supports scenarios.
-func TestSignatureAuthenticatorSupports(t *testing.T) {
-	loader := new(MockExternalAppLoader)
-	auth := NewSignatureAuthenticator(loader, nil)
+// TestSupports verifies type matching.
+func (s *SignatureAuthenticatorTestSuite) TestSupports() {
+	auth := NewSignatureAuthenticator(new(MockExternalAppLoader), nil)
 
-	t.Run("SupportedType", func(t *testing.T) {
-		assert.True(t, auth.Supports(AuthTypeSignature), "Should support signature type")
-	})
+	s.True(auth.Supports(AuthTypeSignature), "Should support signature type")
 
-	t.Run("UnsupportedTypes", func(t *testing.T) {
-		unsupportedTypes := []string{"password", "token", "jwt", "openapi", "bearer", ""}
-
-		for _, authType := range unsupportedTypes {
-			t.Run(authType, func(t *testing.T) {
-				assert.False(t, auth.Supports(authType), "Should not support %q type", authType)
-			})
-		}
-	})
+	for _, authType := range []string{"password", "token", "jwt", "openapi", "bearer", ""} {
+		s.Run(authType, func() {
+			s.False(auth.Supports(authType), "Should not support %q type", authType)
+		})
+	}
 }
 
-// TestSignatureAuthenticatorAuthenticate tests SignatureAuthenticator Authenticate scenarios.
-func TestSignatureAuthenticatorAuthenticate(t *testing.T) {
+// TestAuthenticate verifies all authentication paths.
+func (s *SignatureAuthenticatorTestSuite) TestAuthenticate() {
 	ctx := context.Background()
 
-	t.Run("MissingAppID", func(t *testing.T) {
-		loader := new(MockExternalAppLoader)
-		auth := NewSignatureAuthenticator(loader, nil)
+	s.Run("MissingAppID", func() {
+		auth := NewSignatureAuthenticator(new(MockExternalAppLoader), nil)
 
 		_, err := auth.Authenticate(ctx, security.Authentication{
 			Type:      AuthTypeSignature,
@@ -123,13 +84,11 @@ func TestSignatureAuthenticatorAuthenticate(t *testing.T) {
 				Signature: "signature",
 			},
 		})
-
-		assert.Error(t, err, "Should return error for empty appID")
+		s.Require().Error(err, "Should return error for empty appID")
 	})
 
-	t.Run("InvalidCredentials", func(t *testing.T) {
-		loader := new(MockExternalAppLoader)
-		auth := NewSignatureAuthenticator(loader, nil)
+	s.Run("InvalidCredentials", func() {
+		auth := NewSignatureAuthenticator(new(MockExternalAppLoader), nil)
 
 		testCases := []struct {
 			name        string
@@ -143,18 +102,18 @@ func TestSignatureAuthenticatorAuthenticate(t *testing.T) {
 		}
 
 		for _, tc := range testCases {
-			t.Run(tc.name, func(t *testing.T) {
+			s.Run(tc.name, func() {
 				_, err := auth.Authenticate(ctx, security.Authentication{
 					Type:        AuthTypeSignature,
 					Principal:   "app1",
 					Credentials: tc.credentials,
 				})
-				assert.Error(t, err, "Should return error for invalid credentials type")
+				s.Require().Error(err, "Should return error for invalid credentials type")
 			})
 		}
 	})
 
-	t.Run("AppNotFound", func(t *testing.T) {
+	s.Run("AppNotFound", func() {
 		loader := new(MockExternalAppLoader)
 		loader.On("LoadByID", mock.Anything, "app1").Return(nil, "", nil)
 
@@ -169,12 +128,11 @@ func TestSignatureAuthenticatorAuthenticate(t *testing.T) {
 				Signature: "signature",
 			},
 		})
-
-		assert.Error(t, err, "Should return error when app is not found")
-		loader.AssertExpectations(t)
+		s.Require().Error(err, "Should return error when app is not found")
+		loader.AssertExpectations(s.T())
 	})
 
-	t.Run("LoaderReturnsError", func(t *testing.T) {
+	s.Run("LoaderReturnsError", func() {
 		loader := new(MockExternalAppLoader)
 		expectedErr := errors.New("database connection failed")
 		loader.On("LoadByID", mock.Anything, "app1").Return(nil, "", expectedErr)
@@ -190,12 +148,11 @@ func TestSignatureAuthenticatorAuthenticate(t *testing.T) {
 				Signature: "signature",
 			},
 		})
-
-		assert.ErrorIs(t, err, expectedErr, "Should return loader error")
-		loader.AssertExpectations(t)
+		s.ErrorIs(err, expectedErr, "Should return loader error")
+		loader.AssertExpectations(s.T())
 	})
 
-	t.Run("EmptySecret", func(t *testing.T) {
+	s.Run("EmptySecret", func() {
 		loader := new(MockExternalAppLoader)
 		principal := security.NewExternalApp("app1", "Test App", "api_user")
 		loader.On("LoadByID", mock.Anything, "app1").Return(principal, "", nil)
@@ -211,63 +168,95 @@ func TestSignatureAuthenticatorAuthenticate(t *testing.T) {
 				Signature: "signature",
 			},
 		})
+		s.Require().Error(err, "Should return error when secret is empty")
+		loader.AssertExpectations(s.T())
+	})
 
-		assert.Error(t, err, "Should return error when secret is empty")
-		loader.AssertExpectations(t)
+	s.Run("NilLoader", func() {
+		auth := NewSignatureAuthenticator(nil, nil)
+
+		_, err := auth.Authenticate(ctx, security.Authentication{
+			Type:      AuthTypeSignature,
+			Principal: "app1",
+			Credentials: &security.SignatureCredentials{
+				Timestamp: time.Now().Unix(),
+				Nonce:     "abcdefghijklmnop",
+				Signature: "signature",
+			},
+		})
+		s.Require().Error(err, "Should return error when loader is nil")
+
+		resErr, ok := result.AsErr(err)
+		s.Require().True(ok, "Should return a result.Error")
+		s.Equal(result.ErrCodeNotImplemented, resErr.Code, "Should return not implemented code")
+	})
+
+	s.Run("InvalidSecretFormat", func() {
+		loader := new(MockExternalAppLoader)
+		principal := security.NewExternalApp("app1", "Test App", "api_user")
+		loader.On("LoadByID", mock.Anything, "app1").Return(principal, "not-valid-hex", nil)
+
+		auth := NewSignatureAuthenticator(loader, nil)
+
+		_, err := auth.Authenticate(ctx, security.Authentication{
+			Type:      AuthTypeSignature,
+			Principal: "app1",
+			Credentials: &security.SignatureCredentials{
+				Timestamp: time.Now().Unix(),
+				Nonce:     "abcdefghijklmnop",
+				Signature: "0000000000000000000000000000000000000000000000000000000000000000",
+			},
+		})
+		s.Require().Error(err, "Should return error when secret is not valid hex")
+		loader.AssertExpectations(s.T())
 	})
 }
 
-// TestSignatureAuthenticatorTimestampValidation tests SignatureAuthenticator timestamp validation scenarios.
-func TestSignatureAuthenticatorTimestampValidation(t *testing.T) {
+// TestTimestampValidation verifies timestamp validation scenarios.
+func (s *SignatureAuthenticatorTestSuite) TestTimestampValidation() {
 	ctx := context.Background()
 
-	t.Run("ExpiredTimestamp", func(t *testing.T) {
+	s.Run("ExpiredTimestamp", func() {
 		loader := new(MockExternalAppLoader)
 		principal := security.NewExternalApp("app1", "Test App", "api_user")
 		loader.On("LoadByID", mock.Anything, "app1").Return(principal, testSecretHex, nil)
 
 		auth := NewSignatureAuthenticator(loader, nil)
 
-		oldTimestamp := time.Now().Add(-10 * time.Minute).Unix()
-
 		_, err := auth.Authenticate(ctx, security.Authentication{
 			Type:      AuthTypeSignature,
 			Principal: "app1",
 			Credentials: &security.SignatureCredentials{
-				Timestamp: oldTimestamp,
+				Timestamp: time.Now().Add(-10 * time.Minute).Unix(),
 				Nonce:     "abcdefghijklmnop",
 				Signature: "0000000000000000000000000000000000000000000000000000000000000000",
 			},
 		})
-
-		assert.Error(t, err, "Should return error for expired timestamp")
-		loader.AssertExpectations(t)
+		s.Require().Error(err, "Should return error for expired timestamp")
+		loader.AssertExpectations(s.T())
 	})
 
-	t.Run("FutureTimestamp", func(t *testing.T) {
+	s.Run("FutureTimestamp", func() {
 		loader := new(MockExternalAppLoader)
 		principal := security.NewExternalApp("app1", "Test App", "api_user")
 		loader.On("LoadByID", mock.Anything, "app1").Return(principal, testSecretHex, nil)
 
 		auth := NewSignatureAuthenticator(loader, nil)
 
-		futureTimestamp := time.Now().Add(10 * time.Minute).Unix()
-
 		_, err := auth.Authenticate(ctx, security.Authentication{
 			Type:      AuthTypeSignature,
 			Principal: "app1",
 			Credentials: &security.SignatureCredentials{
-				Timestamp: futureTimestamp,
+				Timestamp: time.Now().Add(10 * time.Minute).Unix(),
 				Nonce:     "abcdefghijklmnop",
 				Signature: "0000000000000000000000000000000000000000000000000000000000000000",
 			},
 		})
-
-		assert.Error(t, err, "Should return error for future timestamp")
-		loader.AssertExpectations(t)
+		s.Require().Error(err, "Should return error for future timestamp")
+		loader.AssertExpectations(s.T())
 	})
 
-	t.Run("ValidTimestampWithinTolerance", func(t *testing.T) {
+	s.Run("ValidTimestampWithinTolerance", func() {
 		loader := new(MockExternalAppLoader)
 		nonceStore := new(MockNonceStore)
 
@@ -277,27 +266,25 @@ func TestSignatureAuthenticatorTimestampValidation(t *testing.T) {
 		nonceStore.On("Store", mock.Anything, "app1", mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration")).Return(nil)
 
 		auth := NewSignatureAuthenticator(loader, nonceStore)
+		credentials := s.generateValidCredentials("app1", testSecretHex)
 
-		credentials := generateValidCredentials(t, "app1", testSecretHex)
-
-		result, err := auth.Authenticate(ctx, security.Authentication{
+		got, err := auth.Authenticate(ctx, security.Authentication{
 			Type:        AuthTypeSignature,
 			Principal:   "app1",
 			Credentials: credentials,
 		})
-
-		require.NoError(t, err, "Should authenticate with valid timestamp")
-		assert.Equal(t, "app1", result.ID, "Principal ID should match")
-		loader.AssertExpectations(t)
-		nonceStore.AssertExpectations(t)
+		s.Require().NoError(err, "Should authenticate with valid timestamp")
+		s.Equal("app1", got.ID, "Principal ID should match")
+		loader.AssertExpectations(s.T())
+		nonceStore.AssertExpectations(s.T())
 	})
 }
 
-// TestSignatureAuthenticatorSignatureValidation tests SignatureAuthenticator signature validation scenarios.
-func TestSignatureAuthenticatorSignatureValidation(t *testing.T) {
+// TestSignatureValidation verifies signature validation scenarios.
+func (s *SignatureAuthenticatorTestSuite) TestSignatureValidation() {
 	ctx := context.Background()
 
-	t.Run("InvalidSignature", func(t *testing.T) {
+	s.Run("InvalidSignature", func() {
 		loader := new(MockExternalAppLoader)
 		nonceStore := new(MockNonceStore)
 
@@ -316,12 +303,11 @@ func TestSignatureAuthenticatorSignatureValidation(t *testing.T) {
 				Signature: "0000000000000000000000000000000000000000000000000000000000000000",
 			},
 		})
-
-		assert.Error(t, err, "Should return error for invalid signature")
-		loader.AssertExpectations(t)
+		s.Require().Error(err, "Should return error for invalid signature")
+		loader.AssertExpectations(s.T())
 	})
 
-	t.Run("MalformedSignature", func(t *testing.T) {
+	s.Run("MalformedSignature", func() {
 		loader := new(MockExternalAppLoader)
 		nonceStore := new(MockNonceStore)
 
@@ -340,12 +326,11 @@ func TestSignatureAuthenticatorSignatureValidation(t *testing.T) {
 				Signature: "not-valid-hex",
 			},
 		})
-
-		assert.Error(t, err, "Should return error for malformed signature")
-		loader.AssertExpectations(t)
+		s.Require().Error(err, "Should return error for malformed signature")
+		loader.AssertExpectations(s.T())
 	})
 
-	t.Run("WrongSecret", func(t *testing.T) {
+	s.Run("WrongSecret", func() {
 		loader := new(MockExternalAppLoader)
 		nonceStore := new(MockNonceStore)
 
@@ -355,25 +340,23 @@ func TestSignatureAuthenticatorSignatureValidation(t *testing.T) {
 		nonceStore.On("Exists", mock.Anything, "app1", mock.AnythingOfType("string")).Return(false, nil)
 
 		auth := NewSignatureAuthenticator(loader, nonceStore)
-
-		credentials := generateValidCredentials(t, "app1", testSecretHex)
+		credentials := s.generateValidCredentials("app1", testSecretHex)
 
 		_, err := auth.Authenticate(ctx, security.Authentication{
 			Type:        AuthTypeSignature,
 			Principal:   "app1",
 			Credentials: credentials,
 		})
-
-		assert.Error(t, err, "Should return error when secret doesn't match")
-		loader.AssertExpectations(t)
+		s.Require().Error(err, "Should return error when secret doesn't match")
+		loader.AssertExpectations(s.T())
 	})
 }
 
-// TestSignatureAuthenticatorNonceValidation tests SignatureAuthenticator nonce validation scenarios.
-func TestSignatureAuthenticatorNonceValidation(t *testing.T) {
+// TestNonceValidation verifies nonce validation scenarios.
+func (s *SignatureAuthenticatorTestSuite) TestNonceValidation() {
 	ctx := context.Background()
 
-	t.Run("NonceAlreadyUsed", func(t *testing.T) {
+	s.Run("NonceAlreadyUsed", func() {
 		loader := new(MockExternalAppLoader)
 		nonceStore := new(MockNonceStore)
 
@@ -382,21 +365,19 @@ func TestSignatureAuthenticatorNonceValidation(t *testing.T) {
 		nonceStore.On("Exists", mock.Anything, "app1", mock.AnythingOfType("string")).Return(true, nil)
 
 		auth := NewSignatureAuthenticator(loader, nonceStore)
-
-		credentials := generateValidCredentials(t, "app1", testSecretHex)
+		credentials := s.generateValidCredentials("app1", testSecretHex)
 
 		_, err := auth.Authenticate(ctx, security.Authentication{
 			Type:        AuthTypeSignature,
 			Principal:   "app1",
 			Credentials: credentials,
 		})
-
-		assert.Error(t, err, "Should return error when nonce is already used")
-		loader.AssertExpectations(t)
-		nonceStore.AssertExpectations(t)
+		s.Require().Error(err, "Should return error when nonce is already used")
+		loader.AssertExpectations(s.T())
+		nonceStore.AssertExpectations(s.T())
 	})
 
-	t.Run("NonceStoreExistsError", func(t *testing.T) {
+	s.Run("NonceStoreExistsError", func() {
 		loader := new(MockExternalAppLoader)
 		nonceStore := new(MockNonceStore)
 
@@ -405,21 +386,40 @@ func TestSignatureAuthenticatorNonceValidation(t *testing.T) {
 		nonceStore.On("Exists", mock.Anything, "app1", mock.AnythingOfType("string")).Return(false, errors.New("redis connection failed"))
 
 		auth := NewSignatureAuthenticator(loader, nonceStore)
-
-		credentials := generateValidCredentials(t, "app1", testSecretHex)
+		credentials := s.generateValidCredentials("app1", testSecretHex)
 
 		_, err := auth.Authenticate(ctx, security.Authentication{
 			Type:        AuthTypeSignature,
 			Principal:   "app1",
 			Credentials: credentials,
 		})
-
-		assert.Error(t, err, "Should return error when nonce store fails")
-		loader.AssertExpectations(t)
-		nonceStore.AssertExpectations(t)
+		s.Require().Error(err, "Should return error when nonce store fails")
+		loader.AssertExpectations(s.T())
+		nonceStore.AssertExpectations(s.T())
 	})
 
-	t.Run("NonceStoreStoreError", func(t *testing.T) {
+	s.Run("NonceRequired", func() {
+		loader := new(MockExternalAppLoader)
+		principal := security.NewExternalApp("app1", "Test App", "api_user")
+		loader.On("LoadByID", mock.Anything, "app1").Return(principal, testSecretHex, nil)
+
+		auth := NewSignatureAuthenticator(loader, nil)
+
+		_, err := auth.Authenticate(ctx, security.Authentication{
+			Type:      AuthTypeSignature,
+			Principal: "app1",
+			Credentials: &security.SignatureCredentials{
+				Timestamp: time.Now().Unix(),
+				Nonce:     "",
+				Signature: "0000000000000000000000000000000000000000000000000000000000000000",
+			},
+		})
+		s.Require().Error(err, "Should return error when nonce is empty")
+		s.ErrorIs(err, result.ErrNonceRequired, "Should return nonce required error")
+		loader.AssertExpectations(s.T())
+	})
+
+	s.Run("NonceStoreStoreError", func() {
 		loader := new(MockExternalAppLoader)
 		nonceStore := new(MockNonceStore)
 
@@ -429,26 +429,24 @@ func TestSignatureAuthenticatorNonceValidation(t *testing.T) {
 		nonceStore.On("Store", mock.Anything, "app1", mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration")).Return(errors.New("redis write failed"))
 
 		auth := NewSignatureAuthenticator(loader, nonceStore)
-
-		credentials := generateValidCredentials(t, "app1", testSecretHex)
+		credentials := s.generateValidCredentials("app1", testSecretHex)
 
 		_, err := auth.Authenticate(ctx, security.Authentication{
 			Type:        AuthTypeSignature,
 			Principal:   "app1",
 			Credentials: credentials,
 		})
-
-		assert.Error(t, err, "Should return error when nonce store write fails")
-		loader.AssertExpectations(t)
-		nonceStore.AssertExpectations(t)
+		s.Require().Error(err, "Should return error when nonce store write fails")
+		loader.AssertExpectations(s.T())
+		nonceStore.AssertExpectations(s.T())
 	})
 }
 
-// TestSignatureAuthenticatorIPWhitelist tests SignatureAuthenticator IP whitelist scenarios.
-func TestSignatureAuthenticatorIPWhitelist(t *testing.T) {
+// TestIPWhitelist verifies IP whitelist and app config scenarios.
+func (s *SignatureAuthenticatorTestSuite) TestIPWhitelist() {
 	ctx := context.Background()
 
-	t.Run("DisabledApp", func(t *testing.T) {
+	s.Run("DisabledApp", func() {
 		loader := new(MockExternalAppLoader)
 
 		principal := security.NewExternalApp("app1", "Test App", "api_user")
@@ -468,12 +466,11 @@ func TestSignatureAuthenticatorIPWhitelist(t *testing.T) {
 				Signature: "signature",
 			},
 		})
-
-		assert.Error(t, err, "Should return error for disabled app")
-		loader.AssertExpectations(t)
+		s.Require().Error(err, "Should return error for disabled app")
+		loader.AssertExpectations(s.T())
 	})
 
-	t.Run("EnabledAppWithoutWhitelist", func(t *testing.T) {
+	s.Run("EnabledAppWithoutWhitelist", func() {
 		loader := new(MockExternalAppLoader)
 		nonceStore := new(MockNonceStore)
 
@@ -487,22 +484,103 @@ func TestSignatureAuthenticatorIPWhitelist(t *testing.T) {
 		nonceStore.On("Store", mock.Anything, "app1", mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration")).Return(nil)
 
 		auth := NewSignatureAuthenticator(loader, nonceStore)
+		credentials := s.generateValidCredentials("app1", testSecretHex)
 
-		credentials := generateValidCredentials(t, "app1", testSecretHex)
-
-		result, err := auth.Authenticate(ctx, security.Authentication{
+		got, err := auth.Authenticate(ctx, security.Authentication{
 			Type:        AuthTypeSignature,
 			Principal:   "app1",
 			Credentials: credentials,
 		})
-
-		require.NoError(t, err, "Should authenticate when app is enabled without whitelist")
-		assert.Equal(t, "app1", result.ID, "Principal ID should match")
-		loader.AssertExpectations(t)
-		nonceStore.AssertExpectations(t)
+		s.Require().NoError(err, "Should authenticate when app is enabled without whitelist")
+		s.Equal("app1", got.ID, "Principal ID should match")
+		loader.AssertExpectations(s.T())
+		nonceStore.AssertExpectations(s.T())
 	})
 
-	t.Run("NoExternalAppConfig", func(t *testing.T) {
+	s.Run("WhitelistWithEmptyRequestIP", func() {
+		loader := new(MockExternalAppLoader)
+		nonceStore := new(MockNonceStore)
+
+		principal := security.NewExternalApp("app1", "Test App", "api_user")
+		principal.Details = &security.ExternalAppConfig{
+			Enabled:     true,
+			IPWhitelist: "192.168.1.0/24",
+		}
+		loader.On("LoadByID", mock.Anything, "app1").Return(principal, testSecretHex, nil)
+		nonceStore.On("Exists", mock.Anything, "app1", mock.AnythingOfType("string")).Return(false, nil)
+		nonceStore.On("Store", mock.Anything, "app1", mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration")).Return(nil)
+
+		auth := NewSignatureAuthenticator(loader, nonceStore)
+		credentials := s.generateValidCredentials("app1", testSecretHex)
+
+		// No IP set in context — should pass whitelist check
+		got, err := auth.Authenticate(ctx, security.Authentication{
+			Type:        AuthTypeSignature,
+			Principal:   "app1",
+			Credentials: credentials,
+		})
+		s.Require().NoError(err, "Should pass when request IP is empty")
+		s.Equal("app1", got.ID, "Principal ID should match")
+		loader.AssertExpectations(s.T())
+		nonceStore.AssertExpectations(s.T())
+	})
+
+	s.Run("WhitelistIPAllowed", func() {
+		loader := new(MockExternalAppLoader)
+		nonceStore := new(MockNonceStore)
+
+		principal := security.NewExternalApp("app1", "Test App", "api_user")
+		principal.Details = &security.ExternalAppConfig{
+			Enabled:     true,
+			IPWhitelist: "192.168.1.0/24",
+		}
+		loader.On("LoadByID", mock.Anything, "app1").Return(principal, testSecretHex, nil)
+		nonceStore.On("Exists", mock.Anything, "app1", mock.AnythingOfType("string")).Return(false, nil)
+		nonceStore.On("Store", mock.Anything, "app1", mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration")).Return(nil)
+
+		auth := NewSignatureAuthenticator(loader, nonceStore)
+		credentials := s.generateValidCredentials("app1", testSecretHex)
+
+		ipCtx := contextx.SetRequestIP(ctx, "192.168.1.100")
+		got, err := auth.Authenticate(ipCtx, security.Authentication{
+			Type:        AuthTypeSignature,
+			Principal:   "app1",
+			Credentials: credentials,
+		})
+		s.Require().NoError(err, "Should pass when IP is in whitelist")
+		s.Equal("app1", got.ID, "Principal ID should match")
+		loader.AssertExpectations(s.T())
+		nonceStore.AssertExpectations(s.T())
+	})
+
+	s.Run("WhitelistIPBlocked", func() {
+		loader := new(MockExternalAppLoader)
+
+		principal := security.NewExternalApp("app1", "Test App", "api_user")
+		principal.Details = &security.ExternalAppConfig{
+			Enabled:     true,
+			IPWhitelist: "192.168.1.0/24",
+		}
+		loader.On("LoadByID", mock.Anything, "app1").Return(principal, testSecretHex, nil)
+
+		auth := NewSignatureAuthenticator(loader, nil)
+
+		ipCtx := contextx.SetRequestIP(ctx, "10.0.0.1")
+		_, err := auth.Authenticate(ipCtx, security.Authentication{
+			Type:      AuthTypeSignature,
+			Principal: "app1",
+			Credentials: &security.SignatureCredentials{
+				Timestamp: time.Now().Unix(),
+				Nonce:     "abcdefghijklmnop",
+				Signature: "0000000000000000000000000000000000000000000000000000000000000000",
+			},
+		})
+		s.Require().Error(err, "Should return error when IP is not in whitelist")
+		s.ErrorIs(err, result.ErrIPNotAllowed, "Should return IP not allowed error")
+		loader.AssertExpectations(s.T())
+	})
+
+	s.Run("NoExternalAppConfig", func() {
 		loader := new(MockExternalAppLoader)
 		nonceStore := new(MockNonceStore)
 
@@ -512,27 +590,25 @@ func TestSignatureAuthenticatorIPWhitelist(t *testing.T) {
 		nonceStore.On("Store", mock.Anything, "app1", mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration")).Return(nil)
 
 		auth := NewSignatureAuthenticator(loader, nonceStore)
+		credentials := s.generateValidCredentials("app1", testSecretHex)
 
-		credentials := generateValidCredentials(t, "app1", testSecretHex)
-
-		result, err := auth.Authenticate(ctx, security.Authentication{
+		got, err := auth.Authenticate(ctx, security.Authentication{
 			Type:        AuthTypeSignature,
 			Principal:   "app1",
 			Credentials: credentials,
 		})
-
-		require.NoError(t, err, "Should authenticate when no ExternalAppConfig is set")
-		assert.Equal(t, "app1", result.ID, "Principal ID should match")
-		loader.AssertExpectations(t)
-		nonceStore.AssertExpectations(t)
+		s.Require().NoError(err, "Should authenticate when no ExternalAppConfig is set")
+		s.Equal("app1", got.ID, "Principal ID should match")
+		loader.AssertExpectations(s.T())
+		nonceStore.AssertExpectations(s.T())
 	})
 }
 
-// TestSignatureAuthenticatorSuccessfulAuthentication tests SignatureAuthenticator successful authentication scenarios.
-func TestSignatureAuthenticatorSuccessfulAuthentication(t *testing.T) {
+// TestSuccessfulAuthentication verifies successful authentication scenarios.
+func (s *SignatureAuthenticatorTestSuite) TestSuccessfulAuthentication() {
 	ctx := context.Background()
 
-	t.Run("WithNonceStore", func(t *testing.T) {
+	s.Run("WithNonceStore", func() {
 		loader := new(MockExternalAppLoader)
 		nonceStore := new(MockNonceStore)
 
@@ -542,47 +618,41 @@ func TestSignatureAuthenticatorSuccessfulAuthentication(t *testing.T) {
 		nonceStore.On("Store", mock.Anything, "app1", mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration")).Return(nil)
 
 		auth := NewSignatureAuthenticator(loader, nonceStore)
+		credentials := s.generateValidCredentials("app1", testSecretHex)
 
-		credentials := generateValidCredentials(t, "app1", testSecretHex)
-
-		result, err := auth.Authenticate(ctx, security.Authentication{
+		got, err := auth.Authenticate(ctx, security.Authentication{
 			Type:        AuthTypeSignature,
 			Principal:   "app1",
 			Credentials: credentials,
 		})
-
-		require.NoError(t, err, "Should authenticate successfully")
-		assert.Equal(t, "app1", result.ID, "Principal ID should match")
-		assert.Equal(t, "Test App", result.Name, "Principal name should match")
-		assert.Equal(t, security.PrincipalTypeExternalApp, result.Type, "Principal type should be external app")
-
-		loader.AssertExpectations(t)
-		nonceStore.AssertExpectations(t)
+		s.Require().NoError(err, "Should authenticate successfully")
+		s.Equal("app1", got.ID, "Principal ID should match")
+		s.Equal("Test App", got.Name, "Principal name should match")
+		s.Equal(security.PrincipalTypeExternalApp, got.Type, "Principal type should be external app")
+		loader.AssertExpectations(s.T())
+		nonceStore.AssertExpectations(s.T())
 	})
 
-	t.Run("WithoutNonceStore", func(t *testing.T) {
+	s.Run("WithoutNonceStore", func() {
 		loader := new(MockExternalAppLoader)
 
 		principal := security.NewExternalApp("app1", "Test App", "api_user")
 		loader.On("LoadByID", mock.Anything, "app1").Return(principal, testSecretHex, nil)
 
 		auth := NewSignatureAuthenticator(loader, nil)
+		credentials := s.generateValidCredentials("app1", testSecretHex)
 
-		credentials := generateValidCredentials(t, "app1", testSecretHex)
-
-		result, err := auth.Authenticate(ctx, security.Authentication{
+		got, err := auth.Authenticate(ctx, security.Authentication{
 			Type:        AuthTypeSignature,
 			Principal:   "app1",
 			Credentials: credentials,
 		})
-
-		require.NoError(t, err, "Should authenticate successfully without nonce store")
-		assert.Equal(t, "app1", result.ID, "Principal ID should match")
-
-		loader.AssertExpectations(t)
+		s.Require().NoError(err, "Should authenticate successfully without nonce store")
+		s.Equal("app1", got.ID, "Principal ID should match")
+		loader.AssertExpectations(s.T())
 	})
 
-	t.Run("MultipleApps", func(t *testing.T) {
+	s.Run("MultipleApps", func() {
 		loader := new(MockExternalAppLoader)
 		nonceStore := new(MockNonceStore)
 
@@ -599,28 +669,30 @@ func TestSignatureAuthenticatorSuccessfulAuthentication(t *testing.T) {
 
 		auth := NewSignatureAuthenticator(loader, nonceStore)
 
-		// Authenticate app1
-		creds1 := generateValidCredentials(t, "app1", secret1)
-		result1, err := auth.Authenticate(ctx, security.Authentication{
+		creds1 := s.generateValidCredentials("app1", secret1)
+		got1, err := auth.Authenticate(ctx, security.Authentication{
 			Type:        AuthTypeSignature,
 			Principal:   "app1",
 			Credentials: creds1,
 		})
-		require.NoError(t, err, "Should authenticate app1")
-		assert.Equal(t, "app1", result1.ID, "Should equal expected value")
-		assert.Equal(t, "App One", result1.Name, "Should equal expected value")
+		s.Require().NoError(err, "Should authenticate app1")
+		s.Equal("app1", got1.ID, "Should equal expected value")
+		s.Equal("App One", got1.Name, "Should equal expected value")
 
-		// Authenticate app2
-		creds2 := generateValidCredentials(t, "app2", secret2)
-		result2, err := auth.Authenticate(ctx, security.Authentication{
+		creds2 := s.generateValidCredentials("app2", secret2)
+		got2, err := auth.Authenticate(ctx, security.Authentication{
 			Type:        AuthTypeSignature,
 			Principal:   "app2",
 			Credentials: creds2,
 		})
-		require.NoError(t, err, "Should authenticate app2")
-		assert.Equal(t, "app2", result2.ID, "Should equal expected value")
-		assert.Equal(t, "App Two", result2.Name, "Should equal expected value")
+		s.Require().NoError(err, "Should authenticate app2")
+		s.Equal("app2", got2.ID, "Should equal expected value")
+		s.Equal("App Two", got2.Name, "Should equal expected value")
 
-		loader.AssertExpectations(t)
+		loader.AssertExpectations(s.T())
 	})
+}
+
+func TestSignatureAuthenticatorTestSuite(t *testing.T) {
+	suite.Run(t, new(SignatureAuthenticatorTestSuite))
 }
