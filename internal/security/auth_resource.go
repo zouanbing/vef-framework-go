@@ -1,6 +1,7 @@
 package security
 
 import (
+	"cmp"
 	"context"
 	"slices"
 
@@ -34,17 +35,17 @@ type AuthResourceParams struct {
 
 // NewAuthResource creates a new authentication resource with the provided auth manager and token generator.
 func NewAuthResource(params AuthResourceParams) api.Resource {
+	slices.SortFunc(params.ChallengeProviders, func(a, b security.ChallengeProvider) int {
+		return cmp.Compare(a.Order(), b.Order())
+	})
+
 	return &AuthResource{
 		authManager:         params.AuthManager,
 		tokenGenerator:      params.TokenGenerator,
 		challengeTokenStore: params.ChallengeTokenStore,
 		userInfoLoader:      params.UserInfoLoader,
-		challengeProviders: streams.ToMap(
-			streams.FromSlice(params.ChallengeProviders),
-			func(cp security.ChallengeProvider) string { return cp.Type() },
-			func(cp security.ChallengeProvider) security.ChallengeProvider { return cp },
-		),
-		publisher: params.Publisher,
+		challengeProviders:  params.ChallengeProviders,
+		publisher:           params.Publisher,
 
 		Resource: api.NewRPCResource(
 			"security/auth",
@@ -83,7 +84,7 @@ type AuthResource struct {
 	tokenGenerator      security.TokenGenerator
 	challengeTokenStore security.ChallengeTokenStore
 	userInfoLoader      security.UserInfoLoader
-	challengeProviders  map[string]security.ChallengeProvider
+	challengeProviders  []security.ChallengeProvider
 	publisher           event.Publisher
 }
 
@@ -134,17 +135,17 @@ func (a *AuthResource) Login(ctx fiber.Ctx, params LoginParams) error {
 		return err
 	}
 
-	challenges, err := a.evaluateChallenges(ctx.Context(), principal)
+	pending := streams.MapTo(
+		streams.FromSlice(a.challengeProviders),
+		func(p security.ChallengeProvider) string { return p.Type() },
+	).Collect()
+
+	challenge, pending, err := a.evaluateNextChallenge(ctx.Context(), principal, pending)
 	if err != nil {
 		return err
 	}
 
-	if len(challenges) > 0 {
-		pending := streams.MapTo(
-			streams.FromSlice(challenges),
-			func(c security.LoginChallenge) string { return c.Type },
-		).Collect()
-
+	if challenge != nil {
 		challengeToken, err := a.challengeTokenStore.Generate(principal, pending, nil)
 		if err != nil {
 			return err
@@ -152,7 +153,7 @@ func (a *AuthResource) Login(ctx fiber.Ctx, params LoginParams) error {
 
 		return result.Ok(&security.LoginResult{
 			ChallengeToken: challengeToken,
-			Challenges:     challenges,
+			Challenge:      challenge,
 		}).Response(ctx)
 	}
 
@@ -218,19 +219,19 @@ type ResolveChallengeParams struct {
 
 // ResolveChallenge validates a user's response to a login challenge.
 // On success, either issues real auth tokens (all challenges resolved)
-// or returns a new challenge token with remaining challenges.
+// or evaluates the next challenge sequentially.
 func (a *AuthResource) ResolveChallenge(ctx fiber.Ctx, params ResolveChallengeParams) error {
 	state, err := a.challengeTokenStore.Parse(params.ChallengeToken)
 	if err != nil {
 		return result.ErrChallengeTokenInvalid
 	}
 
-	if !slices.Contains(state.Pending, params.Type) {
+	if len(state.Pending) == 0 || state.Pending[0] != params.Type {
 		return result.ErrChallengeTypeInvalid
 	}
 
-	provider, ok := a.challengeProviders[params.Type]
-	if !ok {
+	provider := a.findProvider(params.Type)
+	if provider == nil {
 		return result.ErrChallengeTypeInvalid
 	}
 
@@ -239,58 +240,41 @@ func (a *AuthResource) ResolveChallenge(ctx fiber.Ctx, params ResolveChallengePa
 		return err
 	}
 
-	// Build updated pending list (remove resolved type)
 	resolved := append(state.Resolved, params.Type)
-	remaining := streams.FromSlice(state.Pending).
-		Filter(func(p string) bool { return p != params.Type }).
-		Collect()
+	remaining := state.Pending[1:]
 
-	if len(remaining) == 0 {
-		credentials, err := a.tokenGenerator.Generate(principal)
-		if err != nil {
-			return err
-		}
-
-		loginEvent := security.NewLoginEvent(security.LoginEventParams{
-			UserID:    &principal.ID,
-			LoginIP:   httpx.GetIP(ctx),
-			UserAgent: ctx.Get(fiber.HeaderUserAgent),
-			TraceID:   contextx.RequestID(ctx),
-			IsOk:      true,
-		})
-		a.publisher.Publish(loginEvent)
-
-		return result.Ok(&security.LoginResult{Tokens: credentials}).Response(ctx)
-	}
-
-	// More challenges remain — issue new ephemeral token
-	challengeToken, err := a.challengeTokenStore.Generate(principal, remaining, resolved)
+	challenge, remaining, err := a.evaluateNextChallenge(ctx.Context(), principal, remaining)
 	if err != nil {
 		return err
 	}
 
-	// Re-evaluate remaining challenges to get fresh data
-	var remainingChallenges []security.LoginChallenge
-	for _, challengeType := range remaining {
-		provider, ok := a.challengeProviders[challengeType]
-		if !ok {
-			continue
-		}
-
-		challenge, err := provider.Evaluate(ctx.Context(), principal)
+	if challenge != nil {
+		challengeToken, err := a.challengeTokenStore.Generate(principal, remaining, resolved)
 		if err != nil {
 			return err
 		}
 
-		if challenge != nil {
-			remainingChallenges = append(remainingChallenges, *challenge)
-		}
+		return result.Ok(&security.LoginResult{
+			ChallengeToken: challengeToken,
+			Challenge:      challenge,
+		}).Response(ctx)
 	}
 
-	return result.Ok(&security.LoginResult{
-		ChallengeToken: challengeToken,
-		Challenges:     remainingChallenges,
-	}).Response(ctx)
+	tokens, err := a.tokenGenerator.Generate(principal)
+	if err != nil {
+		return err
+	}
+
+	loginEvent := security.NewLoginEvent(security.LoginEventParams{
+		UserID:    &principal.ID,
+		LoginIP:   httpx.GetIP(ctx),
+		UserAgent: ctx.Get(fiber.HeaderUserAgent),
+		TraceID:   contextx.RequestID(ctx),
+		IsOk:      true,
+	})
+	a.publisher.Publish(loginEvent)
+
+	return result.Ok(&security.LoginResult{Tokens: tokens}).Response(ctx)
 }
 
 // GetUserInfo retrieves user information via UserInfoLoader.
@@ -308,23 +292,37 @@ func (a *AuthResource) GetUserInfo(ctx fiber.Ctx, principal *security.Principal,
 	return result.Ok(userInfo).Response(ctx)
 }
 
-// evaluateChallenges collects all applicable challenges for the given principal.
-func (a *AuthResource) evaluateChallenges(ctx context.Context, principal *security.Principal) ([]security.LoginChallenge, error) {
-	if len(a.challengeProviders) == 0 {
-		return nil, nil
-	}
+// findProvider returns the challenge provider matching the given type, or nil.
+func (a *AuthResource) findProvider(challengeType string) security.ChallengeProvider {
+	return streams.FromSlice(a.challengeProviders).
+		FindFirst(func(cp security.ChallengeProvider) bool {
+			return cp.Type() == challengeType
+		}).
+		GetOrElse(nil)
+}
 
-	var challenges []security.LoginChallenge
-	for _, provider := range a.challengeProviders {
+// evaluateNextChallenge walks pending types sequentially and returns the first
+// applicable challenge. Providers that return nil (challenge not needed) are
+// skipped, and their types are removed from pending.
+func (a *AuthResource) evaluateNextChallenge(ctx context.Context, principal *security.Principal, pending []string) (*security.LoginChallenge, []string, error) {
+	for len(pending) > 0 {
+		provider := a.findProvider(pending[0])
+		if provider == nil {
+			pending = pending[1:]
+			continue
+		}
+
 		challenge, err := provider.Evaluate(ctx, principal)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		if challenge != nil {
-			challenges = append(challenges, *challenge)
+			return challenge, pending, nil
 		}
+
+		pending = pending[1:]
 	}
 
-	return challenges, nil
+	return nil, nil, nil
 }

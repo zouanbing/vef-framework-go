@@ -134,9 +134,15 @@ type ChallengeTokenStore interface {
 // ChallengeProvider evaluates and resolves a login challenge.
 // Register implementations via vef.ProvideChallengeProvider to inject
 // additional steps into the login flow (e.g., 2FA, department selection).
+//
+// Providers are evaluated sequentially in Order() ascending order.
+// Each challenge is presented and resolved one at a time before
+// the next provider is evaluated.
 type ChallengeProvider interface {
 	// Type returns the unique challenge type identifier (e.g. "totp", "select_department").
 	Type() string
+	// Order returns the evaluation priority. Lower values are evaluated first.
+	Order() int
 	// Evaluate checks whether this challenge applies to the given principal.
 	// Return nil to indicate the challenge is not needed.
 	Evaluate(ctx context.Context, principal *Principal) (*LoginChallenge, error)

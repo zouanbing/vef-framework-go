@@ -216,7 +216,7 @@ func (suite *AuthResourceTestSuite) TestLoginSuccess() {
 
 	data := suite.ReadDataAsMap(body.Data)
 	suite.Nil(data["challengeToken"], "No challenge token when no challenges")
-	suite.Nil(data["challenges"], "No challenges when no challenge providers")
+	suite.Nil(data["challenge"], "No challenge when no challenge providers")
 
 	tokens := suite.extractTokensFromLoginResult(data)
 	suite.NotEmpty(tokens["accessToken"], "Access token should not be empty")
@@ -1067,6 +1067,11 @@ func (m *MockChallengeProvider) Type() string {
 	return args.String(0)
 }
 
+func (m *MockChallengeProvider) Order() int {
+	args := m.Called()
+	return args.Int(0)
+}
+
 func (m *MockChallengeProvider) Evaluate(ctx context.Context, principal *security.Principal) (*security.LoginChallenge, error) {
 	args := m.Called(ctx, principal)
 	if args.Get(0) == nil {
@@ -1105,6 +1110,7 @@ func (s *ChallengeFlowTestSuite) SetupSuite() {
 	s.publisher = new(MockPublisher)
 	s.challengeProvider = new(MockChallengeProvider)
 	s.challengeProvider.On("Type").Return("totp")
+	s.challengeProvider.On("Order").Return(0).Maybe()
 
 	hashedPassword, err := password.NewBcryptEncoder().Encode("password123")
 	s.Require().NoError(err)
@@ -1208,11 +1214,8 @@ func (s *ChallengeFlowTestSuite) TestLoginWithChallenge() {
 	s.NotEmpty(data["challengeToken"], "Should return a challenge token")
 	s.Nil(data["tokens"], "Should not return tokens when challenges are pending")
 
-	challenges, ok := data["challenges"].([]any)
-	s.Require().True(ok, "Challenges should be an array")
-	s.Len(challenges, 1)
-
-	challenge := challenges[0].(map[string]any)
+	challenge, ok := data["challenge"].(map[string]any)
+	s.Require().True(ok, "Challenge should be an object")
 	s.Equal("totp", challenge["type"])
 	s.Equal(true, challenge["required"])
 
@@ -1229,7 +1232,7 @@ func (s *ChallengeFlowTestSuite) TestLoginNoChallengeWhenEvaluateReturnsNil() {
 	data := s.loginAndGetResult()
 
 	s.Nil(data["challengeToken"], "No challenge token when challenge not needed")
-	s.Nil(data["challenges"], "No challenges when challenge not needed")
+	s.Nil(data["challenge"], "No challenge when challenge not needed")
 
 	tokensRaw, ok := data["tokens"]
 	s.Require().True(ok, "Should have tokens")
@@ -1536,7 +1539,9 @@ func (s *AuthResourceErrorPathTestSuite) SetupSuite() {
 	s.challengeProviderB = new(MockChallengeProvider)
 
 	s.challengeProviderA.On("Type").Return("totp")
+	s.challengeProviderA.On("Order").Return(10)
 	s.challengeProviderB.On("Type").Return("sms")
+	s.challengeProviderB.On("Order").Return(20)
 	s.publisher.On("Publish", mock.Anything).Maybe()
 
 	s.SetupApp(
@@ -1608,7 +1613,9 @@ func (s *AuthResourceErrorPathTestSuite) SetupTest() {
 
 	// Re-register stable expectations.
 	s.challengeProviderA.On("Type").Return("totp")
+	s.challengeProviderA.On("Order").Return(10)
 	s.challengeProviderB.On("Type").Return("sms")
+	s.challengeProviderB.On("Order").Return(20)
 	s.publisher.On("Publish", mock.Anything).Maybe()
 }
 
@@ -1690,14 +1697,12 @@ func (s *AuthResourceErrorPathTestSuite) TestLoginTokenGenerateError() {
 }
 
 // TestLoginChallengeStoreError covers the branch where authentication succeeds,
-// challenges are present, but ChallengeTokenStore.Generate fails.
+// a challenge is present, but ChallengeTokenStore.Generate fails.
 func (s *AuthResourceErrorPathTestSuite) TestLoginChallengeStoreError() {
 	s.authManager.On("Authenticate", mock.Anything, mock.Anything).
 		Return(s.testUser, nil).Once()
 	s.challengeProviderA.On("Evaluate", mock.Anything, mock.Anything).
-		Return(&security.LoginChallenge{Type: "totp", Required: true}, nil).Maybe()
-	s.challengeProviderB.On("Evaluate", mock.Anything, mock.Anything).
-		Return((*security.LoginChallenge)(nil), nil).Maybe()
+		Return(&security.LoginChallenge{Type: "totp", Required: true}, nil).Once()
 	s.challengeTokenStore.On("Generate", s.testUser, mock.Anything, mock.Anything).
 		Return("", errors.New("store unavailable")).Once()
 
@@ -1783,7 +1788,7 @@ func (s *AuthResourceErrorPathTestSuite) TestResolveChallengeTokenGenerateError(
 }
 
 // TestResolveChallengeMoreRemain covers the branch where resolving one challenge
-// leaves others pending, returning a new challenge token with remaining challenges.
+// leaves others pending, returning a new challenge token with the next challenge.
 func (s *AuthResourceErrorPathTestSuite) TestResolveChallengeMoreRemain() {
 	s.challengeTokenStore.On("Parse", "valid-challenge-token").
 		Return(&security.ChallengeState{
@@ -1792,10 +1797,10 @@ func (s *AuthResourceErrorPathTestSuite) TestResolveChallengeMoreRemain() {
 		}, nil).Once()
 	s.challengeProviderA.On("Resolve", mock.Anything, s.testUser, "123456").
 		Return(s.testUser, nil).Once()
-	s.challengeTokenStore.On("Generate", s.testUser, []string{"sms"}, []string{"totp"}).
-		Return("new-challenge-token", nil).Once()
 	s.challengeProviderB.On("Evaluate", mock.Anything, s.testUser).
 		Return(&security.LoginChallenge{Type: "sms", Required: true}, nil).Once()
+	s.challengeTokenStore.On("Generate", s.testUser, []string{"sms"}, []string{"totp"}).
+		Return("new-challenge-token", nil).Once()
 
 	resp := s.MakeRPCRequest(s.resolveChallengeRequest())
 
@@ -1807,11 +1812,8 @@ func (s *AuthResourceErrorPathTestSuite) TestResolveChallengeMoreRemain() {
 	data := s.ReadDataAsMap(body.Data)
 	s.Equal("new-challenge-token", data["challengeToken"])
 
-	challenges, ok := data["challenges"].([]any)
-	s.Require().True(ok)
-	s.Len(challenges, 1)
-
-	challenge := challenges[0].(map[string]any)
+	challenge, ok := data["challenge"].(map[string]any)
+	s.Require().True(ok, "Challenge should be an object")
 	s.Equal("sms", challenge["type"])
 	s.Equal(true, challenge["required"])
 }
@@ -1826,6 +1828,8 @@ func (s *AuthResourceErrorPathTestSuite) TestResolveChallengeStoreErrorOnRemain(
 		}, nil).Once()
 	s.challengeProviderA.On("Resolve", mock.Anything, s.testUser, "123456").
 		Return(s.testUser, nil).Once()
+	s.challengeProviderB.On("Evaluate", mock.Anything, s.testUser).
+		Return(&security.LoginChallenge{Type: "sms", Required: true}, nil).Once()
 	s.challengeTokenStore.On("Generate", s.testUser, []string{"sms"}, []string{"totp"}).
 		Return("", errors.New("store failure")).Once()
 
@@ -1838,7 +1842,7 @@ func (s *AuthResourceErrorPathTestSuite) TestResolveChallengeStoreErrorOnRemain(
 }
 
 // TestResolveChallengeEvaluateErrorOnRemain covers the branch where remaining
-// challenges exist and the new token is generated, but provider.Evaluate fails.
+// challenges exist but the next provider.Evaluate fails.
 func (s *AuthResourceErrorPathTestSuite) TestResolveChallengeEvaluateErrorOnRemain() {
 	s.challengeTokenStore.On("Parse", "valid-challenge-token").
 		Return(&security.ChallengeState{
@@ -1847,8 +1851,6 @@ func (s *AuthResourceErrorPathTestSuite) TestResolveChallengeEvaluateErrorOnRema
 		}, nil).Once()
 	s.challengeProviderA.On("Resolve", mock.Anything, s.testUser, "123456").
 		Return(s.testUser, nil).Once()
-	s.challengeTokenStore.On("Generate", s.testUser, []string{"sms"}, []string{"totp"}).
-		Return("new-challenge-token", nil).Once()
 	s.challengeProviderB.On("Evaluate", mock.Anything, s.testUser).
 		Return((*security.LoginChallenge)(nil), errors.New("sms service unavailable")).Once()
 
@@ -1860,8 +1862,9 @@ func (s *AuthResourceErrorPathTestSuite) TestResolveChallengeEvaluateErrorOnRema
 	s.False(body.IsOk())
 }
 
-// TestResolveChallengeRemainingProviderNotFound covers the continue branch
-// when iterating remaining challenge types and a provider is not registered.
+// TestResolveChallengeRemainingProviderNotFound covers the skip branch
+// when the next pending type has no registered provider — it is skipped
+// and since no more challenges remain, auth tokens are issued.
 func (s *AuthResourceErrorPathTestSuite) TestResolveChallengeRemainingProviderNotFound() {
 	s.challengeTokenStore.On("Parse", "valid-challenge-token").
 		Return(&security.ChallengeState{
@@ -1870,8 +1873,8 @@ func (s *AuthResourceErrorPathTestSuite) TestResolveChallengeRemainingProviderNo
 		}, nil).Once()
 	s.challengeProviderA.On("Resolve", mock.Anything, s.testUser, "123456").
 		Return(s.testUser, nil).Once()
-	s.challengeTokenStore.On("Generate", s.testUser, []string{"unknown_type"}, []string{"totp"}).
-		Return("new-challenge-token", nil).Once()
+	s.tokenGenerator.On("Generate", s.testUser).
+		Return(&security.AuthTokens{AccessToken: "at", RefreshToken: "rt"}, nil).Once()
 
 	resp := s.MakeRPCRequest(s.resolveChallengeRequest())
 
@@ -1881,8 +1884,13 @@ func (s *AuthResourceErrorPathTestSuite) TestResolveChallengeRemainingProviderNo
 	s.True(body.IsOk())
 
 	data := s.ReadDataAsMap(body.Data)
-	s.Equal("new-challenge-token", data["challengeToken"])
-	s.Nil(data["challenges"], "No challenges when provider not found for remaining type")
+	s.Nil(data["challengeToken"], "No challenge token when all resolved")
+	s.Nil(data["challenge"], "No challenge when all resolved")
+
+	tokensRaw, ok := data["tokens"].(map[string]any)
+	s.Require().True(ok, "Should have tokens")
+	s.NotEmpty(tokensRaw["accessToken"])
+	s.NotEmpty(tokensRaw["refreshToken"])
 }
 
 func TestAuthResourceErrorPathTestSuite(t *testing.T) {
