@@ -160,6 +160,16 @@ var (
 		WithCode(ErrCodeChallengeTypeInvalid),
 		WithStatus(fiber.StatusBadRequest),
 	)
+	ErrOTPCodeRequired = Err(
+		i18n.T(ErrMessageOTPCodeRequired),
+		WithCode(ErrCodeOTPCodeRequired),
+		WithStatus(fiber.StatusBadRequest),
+	)
+	ErrOTPCodeInvalid = Err(
+		i18n.T(ErrMessageOTPCodeInvalid),
+		WithCode(ErrCodeOTPCodeInvalid),
+		WithStatus(fiber.StatusUnauthorized),
+	)
 )
 
 // Predefined business errors (HTTP 200 with error code).

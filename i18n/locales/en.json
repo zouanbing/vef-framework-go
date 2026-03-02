@@ -88,5 +88,7 @@
   "challenge_token_invalid": "Invalid challenge token",
   "challenge_token_expired": "Challenge token has expired",
   "challenge_type_invalid": "Invalid challenge type",
-  "challenge_resolve_failed": "Challenge verification failed"
+  "challenge_resolve_failed": "Challenge verification failed",
+  "otp_code_required": "OTP code is required",
+  "otp_code_invalid": "Invalid OTP code"
 }

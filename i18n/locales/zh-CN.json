@@ -88,5 +88,7 @@
   "challenge_token_invalid": "无效的挑战令牌",
   "challenge_token_expired": "挑战令牌已过期",
   "challenge_type_invalid": "无效的挑战类型",
-  "challenge_resolve_failed": "挑战验证失败"
+  "challenge_resolve_failed": "挑战验证失败",
+  "otp_code_required": "验证码不能为空",
+  "otp_code_invalid": "验证码错误"
 }
