@@ -1,6 +1,17 @@
 package security
 
-import "github.com/guregu/null/v6"
+import (
+	"context"
+
+	"github.com/guregu/null/v6"
+)
+
+// UserInfoLoader retrieves extended user information for the current session.
+// Used to populate user profile data, preferences, or other session-specific details.
+type UserInfoLoader interface {
+	// LoadUserInfo retrieves detailed user information based on the Principal and parameters.
+	LoadUserInfo(ctx context.Context, principal *Principal, params map[string]any) (*UserInfo, error)
+}
 
 type Gender string
 
