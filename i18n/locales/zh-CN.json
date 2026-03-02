@@ -90,5 +90,7 @@
   "challenge_type_invalid": "无效的挑战类型",
   "challenge_resolve_failed": "挑战验证失败",
   "otp_code_required": "验证码不能为空",
-  "otp_code_invalid": "验证码错误"
+  "otp_code_invalid": "验证码错误",
+  "new_password_required": "新密码不能为空",
+  "department_required": "请选择部门"
 }

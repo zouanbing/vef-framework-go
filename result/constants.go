@@ -56,6 +56,8 @@ const (
 	ErrMessageChallengeResolveFailed          = "challenge_resolve_failed"
 	ErrMessageOTPCodeRequired                 = "otp_code_required"
 	ErrMessageOTPCodeInvalid                  = "otp_code_invalid"
+	ErrMessageNewPasswordRequired             = "new_password_required"
+	ErrMessageDepartmentRequired              = "department_required"
 )
 
 // Response codes for API results.
@@ -97,8 +99,10 @@ const (
 	ErrCodeChallengeTokenExpired  = 1032
 	ErrCodeChallengeTypeInvalid   = 1033
 	ErrCodeChallengeResolveFailed = 1034
-	ErrCodeOTPCodeRequired       = 1035
-	ErrCodeOTPCodeInvalid        = 1036
+	ErrCodeOTPCodeRequired        = 1035
+	ErrCodeOTPCodeInvalid         = 1036
+	ErrCodeNewPasswordRequired    = 1037
+	ErrCodeDepartmentRequired     = 1038
 
 	// Authorization errors (1100-1199).
 	ErrCodeAccessDenied = 1100

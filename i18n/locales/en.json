@@ -90,5 +90,7 @@
   "challenge_type_invalid": "Invalid challenge type",
   "challenge_resolve_failed": "Challenge verification failed",
   "otp_code_required": "OTP code is required",
-  "otp_code_invalid": "Invalid OTP code"
+  "otp_code_invalid": "Invalid OTP code",
+  "new_password_required": "New password is required",
+  "department_required": "Department selection is required"
 }
