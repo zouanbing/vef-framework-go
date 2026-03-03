@@ -184,6 +184,6 @@ func (s *RBACDataPermissionResolverTestSuite) TestResolveDataScope() {
 	})
 }
 
-func TestRbacDataPermissionResolverTestSuite(t *testing.T) {
+func TestRBACDataPermissionResolverTestSuite(t *testing.T) {
 	suite.Run(t, new(RBACDataPermissionResolverTestSuite))
 }

@@ -324,7 +324,7 @@ type FindInstancesParams struct {
 
 // FindInstances queries instances with filtering and pagination.
 func (r *InstanceResource) FindInstances(ctx fiber.Ctx, params FindInstancesParams) error {
-	res, err := cqrs.Send[query.FindInstancesQuery, *shared.PagedResult[approval.Instance]](ctx.Context(), r.bus, query.FindInstancesQuery{
+	res, err := cqrs.Send[query.FindInstancesQuery, *page.Page[approval.Instance]](ctx.Context(), r.bus, query.FindInstancesQuery{
 		TenantID:    params.TenantID,
 		ApplicantID: params.ApplicantID,
 		Status:      params.Status,
@@ -336,10 +336,7 @@ func (r *InstanceResource) FindInstances(ctx fiber.Ctx, params FindInstancesPara
 		return err
 	}
 
-	return result.Ok(fiber.Map{
-		"list":  res.List,
-		"total": res.Total,
-	}).Response(ctx)
+	return result.Ok(res).Response(ctx)
 }
 
 // FindTasksParams contains the query parameters for finding tasks.
@@ -356,7 +353,7 @@ type FindTasksParams struct {
 
 // FindTasks queries tasks with filtering and pagination.
 func (r *InstanceResource) FindTasks(ctx fiber.Ctx, params FindTasksParams) error {
-	res, err := cqrs.Send[query.FindTasksQuery, *shared.PagedResult[approval.Task]](ctx.Context(), r.bus, query.FindTasksQuery{
+	res, err := cqrs.Send[query.FindTasksQuery, *page.Page[approval.Task]](ctx.Context(), r.bus, query.FindTasksQuery{
 		TenantID:   params.TenantID,
 		AssigneeID: params.AssigneeID,
 		InstanceID: params.InstanceID,
@@ -367,10 +364,7 @@ func (r *InstanceResource) FindTasks(ctx fiber.Ctx, params FindTasksParams) erro
 		return err
 	}
 
-	return result.Ok(fiber.Map{
-		"list":  res.List,
-		"total": res.Total,
-	}).Response(ctx)
+	return result.Ok(res).Response(ctx)
 }
 
 // GetDetailParams contains the parameters for getting instance detail.

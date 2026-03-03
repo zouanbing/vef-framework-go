@@ -64,8 +64,8 @@ func (r *REST) Route(handler fiber.Handler, op *api.Operation) {
 
 	r.group.Add([]string{method}, fullPath, resolver, handlers...)
 
-	op.Meta[shared.MetaKeyRESTHttpMethod] = method
-	op.Meta[shared.MetaKeyRESTHttpPath] = r.basePath + fullPath
+	op.Meta[shared.MetaKeyRESTHTTPMethod] = method
+	op.Meta[shared.MetaKeyRESTHTTPPath] = r.basePath + fullPath
 }
 
 // createResolver creates a middleware that parses request and sets operation in context.
@@ -175,7 +175,7 @@ func (*REST) parseJSONBody(ctx fiber.Ctx, req *api.Request) error {
 		contextx.Logger(ctx).Warnf("Failed to parse JSON body: %v", err)
 
 		return result.Err(
-			i18n.T(result.ErrMessageApiRequestParamsInvalidJSON),
+			i18n.T(result.ErrMessageAPIRequestParamsInvalidJSON),
 			result.WithCode(result.ErrCodeBadRequest),
 		)
 	}

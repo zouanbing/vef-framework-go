@@ -91,7 +91,7 @@ func applySpa(router fiber.Router, config *middleware.SPAConfig) {
 	}))
 }
 
-func NewSpaMiddleware(configs []*middleware.SPAConfig) app.Middleware {
+func NewSPAMiddleware(configs []*middleware.SPAConfig) app.Middleware {
 	if len(configs) == 0 {
 		return nil
 	}

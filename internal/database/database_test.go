@@ -378,7 +378,7 @@ func (suite *SQLGuardTestSuite) TestWhitelistBypassesGuard() {
 	suite.NoError(err, "DROP should work with whitelisted context")
 }
 
-func (suite *SQLGuardTestSuite) TestDisabledGuardAllowsDangerousSql() {
+func (suite *SQLGuardTestSuite) TestDisabledGuardAllowsDangerousSQL() {
 	db := suite.createTestDB(false)
 	defer db.Close()
 

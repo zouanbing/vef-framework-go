@@ -91,7 +91,7 @@ func detectClient(ua string) string {
 	}
 }
 
-func isSpaStaticRequest(ctx fiber.Ctx, spaConfigs []*middleware.SPAConfig) bool {
+func isSPAStaticRequest(ctx fiber.Ctx, spaConfigs []*middleware.SPAConfig) bool {
 	if ctx.Method() != fiber.MethodGet {
 		return false
 	}
@@ -210,7 +210,7 @@ func logRequest(ctx fiber.Ctx, data *logger.Data) {
 func NewRequestRecordMiddleware(spaConfigs []*middleware.SPAConfig) app.Middleware {
 	handler := logger.New(logger.Config{
 		Next: func(ctx fiber.Ctx) bool {
-			return isSpaStaticRequest(ctx, spaConfigs)
+			return isSPAStaticRequest(ctx, spaConfigs)
 		},
 		LoggerFunc: func(ctx fiber.Ctx, data *logger.Data, _ *logger.Config) error {
 			logRequest(ctx, data)

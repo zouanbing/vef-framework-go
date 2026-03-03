@@ -105,7 +105,7 @@ type AppParams struct {
 
 	Config      *config.AppConfig
 	Middlewares []Middleware `group:"vef:app:middlewares"`
-	ApiEngine   api.Engine
+	APIEngine   api.Engine
 }
 
 // New creates a new VEF application instance with the provided dependencies.
@@ -118,7 +118,7 @@ func New(params AppParams) (*App, error) {
 		return nil, fmt.Errorf("failed to create fiber app: %w", err)
 	}
 
-	if err := configureFiberApp(fiberApp, params.Middlewares, params.ApiEngine); err != nil {
+	if err := configureFiberApp(fiberApp, params.Middlewares, params.APIEngine); err != nil {
 		return nil, err
 	}
 

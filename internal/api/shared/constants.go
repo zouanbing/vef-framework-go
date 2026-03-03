@@ -2,8 +2,8 @@ package shared
 
 const (
 	MetaKeyResource       = "__resource"
-	MetaKeyRESTHttpMethod = "__http_method"
-	MetaKeyRESTHttpPath   = "__http_path"
+	MetaKeyRESTHTTPMethod = "__http_method"
+	MetaKeyRESTHTTPPath   = "__http_path"
 
 	AuthOptionPermToken = "__perm_token"
 )

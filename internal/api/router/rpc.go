@@ -158,7 +158,7 @@ func parseFormRequest(ctx fiber.Ctx, request *api.Request) error {
 			contextx.Logger(ctx).Warnf("Failed to parse params json: %v", err)
 
 			return result.Err(
-				i18n.T(result.ErrMessageApiRequestParamsInvalidJSON),
+				i18n.T(result.ErrMessageAPIRequestParamsInvalidJSON),
 				result.WithCode(result.ErrCodeBadRequest),
 			)
 		}
@@ -169,7 +169,7 @@ func parseFormRequest(ctx fiber.Ctx, request *api.Request) error {
 			contextx.Logger(ctx).Warnf("Failed to parse meta json: %v", err)
 
 			return result.Err(
-				i18n.T(result.ErrMessageApiRequestMetaInvalidJSON),
+				i18n.T(result.ErrMessageAPIRequestMetaInvalidJSON),
 				result.WithCode(result.ErrCodeBadRequest),
 			)
 		}

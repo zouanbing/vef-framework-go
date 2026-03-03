@@ -6,7 +6,6 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/contextx"
-	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
 	"github.com/ilxqx/vef-framework-go/internal/cqrs"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/page"
@@ -33,7 +32,7 @@ func NewFindInstancesHandler(db orm.DB) *FindInstancesHandler {
 	return &FindInstancesHandler{db: db}
 }
 
-func (h *FindInstancesHandler) Handle(ctx context.Context, query FindInstancesQuery) (*shared.PagedResult[approval.Instance], error) {
+func (h *FindInstancesHandler) Handle(ctx context.Context, query FindInstancesQuery) (*page.Page[approval.Instance], error) {
 	db := contextx.DB(ctx, h.db)
 
 	var instances []approval.Instance
@@ -65,5 +64,6 @@ func (h *FindInstancesHandler) Handle(ctx context.Context, query FindInstancesQu
 		return nil, fmt.Errorf("query instances: %w", err)
 	}
 
-	return &shared.PagedResult[approval.Instance]{List: instances, Total: int(count)}, nil
+	result := page.New(query.Pageable, int64(count), instances)
+	return &result, nil
 }

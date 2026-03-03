@@ -321,7 +321,7 @@ func (suite *RPCEngineTestSuite) login() string {
 	return tokens["accessToken"].(string)
 }
 
-func (suite *RPCEngineTestSuite) TestPublicApiPing() {
+func (suite *RPCEngineTestSuite) TestPublicAPIPing() {
 	suite.T().Log("Testing public API ping endpoint")
 
 	resp := suite.MakeRPCRequest(api.Request{
@@ -339,7 +339,7 @@ func (suite *RPCEngineTestSuite) TestPublicApiPing() {
 	suite.Equal("pong", body.Data, "Should return pong")
 }
 
-func (suite *RPCEngineTestSuite) TestPublicApiEcho() {
+func (suite *RPCEngineTestSuite) TestPublicAPIEcho() {
 	suite.T().Log("Testing public API echo endpoint with params")
 
 	resp := suite.MakeRPCRequest(api.Request{
@@ -364,7 +364,7 @@ func (suite *RPCEngineTestSuite) TestPublicApiEcho() {
 	suite.Equal(float64(42), data["count"], "Count should match")
 }
 
-func (suite *RPCEngineTestSuite) TestProtectedApiWithoutToken() {
+func (suite *RPCEngineTestSuite) TestProtectedAPIWithoutToken() {
 	suite.T().Log("Testing protected API without token")
 
 	resp := suite.MakeRPCRequest(api.Request{
@@ -378,7 +378,7 @@ func (suite *RPCEngineTestSuite) TestProtectedApiWithoutToken() {
 	suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 }
 
-func (suite *RPCEngineTestSuite) TestProtectedApiWithValidToken() {
+func (suite *RPCEngineTestSuite) TestProtectedAPIWithValidToken() {
 	suite.T().Log("Testing protected API with valid token")
 
 	token := suite.GenerateToken(suite.testUser)
@@ -401,7 +401,7 @@ func (suite *RPCEngineTestSuite) TestProtectedApiWithValidToken() {
 	suite.Equal("Test User", data["name"], "User name should match")
 }
 
-func (suite *RPCEngineTestSuite) TestProtectedApiWithInvalidToken() {
+func (suite *RPCEngineTestSuite) TestProtectedAPIWithInvalidToken() {
 	suite.T().Log("Testing protected API with invalid token")
 
 	resp := suite.MakeRPCRequestWithToken(api.Request{
