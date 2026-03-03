@@ -7,7 +7,9 @@ import (
 
 // Bus is the command/query dispatch bus interface.
 type Bus interface {
+	// register binds a dispatcher to an action type key.
 	register(key reflect.Type, d Dispatcher)
+	// send dispatches an action by type key through the behavior pipeline.
 	send(ctx context.Context, key reflect.Type, action Action) (any, error)
 }
 

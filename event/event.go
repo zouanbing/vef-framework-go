@@ -10,7 +10,7 @@ import (
 )
 
 // Event represents the base interface for all events in the system.
-// All custom events should embed this interface to be compatible with the event bus.
+// All custom events should implement this interface to be compatible with the event bus.
 type Event interface {
 	// ID returns a unique identifier for this specific event instance.
 	ID() string

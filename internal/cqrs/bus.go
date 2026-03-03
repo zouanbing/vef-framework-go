@@ -12,6 +12,7 @@ import (
 
 // Dispatcher is the type-erased interface used for map lookup.
 type Dispatcher interface {
+	// dispatch executes the underlying typed handler using a type-erased action value.
 	dispatch(ctx context.Context, cmd any) (any, error)
 }
 

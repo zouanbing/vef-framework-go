@@ -52,9 +52,9 @@ type Store interface {
 	Clear(ctx context.Context, prefix string) error
 	// Keys returns all keys in the cache, optionally filtered by prefix.
 	Keys(ctx context.Context, prefix string) ([]string, error)
-	// ForEachRaw iterates over all key-value pairs in the cache, optionally filtered by prefix.
-	// The iteration stops if the callback returns false.
-	ForEach(ctx context.Context, prefix string, callback func(key string, data []byte) bool) error
+		// ForEach iterates over all key-value pairs in the cache, optionally filtered by prefix.
+		// The iteration stops if the callback returns false.
+		ForEach(ctx context.Context, prefix string, callback func(key string, data []byte) bool) error
 	// Size returns the number of entries in the cache.
 	Size(ctx context.Context, prefix string) (int64, error)
 	// Close closes the cache and releases any resources.

@@ -58,7 +58,9 @@ func (m *HandlerParamResolverManager) Resolve(target reflect.Value, paramType re
 	return nil, fmt.Errorf("%w: %s", ErrResolveHandlerParamType, paramType.String())
 }
 
+// decodable represents request sections that can decode themselves into a target struct.
 type decodable interface {
+	// Decode decodes the underlying request data into out.
 	Decode(out any) error
 }
 
