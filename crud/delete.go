@@ -21,10 +21,11 @@ type Delete[TModel any] interface {
 	api.OperationsProvider
 	Builder[Delete[TModel]]
 
-	// This processor is called before the model is deleted from the database.
+	// WithPreDelete registers a processor that is called before the model is deleted from the database.
 	WithPreDelete(processor PreDeleteProcessor[TModel]) Delete[TModel]
-	// This processor is called after the model is successfully deleted within the same transaction.
+	// WithPostDelete registers a processor that is called after the model is deleted within the same transaction.
 	WithPostDelete(processor PostDeleteProcessor[TModel]) Delete[TModel]
+	// DisableDataPerm disables automatic data permission filtering for delete queries.
 	DisableDataPerm() Delete[TModel]
 }
 

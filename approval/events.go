@@ -8,13 +8,16 @@ import (
 
 // DomainEvent is the base interface for all approval domain events.
 type DomainEvent interface {
+	// EventName returns the unique event identifier (e.g., "approval.instance.created").
 	EventName() string
+	// OccurredAt returns the timestamp when the event occurred.
 	OccurredAt() timex.DateTime
 }
 
 // EventDispatcher dispatches outbox events to external systems.
 // Default implementation forwards to event.Bus.
 type EventDispatcher interface {
+	// Dispatch sends an outbox event record to the external event system.
 	Dispatch(ctx context.Context, record EventOutbox) error
 }
 

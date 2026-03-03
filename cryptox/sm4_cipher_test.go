@@ -3,14 +3,13 @@ package cryptox
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tjfoc/gmsm/sm4"
-
-	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
 // TestSm4CipherCbc tests SM4 encryption and decryption in CBC mode.
@@ -87,7 +86,7 @@ func TestSm4CipherFromHex(t *testing.T) {
 	keyHex := "0123456789abcdef0123456789abcdef"
 	ivHex := "fedcba9876543210fedcba9876543210"
 
-	iv, err := encoding.FromHex(ivHex)
+	iv, err := hex.DecodeString(ivHex)
 	require.NoError(t, err, "Should decode hex IV")
 
 	cipher, err := NewSM4FromHex(keyHex, WithSM4Iv(iv), WithSM4Mode(SM4ModeCBC))

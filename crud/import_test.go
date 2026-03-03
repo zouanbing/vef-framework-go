@@ -11,10 +11,11 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/uptrace/bun"
 
+	"encoding/json"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/crud"
 	"github.com/ilxqx/vef-framework-go/csv"
-	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/excel"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
@@ -795,18 +796,18 @@ func (suite *ImportTestSuite) makeMultipartAPIRequest(req api.Request, filename 
 
 	// Add params as JSON string if present
 	if req.Params != nil {
-		paramsJSON, err := encoding.ToJSON(req.Params)
+		paramsBytes, err := json.Marshal(req.Params)
 		suite.NoError(err, "Should marshal params to JSON")
 
-		_ = writer.WriteField("params", paramsJSON)
+		_ = writer.WriteField("params", string(paramsBytes))
 	}
 
 	// Add meta as JSON string if present
 	if req.Meta != nil {
-		metaJSON, err := encoding.ToJSON(req.Meta)
+		metaBytes, err := json.Marshal(req.Meta)
 		suite.NoError(err, "Should marshal meta to JSON")
 
-		_ = writer.WriteField("meta", metaJSON)
+		_ = writer.WriteField("meta", string(metaBytes))
 	}
 
 	// Add file

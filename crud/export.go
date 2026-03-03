@@ -20,10 +20,15 @@ type Export[TModel, TSearch any] interface {
 	api.OperationsProvider
 	Find[TModel, TSearch, []TModel, Export[TModel, TSearch]]
 
+	// WithDefaultFormat sets the default export format (Excel or CSV) when not specified in the request.
 	WithDefaultFormat(format TabularFormat) Export[TModel, TSearch]
+	// WithExcelOptions configures Excel-specific export options (sheet name, styles, etc.).
 	WithExcelOptions(opts ...excel.ExportOption) Export[TModel, TSearch]
+	// WithCsvOptions configures CSV-specific export options (delimiter, encoding, etc.).
 	WithCsvOptions(opts ...csv.ExportOption) Export[TModel, TSearch]
+	// WithPreExport registers a processor for post-query data transformation before export.
 	WithPreExport(processor PreExportProcessor[TModel, TSearch]) Export[TModel, TSearch]
+	// WithFilenameBuilder sets a custom function to generate the export filename.
 	WithFilenameBuilder(builder FilenameBuilder[TSearch]) Export[TModel, TSearch]
 }
 

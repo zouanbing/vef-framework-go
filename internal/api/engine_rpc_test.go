@@ -12,9 +12,10 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/fx"
 
+	"encoding/json"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/apptest"
 	"github.com/ilxqx/vef-framework-go/password"
@@ -624,7 +625,7 @@ func (suite *RPCEngineTestSuite) TestI18nErrorMessages() {
 func (suite *RPCEngineTestSuite) TestContentTypeValidation() {
 	suite.T().Log("Testing content type validation")
 
-	jsonBody, err := encoding.ToJSON(api.Request{
+	jsonBytes, err := json.Marshal(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "ping",
@@ -633,7 +634,7 @@ func (suite *RPCEngineTestSuite) TestContentTypeValidation() {
 	})
 	suite.Require().NoError(err, "Should not return error")
 
-	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
+	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(string(jsonBytes)))
 	req.Header.Set(fiber.HeaderContentType, "text/plain")
 
 	resp, err := suite.App.Test(req, 30*time.Second)
@@ -684,7 +685,7 @@ func (suite *RPCEngineTestSuite) TestTokenInQueryParam() {
 
 	token := suite.GenerateToken(suite.testUser)
 
-	jsonBody, err := encoding.ToJSON(api.Request{
+	jsonBytes, err := json.Marshal(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test",
 			Action:   "protected",
@@ -693,7 +694,7 @@ func (suite *RPCEngineTestSuite) TestTokenInQueryParam() {
 	})
 	suite.Require().NoError(err, "Should not return error")
 
-	req := httptest.NewRequest(fiber.MethodPost, "/api?"+security.QueryKeyAccessToken+"="+token, strings.NewReader(jsonBody))
+	req := httptest.NewRequest(fiber.MethodPost, "/api?"+security.QueryKeyAccessToken+"="+token, strings.NewReader(string(jsonBytes)))
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 	resp, err := suite.App.Test(req, 30*time.Second)

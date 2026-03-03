@@ -8,7 +8,9 @@ import (
 
 // MessageSource produces streaming messages. Returns io.EOF when complete.
 type MessageSource interface {
+	// Recv receives the next message from the stream. Returns io.EOF when no more messages are available.
 	Recv() (Message, error)
+	// Close releases resources associated with this message source.
 	Close() error
 }
 

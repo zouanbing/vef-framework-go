@@ -11,12 +11,19 @@ import (
 type QueryBuilder interface {
 	fmt.Stringer
 
+	// Dialect returns the current database dialect (PostgreSQL, MySQL, or SQLite).
 	Dialect() schema.Dialect
+	// GetTable returns the Bun schema table metadata for the query's model.
 	GetTable() *schema.Table
+	// Query returns the underlying bun.Query instance.
 	Query() bun.Query
+	// ExprBuilder returns an expression builder for constructing SQL expressions.
 	ExprBuilder() ExprBuilder
+	// CreateSubQuery wraps a raw bun.SelectQuery into a VEF SelectQuery for use as a subquery.
 	CreateSubQuery(subQuery *bun.SelectQuery) SelectQuery
+	// BuildSubQuery creates a bun.SelectQuery by applying the builder function to a new subquery.
 	BuildSubQuery(builder func(query SelectQuery)) *bun.SelectQuery
+	// BuildCondition creates a WHERE condition clause by applying the builder function.
 	BuildCondition(builder func(ConditionBuilder)) interface {
 		schema.QueryAppender
 		ConditionBuilder

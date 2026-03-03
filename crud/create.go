@@ -20,9 +20,9 @@ type Create[TModel, TParams any] interface {
 	api.OperationsProvider
 	Builder[Create[TModel, TParams]]
 
-	// This processor is called before the model is saved to the database.
+	// WithPreCreate registers a processor that is called before the model is saved to the database.
 	WithPreCreate(processor PreCreateProcessor[TModel, TParams]) Create[TModel, TParams]
-	// This processor is called after the model is successfully saved within the same transaction.
+	// WithPostCreate registers a processor that is called after the model is saved within the same transaction.
 	WithPostCreate(processor PostCreateProcessor[TModel, TParams]) Create[TModel, TParams]
 }
 

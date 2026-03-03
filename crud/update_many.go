@@ -22,10 +22,11 @@ type UpdateMany[TModel, TParams any] interface {
 	api.OperationsProvider
 	Builder[UpdateMany[TModel, TParams]]
 
-	// This processor is called before the models are updated in the database.
+	// WithPreUpdateMany registers a processor that is called before the models are updated in the database.
 	WithPreUpdateMany(processor PreUpdateManyProcessor[TModel, TParams]) UpdateMany[TModel, TParams]
-	// This processor is called after the models are successfully updated within the same transaction.
+	// WithPostUpdateMany registers a processor that is called after the models are updated within the same transaction.
 	WithPostUpdateMany(processor PostUpdateManyProcessor[TModel, TParams]) UpdateMany[TModel, TParams]
+	// DisableDataPerm disables automatic data permission filtering for batch update queries.
 	DisableDataPerm() UpdateMany[TModel, TParams]
 }
 

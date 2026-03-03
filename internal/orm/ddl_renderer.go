@@ -10,7 +10,9 @@ import (
 // DDLDialect defines the dialect methods needed by DDL renderers.
 // Schema.Dialect satisfies this interface implicitly.
 type DDLDialect interface {
+	// Name returns the dialect name (e.g., pgdialect, mysqldialect, sqlitedialect).
 	Name() dialect.Name
+	// IdentQuote returns the character used to quote identifiers (e.g., '"' for PostgreSQL, '`' for MySQL).
 	IdentQuote() byte
 }
 

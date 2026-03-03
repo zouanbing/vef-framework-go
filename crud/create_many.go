@@ -20,9 +20,9 @@ type CreateMany[TModel, TParams any] interface {
 	api.OperationsProvider
 	Builder[CreateMany[TModel, TParams]]
 
-	// This processor is called before the models are saved to the database.
+	// WithPreCreateMany registers a processor that is called before the models are saved to the database.
 	WithPreCreateMany(processor PreCreateManyProcessor[TModel, TParams]) CreateMany[TModel, TParams]
-	// This processor is called after the models are successfully saved within the same transaction.
+	// WithPostCreateMany registers a processor that is called after the models are saved within the same transaction.
 	WithPostCreateMany(processor PostCreateManyProcessor[TModel, TParams]) CreateMany[TModel, TParams]
 }
 

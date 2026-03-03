@@ -11,11 +11,17 @@ import (
 
 // CallbackWriter provides methods to push messages in callback-based sources.
 type CallbackWriter interface {
+	// WriteText sends a text content message as the assistant role.
 	WriteText(content string)
+	// WriteToolCall sends a tool call message with the given id, function name, and JSON arguments.
 	WriteToolCall(id, name, arguments string)
+	// WriteToolResult sends a tool result message for the specified tool call.
 	WriteToolResult(toolCallID, content string)
+	// WriteReasoning sends a reasoning/thinking message as the assistant role.
 	WriteReasoning(reasoning string)
+	// WriteData sends a custom data message with the specified type and payload.
 	WriteData(dataType string, data any)
+	// WriteMessage sends an arbitrary pre-built message to the stream.
 	WriteMessage(msg Message)
 }
 

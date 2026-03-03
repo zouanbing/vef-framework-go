@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/contextx"
-	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/httpx"
 	"github.com/ilxqx/vef-framework-go/i18n"
@@ -97,8 +97,8 @@ func buildAuditEvent(ctx fiber.Ctx, elapsed int64, err error) (*api.AuditEvent, 
 	if err != nil {
 		resultCode, resultMsg = extractErrorInfo(err)
 	} else {
-		res, decodeErr := encoding.FromJSON[result.Result](string(utils.CopyBytes(ctx.Response().Body())))
-		if decodeErr != nil {
+		var res result.Result
+		if decodeErr := json.Unmarshal(utils.CopyBytes(ctx.Response().Body()), &res); decodeErr != nil {
 			return nil, fmt.Errorf("%w: %w", ErrResponseDecodeFailed, decodeErr)
 		}
 

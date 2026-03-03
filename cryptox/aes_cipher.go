@@ -4,10 +4,10 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"io"
-
-	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
 type AESMode string
@@ -61,7 +61,7 @@ func NewAES(key []byte, opts ...AESOption) (Cipher, error) {
 }
 
 func NewAESFromHex(keyHex string, opts ...AESOption) (Cipher, error) {
-	key, err := encoding.FromHex(keyHex)
+	key, err := hex.DecodeString(keyHex)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode key from hex: %w", err)
 	}
@@ -70,7 +70,7 @@ func NewAESFromHex(keyHex string, opts ...AESOption) (Cipher, error) {
 }
 
 func NewAESFromBase64(keyBase64 string, opts ...AESOption) (Cipher, error) {
-	key, err := encoding.FromBase64(keyBase64)
+	key, err := base64.StdEncoding.DecodeString(keyBase64)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode key from base64: %w", err)
 	}
@@ -106,7 +106,7 @@ func (a *aesCipher) encryptCBC(plaintext string) (string, error) {
 	mode := cipher.NewCBCEncrypter(block, a.iv)
 	mode.CryptBlocks(ciphertext, paddedData)
 
-	return encoding.ToBase64(ciphertext), nil
+	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
 func (a *aesCipher) decryptCBC(ciphertext string) (string, error) {
@@ -115,7 +115,7 @@ func (a *aesCipher) decryptCBC(ciphertext string) (string, error) {
 		return "", fmt.Errorf("failed to create AES cipher: %w", err)
 	}
 
-	encryptedData, err := encoding.FromBase64(ciphertext)
+	encryptedData, err := base64.StdEncoding.DecodeString(ciphertext)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode base64: %w", err)
 	}
@@ -154,7 +154,7 @@ func (a *aesCipher) encryptGCM(plaintext string) (string, error) {
 
 	ciphertext := gcm.Seal(nonce, nonce, []byte(plaintext), nil)
 
-	return encoding.ToBase64(ciphertext), nil
+	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
 func (a *aesCipher) decryptGCM(ciphertext string) (string, error) {
@@ -168,7 +168,7 @@ func (a *aesCipher) decryptGCM(ciphertext string) (string, error) {
 		return "", fmt.Errorf("failed to create GCM: %w", err)
 	}
 
-	encryptedData, err := encoding.FromBase64(ciphertext)
+	encryptedData, err := base64.StdEncoding.DecodeString(ciphertext)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode base64: %w", err)
 	}

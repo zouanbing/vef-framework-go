@@ -2,13 +2,13 @@ package cryptox
 
 import (
 	"crypto/rand"
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/pem"
 	"fmt"
 
 	"github.com/tjfoc/gmsm/sm2"
 	"github.com/tjfoc/gmsm/x509"
-
-	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
 type SM2Cipher struct {
@@ -62,7 +62,7 @@ func NewSM2FromHex(privateKeyHex, publicKeyHex string) (CipherSigner, error) {
 	)
 
 	if privateKeyHex != "" {
-		if keyBytes, err := encoding.FromHex(privateKeyHex); err != nil {
+		if keyBytes, err := hex.DecodeString(privateKeyHex); err != nil {
 			return nil, fmt.Errorf("failed to decode private key from hex: %w", err)
 		} else if privateKey, err = x509.ParseSm2PrivateKey(keyBytes); err != nil {
 			return nil, fmt.Errorf("failed to parse private key: %w", err)
@@ -70,7 +70,7 @@ func NewSM2FromHex(privateKeyHex, publicKeyHex string) (CipherSigner, error) {
 	}
 
 	if publicKeyHex != "" {
-		if keyBytes, err := encoding.FromHex(publicKeyHex); err != nil {
+		if keyBytes, err := hex.DecodeString(publicKeyHex); err != nil {
 			return nil, fmt.Errorf("failed to decode public key from hex: %w", err)
 		} else if publicKey, err = x509.ParseSm2PublicKey(keyBytes); err != nil {
 			return nil, fmt.Errorf("failed to parse public key: %w", err)
@@ -87,7 +87,7 @@ func NewSM2FromBase64(privateKeyBase64, publicKeyBase64 string) (CipherSigner, e
 	)
 
 	if privateKeyBase64 != "" {
-		if keyBytes, err := encoding.FromBase64(privateKeyBase64); err != nil {
+		if keyBytes, err := base64.StdEncoding.DecodeString(privateKeyBase64); err != nil {
 			return nil, fmt.Errorf("failed to decode private key from base64: %w", err)
 		} else if privateKey, err = x509.ParseSm2PrivateKey(keyBytes); err != nil {
 			return nil, fmt.Errorf("failed to parse private key: %w", err)
@@ -95,7 +95,7 @@ func NewSM2FromBase64(privateKeyBase64, publicKeyBase64 string) (CipherSigner, e
 	}
 
 	if publicKeyBase64 != "" {
-		if keyBytes, err := encoding.FromBase64(publicKeyBase64); err != nil {
+		if keyBytes, err := base64.StdEncoding.DecodeString(publicKeyBase64); err != nil {
 			return nil, fmt.Errorf("failed to decode public key from base64: %w", err)
 		} else if publicKey, err = x509.ParseSm2PublicKey(keyBytes); err != nil {
 			return nil, fmt.Errorf("failed to parse public key: %w", err)
@@ -115,7 +115,7 @@ func (s *SM2Cipher) Encrypt(plaintext string) (string, error) {
 		return "", fmt.Errorf("failed to encrypt: %w", err)
 	}
 
-	return encoding.ToBase64(ciphertext), nil
+	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
 func (s *SM2Cipher) Decrypt(ciphertext string) (string, error) {
@@ -123,7 +123,7 @@ func (s *SM2Cipher) Decrypt(ciphertext string) (string, error) {
 		return "", ErrPrivateKeyRequiredForDecrypt
 	}
 
-	encryptedData, err := encoding.FromBase64(ciphertext)
+	encryptedData, err := base64.StdEncoding.DecodeString(ciphertext)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode base64: %w", err)
 	}
@@ -164,7 +164,7 @@ func (s *SM2Cipher) Sign(data string) (string, error) {
 		return "", fmt.Errorf("failed to sign: %w", err)
 	}
 
-	return encoding.ToBase64(signature), nil
+	return base64.StdEncoding.EncodeToString(signature), nil
 }
 
 func (s *SM2Cipher) Verify(data, signature string) (bool, error) {
@@ -172,7 +172,7 @@ func (s *SM2Cipher) Verify(data, signature string) (bool, error) {
 		return false, ErrPublicKeyRequiredForVerify
 	}
 
-	signatureBytes, err := encoding.FromBase64(signature)
+	signatureBytes, err := base64.StdEncoding.DecodeString(signature)
 	if err != nil {
 		return false, fmt.Errorf("%w: %w", ErrInvalidSignature, err)
 	}

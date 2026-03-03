@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -10,7 +11,6 @@ import (
 	smcp "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/encoding"
 	ilog "github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/mcp"
 )
@@ -131,12 +131,12 @@ func formatParams(params smcp.Params) string {
 		return "{}"
 	}
 
-	json, err := encoding.ToJSON(params)
+	jsonBytes, err := json.Marshal(params)
 	if err != nil {
 		return fmt.Sprintf("%v", params)
 	}
 
-	return json
+	return string(jsonBytes)
 }
 
 func getServerName(params ServerParams) string {

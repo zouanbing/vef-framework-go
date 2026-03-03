@@ -3,10 +3,10 @@ package security
 import (
 	"context"
 	"crypto/hmac"
+	"encoding/hex"
 	"fmt"
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/hashx"
 	"github.com/ilxqx/vef-framework-go/id"
 )
@@ -86,7 +86,7 @@ type SignatureResult struct {
 // NewSignature creates a new Signature instance.
 // The secret parameter is required and expects a hex-encoded string.
 func NewSignature(secret string, opts ...SignatureOption) (*Signature, error) {
-	secretBytes, err := encoding.FromHex(secret)
+	secretBytes, err := hex.DecodeString(secret)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrDecodeSignatureSecretFailed, err)
 	}
@@ -140,7 +140,7 @@ func (s *Signature) Verify(ctx context.Context, appID string, timestamp int64, n
 // This is useful when the secret is loaded dynamically per-request (e.g., from ExternalAppLoader).
 // The secret parameter expects a hex-encoded string.
 func (s *Signature) VerifyWithSecret(ctx context.Context, secret, appID string, timestamp int64, nonce, signature string) error {
-	secretBytes, err := encoding.FromHex(secret)
+	secretBytes, err := hex.DecodeString(secret)
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrDecodeSignatureSecretFailed, err)
 	}
@@ -169,12 +169,12 @@ func (s *Signature) verifyWithSecret(ctx context.Context, secret []byte, appID s
 	payload := s.buildPayload(appID, timestamp, nonce)
 	expectedSignature := s.computeHMACWithSecret(secret, payload)
 
-	expectedMAC, err := encoding.FromHex(expectedSignature)
+	expectedMAC, err := hex.DecodeString(expectedSignature)
 	if err != nil {
 		return fmt.Errorf("failed to decode expected signature: %w", err)
 	}
 
-	providedMAC, err := encoding.FromHex(signature)
+	providedMAC, err := hex.DecodeString(signature)
 	if err != nil {
 		return ErrSignatureInvalid
 	}

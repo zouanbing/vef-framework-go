@@ -6,12 +6,12 @@ import (
 	"crypto/ecdh"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"io"
 
 	"golang.org/x/crypto/hkdf"
-
-	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
 type ECIESCurve string
@@ -83,13 +83,13 @@ func NewECIESFromHex(privateKeyHex, publicKeyHex string, curve ECIESCurve, opts 
 	)
 
 	if privateKeyHex != "" {
-		if privateBytes, err = encoding.FromHex(privateKeyHex); err != nil {
+		if privateBytes, err = hex.DecodeString(privateKeyHex); err != nil {
 			return nil, fmt.Errorf("failed to decode private key from hex: %w", err)
 		}
 	}
 
 	if publicKeyHex != "" {
-		if publicBytes, err = encoding.FromHex(publicKeyHex); err != nil {
+		if publicBytes, err = hex.DecodeString(publicKeyHex); err != nil {
 			return nil, fmt.Errorf("failed to decode public key from hex: %w", err)
 		}
 	}
@@ -105,13 +105,13 @@ func NewECIESFromBase64(privateKeyBase64, publicKeyBase64 string, curve ECIESCur
 	)
 
 	if privateKeyBase64 != "" {
-		if privateBytes, err = encoding.FromBase64(privateKeyBase64); err != nil {
+		if privateBytes, err = base64.StdEncoding.DecodeString(privateKeyBase64); err != nil {
 			return nil, fmt.Errorf("failed to decode private key from base64: %w", err)
 		}
 	}
 
 	if publicKeyBase64 != "" {
-		if publicBytes, err = encoding.FromBase64(publicKeyBase64); err != nil {
+		if publicBytes, err = base64.StdEncoding.DecodeString(publicKeyBase64); err != nil {
 			return nil, fmt.Errorf("failed to decode public key from base64: %w", err)
 		}
 	}
@@ -185,7 +185,7 @@ func (e *eciesCipher) Encrypt(plaintext string) (string, error) {
 	result = append(result, nonce...)
 	result = append(result, ciphertext...)
 
-	return encoding.ToBase64(result), nil
+	return base64.StdEncoding.EncodeToString(result), nil
 }
 
 func (e *eciesCipher) Decrypt(ciphertext string) (string, error) {
@@ -193,7 +193,7 @@ func (e *eciesCipher) Decrypt(ciphertext string) (string, error) {
 		return "", ErrPrivateKeyRequiredForDecrypt
 	}
 
-	encryptedData, err := encoding.FromBase64(ciphertext)
+	encryptedData, err := base64.StdEncoding.DecodeString(ciphertext)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode base64: %w", err)
 	}

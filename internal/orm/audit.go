@@ -17,18 +17,21 @@ var autoColumnHandlers = []ColumnHandler{
 
 // ColumnHandler provides the column name that the handler manages.
 type ColumnHandler interface {
+	// Name returns the database column name this handler manages (e.g., "id", "created_at").
 	Name() string
 }
 
 // InsertColumnHandler manages columns automatically during insert operations.
 type InsertColumnHandler interface {
 	ColumnHandler
+	// OnInsert sets the column value automatically when a new row is inserted.
 	OnInsert(query *BunInsertQuery, table *schema.Table, field *schema.Field, model any, value reflect.Value)
 }
 
 // UpdateColumnHandler manages columns during both insert and update operations.
 type UpdateColumnHandler interface {
 	InsertColumnHandler
+	// OnUpdate sets the column value automatically when an existing row is updated.
 	OnUpdate(query *BunUpdateQuery, table *schema.Table, field *schema.Field, model any, value reflect.Value)
 }
 

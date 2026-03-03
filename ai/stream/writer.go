@@ -13,7 +13,9 @@ import (
 
 // StreamWriter writes UI message stream chunks.
 type StreamWriter interface {
+	// WriteChunk writes a single chunk to the stream output.
 	WriteChunk(chunk Chunk) error
+	// Flush flushes any buffered data to the underlying writer.
 	Flush() error
 }
 

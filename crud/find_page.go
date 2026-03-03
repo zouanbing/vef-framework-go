@@ -20,6 +20,7 @@ type FindPage[TModel, TSearch any] interface {
 	api.OperationsProvider
 	Find[TModel, TSearch, []TModel, FindPage[TModel, TSearch]]
 
+	// WithDefaultPageSize sets the fallback page size when the request's page size is zero or invalid.
 	WithDefaultPageSize(size int) FindPage[TModel, TSearch]
 }
 

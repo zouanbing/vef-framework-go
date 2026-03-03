@@ -68,5 +68,6 @@ type Logger interface {
 
 // LoggerConfigurable defines an interface for components that can be configured with a logger.
 type LoggerConfigurable[T any] interface {
+	// WithLogger returns a copy of the component configured with the given logger.
 	WithLogger(logger Logger) T
 }

@@ -13,7 +13,9 @@ type Violation struct {
 
 // Rule defines the interface for SQL checking rules.
 type Rule interface {
+	// Name returns the rule identifier (e.g., "no_drop", "no_truncate").
 	Name() string
+	// Check inspects the SQL AST and returns a Violation if the rule is violated, or nil if it passes.
 	Check(astNode *ast.AST) *Violation
 }
 

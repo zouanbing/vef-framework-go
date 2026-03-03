@@ -3,6 +3,7 @@ package cryptox
 import (
 	"crypto/rand"
 	"encoding/asn1"
+	"encoding/hex"
 	"encoding/pem"
 	"testing"
 
@@ -10,8 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tjfoc/gmsm/sm2"
 	"github.com/tjfoc/gmsm/x509"
-
-	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
 func generateSM2KeyPair() (*sm2.PrivateKey, error) {
@@ -98,8 +97,8 @@ func TestSm2CipherFromHex(t *testing.T) {
 	derPub, err := x509.MarshalSm2PublicKey(&priv.PublicKey)
 	require.NoError(t, err, "Should marshal SM2 public key")
 
-	hexPriv := encoding.ToHex(derPriv)
-	hexPub := encoding.ToHex(derPub)
+	hexPriv := hex.EncodeToString(derPriv)
+	hexPub := hex.EncodeToString(derPub)
 
 	cipher, err := NewSM2FromHex(hexPriv, hexPub)
 	require.NoError(t, err, "Should create SM2 cipher from hex")

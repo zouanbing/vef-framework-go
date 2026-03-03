@@ -24,10 +24,15 @@ type Import[TModel any] interface {
 	api.OperationsProvider
 	Builder[Import[TModel]]
 
+	// WithDefaultFormat sets the default import format (Excel or CSV) when not specified in the request.
 	WithDefaultFormat(format TabularFormat) Import[TModel]
+	// WithExcelOptions configures Excel-specific import options (sheet index, header row, etc.).
 	WithExcelOptions(opts ...excel.ImportOption) Import[TModel]
+	// WithCsvOptions configures CSV-specific import options (delimiter, encoding, etc.).
 	WithCsvOptions(opts ...csv.ImportOption) Import[TModel]
+	// WithPreImport registers a processor that is called before parsed models are inserted into the database.
 	WithPreImport(processor PreImportProcessor[TModel]) Import[TModel]
+	// WithPostImport registers a processor that is called after models are inserted within the same transaction.
 	WithPostImport(processor PostImportProcessor[TModel]) Import[TModel]
 }
 

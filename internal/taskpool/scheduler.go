@@ -13,6 +13,7 @@ type Scheduler[TIn, TOut any] interface {
 	// SubmitAsync returns immediately with a result channel.
 	SubmitAsync(ctx context.Context, payload TIn, opts ...SubmitOption) (<-chan Result[TOut], error)
 
+	// Stats returns current scheduler statistics (total submitted, completed, and failed counts).
 	Stats() SchedulerStats
 
 	// Shutdown waits for running tasks to complete.

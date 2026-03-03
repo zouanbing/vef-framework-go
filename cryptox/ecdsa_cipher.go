@@ -7,11 +7,11 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/asn1"
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/pem"
 	"fmt"
 	"math/big"
-
-	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
 type ECDSACurve string
@@ -122,13 +122,13 @@ func NewECDSAFromHex(privateKeyHex, publicKeyHex string, opts ...ECDSAOption) (S
 	)
 
 	if privateKeyHex != "" {
-		if privateBytes, err = encoding.FromHex(privateKeyHex); err != nil {
+		if privateBytes, err = hex.DecodeString(privateKeyHex); err != nil {
 			return nil, fmt.Errorf("failed to decode private key from hex: %w", err)
 		}
 	}
 
 	if publicKeyHex != "" {
-		if publicBytes, err = encoding.FromHex(publicKeyHex); err != nil {
+		if publicBytes, err = hex.DecodeString(publicKeyHex); err != nil {
 			return nil, fmt.Errorf("failed to decode public key from hex: %w", err)
 		}
 	}
@@ -149,13 +149,13 @@ func NewECDSAFromBase64(privateKeyBase64, publicKeyBase64 string, opts ...ECDSAO
 	)
 
 	if privateKeyBase64 != "" {
-		if privateBytes, err = encoding.FromBase64(privateKeyBase64); err != nil {
+		if privateBytes, err = base64.StdEncoding.DecodeString(privateKeyBase64); err != nil {
 			return nil, fmt.Errorf("failed to decode private key from base64: %w", err)
 		}
 	}
 
 	if publicKeyBase64 != "" {
-		if publicBytes, err = encoding.FromBase64(publicKeyBase64); err != nil {
+		if publicBytes, err = base64.StdEncoding.DecodeString(publicKeyBase64); err != nil {
 			return nil, fmt.Errorf("failed to decode public key from base64: %w", err)
 		}
 	}
@@ -207,7 +207,7 @@ func (e *ecdsaCipher) Sign(data string) (string, error) {
 		return "", fmt.Errorf("failed to marshal signature: %w", err)
 	}
 
-	return encoding.ToBase64(signature), nil
+	return base64.StdEncoding.EncodeToString(signature), nil
 }
 
 func (e *ecdsaCipher) Verify(data, signature string) (bool, error) {
@@ -215,7 +215,7 @@ func (e *ecdsaCipher) Verify(data, signature string) (bool, error) {
 		return false, ErrPublicKeyRequiredForVerify
 	}
 
-	signatureBytes, err := encoding.FromBase64(signature)
+	signatureBytes, err := base64.StdEncoding.DecodeString(signature)
 	if err != nil {
 		return false, fmt.Errorf("%w: %w", ErrInvalidSignature, err)
 	}

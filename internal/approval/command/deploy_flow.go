@@ -24,11 +24,13 @@ type DeployFlowCmd struct {
 
 // AssigneeProvider is the interface for accessing assignees from typed node data.
 type AssigneeProvider interface {
+	// GetAssignees returns the assignee definitions configured on this node.
 	GetAssignees() []approval.AssigneeDefinition
 }
 
 // CCProvider is the interface for accessing CC list from typed node data.
 type CCProvider interface {
+	// GetCCs returns the CC recipient definitions configured on this node.
 	GetCCs() []approval.CCDefinition
 }
 

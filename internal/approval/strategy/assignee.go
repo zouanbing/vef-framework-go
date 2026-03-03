@@ -24,7 +24,9 @@ type ResolveContext struct {
 
 // AssigneeResolver resolves assignees for a specific kind.
 type AssigneeResolver interface {
+	// Kind returns the assignee kind this resolver handles (user, role, dept_leader, superior, etc.).
 	Kind() approval.AssigneeKind
+	// Resolve resolves concrete assignees from the assignee configuration in ResolveContext.
 	Resolve(ctx context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error)
 }
 

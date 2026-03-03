@@ -19,9 +19,11 @@ type FindTreeOptions[TModel, TSearch any] interface {
 	api.OperationsProvider
 	Find[TModel, TSearch, []TreeDataOption, FindTreeOptions[TModel, TSearch]]
 
-	// This mapping provides fallback values for label, value, description, and sort columns.
+	// WithDefaultColumnMapping sets fallback column mapping for label, value, description, and sort columns.
 	WithDefaultColumnMapping(mapping *DataOptionColumnMapping) FindTreeOptions[TModel, TSearch]
+	// WithIDColumn sets the column used to identify individual tree nodes.
 	WithIDColumn(name string) FindTreeOptions[TModel, TSearch]
+	// WithParentIDColumn sets the column that establishes parent-child relationships between nodes.
 	WithParentIDColumn(name string) FindTreeOptions[TModel, TSearch]
 }
 

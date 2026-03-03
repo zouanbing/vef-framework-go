@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"unicode/utf8"
 
-	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/mcp"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
@@ -64,13 +63,13 @@ func (t *QueryTool) handleQuery(ctx context.Context, req *mcp.CallToolRequest) (
 		convertByteSlicesToStrings(result)
 	}
 
-	jsonResult, err := encoding.ToJSON(results)
+	jsonBytes, err := json.Marshal(results)
 	if err != nil {
 		//nolint:nilerr // MCP handler should return error result with nil error
 		return mcp.NewToolResultError("Failed to encode results: " + err.Error()), nil
 	}
 
-	return mcp.NewToolResultText(jsonResult), nil
+	return mcp.NewToolResultText(string(jsonBytes)), nil
 }
 
 // convertByteSlicesToStrings converts []byte values to strings in a map.

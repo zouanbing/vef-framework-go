@@ -10,7 +10,9 @@ import (
 type State interface {
 	comparable
 
+	// String returns the string representation of this state.
 	String() string
+	// IsFinal returns true if this is a terminal state with no further transitions.
 	IsFinal() bool
 }
 

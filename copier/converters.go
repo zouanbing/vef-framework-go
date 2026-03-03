@@ -8,7 +8,9 @@ import (
 
 // Nullable defines the interface for null wrapper types.
 type Nullable[T any] interface {
+	// ValueOrZero returns the underlying value, or the zero value of T if null.
 	ValueOrZero() T
+	// Ptr returns a pointer to the underlying value, or nil if null.
 	Ptr() *T
 }
 

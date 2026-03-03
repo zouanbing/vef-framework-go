@@ -22,10 +22,11 @@ type Update[TModel, TParams any] interface {
 	api.OperationsProvider
 	Builder[Update[TModel, TParams]]
 
-	// This processor is called before the model is updated in the database.
+	// WithPreUpdate registers a processor that is called before the model is updated in the database.
 	WithPreUpdate(processor PreUpdateProcessor[TModel, TParams]) Update[TModel, TParams]
-	// This processor is called after the model is successfully updated within the same transaction.
+	// WithPostUpdate registers a processor that is called after the model is updated within the same transaction.
 	WithPostUpdate(processor PostUpdateProcessor[TModel, TParams]) Update[TModel, TParams]
+	// DisableDataPerm disables automatic data permission filtering for update queries.
 	DisableDataPerm() Update[TModel, TParams]
 }
 

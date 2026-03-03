@@ -2,6 +2,7 @@ package mold
 
 import "context"
 
+// Translator translates field values to human-readable descriptions based on kind.
 type Translator interface {
 	// Supports returns true if the translator supports the given kind
 	Supports(kind string) bool
@@ -21,5 +22,6 @@ type DataDictResolver interface {
 // Implementations should return a map where the key is the dictionary item's code
 // and the value is the translated/display name.
 type DataDictLoader interface {
+	// Load loads all dictionary entries for the given key, returning a code-to-name mapping.
 	Load(ctx context.Context, key string) (map[string]string, error)
 }

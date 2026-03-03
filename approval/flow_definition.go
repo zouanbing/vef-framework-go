@@ -67,5 +67,6 @@ type EdgeDefinition struct {
 
 // InstanceNoGenerator generates unique instance numbers for flow instances.
 type InstanceNoGenerator interface {
+	// Generate creates a unique instance number for a flow identified by flowCode.
 	Generate(ctx context.Context, flowCode string) (string, error)
 }

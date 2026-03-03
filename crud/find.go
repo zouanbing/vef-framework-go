@@ -25,6 +25,7 @@ type Find[TModel, TSearch, TProcessorIn, TOperation any] interface {
 	// Returns input unchanged if no Processor is configured.
 	Process(input TProcessorIn, search TSearch, ctx fiber.Ctx) any
 
+	// WithProcessor registers a post-query processor to transform or enrich results before returning.
 	WithProcessor(processor Processor[TProcessorIn, TSearch]) TOperation
 	// WithOptions appends custom FindOperationOption to the query configuration.
 	WithOptions(opts ...*FindOperationOption) TOperation
@@ -32,6 +33,7 @@ type Find[TModel, TSearch, TProcessorIn, TOperation any] interface {
 	WithSelect(column string, parts ...QueryPart) TOperation
 	// WithSelectAs adds a column with an alias to the SELECT clause for specified query parts.
 	WithSelectAs(column, alias string, parts ...QueryPart) TOperation
+	// WithDefaultSort sets the default sort order when no dynamic sorting is provided in the request.
 	WithDefaultSort(sort ...*sortx.OrderSpec) TOperation
 	// WithCondition adds a WHERE condition using ConditionBuilder for specified query parts.
 	WithCondition(fn func(cb orm.ConditionBuilder), parts ...QueryPart) TOperation

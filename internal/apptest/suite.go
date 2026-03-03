@@ -1,6 +1,7 @@
 package apptest
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -13,7 +14,6 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
@@ -59,10 +59,10 @@ func (s *Suite) TearDownApp() {
 // MakeRPCRequest sends an RPC API request (POST /api with JSON body)
 // and returns the raw HTTP response.
 func (s *Suite) MakeRPCRequest(body api.Request) *http.Response {
-	jsonBody, err := encoding.ToJSON(body)
+	jsonBytes, err := json.Marshal(body)
 	s.Require().NoError(err)
 
-	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
+	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(string(jsonBytes)))
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 	resp, err := s.App.Test(req)
@@ -73,10 +73,10 @@ func (s *Suite) MakeRPCRequest(body api.Request) *http.Response {
 
 // MakeRPCRequestWithToken sends an RPC API request with a Bearer authorization header.
 func (s *Suite) MakeRPCRequestWithToken(body api.Request, token string) *http.Response {
-	jsonBody, err := encoding.ToJSON(body)
+	jsonBytes, err := json.Marshal(body)
 	s.Require().NoError(err)
 
-	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
+	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(string(jsonBytes)))
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 	req.Header.Set(fiber.HeaderAuthorization, security.AuthSchemeBearer+" "+token)
 
@@ -132,10 +132,11 @@ func (s *Suite) ReadResult(resp *http.Response) result.Result {
 	body, err := io.ReadAll(resp.Body)
 	s.Require().NoError(err)
 
-	res, err := encoding.FromJSON[result.Result](string(body))
+	var res result.Result
+	err = json.Unmarshal(body, &res)
 	s.Require().NoError(err)
 
-	return *res
+	return res
 }
 
 // ReadDataAsMap asserts that data is a map[string]any and returns it.

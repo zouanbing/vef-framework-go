@@ -8,13 +8,21 @@ import (
 
 // Builder defines the interface for building API endpoints.
 type Builder[T any] interface {
+	// ResourceKind sets the resource kind (RPC or REST) for this endpoint.
 	ResourceKind(kind api.Kind) T
+	// Action sets the action name for this endpoint.
 	Action(action string) T
+	// EnableAudit enables audit logging for this endpoint.
 	EnableAudit() T
+	// Timeout sets the request timeout for this endpoint.
 	Timeout(timeout time.Duration) T
+	// Public marks this endpoint as publicly accessible without authentication.
 	Public() T
+	// PermToken sets the permission token required to access this endpoint.
 	PermToken(token string) T
+	// RateLimit configures rate limiting for this endpoint.
 	RateLimit(maxRequests int, period time.Duration) T
+	// Build creates an OperationSpec with the configured settings and the given handler.
 	Build(handler any) api.OperationSpec
 }
 

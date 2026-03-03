@@ -14,7 +14,7 @@ type FindOptions[TModel, TSearch any] interface {
 	api.OperationsProvider
 	Find[TModel, TSearch, []DataOption, FindOptions[TModel, TSearch]]
 
-	// This mapping provides fallback values for column mapping when not explicitly specified in queries.
+	// WithDefaultColumnMapping sets fallback column mapping for value, label, and description columns.
 	WithDefaultColumnMapping(mapping *DataOptionColumnMapping) FindOptions[TModel, TSearch]
 }
 

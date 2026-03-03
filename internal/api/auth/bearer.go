@@ -19,6 +19,7 @@ var defaultTokenExtractor = extractors.Chain(
 
 // TokenAuthenticator validates a token and returns the principal.
 type TokenAuthenticator interface {
+	// Authenticate validates the bearer token and returns the authenticated principal, or an error if invalid.
 	Authenticate(ctx context.Context, token string) (*security.Principal, error)
 }
 

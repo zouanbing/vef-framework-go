@@ -6,9 +6,13 @@ import (
 
 // NodeData is the interface implemented by all node data types.
 type NodeData interface {
+	// Kind returns the node kind (start, end, approval, handle, cc, condition).
 	Kind() NodeKind
+	// GetName returns the display name of the node.
 	GetName() string
+	// GetDescription returns the optional description of the node.
 	GetDescription() *string
+	// ApplyTo applies this node data's configuration to the given FlowNode.
 	ApplyTo(node *FlowNode)
 }
 

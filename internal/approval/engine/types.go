@@ -38,11 +38,14 @@ type ProcessContext struct {
 
 // NodeProcessor processes a specific node kind.
 type NodeProcessor interface {
+	// NodeKind returns the node kind this processor handles (approval, handle, cc, condition, etc.).
 	NodeKind() approval.NodeKind
+	// Process executes the node logic and returns the action to take (wait, continue, or complete).
 	Process(ctx context.Context, pc *ProcessContext) (*ProcessResult, error)
 }
 
 // NodePredictor predicts assignees for a node without side effects.
 type NodePredictor interface {
+	// Predict returns the predicted assignee user IDs for the node without executing any side effects.
 	Predict(ctx context.Context, pc *ProcessContext) ([]string, error)
 }

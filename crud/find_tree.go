@@ -20,9 +20,9 @@ type FindTree[TModel, TSearch any] interface {
 	api.OperationsProvider
 	Find[TModel, TSearch, []TModel, FindTree[TModel, TSearch]]
 
-	// This column is used to identify individual nodes and establish parent-child relationships.
+	// WithIDColumn sets the column used to identify individual tree nodes.
 	WithIDColumn(name string) FindTree[TModel, TSearch]
-	// This column establishes the hierarchical relationship between parent and child nodes.
+	// WithParentIDColumn sets the column that establishes parent-child relationships between nodes.
 	WithParentIDColumn(name string) FindTree[TModel, TSearch]
 }
 

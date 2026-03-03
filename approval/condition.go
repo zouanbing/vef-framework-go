@@ -36,7 +36,9 @@ type EvaluationContext struct {
 
 // ConditionEvaluator evaluates branch conditions.
 type ConditionEvaluator interface {
+	// Kind returns the condition kind this evaluator handles.
 	Kind() ConditionKind
+	// Evaluate evaluates a single condition against the given evaluation context.
 	Evaluate(ctx context.Context, cond Condition, ec *EvaluationContext) (bool, error)
 }
 
@@ -59,6 +61,8 @@ type PassRuleContext struct {
 
 // PassRuleStrategy evaluates whether a node passes based on task results.
 type PassRuleStrategy interface {
+	// Rule returns the pass rule this strategy handles.
 	Rule() PassRule
+	// Evaluate determines the pass/reject/pending outcome based on task approval counts.
 	Evaluate(ctx PassRuleContext) PassRuleResult
 }
