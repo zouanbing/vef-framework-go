@@ -14,6 +14,19 @@ import (
 	"github.com/ilxqx/vef-framework-go/tabular"
 )
 
+// Export provides a fluent interface for building export endpoints.
+// Queries data based on search conditions and exports to Excel or Csv file.
+type Export[TModel, TSearch any] interface {
+	api.OperationsProvider
+	Find[TModel, TSearch, []TModel, Export[TModel, TSearch]]
+
+	WithDefaultFormat(format TabularFormat) Export[TModel, TSearch]
+	WithExcelOptions(opts ...excel.ExportOption) Export[TModel, TSearch]
+	WithCsvOptions(opts ...csv.ExportOption) Export[TModel, TSearch]
+	WithPreExport(processor PreExportProcessor[TModel, TSearch]) Export[TModel, TSearch]
+	WithFilenameBuilder(builder FilenameBuilder[TSearch]) Export[TModel, TSearch]
+}
+
 const (
 	contentTypeExcel     = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 	contentTypeCsv       = "text/csv; charset=utf-8"

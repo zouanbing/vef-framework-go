@@ -15,6 +15,16 @@ import (
 	"github.com/ilxqx/vef-framework-go/version"
 )
 
+// Middleware is a middleware for the app.
+type Middleware interface {
+	// Name returns the name of the middleware.
+	Name() string
+	// Order returns the order of the middleware.
+	Order() int
+	// Apply applies the middleware to the router.
+	Apply(router fiber.Router)
+}
+
 var logger = log.Named("app")
 
 // App represents the VEF application server.

@@ -5,6 +5,20 @@ import (
 	"time"
 )
 
+// Scheduler manages task submission and execution.
+type Scheduler[TIn, TOut any] interface {
+	// Submit blocks until task completes or context is canceled.
+	Submit(ctx context.Context, payload TIn, opts ...SubmitOption) (Result[TOut], error)
+
+	// SubmitAsync returns immediately with a result channel.
+	SubmitAsync(ctx context.Context, payload TIn, opts ...SubmitOption) (<-chan Result[TOut], error)
+
+	Stats() SchedulerStats
+
+	// Shutdown waits for running tasks to complete.
+	Shutdown(ctx context.Context) error
+}
+
 type SchedulerStats struct {
 	TotalSubmitted uint64
 	TotalCompleted uint64

@@ -7,6 +7,22 @@ import (
 	"github.com/uptrace/bun/schema"
 )
 
+// QueryBuilder defines the common interface for building subqueries and conditions.
+type QueryBuilder interface {
+	fmt.Stringer
+
+	Dialect() schema.Dialect
+	GetTable() *schema.Table
+	Query() bun.Query
+	ExprBuilder() ExprBuilder
+	CreateSubQuery(subQuery *bun.SelectQuery) SelectQuery
+	BuildSubQuery(builder func(query SelectQuery)) *bun.SelectQuery
+	BuildCondition(builder func(ConditionBuilder)) interface {
+		schema.QueryAppender
+		ConditionBuilder
+	}
+}
+
 // BaseQueryBuilder provides a common implementation for QueryBuilder interface.
 // It can be embedded in concrete query types to reduce code duplication.
 type BaseQueryBuilder struct {

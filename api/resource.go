@@ -5,8 +5,47 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/gofiber/fiber/v3"
 	"github.com/ilxqx/go-collections"
 )
+
+// Resource defines an API resource that groups related operations.
+type Resource interface {
+	// Kind returns the resource kind.
+	Kind() Kind
+	// Name returns the resource name (e.g., "users", "sys/config").
+	Name() string
+	// Version returns the resource version.
+	// Empty string means using Engine's default version.
+	Version() string
+	// Auth returns the resource authentication configuration.
+	Auth() *AuthConfig
+	// Operations returns the resource operations.
+	Operations() []OperationSpec
+}
+
+// RouterStrategy determines how API operations are exposed as HTTP endpoints.
+type RouterStrategy interface {
+	// Name returns the strategy identifier for logging/debugging.
+	Name() string
+	// CanHandle returns true if the router can handle the given resource kind.
+	CanHandle(kind Kind) bool
+	// Setup initializes the router (called once during Mount).
+	// Implementations should store the router if needed for Route calls.
+	Setup(router fiber.Router) error
+	// Route registers an operation with the router.
+	Route(handler fiber.Handler, op *Operation)
+}
+
+// Engine is the unified API engine that manages multiple routers.
+type Engine interface {
+	// Register adds resources to the engine.
+	Register(resources ...Resource) error
+	// Lookup finds an operation by identifier.
+	Lookup(id Identifier) *Operation
+	// Mount attaches the engine to a Fiber router.
+	Mount(router fiber.Router) error
+}
 
 type Kind uint8
 

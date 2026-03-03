@@ -18,6 +18,19 @@ import (
 	"github.com/ilxqx/vef-framework-go/tabular"
 )
 
+// Import provides a fluent interface for building import endpoints.
+// Parses uploaded Excel or Csv file and creates records in database.
+type Import[TModel any] interface {
+	api.OperationsProvider
+	Builder[Import[TModel]]
+
+	WithDefaultFormat(format TabularFormat) Import[TModel]
+	WithExcelOptions(opts ...excel.ImportOption) Import[TModel]
+	WithCsvOptions(opts ...csv.ImportOption) Import[TModel]
+	WithPreImport(processor PreImportProcessor[TModel]) Import[TModel]
+	WithPostImport(processor PostImportProcessor[TModel]) Import[TModel]
+}
+
 type importOperation[TModel any] struct {
 	Builder[Import[TModel]]
 

@@ -15,6 +15,19 @@ import (
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 
+// DeleteMany provides a fluent interface for building batch delete endpoints.
+// Deletes multiple models atomically with validation and pre/post hooks.
+type DeleteMany[TModel any] interface {
+	api.OperationsProvider
+	Builder[DeleteMany[TModel]]
+
+	// This processor is called before the models are deleted from the database.
+	WithPreDeleteMany(processor PreDeleteManyProcessor[TModel]) DeleteMany[TModel]
+	// This processor is called after the models are successfully deleted within the same transaction.
+	WithPostDeleteMany(processor PostDeleteManyProcessor[TModel]) DeleteMany[TModel]
+	DisableDataPerm() DeleteMany[TModel]
+}
+
 type deleteManyOperation[TModel any] struct {
 	Builder[DeleteMany[TModel]]
 

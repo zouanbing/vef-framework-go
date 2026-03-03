@@ -6,6 +6,26 @@ import (
 	"github.com/ilxqx/vef-framework-go/timex"
 )
 
+// OperatorInfo bundles operator identity for action logging.
+type OperatorInfo struct {
+	ID       string  `json:"id"`
+	Name     string  `json:"name"`
+	DeptID   *string `json:"deptId,omitempty"`
+	DeptName *string `json:"deptName,omitempty"`
+}
+
+// NewActionLog creates an ActionLog with the operator fields pre-filled.
+func (o OperatorInfo) NewActionLog(instanceID string, action ActionType) *ActionLog {
+	return &ActionLog{
+		InstanceID:       instanceID,
+		Action:           action,
+		OperatorID:       o.ID,
+		OperatorName:     o.Name,
+		OperatorDeptID:   o.DeptID,
+		OperatorDeptName: o.DeptName,
+	}
+}
+
 // ── Flow Definition ─────────────────────────────────────────────────────────
 
 // Flow represents a flow definition.

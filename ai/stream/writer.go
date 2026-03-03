@@ -4,11 +4,23 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/id"
 )
+
+// StreamWriter writes UI message stream chunks.
+type StreamWriter interface {
+	WriteChunk(chunk Chunk) error
+	Flush() error
+}
+
+// ResponseWriter is compatible with fiber.Ctx.SendStreamWriter.
+type ResponseWriter interface {
+	io.Writer
+}
 
 func defaultIDGenerator(prefix string) string {
 	return prefix + "_" + id.GenerateUUID()

@@ -9,6 +9,13 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
+// FindOne provides a fluent interface for building find one endpoints.
+// Returns a single record matching the search criteria.
+type FindOne[TModel, TSearch any] interface {
+	api.OperationsProvider
+	Find[TModel, TSearch, TModel, FindOne[TModel, TSearch]]
+}
+
 type findOneOperation[TModel, TSearch any] struct {
 	Find[TModel, TSearch, TModel, FindOne[TModel, TSearch]]
 }

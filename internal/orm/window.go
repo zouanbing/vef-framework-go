@@ -46,8 +46,11 @@ type WindowFrameablePartitionBuilder interface {
 
 // WindowBoundable defines window frame boundaries.
 type WindowBoundable[T any] interface {
+	// CurrentRow sets the boundary to the current row.
 	CurrentRow() T
+	// Preceding sets the boundary to N rows before the current row.
 	Preceding(n int) T
+	// Following sets the boundary to N rows after the current row.
 	Following(n int) T
 }
 
@@ -55,6 +58,7 @@ type WindowBoundable[T any] interface {
 type WindowStartBoundable[T any] interface {
 	WindowBoundable[T]
 
+	// UnboundedPreceding sets the start boundary to the first row of the partition.
 	UnboundedPreceding() T
 }
 
@@ -62,6 +66,7 @@ type WindowStartBoundable[T any] interface {
 type WindowEndBoundable[T any] interface {
 	WindowStartBoundable[T]
 
+	// UnboundedFollowing sets the end boundary to the last row of the partition.
 	UnboundedFollowing() T
 }
 
@@ -107,6 +112,7 @@ type CumeDistBuilder interface {
 type NTileBuilder interface {
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 
+	// Buckets sets the number of roughly equal-sized groups to distribute rows into.
 	Buckets(n int) NTileBuilder
 }
 
@@ -114,20 +120,28 @@ type NTileBuilder interface {
 type LagBuilder interface {
 	WindowPartitionable[WindowPartitionBuilder]
 
+	// Column specifies the column to access from the previous row.
 	Column(column string) LagBuilder
+	// Expr specifies a raw expression to access from the previous row.
 	Expr(expr any) LagBuilder
-	Offset(offset int) LagBuilder      // Number of rows to lag (default 1)
-	DefaultValue(value any) LagBuilder // Default value when no previous row exists
+	// Offset sets the number of rows to look back (default 1).
+	Offset(offset int) LagBuilder
+	// DefaultValue sets the fallback value when no previous row exists.
+	DefaultValue(value any) LagBuilder
 }
 
 // LeadBuilder defines the LEAD() window function builder.
 type LeadBuilder interface {
 	WindowPartitionable[WindowPartitionBuilder]
 
+	// Column specifies the column to access from the next row.
 	Column(column string) LeadBuilder
+	// Expr specifies a raw expression to access from the next row.
 	Expr(expr any) LeadBuilder
-	Offset(offset int) LeadBuilder      // Number of rows to lead (default 1)
-	DefaultValue(value any) LeadBuilder // Default value when no next row exists
+	// Offset sets the number of rows to look ahead (default 1).
+	Offset(offset int) LeadBuilder
+	// DefaultValue sets the fallback value when no next row exists.
+	DefaultValue(value any) LeadBuilder
 }
 
 // FirstValueBuilder defines the FIRST_VALUE() window function builder.
@@ -135,7 +149,9 @@ type FirstValueBuilder interface {
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 	NullHandlingBuilder[FirstValueBuilder]
 
+	// Column specifies the column to retrieve the first value from.
 	Column(column string) FirstValueBuilder
+	// Expr specifies a raw expression to retrieve the first value from.
 	Expr(expr any) FirstValueBuilder
 }
 
@@ -144,7 +160,9 @@ type LastValueBuilder interface {
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 	NullHandlingBuilder[LastValueBuilder]
 
+	// Column specifies the column to retrieve the last value from.
 	Column(column string) LastValueBuilder
+	// Expr specifies a raw expression to retrieve the last value from.
 	Expr(expr any) LastValueBuilder
 }
 
@@ -153,10 +171,15 @@ type NthValueBuilder interface {
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 	NullHandlingBuilder[NthValueBuilder]
 
+	// Column specifies the column to retrieve the Nth value from.
 	Column(column string) NthValueBuilder
+	// Expr specifies a raw expression to retrieve the Nth value from.
 	Expr(expr any) NthValueBuilder
+	// N sets the position (1-based) of the value to retrieve within the window frame.
 	N(n int) NthValueBuilder
+	// FromFirst counts the position from the first row of the window frame.
 	FromFirst() NthValueBuilder
+	// FromLast counts the position from the last row of the window frame.
 	FromLast() NthValueBuilder
 }
 
@@ -166,6 +189,7 @@ type WindowCountBuilder interface {
 	DistinctableAggregate[WindowCountBuilder]
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 
+	// All configures COUNT(*) semantics for the window function.
 	All() WindowCountBuilder
 }
 
@@ -203,6 +227,7 @@ type WindowStringAggBuilder interface {
 	NullHandlingBuilder[WindowStringAggBuilder]
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 
+	// Separator sets the delimiter string between concatenated values.
 	Separator(separator string) WindowStringAggBuilder
 }
 
@@ -236,7 +261,9 @@ type WindowJSONObjectAggBuilder interface {
 	OrderableAggregate[WindowJSONObjectAggBuilder]
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 
+	// KeyColumn specifies the column to use as JSON object keys.
 	KeyColumn(column string) WindowJSONObjectAggBuilder
+	// KeyExpr specifies a raw expression to use as JSON object keys.
 	KeyExpr(expr any) WindowJSONObjectAggBuilder
 }
 

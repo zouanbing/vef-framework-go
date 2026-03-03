@@ -12,6 +12,13 @@ import (
 	"github.com/ilxqx/vef-framework-go/timex"
 )
 
+// ValueParser defines the interface for custom value parsers.
+// Parsers convert cell strings to Go values during import.
+type ValueParser interface {
+	// Parse converts a cell string to a Go value
+	Parse(cellValue string, targetType reflect.Type) (any, error)
+}
+
 var (
 	// Cached reflect types for performance.
 	typeNullString   = reflect.TypeFor[null.String]()

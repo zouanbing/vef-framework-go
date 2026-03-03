@@ -11,6 +11,13 @@ import (
 	"github.com/ilxqx/vef-framework-go/timex"
 )
 
+// Formatter defines the interface for custom value formatters.
+// Formatters convert Go values to cell strings during export.
+type Formatter interface {
+	// Format converts a Go value to a cell string
+	Format(value any) (string, error)
+}
+
 // defaultFormatter is the built-in formatter that handles common Go types.
 type defaultFormatter struct {
 	format string

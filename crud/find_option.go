@@ -11,6 +11,22 @@ import (
 	"github.com/ilxqx/vef-framework-go/sortx"
 )
 
+// FindOperationConfig contains all configuration for find operation setup phase.
+type FindOperationConfig struct {
+	// QueryParts defines which query operations (condition, sort, audit relations) apply to different query contexts
+	QueryParts *QueryPartsConfig
+}
+
+// QueryPartsConfig controls which query parts are enabled for specific query contexts (e.g., FindAll, FindPage).
+type QueryPartsConfig struct {
+	// Condition specifies which queries apply WHERE clause filtering
+	Condition []QueryPart
+	// Sort specifies which queries apply ORDER BY sorting
+	Sort []QueryPart
+	// AuditUserRelation specifies which queries auto-join audit user relations (created_by, updated_by)
+	AuditUserRelation []QueryPart
+}
+
 // QueryPart defines which part(s) of a query an option applies to.
 // This is particularly important for tree APIs that use recursive CTEs,
 // where different parts of the query require different configurations.

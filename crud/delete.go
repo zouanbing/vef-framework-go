@@ -15,6 +15,19 @@ import (
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 
+// Delete provides a fluent interface for building delete endpoints.
+// Validates primary key, loads model, and supports pre/post processing hooks.
+type Delete[TModel any] interface {
+	api.OperationsProvider
+	Builder[Delete[TModel]]
+
+	// This processor is called before the model is deleted from the database.
+	WithPreDelete(processor PreDeleteProcessor[TModel]) Delete[TModel]
+	// This processor is called after the model is successfully deleted within the same transaction.
+	WithPostDelete(processor PostDeleteProcessor[TModel]) Delete[TModel]
+	DisableDataPerm() Delete[TModel]
+}
+
 type deleteOperation[TModel any] struct {
 	Builder[Delete[TModel]]
 

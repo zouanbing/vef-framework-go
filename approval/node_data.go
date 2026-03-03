@@ -4,6 +4,14 @@ import (
 	"github.com/ilxqx/vef-framework-go/decimal"
 )
 
+// NodeData is the interface implemented by all node data types.
+type NodeData interface {
+	Kind() NodeKind
+	GetName() string
+	GetDescription() *string
+	ApplyTo(node *FlowNode)
+}
+
 // BaseNodeData contains common fields shared across all node data types.
 type BaseNodeData struct {
 	Name        string  `json:"name,omitempty"`

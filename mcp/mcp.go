@@ -2,6 +2,57 @@ package mcp
 
 import "github.com/modelcontextprotocol/go-sdk/mcp"
 
+// ToolProvider provides MCP tools to the server.
+type ToolProvider interface {
+	Tools() []ToolDefinition
+}
+
+// ResourceProvider provides static MCP resources to the server.
+type ResourceProvider interface {
+	Resources() []ResourceDefinition
+}
+
+// ResourceTemplateProvider provides dynamic MCP resource templates to the server.
+type ResourceTemplateProvider interface {
+	ResourceTemplates() []ResourceTemplateDefinition
+}
+
+// PromptProvider provides MCP prompts to the server.
+type PromptProvider interface {
+	Prompts() []PromptDefinition
+}
+
+// ToolDefinition defines a tool and its handler.
+type ToolDefinition struct {
+	Tool    *Tool
+	Handler ToolHandler
+}
+
+// ResourceDefinition defines a static resource and its handler.
+type ResourceDefinition struct {
+	Resource *Resource
+	Handler  ResourceHandler
+}
+
+// ResourceTemplateDefinition defines a dynamic resource template and its handler.
+type ResourceTemplateDefinition struct {
+	Template *ResourceTemplate
+	Handler  ResourceHandler
+}
+
+// PromptDefinition defines a prompt and its handler.
+type PromptDefinition struct {
+	Prompt  *Prompt
+	Handler PromptHandler
+}
+
+// ServerInfo configures MCP server identification.
+type ServerInfo struct {
+	Name         string
+	Version      string
+	Instructions string
+}
+
 // Type aliases for MCP SDK types - users don't need to import the SDK directly.
 type (
 	Server         = mcp.Server

@@ -3,56 +3,8 @@ package crud
 import (
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/orm"
-	"github.com/ilxqx/vef-framework-go/sortx"
 )
-
-// FindOperationConfig contains all configuration for find operation setup phase.
-type FindOperationConfig struct {
-	// QueryParts defines which query operations (condition, sort, audit relations) apply to different query contexts
-	QueryParts *QueryPartsConfig
-}
-
-// QueryPartsConfig controls which query parts are enabled for specific query contexts (e.g., FindAll, FindPage).
-type QueryPartsConfig struct {
-	// Condition specifies which queries apply WHERE clause filtering
-	Condition []QueryPart
-	// Sort specifies which queries apply ORDER BY sorting
-	Sort []QueryPart
-	// AuditUserRelation specifies which queries auto-join audit user relations (created_by, updated_by)
-	AuditUserRelation []QueryPart
-}
-
-// CreateManyParams is a wrapper type for batch create parameters.
-type CreateManyParams[TParams any] struct {
-	api.P
-
-	List []TParams `json:"list" validate:"required,min=1,dive" label_i18n:"batch_create_list"`
-}
-
-// UpdateManyParams is a wrapper type for batch update parameters.
-type UpdateManyParams[TParams any] struct {
-	api.P
-
-	List []TParams `json:"list" validate:"required,min=1,dive" label_i18n:"batch_update_list"`
-}
-
-// DeleteManyParams is a wrapper type for batch delete parameters.
-// For single primary key models: PKs can be []any with direct values (e.g., ["id1", "id2"])
-// For composite primary key models: PKs should be []map[string]any with each map containing all PK fields.
-type DeleteManyParams struct {
-	api.P
-
-	PKs []any `json:"pks" validate:"required,min=1" label_i18n:"batch_delete_pks"`
-}
-
-// Sortable provides sorting capability for API search parameters.
-type Sortable struct {
-	api.M
-
-	Sort []sortx.OrderSpec `json:"sort"`
-}
 
 // Processor transforms query results after execution but before JSON serialization.
 // Commonly used for data formatting, field selection, or computed properties.

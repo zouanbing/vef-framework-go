@@ -6,6 +6,12 @@ import (
 	"github.com/ilxqx/vef-framework-go/ai"
 )
 
+// MessageSource produces streaming messages. Returns io.EOF when complete.
+type MessageSource interface {
+	Recv() (Message, error)
+	Close() error
+}
+
 // Channel adapter
 
 type channelSource struct {

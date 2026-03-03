@@ -14,6 +14,18 @@ import (
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 
+// CreateMany provides a fluent interface for building batch create endpoints.
+// Creates multiple models atomically in a single transaction with pre/post hooks.
+type CreateMany[TModel, TParams any] interface {
+	api.OperationsProvider
+	Builder[CreateMany[TModel, TParams]]
+
+	// This processor is called before the models are saved to the database.
+	WithPreCreateMany(processor PreCreateManyProcessor[TModel, TParams]) CreateMany[TModel, TParams]
+	// This processor is called after the models are successfully saved within the same transaction.
+	WithPostCreateMany(processor PostCreateManyProcessor[TModel, TParams]) CreateMany[TModel, TParams]
+}
+
 type createManyOperation[TModel, TParams any] struct {
 	Builder[CreateMany[TModel, TParams]]
 

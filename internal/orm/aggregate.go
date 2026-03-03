@@ -10,7 +10,9 @@ import (
 
 // BaseAggregate defines the basic aggregate function interface with generic type support.
 type BaseAggregate[T any] interface {
+	// Column specifies the column to aggregate.
 	Column(column string) T
+	// Expr specifies a raw expression to aggregate.
 	Expr(expr any) T
 	// Filter applies a FILTER clause to the aggregate expression.
 	Filter(func(ConditionBuilder)) T
@@ -85,6 +87,7 @@ type StringAggBuilder interface {
 	OrderableAggregate[StringAggBuilder]
 	NullHandlingBuilder[StringAggBuilder]
 
+	// Separator sets the delimiter string between concatenated values.
 	Separator(separator string) StringAggBuilder
 }
 
@@ -114,7 +117,9 @@ type JSONObjectAggBuilder interface {
 	DistinctableAggregate[JSONObjectAggBuilder]
 	OrderableAggregate[JSONObjectAggBuilder]
 
+	// KeyColumn specifies the column to use as JSON object keys.
 	KeyColumn(column string) JSONObjectAggBuilder
+	// KeyExpr specifies a raw expression to use as JSON object keys.
 	KeyExpr(expr any) JSONObjectAggBuilder
 }
 

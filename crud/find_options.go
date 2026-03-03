@@ -8,6 +8,16 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
+// FindOptions provides a fluent interface for building find options endpoints.
+// Returns a simplified list of options (value, label, description) for dropdowns and selects.
+type FindOptions[TModel, TSearch any] interface {
+	api.OperationsProvider
+	Find[TModel, TSearch, []DataOption, FindOptions[TModel, TSearch]]
+
+	// This mapping provides fallback values for column mapping when not explicitly specified in queries.
+	WithDefaultColumnMapping(mapping *DataOptionColumnMapping) FindOptions[TModel, TSearch]
+}
+
 // selectColumn adds a column to the SELECT clause, aliasing it if the name differs from the target.
 func selectColumn(query orm.SelectQuery, column, target string) {
 	if column == target {

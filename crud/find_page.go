@@ -14,6 +14,15 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
+// FindPage provides a fluent interface for building find page endpoints.
+// Returns paginated results with total count.
+type FindPage[TModel, TSearch any] interface {
+	api.OperationsProvider
+	Find[TModel, TSearch, []TModel, FindPage[TModel, TSearch]]
+
+	WithDefaultPageSize(size int) FindPage[TModel, TSearch]
+}
+
 type findPageOperation[TModel, TSearch any] struct {
 	Find[TModel, TSearch, []TModel, FindPage[TModel, TSearch]]
 

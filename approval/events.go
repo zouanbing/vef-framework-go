@@ -1,6 +1,22 @@
 package approval
 
-import "github.com/ilxqx/vef-framework-go/timex"
+import (
+	"context"
+
+	"github.com/ilxqx/vef-framework-go/timex"
+)
+
+// DomainEvent is the base interface for all approval domain events.
+type DomainEvent interface {
+	EventName() string
+	OccurredAt() timex.DateTime
+}
+
+// EventDispatcher dispatches outbox events to external systems.
+// Default implementation forwards to event.Bus.
+type EventDispatcher interface {
+	Dispatch(ctx context.Context, record EventOutbox) error
+}
 
 // ==================== Instance Events ====================
 

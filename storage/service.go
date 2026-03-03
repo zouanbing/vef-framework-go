@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"io"
+	"time"
 )
 
 // Service defines the core interface for object storage operations.
@@ -36,15 +37,20 @@ type Service interface {
 	PromoteObject(ctx context.Context, tempKey string) (*ObjectInfo, error)
 }
 
-// Promoter defines the interface for automatic file field promotion and cleanup.
-// It supports three types of meta information fields:
-// - uploaded_file: Direct file fields (string, *string, null.String, []string)
-// - richtext: Rich text fields (string, *string, null.String), automatically extracts and processes resource references in HTML
-// - markdown: Markdown fields (string, *string, null.String), automatically extracts and processes resource references in Markdown.
-type Promoter[T any] interface {
-	// Promote handles file promotion and cleanup based on the scenario:
-	// - newModel != nil && oldModel == nil: Create (promote new files)
-	// - newModel != nil && oldModel != nil: Update (promote new files + cleanup replaced files)
-	// - newModel == nil && oldModel != nil: Delete (cleanup all files)
-	Promote(ctx context.Context, newModel, oldModel *T) error
+// ObjectInfo represents metadata information about a stored object.
+type ObjectInfo struct {
+	// Bucket is the name of the storage bucket
+	Bucket string `json:"bucket"`
+	// Key is the unique identifier of the object within the bucket
+	Key string `json:"key"`
+	// ETag is the entity tag, typically an MD5 hash used for versioning and cache validation
+	ETag string `json:"eTag"`
+	// Size is the object size in bytes
+	Size int64 `json:"size"`
+	// ContentType is the MIME type of the object
+	ContentType string `json:"contentType"`
+	// LastModified is the timestamp when the object was last modified
+	LastModified time.Time `json:"lastModified"`
+	// Metadata contains custom key-value pairs associated with the object
+	Metadata map[string]string `json:"metadata,omitempty"`
 }

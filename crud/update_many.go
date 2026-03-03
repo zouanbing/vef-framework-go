@@ -16,6 +16,19 @@ import (
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 
+// UpdateMany provides a fluent interface for building batch update endpoints.
+// Updates multiple models atomically with validation, merge, and pre/post hooks.
+type UpdateMany[TModel, TParams any] interface {
+	api.OperationsProvider
+	Builder[UpdateMany[TModel, TParams]]
+
+	// This processor is called before the models are updated in the database.
+	WithPreUpdateMany(processor PreUpdateManyProcessor[TModel, TParams]) UpdateMany[TModel, TParams]
+	// This processor is called after the models are successfully updated within the same transaction.
+	WithPostUpdateMany(processor PostUpdateManyProcessor[TModel, TParams]) UpdateMany[TModel, TParams]
+	DisableDataPerm() UpdateMany[TModel, TParams]
+}
+
 type updateManyOperation[TModel, TParams any] struct {
 	Builder[UpdateMany[TModel, TParams]]
 

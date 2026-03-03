@@ -6,6 +6,34 @@ import (
 	"github.com/samber/lo"
 )
 
+// Scheduler manages the lifecycle and execution of cron jobs.
+// It provides a high-level interface for job scheduling, management, and control.
+type Scheduler interface {
+	// Jobs returns all jobs currently registered with the scheduler.
+	Jobs() []Job
+	// NewJob creates and registers a new job with the scheduler.
+	// The job will be scheduled according to its definition when the scheduler is running.
+	// If the task function accepts a context.Context as its first parameter,
+	// the scheduler will provide cancellation support for graceful shutdown.
+	NewJob(definition JobDefinition) (Job, error)
+	// RemoveByTags removes all jobs that have any of the specified tags.
+	RemoveByTags(tags ...string)
+	// RemoveJob removes the job with the specified unique identifier.
+	RemoveJob(id string) error
+	// Start begins scheduling and executing jobs according to their definitions.
+	// Jobs added to a running scheduler are scheduled immediately. This method is non-blocking.
+	Start()
+	// StopJobs stops the execution of all jobs without removing them from the scheduler.
+	// Jobs can be restarted by calling Start() again.
+	StopJobs() error
+	// Update replaces an existing job's definition while preserving its unique identifier.
+	// This allows for dynamic job reconfiguration without losing job history.
+	Update(id string, definition JobDefinition) (Job, error)
+	// JobsWaitingInQueue returns the number of jobs waiting in the execution queue.
+	// This is only relevant when using LimitModeWait; otherwise it returns zero.
+	JobsWaitingInQueue() int
+}
+
 // schedulerAdapter implements the Scheduler interface by adapting a gocron.Scheduler.
 // It provides a clean abstraction layer over the underlying gocron scheduler.
 type schedulerAdapter struct {

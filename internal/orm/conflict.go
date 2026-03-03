@@ -10,8 +10,11 @@ import (
 // ConflictBuilder is used to configure INSERT conflict handling (UPSERT) target in a dialect-aware way.
 // This is the first stage that defines the conflict target (columns, constraints, conditions).
 type ConflictBuilder interface {
+	// Columns specifies the conflict target columns (used with DO UPDATE).
 	Columns(columns ...string) ConflictBuilder
+	// Constraint specifies a named constraint as the conflict target.
 	Constraint(name string) ConflictBuilder
+	// Where adds a condition to the conflict target (partial unique index filter).
 	Where(func(ConditionBuilder)) ConflictBuilder
 
 	// DoNothing performs DO NOTHING on conflict and finalizes the conflict handling.

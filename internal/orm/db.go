@@ -8,6 +8,70 @@ import (
 	"github.com/uptrace/bun/schema"
 )
 
+// Tx extends DB with Commit and Rollback for manual transaction control.
+type Tx interface {
+	DB
+	// Commit commits the transaction.
+	Commit() error
+	// Rollback aborts the transaction and discards all changes.
+	Rollback() error
+}
+
+// DB provides factory methods for creating queries and managing transactions.
+type DB interface {
+	// NewSelect creates a new SELECT query builder.
+	NewSelect() SelectQuery
+	// NewInsert creates a new INSERT query builder.
+	NewInsert() InsertQuery
+	// NewUpdate creates a new UPDATE query builder.
+	NewUpdate() UpdateQuery
+	// NewDelete creates a new DELETE query builder.
+	NewDelete() DeleteQuery
+	// NewMerge creates a new MERGE (UPSERT) query builder.
+	NewMerge() MergeQuery
+	// NewRaw creates a raw SQL query with parameter binding.
+	NewRaw(query string, args ...any) RawQuery
+	// NewCreateTable creates a new CREATE TABLE query builder.
+	NewCreateTable() CreateTableQuery
+	// NewDropTable creates a new DROP TABLE query builder.
+	NewDropTable() DropTableQuery
+	// NewCreateIndex creates a new CREATE INDEX query builder.
+	NewCreateIndex() CreateIndexQuery
+	// NewDropIndex creates a new DROP INDEX query builder.
+	NewDropIndex() DropIndexQuery
+	// NewTruncateTable creates a new TRUNCATE TABLE query builder.
+	NewTruncateTable() TruncateTableQuery
+	// NewAddColumn creates a new ALTER TABLE ADD COLUMN query builder.
+	NewAddColumn() AddColumnQuery
+	// NewDropColumn creates a new ALTER TABLE DROP COLUMN query builder.
+	NewDropColumn() DropColumnQuery
+	// RunInTX executes fn within a read-write transaction (READ COMMITTED isolation).
+	// The transaction is committed if fn returns nil, rolled back otherwise.
+	RunInTX(ctx context.Context, fn func(ctx context.Context, tx DB) error) error
+	// RunInReadOnlyTX executes fn within a read-only transaction (READ COMMITTED isolation).
+	RunInReadOnlyTX(ctx context.Context, fn func(ctx context.Context, tx DB) error) error
+	// BeginTx starts a manual transaction with the given options. Caller must commit or rollback.
+	BeginTx(ctx context.Context, opts *sql.TxOptions) (Tx, error)
+	// Connection acquires a dedicated database connection from the pool.
+	Connection(ctx context.Context) (*sql.Conn, error)
+	// RegisterModel registers models for Bun relation mapping (e.g., many-to-many join tables).
+	RegisterModel(models ...any)
+	// ResetModel drops and recreates tables for the given models. Intended for testing only.
+	ResetModel(ctx context.Context, models ...any) error
+	// ScanRows scans all rows and closes *sql.Rows when done.
+	ScanRows(ctx context.Context, rows *sql.Rows, dest ...any) error
+	// ScanRow scans a single row without closing *sql.Rows.
+	ScanRow(ctx context.Context, rows *sql.Rows, dest ...any) error
+	// WithNamedArg returns a new DB that binds a named argument for use in raw SQL (e.g., ?name).
+	WithNamedArg(name string, value any) DB
+	// ModelPKs extracts primary key column names and their values from a model instance.
+	ModelPKs(model any) (map[string]any, error)
+	// ModelPKFields returns the primary key field descriptors for the given model.
+	ModelPKFields(model any) []*PKField
+	// TableOf returns the schema metadata (columns, relations, etc.) for the given model.
+	TableOf(model any) *schema.Table
+}
+
 var (
 	txOptions = &sql.TxOptions{
 		Isolation: sql.LevelReadCommitted,

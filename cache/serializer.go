@@ -2,6 +2,14 @@ package cache
 
 import "encoding/json"
 
+// Serializer handles serialization/deserialization of cache values.
+type Serializer[T any] interface {
+	// Serialize converts a value of type T into a byte array for storage
+	Serialize(value T) ([]byte, error)
+	// Deserialize converts a byte array back into a value of type T
+	Deserialize(data []byte) (T, error)
+}
+
 // jsonSerializer implements Serializer using JSON encoding.
 // It provides human-readable serialization format and cross-language compatibility.
 type jsonSerializer[T any] struct{}

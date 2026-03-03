@@ -1,6 +1,30 @@
 package api
 
-import "maps"
+import (
+	"maps"
+
+	"github.com/gofiber/fiber/v3"
+
+	"github.com/ilxqx/vef-framework-go/security"
+)
+
+// AuthStrategy handles authentication for a specific auth type.
+type AuthStrategy interface {
+	// Name returns the strategy name (used in AuthConfig.Strategy).
+	Name() string
+	// Authenticate validates credentials and returns principal.
+	Authenticate(ctx fiber.Ctx, options map[string]any) (*security.Principal, error)
+}
+
+// AuthStrategyRegistry manages authentication strategies.
+type AuthStrategyRegistry interface {
+	// Register adds a strategy to the registry.
+	Register(strategy AuthStrategy)
+	// Get retrieves a strategy by name.
+	Get(name string) (AuthStrategy, bool)
+	// Names returns all registered strategy names.
+	Names() []string
+}
 
 // Auth strategy constants.
 const (

@@ -14,6 +14,18 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
+// FindTree provides a fluent interface for building find tree endpoints.
+// Returns hierarchical data using recursive CTEs.
+type FindTree[TModel, TSearch any] interface {
+	api.OperationsProvider
+	Find[TModel, TSearch, []TModel, FindTree[TModel, TSearch]]
+
+	// This column is used to identify individual nodes and establish parent-child relationships.
+	WithIDColumn(name string) FindTree[TModel, TSearch]
+	// This column establishes the hierarchical relationship between parent and child nodes.
+	WithParentIDColumn(name string) FindTree[TModel, TSearch]
+}
+
 type findTreeOperation[TModel, TSearch any] struct {
 	Find[TModel, TSearch, []TModel, FindTree[TModel, TSearch]]
 

@@ -6,6 +6,18 @@ import (
 	"github.com/ilxqx/vef-framework-go/api"
 )
 
+// Builder defines the interface for building API endpoints.
+type Builder[T any] interface {
+	ResourceKind(kind api.Kind) T
+	Action(action string) T
+	EnableAudit() T
+	Timeout(timeout time.Duration) T
+	Public() T
+	PermToken(token string) T
+	RateLimit(maxRequests int, period time.Duration) T
+	Build(handler any) api.OperationSpec
+}
+
 type baseBuilder[T any] struct {
 	kind        api.Kind
 	action      string

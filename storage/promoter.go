@@ -16,6 +16,19 @@ import (
 	"github.com/ilxqx/vef-framework-go/strx"
 )
 
+// Promoter defines the interface for automatic file field promotion and cleanup.
+// It supports three types of meta information fields:
+// - uploaded_file: Direct file fields (string, *string, null.String, []string)
+// - richtext: Rich text fields (string, *string, null.String), automatically extracts and processes resource references in HTML
+// - markdown: Markdown fields (string, *string, null.String), automatically extracts and processes resource references in Markdown.
+type Promoter[T any] interface {
+	// Promote handles file promotion and cleanup based on the scenario:
+	// - newModel != nil && oldModel == nil: Create (promote new files)
+	// - newModel != nil && oldModel != nil: Update (promote new files + cleanup replaced files)
+	// - newModel == nil && oldModel != nil: Delete (cleanup all files)
+	Promote(ctx context.Context, newModel, oldModel *T) error
+}
+
 // MetaType defines the type of meta information field.
 type MetaType string
 

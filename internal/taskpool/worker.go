@@ -11,6 +11,22 @@ import (
 	"github.com/ilxqx/vef-framework-go/log"
 )
 
+// WorkerDelegate defines pluggable task execution logic.
+// Each worker owns its delegate instance, all methods run in worker's OS thread.
+type WorkerDelegate[TIn, TOut any] interface {
+	// Init is called once when worker starts.
+	Init(ctx context.Context, config any) error
+
+	// Execute runs for each task. Must respect context cancellation.
+	Execute(ctx context.Context, payload TIn) (TOut, error)
+
+	// Destroy is called once when worker stops.
+	Destroy() error
+
+	// HealthCheck is called periodically.
+	HealthCheck() error
+}
+
 type workerState int
 
 const (

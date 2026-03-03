@@ -13,6 +13,18 @@ import (
 	"github.com/ilxqx/vef-framework-go/tree"
 )
 
+// FindTreeOptions provides a fluent interface for building find tree options endpoints.
+// Returns hierarchical options using recursive CTEs for tree-structured dropdowns.
+type FindTreeOptions[TModel, TSearch any] interface {
+	api.OperationsProvider
+	Find[TModel, TSearch, []TreeDataOption, FindTreeOptions[TModel, TSearch]]
+
+	// This mapping provides fallback values for label, value, description, and sort columns.
+	WithDefaultColumnMapping(mapping *DataOptionColumnMapping) FindTreeOptions[TModel, TSearch]
+	WithIDColumn(name string) FindTreeOptions[TModel, TSearch]
+	WithParentIDColumn(name string) FindTreeOptions[TModel, TSearch]
+}
+
 type findTreeOptionsOperation[TModel, TSearch any] struct {
 	Find[TModel, TSearch, []TreeDataOption, FindTreeOptions[TModel, TSearch]]
 

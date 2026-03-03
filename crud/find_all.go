@@ -10,6 +10,13 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
+// FindAll provides a fluent interface for building find all endpoints.
+// Returns all records matching the search criteria (with a safety limit).
+type FindAll[TModel, TSearch any] interface {
+	api.OperationsProvider
+	Find[TModel, TSearch, []TModel, FindAll[TModel, TSearch]]
+}
+
 type findAllOperation[TModel, TSearch any] struct {
 	Find[TModel, TSearch, []TModel, FindAll[TModel, TSearch]]
 }

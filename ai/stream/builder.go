@@ -9,6 +9,16 @@ import (
 	"github.com/gofiber/fiber/v3"
 )
 
+// CallbackWriter provides methods to push messages in callback-based sources.
+type CallbackWriter interface {
+	WriteText(content string)
+	WriteToolCall(id, name, arguments string)
+	WriteToolResult(toolCallID, content string)
+	WriteReasoning(reasoning string)
+	WriteData(dataType string, data any)
+	WriteMessage(msg Message)
+}
+
 // Builder provides a fluent interface for building UI message streams.
 type Builder struct {
 	opts      Options

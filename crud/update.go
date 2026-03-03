@@ -16,6 +16,19 @@ import (
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 
+// Update provides a fluent interface for building update endpoints.
+// Loads existing model, merges changes, and supports pre/post processing hooks.
+type Update[TModel, TParams any] interface {
+	api.OperationsProvider
+	Builder[Update[TModel, TParams]]
+
+	// This processor is called before the model is updated in the database.
+	WithPreUpdate(processor PreUpdateProcessor[TModel, TParams]) Update[TModel, TParams]
+	// This processor is called after the model is successfully updated within the same transaction.
+	WithPostUpdate(processor PostUpdateProcessor[TModel, TParams]) Update[TModel, TParams]
+	DisableDataPerm() Update[TModel, TParams]
+}
+
 type updateOperation[TModel, TParams any] struct {
 	Builder[Update[TModel, TParams]]
 

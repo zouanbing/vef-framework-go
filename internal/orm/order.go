@@ -10,11 +10,15 @@ import (
 type OrderBuilder interface {
 	// Column specifies the column name to order by
 	Column(column string) OrderBuilder
-	// Expr allows ordering by a SQL expression
+	// Expr allows ordering by a raw SQL expression instead of a column name.
 	Expr(expr any) OrderBuilder
+	// Asc sets ascending sort direction.
 	Asc() OrderBuilder
+	// Desc sets descending sort direction.
 	Desc() OrderBuilder
+	// NullsFirst places NULL values before non-NULL values in the sort order.
 	NullsFirst() OrderBuilder
+	// NullsLast places NULL values after non-NULL values in the sort order.
 	NullsLast() OrderBuilder
 }
 
