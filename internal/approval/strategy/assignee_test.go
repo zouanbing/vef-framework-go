@@ -201,24 +201,24 @@ func TestDeptLeaderAssigneeResolver(t *testing.T) {
 	assert.Equal(t, approval.AssigneeDeptLeader, r.Kind(), "Kind should be AssigneeDeptLeader")
 
 	t.Run("WithLeaders", func(t *testing.T) {
-		result, err := r.Resolve(context.Background(), &ResolveContext{ApplicantDeptID: "dept1"})
+		result, err := r.Resolve(context.Background(), &ResolveContext{ApplicantDeptID: new("dept1")})
 		require.NoError(t, err, "Should resolve without error")
 		assertUserIDs(t, result, "leader1", "leader2")
 	})
 
 	t.Run("UnknownDept", func(t *testing.T) {
-		result, err := r.Resolve(context.Background(), &ResolveContext{ApplicantDeptID: "unknown"})
+		result, err := r.Resolve(context.Background(), &ResolveContext{ApplicantDeptID: new("unknown")})
 		require.NoError(t, err, "Should resolve without error")
 		assertUserIDs(t, result)
 	})
 
 	t.Run("NilService", func(t *testing.T) {
-		_, err := NewDeptLeaderAssigneeResolver(nil).Resolve(context.Background(), &ResolveContext{ApplicantDeptID: "dept1"})
+		_, err := NewDeptLeaderAssigneeResolver(nil).Resolve(context.Background(), &ResolveContext{ApplicantDeptID: new("dept1")})
 		require.ErrorIs(t, err, ErrAssigneeServiceNil, "Should return ErrAssigneeServiceNil")
 	})
 
 	t.Run("ServiceError", func(t *testing.T) {
-		_, err := NewDeptLeaderAssigneeResolver(&ErrAssigneeService{}).Resolve(context.Background(), &ResolveContext{ApplicantDeptID: "dept1"})
+		_, err := NewDeptLeaderAssigneeResolver(&ErrAssigneeService{}).Resolve(context.Background(), &ResolveContext{ApplicantDeptID: new("dept1")})
 		require.ErrorIs(t, err, errAssigneeSvc, "Should wrap underlying service error")
 	})
 }
@@ -350,7 +350,7 @@ func TestCompositeAssigneeResolver(t *testing.T) {
 
 	t.Run("MultipleKinds", func(t *testing.T) {
 		composite := NewCompositeAssigneeResolver(NewUserAssigneeResolver(), NewSelfAssigneeResolver())
-		configs := []*approval.FlowNodeAssignee{
+		configs := []approval.FlowNodeAssignee{
 			{Kind: approval.AssigneeUser, IDs: []string{"u1", "u2"}},
 			{Kind: approval.AssigneeSelf},
 		}
@@ -366,7 +366,7 @@ func TestCompositeAssigneeResolver(t *testing.T) {
 			NewSelfAssigneeResolver(),
 			NewRoleAssigneeResolver(svc),
 		)
-		configs := []*approval.FlowNodeAssignee{
+		configs := []approval.FlowNodeAssignee{
 			{Kind: approval.AssigneeUser, IDs: []string{"u1"}},
 			{Kind: approval.AssigneeSelf},
 			{Kind: approval.AssigneeRole, IDs: []string{"admin"}},
@@ -387,7 +387,7 @@ func TestCompositeAssigneeResolver(t *testing.T) {
 
 	t.Run("UnknownKind", func(t *testing.T) {
 		composite := NewCompositeAssigneeResolver(NewUserAssigneeResolver())
-		configs := []*approval.FlowNodeAssignee{
+		configs := []approval.FlowNodeAssignee{
 			{Kind: approval.AssigneeRole, IDs: []string{"r1"}},
 		}
 
@@ -397,7 +397,7 @@ func TestCompositeAssigneeResolver(t *testing.T) {
 
 	t.Run("ErrorPropagation", func(t *testing.T) {
 		composite := NewCompositeAssigneeResolver(NewSuperiorAssigneeResolver(&ErrAssigneeService{}))
-		configs := []*approval.FlowNodeAssignee{
+		configs := []approval.FlowNodeAssignee{
 			{Kind: approval.AssigneeSuperior},
 		}
 

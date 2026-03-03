@@ -43,22 +43,6 @@ func (p *HandleProcessor) Process(ctx context.Context, pc *ProcessContext) (*Pro
 	return &ProcessResult{Action: NodeActionWait}, nil
 }
 
-// Predict predicts assignees without side effects.
-func (p *HandleProcessor) Predict(ctx context.Context, pc *ProcessContext) ([]string, error) {
-	assignees, err := p.resolveAndDeduplicateAssignees(ctx, pc)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(assignees) == 0 {
-		return predictEmptyAssignee(pc)
-	}
-
-	assignees = applyDelegation(ctx, pc.DB, pc.Instance.FlowID, assignees)
-
-	return extractUserIDs(assignees), nil
-}
-
 func (p *HandleProcessor) resolveAndDeduplicateAssignees(ctx context.Context, pc *ProcessContext) ([]approval.ResolvedAssignee, error) {
 	assignees, err := resolveAssignees(ctx, pc)
 	if err != nil {

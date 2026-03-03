@@ -1,0 +1,22 @@
+package engine
+
+import (
+	"context"
+
+	"github.com/ilxqx/vef-framework-go/approval"
+)
+
+// EndProcessor handles end nodes by completing the flow as approved.
+type EndProcessor struct{}
+
+// NewEndProcessor creates an EndProcessor.
+func NewEndProcessor() NodeProcessor { return &EndProcessor{} }
+
+func (p *EndProcessor) NodeKind() approval.NodeKind { return approval.NodeEnd }
+
+func (p *EndProcessor) Process(context.Context, *ProcessContext) (*ProcessResult, error) {
+	return &ProcessResult{
+		Action:      NodeActionComplete,
+		FinalStatus: new(approval.InstanceApproved),
+	}, nil
+}

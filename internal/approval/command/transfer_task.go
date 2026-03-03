@@ -47,7 +47,7 @@ func NewTransferTaskHandler(
 func (h *TransferTaskHandler) Handle(ctx context.Context, cmd TransferTaskCmd) (cqrs.Unit, error) {
 	db := contextx.DB(ctx, h.db)
 
-	tc, err := prepareTaskOperation(ctx, db, nil, cmd.InstanceID, cmd.TaskID, cmd.Operator.ID, "", cmd.FormData)
+	tc, err := h.taskSvc.PrepareOperation(ctx, db, cmd.InstanceID, cmd.TaskID, cmd.Operator.ID, cmd.FormData)
 	if err != nil {
 		return cqrs.Unit{}, err
 	}
@@ -84,7 +84,7 @@ func (h *TransferTaskHandler) Handle(ctx context.Context, cmd TransferTaskCmd) (
 		approval.NewTaskCreatedEvent(newTask.ID, instance.ID, node.ID, cmd.TransferToID, nil),
 	}
 
-	if err := insertActionLog(ctx, db, instance.ID, task, cmd.Operator, approval.ActionTransfer, cmd.Opinion, cmd.TransferToID, ""); err != nil {
+	if err := h.taskSvc.InsertActionLog(ctx, db, instance.ID, task, cmd.Operator, approval.ActionTransfer, cmd.Opinion, cmd.TransferToID, ""); err != nil {
 		return cqrs.Unit{}, err
 	}
 

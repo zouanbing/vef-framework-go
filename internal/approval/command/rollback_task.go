@@ -55,7 +55,7 @@ func NewRollbackTaskHandler(
 func (h *RollbackTaskHandler) Handle(ctx context.Context, cmd RollbackTaskCmd) (cqrs.Unit, error) {
 	db := contextx.DB(ctx, h.db)
 
-	tc, err := prepareTaskOperation(ctx, db, nil, cmd.InstanceID, cmd.TaskID, cmd.Operator.ID, "", cmd.FormData)
+	tc, err := h.taskSvc.PrepareOperation(ctx, db, cmd.InstanceID, cmd.TaskID, cmd.Operator.ID, cmd.FormData)
 	if err != nil {
 		return cqrs.Unit{}, err
 	}
@@ -126,7 +126,7 @@ func (h *RollbackTaskHandler) Handle(ctx context.Context, cmd RollbackTaskCmd) (
 		}
 	}
 
-	if err := insertActionLog(ctx, db, instance.ID, task, cmd.Operator, approval.ActionRollback, cmd.Opinion, "", cmd.TargetNodeID); err != nil {
+	if err := h.taskSvc.InsertActionLog(ctx, db, instance.ID, task, cmd.Operator, approval.ActionRollback, cmd.Opinion, "", cmd.TargetNodeID); err != nil {
 		return cqrs.Unit{}, err
 	}
 

@@ -154,13 +154,6 @@ func (h *StartInstanceHandler) Handle(ctx context.Context, cmd StartInstanceCmd)
 		return nil, fmt.Errorf("start process: %w", err)
 	}
 
-	if _, err := db.NewUpdate().
-		Model(instance).
-		WherePK().
-		Exec(ctx); err != nil {
-		return nil, fmt.Errorf("update instance after start: %w", err)
-	}
-
 	return instance, nil
 }
 

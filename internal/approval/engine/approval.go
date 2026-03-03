@@ -45,24 +45,6 @@ func (p *ApprovalProcessor) Process(ctx context.Context, pc *ProcessContext) (*P
 	return &ProcessResult{Action: NodeActionWait}, nil
 }
 
-// Predict predicts assignees without side effects.
-func (p *ApprovalProcessor) Predict(ctx context.Context, pc *ProcessContext) ([]string, error) {
-	assignees, err := p.resolveAndProcessAssignees(ctx, pc)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(assignees) == 0 {
-		return predictEmptyAssignee(pc)
-	}
-
-	if p.isSameApplicant(assignees, pc.ApplicantID) {
-		return p.predictSameApplicant(ctx, pc)
-	}
-
-	return extractUserIDs(assignees), nil
-}
-
 func (p *ApprovalProcessor) resolveAndProcessAssignees(ctx context.Context, pc *ProcessContext) ([]approval.ResolvedAssignee, error) {
 	assignees, err := resolveAssignees(ctx, pc)
 	if err != nil {
@@ -153,22 +135,3 @@ func (p *ApprovalProcessor) isSameApplicant(assignees []approval.ResolvedAssigne
 	})
 }
 
-func (p *ApprovalProcessor) predictSameApplicant(ctx context.Context, pc *ProcessContext) ([]string, error) {
-	switch pc.Node.SameApplicantAction {
-	case approval.SameApplicantAutoPass:
-		return nil, nil
-	case approval.SameApplicantTransferSuperior:
-		superiorID, err := getSuperior(ctx, p.assigneeService, pc.ApplicantID)
-		if err != nil {
-			return nil, err
-		}
-
-		if superiorID == "" {
-			return nil, ErrNoAssignee
-		}
-
-		return []string{superiorID}, nil
-	default:
-		return []string{pc.ApplicantID}, nil
-	}
-}

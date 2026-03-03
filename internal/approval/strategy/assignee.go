@@ -15,7 +15,7 @@ import (
 type ResolveContext struct {
 	DB              orm.DB
 	ApplicantID     string
-	ApplicantDeptID string
+	ApplicantDeptID *string
 	FormData        approval.FormData
 
 	IDs       []string
@@ -171,7 +171,11 @@ func (r *DeptLeaderAssigneeResolver) Resolve(ctx context.Context, rc *ResolveCon
 		return nil, ErrAssigneeServiceNil
 	}
 
-	leaders, err := r.svc.GetDeptLeaders(ctx, rc.ApplicantDeptID)
+	if rc.ApplicantDeptID == nil || *rc.ApplicantDeptID == "" {
+		return []approval.ResolvedAssignee{}, nil
+	}
+
+	leaders, err := r.svc.GetDeptLeaders(ctx, *rc.ApplicantDeptID)
 	if err != nil {
 		return nil, fmt.Errorf("dept leader assignee resolver: %w", err)
 	}
@@ -248,8 +252,8 @@ func NewCompositeAssigneeResolver(resolvers ...AssigneeResolver) *CompositeAssig
 }
 
 // ResolveAll resolves assignees from multiple configs.
-func (c *CompositeAssigneeResolver) ResolveAll(ctx context.Context, assignees []*approval.FlowNodeAssignee, baseRC *ResolveContext) ([]approval.ResolvedAssignee, error) {
-	return streams.CollectResults(streams.FlatMapErr(streams.FromSlice(assignees), func(assignee *approval.FlowNodeAssignee) (streams.Stream[approval.ResolvedAssignee], error) {
+func (c *CompositeAssigneeResolver) ResolveAll(ctx context.Context, assignees []approval.FlowNodeAssignee, baseRC *ResolveContext) ([]approval.ResolvedAssignee, error) {
+	return streams.CollectResults(streams.FlatMapErr(streams.FromSlice(assignees), func(assignee approval.FlowNodeAssignee) (streams.Stream[approval.ResolvedAssignee], error) {
 		resolver, ok := c.resolvers[assignee.Kind]
 		if !ok {
 			return streams.Empty[approval.ResolvedAssignee](), fmt.Errorf("%w: %s", ErrAssigneeResolverNotFound, assignee.Kind)

@@ -28,7 +28,7 @@ func TestFieldConditionEvaluator(t *testing.T) {
 			"int_val":    int64(100),
 		},
 		ApplicantID:     "user1",
-		ApplicantDeptID: "dept1",
+		ApplicantDeptID: new("dept1"),
 	}
 
 	tests := []struct {
@@ -37,64 +37,64 @@ func TestFieldConditionEvaluator(t *testing.T) {
 		expected bool
 	}{
 		// eq / ne
-		{"EqStringMatch", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "eq", Value: "alice"}, true},
-		{"EqStringNoMatch", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "eq", Value: "bob"}, false},
-		{"NeString", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "ne", Value: "bob"}, true},
-		{"NeStringSame", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "ne", Value: "alice"}, false},
+		{"EqStringMatch", approval.Condition{Kind: approval.ConditionField, Subject: "name", Operator: "eq", Value: "alice"}, true},
+		{"EqStringNoMatch", approval.Condition{Kind: approval.ConditionField, Subject: "name", Operator: "eq", Value: "bob"}, false},
+		{"NeString", approval.Condition{Kind: approval.ConditionField, Subject: "name", Operator: "ne", Value: "bob"}, true},
+		{"NeStringSame", approval.Condition{Kind: approval.ConditionField, Subject: "name", Operator: "ne", Value: "alice"}, false},
 
 		// gt / gte / lt / lte (int)
-		{"GtIntTrue", approval.Condition{Type: approval.ConditionField, Subject: "amount", Operator: "gt", Value: 3000}, true},
-		{"GtIntFalse", approval.Condition{Type: approval.ConditionField, Subject: "amount", Operator: "gt", Value: 5000}, false},
-		{"GteIntEqual", approval.Condition{Type: approval.ConditionField, Subject: "amount", Operator: "gte", Value: 5000}, true},
-		{"LtIntTrue", approval.Condition{Type: approval.ConditionField, Subject: "amount", Operator: "lt", Value: 6000}, true},
-		{"LtIntFalse", approval.Condition{Type: approval.ConditionField, Subject: "amount", Operator: "lt", Value: 5000}, false},
-		{"LteIntEqual", approval.Condition{Type: approval.ConditionField, Subject: "amount", Operator: "lte", Value: 5000}, true},
+		{"GtIntTrue", approval.Condition{Kind: approval.ConditionField, Subject: "amount", Operator: "gt", Value: 3000}, true},
+		{"GtIntFalse", approval.Condition{Kind: approval.ConditionField, Subject: "amount", Operator: "gt", Value: 5000}, false},
+		{"GteIntEqual", approval.Condition{Kind: approval.ConditionField, Subject: "amount", Operator: "gte", Value: 5000}, true},
+		{"LtIntTrue", approval.Condition{Kind: approval.ConditionField, Subject: "amount", Operator: "lt", Value: 6000}, true},
+		{"LtIntFalse", approval.Condition{Kind: approval.ConditionField, Subject: "amount", Operator: "lt", Value: 5000}, false},
+		{"LteIntEqual", approval.Condition{Kind: approval.ConditionField, Subject: "amount", Operator: "lte", Value: 5000}, true},
 
 		// gt / lt (float64)
-		{"GtFloatTrue", approval.Condition{Type: approval.ConditionField, Subject: "amountF", Operator: "gt", Value: 5000.0}, true},
-		{"LtFloatTrue", approval.Condition{Type: approval.ConditionField, Subject: "amountF", Operator: "lt", Value: 5001.0}, true},
+		{"GtFloatTrue", approval.Condition{Kind: approval.ConditionField, Subject: "amountF", Operator: "gt", Value: 5000.0}, true},
+		{"LtFloatTrue", approval.Condition{Kind: approval.ConditionField, Subject: "amountF", Operator: "lt", Value: 5001.0}, true},
 
 		// cross-type numeric comparison (int field vs float value)
-		{"GtIntFieldFloatValue", approval.Condition{Type: approval.ConditionField, Subject: "amount", Operator: "gt", Value: 4999.9}, true},
-		{"LtFloatFieldIntValue", approval.Condition{Type: approval.ConditionField, Subject: "amountF", Operator: "lt", Value: 5001}, true},
+		{"GtIntFieldFloatValue", approval.Condition{Kind: approval.ConditionField, Subject: "amount", Operator: "gt", Value: 4999.9}, true},
+		{"LtFloatFieldIntValue", approval.Condition{Kind: approval.ConditionField, Subject: "amountF", Operator: "lt", Value: 5001}, true},
 
 		// in / not_in
-		{"InStringArray", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "in", Value: []string{"alice", "bob"}}, true},
-		{"InStringArrayNotFound", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "in", Value: []string{"bob", "charlie"}}, false},
-		{"InEmptySlice", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "in", Value: []string{}}, false},
-		{"NotInStringArray", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "not_in", Value: []string{"bob", "charlie"}}, true},
-		{"NotInStringArrayFound", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "not_in", Value: []string{"alice", "bob"}}, false},
-		{"NotInEmptySlice", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "not_in", Value: []string{}}, true},
-		{"InWithAnySlice", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "in", Value: []any{"alice", "charlie"}}, true},
+		{"InStringArray", approval.Condition{Kind: approval.ConditionField, Subject: "name", Operator: "in", Value: []string{"alice", "bob"}}, true},
+		{"InStringArrayNotFound", approval.Condition{Kind: approval.ConditionField, Subject: "name", Operator: "in", Value: []string{"bob", "charlie"}}, false},
+		{"InEmptySlice", approval.Condition{Kind: approval.ConditionField, Subject: "name", Operator: "in", Value: []string{}}, false},
+		{"NotInStringArray", approval.Condition{Kind: approval.ConditionField, Subject: "name", Operator: "not_in", Value: []string{"bob", "charlie"}}, true},
+		{"NotInStringArrayFound", approval.Condition{Kind: approval.ConditionField, Subject: "name", Operator: "not_in", Value: []string{"alice", "bob"}}, false},
+		{"NotInEmptySlice", approval.Condition{Kind: approval.ConditionField, Subject: "name", Operator: "not_in", Value: []string{}}, true},
+		{"InWithAnySlice", approval.Condition{Kind: approval.ConditionField, Subject: "name", Operator: "in", Value: []any{"alice", "charlie"}}, true},
 
 		// contains / not_contains
-		{"ContainsTrue", approval.Condition{Type: approval.ConditionField, Subject: "greeting", Operator: "contains", Value: "world"}, true},
-		{"ContainsFalse", approval.Condition{Type: approval.ConditionField, Subject: "greeting", Operator: "contains", Value: "mars"}, false},
-		{"ContainsEmptyValue", approval.Condition{Type: approval.ConditionField, Subject: "greeting", Operator: "contains", Value: ""}, true},
-		{"NotContainsTrue", approval.Condition{Type: approval.ConditionField, Subject: "greeting", Operator: "not_contains", Value: "mars"}, true},
-		{"NotContainsFalse", approval.Condition{Type: approval.ConditionField, Subject: "greeting", Operator: "not_contains", Value: "world"}, false},
+		{"ContainsTrue", approval.Condition{Kind: approval.ConditionField, Subject: "greeting", Operator: "contains", Value: "world"}, true},
+		{"ContainsFalse", approval.Condition{Kind: approval.ConditionField, Subject: "greeting", Operator: "contains", Value: "mars"}, false},
+		{"ContainsEmptyValue", approval.Condition{Kind: approval.ConditionField, Subject: "greeting", Operator: "contains", Value: ""}, true},
+		{"NotContainsTrue", approval.Condition{Kind: approval.ConditionField, Subject: "greeting", Operator: "not_contains", Value: "mars"}, true},
+		{"NotContainsFalse", approval.Condition{Kind: approval.ConditionField, Subject: "greeting", Operator: "not_contains", Value: "world"}, false},
 
 		// starts_with / ends_with
-		{"StartsWithTrue", approval.Condition{Type: approval.ConditionField, Subject: "greeting", Operator: "starts_with", Value: "hello"}, true},
-		{"StartsWithFalse", approval.Condition{Type: approval.ConditionField, Subject: "greeting", Operator: "starts_with", Value: "world"}, false},
-		{"StartsWithEmptyValue", approval.Condition{Type: approval.ConditionField, Subject: "greeting", Operator: "starts_with", Value: ""}, true},
-		{"EndsWithTrue", approval.Condition{Type: approval.ConditionField, Subject: "greeting", Operator: "ends_with", Value: "world"}, true},
-		{"EndsWithFalse", approval.Condition{Type: approval.ConditionField, Subject: "greeting", Operator: "ends_with", Value: "hello"}, false},
-		{"EndsWithEmptyValue", approval.Condition{Type: approval.ConditionField, Subject: "greeting", Operator: "ends_with", Value: ""}, true},
+		{"StartsWithTrue", approval.Condition{Kind: approval.ConditionField, Subject: "greeting", Operator: "starts_with", Value: "hello"}, true},
+		{"StartsWithFalse", approval.Condition{Kind: approval.ConditionField, Subject: "greeting", Operator: "starts_with", Value: "world"}, false},
+		{"StartsWithEmptyValue", approval.Condition{Kind: approval.ConditionField, Subject: "greeting", Operator: "starts_with", Value: ""}, true},
+		{"EndsWithTrue", approval.Condition{Kind: approval.ConditionField, Subject: "greeting", Operator: "ends_with", Value: "world"}, true},
+		{"EndsWithFalse", approval.Condition{Kind: approval.ConditionField, Subject: "greeting", Operator: "ends_with", Value: "hello"}, false},
+		{"EndsWithEmptyValue", approval.Condition{Kind: approval.ConditionField, Subject: "greeting", Operator: "ends_with", Value: ""}, true},
 
 		// is_empty / is_not_empty
-		{"IsEmptyNil", approval.Condition{Type: approval.ConditionField, Subject: "nonexistent", Operator: "is_empty"}, true},
-		{"IsEmptyEmptyString", approval.Condition{Type: approval.ConditionField, Subject: "empty_str", Operator: "is_empty"}, true},
-		{"IsEmptyNonEmpty", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "is_empty"}, false},
-		{"IsNotEmptyString", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "is_not_empty"}, true},
-		{"IsNotEmptyNil", approval.Condition{Type: approval.ConditionField, Subject: "nonexistent", Operator: "is_not_empty"}, false},
+		{"IsEmptyNil", approval.Condition{Kind: approval.ConditionField, Subject: "nonexistent", Operator: "is_empty"}, true},
+		{"IsEmptyEmptyString", approval.Condition{Kind: approval.ConditionField, Subject: "empty_str", Operator: "is_empty"}, true},
+		{"IsEmptyNonEmpty", approval.Condition{Kind: approval.ConditionField, Subject: "name", Operator: "is_empty"}, false},
+		{"IsNotEmptyString", approval.Condition{Kind: approval.ConditionField, Subject: "name", Operator: "is_not_empty"}, true},
+		{"IsNotEmptyNil", approval.Condition{Kind: approval.ConditionField, Subject: "nonexistent", Operator: "is_not_empty"}, false},
 
 		// Special subjects
-		{"ApplicantSubject", approval.Condition{Type: approval.ConditionField, Subject: "applicantId", Operator: "eq", Value: "user1"}, true},
-		{"DeptSubject", approval.Condition{Type: approval.ConditionField, Subject: "applicantDeptId", Operator: "eq", Value: "dept1"}, true},
+		{"ApplicantSubject", approval.Condition{Kind: approval.ConditionField, Subject: "applicantId", Operator: "eq", Value: "user1"}, true},
+		{"DeptSubject", approval.Condition{Kind: approval.ConditionField, Subject: "applicantDeptId", Operator: "eq", Value: "dept1"}, true},
 
 		// Unknown operator
-		{"UnknownOperator", approval.Condition{Type: approval.ConditionField, Subject: "name", Operator: "unknown_op", Value: "x"}, false},
+		{"UnknownOperator", approval.Condition{Kind: approval.ConditionField, Subject: "name", Operator: "unknown_op", Value: "x"}, false},
 	}
 
 	for _, tt := range tests {
@@ -172,7 +172,7 @@ func TestExpressionConditionEvaluator(t *testing.T) {
 		ec := &approval.EvaluationContext{
 			FormData:        approval.FormData{"amount": 5000},
 			ApplicantID:     "user1",
-			ApplicantDeptID: "dept1",
+			ApplicantDeptID: new("dept1"),
 		}
 
 		result, err := e.Evaluate(ctx, approval.Condition{Expression: "formData.amount > 3000"}, ec)
@@ -188,7 +188,7 @@ func TestExpressionConditionEvaluator(t *testing.T) {
 		ec := &approval.EvaluationContext{
 			FormData:        approval.FormData{"amount": 5000, "department": "sales"},
 			ApplicantID:     "user1",
-			ApplicantDeptID: "dept1",
+			ApplicantDeptID: new("dept1"),
 		}
 
 		result, err := e.Evaluate(ctx, approval.Condition{Expression: `formData.amount > 1000 && formData.department == "sales"`}, ec)
@@ -204,7 +204,7 @@ func TestExpressionConditionEvaluator(t *testing.T) {
 		ec := &approval.EvaluationContext{
 			FormData:        approval.FormData{},
 			ApplicantID:     "user1",
-			ApplicantDeptID: "dept_sales",
+			ApplicantDeptID: new("dept_sales"),
 		}
 
 		result, err := e.Evaluate(ctx, approval.Condition{Expression: `applicantId == "user1"`}, ec)
@@ -233,7 +233,7 @@ func TestExpressionConditionEvaluator(t *testing.T) {
 		ec := &approval.EvaluationContext{
 			FormData:        approval.FormData{"amount": "not_a_number"},
 			ApplicantID:     "user1",
-			ApplicantDeptID: "dept1",
+			ApplicantDeptID: new("dept1"),
 		}
 		_, err := e.Evaluate(ctx, approval.Condition{Expression: "formData.amount > 100"}, ec)
 		require.Error(t, err, "Should fail when expression evaluation fails at runtime")

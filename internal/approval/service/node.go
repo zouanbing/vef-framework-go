@@ -43,7 +43,7 @@ func (s *NodeService) HandleNodeCompletion(
 			return nil, fmt.Errorf("trigger node cc: %w", err)
 		}
 
-		if err := s.engine.AdvanceToNextNode(ctx, db, instance, node, ""); err != nil {
+		if err := s.engine.AdvanceToNextNode(ctx, db, instance, node, nil); err != nil {
 			return nil, fmt.Errorf("advance to next node: %w", err)
 		}
 
@@ -168,7 +168,7 @@ func (s *NodeService) CheckCCNodeCompletion(ctx context.Context, db orm.DB, inst
 				return fmt.Errorf("find instance for cc advance: %w", err)
 			}
 
-			if err := s.engine.AdvanceToNextNode(ctx, db, &instance, &node, ""); err != nil {
+			if err := s.engine.AdvanceToNextNode(ctx, db, &instance, &node, nil); err != nil {
 				return fmt.Errorf("advance cc node: %w", err)
 			}
 		}

@@ -189,7 +189,7 @@ func (s *DeployFlowTestSuite) TestDeployInvalidFlowDesign() {
 		FlowID: s.flowID,
 		FlowDefinition: approval.FlowDefinition{
 			Nodes: []approval.NodeDefinition{
-				{ID: "orphan-1", Type: approval.NodeApproval, Data: mustMarshal(approval.ApprovalNodeData{
+				{ID: "orphan-1", Kind: approval.NodeApproval, Data: mustMarshal(approval.ApprovalNodeData{
 					BaseNodeData: approval.BaseNodeData{Name: "审批"},
 				})},
 			},

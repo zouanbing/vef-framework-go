@@ -44,10 +44,15 @@ func (e *ExpressionConditionEvaluator) Kind() approval.ConditionKind {
 }
 
 func (e *ExpressionConditionEvaluator) Evaluate(_ context.Context, cond approval.Condition, ec *approval.EvaluationContext) (bool, error) {
+	var deptID string
+	if ec.ApplicantDeptID != nil {
+		deptID = *ec.ApplicantDeptID
+	}
+
 	env := map[string]any{
 		"formData":        ec.FormData.ToMap(),
 		"applicantId":     ec.ApplicantID,
-		"applicantDeptId": ec.ApplicantDeptID,
+		"applicantDeptId": deptID,
 	}
 
 	program, err := expr.Compile(cond.Expression, expr.Env(env), expr.AsBool())

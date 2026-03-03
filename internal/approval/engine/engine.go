@@ -50,11 +50,13 @@ func (e *FlowEngine) publishEvents(ctx context.Context, db orm.DB, events ...app
 func (e *FlowEngine) StartProcess(ctx context.Context, db orm.DB, instance *approval.Instance) error {
 	var startNode approval.FlowNode
 
-	err := db.NewSelect().Model(&startNode).Where(func(c orm.ConditionBuilder) {
-		c.Equals("flow_version_id", instance.FlowVersionID)
-		c.Equals("kind", string(approval.NodeStart))
-	}).Scan(ctx)
-	if err != nil {
+	if err := db.NewSelect().
+		Model(&startNode).
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("flow_version_id", instance.FlowVersionID).
+				Equals("kind", string(approval.NodeStart))
+		}).
+		Scan(ctx); err != nil {
 		return fmt.Errorf("find start node: %w", err)
 	}
 
@@ -75,21 +77,10 @@ func (e *FlowEngine) ProcessNode(ctx context.Context, db orm.DB, instance *appro
 		return fmt.Errorf("%w: %s", ErrProcessorNotFound, node.Kind)
 	}
 
-	// Load assignee configs for the node
-	var assignees []*approval.FlowNodeAssignee
-
-	err := db.NewSelect().Model(&assignees).Where(func(c orm.ConditionBuilder) {
-		c.Equals("node_id", node.ID)
-	}).OrderBy("sort_order").Scan(ctx)
-	if err != nil {
-		return fmt.Errorf("load node assignees: %w", err)
-	}
-
 	pc := &ProcessContext{
 		DB:          db,
 		Instance:    instance,
 		Node:        node,
-		Assignees:   assignees,
 		FormData:    approval.NewFormData(instance.FormData),
 		ApplicantID: instance.ApplicantID,
 		Registry:    e.registry,
@@ -113,7 +104,11 @@ func (e *FlowEngine) handleProcessResult(ctx context.Context, db orm.DB, instanc
 	case NodeActionWait:
 		instance.CurrentNodeID = new(node.ID)
 
-		_, err := db.NewUpdate().Model(instance).WherePK().Exec(ctx)
+		_, err := db.NewUpdate().
+			Model(instance).
+			Select("current_node_id").
+			WherePK().
+			Exec(ctx)
 
 		return err
 
@@ -122,16 +117,21 @@ func (e *FlowEngine) handleProcessResult(ctx context.Context, db orm.DB, instanc
 
 	case NodeActionComplete:
 		instance.CurrentNodeID = new(node.ID)
-		instance.Status = result.FinalStatus
+		instance.Status = *result.FinalStatus
 		instance.FinishedAt = new(timex.Now())
 
-		if _, err := db.NewUpdate().Model(instance).WherePK().Exec(ctx); err != nil {
+		if _, err := db.NewUpdate().
+			Model(instance).
+			Select("current_node_id", "status", "finished_at").
+			WherePK().
+			Exec(ctx); err != nil {
 			return err
 		}
 
 		// Publish completion event
-		if err := e.publishEvents(ctx, db,
-			approval.NewInstanceCompletedEvent(instance.ID, result.FinalStatus),
+		if err := e.publishEvents(
+			ctx, db,
+			approval.NewInstanceCompletedEvent(instance.ID, *result.FinalStatus),
 		); err != nil {
 			return fmt.Errorf("publish instance completed event: %w", err)
 		}
@@ -145,39 +145,46 @@ func (e *FlowEngine) handleProcessResult(ctx context.Context, db orm.DB, instanc
 
 // AdvanceToNextNode finds the matching edge from the current node and advances to the next one.
 // branchID is used by condition nodes to select the edge matching the branch.
-func (e *FlowEngine) AdvanceToNextNode(ctx context.Context, db orm.DB, instance *approval.Instance, fromNode *approval.FlowNode, branchID string) error {
+func (e *FlowEngine) AdvanceToNextNode(ctx context.Context, db orm.DB, instance *approval.Instance, fromNode *approval.FlowNode, branchID *string) error {
 	edge, err := e.findMatchingEdge(ctx, db, fromNode.ID, branchID)
 	if err != nil {
 		return err
 	}
 
 	var nextNode approval.FlowNode
+	nextNode.ID = edge.TargetNodeID
 
-	err = db.NewSelect().Model(&nextNode).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", edge.TargetNodeID)
-	}).Scan(ctx)
-	if err != nil {
+	if err = db.NewSelect().
+		Model(&nextNode).
+		WherePK().
+		Scan(ctx); err != nil {
 		return fmt.Errorf("find next node: %w", err)
 	}
 
 	return e.ProcessNode(ctx, db, instance, &nextNode)
 }
 
-func (e *FlowEngine) findMatchingEdge(ctx context.Context, db orm.DB, sourceNodeID string, branchID string) (*approval.FlowEdge, error) {
+func (e *FlowEngine) findMatchingEdge(ctx context.Context, db orm.DB, sourceNodeID string, branchID *string) (*approval.FlowEdge, error) {
 	var edges []approval.FlowEdge
 
-	err := db.NewSelect().Model(&edges).Where(func(c orm.ConditionBuilder) {
-		c.Equals("source_node_id", sourceNodeID)
-		if branchID != "" {
-			c.Equals("source_handle", branchID)
-		}
-	}).Scan(ctx)
-	if err != nil {
+	if err := db.NewSelect().
+		Model(&edges).
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("source_node_id", sourceNodeID).
+				ApplyIf(branchID != nil, func(cb orm.ConditionBuilder) {
+					cb.Equals("source_handle", *branchID)
+				})
+		}).
+		Scan(ctx); err != nil {
 		return nil, fmt.Errorf("find edges: %w", err)
 	}
 
 	if len(edges) == 0 {
 		return nil, ErrNoMatchingEdge
+	}
+
+	if len(edges) > 1 {
+		return nil, fmt.Errorf("ambiguous edges: found %d edges from node %q", len(edges), sourceNodeID)
 	}
 
 	return &edges[0], nil
@@ -187,10 +194,13 @@ func (e *FlowEngine) findMatchingEdge(ctx context.Context, db orm.DB, sourceNode
 func (e *FlowEngine) EvaluateNodeCompletion(ctx context.Context, db orm.DB, instance *approval.Instance, node *approval.FlowNode) (approval.PassRuleResult, error) {
 	var tasks []approval.Task
 
-	err := db.NewSelect().Model(&tasks).Where(func(c orm.ConditionBuilder) {
-		c.Equals("instance_id", instance.ID)
-		c.Equals("node_id", node.ID)
-	}).Scan(ctx)
+	err := db.NewSelect().
+		Model(&tasks).
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("instance_id", instance.ID).
+				Equals("node_id", node.ID)
+		}).
+		Scan(ctx)
 	if err != nil {
 		return approval.PassRulePending, fmt.Errorf("query tasks: %w", err)
 	}
@@ -264,57 +274,3 @@ func NormalizePassRatio(ratio float64) float64 {
 	return ratio
 }
 
-// PredictNextNode predicts the next node and its assignees.
-func (e *FlowEngine) PredictNextNode(ctx context.Context, db orm.DB, instance *approval.Instance, fromNode *approval.FlowNode) (*approval.FlowNode, []string, error) {
-	edge, err := e.findMatchingEdge(ctx, db, fromNode.ID, "")
-	if err != nil {
-		return nil, nil, err
-	}
-
-	var nextNode approval.FlowNode
-
-	err = db.NewSelect().Model(&nextNode).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", edge.TargetNodeID)
-	}).Scan(ctx)
-	if err != nil {
-		return nil, nil, fmt.Errorf("find next node: %w", err)
-	}
-
-	assigneeIDs := e.predictAssignees(ctx, db, instance, &nextNode)
-
-	return &nextNode, assigneeIDs, nil
-}
-
-func (e *FlowEngine) predictAssignees(ctx context.Context, db orm.DB, instance *approval.Instance, node *approval.FlowNode) []string {
-	processor, ok := e.processors[node.Kind]
-	if !ok {
-		return nil
-	}
-
-	predictor, ok := processor.(NodePredictor)
-	if !ok {
-		return nil
-	}
-
-	var assignees []*approval.FlowNodeAssignee
-	_ = db.NewSelect().Model(&assignees).Where(func(c orm.ConditionBuilder) {
-		c.Equals("node_id", node.ID)
-	}).OrderBy("sort_order").Scan(ctx)
-
-	pc := &ProcessContext{
-		DB:          db,
-		Instance:    instance,
-		Node:        node,
-		Assignees:   assignees,
-		FormData:    approval.NewFormData(instance.FormData),
-		ApplicantID: instance.ApplicantID,
-		Registry:    e.registry,
-	}
-
-	ids, err := predictor.Predict(ctx, pc)
-	if err != nil {
-		return nil
-	}
-
-	return ids
-}

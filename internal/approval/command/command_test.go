@@ -28,8 +28,8 @@ func mustMarshal(v any) json.RawMessage {
 func simpleFlowDef() approval.FlowDefinition {
 	return approval.FlowDefinition{
 		Nodes: []approval.NodeDefinition{
-			{ID: "start-1", Type: approval.NodeStart, Data: mustMarshal(approval.StartNodeData{BaseNodeData: approval.BaseNodeData{Name: "开始"}})},
-			{ID: "end-1", Type: approval.NodeEnd, Data: mustMarshal(approval.EndNodeData{BaseNodeData: approval.BaseNodeData{Name: "结束"}})},
+			{ID: "start-1", Kind: approval.NodeStart, Data: mustMarshal(approval.StartNodeData{BaseNodeData: approval.BaseNodeData{Name: "开始"}})},
+			{ID: "end-1", Kind: approval.NodeEnd, Data: mustMarshal(approval.EndNodeData{BaseNodeData: approval.BaseNodeData{Name: "结束"}})},
 		},
 		Edges: []approval.EdgeDefinition{
 			{ID: "edge-1", Source: "start-1", Target: "end-1"},
@@ -41,8 +41,8 @@ func simpleFlowDef() approval.FlowDefinition {
 func approvalFlowDef() approval.FlowDefinition {
 	return approval.FlowDefinition{
 		Nodes: []approval.NodeDefinition{
-			{ID: "start-1", Type: approval.NodeStart, Data: mustMarshal(approval.StartNodeData{BaseNodeData: approval.BaseNodeData{Name: "开始"}})},
-			{ID: "approval-1", Type: approval.NodeApproval, Data: mustMarshal(approval.ApprovalNodeData{
+			{ID: "start-1", Kind: approval.NodeStart, Data: mustMarshal(approval.StartNodeData{BaseNodeData: approval.BaseNodeData{Name: "开始"}})},
+			{ID: "approval-1", Kind: approval.NodeApproval, Data: mustMarshal(approval.ApprovalNodeData{
 				BaseNodeData: approval.BaseNodeData{Name: "审批"},
 				TaskNodeData: approval.TaskNodeData{
 					Assignees: []approval.AssigneeDefinition{
@@ -57,7 +57,7 @@ func approvalFlowDef() approval.FlowDefinition {
 				ApprovalMethod: approval.ApprovalSequential,
 				PassRule:       approval.PassAll,
 			})},
-			{ID: "end-1", Type: approval.NodeEnd, Data: mustMarshal(approval.EndNodeData{BaseNodeData: approval.BaseNodeData{Name: "结束"}})},
+			{ID: "end-1", Kind: approval.NodeEnd, Data: mustMarshal(approval.EndNodeData{BaseNodeData: approval.BaseNodeData{Name: "结束"}})},
 		},
 		Edges: []approval.EdgeDefinition{
 			{ID: "edge-1", Source: "start-1", Target: "approval-1"},

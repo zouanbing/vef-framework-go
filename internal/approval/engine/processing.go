@@ -20,8 +20,8 @@ const (
 // ProcessResult contains the outcome of node processing.
 type ProcessResult struct {
 	Action      NodeAction
-	FinalStatus approval.InstanceStatus   // Only used when Action == NodeActionComplete
-	BranchID    string                    // Condition node: the matched branch ID
+	FinalStatus *approval.InstanceStatus  // Only set when Action == NodeActionComplete
+	BranchID    *string                   // Only set when Action == NodeActionContinue (condition node)
 	Events      []approval.DomainEvent    // Events to publish after processing
 }
 
@@ -30,7 +30,6 @@ type ProcessContext struct {
 	DB          orm.DB
 	Instance    *approval.Instance
 	Node        *approval.FlowNode
-	Assignees   []*approval.FlowNodeAssignee
 	FormData    approval.FormData
 	ApplicantID string
 	Registry    *strategy.StrategyRegistry
@@ -44,8 +43,3 @@ type NodeProcessor interface {
 	Process(ctx context.Context, pc *ProcessContext) (*ProcessResult, error)
 }
 
-// NodePredictor predicts assignees for a node without side effects.
-type NodePredictor interface {
-	// Predict returns the predicted assignee user IDs for the node without executing any side effects.
-	Predict(ctx context.Context, pc *ProcessContext) ([]string, error)
-}

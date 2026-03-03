@@ -51,8 +51,12 @@ func NewApproveTaskHandler(
 func (h *ApproveTaskHandler) Handle(ctx context.Context, cmd ApproveTaskCmd) (cqrs.Unit, error) {
 	db := contextx.DB(ctx, h.db)
 
-	tc, err := prepareTaskOperation(ctx, db, h.validSvc, cmd.InstanceID, cmd.TaskID, cmd.Operator.ID, cmd.Opinion, cmd.FormData)
+	tc, err := h.taskSvc.PrepareOperation(ctx, db, cmd.InstanceID, cmd.TaskID, cmd.Operator.ID, cmd.FormData)
 	if err != nil {
+		return cqrs.Unit{}, err
+	}
+
+	if err := h.validSvc.ValidateOpinion(tc.Node, cmd.Opinion); err != nil {
 		return cqrs.Unit{}, err
 	}
 
@@ -83,7 +87,7 @@ func (h *ApproveTaskHandler) Handle(ctx context.Context, cmd ApproveTaskCmd) (cq
 	}
 	events = append(events, completionEvents...)
 
-	if err := insertActionLog(ctx, db, instance.ID, task, cmd.Operator, approval.ActionApprove, cmd.Opinion, "", ""); err != nil {
+	if err := h.taskSvc.InsertActionLog(ctx, db, instance.ID, task, cmd.Operator, approval.ActionApprove, cmd.Opinion, "", ""); err != nil {
 		return cqrs.Unit{}, err
 	}
 

@@ -52,11 +52,11 @@ func (s *FlowDefinitionService) ValidateFlowDefinition(def *approval.FlowDefinit
 			return fmt.Errorf("duplicate node ID %q", node.ID)
 		}
 
-		if !validNodeKinds.Contains(node.Type) {
-			return fmt.Errorf("invalid node kind %q for node %q", node.Type, node.ID)
+		if !validNodeKinds.Contains(node.Kind) {
+			return fmt.Errorf("invalid node kind %q for node %q", node.Kind, node.ID)
 		}
 
-		switch node.Type {
+		switch node.Kind {
 		case approval.NodeStart:
 			startCount++
 			startID = node.ID
@@ -133,13 +133,13 @@ func (s *FlowDefinitionService) ValidateFlowDefinition(def *approval.FlowDefinit
 	}
 
 	for _, node := range def.Nodes {
-		if node.Type == approval.NodeStart || node.Type == approval.NodeEnd {
+		if node.Kind == approval.NodeStart || node.Kind == approval.NodeEnd {
 			continue
 		}
 
 		outs := outEdges[node.ID]
 
-		switch node.Type {
+		switch node.Kind {
 		case approval.NodeCondition:
 			if err := validateConditionEdges(node.ID, condBranches[node.ID], outs); err != nil {
 				return err

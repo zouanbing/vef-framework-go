@@ -21,16 +21,16 @@ type Position struct {
 // NodeDefinition represents a node in the flow definition.
 type NodeDefinition struct {
 	ID       string          `json:"id"`
-	Type     NodeKind        `json:"type"`
+	Kind     NodeKind        `json:"kind"`
 	Position Position        `json:"position"`
 	Data     json.RawMessage `json:"data,omitempty"`
 }
 
-// ParseData parses Data into the appropriate typed struct based on Type.
+// ParseData parses Data into the appropriate typed struct based on Kind.
 func (nd *NodeDefinition) ParseData() (NodeData, error) {
 	var target NodeData
 
-	switch nd.Type {
+	switch nd.Kind {
 	case NodeStart:
 		target = &StartNodeData{}
 	case NodeEnd:
@@ -44,12 +44,12 @@ func (nd *NodeDefinition) ParseData() (NodeData, error) {
 	case NodeCondition:
 		target = &ConditionNodeData{}
 	default:
-		return nil, fmt.Errorf("unknown node kind %q", nd.Type)
+		return nil, fmt.Errorf("unknown node kind %q", nd.Kind)
 	}
 
 	if len(nd.Data) > 0 {
 		if err := json.Unmarshal(nd.Data, target); err != nil {
-			return nil, fmt.Errorf("unmarshal %q node data: %w", nd.Type, err)
+			return nil, fmt.Errorf("unmarshal %q node data: %w", nd.Kind, err)
 		}
 	}
 

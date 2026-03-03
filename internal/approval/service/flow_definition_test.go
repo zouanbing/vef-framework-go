@@ -13,12 +13,12 @@ import (
 // --- Test helpers ---
 
 func node(id string, kind approval.NodeKind) approval.NodeDefinition {
-	return approval.NodeDefinition{ID: id, Type: kind}
+	return approval.NodeDefinition{ID: id, Kind: kind}
 }
 
 func conditionNode(id string, branches ...approval.ConditionBranch) approval.NodeDefinition {
 	data, _ := json.Marshal(&approval.ConditionNodeData{Branches: branches})
-	return approval.NodeDefinition{ID: id, Type: approval.NodeCondition, Data: data}
+	return approval.NodeDefinition{ID: id, Kind: approval.NodeCondition, Data: data}
 }
 
 func branch(id string, isDefault bool) approval.ConditionBranch {
@@ -106,7 +106,7 @@ func TestValidateFlowDefinition(t *testing.T) {
 	t.Run("DuplicateNodeID", func(t *testing.T) {
 		def := minimalFlow()
 		def.Nodes[1].ID = "start"
-		def.Nodes[1].Type = approval.NodeEnd
+		def.Nodes[1].Kind = approval.NodeEnd
 		def.Edges[0].Target = "start"
 		err := svc.ValidateFlowDefinition(def)
 		assert.EqualError(t, err, `duplicate node ID "start"`,
@@ -115,7 +115,7 @@ func TestValidateFlowDefinition(t *testing.T) {
 
 	t.Run("InvalidNodeKind", func(t *testing.T) {
 		def := minimalFlow()
-		def.Nodes[0].Type = "invalid"
+		def.Nodes[0].Kind = "invalid"
 		err := svc.ValidateFlowDefinition(def)
 		assert.ErrorContains(t, err, `invalid node kind "invalid"`,
 			"Should reject unknown node kind")
@@ -186,7 +186,7 @@ func TestValidateFlowDefinition(t *testing.T) {
 		def := &approval.FlowDefinition{
 			Nodes: []approval.NodeDefinition{
 				node("start", approval.NodeStart),
-				{ID: "cond", Type: approval.NodeCondition, Data: []byte(`{invalid json`)},
+				{ID: "cond", Kind: approval.NodeCondition, Data: []byte(`{invalid json`)},
 				node("end", approval.NodeEnd),
 			},
 			Edges: []approval.EdgeDefinition{edge("e1", "start", "end")},

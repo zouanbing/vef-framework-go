@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"maps"
 	"slices"
 
 	"github.com/ilxqx/vef-framework-go/approval"
@@ -92,6 +93,24 @@ func (s *ValidationService) ValidateRollbackTarget(ctx context.Context, db orm.D
 	}
 
 	return nil
+}
+
+// MergeFormData filters editable form data and merges it into the instance.
+func MergeFormData(instance *approval.Instance, formData map[string]any, permissions map[string]approval.Permission) {
+	if len(formData) == 0 {
+		return
+	}
+
+	editableData := FilterEditableFormData(formData, permissions)
+	if len(editableData) == 0 {
+		return
+	}
+
+	if instance.FormData == nil {
+		instance.FormData = make(map[string]any, len(editableData))
+	}
+
+	maps.Copy(instance.FormData, editableData)
 }
 
 // FilterEditableFormData filters form data to only include fields that are editable or required

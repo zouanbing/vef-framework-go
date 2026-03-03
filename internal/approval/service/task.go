@@ -13,6 +13,13 @@ import (
 	"github.com/ilxqx/vef-framework-go/timex"
 )
 
+// TaskContext holds the validated context for task processing operations.
+type TaskContext struct {
+	Instance *approval.Instance
+	Task     *approval.Task
+	Node     *approval.FlowNode
+}
+
 // cancelableTaskStatuses lists statuses eligible for bulk cancellation.
 var cancelableTaskStatuses = []string{string(approval.TaskPending), string(approval.TaskWaiting)}
 
@@ -161,4 +168,81 @@ func (s *TaskService) CanRemoveAssigneeTask(ctx context.Context, db orm.DB, eng 
 	}
 
 	return evalResult != approval.PassRulePending, nil
+}
+
+// PrepareOperation loads task context and merges editable form data.
+// Callers that require opinion validation should invoke ValidateOpinion separately.
+func (s *TaskService) PrepareOperation(ctx context.Context, db orm.DB, instanceID, taskID, operatorID string, formData map[string]any) (*TaskContext, error) {
+	tc, err := s.loadContext(ctx, db, instanceID, taskID, operatorID)
+	if err != nil {
+		return nil, err
+	}
+
+	MergeFormData(tc.Instance, formData, tc.Node.FieldPermissions)
+
+	return tc, nil
+}
+
+// InsertActionLog creates and inserts an action log entry.
+func (s *TaskService) InsertActionLog(ctx context.Context, db orm.DB, instanceID string, task *approval.Task, operator approval.OperatorInfo, action approval.ActionType, opinion, transferToID, rollbackToNodeID string) error {
+	actionLog := operator.NewActionLog(instanceID, action)
+	actionLog.NodeID = new(task.NodeID)
+	actionLog.TaskID = new(task.ID)
+
+	if opinion != "" {
+		actionLog.Opinion = new(opinion)
+	}
+
+	if transferToID != "" {
+		actionLog.TransferToID = new(transferToID)
+	}
+
+	if rollbackToNodeID != "" {
+		actionLog.RollbackToNodeID = new(rollbackToNodeID)
+	}
+
+	if _, err := db.NewInsert().Model(actionLog).Exec(ctx); err != nil {
+		return fmt.Errorf("insert action log: %w", err)
+	}
+
+	return nil
+}
+
+// loadContext loads and validates the instance, task, and node for task processing.
+func (s *TaskService) loadContext(ctx context.Context, db orm.DB, instanceID, taskID, operatorID string) (*TaskContext, error) {
+	var instance approval.Instance
+	if err := db.NewSelect().Model(&instance).Where(func(c orm.ConditionBuilder) {
+		c.Equals("id", instanceID)
+	}).Scan(ctx); err != nil {
+		return nil, shared.ErrInstanceNotFound
+	}
+
+	if instance.Status != approval.InstanceRunning {
+		return nil, shared.ErrInstanceCompleted
+	}
+
+	var task approval.Task
+	if err := db.NewSelect().Model(&task).Where(func(c orm.ConditionBuilder) {
+		c.Equals("id", taskID)
+		c.Equals("instance_id", instanceID)
+	}).Scan(ctx); err != nil {
+		return nil, shared.ErrTaskNotFound
+	}
+
+	if task.AssigneeID != operatorID {
+		return nil, shared.ErrNotAssignee
+	}
+
+	if task.Status != approval.TaskPending {
+		return nil, shared.ErrTaskNotPending
+	}
+
+	var node approval.FlowNode
+	if err := db.NewSelect().Model(&node).Where(func(c orm.ConditionBuilder) {
+		c.Equals("id", task.NodeID)
+	}).Scan(ctx); err != nil {
+		return nil, fmt.Errorf("load node: %w", err)
+	}
+
+	return &TaskContext{Instance: &instance, Task: &task, Node: &node}, nil
 }

@@ -185,7 +185,7 @@ func TestEvaluateBranchConditions(t *testing.T) {
 
 	t.Run("SingleFieldConditionMatch", func(t *testing.T) {
 		conditions := []approval.Condition{
-			{Type: approval.ConditionField, Subject: "amount", Operator: "gt", Value: float64(500)},
+			{Kind: approval.ConditionField, Subject: "amount", Operator: "gt", Value: float64(500)},
 		}
 		formData := approval.NewFormData(map[string]any{"amount": float64(1000)})
 		evalCtx := &approval.EvaluationContext{FormData: formData, ApplicantID: "u1"}
@@ -197,7 +197,7 @@ func TestEvaluateBranchConditions(t *testing.T) {
 
 	t.Run("SingleFieldConditionNoMatch", func(t *testing.T) {
 		conditions := []approval.Condition{
-			{Type: approval.ConditionField, Subject: "amount", Operator: "gt", Value: float64(2000)},
+			{Kind: approval.ConditionField, Subject: "amount", Operator: "gt", Value: float64(2000)},
 		}
 		formData := approval.NewFormData(map[string]any{"amount": float64(1000)})
 		evalCtx := &approval.EvaluationContext{FormData: formData, ApplicantID: "u1"}
@@ -209,8 +209,8 @@ func TestEvaluateBranchConditions(t *testing.T) {
 
 	t.Run("AllConditionsMatch", func(t *testing.T) {
 		conditions := []approval.Condition{
-			{Type: approval.ConditionField, Subject: "amount", Operator: "gte", Value: float64(100)},
-			{Type: approval.ConditionField, Subject: "category", Operator: "eq", Value: "travel"},
+			{Kind: approval.ConditionField, Subject: "amount", Operator: "gte", Value: float64(100)},
+			{Kind: approval.ConditionField, Subject: "category", Operator: "eq", Value: "travel"},
 		}
 		formData := approval.NewFormData(map[string]any{
 			"amount":   float64(500),
@@ -225,8 +225,8 @@ func TestEvaluateBranchConditions(t *testing.T) {
 
 	t.Run("OneConditionFails", func(t *testing.T) {
 		conditions := []approval.Condition{
-			{Type: approval.ConditionField, Subject: "amount", Operator: "gte", Value: float64(100)},
-			{Type: approval.ConditionField, Subject: "category", Operator: "eq", Value: "travel"},
+			{Kind: approval.ConditionField, Subject: "amount", Operator: "gte", Value: float64(100)},
+			{Kind: approval.ConditionField, Subject: "category", Operator: "eq", Value: "travel"},
 		}
 		formData := approval.NewFormData(map[string]any{
 			"amount":   float64(500),
@@ -241,7 +241,7 @@ func TestEvaluateBranchConditions(t *testing.T) {
 
 	t.Run("UnknownConditionType", func(t *testing.T) {
 		conditions := []approval.Condition{
-			{Type: approval.ConditionKind("unknown_type"), Subject: "x", Operator: "eq", Value: "y"},
+			{Kind: approval.ConditionKind("unknown_type"), Subject: "x", Operator: "eq", Value: "y"},
 		}
 		formData := approval.NewFormData(nil)
 		evalCtx := &approval.EvaluationContext{FormData: formData, ApplicantID: "u1"}
@@ -252,7 +252,7 @@ func TestEvaluateBranchConditions(t *testing.T) {
 
 	t.Run("ExpressionConditionMatch", func(t *testing.T) {
 		conditions := []approval.Condition{
-			{Type: approval.ConditionExpression, Expression: `formData["amount"] > 500`},
+			{Kind: approval.ConditionExpression, Expression: `formData["amount"] > 500`},
 		}
 		formData := approval.NewFormData(map[string]any{"amount": float64(1000)})
 		evalCtx := &approval.EvaluationContext{FormData: formData, ApplicantID: "u1"}
@@ -264,7 +264,7 @@ func TestEvaluateBranchConditions(t *testing.T) {
 
 	t.Run("ExpressionConditionNoMatch", func(t *testing.T) {
 		conditions := []approval.Condition{
-			{Type: approval.ConditionExpression, Expression: `formData["amount"] > 5000`},
+			{Kind: approval.ConditionExpression, Expression: `formData["amount"] > 5000`},
 		}
 		formData := approval.NewFormData(map[string]any{"amount": float64(100)})
 		evalCtx := &approval.EvaluationContext{FormData: formData, ApplicantID: "u1"}
@@ -276,7 +276,7 @@ func TestEvaluateBranchConditions(t *testing.T) {
 
 	t.Run("ExpressionWithApplicantContext", func(t *testing.T) {
 		conditions := []approval.Condition{
-			{Type: approval.ConditionExpression, Expression: `applicantId == "admin_user"`},
+			{Kind: approval.ConditionExpression, Expression: `applicantId == "admin_user"`},
 		}
 		formData := approval.NewFormData(nil)
 		evalCtx := &approval.EvaluationContext{FormData: formData, ApplicantID: "admin_user"}
@@ -288,7 +288,7 @@ func TestEvaluateBranchConditions(t *testing.T) {
 
 	t.Run("ExpressionCompileError", func(t *testing.T) {
 		conditions := []approval.Condition{
-			{Type: approval.ConditionExpression, Expression: `formData[`},
+			{Kind: approval.ConditionExpression, Expression: `formData[`},
 		}
 		formData := approval.NewFormData(nil)
 		evalCtx := &approval.EvaluationContext{FormData: formData, ApplicantID: "u1"}
@@ -308,7 +308,7 @@ func TestEvaluateBranchConditions(t *testing.T) {
 
 	t.Run("FieldConditionWithApplicantSubject", func(t *testing.T) {
 		conditions := []approval.Condition{
-			{Type: approval.ConditionField, Subject: "applicantId", Operator: "eq", Value: "user_42"},
+			{Kind: approval.ConditionField, Subject: "applicantId", Operator: "eq", Value: "user_42"},
 		}
 		formData := approval.NewFormData(nil)
 		evalCtx := &approval.EvaluationContext{FormData: formData, ApplicantID: "user_42"}
@@ -320,8 +320,8 @@ func TestEvaluateBranchConditions(t *testing.T) {
 
 	t.Run("MixedFieldAndExpressionAllMatch", func(t *testing.T) {
 		conditions := []approval.Condition{
-			{Type: approval.ConditionField, Subject: "status", Operator: "eq", Value: "active"},
-			{Type: approval.ConditionExpression, Expression: `formData["priority"] == "high"`},
+			{Kind: approval.ConditionField, Subject: "status", Operator: "eq", Value: "active"},
+			{Kind: approval.ConditionExpression, Expression: `formData["priority"] == "high"`},
 		}
 		formData := approval.NewFormData(map[string]any{
 			"status":   "active",
@@ -336,8 +336,8 @@ func TestEvaluateBranchConditions(t *testing.T) {
 
 	t.Run("MixedFieldAndExpressionOneFails", func(t *testing.T) {
 		conditions := []approval.Condition{
-			{Type: approval.ConditionField, Subject: "status", Operator: "eq", Value: "active"},
-			{Type: approval.ConditionExpression, Expression: `formData["priority"] == "low"`},
+			{Kind: approval.ConditionField, Subject: "status", Operator: "eq", Value: "active"},
+			{Kind: approval.ConditionExpression, Expression: `formData["priority"] == "low"`},
 		}
 		formData := approval.NewFormData(map[string]any{
 			"status":   "active",
@@ -378,10 +378,10 @@ func TestEvaluateBranchConditionsWithDeptSubject(t *testing.T) {
 
 	t.Run("DeptSubjectMatch", func(t *testing.T) {
 		conditions := []approval.Condition{
-			{Type: approval.ConditionField, Subject: "applicantDeptId", Operator: "eq", Value: "dept_001"},
+			{Kind: approval.ConditionField, Subject: "applicantDeptId", Operator: "eq", Value: "dept_001"},
 		}
 		formData := approval.NewFormData(nil)
-		evalCtx := &approval.EvaluationContext{FormData: formData, ApplicantID: "u1", ApplicantDeptID: "dept_001"}
+		evalCtx := &approval.EvaluationContext{FormData: formData, ApplicantID: "u1", ApplicantDeptID: new("dept_001")}
 
 		match, err := evaluateGroupConditions(registry, t.Context(), evalCtx, conditions)
 		require.NoError(t, err, "Should not return error for dept condition")
@@ -390,10 +390,10 @@ func TestEvaluateBranchConditionsWithDeptSubject(t *testing.T) {
 
 	t.Run("DeptSubjectNoMatch", func(t *testing.T) {
 		conditions := []approval.Condition{
-			{Type: approval.ConditionField, Subject: "applicantDeptId", Operator: "eq", Value: "dept_999"},
+			{Kind: approval.ConditionField, Subject: "applicantDeptId", Operator: "eq", Value: "dept_999"},
 		}
 		formData := approval.NewFormData(nil)
-		evalCtx := &approval.EvaluationContext{FormData: formData, ApplicantID: "u1", ApplicantDeptID: "dept_001"}
+		evalCtx := &approval.EvaluationContext{FormData: formData, ApplicantID: "u1", ApplicantDeptID: new("dept_001")}
 
 		match, err := evaluateGroupConditions(registry, t.Context(), evalCtx, conditions)
 		require.NoError(t, err, "Should not return error for dept condition")
@@ -444,10 +444,10 @@ func TestEvaluateBranchConditionsExpressionWithDept(t *testing.T) {
 
 	t.Run("DeptInExpression", func(t *testing.T) {
 		conditions := []approval.Condition{
-			{Type: approval.ConditionExpression, Expression: `applicantDeptId == "finance"`},
+			{Kind: approval.ConditionExpression, Expression: `applicantDeptId == "finance"`},
 		}
 		formData := approval.NewFormData(nil)
-		evalCtx := &approval.EvaluationContext{FormData: formData, ApplicantID: "u1", ApplicantDeptID: "finance"}
+		evalCtx := &approval.EvaluationContext{FormData: formData, ApplicantID: "u1", ApplicantDeptID: new("finance")}
 
 		match, err := evaluateGroupConditions(registry, t.Context(), evalCtx, conditions)
 		require.NoError(t, err, "Should not return error for dept expression")
@@ -456,7 +456,7 @@ func TestEvaluateBranchConditionsExpressionWithDept(t *testing.T) {
 
 	t.Run("ComplexExpression", func(t *testing.T) {
 		conditions := []approval.Condition{
-			{Type: approval.ConditionExpression, Expression: `formData["amount"] > 100 && applicantId != "admin"`},
+			{Kind: approval.ConditionExpression, Expression: `formData["amount"] > 100 && applicantId != "admin"`},
 		}
 		formData := approval.NewFormData(map[string]any{"amount": float64(500)})
 		evalCtx := &approval.EvaluationContext{FormData: formData, ApplicantID: "user1"}
@@ -564,7 +564,7 @@ func TestEvaluateBranchConditionsFieldOperators(t *testing.T) {
 			}
 
 			conditions := []approval.Condition{
-				{Type: approval.ConditionField, Subject: subject, Operator: tt.operator, Value: tt.value},
+				{Kind: approval.ConditionField, Subject: subject, Operator: tt.operator, Value: tt.value},
 			}
 			formData := approval.NewFormData(tt.formData)
 			evalCtx := &approval.EvaluationContext{FormData: formData, ApplicantID: "u1"}

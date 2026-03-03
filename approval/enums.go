@@ -209,11 +209,6 @@ type ConditionKind string
 const (
 	ConditionField      ConditionKind = "field"      // Field-based condition
 	ConditionExpression ConditionKind = "expression" // Expression-based condition
-	ConditionAmount     ConditionKind = "amount"
-	ConditionDept       ConditionKind = "dept"
-	ConditionSelect     ConditionKind = "select"
-	ConditionRole       ConditionKind = "role"
-	ConditionScript     ConditionKind = "script"
 )
 
 // ActionType represents the type of action performed by an operator.

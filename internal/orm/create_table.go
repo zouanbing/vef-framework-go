@@ -8,8 +8,8 @@ import (
 	"github.com/uptrace/bun"
 )
 
-// rawColumnDef stores a column definition for model-less table creation.
-type rawColumnDef struct {
+// RawColumnDef stores a column definition for model-less table creation.
+type RawColumnDef struct {
 	sql  string
 	args []any
 }
@@ -26,7 +26,7 @@ type BunCreateTableQuery struct {
 
 	// State for model-less raw SQL building.
 	tableName     string
-	columnDefs    []rawColumnDef
+	columnDefs    []RawColumnDef
 	isTemp        bool
 	ifNotExists   bool
 	partitionExpr string
@@ -66,7 +66,7 @@ func (q *BunCreateTableQuery) Table(tables ...string) CreateTableQuery {
 func (q *BunCreateTableQuery) Column(name string, dataType DataTypeDef, constraints ...ColumnConstraint) CreateTableQuery {
 	queryStr, args := renderColumnDef(q.Dialect(), name, dataType, constraints, q)
 	q.query.ColumnExpr(queryStr, args...)
-	q.columnDefs = append(q.columnDefs, rawColumnDef{sql: queryStr, args: args})
+	q.columnDefs = append(q.columnDefs, RawColumnDef{sql: queryStr, args: args})
 
 	return q
 }
@@ -97,7 +97,7 @@ func (q *BunCreateTableQuery) PrimaryKey(builder func(PrimaryKeyBuilder)) Create
 
 	rendered := renderTableKeyConstraint(q.Dialect().IdentQuote(), "PRIMARY KEY", pk.name, pk.columns)
 	q.query.ColumnExpr(rendered)
-	q.columnDefs = append(q.columnDefs, rawColumnDef{sql: rendered})
+	q.columnDefs = append(q.columnDefs, RawColumnDef{sql: rendered})
 
 	return q
 }
@@ -108,7 +108,7 @@ func (q *BunCreateTableQuery) Unique(builder func(UniqueBuilder)) CreateTableQue
 
 	rendered := renderTableKeyConstraint(q.Dialect().IdentQuote(), "UNIQUE", u.name, u.columns)
 	q.query.ColumnExpr(rendered)
-	q.columnDefs = append(q.columnDefs, rawColumnDef{sql: rendered})
+	q.columnDefs = append(q.columnDefs, RawColumnDef{sql: rendered})
 
 	return q
 }
@@ -131,7 +131,7 @@ func (q *BunCreateTableQuery) Check(builder func(CheckBuilder)) CreateTableQuery
 	}
 
 	q.query.ColumnExpr(queryStr, condition)
-	q.columnDefs = append(q.columnDefs, rawColumnDef{sql: queryStr, args: []any{condition}})
+	q.columnDefs = append(q.columnDefs, RawColumnDef{sql: queryStr, args: []any{condition}})
 
 	return q
 }
@@ -142,7 +142,7 @@ func (q *BunCreateTableQuery) ForeignKey(builder func(ForeignKeyBuilder)) Create
 
 	rendered := renderTableForeignKey(q.Dialect().IdentQuote(), fk)
 	q.query.ColumnExpr(rendered)
-	q.columnDefs = append(q.columnDefs, rawColumnDef{sql: rendered})
+	q.columnDefs = append(q.columnDefs, RawColumnDef{sql: rendered})
 
 	return q
 }

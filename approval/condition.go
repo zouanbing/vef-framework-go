@@ -4,7 +4,7 @@ import "context"
 
 // Condition represents a branch condition evaluated by condition nodes.
 type Condition struct {
-	Type       ConditionKind `json:"type"`
+	Kind       ConditionKind `json:"kind"`
 	Subject    string        `json:"subject"`
 	Operator   string        `json:"operator"`
 	Value      any           `json:"value"`
@@ -31,7 +31,7 @@ type ConditionBranch struct {
 type EvaluationContext struct {
 	FormData        FormData
 	ApplicantID     string
-	ApplicantDeptID string
+	ApplicantDeptID *string
 }
 
 // ConditionEvaluator evaluates branch conditions.

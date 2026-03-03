@@ -10,33 +10,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/approval/strategy"
 )
 
-// StartProcessor handles start nodes by auto-advancing to the next node.
-type StartProcessor struct{}
-
-// NewStartProcessor creates a StartProcessor.
-func NewStartProcessor() NodeProcessor { return &StartProcessor{} }
-
-func (p *StartProcessor) NodeKind() approval.NodeKind { return approval.NodeStart }
-
-func (p *StartProcessor) Process(context.Context, *ProcessContext) (*ProcessResult, error) {
-	return &ProcessResult{Action: NodeActionContinue}, nil
-}
-
-// EndProcessor handles end nodes by completing the flow as approved.
-type EndProcessor struct{}
-
-// NewEndProcessor creates an EndProcessor.
-func NewEndProcessor() NodeProcessor { return &EndProcessor{} }
-
-func (p *EndProcessor) NodeKind() approval.NodeKind { return approval.NodeEnd }
-
-func (p *EndProcessor) Process(context.Context, *ProcessContext) (*ProcessResult, error) {
-	return &ProcessResult{
-		Action:      NodeActionComplete,
-		FinalStatus: approval.InstanceApproved,
-	}, nil
-}
-
 // ConditionProcessor evaluates condition branches and selects the matching branch.
 type ConditionProcessor struct{}
 
@@ -57,38 +30,33 @@ func (p *ConditionProcessor) Process(ctx context.Context, pc *ProcessContext) (*
 
 	formData := approval.NewFormData(pc.Instance.FormData)
 
-	var deptID string
-	if pc.Instance.ApplicantDeptID != nil {
-		deptID = *pc.Instance.ApplicantDeptID
-	}
-
 	evalCtx := &approval.EvaluationContext{
-		FormData:    formData,
-		ApplicantID: pc.Instance.ApplicantID,
-		ApplicantDeptID: deptID,
+		FormData:        formData,
+		ApplicantID:     pc.Instance.ApplicantID,
+		ApplicantDeptID: pc.Instance.ApplicantDeptID,
 	}
 
 	var defaultBranch *approval.ConditionBranch
 
 	for i := range branches {
-		b := &branches[i]
-		if b.IsDefault {
-			defaultBranch = b
+		branch := &branches[i]
+		if branch.IsDefault {
+			defaultBranch = branch
 			continue
 		}
 
-		match, err := evaluateConditionGroups(pc.Registry, ctx, evalCtx, b.ConditionGroups)
+		match, err := evaluateConditionGroups(pc.Registry, ctx, evalCtx, branch.ConditionGroups)
 		if err != nil {
-			return nil, fmt.Errorf("evaluate branch %q: %w", b.Label, err)
+			return nil, fmt.Errorf("evaluate branch %q: %w", branch.Label, err)
 		}
 
 		if match {
-			return &ProcessResult{Action: NodeActionContinue, BranchID: b.ID}, nil
+			return &ProcessResult{Action: NodeActionContinue, BranchID: new(branch.ID)}, nil
 		}
 	}
 
 	if defaultBranch != nil {
-		return &ProcessResult{Action: NodeActionContinue, BranchID: defaultBranch.ID}, nil
+		return &ProcessResult{Action: NodeActionContinue, BranchID: new(defaultBranch.ID)}, nil
 	}
 
 	return nil, ErrNoMatchingBranch
@@ -117,13 +85,13 @@ func evaluateGroupConditions(registry *strategy.StrategyRegistry, ctx context.Co
 		return true, nil
 	}
 
-	for _, cond := range conditions {
-		evaluator, err := registry.GetConditionEvaluator(cond.Type)
+	for _, condition := range conditions {
+		evaluator, err := registry.GetConditionEvaluator(condition.Kind)
 		if err != nil {
 			return false, err
 		}
 
-		match, err := evaluator.Evaluate(ctx, cond, evalCtx)
+		match, err := evaluator.Evaluate(ctx, condition, evalCtx)
 		if err != nil {
 			return false, err
 		}

@@ -39,15 +39,14 @@ func (p *CCProcessor) Process(ctx context.Context, pc *ProcessContext) (*Process
 // createCCRecords loads FlowNodeCC configurations and creates CC records for all CC users.
 // Returns the list of CC user IDs for event publishing.
 func (p *CCProcessor) createCCRecords(ctx context.Context, pc *ProcessContext) ([]string, error) {
-	if pc.DB == nil {
-		return nil, nil
-	}
-
 	var ccConfigs []approval.FlowNodeCC
 
-	if err := pc.DB.NewSelect().Model(&ccConfigs).Where(func(c orm.ConditionBuilder) {
-		c.Equals("node_id", pc.Node.ID)
-	}).Scan(ctx); err != nil {
+	if err := pc.DB.NewSelect().
+		Model(&ccConfigs).
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("node_id", pc.Node.ID)
+		}).
+		Scan(ctx); err != nil {
 		return nil, fmt.Errorf("load cc configs: %w", err)
 	}
 
@@ -62,15 +61,14 @@ func (p *CCProcessor) createCCRecords(ctx context.Context, pc *ProcessContext) (
 	}
 
 	// Batch create CC records
-	records := make([]approval.CCRecord, 0, len(ccUserIDs))
-	for _, userID := range ccUserIDs {
-		record := approval.CCRecord{
+	records := make([]approval.CCRecord, len(ccUserIDs))
+	for i, userID := range ccUserIDs {
+		records[i] = approval.CCRecord{
 			InstanceID: pc.Instance.ID,
-			NodeID:     new(pc.Node.ID),
+			NodeID:     &pc.Node.ID,
 			CCUserID:   userID,
 			IsManual:   false,
 		}
-		records = append(records, record)
 	}
 
 	if _, err := pc.DB.NewInsert().Model(&records).Exec(ctx); err != nil {

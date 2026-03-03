@@ -75,38 +75,6 @@ func TestDeduplicateAssignees(t *testing.T) {
 	}
 }
 
-// TestExtractUserIDs tests extract user IDs scenarios.
-func TestExtractUserIDs(t *testing.T) {
-	tests := []struct {
-		name      string
-		assignees []approval.ResolvedAssignee
-		expected  []string
-	}{
-		{
-			name: "MultipleAssignees",
-			assignees: []approval.ResolvedAssignee{
-				{UserID: "u1"}, {UserID: "u2"}, {UserID: "u3"},
-			},
-			expected: []string{"u1", "u2", "u3"},
-		},
-		{
-			name:     "EmptySlice",
-			expected: []string{},
-		},
-		{
-			name:      "SingleAssignee",
-			assignees: []approval.ResolvedAssignee{{UserID: "u1"}},
-			expected:  []string{"u1"},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := extractUserIDs(tt.assignees)
-			assert.Equal(t, tt.expected, got, "Should return expected user IDs")
-		})
-	}
-}
 
 // TestMatchDelegation tests match delegation scenarios.
 func TestMatchDelegation(t *testing.T) {
@@ -215,65 +183,6 @@ func TestMatchDelegation(t *testing.T) {
 			} else {
 				assert.NotNil(t, got, "Should match a delegation")
 				assert.Equal(t, tt.expectedID, got.DelegateeID, "Should match the expected delegatee")
-			}
-		})
-	}
-}
-
-// TestPredictEmptyAssignee tests predict empty assignee scenarios.
-func TestPredictEmptyAssignee(t *testing.T) {
-	tests := []struct {
-		name        string
-		node        *approval.FlowNode
-		applicantID string
-		expectedIDs []string
-		expectErr   bool
-	}{
-		{
-			name: "AutoPass",
-			node: &approval.FlowNode{EmptyHandlerAction: approval.EmptyHandlerAutoPass},
-		},
-		{
-			name: "TransferAdmin",
-			node: &approval.FlowNode{
-				EmptyHandlerAction: approval.EmptyHandlerTransferAdmin,
-				AdminUserIDs:       []string{"admin1", "admin2"},
-			},
-			expectedIDs: []string{"admin1", "admin2"},
-		},
-		{
-			name:        "TransferApplicant",
-			node:        &approval.FlowNode{EmptyHandlerAction: approval.EmptyHandlerTransferApplicant},
-			applicantID: "applicant1",
-			expectedIDs: []string{"applicant1"},
-		},
-		{
-			name: "TransferSpecified",
-			node: &approval.FlowNode{
-				EmptyHandlerAction: approval.EmptyHandlerTransferSpecified,
-				FallbackUserIDs:    []string{"fb1", "fb2"},
-			},
-			expectedIDs: []string{"fb1", "fb2"},
-		},
-		{
-			name:      "DefaultError",
-			node:      &approval.FlowNode{EmptyHandlerAction: "unknown_action"},
-			expectErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			pc := &ProcessContext{
-				Node:        tt.node,
-				ApplicantID: tt.applicantID,
-			}
-			got, err := predictEmptyAssignee(pc)
-			if tt.expectErr {
-				assert.ErrorIs(t, err, ErrNoAssignee, "Should return ErrNoAssignee")
-			} else {
-				assert.NoError(t, err, "Should not return error")
-				assert.Equal(t, tt.expectedIDs, got, "Should return expected assignee IDs")
 			}
 		})
 	}

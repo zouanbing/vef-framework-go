@@ -13,26 +13,35 @@ import (
 
 // saveFormSnapshot persists a snapshot of the form data at the current node.
 func saveFormSnapshot(ctx context.Context, pc *ProcessContext) error {
-	_, err := pc.DB.NewInsert().Model(&approval.FormSnapshot{
-		InstanceID: pc.Instance.ID,
-		NodeID:     pc.Node.ID,
-		FormData:   pc.FormData.ToMap(),
-	}).Exec(ctx)
+	_, err := pc.DB.NewInsert().
+		Model(&approval.FormSnapshot{
+			InstanceID: pc.Instance.ID,
+			NodeID:     pc.Node.ID,
+			FormData:   pc.FormData.ToMap(),
+		}).
+		Exec(ctx)
 
 	return err
 }
 
-// resolveAssignees resolves assignees using the composite resolver from the strategy registry.
+// resolveAssignees loads the node's assignee configs and resolves them to concrete users.
 func resolveAssignees(ctx context.Context, pc *ProcessContext) ([]approval.ResolvedAssignee, error) {
-	var deptID string
-	if pc.Instance.ApplicantDeptID != nil {
-		deptID = *pc.Instance.ApplicantDeptID
+	var assignees []approval.FlowNodeAssignee
+
+	if err := pc.DB.NewSelect().
+		Model(&assignees).
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("node_id", pc.Node.ID)
+		}).
+		OrderBy("sort_order").
+		Scan(ctx); err != nil {
+		return nil, fmt.Errorf("load node assignees: %w", err)
 	}
 
-	return pc.Registry.CompositeAssigneeResolver().ResolveAll(ctx, pc.Assignees, &strategy.ResolveContext{
+	return pc.Registry.CompositeAssigneeResolver().ResolveAll(ctx, assignees, &strategy.ResolveContext{
 		DB:              pc.DB,
 		ApplicantID:     pc.ApplicantID,
-		ApplicantDeptID: deptID,
+		ApplicantDeptID: pc.Instance.ApplicantDeptID,
 		FormData:        pc.FormData,
 	})
 }
@@ -62,17 +71,17 @@ func deduplicateAssignees(node *approval.FlowNode, assignees []approval.Resolved
 // applyDelegation resolves delegation chains for each assignee, replacing delegators with delegates.
 func applyDelegation(ctx context.Context, db orm.DB, flowID string, assignees []approval.ResolvedAssignee) []approval.ResolvedAssignee {
 	categoryID := loadFlowCategoryID(ctx, db, flowID)
-	result := make([]approval.ResolvedAssignee, 0, len(assignees))
+	result := make([]approval.ResolvedAssignee, len(assignees))
 
-	for _, a := range assignees {
-		finalID, originalID := resolveDelegationChain(ctx, db, a.UserID, flowID, categoryID)
-		if finalID != a.UserID {
-			result = append(result, approval.ResolvedAssignee{
+	for i, assignee := range assignees {
+		finalID, originalID := resolveDelegationChain(ctx, db, assignee.UserID, flowID, categoryID)
+		if finalID != assignee.UserID {
+			result[i] = approval.ResolvedAssignee{
 				UserID:         finalID,
 				DelegateFromID: &originalID,
-			})
+			}
 		} else {
-			result = append(result, a)
+			result[i] = assignee
 		}
 	}
 
@@ -140,22 +149,6 @@ func handleEmptyAssignee(ctx context.Context, pc *ProcessContext, assigneeServic
 	}
 }
 
-// predictEmptyAssignee predicts the assignee IDs for an empty assignee scenario without side effects.
-func predictEmptyAssignee(pc *ProcessContext) ([]string, error) {
-	switch pc.Node.EmptyHandlerAction {
-	case approval.EmptyHandlerAutoPass:
-		return nil, nil
-	case approval.EmptyHandlerTransferAdmin:
-		return pc.Node.AdminUserIDs, nil
-	case approval.EmptyHandlerTransferApplicant:
-		return []string{pc.ApplicantID}, nil
-	case approval.EmptyHandlerTransferSpecified:
-		return pc.Node.FallbackUserIDs, nil
-	default:
-		return nil, ErrNoAssignee
-	}
-}
-
 // createTasksWithDelegation creates tasks for resolved assignees, setting DelegateFromID when applicable.
 func createTasksWithDelegation(ctx context.Context, pc *ProcessContext, assignees []approval.ResolvedAssignee) error {
 	deadline := computeDeadline(pc.Node)
@@ -202,16 +195,6 @@ func computeDeadline(node *approval.FlowNode) *timex.DateTime {
 	d := timex.DateTime(timex.Now().Unwrap().Add(time.Duration(node.TimeoutHours) * time.Hour))
 
 	return &d
-}
-
-// extractUserIDs extracts user IDs from a slice of ResolvedAssignee.
-func extractUserIDs(assignees []approval.ResolvedAssignee) []string {
-	ids := make([]string, 0, len(assignees))
-	for _, a := range assignees {
-		ids = append(ids, a.UserID)
-	}
-
-	return ids
 }
 
 // loadFlowCategoryID loads the category ID for a flow.
