@@ -6,18 +6,18 @@ import (
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
-type RbacPermissionChecker struct {
+type RBACPermissionChecker struct {
 	loader security.RolePermissionsLoader
 }
 
-func NewRbacPermissionChecker(loader security.RolePermissionsLoader) security.PermissionChecker {
-	return &RbacPermissionChecker{
+func NewRBACPermissionChecker(loader security.RolePermissionsLoader) security.PermissionChecker {
+	return &RBACPermissionChecker{
 		loader: loader,
 	}
 }
 
 // HasPermission uses sequential role loading rather than parallel to optimize for common case (1-3 roles).
-func (c *RbacPermissionChecker) HasPermission(
+func (c *RBACPermissionChecker) HasPermission(
 	ctx context.Context,
 	principal *security.Principal,
 	permissionToken string,

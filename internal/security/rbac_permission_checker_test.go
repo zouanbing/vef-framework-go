@@ -11,17 +11,17 @@ import (
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
-type RbacPermissionCheckerTestSuite struct {
+type RBACPermissionCheckerTestSuite struct {
 	suite.Suite
 }
 
 // TestHasPermission verifies all permission check paths.
-func (s *RbacPermissionCheckerTestSuite) TestHasPermission() {
+func (s *RBACPermissionCheckerTestSuite) TestHasPermission() {
 	ctx := context.Background()
 
 	s.Run("NilPrincipal", func() {
 		loader := new(MockRolePermissionsLoader)
-		checker := NewRbacPermissionChecker(loader)
+		checker := NewRBACPermissionChecker(loader)
 
 		has, err := checker.HasPermission(ctx, nil, "user:read")
 		s.Require().NoError(err, "Should not return error for nil principal")
@@ -30,7 +30,7 @@ func (s *RbacPermissionCheckerTestSuite) TestHasPermission() {
 
 	s.Run("NoRoles", func() {
 		loader := new(MockRolePermissionsLoader)
-		checker := NewRbacPermissionChecker(loader)
+		checker := NewRBACPermissionChecker(loader)
 		principal := security.NewUser("user1", "Alice")
 
 		has, err := checker.HasPermission(ctx, principal, "user:read")
@@ -45,7 +45,7 @@ func (s *RbacPermissionCheckerTestSuite) TestHasPermission() {
 			map[string]security.DataScope{"user:read": scope}, nil,
 		)
 
-		checker := NewRbacPermissionChecker(loader)
+		checker := NewRBACPermissionChecker(loader)
 		principal := security.NewUser("user1", "Alice", "admin")
 
 		has, err := checker.HasPermission(ctx, principal, "user:read")
@@ -60,7 +60,7 @@ func (s *RbacPermissionCheckerTestSuite) TestHasPermission() {
 			map[string]security.DataScope{"user:read": nil}, nil,
 		)
 
-		checker := NewRbacPermissionChecker(loader)
+		checker := NewRBACPermissionChecker(loader)
 		principal := security.NewUser("user1", "Alice", "viewer")
 
 		has, err := checker.HasPermission(ctx, principal, "user:write")
@@ -78,7 +78,7 @@ func (s *RbacPermissionCheckerTestSuite) TestHasPermission() {
 			map[string]security.DataScope{"user:write": nil}, nil,
 		)
 
-		checker := NewRbacPermissionChecker(loader)
+		checker := NewRBACPermissionChecker(loader)
 		principal := security.NewUser("user1", "Alice", "viewer", "admin")
 
 		has, err := checker.HasPermission(ctx, principal, "user:write")
@@ -91,7 +91,7 @@ func (s *RbacPermissionCheckerTestSuite) TestHasPermission() {
 		loader := new(MockRolePermissionsLoader)
 		loader.On("LoadPermissions", mock.Anything, "admin").Return(nil, errors.New("cache failure"))
 
-		checker := NewRbacPermissionChecker(loader)
+		checker := NewRBACPermissionChecker(loader)
 		principal := security.NewUser("user1", "Alice", "admin")
 
 		_, err := checker.HasPermission(ctx, principal, "user:read")
@@ -104,7 +104,7 @@ func (s *RbacPermissionCheckerTestSuite) TestHasPermission() {
 		loader := new(MockRolePermissionsLoader)
 		loader.On("LoadPermissions", mock.Anything, "admin").Return(nil, nil)
 
-		checker := NewRbacPermissionChecker(loader)
+		checker := NewRBACPermissionChecker(loader)
 		principal := security.NewUser("user1", "Alice", "admin")
 
 		has, err := checker.HasPermission(ctx, principal, "user:read")
@@ -119,7 +119,7 @@ func (s *RbacPermissionCheckerTestSuite) TestHasPermission() {
 			map[string]security.DataScope{}, nil,
 		)
 
-		checker := NewRbacPermissionChecker(loader)
+		checker := NewRBACPermissionChecker(loader)
 		principal := security.NewUser("user1", "Alice", "admin")
 
 		has, err := checker.HasPermission(ctx, principal, "user:read")
@@ -129,6 +129,6 @@ func (s *RbacPermissionCheckerTestSuite) TestHasPermission() {
 	})
 }
 
-func TestRbacPermissionCheckerTestSuite(t *testing.T) {
-	suite.Run(t, new(RbacPermissionCheckerTestSuite))
+func TestRBACPermissionCheckerTestSuite(t *testing.T) {
+	suite.Run(t, new(RBACPermissionCheckerTestSuite))
 }

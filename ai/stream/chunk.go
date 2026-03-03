@@ -33,6 +33,15 @@ const (
 // Chunk represents a single chunk in the UI message stream.
 type Chunk map[string]any
 
+// Source represents a reference source (URL or document).
+type Source struct {
+	Type      string
+	ID        string
+	URL       string
+	Title     string
+	MediaType string
+}
+
 func NewStartChunk(messageID string) Chunk {
 	return Chunk{"type": ChunkTypeStart, "messageID": messageID}
 }

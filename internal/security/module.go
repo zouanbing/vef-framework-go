@@ -75,7 +75,7 @@ var Module = fx.Module(
 			fx.ParamTags(`group:"vef:security:authenticators"`),
 		),
 		fx.Annotate(
-			NewRbacPermissionChecker,
+			NewRBACPermissionChecker,
 			fx.ParamTags(`optional:"true"`),
 		),
 		fx.Annotate(
