@@ -174,7 +174,11 @@ func (*TestRPCResource) Audited(ctx fiber.Ctx) error {
 }
 
 func (*TestRPCResource) Slow(ctx fiber.Ctx) error {
-	time.Sleep(100 * time.Millisecond)
+	select {
+	case <-time.After(100 * time.Millisecond):
+	case <-ctx.Context().Done():
+		return nil
+	}
 
 	return result.Ok("slow response").Response(ctx)
 }
