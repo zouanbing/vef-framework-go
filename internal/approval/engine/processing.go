@@ -42,4 +42,3 @@ type NodeProcessor interface {
 	// Process executes the node logic and returns the action to take (wait, continue, or complete).
 	Process(ctx context.Context, pc *ProcessContext) (*ProcessResult, error)
 }
-

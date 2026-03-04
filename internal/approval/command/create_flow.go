@@ -9,6 +9,7 @@ import (
 	"github.com/coldsmirk/vef-framework-go/internal/approval/shared"
 	"github.com/coldsmirk/vef-framework-go/internal/cqrs"
 	"github.com/coldsmirk/vef-framework-go/orm"
+	"github.com/samber/lo"
 )
 
 // CreateFlowCmd creates a new flow with its initiator configurations.
@@ -44,16 +45,10 @@ func NewCreateFlowHandler(db orm.DB) *CreateFlowHandler {
 
 func (h *CreateFlowHandler) Handle(ctx context.Context, cmd CreateFlowCmd) (*approval.Flow, error) {
 	db := contextx.DB(ctx, h.db)
+	tenantID := lo.CoalesceOrEmpty(cmd.TenantID, "default")
 
-	tenantID := cmd.TenantID
-	if tenantID == "" {
-		tenantID = "default"
-	}
-
-	// Check code uniqueness within tenant
-	var existing approval.Flow
 	exists, err := db.NewSelect().
-		Model(&existing).
+		Model((*approval.Flow)(nil)).
 		Where(func(cb orm.ConditionBuilder) {
 			cb.Equals("tenant_id", tenantID).
 				Equals("code", cmd.Code)

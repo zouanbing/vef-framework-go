@@ -67,6 +67,7 @@ func evaluateConditionGroups(registry *strategy.StrategyRegistry, ctx context.Co
 	if len(groups) == 0 {
 		return true, nil
 	}
+
 	for _, group := range groups {
 		match, err := evaluateGroupConditions(registry, ctx, evalCtx, group.Conditions)
 		if err != nil {

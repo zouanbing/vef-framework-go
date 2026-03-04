@@ -38,7 +38,6 @@ func NewUrgeTaskHandler(db orm.DB, publisher *dispatcher.EventPublisher) *UrgeTa
 func (h *UrgeTaskHandler) Handle(ctx context.Context, cmd UrgeTaskCmd) (cqrs.Unit, error) {
 	db := contextx.DB(ctx, h.db)
 
-	// Load the task
 	var task approval.Task
 	task.ID = cmd.TaskID
 
@@ -50,12 +49,10 @@ func (h *UrgeTaskHandler) Handle(ctx context.Context, cmd UrgeTaskCmd) (cqrs.Uni
 		return cqrs.Unit{}, shared.ErrTaskNotFound
 	}
 
-	// Only pending or waiting tasks can be urged
 	if task.Status != approval.TaskPending && task.Status != approval.TaskWaiting {
 		return cqrs.Unit{}, shared.ErrTaskNotPending
 	}
 
-	// Load node to check cooldown settings
 	var node approval.FlowNode
 	node.ID = task.NodeID
 
@@ -67,7 +64,6 @@ func (h *UrgeTaskHandler) Handle(ctx context.Context, cmd UrgeTaskCmd) (cqrs.Uni
 		return cqrs.Unit{}, fmt.Errorf("load node: %w", err)
 	}
 
-	// Enforce cooldown
 	cooldownMinutes := node.UrgeCooldownMinutes
 	if cooldownMinutes <= 0 {
 		cooldownMinutes = 30
@@ -94,7 +90,6 @@ func (h *UrgeTaskHandler) Handle(ctx context.Context, cmd UrgeTaskCmd) (cqrs.Uni
 		)
 	}
 
-	// Insert urge record
 	record := &approval.UrgeRecord{
 		InstanceID:   task.InstanceID,
 		NodeID:       task.NodeID,
@@ -107,7 +102,6 @@ func (h *UrgeTaskHandler) Handle(ctx context.Context, cmd UrgeTaskCmd) (cqrs.Uni
 		return cqrs.Unit{}, fmt.Errorf("insert urge record: %w", err)
 	}
 
-	// Publish urge event
 	event := approval.NewTaskUrgedEvent(
 		task.InstanceID, task.NodeID, cmd.TaskID,
 		cmd.UrgerID, task.AssigneeID, cmd.Message,

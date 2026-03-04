@@ -60,35 +60,13 @@ func (s *DeployFlowTestSuite) SetupSuite() {
 }
 
 func (s *DeployFlowTestSuite) TearDownTest() {
-	_, err := s.db.NewDelete().
-		Model((*approval.FlowEdge)(nil)).
-		Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).
-		Exec(s.ctx)
-	s.Require().NoError(err, "Should clean flow edges")
-
-	_, err = s.db.NewDelete().
-		Model((*approval.FlowNodeCC)(nil)).
-		Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).
-		Exec(s.ctx)
-	s.Require().NoError(err, "Should clean flow node CCs")
-
-	_, err = s.db.NewDelete().
-		Model((*approval.FlowNodeAssignee)(nil)).
-		Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).
-		Exec(s.ctx)
-	s.Require().NoError(err, "Should clean flow node assignees")
-
-	_, err = s.db.NewDelete().
-		Model((*approval.FlowNode)(nil)).
-		Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).
-		Exec(s.ctx)
-	s.Require().NoError(err, "Should clean flow nodes")
-
-	_, err = s.db.NewDelete().
-		Model((*approval.FlowVersion)(nil)).
-		Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).
-		Exec(s.ctx)
-	s.Require().NoError(err, "Should clean flow versions")
+	deleteAll(s.ctx, s.db,
+		(*approval.FlowEdge)(nil),
+		(*approval.FlowNodeCC)(nil),
+		(*approval.FlowNodeAssignee)(nil),
+		(*approval.FlowNode)(nil),
+		(*approval.FlowVersion)(nil),
+	)
 }
 
 func (s *DeployFlowTestSuite) TearDownSuite() {

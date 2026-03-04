@@ -158,20 +158,28 @@ func setupPrepareOperationData(t testing.TB, ctx context.Context, db orm.DB, fix
 
 // --- Cleanup ---
 
+func deleteAll(ctx context.Context, db orm.DB, models ...any) {
+	for _, model := range models {
+		_, _ = db.NewDelete().Model(model).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
+	}
+}
+
 // cleanAllServiceData removes all approval-related data from the database.
 func cleanAllServiceData(ctx context.Context, db orm.DB) {
-	_, _ = db.NewDelete().Model((*approval.EventOutbox)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.ActionLog)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.UrgeRecord)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.CCRecord)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.Task)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.Instance)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.FlowEdge)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.FlowNodeCC)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.FlowNodeAssignee)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.FlowNode)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.FlowVersion)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.FlowInitiator)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.Flow)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.FlowCategory)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
+	deleteAll(ctx, db,
+		(*approval.EventOutbox)(nil),
+		(*approval.ActionLog)(nil),
+		(*approval.UrgeRecord)(nil),
+		(*approval.CCRecord)(nil),
+		(*approval.Task)(nil),
+		(*approval.Instance)(nil),
+		(*approval.FlowEdge)(nil),
+		(*approval.FlowNodeCC)(nil),
+		(*approval.FlowNodeAssignee)(nil),
+		(*approval.FlowNode)(nil),
+		(*approval.FlowVersion)(nil),
+		(*approval.FlowInitiator)(nil),
+		(*approval.Flow)(nil),
+		(*approval.FlowCategory)(nil),
+	)
 }

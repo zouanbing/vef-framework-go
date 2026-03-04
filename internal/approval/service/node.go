@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	collections "github.com/coldsmirk/go-collections"
+	streams "github.com/coldsmirk/go-streams"
 
 	"github.com/coldsmirk/vef-framework-go/approval"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/dispatcher"
@@ -137,12 +137,10 @@ func (s *NodeService) TriggerNodeCC(ctx context.Context, db orm.DB, instance *ap
 
 // CheckCCNodeCompletion checks if all CC records for CC nodes are read and advances the flow.
 func (s *NodeService) CheckCCNodeCompletion(ctx context.Context, db orm.DB, instanceID string, records []approval.CCRecord) error {
-	nodeIDs := collections.NewHashSet[string]()
-	for _, record := range records {
-		if record.NodeID != nil {
-			nodeIDs.Add(*record.NodeID)
-		}
-	}
+	nodeIDs := streams.ToHashSet(streams.MapTo(
+		streams.FromSlice(records).Filter(func(r approval.CCRecord) bool { return r.NodeID != nil }),
+		func(r approval.CCRecord) string { return *r.NodeID },
+	))
 
 	for _, nodeID := range nodeIDs.ToSlice() {
 		var node approval.FlowNode

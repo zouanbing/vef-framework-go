@@ -41,12 +41,7 @@ type UserAssigneeResolver struct{}
 func (r *UserAssigneeResolver) Kind() approval.AssigneeKind { return approval.AssigneeUser }
 
 func (r *UserAssigneeResolver) Resolve(_ context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error) {
-	result := make([]approval.ResolvedAssignee, len(rc.IDs))
-	for i, uid := range rc.IDs {
-		result[i] = approval.ResolvedAssignee{UserID: uid}
-	}
-
-	return result, nil
+	return streams.MapTo(streams.FromSlice(rc.IDs), toResolvedAssignee).Collect(), nil
 }
 
 // NewRoleAssigneeResolver creates a new RoleAssigneeResolver.
@@ -72,9 +67,7 @@ func (r *RoleAssigneeResolver) Resolve(ctx context.Context, rc *ResolveContext) 
 			return streams.Empty[approval.ResolvedAssignee](), fmt.Errorf("role assignee resolver: %w", err)
 		}
 
-		return streams.MapTo(streams.FromSlice(users), func(uid string) approval.ResolvedAssignee {
-			return approval.ResolvedAssignee{UserID: uid}
-		}), nil
+		return streams.MapTo(streams.FromSlice(users), toResolvedAssignee), nil
 	}))
 }
 
@@ -101,9 +94,7 @@ func (r *DeptAssigneeResolver) Resolve(ctx context.Context, rc *ResolveContext) 
 			return streams.Empty[approval.ResolvedAssignee](), fmt.Errorf("dept assignee resolver: %w", err)
 		}
 
-		return streams.MapTo(streams.FromSlice(leaders), func(uid string) approval.ResolvedAssignee {
-			return approval.ResolvedAssignee{UserID: uid}
-		}), nil
+		return streams.MapTo(streams.FromSlice(leaders), toResolvedAssignee), nil
 	}))
 }
 
@@ -180,12 +171,7 @@ func (r *DeptLeaderAssigneeResolver) Resolve(ctx context.Context, rc *ResolveCon
 		return nil, fmt.Errorf("dept leader assignee resolver: %w", err)
 	}
 
-	result := make([]approval.ResolvedAssignee, len(leaders))
-	for i, uid := range leaders {
-		result[i] = approval.ResolvedAssignee{UserID: uid}
-	}
-
-	return result, nil
+	return streams.MapTo(streams.FromSlice(leaders), toResolvedAssignee).Collect(), nil
 }
 
 // NewFormFieldAssigneeResolver creates a new FormFieldAssigneeResolver.
@@ -215,12 +201,7 @@ func (r *FormFieldAssigneeResolver) Resolve(_ context.Context, rc *ResolveContex
 
 		return []approval.ResolvedAssignee{{UserID: v}}, nil
 	case []string:
-		result := make([]approval.ResolvedAssignee, len(v))
-		for i, uid := range v {
-			result[i] = approval.ResolvedAssignee{UserID: uid}
-		}
-
-		return result, nil
+		return streams.MapTo(streams.FromSlice(v), toResolvedAssignee).Collect(), nil
 	case []any:
 		result := make([]approval.ResolvedAssignee, len(v))
 		for i, item := range v {
@@ -235,6 +216,11 @@ func (r *FormFieldAssigneeResolver) Resolve(_ context.Context, rc *ResolveContex
 	default:
 		return nil, fmt.Errorf("%w: %T", ErrUnsupportedFieldValueType, value)
 	}
+}
+
+// toResolvedAssignee converts a user ID to a ResolvedAssignee.
+func toResolvedAssignee(userID string) approval.ResolvedAssignee {
+	return approval.ResolvedAssignee{UserID: userID}
 }
 
 // CompositeAssigneeResolver chains multiple resolvers and resolves assignees based on config kind.

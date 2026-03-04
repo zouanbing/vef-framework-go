@@ -51,7 +51,6 @@ func (p *CCProcessor) createCCRecords(ctx context.Context, pc *ProcessContext) (
 		return nil, fmt.Errorf("load cc configs: %w", err)
 	}
 
-	// Collect all CC user IDs
 	var ccUserIDs []string
 	for _, cfg := range ccConfigs {
 		ccUserIDs = append(ccUserIDs, cfg.IDs...)
@@ -61,7 +60,6 @@ func (p *CCProcessor) createCCRecords(ctx context.Context, pc *ProcessContext) (
 		return nil, nil
 	}
 
-	// Batch create CC records
 	records := make([]approval.CCRecord, len(ccUserIDs))
 	for i, userID := range ccUserIDs {
 		records[i] = approval.CCRecord{

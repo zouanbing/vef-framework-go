@@ -55,22 +55,7 @@ func (s *CreateFlowTestSuite) TearDownSuite() {
 }
 
 func (s *CreateFlowTestSuite) TearDownTest() {
-	// Clean up test data after each test (respect FK order)
-	_, err := s.db.NewDelete().
-		Model((*approval.FlowInitiator)(nil)).
-		Where(func(cb orm.ConditionBuilder) {
-			cb.IsNotNull("id")
-		}).
-		Exec(s.ctx)
-	s.Require().NoError(err, "Should clean flow initiators")
-
-	_, err = s.db.NewDelete().
-		Model((*approval.Flow)(nil)).
-		Where(func(cb orm.ConditionBuilder) {
-			cb.IsNotNull("id")
-		}).
-		Exec(s.ctx)
-	s.Require().NoError(err, "Should clean flows")
+	deleteAll(s.ctx, s.db, (*approval.FlowInitiator)(nil), (*approval.Flow)(nil))
 }
 
 func (s *CreateFlowTestSuite) TestCreateFlowSuccess() {

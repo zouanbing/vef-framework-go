@@ -63,32 +63,15 @@ func (s *PublishVersionTestSuite) SetupSuite() {
 }
 
 func (s *PublishVersionTestSuite) TearDownTest() {
-	_, err := s.db.NewDelete().
-		Model((*approval.EventOutbox)(nil)).
-		Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).
-		Exec(s.ctx)
-	s.Require().NoError(err, "Should clean event outbox")
-
-	_, err = s.db.NewDelete().
-		Model((*approval.FlowEdge)(nil)).
-		Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).
-		Exec(s.ctx)
-	s.Require().NoError(err, "Should clean flow edges")
-
-	_, err = s.db.NewDelete().
-		Model((*approval.FlowNode)(nil)).
-		Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).
-		Exec(s.ctx)
-	s.Require().NoError(err, "Should clean flow nodes")
-
-	_, err = s.db.NewDelete().
-		Model((*approval.FlowVersion)(nil)).
-		Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).
-		Exec(s.ctx)
-	s.Require().NoError(err, "Should clean flow versions")
+	deleteAll(s.ctx, s.db,
+		(*approval.EventOutbox)(nil),
+		(*approval.FlowEdge)(nil),
+		(*approval.FlowNode)(nil),
+		(*approval.FlowVersion)(nil),
+	)
 
 	// Reset flow CurrentVersion to 0 for test isolation
-	_, err = s.db.NewUpdate().
+	_, err := s.db.NewUpdate().
 		Model((*approval.Flow)(nil)).
 		Set("current_version", 0).
 		Where(func(cb orm.ConditionBuilder) { cb.PKEquals(s.flowID) }).

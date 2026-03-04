@@ -3,6 +3,8 @@ package strategy
 import (
 	"fmt"
 
+	streams "github.com/coldsmirk/go-streams"
+
 	"github.com/coldsmirk/vef-framework-go/approval"
 )
 
@@ -20,27 +22,18 @@ func NewStrategyRegistry(
 	assignees []AssigneeResolver,
 	conditions []approval.ConditionEvaluator,
 ) *StrategyRegistry {
-	r := &StrategyRegistry{
-		passRules:  make(map[approval.PassRule]approval.PassRuleStrategy, len(passRules)),
-		assignees:  make(map[approval.AssigneeKind]AssigneeResolver, len(assignees)),
-		conditions: make(map[approval.ConditionKind]approval.ConditionEvaluator, len(conditions)),
+	return &StrategyRegistry{
+		passRules: streams.AssociateBy(streams.FromSlice(passRules), func(r approval.PassRuleStrategy) approval.PassRule {
+			return r.Rule()
+		}),
+		assignees: streams.AssociateBy(streams.FromSlice(assignees), func(a AssigneeResolver) approval.AssigneeKind {
+			return a.Kind()
+		}),
+		conditions: streams.AssociateBy(streams.FromSlice(conditions), func(c approval.ConditionEvaluator) approval.ConditionKind {
+			return c.Kind()
+		}),
+		composite: NewCompositeAssigneeResolver(assignees...),
 	}
-
-	for _, rule := range passRules {
-		r.passRules[rule.Rule()] = rule
-	}
-
-	for _, assignee := range assignees {
-		r.assignees[assignee.Kind()] = assignee
-	}
-
-	for _, condition := range conditions {
-		r.conditions[condition.Kind()] = condition
-	}
-
-	r.composite = NewCompositeAssigneeResolver(assignees...)
-
-	return r
 }
 
 // GetPassRuleStrategy returns the pass rule strategy for the given rule.

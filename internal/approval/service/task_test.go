@@ -35,9 +35,11 @@ func (s *TaskServiceTestSuite) SetupSuite() {
 }
 
 func (s *TaskServiceTestSuite) TearDownTest() {
-	_, _ = s.db.NewDelete().Model((*approval.ActionLog)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(s.ctx)
-	_, _ = s.db.NewDelete().Model((*approval.Task)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(s.ctx)
-	_, _ = s.db.NewDelete().Model((*approval.Instance)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(s.ctx)
+	deleteAll(s.ctx, s.db,
+		(*approval.ActionLog)(nil),
+		(*approval.Task)(nil),
+		(*approval.Instance)(nil),
+	)
 }
 
 func (s *TaskServiceTestSuite) TearDownSuite() {

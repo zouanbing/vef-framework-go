@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	collections "github.com/coldsmirk/go-collections"
+	streams "github.com/coldsmirk/go-streams"
 
 	"github.com/coldsmirk/vef-framework-go/approval"
 	"github.com/coldsmirk/vef-framework-go/contextx"
@@ -76,10 +76,9 @@ func (h *AddCCHandler) Handle(ctx context.Context, cmd AddCCCmd) (cqrs.Unit, err
 		return cqrs.Unit{}, fmt.Errorf("query existing cc records: %w", err)
 	}
 
-	existingSet := collections.NewHashSet[string]()
-	for _, cc := range existingCCs {
-		existingSet.Add(cc.CCUserID)
-	}
+	existingSet := streams.ToHashSet(streams.MapTo(streams.FromSlice(existingCCs), func(cc approval.CCRecord) string {
+		return cc.CCUserID
+	}))
 
 	records := make([]approval.CCRecord, 0, len(cmd.CCUserIDs))
 	for _, userID := range cmd.CCUserIDs {

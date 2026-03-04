@@ -47,9 +47,11 @@ func (s *AddCCTestSuite) SetupSuite() {
 }
 
 func (s *AddCCTestSuite) TearDownTest() {
-	_, _ = s.db.NewDelete().Model((*approval.EventOutbox)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(s.ctx)
-	_, _ = s.db.NewDelete().Model((*approval.CCRecord)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(s.ctx)
-	_, _ = s.db.NewDelete().Model((*approval.Instance)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(s.ctx)
+	deleteAll(s.ctx, s.db,
+		(*approval.EventOutbox)(nil),
+		(*approval.CCRecord)(nil),
+		(*approval.Instance)(nil),
+	)
 }
 
 func (s *AddCCTestSuite) TearDownSuite() {

@@ -108,137 +108,149 @@ func setupMinimalFixture(t testing.TB, ctx context.Context, db orm.DB, code stri
 	}
 }
 
-// setupSimpleFlow creates a flow category, flow, deploys and publishes a simple flow
-// (start -> approval -> end) with PassAll rule and returns the fixture.
+// deployAndPublishFlow creates a category, flow, deploys the given definition, and publishes it.
+// The code parameter distinguishes different test suites (e.g., "cmd-test", "apv-cmd-test").
+func deployAndPublishFlow(t testing.TB, ctx context.Context, db orm.DB, code string, def approval.FlowDefinition) *FlowFixture {
+	category := &approval.FlowCategory{
+		TenantID: "default",
+		Code:     code + "-cat",
+		Name:     code + " Category",
+	}
+	_, err := db.NewInsert().Model(category).Exec(ctx)
+	require.NoError(t, err, "Should insert test category")
+
+	flow := &approval.Flow{
+		TenantID:               "default",
+		CategoryID:             category.ID,
+		Code:                   code + "-flow",
+		Name:                   code + " Flow",
+		BindingMode:            approval.BindingStandalone,
+		IsAllInitiationAllowed: true,
+		InstanceTitleTemplate:  code + " {{.InstanceNo}}",
+		IsActive:               true,
+	}
+	_, err = db.NewInsert().Model(flow).Exec(ctx)
+	require.NoError(t, err, "Should insert test flow")
+
+	deployHandler := command.NewDeployFlowHandler(db, service.NewFlowDefinitionService())
+	version, err := deployHandler.Handle(ctx, command.DeployFlowCmd{
+		FlowID:         flow.ID,
+		FlowDefinition: def,
+	})
+	require.NoError(t, err, "Should deploy flow")
+
+	publishHandler := command.NewPublishVersionHandler(db, dispatcher.NewEventPublisher())
+	_, err = publishHandler.Handle(ctx, command.PublishVersionCmd{
+		VersionID:  version.ID,
+		OperatorID: "admin",
+	})
+	require.NoError(t, err, "Should publish version")
+
+	var nodes []approval.FlowNode
+	err = db.NewSelect().Model(&nodes).
+		Where(func(cb orm.ConditionBuilder) { cb.Equals("flow_version_id", version.ID) }).
+		Scan(ctx)
+	require.NoError(t, err, "Should load nodes")
+
+	nodeIDs := make(map[string]string, len(nodes))
+	for _, n := range nodes {
+		nodeIDs[n.Key] = n.ID
+	}
+
+	return &FlowFixture{
+		CategoryID: category.ID,
+		FlowID:     flow.ID,
+		VersionID:  version.ID,
+		NodeIDs:    nodeIDs,
+	}
+}
+
+// setupSimpleFlow creates and publishes a minimal Start -> End flow.
 func setupSimpleFlow(t testing.TB, ctx context.Context, db orm.DB) *FlowFixture {
-	category := &approval.FlowCategory{
-		TenantID: "default",
-		Code:     "cmd-test",
-		Name:     "Command Test Category",
-	}
-	_, err := db.NewInsert().Model(category).Exec(ctx)
-	require.NoError(t, err, "Should insert test category")
-
-	flow := &approval.Flow{
-		TenantID:               "default",
-		CategoryID:             category.ID,
-		Code:                   "cmd-test-flow",
-		Name:                   "Command Test Flow",
-		BindingMode:            approval.BindingStandalone,
-		IsAllInitiationAllowed: true,
-		InstanceTitleTemplate:  "Test {{.InstanceNo}}",
-		IsActive:               true,
-	}
-	_, err = db.NewInsert().Model(flow).Exec(ctx)
-	require.NoError(t, err, "Should insert test flow")
-
-	deployHandler := command.NewDeployFlowHandler(db, service.NewFlowDefinitionService())
-	version, err := deployHandler.Handle(ctx, command.DeployFlowCmd{
-		FlowID:         flow.ID,
-		FlowDefinition: simpleFlowDef(),
-	})
-	require.NoError(t, err, "Should deploy flow")
-
-	publishHandler := command.NewPublishVersionHandler(db, dispatcher.NewEventPublisher())
-	_, err = publishHandler.Handle(ctx, command.PublishVersionCmd{
-		VersionID:  version.ID,
-		OperatorID: "admin",
-	})
-	require.NoError(t, err, "Should publish version")
-
-	// Load node IDs
-	var nodes []approval.FlowNode
-	err = db.NewSelect().Model(&nodes).
-		Where(func(cb orm.ConditionBuilder) { cb.Equals("flow_version_id", version.ID) }).
-		Scan(ctx)
-	require.NoError(t, err, "Should load nodes")
-
-	nodeIDs := make(map[string]string, len(nodes))
-	for _, n := range nodes {
-		nodeIDs[n.Key] = n.ID
-	}
-
-	// Reload flow to get updated CurrentVersion
-	_ = db.NewSelect().Model(flow).WherePK().Scan(ctx)
-
-	return &FlowFixture{
-		CategoryID: category.ID,
-		FlowID:     flow.ID,
-		VersionID:  version.ID,
-		NodeIDs:    nodeIDs,
-	}
+	return deployAndPublishFlow(t, ctx, db, "cmd-test", simpleFlowDef())
 }
 
-// setupApprovalFlow creates a flow with an approval node using approvalFlowDef() and publishes it.
+// setupApprovalFlow creates and publishes a Start -> Approval -> End flow.
 func setupApprovalFlow(t testing.TB, ctx context.Context, db orm.DB) *FlowFixture {
-	category := &approval.FlowCategory{
-		TenantID: "default",
-		Code:     "apv-cmd-test",
-		Name:     "Approval Command Test Category",
-	}
-	_, err := db.NewInsert().Model(category).Exec(ctx)
-	require.NoError(t, err, "Should insert test category")
+	return deployAndPublishFlow(t, ctx, db, "apv-cmd-test", approvalFlowDef())
+}
 
-	flow := &approval.Flow{
-		TenantID:               "default",
-		CategoryID:             category.ID,
-		Code:                   "apv-cmd-test-flow",
-		Name:                   "Approval Command Test Flow",
-		BindingMode:            approval.BindingStandalone,
-		IsAllInitiationAllowed: true,
-		InstanceTitleTemplate:  "Approval Test {{.InstanceNo}}",
-		IsActive:               true,
-	}
-	_, err = db.NewInsert().Model(flow).Exec(ctx)
-	require.NoError(t, err, "Should insert test flow")
-
-	deployHandler := command.NewDeployFlowHandler(db, service.NewFlowDefinitionService())
-	version, err := deployHandler.Handle(ctx, command.DeployFlowCmd{
-		FlowID:         flow.ID,
-		FlowDefinition: approvalFlowDef(),
-	})
-	require.NoError(t, err, "Should deploy flow")
-
-	publishHandler := command.NewPublishVersionHandler(db, dispatcher.NewEventPublisher())
-	_, err = publishHandler.Handle(ctx, command.PublishVersionCmd{
-		VersionID:  version.ID,
-		OperatorID: "admin",
-	})
-	require.NoError(t, err, "Should publish version")
-
-	var nodes []approval.FlowNode
-	err = db.NewSelect().Model(&nodes).
-		Where(func(cb orm.ConditionBuilder) { cb.Equals("flow_version_id", version.ID) }).
-		Scan(ctx)
-	require.NoError(t, err, "Should load nodes")
-
-	nodeIDs := make(map[string]string, len(nodes))
-	for _, n := range nodes {
-		nodeIDs[n.Key] = n.ID
-	}
-
-	return &FlowFixture{
-		CategoryID: category.ID,
-		FlowID:     flow.ID,
-		VersionID:  version.ID,
-		NodeIDs:    nodeIDs,
+// deleteAll removes all rows from the given models in order (FK-safe).
+func deleteAll(ctx context.Context, db orm.DB, models ...any) {
+	for _, model := range models {
+		_, _ = db.NewDelete().Model(model).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
 	}
 }
 
-// cleanAllApprovalData removes all approval-related data from the database.
+// cleanRuntimeData removes runtime data (instances, tasks, logs, etc.) while preserving flow definitions.
+// Used in TearDownTest for suites that operate on runtime data.
+func cleanRuntimeData(ctx context.Context, db orm.DB) {
+	deleteAll(ctx, db,
+		(*approval.EventOutbox)(nil),
+		(*approval.ActionLog)(nil),
+		(*approval.UrgeRecord)(nil),
+		(*approval.CCRecord)(nil),
+		(*approval.Task)(nil),
+		(*approval.Instance)(nil),
+	)
+}
+
+// cleanAllApprovalData removes all approval-related data in FK-safe order.
 func cleanAllApprovalData(ctx context.Context, db orm.DB) {
-	_, _ = db.NewDelete().Model((*approval.EventOutbox)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.ActionLog)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.UrgeRecord)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.CCRecord)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.Task)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.Instance)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.FlowEdge)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.FlowNodeCC)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.FlowNodeAssignee)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.FlowNode)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.FlowVersion)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.FlowInitiator)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.Flow)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.FlowCategory)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
+	cleanRuntimeData(ctx, db)
+	deleteAll(ctx, db,
+		(*approval.FlowEdge)(nil),
+		(*approval.FlowNodeCC)(nil),
+		(*approval.FlowNodeAssignee)(nil),
+		(*approval.FlowNode)(nil),
+		(*approval.FlowVersion)(nil),
+		(*approval.FlowInitiator)(nil),
+		(*approval.Flow)(nil),
+		(*approval.FlowCategory)(nil),
+	)
+}
+
+// setupRunningInstance creates a running instance with a pending task for the given assignee.
+// It finds the first non-start/non-end node from the fixture to use as the approval node.
+func setupRunningInstance(
+	t require.TestingT,
+	ctx context.Context,
+	db orm.DB,
+	fixture *FlowFixture,
+	assigneeID string,
+) (*approval.Instance, *approval.Task) {
+	var approvalNodeID string
+	for key, id := range fixture.NodeIDs {
+		if key != "start-1" && key != "end-1" {
+			approvalNodeID = id
+			break
+		}
+	}
+	require.NotEmpty(t, approvalNodeID, "Should find approval node ID")
+
+	inst := &approval.Instance{
+		TenantID:      "default",
+		FlowID:        fixture.FlowID,
+		FlowVersionID: fixture.VersionID,
+		Title:         "Test Instance",
+		InstanceNo:    "TEST-001",
+		ApplicantID:   "applicant-1",
+		Status:        approval.InstanceRunning,
+		CurrentNodeID: &approvalNodeID,
+	}
+	_, err := db.NewInsert().Model(inst).Exec(ctx)
+	require.NoError(t, err, "Should insert instance")
+
+	task := &approval.Task{
+		TenantID:   "default",
+		InstanceID: inst.ID,
+		NodeID:     approvalNodeID,
+		AssigneeID: assigneeID,
+		SortOrder:  1,
+		Status:     approval.TaskPending,
+	}
+	_, err = db.NewInsert().Model(task).Exec(ctx)
+	require.NoError(t, err, "Should insert task")
+
+	return inst, task
 }

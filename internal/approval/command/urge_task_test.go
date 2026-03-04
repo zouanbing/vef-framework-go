@@ -61,9 +61,11 @@ func (s *UrgeTaskTestSuite) SetupSuite() {
 }
 
 func (s *UrgeTaskTestSuite) TearDownTest() {
-	_, _ = s.db.NewDelete().Model((*approval.EventOutbox)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(s.ctx)
-	_, _ = s.db.NewDelete().Model((*approval.UrgeRecord)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(s.ctx)
-	_, _ = s.db.NewDelete().Model((*approval.Task)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(s.ctx)
+	deleteAll(s.ctx, s.db,
+		(*approval.EventOutbox)(nil),
+		(*approval.UrgeRecord)(nil),
+		(*approval.Task)(nil),
+	)
 }
 
 func (s *UrgeTaskTestSuite) TearDownSuite() {

@@ -40,55 +40,19 @@ func (s *RejectTaskTestSuite) SetupSuite() {
 }
 
 func (s *RejectTaskTestSuite) TearDownTest() {
-	_, _ = s.db.NewDelete().Model((*approval.EventOutbox)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(s.ctx)
-	_, _ = s.db.NewDelete().Model((*approval.ActionLog)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(s.ctx)
-	_, _ = s.db.NewDelete().Model((*approval.Task)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(s.ctx)
-	_, _ = s.db.NewDelete().Model((*approval.Instance)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(s.ctx)
+	cleanRuntimeData(s.ctx, s.db)
 }
 
 func (s *RejectTaskTestSuite) TearDownSuite() {
 	cleanAllApprovalData(s.ctx, s.db)
 }
 
-func (s *RejectTaskTestSuite) setupRunningInstance(assigneeID string) (*approval.Instance, *approval.Task) {
-	var approvalNodeID string
-	for key, id := range s.fixture.NodeIDs {
-		if key != "start-1" && key != "end-1" {
-			approvalNodeID = id
-			break
-		}
-	}
-	s.Require().NotEmpty(approvalNodeID)
-
-	inst := &approval.Instance{
-		TenantID:      "default",
-		FlowID:        s.fixture.FlowID,
-		FlowVersionID: s.fixture.VersionID,
-		Title:         "Reject Test",
-		InstanceNo:    "REJ-001",
-		ApplicantID:   "applicant-1",
-		Status:        approval.InstanceRunning,
-		CurrentNodeID: &approvalNodeID,
-	}
-	_, err := s.db.NewInsert().Model(inst).Exec(s.ctx)
-	s.Require().NoError(err)
-
-	task := &approval.Task{
-		TenantID:   "default",
-		InstanceID: inst.ID,
-		NodeID:     approvalNodeID,
-		AssigneeID: assigneeID,
-		SortOrder:  1,
-		Status:     approval.TaskPending,
-	}
-	_, err = s.db.NewInsert().Model(task).Exec(s.ctx)
-	s.Require().NoError(err)
-
-	return inst, task
+func (s *RejectTaskTestSuite) newRunningInstance(assigneeID string) (*approval.Instance, *approval.Task) {
+	return setupRunningInstance(s.T(), s.ctx, s.db, s.fixture, assigneeID)
 }
 
 func (s *RejectTaskTestSuite) TestRejectSuccess() {
-	inst, task := s.setupRunningInstance("rejector-1")
+	inst, task := s.newRunningInstance("rejector-1")
 
 	operator := approval.OperatorInfo{ID: "rejector-1", Name: "Rejector"}
 	_, err := s.handler.Handle(s.ctx, command.RejectTaskCmd{
@@ -136,7 +100,7 @@ func (s *RejectTaskTestSuite) TestRejectTaskNotFound() {
 }
 
 func (s *RejectTaskTestSuite) TestRejectNotAssignee() {
-	_, task := s.setupRunningInstance("rejector-1")
+	_, task := s.newRunningInstance("rejector-1")
 
 	operator := approval.OperatorInfo{ID: "wrong-user", Name: "Wrong"}
 	_, err := s.handler.Handle(s.ctx, command.RejectTaskCmd{

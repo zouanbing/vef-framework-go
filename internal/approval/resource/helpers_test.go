@@ -22,22 +22,22 @@ import (
 // MockAssigneeService is a no-op implementation of approval.AssigneeService for testing.
 type MockAssigneeService struct{}
 
-func (m *MockAssigneeService) GetSuperior(_ context.Context, _ string) (string, error) {
+func (m *MockAssigneeService) GetSuperior(context.Context, string) (string, error) {
 	return "", fmt.Errorf("not implemented")
 }
 
-func (m *MockAssigneeService) GetDeptLeaders(_ context.Context, _ string) ([]string, error) {
+func (m *MockAssigneeService) GetDeptLeaders(context.Context, string) ([]string, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *MockAssigneeService) GetRoleUsers(_ context.Context, _ string) ([]string, error) {
+func (m *MockAssigneeService) GetRoleUsers(context.Context, string) ([]string, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
 // MockPrincipalDeptResolver is a test implementation of approval.PrincipalDeptResolver.
 type MockPrincipalDeptResolver struct{}
 
-func (m *MockPrincipalDeptResolver) Resolve(_ context.Context, _ *security.Principal) (*string, *string, error) {
+func (m *MockPrincipalDeptResolver) Resolve(context.Context, *security.Principal) (*string, *string, error) {
 	return nil, nil, nil
 }
 
@@ -85,31 +85,38 @@ func setupResourceApp(s *apptest.Suite) (orm.DB, string) {
 
 // --- Cleanup helpers ---
 
+// deleteAll removes all rows from the given models in order (FK-safe).
+func deleteAll(ctx context.Context, db orm.DB, models ...any) {
+	for _, model := range models {
+		_, _ = db.NewDelete().Model(model).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(ctx)
+	}
+}
+
 // cleanRuntimeData removes runtime data (instances, tasks, etc.) while preserving flow definitions.
-// Use in TearDownTest.
 func cleanRuntimeData(ctx context.Context, db orm.DB) {
-	delAll := func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }
-	_, _ = db.NewDelete().Model((*approval.EventOutbox)(nil)).Where(delAll).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.ActionLog)(nil)).Where(delAll).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.UrgeRecord)(nil)).Where(delAll).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.CCRecord)(nil)).Where(delAll).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.Task)(nil)).Where(delAll).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.Instance)(nil)).Where(delAll).Exec(ctx)
+	deleteAll(ctx, db,
+		(*approval.EventOutbox)(nil),
+		(*approval.ActionLog)(nil),
+		(*approval.UrgeRecord)(nil),
+		(*approval.CCRecord)(nil),
+		(*approval.Task)(nil),
+		(*approval.Instance)(nil),
+	)
 }
 
 // cleanAllApprovalData removes all approval data in FK-safe order.
-// Use in TearDownSuite.
 func cleanAllApprovalData(ctx context.Context, db orm.DB) {
 	cleanRuntimeData(ctx, db)
-	delAll := func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }
-	_, _ = db.NewDelete().Model((*approval.FlowEdge)(nil)).Where(delAll).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.FlowNodeCC)(nil)).Where(delAll).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.FlowNodeAssignee)(nil)).Where(delAll).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.FlowNode)(nil)).Where(delAll).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.FlowVersion)(nil)).Where(delAll).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.FlowInitiator)(nil)).Where(delAll).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.Flow)(nil)).Where(delAll).Exec(ctx)
-	_, _ = db.NewDelete().Model((*approval.FlowCategory)(nil)).Where(delAll).Exec(ctx)
+	deleteAll(ctx, db,
+		(*approval.FlowEdge)(nil),
+		(*approval.FlowNodeCC)(nil),
+		(*approval.FlowNodeAssignee)(nil),
+		(*approval.FlowNode)(nil),
+		(*approval.FlowVersion)(nil),
+		(*approval.FlowInitiator)(nil),
+		(*approval.Flow)(nil),
+		(*approval.FlowCategory)(nil),
+	)
 }
 
 // --- JSON helper ---
@@ -153,6 +160,7 @@ func simpleFlowDef() approval.FlowDefinition {
 }
 
 // approvalFlowDef returns a flow definition with an approval node: Start → Approval → End.
+// The approval node has rollback, add/remove assignee, opinion required, transfer, and manual CC enabled.
 func approvalFlowDef() approval.FlowDefinition {
 	return approval.FlowDefinition{
 		Nodes: []approval.NodeDefinition{
@@ -169,10 +177,16 @@ func approvalFlowDef() approval.FlowDefinition {
 					ExecutionType:       approval.ExecutionManual,
 					EmptyAssigneeAction: approval.EmptyAssigneeAutoPass,
 					IsTransferAllowed:   true,
+					IsOpinionRequired:   true,
 				},
-				IsManualCCAllowed: true,
-				ApprovalMethod:    approval.ApprovalSequential,
-				PassRule:          approval.PassAll,
+				IsManualCCAllowed:       true,
+				ApprovalMethod:          approval.ApprovalSequential,
+				PassRule:                approval.PassAll,
+				IsRollbackAllowed:       true,
+				RollbackType:            approval.RollbackPrevious,
+				IsAddAssigneeAllowed:    true,
+				AddAssigneeTypes:        []string{"before", "after", "parallel"},
+				IsRemoveAssigneeAllowed: true,
 			})},
 			{ID: "end-1", Kind: approval.NodeEnd, Data: mustMarshal(approval.EndNodeData{BaseNodeData: approval.BaseNodeData{Name: "结束"}})},
 		},
@@ -221,6 +235,7 @@ func complexFlowDef() approval.FlowDefinition {
 					},
 					ExecutionType:       approval.ExecutionManual,
 					EmptyAssigneeAction: approval.EmptyAssigneeAutoPass,
+					IsTransferAllowed:   true,
 				},
 				ApprovalMethod: approval.ApprovalSequential,
 				PassRule:       approval.PassAll,
@@ -243,6 +258,62 @@ func complexFlowDef() approval.FlowDefinition {
 			{ID: "edge-3", Source: "condition-1", Target: "handle-default", SourceHandle: &branchDefaultID},
 			{ID: "edge-4", Source: "approval-high", Target: "end-1"},
 			{ID: "edge-5", Source: "handle-default", Target: "end-1"},
+		},
+	}
+}
+
+// parallelApprovalFlowDef returns a flow with a parallel approval node:
+// Start → Approval(parallel, passAll, 2 assignees: test-admin + approver-2) → End
+func parallelApprovalFlowDef() approval.FlowDefinition {
+	return approval.FlowDefinition{
+		Nodes: []approval.NodeDefinition{
+			{ID: "start-1", Kind: approval.NodeStart, Data: mustMarshal(approval.StartNodeData{BaseNodeData: approval.BaseNodeData{Name: "开始"}})},
+			{ID: "approval-1", Kind: approval.NodeApproval, Data: mustMarshal(approval.ApprovalNodeData{
+				BaseNodeData: approval.BaseNodeData{Name: "会签审批"},
+				TaskNodeData: approval.TaskNodeData{
+					Assignees: []approval.AssigneeDefinition{
+						{Kind: approval.AssigneeUser, IDs: []string{"test-admin"}, SortOrder: 1},
+						{Kind: approval.AssigneeUser, IDs: []string{"approver-2"}, SortOrder: 2},
+					},
+					ExecutionType:       approval.ExecutionManual,
+					EmptyAssigneeAction: approval.EmptyAssigneeAutoPass,
+				},
+				ApprovalMethod: approval.ApprovalParallel,
+				PassRule:       approval.PassAll,
+			})},
+			{ID: "end-1", Kind: approval.NodeEnd, Data: mustMarshal(approval.EndNodeData{BaseNodeData: approval.BaseNodeData{Name: "结束"}})},
+		},
+		Edges: []approval.EdgeDefinition{
+			{ID: "edge-1", Source: "start-1", Target: "approval-1"},
+			{ID: "edge-2", Source: "approval-1", Target: "end-1"},
+		},
+	}
+}
+
+// noManualCCFlowDef returns a flow with an approval node that disallows manual CC:
+// Start → Approval(sequential, 1 assignee, IsManualCCAllowed=false) → End
+func noManualCCFlowDef() approval.FlowDefinition {
+	return approval.FlowDefinition{
+		Nodes: []approval.NodeDefinition{
+			{ID: "start-1", Kind: approval.NodeStart, Data: mustMarshal(approval.StartNodeData{BaseNodeData: approval.BaseNodeData{Name: "开始"}})},
+			{ID: "approval-1", Kind: approval.NodeApproval, Data: mustMarshal(approval.ApprovalNodeData{
+				BaseNodeData: approval.BaseNodeData{Name: "审批"},
+				TaskNodeData: approval.TaskNodeData{
+					Assignees: []approval.AssigneeDefinition{
+						{Kind: approval.AssigneeUser, IDs: []string{"test-admin"}, SortOrder: 1},
+					},
+					ExecutionType:       approval.ExecutionManual,
+					EmptyAssigneeAction: approval.EmptyAssigneeAutoPass,
+				},
+				IsManualCCAllowed: false,
+				ApprovalMethod:    approval.ApprovalSequential,
+				PassRule:          approval.PassAll,
+			})},
+			{ID: "end-1", Kind: approval.NodeEnd, Data: mustMarshal(approval.EndNodeData{BaseNodeData: approval.BaseNodeData{Name: "结束"}})},
+		},
+		Edges: []approval.EdgeDefinition{
+			{ID: "edge-1", Source: "start-1", Target: "approval-1"},
+			{ID: "edge-2", Source: "approval-1", Target: "end-1"},
 		},
 	}
 }

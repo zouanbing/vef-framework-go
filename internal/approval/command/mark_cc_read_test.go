@@ -35,8 +35,7 @@ func (s *MarkCCReadTestSuite) SetupSuite() {
 }
 
 func (s *MarkCCReadTestSuite) TearDownTest() {
-	_, _ = s.db.NewDelete().Model((*approval.CCRecord)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(s.ctx)
-	_, _ = s.db.NewDelete().Model((*approval.Instance)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(s.ctx)
+	deleteAll(s.ctx, s.db, (*approval.CCRecord)(nil), (*approval.Instance)(nil))
 }
 
 func (s *MarkCCReadTestSuite) TearDownSuite() {

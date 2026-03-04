@@ -51,14 +51,15 @@ func (s *FlowResourceTestSuite) TearDownSuite() {
 
 func (s *FlowResourceTestSuite) TearDownTest() {
 	// Clean flow data but keep the shared category
-	delAll := func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }
-	_, _ = s.db.NewDelete().Model((*approval.FlowEdge)(nil)).Where(delAll).Exec(s.ctx)
-	_, _ = s.db.NewDelete().Model((*approval.FlowNodeCC)(nil)).Where(delAll).Exec(s.ctx)
-	_, _ = s.db.NewDelete().Model((*approval.FlowNodeAssignee)(nil)).Where(delAll).Exec(s.ctx)
-	_, _ = s.db.NewDelete().Model((*approval.FlowNode)(nil)).Where(delAll).Exec(s.ctx)
-	_, _ = s.db.NewDelete().Model((*approval.FlowVersion)(nil)).Where(delAll).Exec(s.ctx)
-	_, _ = s.db.NewDelete().Model((*approval.FlowInitiator)(nil)).Where(delAll).Exec(s.ctx)
-	_, _ = s.db.NewDelete().Model((*approval.Flow)(nil)).Where(delAll).Exec(s.ctx)
+	deleteAll(s.ctx, s.db,
+		(*approval.FlowEdge)(nil),
+		(*approval.FlowNodeCC)(nil),
+		(*approval.FlowNodeAssignee)(nil),
+		(*approval.FlowNode)(nil),
+		(*approval.FlowVersion)(nil),
+		(*approval.FlowInitiator)(nil),
+		(*approval.Flow)(nil),
+	)
 }
 
 // createFlow creates a flow via RPC and returns its ID.

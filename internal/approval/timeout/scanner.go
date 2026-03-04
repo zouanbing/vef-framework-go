@@ -70,7 +70,6 @@ func (s *Scanner) processTimeout(ctx context.Context, task *approval.Task) error
 	}
 
 	return s.db.RunInTX(ctx, func(ctx context.Context, tx orm.DB) error {
-		// Mark the task as timed out
 		task.IsTimeout = true
 		if _, err := tx.NewUpdate().
 			Model(task).
@@ -80,7 +79,6 @@ func (s *Scanner) processTimeout(ctx context.Context, task *approval.Task) error
 			return fmt.Errorf("mark timeout: %w", err)
 		}
 
-		// Execute timeout action
 		events, err := s.executeTimeoutAction(ctx, tx, task, &node)
 		if err != nil {
 			return fmt.Errorf("execute timeout action: %w", err)
@@ -150,24 +148,12 @@ func (s *Scanner) autoFinishTask(ctx context.Context, tx orm.DB, task *approval.
 
 	if status == approval.TaskApproved {
 		return []approval.DomainEvent{
-			approval.NewTaskApprovedEvent(
-				task.ID,
-				task.InstanceID,
-				node.ID,
-				"system",
-				"任务处理超时，系统自动通过",
-			),
+			approval.NewTaskApprovedEvent(task.ID, task.InstanceID, node.ID, "system", "任务处理超时，系统自动通过"),
 		}, nil
 	}
 
 	return []approval.DomainEvent{
-		approval.NewTaskRejectedEvent(
-			task.ID,
-			task.InstanceID,
-			node.ID,
-			"system",
-			"任务处理超时，系统自动驳回",
-		),
+		approval.NewTaskRejectedEvent(task.ID, task.InstanceID, node.ID, "system", "任务处理超时，系统自动驳回"),
 	}, nil
 }
 

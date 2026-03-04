@@ -19,6 +19,7 @@ func NewTransactionBehavior(db orm.DB) cqrs.Behavior {
 	return &TransactionBehavior{db: db}
 }
 
+// Handle wraps command actions in a database transaction. Query actions pass through unchanged.
 func (b *TransactionBehavior) Handle(ctx context.Context, action cqrs.Action, next func(context.Context) (any, error)) (any, error) {
 	if action.Kind() == cqrs.Query {
 		return next(ctx)

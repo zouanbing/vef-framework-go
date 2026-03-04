@@ -196,9 +196,18 @@ type HandleNodeData struct {
 func (d *HandleNodeData) Kind() NodeKind { return NodeHandle }
 
 // ApplyTo applies handle node data to a FlowNode.
+// Handle nodes default to sequential execution with PassAny rule,
+// since any handler completing the task is sufficient.
 func (d *HandleNodeData) ApplyTo(node *FlowNode) {
 	applyBaseNodeData(node, &d.BaseNodeData)
 	applyTaskNodeData(node, &d.TaskNodeData)
+
+	if node.ApprovalMethod == "" {
+		node.ApprovalMethod = ApprovalSequential
+	}
+	if node.PassRule == "" {
+		node.PassRule = PassAny
+	}
 }
 
 // --- CCNodeData ---

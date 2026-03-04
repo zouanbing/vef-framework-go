@@ -128,7 +128,7 @@ func (s *TaskService) IsAuthorizedForNodeOperation(ctx context.Context, db orm.D
 			cb.Equals("instance_id", task.InstanceID).
 				Equals("node_id", task.NodeID).
 				Equals("assignee_id", operatorID).
-				In("status", []string{string(approval.TaskPending), string(approval.TaskWaiting)})
+				In("status", cancelableTaskStatuses)
 		}).
 		Count(ctx)
 	if err == nil && peerCount > 0 {
@@ -177,22 +177,19 @@ func (s *TaskService) CanRemoveAssigneeTask(ctx context.Context, db orm.DB, eng 
 	}
 
 	hasOtherActionable := false
-	simulatedTasks := make([]approval.Task, 0, len(tasks))
-	for _, current := range tasks {
-		if current.ID == task.ID {
-			current.Status = approval.TaskRemoved
-		} else if current.Status == approval.TaskPending || current.Status == approval.TaskWaiting {
+	for i := range tasks {
+		if tasks[i].ID == task.ID {
+			tasks[i].Status = approval.TaskRemoved
+		} else if tasks[i].Status == approval.TaskPending || tasks[i].Status == approval.TaskWaiting {
 			hasOtherActionable = true
 		}
-
-		simulatedTasks = append(simulatedTasks, current)
 	}
 
 	if hasOtherActionable {
 		return true, nil
 	}
 
-	evalResult, err := eng.EvaluatePassRuleWithTasks(node, simulatedTasks)
+	evalResult, err := eng.EvaluatePassRuleWithTasks(node, tasks)
 	if err != nil {
 		return false, err
 	}

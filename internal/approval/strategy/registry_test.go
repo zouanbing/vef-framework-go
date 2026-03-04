@@ -72,8 +72,8 @@ func TestGetConditionEvaluator(t *testing.T) {
 	})
 }
 
-// TestStrategyRegistry_CompositeAssigneeResolver tests registry composite resolver accessor.
-func TestStrategyRegistry_CompositeAssigneeResolver(t *testing.T) {
+// TestRegistryCompositeAssigneeResolver tests registry composite resolver accessor.
+func TestRegistryCompositeAssigneeResolver(t *testing.T) {
 	r := NewStrategyRegistry(
 		nil,
 		[]AssigneeResolver{NewUserAssigneeResolver(), NewSelfAssigneeResolver()},

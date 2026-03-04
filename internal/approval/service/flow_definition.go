@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/coldsmirk/go-collections"
+	streams "github.com/coldsmirk/go-streams"
+
 	"github.com/coldsmirk/vef-framework-go/approval"
 )
 
@@ -156,10 +158,9 @@ func (s *FlowDefinitionService) ValidateFlowDefinition(def *approval.FlowDefinit
 	}
 
 	// --- Phase 4: Topology ---
-	nodeIDSlice := make([]string, 0, len(def.Nodes))
-	for _, node := range def.Nodes {
-		nodeIDSlice = append(nodeIDSlice, node.ID)
-	}
+	nodeIDSlice := streams.MapTo(streams.FromSlice(def.Nodes), func(n approval.NodeDefinition) string {
+		return n.ID
+	}).Collect()
 
 	if detectCycle(nodeIDSlice, adjacency) {
 		return fmt.Errorf("flow graph contains a cycle")

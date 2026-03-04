@@ -69,26 +69,19 @@ func (s *CCProcessorTestSuite) SetupSuite() {
 	s.nodeID = node.ID
 }
 
-// cleanTransientData removes all transient test data (respect FK order).
-// Called from TearDownTest and deferred in each s.Run() subtest for data isolation.
+// cleanTransientData removes all transient test data in FK-safe order.
 func (s *CCProcessorTestSuite) cleanTransientData() {
-	_, err := s.db.NewDelete().
-		Model((*approval.CCRecord)(nil)).
-		Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).
-		Exec(s.ctx)
-	s.Require().NoError(err, "Should clean cc records")
-
-	_, err = s.db.NewDelete().
-		Model((*approval.FlowNodeCC)(nil)).
-		Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).
-		Exec(s.ctx)
-	s.Require().NoError(err, "Should clean cc configs")
-
-	_, err = s.db.NewDelete().
-		Model((*approval.Instance)(nil)).
-		Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).
-		Exec(s.ctx)
-	s.Require().NoError(err, "Should clean instances")
+	for _, model := range []any{
+		(*approval.CCRecord)(nil),
+		(*approval.FlowNodeCC)(nil),
+		(*approval.Instance)(nil),
+	} {
+		_, err := s.db.NewDelete().
+			Model(model).
+			Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).
+			Exec(s.ctx)
+		s.Require().NoError(err, "Should clean transient data")
+	}
 }
 
 func (s *CCProcessorTestSuite) TearDownTest() {

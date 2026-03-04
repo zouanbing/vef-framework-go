@@ -34,7 +34,6 @@ func NewMarkCCReadHandler(db orm.DB, nodeSvc *service.NodeService) *MarkCCReadHa
 func (h *MarkCCReadHandler) Handle(ctx context.Context, cmd MarkCCReadCmd) (cqrs.Unit, error) {
 	db := contextx.DB(ctx, h.db)
 
-	// Query unread CC records for this user in this instance
 	var records []approval.CCRecord
 
 	if err := db.NewSelect().
@@ -53,7 +52,6 @@ func (h *MarkCCReadHandler) Handle(ctx context.Context, cmd MarkCCReadCmd) (cqrs
 		return cqrs.Unit{}, nil
 	}
 
-	// Batch update read_at
 	now := timex.Now()
 	recordIDs := make([]string, 0, len(records))
 	for _, record := range records {
@@ -68,7 +66,6 @@ func (h *MarkCCReadHandler) Handle(ctx context.Context, cmd MarkCCReadCmd) (cqrs
 		return cqrs.Unit{}, fmt.Errorf("update cc records read_at: %w", err)
 	}
 
-	// Check if any CC node should advance
 	if err := h.nodeSvc.CheckCCNodeCompletion(ctx, db, cmd.InstanceID, records); err != nil {
 		return cqrs.Unit{}, err
 	}

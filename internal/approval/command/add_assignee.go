@@ -90,7 +90,6 @@ func (h *AddAssigneeHandler) Handle(ctx context.Context, cmd AddAssigneeCmd) (cq
 		return cqrs.Unit{}, shared.ErrInvalidAddAssigneeType
 	}
 
-	// Find current max sort_order for this node
 	var lastTask approval.Task
 	baseSortOrder := task.SortOrder
 	if err := db.NewSelect().

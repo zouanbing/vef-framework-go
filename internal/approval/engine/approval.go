@@ -76,16 +76,13 @@ func (p *ApprovalProcessor) createApprovalTasks(ctx context.Context, pc *Process
 		}
 
 		task := &approval.Task{
-			TenantID:   pc.Instance.TenantID,
-			InstanceID: pc.Instance.ID,
-			NodeID:     pc.Node.ID,
-			AssigneeID: assignee.UserID,
-			SortOrder:  sortOrder,
-			Status:     status,
-		}
-
-		if assignee.DelegatorID != nil {
-			task.DelegatorID = assignee.DelegatorID
+			TenantID:    pc.Instance.TenantID,
+			InstanceID:  pc.Instance.ID,
+			NodeID:      pc.Node.ID,
+			AssigneeID:  assignee.UserID,
+			DelegatorID: assignee.DelegatorID,
+			SortOrder:   sortOrder,
+			Status:      status,
 		}
 
 		if _, err := pc.DB.NewInsert().Model(task).Exec(ctx); err != nil {

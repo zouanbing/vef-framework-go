@@ -40,56 +40,19 @@ func (s *ApproveTaskTestSuite) SetupSuite() {
 }
 
 func (s *ApproveTaskTestSuite) TearDownTest() {
-	_, _ = s.db.NewDelete().Model((*approval.EventOutbox)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(s.ctx)
-	_, _ = s.db.NewDelete().Model((*approval.ActionLog)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(s.ctx)
-	_, _ = s.db.NewDelete().Model((*approval.Task)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(s.ctx)
-	_, _ = s.db.NewDelete().Model((*approval.Instance)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(s.ctx)
+	cleanRuntimeData(s.ctx, s.db)
 }
 
 func (s *ApproveTaskTestSuite) TearDownSuite() {
 	cleanAllApprovalData(s.ctx, s.db)
 }
 
-func (s *ApproveTaskTestSuite) setupRunningInstance(assigneeID string) (*approval.Instance, *approval.Task) {
-	// Find the approval node key from the fixture
-	var approvalNodeID string
-	for key, id := range s.fixture.NodeIDs {
-		if key != "start-1" && key != "end-1" {
-			approvalNodeID = id
-			break
-		}
-	}
-	s.Require().NotEmpty(approvalNodeID, "Should find approval node ID")
-
-	inst := &approval.Instance{
-		TenantID:      "default",
-		FlowID:        s.fixture.FlowID,
-		FlowVersionID: s.fixture.VersionID,
-		Title:         "Approve Test",
-		InstanceNo:    "APV-001",
-		ApplicantID:   "applicant-1",
-		Status:        approval.InstanceRunning,
-		CurrentNodeID: &approvalNodeID,
-	}
-	_, err := s.db.NewInsert().Model(inst).Exec(s.ctx)
-	s.Require().NoError(err)
-
-	task := &approval.Task{
-		TenantID:   "default",
-		InstanceID: inst.ID,
-		NodeID:     approvalNodeID,
-		AssigneeID: assigneeID,
-		SortOrder:  1,
-		Status:     approval.TaskPending,
-	}
-	_, err = s.db.NewInsert().Model(task).Exec(s.ctx)
-	s.Require().NoError(err)
-
-	return inst, task
+func (s *ApproveTaskTestSuite) newRunningInstance(assigneeID string) (*approval.Instance, *approval.Task) {
+	return setupRunningInstance(s.T(), s.ctx, s.db, s.fixture, assigneeID)
 }
 
 func (s *ApproveTaskTestSuite) TestApproveSuccess() {
-	inst, task := s.setupRunningInstance("approver-1")
+	inst, task := s.newRunningInstance("approver-1")
 
 	operator := approval.OperatorInfo{ID: "approver-1", Name: "Approver"}
 	_, err := s.handler.Handle(s.ctx, command.ApproveTaskCmd{
@@ -133,7 +96,7 @@ func (s *ApproveTaskTestSuite) TestApproveTaskNotFound() {
 }
 
 func (s *ApproveTaskTestSuite) TestApproveNotAssignee() {
-	_, task := s.setupRunningInstance("approver-1")
+	_, task := s.newRunningInstance("approver-1")
 
 	operator := approval.OperatorInfo{ID: "wrong-user", Name: "Wrong"}
 	_, err := s.handler.Handle(s.ctx, command.ApproveTaskCmd{
@@ -145,7 +108,7 @@ func (s *ApproveTaskTestSuite) TestApproveNotAssignee() {
 }
 
 func (s *ApproveTaskTestSuite) TestApproveAlreadyCompleted() {
-	_, task := s.setupRunningInstance("approver-1")
+	_, task := s.newRunningInstance("approver-1")
 
 	// Set task to already approved
 	_, err := s.db.NewUpdate().

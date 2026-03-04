@@ -36,7 +36,6 @@ type DelegationSearch struct {
 type DelegationResource struct {
 	api.Resource
 
-	crud.FindAll[approval.Delegation, DelegationSearch]
 	crud.FindPage[approval.Delegation, DelegationSearch]
 	crud.Create[approval.Delegation, DelegationParams]
 	crud.Update[approval.Delegation, DelegationParams]
@@ -47,7 +46,6 @@ type DelegationResource struct {
 func NewDelegationResource() api.Resource {
 	return &DelegationResource{
 		Resource: api.NewRPCResource("approval/delegation"),
-		FindAll:  crud.NewFindAll[approval.Delegation, DelegationSearch](),
 		FindPage: crud.NewFindPage[approval.Delegation, DelegationSearch](),
 		Create:   crud.NewCreate[approval.Delegation, DelegationParams](),
 		Update:   crud.NewUpdate[approval.Delegation, DelegationParams](),
