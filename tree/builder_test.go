@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -26,7 +27,7 @@ type TestCategory struct {
 func createTestNodeAdapter() Adapter[TestNode] {
 	return Adapter[TestNode]{
 		GetID:       func(node TestNode) string { return node.ID },
-		GetParentID: func(node TestNode) string { return node.ParentID },
+		GetParentID: func(node TestNode) *string { return lo.EmptyableToPtr(node.ParentID) },
 		GetChildren: func(node TestNode) []TestNode { return node.Children },
 		SetChildren: func(node *TestNode, children []TestNode) { node.Children = children },
 	}
@@ -35,7 +36,7 @@ func createTestNodeAdapter() Adapter[TestNode] {
 func createTestCategoryAdapter() Adapter[TestCategory] {
 	return Adapter[TestCategory]{
 		GetID:       func(cat TestCategory) string { return cat.CategoryID },
-		GetParentID: func(cat TestCategory) string { return cat.ParentCatID },
+		GetParentID: func(cat TestCategory) *string { return lo.EmptyableToPtr(cat.ParentCatID) },
 		GetChildren: func(cat TestCategory) []TestCategory { return cat.SubCategories },
 		SetChildren: func(cat *TestCategory, children []TestCategory) { cat.SubCategories = children },
 	}
@@ -671,7 +672,7 @@ func TestAdapterEdgeCases(t *testing.T) {
 
 		node := nodes[0]
 		assert.Equal(t, "1", adapter.GetID(node), "Should equal expected value")
-		assert.Equal(t, "", adapter.GetParentID(node), "Should equal expected value")
+		assert.Nil(t, adapter.GetParentID(node), "Should equal expected value")
 		assert.Empty(t, adapter.GetChildren(node), "Should be empty")
 
 		newChildren := []TestNode{{ID: "child", Name: "Test Child"}}

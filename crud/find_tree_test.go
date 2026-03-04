@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
@@ -39,8 +38,8 @@ func buildCategoryTree(flatCategories []Department) []Department {
 		GetID: func(c Department) string {
 			return c.ID
 		},
-		GetParentID: func(c Department) string {
-			return lo.FromPtrOr(c.ParentID, "")
+		GetParentID: func(c Department) *string {
+			return c.ParentID
 		},
 		SetChildren: func(c *Department, children []Department) {
 			c.Children = children

@@ -7,7 +7,7 @@ import (
 // Adapter provides functions to access tree node properties.
 type Adapter[T any] struct {
 	GetID       func(T) string
-	GetParentID func(T) string
+	GetParentID func(T) *string
 	GetChildren func(T) []T
 	SetChildren func(*T, []T)
 }
@@ -30,8 +30,8 @@ func Build[T any](nodes []T, adapter Adapter[T]) []T {
 
 	for i := range nodes {
 		node := &nodes[i]
-		if parentID := adapter.GetParentID(*node); parentID != "" {
-			childrenMap[parentID] = append(childrenMap[parentID], node)
+		if parentID := adapter.GetParentID(*node); parentID != nil {
+			childrenMap[*parentID] = append(childrenMap[*parentID], node)
 		}
 	}
 
@@ -71,7 +71,7 @@ func Build[T any](nodes []T, adapter Adapter[T]) []T {
 	roots := make([]T, 0)
 	for _, node := range nodes {
 		parentID := adapter.GetParentID(node)
-		if parentID == "" || nodeMap[parentID] == nil {
+		if parentID == nil || nodeMap[*parentID] == nil {
 			roots = append(roots, node)
 		}
 	}

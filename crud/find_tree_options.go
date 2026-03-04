@@ -90,7 +90,7 @@ func (a *findTreeOptionsOperation[TModel, TSearch]) findTreeOptions(db orm.DB) (
 	table := db.TableOf((*TModel)(nil))
 	treeAdapter := tree.Adapter[TreeDataOption]{
 		GetID:       func(t TreeDataOption) string { return t.ID },
-		GetParentID: func(t TreeDataOption) string { return t.ParentID.ValueOrZero() },
+		GetParentID: func(t TreeDataOption) *string { return t.ParentID.Ptr() },
 		SetChildren: func(t *TreeDataOption, children []TreeDataOption) { t.Children = children },
 	}
 
