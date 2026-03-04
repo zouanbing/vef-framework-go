@@ -4,6 +4,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/crud"
+	"github.com/ilxqx/vef-framework-go/tree"
 )
 
 // CategoryParams contains the create/update parameters for flow category.
@@ -33,21 +34,38 @@ type CategorySearch struct {
 type CategoryResource struct {
 	api.Resource
 
-	crud.FindAll[approval.FlowCategory, CategorySearch]
-	crud.FindPage[approval.FlowCategory, CategorySearch]
+	crud.FindTree[approval.FlowCategory, CategorySearch]
+	crud.FindTreeOptions[approval.FlowCategory, CategorySearch]
 	crud.Create[approval.FlowCategory, CategoryParams]
 	crud.Update[approval.FlowCategory, CategoryParams]
 	crud.Delete[approval.FlowCategory]
 }
 
+// buildFlowCategoryTree converts flat category records into a nested tree structure.
+func buildFlowCategoryTree(flatCategories []approval.FlowCategory) []approval.FlowCategory {
+	adapter := tree.Adapter[approval.FlowCategory]{
+		GetID: func(c approval.FlowCategory) string {
+			return c.ID
+		},
+		GetParentID: func(c approval.FlowCategory) *string {
+			return c.ParentID
+		},
+		SetChildren: func(c *approval.FlowCategory, children []approval.FlowCategory) {
+			c.Children = children
+		},
+	}
+
+	return tree.Build(flatCategories, adapter)
+}
+
 // NewCategoryResource creates a new category resource with standard CRUD operations.
 func NewCategoryResource() api.Resource {
 	return &CategoryResource{
-		Resource: api.NewRPCResource("approval/category"),
-		FindAll:  crud.NewFindAll[approval.FlowCategory, CategorySearch](),
-		FindPage: crud.NewFindPage[approval.FlowCategory, CategorySearch](),
-		Create:   crud.NewCreate[approval.FlowCategory, CategoryParams](),
-		Update:   crud.NewUpdate[approval.FlowCategory, CategoryParams](),
-		Delete:   crud.NewDelete[approval.FlowCategory](),
+		Resource:        api.NewRPCResource("approval/category"),
+		FindTree:        crud.NewFindTree[approval.FlowCategory, CategorySearch](buildFlowCategoryTree),
+		FindTreeOptions: crud.NewFindTreeOptions[approval.FlowCategory, CategorySearch](),
+		Create:          crud.NewCreate[approval.FlowCategory, CategoryParams](),
+		Update:          crud.NewUpdate[approval.FlowCategory, CategoryParams](),
+		Delete:          crud.NewDelete[approval.FlowCategory](),
 	}
 }

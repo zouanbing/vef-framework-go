@@ -56,14 +56,15 @@ type FlowCategory struct {
 	orm.BaseModel `bun:"table:apv_flow_category,alias:afc"`
 	orm.Model
 
-	TenantID  string  `json:"tenantId" bun:"tenant_id"`
-	Code      string  `json:"code" bun:"code"`
-	Name      string  `json:"name" bun:"name"`
-	Icon      *string `json:"icon" bun:"icon,nullzero"`
-	ParentID  *string `json:"parentId" bun:"parent_id,nullzero"`
-	SortOrder int     `json:"sortOrder" bun:"sort_order"`
-	IsActive  bool    `json:"isActive" bun:"is_active"`
-	Remark    *string `json:"remark" bun:"remark,nullzero"`
+	TenantID  string         `json:"tenantId" bun:"tenant_id"`
+	Code      string         `json:"code" bun:"code"`
+	Name      string         `json:"name" bun:"name"`
+	Icon      *string        `json:"icon" bun:"icon,nullzero"`
+	ParentID  *string        `json:"parentId" bun:"parent_id,nullzero"`
+	SortOrder int            `json:"sortOrder" bun:"sort_order"`
+	IsActive  bool           `json:"isActive" bun:"is_active"`
+	Remark    *string        `json:"remark" bun:"remark,nullzero"`
+	Children  []FlowCategory `json:"children,omitempty" bun:"-"`
 }
 
 // FlowVersion represents a versioned snapshot of a flow definition.
