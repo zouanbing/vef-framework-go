@@ -3,7 +3,7 @@ package result
 import (
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/ilxqx/vef-framework-go/i18n"
+	"github.com/coldsmirk/vef-framework-go/i18n"
 )
 
 // Predefined authentication errors (HTTP 401).

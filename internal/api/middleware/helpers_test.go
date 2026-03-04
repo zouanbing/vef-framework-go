@@ -7,9 +7,9 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/internal/api/shared"
-	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/internal/api/shared"
+	"github.com/coldsmirk/vef-framework-go/result"
 )
 
 // TestBuildLoggerName tests the buildLoggerName helper function.

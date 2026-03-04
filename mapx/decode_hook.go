@@ -5,9 +5,9 @@ import (
 	"mime/multipart"
 	"reflect"
 
-	"github.com/ilxqx/vef-framework-go/decimal"
-	"github.com/ilxqx/vef-framework-go/null"
-	"github.com/ilxqx/vef-framework-go/timex"
+	"github.com/coldsmirk/vef-framework-go/decimal"
+	"github.com/coldsmirk/vef-framework-go/null"
+	"github.com/coldsmirk/vef-framework-go/timex"
 )
 
 // nullTypeMapping holds the type relationships for null type conversions.
@@ -209,7 +209,7 @@ func convertNullValue(from, to reflect.Type, value any) (any, error) {
 // isNullValue checks if a reflect.Type is a null.Value generic type.
 func isNullValue(t reflect.Type) bool {
 	pkgPath := t.PkgPath()
-	if pkgPath != "github.com/ilxqx/vef-framework-go/null" && pkgPath != "github.com/guregu/null/v6" {
+	if pkgPath != "github.com/coldsmirk/vef-framework-go/null" && pkgPath != "github.com/guregu/null/v6" {
 		return false
 	}
 

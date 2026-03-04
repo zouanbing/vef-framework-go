@@ -1,10 +1,10 @@
 package resource
 
 import (
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/crud"
-	"github.com/ilxqx/vef-framework-go/tree"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/approval"
+	"github.com/coldsmirk/vef-framework-go/crud"
+	"github.com/coldsmirk/vef-framework-go/tree"
 )
 
 // CategoryParams contains the create/update parameters for flow category.

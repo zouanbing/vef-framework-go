@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/testx"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/internal/testx"
 )
 
 type RedisTestSuite struct {

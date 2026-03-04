@@ -9,10 +9,10 @@ import (
 	"github.com/muesli/termenv"
 	"go.uber.org/fx"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/log"
-	"github.com/ilxqx/vef-framework-go/version"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/internal/log"
+	"github.com/coldsmirk/vef-framework-go/version"
 )
 
 // Middleware is a middleware for the app.

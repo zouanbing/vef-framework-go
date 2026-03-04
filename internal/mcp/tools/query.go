@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"unicode/utf8"
 
-	"github.com/ilxqx/vef-framework-go/mcp"
-	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/mcp"
+	"github.com/coldsmirk/vef-framework-go/orm"
 )
 
 // QueryArgs defines the expected arguments for the database_query tool.

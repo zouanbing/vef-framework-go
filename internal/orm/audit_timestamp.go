@@ -5,7 +5,7 @@ import (
 
 	"github.com/uptrace/bun/schema"
 
-	"github.com/ilxqx/vef-framework-go/timex"
+	"github.com/coldsmirk/vef-framework-go/timex"
 )
 
 // CreatedAtHandler sets created_at timestamps on insert.

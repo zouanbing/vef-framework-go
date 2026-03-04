@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/event"
+	"github.com/coldsmirk/vef-framework-go/event"
 )
 
 // TestMemoryEventBusBasicPublishSubscribe tests MemoryEventBus basic publish subscribe scenarios.

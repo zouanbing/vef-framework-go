@@ -3,10 +3,10 @@ package monitor
 import (
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/i18n"
-	"github.com/ilxqx/vef-framework-go/monitor"
-	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/i18n"
+	"github.com/coldsmirk/vef-framework-go/monitor"
+	"github.com/coldsmirk/vef-framework-go/result"
 )
 
 // defaultRateLimit is the default rate limit configuration for monitor endpoints.

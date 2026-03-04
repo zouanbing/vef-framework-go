@@ -13,8 +13,8 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/samber/lo"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/storage"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/storage"
 )
 
 type Service struct {

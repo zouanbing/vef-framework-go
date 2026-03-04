@@ -9,7 +9,7 @@ import (
 	"github.com/uptrace/bun/dialect/feature"
 	"github.com/uptrace/bun/schema"
 
-	collections "github.com/ilxqx/go-collections"
+	collections "github.com/coldsmirk/go-collections"
 )
 
 // NewUpdateQuery creates a new UpdateQuery instance with the provided database instance.

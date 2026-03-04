@@ -6,8 +6,8 @@ import (
 
 	"go.uber.org/fx"
 
-	"github.com/ilxqx/vef-framework-go/event"
-	"github.com/ilxqx/vef-framework-go/internal/log"
+	"github.com/coldsmirk/vef-framework-go/event"
+	"github.com/coldsmirk/vef-framework-go/internal/log"
 )
 
 var (

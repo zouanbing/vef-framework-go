@@ -1,6 +1,6 @@
 package shared
 
-import "github.com/ilxqx/vef-framework-go/result"
+import "github.com/coldsmirk/vef-framework-go/result"
 
 // Error codes for the approval module (40xxx range).
 const (

@@ -3,7 +3,7 @@ package strategy
 import (
 	"fmt"
 
-	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/coldsmirk/vef-framework-go/approval"
 )
 
 // StrategyRegistry holds all strategy implementations indexed by their type.

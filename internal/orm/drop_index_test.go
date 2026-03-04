@@ -3,7 +3,7 @@ package orm_test
 import (
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/config"
 )
 
 func init() {

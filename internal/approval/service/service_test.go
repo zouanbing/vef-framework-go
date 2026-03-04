@@ -7,11 +7,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/approval/migration"
-	"github.com/ilxqx/vef-framework-go/internal/testx"
-	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/approval"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/internal/approval/migration"
+	"github.com/coldsmirk/vef-framework-go/internal/testx"
+	"github.com/coldsmirk/vef-framework-go/orm"
 )
 
 // registry holds all service test suite factories, populated by init() in each suite file.

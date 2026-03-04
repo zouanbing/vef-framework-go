@@ -5,7 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/ilxqx/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/api"
 )
 
 // contextResolver is a generic resolver that extracts a value from the request context.

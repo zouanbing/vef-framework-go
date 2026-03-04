@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/internal/approval/strategy"
+	"github.com/coldsmirk/vef-framework-go/approval"
+	"github.com/coldsmirk/vef-framework-go/internal/approval/strategy"
 )
 
 // ConditionProcessor evaluates condition branches and selects the matching branch.

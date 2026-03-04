@@ -3,11 +3,11 @@ package middleware
 import (
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/contextx"
-	"github.com/ilxqx/vef-framework-go/internal/api/shared"
-	"github.com/ilxqx/vef-framework-go/orm"
-	"github.com/ilxqx/vef-framework-go/security"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/contextx"
+	"github.com/coldsmirk/vef-framework-go/internal/api/shared"
+	"github.com/coldsmirk/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/security"
 )
 
 // Contextual injects DB and Logger into the request context.

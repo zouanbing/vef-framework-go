@@ -3,8 +3,8 @@ package config
 import (
 	"fmt"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/monitor"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/internal/monitor"
 )
 
 // unmarshalConfig is a generic helper that unmarshals configuration from a given key.

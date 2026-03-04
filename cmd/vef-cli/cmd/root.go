@@ -6,9 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ilxqx/vef-framework-go/cmd/vef-cli/cmd/buildinfo"
-	"github.com/ilxqx/vef-framework-go/cmd/vef-cli/cmd/create"
-	"github.com/ilxqx/vef-framework-go/cmd/vef-cli/cmd/modelschema"
+	"github.com/coldsmirk/vef-framework-go/cmd/vef-cli/cmd/buildinfo"
+	"github.com/coldsmirk/vef-framework-go/cmd/vef-cli/cmd/create"
+	"github.com/coldsmirk/vef-framework-go/cmd/vef-cli/cmd/modelschema"
 )
 
 var (

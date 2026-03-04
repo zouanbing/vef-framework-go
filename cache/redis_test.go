@@ -13,9 +13,9 @@ import (
 
 	goredis "github.com/redis/go-redis/v9"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/redis"
-	"github.com/ilxqx/vef-framework-go/internal/testx"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/internal/redis"
+	"github.com/coldsmirk/vef-framework-go/internal/testx"
 )
 
 type TestUser struct {

@@ -4,7 +4,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/ilxqx/go-collections"
+	"github.com/coldsmirk/go-collections"
 )
 
 // IPWhitelistValidator validates IP addresses against a whitelist.

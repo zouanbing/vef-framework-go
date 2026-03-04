@@ -1,11 +1,11 @@
 package vef
 
 import (
-	"github.com/ilxqx/go-streams"
+	"github.com/coldsmirk/go-streams"
 	"go.uber.org/fx"
 
-	"github.com/ilxqx/vef-framework-go/mcp"
-	"github.com/ilxqx/vef-framework-go/middleware"
+	"github.com/coldsmirk/vef-framework-go/mcp"
+	"github.com/coldsmirk/vef-framework-go/middleware"
 )
 
 var (

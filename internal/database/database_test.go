@@ -11,10 +11,10 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/uptrace/bun"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/database"
-	"github.com/ilxqx/vef-framework-go/internal/database/sqlguard"
-	"github.com/ilxqx/vef-framework-go/internal/testx"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/internal/database"
+	"github.com/coldsmirk/vef-framework-go/internal/database/sqlguard"
+	"github.com/coldsmirk/vef-framework-go/internal/testx"
 )
 
 // DatabaseTestSuite tests database connection and configuration for PostgreSQL, MySQL, and SQLite.

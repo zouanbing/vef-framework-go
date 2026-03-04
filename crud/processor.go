@@ -3,7 +3,7 @@ package crud
 import (
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/orm"
 )
 
 // Processor transforms query results after execution but before JSON serialization.

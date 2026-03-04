@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/ilxqx/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/log"
 )
 
 // WorkerPool manages elastic worker scaling with priority queues.

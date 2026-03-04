@@ -9,8 +9,8 @@ import (
 	"github.com/uptrace/bun/dialect"
 	"github.com/uptrace/bun/schema"
 
-	"github.com/ilxqx/vef-framework-go/page"
-	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/coldsmirk/vef-framework-go/page"
+	"github.com/coldsmirk/vef-framework-go/result"
 )
 
 // NewSelectQuery creates a new SelectQuery instance with the provided database instance.

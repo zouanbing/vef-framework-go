@@ -3,11 +3,11 @@ package engine
 import (
 	"testing"
 
-	collections "github.com/ilxqx/go-collections"
+	collections "github.com/coldsmirk/go-collections"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/coldsmirk/vef-framework-go/approval"
 )
 
 // --- Test Helpers ---

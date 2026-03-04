@@ -5,10 +5,10 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/orm"
-	"github.com/ilxqx/vef-framework-go/search"
-	"github.com/ilxqx/vef-framework-go/sortx"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/search"
+	"github.com/coldsmirk/vef-framework-go/sortx"
 )
 
 // FindOperationConfig contains all configuration for find operation setup phase.

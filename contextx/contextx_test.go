@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/log"
-	"github.com/ilxqx/vef-framework-go/orm"
-	"github.com/ilxqx/vef-framework-go/security"
+	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/security"
 )
 
 // --- Test helpers ---

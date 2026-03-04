@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/hashx"
-	"github.com/ilxqx/vef-framework-go/id"
+	"github.com/coldsmirk/vef-framework-go/hashx"
+	"github.com/coldsmirk/vef-framework-go/id"
 )
 
 // SignatureCredentials represents the credentials extracted from HTTP headers

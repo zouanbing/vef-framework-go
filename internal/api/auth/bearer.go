@@ -7,9 +7,9 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/extractors"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/internal/api/shared"
-	"github.com/ilxqx/vef-framework-go/security"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/internal/api/shared"
+	"github.com/coldsmirk/vef-framework-go/security"
 )
 
 var defaultTokenExtractor = extractors.Chain(

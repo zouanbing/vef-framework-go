@@ -1,6 +1,6 @@
 package app
 
-import "github.com/ilxqx/vef-framework-go/validator"
+import "github.com/coldsmirk/vef-framework-go/validator"
 
 // StructValidator implements Fiber's struct validator interface.
 type StructValidator struct{}

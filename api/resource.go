@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/ilxqx/go-collections"
+	"github.com/coldsmirk/go-collections"
 )
 
 // Resource defines an API resource that groups related operations.

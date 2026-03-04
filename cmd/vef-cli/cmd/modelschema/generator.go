@@ -13,7 +13,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/ilxqx/go-streams"
+	"github.com/coldsmirk/go-streams"
 	"github.com/samber/lo"
 	"golang.org/x/tools/go/packages"
 )
@@ -245,7 +245,7 @@ func isOrmBaseModel(expr ast.Expr, pkg *packages.Package) bool {
 		return false
 	}
 
-	return pkgName.Imported().Path() == "github.com/ilxqx/vef-framework-go/orm"
+	return pkgName.Imported().Path() == "github.com/coldsmirk/vef-framework-go/orm"
 }
 
 func parseStructFields(structType *ast.StructType, pkg *packages.Package) []ModelField {
@@ -581,7 +581,7 @@ func buildImportDecl() *ast.GenDecl {
 			&ast.ImportSpec{
 				Path: &ast.BasicLit{
 					Kind:  token.STRING,
-					Value: `"github.com/ilxqx/vef-framework-go/dbx"`,
+					Value: `"github.com/coldsmirk/vef-framework-go/dbx"`,
 				},
 			},
 		},

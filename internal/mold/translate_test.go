@@ -8,11 +8,11 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/fx"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/app"
-	"github.com/ilxqx/vef-framework-go/internal/apptest"
-	"github.com/ilxqx/vef-framework-go/mold"
-	"github.com/ilxqx/vef-framework-go/null"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/internal/app"
+	"github.com/coldsmirk/vef-framework-go/internal/apptest"
+	"github.com/coldsmirk/vef-framework-go/mold"
+	"github.com/coldsmirk/vef-framework-go/null"
 )
 
 // TranslateTransformerTestSuite tests the TranslateTransformer functionality.

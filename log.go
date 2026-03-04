@@ -1,8 +1,8 @@
 package vef
 
 import (
-	ilog "github.com/ilxqx/vef-framework-go/internal/log"
-	"github.com/ilxqx/vef-framework-go/log"
+	ilog "github.com/coldsmirk/vef-framework-go/internal/log"
+	"github.com/coldsmirk/vef-framework-go/log"
 )
 
 // NamedLogger creates a named logger instance for the specified component.

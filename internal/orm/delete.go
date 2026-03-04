@@ -7,7 +7,7 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
 
-	collections "github.com/ilxqx/go-collections"
+	collections "github.com/coldsmirk/go-collections"
 )
 
 // NewDeleteQuery creates a new DeleteQuery instance with the provided database instance.

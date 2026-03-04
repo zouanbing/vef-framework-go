@@ -5,10 +5,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ilxqx/go-streams"
+	"github.com/coldsmirk/go-streams"
 
-	"github.com/ilxqx/vef-framework-go/event"
-	"github.com/ilxqx/vef-framework-go/id"
+	"github.com/coldsmirk/vef-framework-go/event"
+	"github.com/coldsmirk/vef-framework-go/id"
 )
 
 // MemoryBus is a simple, thread-safe in-memory event bus implementation.

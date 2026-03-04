@@ -4,7 +4,7 @@ package shared
 import (
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/ilxqx/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/api"
 )
 
 type contextKey uint

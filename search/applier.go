@@ -1,6 +1,6 @@
 package search
 
-import "github.com/ilxqx/vef-framework-go/orm"
+import "github.com/coldsmirk/vef-framework-go/orm"
 
 func Applier[T any]() func(T) orm.ApplyFunc[orm.ConditionBuilder] {
 	f := NewFor[T]()

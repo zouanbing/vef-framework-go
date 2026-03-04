@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/null"
+	"github.com/coldsmirk/vef-framework-go/null"
 )
 
 // TestValidate tests the Validate function with various inputs.

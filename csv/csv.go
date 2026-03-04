@@ -3,7 +3,7 @@ package csv
 import (
 	"reflect"
 
-	"github.com/ilxqx/vef-framework-go/tabular"
+	"github.com/coldsmirk/vef-framework-go/tabular"
 )
 
 func NewImporterFor[T any](opts ...ImportOption) tabular.Importer {

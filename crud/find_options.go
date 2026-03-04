@@ -3,9 +3,9 @@ package crud
 import (
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/orm"
-	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/result"
 )
 
 // FindOptions provides a fluent interface for building find options endpoints.

@@ -7,15 +7,15 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/samber/lo"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/csv"
-	"github.com/ilxqx/vef-framework-go/excel"
-	"github.com/ilxqx/vef-framework-go/httpx"
-	"github.com/ilxqx/vef-framework-go/i18n"
-	"github.com/ilxqx/vef-framework-go/log"
-	"github.com/ilxqx/vef-framework-go/orm"
-	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/tabular"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/csv"
+	"github.com/coldsmirk/vef-framework-go/excel"
+	"github.com/coldsmirk/vef-framework-go/httpx"
+	"github.com/coldsmirk/vef-framework-go/i18n"
+	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/result"
+	"github.com/coldsmirk/vef-framework-go/tabular"
 )
 
 // Import provides a fluent interface for building import endpoints.

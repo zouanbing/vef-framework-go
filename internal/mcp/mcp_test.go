@@ -14,10 +14,10 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/fx"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/apptest"
-	"github.com/ilxqx/vef-framework-go/password"
-	"github.com/ilxqx/vef-framework-go/security"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/internal/apptest"
+	"github.com/coldsmirk/vef-framework-go/password"
+	"github.com/coldsmirk/vef-framework-go/security"
 )
 
 // MockUserLoader is a mock implementation of security.UserLoader for testing.

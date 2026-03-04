@@ -7,8 +7,8 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ilxqx/vef-framework-go/null"
-	"github.com/ilxqx/vef-framework-go/timex"
+	"github.com/coldsmirk/vef-framework-go/null"
+	"github.com/coldsmirk/vef-framework-go/timex"
 )
 
 // TestDefaultFormatterFormatBasicTypes tests DefaultFormatter Format basic types scenarios.

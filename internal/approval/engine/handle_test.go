@@ -5,11 +5,11 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/internal/approval/engine"
-	"github.com/ilxqx/vef-framework-go/internal/approval/strategy"
-	"github.com/ilxqx/vef-framework-go/internal/testx"
-	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/approval"
+	"github.com/coldsmirk/vef-framework-go/internal/approval/engine"
+	"github.com/coldsmirk/vef-framework-go/internal/approval/strategy"
+	"github.com/coldsmirk/vef-framework-go/internal/testx"
+	"github.com/coldsmirk/vef-framework-go/orm"
 )
 
 func init() {

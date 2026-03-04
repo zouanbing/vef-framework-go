@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/ilxqx/vef-framework-go/decimal"
+	"github.com/coldsmirk/vef-framework-go/decimal"
 )
 
 // Common type conversions delegated to cast.

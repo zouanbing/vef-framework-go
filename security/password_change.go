@@ -3,7 +3,7 @@ package security
 import (
 	"context"
 
-	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/coldsmirk/vef-framework-go/result"
 )
 
 // ChallengeTypePasswordChange is the challenge type identifier for forced password change.

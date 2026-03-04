@@ -3,7 +3,7 @@ package orm
 import (
 	"github.com/uptrace/bun/schema"
 
-	"github.com/ilxqx/vef-framework-go/sortx"
+	"github.com/coldsmirk/vef-framework-go/sortx"
 )
 
 // OrderBuilder provides a fluent interface for building ORDER BY clauses.

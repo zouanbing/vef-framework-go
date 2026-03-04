@@ -7,8 +7,8 @@ import (
 
 	"github.com/uptrace/bun"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/orm"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/internal/orm"
 )
 
 // DBEnv encapsulates the database environment for cross-database integration tests.

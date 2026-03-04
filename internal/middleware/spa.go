@@ -9,8 +9,8 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/helmet"
 	"github.com/gofiber/fiber/v3/middleware/static"
 
-	"github.com/ilxqx/vef-framework-go/internal/app"
-	"github.com/ilxqx/vef-framework-go/middleware"
+	"github.com/coldsmirk/vef-framework-go/internal/app"
+	"github.com/coldsmirk/vef-framework-go/middleware"
 )
 
 type spaMiddleware struct {

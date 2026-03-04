@@ -1,6 +1,6 @@
 package orm
 
-import "github.com/ilxqx/vef-framework-go/internal/orm"
+import "github.com/coldsmirk/vef-framework-go/internal/orm"
 
 type (
 	DB                          = orm.DB

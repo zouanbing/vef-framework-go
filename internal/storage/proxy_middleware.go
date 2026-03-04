@@ -8,10 +8,10 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/ilxqx/vef-framework-go/i18n"
-	"github.com/ilxqx/vef-framework-go/internal/app"
-	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/storage"
+	"github.com/coldsmirk/vef-framework-go/i18n"
+	"github.com/coldsmirk/vef-framework-go/internal/app"
+	"github.com/coldsmirk/vef-framework-go/result"
+	"github.com/coldsmirk/vef-framework-go/storage"
 )
 
 type ProxyMiddleware struct {

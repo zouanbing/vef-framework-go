@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ilxqx/vef-framework-go/event"
-	ievent "github.com/ilxqx/vef-framework-go/internal/event"
+	"github.com/coldsmirk/vef-framework-go/event"
+	ievent "github.com/coldsmirk/vef-framework-go/internal/event"
 )
 
 type CachedRolePermissionsLoaderTestSuite struct {

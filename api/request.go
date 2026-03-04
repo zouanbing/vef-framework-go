@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/ilxqx/vef-framework-go/mapx"
-	"github.com/ilxqx/vef-framework-go/reflectx"
+	"github.com/coldsmirk/vef-framework-go/mapx"
+	"github.com/coldsmirk/vef-framework-go/reflectx"
 )
 
 // Identifier uniquely identifies an API operation.

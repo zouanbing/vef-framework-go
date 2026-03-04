@@ -6,10 +6,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	istorage "github.com/ilxqx/vef-framework-go/internal/storage"
-	"github.com/ilxqx/vef-framework-go/internal/storage/memory"
-	"github.com/ilxqx/vef-framework-go/storage"
+	"github.com/coldsmirk/vef-framework-go/config"
+	istorage "github.com/coldsmirk/vef-framework-go/internal/storage"
+	"github.com/coldsmirk/vef-framework-go/internal/storage/memory"
+	"github.com/coldsmirk/vef-framework-go/storage"
 )
 
 // TestNew tests new functionality.

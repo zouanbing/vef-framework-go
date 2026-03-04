@@ -3,10 +3,10 @@ package security
 import (
 	"context"
 
-	"github.com/ilxqx/vef-framework-go/cache"
-	"github.com/ilxqx/vef-framework-go/event"
-	ilog "github.com/ilxqx/vef-framework-go/internal/log"
-	"github.com/ilxqx/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/cache"
+	"github.com/coldsmirk/vef-framework-go/event"
+	ilog "github.com/coldsmirk/vef-framework-go/internal/log"
+	"github.com/coldsmirk/vef-framework-go/log"
 )
 
 // eventTypeRolePermissionsChanged is the event type for role permissions changes.

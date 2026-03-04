@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/cache"
+	"github.com/coldsmirk/vef-framework-go/cache"
 )
 
 // MemoryNonceStore implements NonceStore using an in-memory cache.

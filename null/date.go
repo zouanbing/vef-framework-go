@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/ilxqx/vef-framework-go/timex"
+	"github.com/coldsmirk/vef-framework-go/timex"
 )
 
 // Date is a nullable timex.Date. It supports SQL and JSON serialization.

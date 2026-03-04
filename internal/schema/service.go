@@ -7,8 +7,8 @@ import (
 
 	as "ariga.io/atlas/sql/schema"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/schema"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/schema"
 )
 
 // DefaultService is the default implementation of schema.Service.

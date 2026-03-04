@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/id"
-	"github.com/ilxqx/vef-framework-go/security"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/id"
+	"github.com/coldsmirk/vef-framework-go/security"
 )
 
 const (

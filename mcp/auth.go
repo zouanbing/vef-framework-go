@@ -5,8 +5,8 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/auth"
 
-	"github.com/ilxqx/vef-framework-go/orm"
-	"github.com/ilxqx/vef-framework-go/security"
+	"github.com/coldsmirk/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/security"
 )
 
 // GetPrincipalFromContext extracts the Principal from MCP request context.

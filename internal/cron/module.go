@@ -3,7 +3,7 @@ package cron
 import (
 	"go.uber.org/fx"
 
-	"github.com/ilxqx/vef-framework-go/cron"
+	"github.com/coldsmirk/vef-framework-go/cron"
 )
 
 // Module provides dependency injection configuration for the cron scheduler.

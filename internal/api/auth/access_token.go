@@ -3,8 +3,8 @@ package auth
 import (
 	"context"
 
-	isecurity "github.com/ilxqx/vef-framework-go/internal/security"
-	"github.com/ilxqx/vef-framework-go/security"
+	isecurity "github.com/coldsmirk/vef-framework-go/internal/security"
+	"github.com/coldsmirk/vef-framework-go/security"
 )
 
 // AccessTokenAuthenticator delegates token authentication to the security.AuthManager.

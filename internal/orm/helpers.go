@@ -7,10 +7,10 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
 
-	collections "github.com/ilxqx/go-collections"
+	collections "github.com/coldsmirk/go-collections"
 
-	"github.com/ilxqx/vef-framework-go/dbx"
-	"github.com/ilxqx/vef-framework-go/sortx"
+	"github.com/coldsmirk/vef-framework-go/dbx"
+	"github.com/coldsmirk/vef-framework-go/sortx"
 )
 
 // getTableSchema extracts the table schema from a struct pointer model.

@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/internal/log"
+	"github.com/coldsmirk/vef-framework-go/internal/log"
 )
 
 // TestGuardCheck tests guard check functionality.

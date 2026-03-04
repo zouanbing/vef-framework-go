@@ -1,6 +1,6 @@
 package storage
 
-import "github.com/ilxqx/vef-framework-go/event"
+import "github.com/coldsmirk/vef-framework-go/event"
 
 const (
 	// EventTypeFilePromoted is published when a file is promoted from temp to permanent storage.

@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/ilxqx/vef-framework-go/cmd/vef-cli/cmd"
+	"github.com/coldsmirk/vef-framework-go/cmd/vef-cli/cmd"
 )
 
 var (

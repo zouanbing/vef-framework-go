@@ -3,8 +3,8 @@ package orm
 import (
 	"errors"
 
-	"github.com/ilxqx/vef-framework-go/dbx"
-	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/coldsmirk/vef-framework-go/dbx"
+	"github.com/coldsmirk/vef-framework-go/result"
 )
 
 var (

@@ -3,9 +3,9 @@ package behavior
 import (
 	"context"
 
-	"github.com/ilxqx/vef-framework-go/contextx"
-	"github.com/ilxqx/vef-framework-go/internal/cqrs"
-	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/contextx"
+	"github.com/coldsmirk/vef-framework-go/internal/cqrs"
+	"github.com/coldsmirk/vef-framework-go/orm"
 )
 
 // TransactionBehavior wraps command handlers in a database transaction.

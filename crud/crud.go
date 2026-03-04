@@ -1,6 +1,6 @@
 package crud
 
-import "github.com/ilxqx/vef-framework-go/api"
+import "github.com/coldsmirk/vef-framework-go/api"
 
 // NewBuilder creates a new base API builder instance.
 func NewBuilder[T any](self T, kind ...api.Kind) Builder[T] {

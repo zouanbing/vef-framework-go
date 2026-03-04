@@ -16,9 +16,9 @@ import (
 	"github.com/shirou/gopsutil/v4/net"
 	"github.com/shirou/gopsutil/v4/process"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/monitor"
-	"github.com/ilxqx/vef-framework-go/version"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/monitor"
+	"github.com/coldsmirk/vef-framework-go/version"
 )
 
 // DefaultService implements monitor.Service with background CPU and process sampling.

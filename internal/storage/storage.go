@@ -3,11 +3,11 @@ package storage
 import (
 	"fmt"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/storage/filesystem"
-	"github.com/ilxqx/vef-framework-go/internal/storage/memory"
-	"github.com/ilxqx/vef-framework-go/internal/storage/minio"
-	"github.com/ilxqx/vef-framework-go/storage"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/internal/storage/filesystem"
+	"github.com/coldsmirk/vef-framework-go/internal/storage/memory"
+	"github.com/coldsmirk/vef-framework-go/internal/storage/minio"
+	"github.com/coldsmirk/vef-framework-go/storage"
 )
 
 func NewService(cfg *config.StorageConfig, appCfg *config.AppConfig) (storage.Service, error) {

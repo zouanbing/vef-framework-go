@@ -1,6 +1,6 @@
 package orm
 
-import "github.com/ilxqx/vef-framework-go/page"
+import "github.com/coldsmirk/vef-framework-go/page"
 
 // SelectQuery builds and executes SELECT queries with support for
 // joins, conditions, ordering, grouping, pagination, locking, and set operations.

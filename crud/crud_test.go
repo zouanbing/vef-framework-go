@@ -8,9 +8,9 @@ import (
 	"github.com/go-testfixtures/testfixtures/v3"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/orm"
-	"github.com/ilxqx/vef-framework-go/internal/testx"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/internal/orm"
+	"github.com/coldsmirk/vef-framework-go/internal/testx"
 )
 
 // registry holds all CRUD test suite factories, populated by init() in each suite file.

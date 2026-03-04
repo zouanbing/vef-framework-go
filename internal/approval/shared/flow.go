@@ -1,6 +1,6 @@
 package shared
 
-import "github.com/ilxqx/vef-framework-go/approval"
+import "github.com/coldsmirk/vef-framework-go/approval"
 
 // FlowGraph contains the complete flow graph for a version.
 type FlowGraph struct {

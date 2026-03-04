@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/coldsmirk/vef-framework-go/approval"
 )
 
 // TestAllPassStrategy tests all pass strategy scenarios.

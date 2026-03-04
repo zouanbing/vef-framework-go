@@ -7,9 +7,9 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/ilxqx/vef-framework-go/decimal"
-	"github.com/ilxqx/vef-framework-go/null"
-	"github.com/ilxqx/vef-framework-go/timex"
+	"github.com/coldsmirk/vef-framework-go/decimal"
+	"github.com/coldsmirk/vef-framework-go/null"
+	"github.com/coldsmirk/vef-framework-go/timex"
 )
 
 // ValueParser defines the interface for custom value parsers.

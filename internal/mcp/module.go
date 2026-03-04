@@ -3,8 +3,8 @@ package mcp
 import (
 	"go.uber.org/fx"
 
-	"github.com/ilxqx/vef-framework-go/internal/mcp/prompts"
-	"github.com/ilxqx/vef-framework-go/internal/mcp/tools"
+	"github.com/coldsmirk/vef-framework-go/internal/mcp/prompts"
+	"github.com/coldsmirk/vef-framework-go/internal/mcp/tools"
 )
 
 var Module = fx.Module(

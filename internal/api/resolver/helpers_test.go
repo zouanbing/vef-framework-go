@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ilxqx/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/api"
 )
 
 // TestSelectClosestMatch tests select closest match scenarios.

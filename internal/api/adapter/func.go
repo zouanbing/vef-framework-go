@@ -6,10 +6,10 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/internal/api/handler"
-	"github.com/ilxqx/vef-framework-go/internal/api/param"
-	"github.com/ilxqx/vef-framework-go/internal/api/shared"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/internal/api/handler"
+	"github.com/coldsmirk/vef-framework-go/internal/api/param"
+	"github.com/coldsmirk/vef-framework-go/internal/api/shared"
 )
 
 type FuncHandler struct {

@@ -9,8 +9,8 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/spf13/cast"
 
-	"github.com/ilxqx/vef-framework-go/monad"
-	"github.com/ilxqx/vef-framework-go/reflectx"
+	"github.com/coldsmirk/vef-framework-go/monad"
+	"github.com/coldsmirk/vef-framework-go/reflectx"
 )
 
 var (

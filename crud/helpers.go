@@ -11,11 +11,11 @@ import (
 	"github.com/samber/lo"
 	"github.com/uptrace/bun/schema"
 
-	"github.com/ilxqx/vef-framework-go/contextx"
-	"github.com/ilxqx/vef-framework-go/i18n"
-	"github.com/ilxqx/vef-framework-go/orm"
-	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/storage"
+	"github.com/coldsmirk/vef-framework-go/contextx"
+	"github.com/coldsmirk/vef-framework-go/i18n"
+	"github.com/coldsmirk/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/result"
+	"github.com/coldsmirk/vef-framework-go/storage"
 )
 
 // columnRef pairs a logical name with a column identifier for validation.

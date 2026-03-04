@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/ilxqx/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/log"
 )
 
 type sLogHandler struct {

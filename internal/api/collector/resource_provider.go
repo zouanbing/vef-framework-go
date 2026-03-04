@@ -3,7 +3,7 @@ package collector
 import (
 	"reflect"
 
-	"github.com/ilxqx/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/api"
 )
 
 // ResourceProviderCollector collects API specs if the resource itself implements

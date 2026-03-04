@@ -6,7 +6,7 @@ import (
 
 	"github.com/dlclark/regexp2"
 
-	collections "github.com/ilxqx/go-collections"
+	collections "github.com/coldsmirk/go-collections"
 )
 
 // Uses regexp2 instead of standard library because backreferences (\1, \2) are needed

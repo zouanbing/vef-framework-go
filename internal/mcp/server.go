@@ -10,9 +10,9 @@ import (
 
 	smcp "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	ilog "github.com/ilxqx/vef-framework-go/internal/log"
-	"github.com/ilxqx/vef-framework-go/mcp"
+	"github.com/coldsmirk/vef-framework-go/config"
+	ilog "github.com/coldsmirk/vef-framework-go/internal/log"
+	"github.com/coldsmirk/vef-framework-go/mcp"
 )
 
 var logger = ilog.Named("mcp")

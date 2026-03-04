@@ -1,6 +1,6 @@
 package orm
 
-import "github.com/ilxqx/vef-framework-go/timex"
+import "github.com/coldsmirk/vef-framework-go/timex"
 
 // IDModel contains only the primary key field.
 type IDModel struct {

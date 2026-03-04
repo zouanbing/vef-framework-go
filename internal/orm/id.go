@@ -5,7 +5,7 @@ import (
 
 	"github.com/uptrace/bun/schema"
 
-	"github.com/ilxqx/vef-framework-go/id"
+	"github.com/coldsmirk/vef-framework-go/id"
 )
 
 // IDHandler generates unique IDs for string primary key fields on insert.

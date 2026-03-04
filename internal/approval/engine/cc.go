@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/approval"
+	"github.com/coldsmirk/vef-framework-go/orm"
 )
 
 // CCProcessor handles CC (carbon copy) notification nodes.

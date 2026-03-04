@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/decimal"
-	"github.com/ilxqx/vef-framework-go/null"
-	"github.com/ilxqx/vef-framework-go/timex"
+	"github.com/coldsmirk/vef-framework-go/decimal"
+	"github.com/coldsmirk/vef-framework-go/null"
+	"github.com/coldsmirk/vef-framework-go/timex"
 )
 
 // TestCopyBasic tests basic struct copying functionality.

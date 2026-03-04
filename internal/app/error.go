@@ -5,9 +5,9 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/ilxqx/vef-framework-go/contextx"
-	"github.com/ilxqx/vef-framework-go/i18n"
-	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/coldsmirk/vef-framework-go/contextx"
+	"github.com/coldsmirk/vef-framework-go/i18n"
+	"github.com/coldsmirk/vef-framework-go/result"
 )
 
 // fiberErrorMapping defines the mapping from Fiber HTTP status codes to application error codes and messages.

@@ -7,10 +7,10 @@ import (
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/spf13/viper"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	ilog "github.com/ilxqx/vef-framework-go/internal/log"
-	"github.com/ilxqx/vef-framework-go/log"
-	"github.com/ilxqx/vef-framework-go/mapx"
+	"github.com/coldsmirk/vef-framework-go/config"
+	ilog "github.com/coldsmirk/vef-framework-go/internal/log"
+	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/mapx"
 )
 
 var (

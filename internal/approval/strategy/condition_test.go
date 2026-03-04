@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/coldsmirk/vef-framework-go/approval"
 )
 
 // TestFieldConditionEvaluator tests field condition evaluator scenarios.

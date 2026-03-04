@@ -12,7 +12,7 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/ilxqx/vef-framework-go/storage"
+	"github.com/coldsmirk/vef-framework-go/storage"
 )
 
 // Service is intended for testing purposes only.

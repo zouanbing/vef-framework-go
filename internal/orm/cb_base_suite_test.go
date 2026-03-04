@@ -1,6 +1,6 @@
 package orm_test
 
-import "github.com/ilxqx/vef-framework-go/internal/orm"
+import "github.com/coldsmirk/vef-framework-go/internal/orm"
 
 // ConditionBuilderTestSuite provides common helpers for all condition builder tests.
 type ConditionBuilderTestSuite struct {

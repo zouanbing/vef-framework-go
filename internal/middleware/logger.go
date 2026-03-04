@@ -6,9 +6,9 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/requestid"
 
-	"github.com/ilxqx/vef-framework-go/contextx"
-	"github.com/ilxqx/vef-framework-go/internal/app"
-	"github.com/ilxqx/vef-framework-go/internal/log"
+	"github.com/coldsmirk/vef-framework-go/contextx"
+	"github.com/coldsmirk/vef-framework-go/internal/app"
+	"github.com/coldsmirk/vef-framework-go/internal/log"
 )
 
 // NewLoggerMiddleware creates request-scoped loggers to correlate all log entries within a request.

@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/log"
 )
 
 const (

@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/id"
-	"github.com/ilxqx/vef-framework-go/mapx"
-	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/approval"
+	"github.com/coldsmirk/vef-framework-go/id"
+	"github.com/coldsmirk/vef-framework-go/mapx"
+	"github.com/coldsmirk/vef-framework-go/orm"
 )
 
 // EventPublisher publishes domain events to the EventOutbox table.

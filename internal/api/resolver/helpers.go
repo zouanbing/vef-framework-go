@@ -8,10 +8,10 @@ import (
 
 	"github.com/hbollon/go-edlib"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/internal/api/handler"
-	"github.com/ilxqx/vef-framework-go/internal/api/shared"
-	"github.com/ilxqx/vef-framework-go/reflectx"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/internal/api/handler"
+	"github.com/coldsmirk/vef-framework-go/internal/api/shared"
+	"github.com/coldsmirk/vef-framework-go/reflectx"
 )
 
 var errorType = reflect.TypeFor[error]()

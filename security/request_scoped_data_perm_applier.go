@@ -3,8 +3,8 @@ package security
 import (
 	"fmt"
 
-	"github.com/ilxqx/vef-framework-go/log"
-	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/orm"
 )
 
 // RequestScopedDataPermApplier is the default implementation of DataPermissionApplier.

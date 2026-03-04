@@ -7,7 +7,7 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	v "github.com/go-playground/validator/v10"
 
-	"github.com/ilxqx/vef-framework-go/i18n"
+	"github.com/coldsmirk/vef-framework-go/i18n"
 )
 
 var presetValidationRules = []ValidationRule{

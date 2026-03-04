@@ -3,7 +3,7 @@ package security
 import (
 	"context"
 
-	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/coldsmirk/vef-framework-go/result"
 )
 
 // OTPEvaluator determines whether a user needs OTP verification.

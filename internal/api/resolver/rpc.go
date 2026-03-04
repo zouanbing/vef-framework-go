@@ -5,7 +5,7 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/ilxqx/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/api"
 )
 
 type RPC struct{}

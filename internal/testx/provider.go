@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/database"
-	"github.com/ilxqx/vef-framework-go/internal/orm"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/internal/database"
+	"github.com/coldsmirk/vef-framework-go/internal/orm"
 )
 
 // DBSetupFunc creates a DataSourceConfig (spinning up a container if needed).

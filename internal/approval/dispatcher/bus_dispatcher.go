@@ -3,8 +3,8 @@ package dispatcher
 import (
 	"context"
 
-	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/event"
+	"github.com/coldsmirk/vef-framework-go/approval"
+	"github.com/coldsmirk/vef-framework-go/event"
 )
 
 // OutboxEvent represents an approval outbox event published to the event bus.

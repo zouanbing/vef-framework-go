@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/contextx"
-	"github.com/ilxqx/vef-framework-go/internal/cqrs"
-	"github.com/ilxqx/vef-framework-go/internal/testx"
+	"github.com/coldsmirk/vef-framework-go/contextx"
+	"github.com/coldsmirk/vef-framework-go/internal/cqrs"
+	"github.com/coldsmirk/vef-framework-go/internal/testx"
 )
 
 type TestCmd struct{ cqrs.BaseCommand }

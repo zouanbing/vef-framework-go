@@ -2,13 +2,13 @@
 
 📖 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
-[![GitHub Release](https://img.shields.io/github/v/release/ilxqx/vef-framework-go)](https://github.com/ilxqx/vef-framework-go/releases)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/ilxqx/vef-framework-go/test.yml?branch=main)](https://github.com/ilxqx/vef-framework-go/actions/workflows/test.yml)
-[![Coverage](https://img.shields.io/codecov/c/github/ilxqx/vef-framework-go)](https://codecov.io/gh/ilxqx/vef-framework-go)
-[![Go Reference](https://pkg.go.dev/badge/github.com/ilxqx/vef-framework-go.svg)](https://pkg.go.dev/github.com/ilxqx/vef-framework-go)
-[![Go Report Card](https://goreportcard.com/badge/github.com/ilxqx/vef-framework-go)](https://goreportcard.com/report/github.com/ilxqx/vef-framework-go)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ilxqx/vef-framework-go)
-[![License](https://img.shields.io/github/license/ilxqx/vef-framework-go)](https://github.com/ilxqx/vef-framework-go/blob/main/LICENSE)
+[![GitHub Release](https://img.shields.io/github/v/release/coldsmirk/vef-framework-go)](https://github.com/coldsmirk/vef-framework-go/releases)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/coldsmirk/vef-framework-go/test.yml?branch=main)](https://github.com/coldsmirk/vef-framework-go/actions/workflows/test.yml)
+[![Coverage](https://img.shields.io/codecov/c/github/coldsmirk/vef-framework-go)](https://codecov.io/gh/coldsmirk/vef-framework-go)
+[![Go Reference](https://pkg.go.dev/badge/github.com/coldsmirk/vef-framework-go.svg)](https://pkg.go.dev/github.com/coldsmirk/vef-framework-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/coldsmirk/vef-framework-go)](https://goreportcard.com/report/github.com/coldsmirk/vef-framework-go)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/coldsmirk/vef-framework-go)
+[![License](https://img.shields.io/github/license/coldsmirk/vef-framework-go)](https://github.com/coldsmirk/vef-framework-go/blob/main/LICENSE)
 
 一个基于 Uber FX 依赖注入和 Fiber 构建的现代化 Go Web 开发框架，采用约定优于配置的设计理念，为企业级应用快速开发提供开箱即用的完整功能。
 
@@ -29,7 +29,7 @@
 ### 安装
 
 ```bash
-go get github.com/ilxqx/vef-framework-go
+go get github.com/coldsmirk/vef-framework-go
 ```
 
 **环境要求：** Go 1.25.0 或更高版本
@@ -48,7 +48,7 @@ go mod tidy
 ```go
 package main
 
-import "github.com/ilxqx/vef-framework-go"
+import "github.com/coldsmirk/vef-framework-go"
 
 func main() {
     vef.Run()
@@ -124,7 +124,7 @@ my-app/
 package main
 
 import (
-    "github.com/ilxqx/vef-framework-go"
+    "github.com/coldsmirk/vef-framework-go"
     "my-app/internal/auth"
     "my-app/internal/sys"
     ivef "my-app/internal/vef"
@@ -149,7 +149,7 @@ func main() {
 package sys
 
 import (
-    "github.com/ilxqx/vef-framework-go"
+    "github.com/coldsmirk/vef-framework-go"
     "my-app/internal/sys/resources"
 )
 
@@ -227,8 +227,8 @@ vef.Run(
 package models
 
 import (
-    "github.com/ilxqx/vef-framework-go/null"
-    "github.com/ilxqx/vef-framework-go/orm"
+    "github.com/coldsmirk/vef-framework-go/null"
+    "github.com/coldsmirk/vef-framework-go/orm"
 )
 
 type User struct {
@@ -284,7 +284,7 @@ type User struct {
 ```go
 package payloads
 
-import "github.com/ilxqx/vef-framework-go/api"
+import "github.com/coldsmirk/vef-framework-go/api"
 
 type UserSearch struct {
     api.P
@@ -335,8 +335,8 @@ type UserUpdateParams struct {
 package resources
 
 import (
-    "github.com/ilxqx/vef-framework-go/api"
-    "github.com/ilxqx/vef-framework-go/crud"
+    "github.com/coldsmirk/vef-framework-go/api"
+    "github.com/coldsmirk/vef-framework-go/crud"
 )
 
 type UserResource struct {
@@ -526,7 +526,7 @@ FindOptions: crud.NewFindOptions[User, UserSearch]().
 **FindTree：**
 
 ```go
-import "github.com/ilxqx/vef-framework-go/tree"
+import "github.com/coldsmirk/vef-framework-go/tree"
 
 FindTree: crud.NewFindTree[models.Organization, payloads.OrganizationSearch](
     buildOrganizationTree,
@@ -936,7 +936,7 @@ allow_origins = ["*"]
 ### 缓存
 
 ```go
-import "github.com/ilxqx/vef-framework-go/cache"
+import "github.com/coldsmirk/vef-framework-go/cache"
 
 // 内存缓存
 memCache := cache.NewMemory[models.User](
@@ -959,7 +959,7 @@ user, err := memCache.GetOrLoad(ctx, "user:123", func(ctx context.Context) (mode
 ### 事件总线
 
 ```go
-import "github.com/ilxqx/vef-framework-go/event"
+import "github.com/coldsmirk/vef-framework-go/event"
 
 // 发布事件
 bus.Publish(event.NewBaseEvent("user.created",
@@ -981,7 +981,7 @@ vef.Invoke(func(bus event.Bus, logger log.Logger) {
 基于 [gocron](https://github.com/go-co-op/gocron)：
 
 ```go
-import "github.com/ilxqx/vef-framework-go/cron"
+import "github.com/coldsmirk/vef-framework-go/cron"
 
 vef.Invoke(func(scheduler cron.Scheduler) {
     // Cron 表达式（5 字段：分 时 日 月 周）
@@ -1059,13 +1059,13 @@ type UserParams struct {
 **生成构建信息：**
 
 ```bash
-go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-build-info -o internal/vef/build_info.go -p vef
+go run github.com/coldsmirk/vef-framework-go/cmd/vef-cli@latest generate-build-info -o internal/vef/build_info.go -p vef
 ```
 
 **生成模型 Schema**（类型安全的字段访问器）：
 
 ```bash
-go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-model-schema -i ./models -o ./schemas -p schemas
+go run github.com/coldsmirk/vef-framework-go/cmd/vef-cli@latest generate-model-schema -i ./models -o ./schemas -p schemas
 ```
 
 在查询中使用：
@@ -1117,7 +1117,7 @@ vef.Invoke(func(lc vef.Lifecycle, subscriber event.Subscriber) {
 ### 错误处理
 
 ```go
-import "github.com/ilxqx/vef-framework-go/result"
+import "github.com/coldsmirk/vef-framework-go/result"
 
 return result.Ok(data).Response(ctx)
 return result.Err("操作失败")

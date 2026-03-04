@@ -1,7 +1,7 @@
 package approval
 
 import (
-	"github.com/ilxqx/vef-framework-go/decimal"
+	"github.com/coldsmirk/vef-framework-go/decimal"
 )
 
 // NodeData is the interface implemented by all node data types.

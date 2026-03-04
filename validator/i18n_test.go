@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/i18n"
+	"github.com/coldsmirk/vef-framework-go/i18n"
 )
 
 // TestValidatorI18nMessages tests that custom validation rules use i18n translations

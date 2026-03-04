@@ -8,11 +8,11 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/contract"
-	imonitor "github.com/ilxqx/vef-framework-go/internal/monitor"
-	"github.com/ilxqx/vef-framework-go/monitor"
-	"github.com/ilxqx/vef-framework-go/version"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/internal/contract"
+	imonitor "github.com/coldsmirk/vef-framework-go/internal/monitor"
+	"github.com/coldsmirk/vef-framework-go/monitor"
+	"github.com/coldsmirk/vef-framework-go/version"
 )
 
 type MonitorServiceTestSuite struct {

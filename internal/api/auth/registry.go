@@ -1,9 +1,9 @@
 package auth
 
 import (
-	"github.com/ilxqx/go-collections"
+	"github.com/coldsmirk/go-collections"
 
-	"github.com/ilxqx/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/api"
 )
 
 // Registry implements api.AuthStrategyRegistry using a concurrent map.

@@ -6,8 +6,8 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/log"
 )
 
 func logDBVersion(provider DatabaseProvider, db *bun.DB, logger log.Logger) error {

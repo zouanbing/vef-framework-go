@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/i18n/locales"
+	"github.com/coldsmirk/vef-framework-go/i18n/locales"
 )
 
 // TestConfig tests the Config struct and its field access.

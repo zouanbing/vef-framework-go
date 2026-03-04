@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/js"
+	"github.com/coldsmirk/vef-framework-go/js"
 )
 
 // TestNew tests new functionality.
@@ -216,7 +216,7 @@ func TestValidatorJs(t *testing.T) {
 		},
 		{
 			name:   "ValidURL",
-			script: `validator.isURL('https://github.com/ilxqx/vef-framework-go')`,
+			script: `validator.isURL('https://github.com/coldsmirk/vef-framework-go')`,
 			want:   true,
 		},
 		{

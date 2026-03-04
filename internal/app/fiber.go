@@ -7,11 +7,11 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/gofiber/fiber/v3"
-	"github.com/ilxqx/go-streams"
+	"github.com/coldsmirk/go-streams"
 	"github.com/samber/lo"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/config"
 )
 
 // createFiberApp creates a new Fiber application with the given configuration.

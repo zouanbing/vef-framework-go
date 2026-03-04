@@ -5,12 +5,12 @@ import (
 	"io"
 	"reflect"
 
-	"github.com/ilxqx/go-streams"
+	"github.com/coldsmirk/go-streams"
 	"github.com/xuri/excelize/v2"
 
-	"github.com/ilxqx/vef-framework-go/internal/log"
-	"github.com/ilxqx/vef-framework-go/tabular"
-	"github.com/ilxqx/vef-framework-go/validator"
+	"github.com/coldsmirk/vef-framework-go/internal/log"
+	"github.com/coldsmirk/vef-framework-go/tabular"
+	"github.com/coldsmirk/vef-framework-go/validator"
 )
 
 var logger = log.Named("excel")

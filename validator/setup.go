@@ -3,7 +3,7 @@ package validator
 import (
 	"reflect"
 
-	"github.com/ilxqx/vef-framework-go/null"
+	"github.com/coldsmirk/vef-framework-go/null"
 )
 
 func setup() {

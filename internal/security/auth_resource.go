@@ -8,16 +8,16 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"go.uber.org/fx"
 
-	"github.com/ilxqx/go-streams"
+	"github.com/coldsmirk/go-streams"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/contextx"
-	"github.com/ilxqx/vef-framework-go/event"
-	"github.com/ilxqx/vef-framework-go/httpx"
-	"github.com/ilxqx/vef-framework-go/i18n"
-	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/security"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/contextx"
+	"github.com/coldsmirk/vef-framework-go/event"
+	"github.com/coldsmirk/vef-framework-go/httpx"
+	"github.com/coldsmirk/vef-framework-go/i18n"
+	"github.com/coldsmirk/vef-framework-go/result"
+	"github.com/coldsmirk/vef-framework-go/security"
 )
 
 // AuthResourceParams holds the dependencies for AuthResource construction.

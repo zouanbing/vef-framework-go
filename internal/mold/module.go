@@ -3,9 +3,9 @@ package mold
 import (
 	"go.uber.org/fx"
 
-	"github.com/ilxqx/vef-framework-go/event"
-	"github.com/ilxqx/vef-framework-go/internal/log"
-	"github.com/ilxqx/vef-framework-go/mold"
+	"github.com/coldsmirk/vef-framework-go/event"
+	"github.com/coldsmirk/vef-framework-go/internal/log"
+	"github.com/coldsmirk/vef-framework-go/mold"
 )
 
 var logger = log.Named("mold")

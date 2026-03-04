@@ -3,8 +3,8 @@ package auth
 import (
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/security"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/security"
 )
 
 // NoneStrategy implements api.AuthStrategy for public endpoints.

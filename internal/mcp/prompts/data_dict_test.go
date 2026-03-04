@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/mcp"
+	"github.com/coldsmirk/vef-framework-go/mcp"
 )
 
 // TestDataDictPrompt tests data dict prompt functionality.

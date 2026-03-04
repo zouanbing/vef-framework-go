@@ -3,7 +3,7 @@ package security
 import (
 	"context"
 
-	"github.com/ilxqx/vef-framework-go/security"
+	"github.com/coldsmirk/vef-framework-go/security"
 )
 
 // RBACDataPermissionResolver implements role-based data permission resolution.

@@ -4,14 +4,14 @@ package api
 import (
 	"go.uber.org/fx"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/internal/api/adapter"
-	"github.com/ilxqx/vef-framework-go/internal/api/auth"
-	"github.com/ilxqx/vef-framework-go/internal/api/collector"
-	"github.com/ilxqx/vef-framework-go/internal/api/middleware"
-	"github.com/ilxqx/vef-framework-go/internal/api/param"
-	"github.com/ilxqx/vef-framework-go/internal/api/resolver"
-	"github.com/ilxqx/vef-framework-go/internal/api/router"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/internal/api/adapter"
+	"github.com/coldsmirk/vef-framework-go/internal/api/auth"
+	"github.com/coldsmirk/vef-framework-go/internal/api/collector"
+	"github.com/coldsmirk/vef-framework-go/internal/api/middleware"
+	"github.com/coldsmirk/vef-framework-go/internal/api/param"
+	"github.com/coldsmirk/vef-framework-go/internal/api/resolver"
+	"github.com/coldsmirk/vef-framework-go/internal/api/router"
 )
 
 var Module = fx.Module(

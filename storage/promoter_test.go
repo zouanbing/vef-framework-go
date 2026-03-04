@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/event"
-	"github.com/ilxqx/vef-framework-go/null"
+	"github.com/coldsmirk/vef-framework-go/event"
+	"github.com/coldsmirk/vef-framework-go/null"
 )
 
 // MockService is a mock implementation of Service for testing.

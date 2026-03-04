@@ -3,7 +3,7 @@ package approval
 import (
 	"context"
 
-	"github.com/ilxqx/vef-framework-go/timex"
+	"github.com/coldsmirk/vef-framework-go/timex"
 )
 
 // DomainEvent is the base interface for all approval domain events.

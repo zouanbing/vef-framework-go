@@ -5,8 +5,8 @@ import (
 
 	"go.uber.org/fx"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/orm"
 )
 
 // Module provides automatic database migration for the approval module.

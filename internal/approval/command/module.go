@@ -3,7 +3,7 @@ package command
 import (
 	"go.uber.org/fx"
 
-	"github.com/ilxqx/vef-framework-go/internal/cqrs"
+	"github.com/coldsmirk/vef-framework-go/internal/cqrs"
 )
 
 // Module provides all command handlers and registers them with the Bus.

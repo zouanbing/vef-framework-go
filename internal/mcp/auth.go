@@ -8,8 +8,8 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/auth"
 
-	isecurity "github.com/ilxqx/vef-framework-go/internal/security"
-	"github.com/ilxqx/vef-framework-go/security"
+	isecurity "github.com/coldsmirk/vef-framework-go/internal/security"
+	"github.com/coldsmirk/vef-framework-go/security"
 )
 
 // CreateTokenVerifier creates an auth.TokenVerifier that bridges MCP SDK auth

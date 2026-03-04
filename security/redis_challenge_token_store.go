@@ -7,8 +7,8 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"github.com/ilxqx/vef-framework-go/id"
-	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/coldsmirk/vef-framework-go/id"
+	"github.com/coldsmirk/vef-framework-go/result"
 )
 
 const redisChallengePrefix = "vef:security:challenge:"

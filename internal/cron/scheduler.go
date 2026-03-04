@@ -7,7 +7,7 @@ import (
 	"github.com/go-co-op/gocron/v2"
 	"go.uber.org/fx"
 
-	"github.com/ilxqx/vef-framework-go/internal/log"
+	"github.com/coldsmirk/vef-framework-go/internal/log"
 )
 
 var logger = log.Named("cron")

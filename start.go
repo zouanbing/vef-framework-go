@@ -3,7 +3,7 @@ package vef
 import (
 	"go.uber.org/fx"
 
-	"github.com/ilxqx/vef-framework-go/internal/app"
+	"github.com/coldsmirk/vef-framework-go/internal/app"
 )
 
 // startApp starts the application.

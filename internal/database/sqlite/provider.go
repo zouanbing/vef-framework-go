@@ -9,7 +9,7 @@ import (
 	"github.com/uptrace/bun/driver/sqliteshim"
 	"github.com/uptrace/bun/schema"
 
-	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/config"
 )
 
 type Provider struct {

@@ -1,6 +1,6 @@
 package crud
 
-import "github.com/ilxqx/vef-framework-go/orm"
+import "github.com/coldsmirk/vef-framework-go/orm"
 
 // TabularFormat represents the format type for import/export operations.
 type TabularFormat string

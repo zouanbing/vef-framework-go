@@ -8,11 +8,11 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/fx"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/apptest"
-	"github.com/ilxqx/vef-framework-go/monitor"
-	"github.com/ilxqx/vef-framework-go/security"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/internal/apptest"
+	"github.com/coldsmirk/vef-framework-go/monitor"
+	"github.com/coldsmirk/vef-framework-go/security"
 )
 
 type MonitorResourceTestSuite struct {

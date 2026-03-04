@@ -9,12 +9,12 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/uptrace/bun"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/crud"
-	"github.com/ilxqx/vef-framework-go/csv"
-	"github.com/ilxqx/vef-framework-go/excel"
-	"github.com/ilxqx/vef-framework-go/internal/orm"
-	"github.com/ilxqx/vef-framework-go/internal/testx"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/crud"
+	"github.com/coldsmirk/vef-framework-go/csv"
+	"github.com/coldsmirk/vef-framework-go/excel"
+	"github.com/coldsmirk/vef-framework-go/internal/orm"
+	"github.com/coldsmirk/vef-framework-go/internal/testx"
 )
 
 func init() {

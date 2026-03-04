@@ -1,11 +1,13 @@
-module github.com/ilxqx/vef-framework-go
+module github.com/coldsmirk/vef-framework-go
 
 go 1.26.0
 
 require (
 	ariga.io/atlas v1.1.0
-	github.com/ajitpratap0/GoSQLX v1.8.0
+	github.com/ajitpratap0/GoSQLX v1.9.1
 	github.com/bwmarrin/snowflake v0.3.0
+	github.com/coldsmirk/go-collections v0.3.2
+	github.com/coldsmirk/go-streams v0.3.1
 	github.com/dlclark/regexp2 v1.11.5
 	github.com/dop251/goja v0.0.0-20260226184354-913bd86fb70c
 	github.com/dustin/go-humanize v1.0.1
@@ -23,21 +25,19 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/guregu/null/v6 v6.0.0
 	github.com/hbollon/go-edlib v1.7.0
-	github.com/ilxqx/go-collections v0.3.1
-	github.com/ilxqx/go-streams v0.3.0
 	github.com/invopop/jsonschema v0.13.0
 	github.com/jinzhu/copier v0.4.0
 	github.com/matoous/go-nanoid/v2 v2.1.0
 	github.com/minio/minio-go/v7 v7.0.98
-	github.com/modelcontextprotocol/go-sdk v1.3.1
+	github.com/modelcontextprotocol/go-sdk v1.4.0
 	github.com/muesli/termenv v0.16.0
 	github.com/nicksnyder/go-i18n/v2 v2.6.1
 	github.com/pquerna/otp v1.5.0
 	github.com/puzpuzpuz/xsync/v4 v4.4.0
 	github.com/redis/go-redis/v9 v9.18.0
 	github.com/rs/xid v1.6.0
-	github.com/samber/lo v1.52.0
-	github.com/shirou/gopsutil/v4 v4.26.1
+	github.com/samber/lo v1.53.0
+	github.com/shirou/gopsutil/v4 v4.26.2
 	github.com/shopspring/decimal v1.4.0
 	github.com/spf13/cast v1.10.0
 	github.com/spf13/cobra v1.10.2
@@ -49,12 +49,12 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.40.0
 	github.com/testcontainers/testcontainers-go/modules/redis v0.40.0
 	github.com/tjfoc/gmsm v1.4.1
-	github.com/uptrace/bun v1.2.17
-	github.com/uptrace/bun/dialect/mysqldialect v1.2.17
-	github.com/uptrace/bun/dialect/pgdialect v1.2.17
-	github.com/uptrace/bun/dialect/sqlitedialect v1.2.17
-	github.com/uptrace/bun/driver/pgdriver v1.2.17
-	github.com/uptrace/bun/driver/sqliteshim v1.2.17
+	github.com/uptrace/bun v1.2.18
+	github.com/uptrace/bun/dialect/mysqldialect v1.2.18
+	github.com/uptrace/bun/dialect/pgdialect v1.2.18
+	github.com/uptrace/bun/dialect/sqlitedialect v1.2.18
+	github.com/uptrace/bun/driver/pgdriver v1.2.18
+	github.com/uptrace/bun/driver/sqliteshim v1.2.18
 	github.com/xuri/excelize/v2 v2.10.1
 	go.uber.org/fx v1.24.0
 	go.uber.org/zap v1.27.1
@@ -90,7 +90,7 @@ require (
 	github.com/docker/docker v28.5.2+incompatible // indirect
 	github.com/docker/go-connections v0.6.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/ebitengine/purego v0.9.1 // indirect
+	github.com/ebitengine/purego v0.10.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.12 // indirect

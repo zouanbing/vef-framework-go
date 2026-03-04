@@ -1,8 +1,8 @@
 package crud
 
 import (
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/null"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/null"
 )
 
 // Default column mapping for DataOption.

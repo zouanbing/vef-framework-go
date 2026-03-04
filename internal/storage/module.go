@@ -6,9 +6,9 @@ import (
 
 	"go.uber.org/fx"
 
-	"github.com/ilxqx/vef-framework-go/internal/contract"
-	"github.com/ilxqx/vef-framework-go/internal/log"
-	"github.com/ilxqx/vef-framework-go/storage"
+	"github.com/coldsmirk/vef-framework-go/internal/contract"
+	"github.com/coldsmirk/vef-framework-go/internal/log"
+	"github.com/coldsmirk/vef-framework-go/storage"
 )
 
 var logger = log.Named("storage")

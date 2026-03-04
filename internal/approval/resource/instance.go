@@ -6,15 +6,15 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/internal/approval/command"
-	"github.com/ilxqx/vef-framework-go/internal/approval/query"
-	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
-	"github.com/ilxqx/vef-framework-go/internal/cqrs"
-	"github.com/ilxqx/vef-framework-go/page"
-	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/security"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/approval"
+	"github.com/coldsmirk/vef-framework-go/internal/approval/command"
+	"github.com/coldsmirk/vef-framework-go/internal/approval/query"
+	"github.com/coldsmirk/vef-framework-go/internal/approval/shared"
+	"github.com/coldsmirk/vef-framework-go/internal/cqrs"
+	"github.com/coldsmirk/vef-framework-go/page"
+	"github.com/coldsmirk/vef-framework-go/result"
+	"github.com/coldsmirk/vef-framework-go/security"
 )
 
 // InstanceResource handles instance lifecycle and queries.

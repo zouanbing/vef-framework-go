@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/ilxqx/vef-framework-go/timex"
+	"github.com/coldsmirk/vef-framework-go/timex"
 )
 
 // DateTime is a nullable timex.DateTime. It supports SQL and JSON serialization.

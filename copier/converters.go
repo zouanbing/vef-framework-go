@@ -3,7 +3,7 @@ package copier
 import (
 	"github.com/samber/lo"
 
-	"github.com/ilxqx/vef-framework-go/null"
+	"github.com/coldsmirk/vef-framework-go/null"
 )
 
 // Nullable defines the interface for null wrapper types.

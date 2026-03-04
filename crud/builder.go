@@ -3,7 +3,7 @@ package crud
 import (
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/api"
 )
 
 // Builder defines the interface for building API endpoints.

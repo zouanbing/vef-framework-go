@@ -8,7 +8,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/ilxqx/vef-framework-go/id"
+	"github.com/coldsmirk/vef-framework-go/id"
 )
 
 // StreamWriter writes UI message stream chunks.

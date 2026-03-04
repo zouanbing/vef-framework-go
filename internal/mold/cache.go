@@ -7,7 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/ilxqx/vef-framework-go/mold"
+	"github.com/coldsmirk/vef-framework-go/mold"
 )
 
 type tagType uint8

@@ -3,7 +3,7 @@ package approval
 import (
 	"context"
 
-	"github.com/ilxqx/vef-framework-go/security"
+	"github.com/coldsmirk/vef-framework-go/security"
 )
 
 // AssigneeService resolves approval assignees from organizational data (implemented by host app).

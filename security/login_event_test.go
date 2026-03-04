@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ilxqx/vef-framework-go/event"
+	"github.com/coldsmirk/vef-framework-go/event"
 )
 
 // TestNewLoginEvent tests NewLoginEvent constructor.

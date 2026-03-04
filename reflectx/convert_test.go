@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/decimal"
+	"github.com/coldsmirk/vef-framework-go/decimal"
 )
 
 // TestToDecimalE tests ToDecimalE for all supported types.

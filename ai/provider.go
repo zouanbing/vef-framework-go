@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ilxqx/go-streams"
+	"github.com/coldsmirk/go-streams"
 )
 
 // ModelProvider defines the interface for model providers.

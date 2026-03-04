@@ -6,7 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/ilxqx/vef-framework-go/i18n"
+	"github.com/coldsmirk/vef-framework-go/i18n"
 )
 
 // Error represents a business-level error for API responses.

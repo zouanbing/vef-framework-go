@@ -7,7 +7,7 @@ import (
 
 	"github.com/xuri/excelize/v2"
 
-	"github.com/ilxqx/vef-framework-go/tabular"
+	"github.com/coldsmirk/vef-framework-go/tabular"
 )
 
 type exporter struct {

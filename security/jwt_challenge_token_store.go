@@ -7,8 +7,8 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/ilxqx/vef-framework-go/id"
-	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/coldsmirk/vef-framework-go/id"
+	"github.com/coldsmirk/vef-framework-go/result"
 )
 
 const (

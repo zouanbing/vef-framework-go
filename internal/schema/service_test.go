@@ -7,11 +7,11 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/database"
-	"github.com/ilxqx/vef-framework-go/internal/schema"
-	"github.com/ilxqx/vef-framework-go/internal/testx"
-	pkgschema "github.com/ilxqx/vef-framework-go/schema"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/internal/database"
+	"github.com/coldsmirk/vef-framework-go/internal/schema"
+	"github.com/coldsmirk/vef-framework-go/internal/testx"
+	pkgschema "github.com/coldsmirk/vef-framework-go/schema"
 )
 
 // ServiceTestSuite tests the DefaultService implementation.

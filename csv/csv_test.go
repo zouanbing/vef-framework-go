@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/null"
-	"github.com/ilxqx/vef-framework-go/tabular"
+	"github.com/coldsmirk/vef-framework-go/null"
+	"github.com/coldsmirk/vef-framework-go/tabular"
 )
 
 type TestUser struct {

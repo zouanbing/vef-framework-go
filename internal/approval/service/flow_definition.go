@@ -3,8 +3,8 @@ package service
 import (
 	"fmt"
 
-	"github.com/ilxqx/go-collections"
-	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/coldsmirk/go-collections"
+	"github.com/coldsmirk/vef-framework-go/approval"
 )
 
 // validNodeKinds defines the set of valid node kinds for flow validation.

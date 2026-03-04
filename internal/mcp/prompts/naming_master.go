@@ -5,7 +5,7 @@ import (
 
 	_ "embed"
 
-	"github.com/ilxqx/vef-framework-go/mcp"
+	"github.com/coldsmirk/vef-framework-go/mcp"
 )
 
 //go:embed naming-master.md

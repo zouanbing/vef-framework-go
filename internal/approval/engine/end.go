@@ -3,7 +3,7 @@ package engine
 import (
 	"context"
 
-	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/coldsmirk/vef-framework-go/approval"
 )
 
 // EndProcessor handles end nodes by completing the flow as approved.

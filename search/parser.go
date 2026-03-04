@@ -6,9 +6,9 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/reflectx"
-	"github.com/ilxqx/vef-framework-go/strx"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/reflectx"
+	"github.com/coldsmirk/vef-framework-go/strx"
 )
 
 var apiInType = reflect.TypeFor[api.P]()

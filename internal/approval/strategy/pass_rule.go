@@ -1,6 +1,6 @@
 package strategy
 
-import "github.com/ilxqx/vef-framework-go/approval"
+import "github.com/coldsmirk/vef-framework-go/approval"
 
 // NewAllPassStrategy creates a new AllPassStrategy.
 func NewAllPassStrategy() approval.PassRuleStrategy {

@@ -13,7 +13,7 @@ import (
 
 	as "ariga.io/atlas/sql/schema"
 
-	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/config"
 )
 
 // Inspector wraps Atlas inspection capabilities for read-only schema inspection.

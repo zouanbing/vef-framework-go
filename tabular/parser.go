@@ -7,8 +7,8 @@ import (
 	"github.com/spf13/cast"
 	"github.com/uptrace/bun/schema"
 
-	"github.com/ilxqx/vef-framework-go/reflectx"
-	"github.com/ilxqx/vef-framework-go/strx"
+	"github.com/coldsmirk/vef-framework-go/reflectx"
+	"github.com/coldsmirk/vef-framework-go/strx"
 )
 
 var baseModelType = reflect.TypeFor[schema.BaseModel]()

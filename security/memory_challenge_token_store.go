@@ -3,9 +3,9 @@ package security
 import (
 	"context"
 
-	"github.com/ilxqx/vef-framework-go/cache"
-	"github.com/ilxqx/vef-framework-go/id"
-	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/coldsmirk/vef-framework-go/cache"
+	"github.com/coldsmirk/vef-framework-go/id"
+	"github.com/coldsmirk/vef-framework-go/result"
 )
 
 // MemoryChallengeTokenStore implements ChallengeTokenStore using an in-memory cache.

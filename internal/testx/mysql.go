@@ -9,7 +9,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/mysql"
 	"github.com/testcontainers/testcontainers-go/wait"
 
-	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/config"
 )
 
 func NewMySQLContainer(ctx context.Context, t testing.TB) *MySQLContainer {

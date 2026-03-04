@@ -3,7 +3,7 @@ package engine
 import (
 	"fmt"
 
-	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/coldsmirk/vef-framework-go/approval"
 )
 
 // State represents a state that can be used in a state machine.

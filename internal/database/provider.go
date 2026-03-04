@@ -6,10 +6,10 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/database/mysql"
-	"github.com/ilxqx/vef-framework-go/internal/database/postgres"
-	"github.com/ilxqx/vef-framework-go/internal/database/sqlite"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/internal/database/mysql"
+	"github.com/coldsmirk/vef-framework-go/internal/database/postgres"
+	"github.com/coldsmirk/vef-framework-go/internal/database/sqlite"
 )
 
 // DatabaseProvider defines the contract for database-specific connection and validation logic.

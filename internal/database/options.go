@@ -3,9 +3,9 @@ package database
 import (
 	"github.com/uptrace/bun"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/database/sqlguard"
-	"github.com/ilxqx/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/internal/database/sqlguard"
+	"github.com/coldsmirk/vef-framework-go/log"
 )
 
 type databaseOptions struct {

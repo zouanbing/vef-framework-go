@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/internal/testx"
-	"github.com/ilxqx/vef-framework-go/mapx"
-	"github.com/ilxqx/vef-framework-go/timex"
+	"github.com/coldsmirk/vef-framework-go/approval"
+	"github.com/coldsmirk/vef-framework-go/internal/testx"
+	"github.com/coldsmirk/vef-framework-go/mapx"
+	"github.com/coldsmirk/vef-framework-go/timex"
 )
 
 func TestEventNames(t *testing.T) {

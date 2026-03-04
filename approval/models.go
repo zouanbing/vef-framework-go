@@ -1,9 +1,9 @@
 package approval
 
 import (
-	"github.com/ilxqx/vef-framework-go/decimal"
-	"github.com/ilxqx/vef-framework-go/orm"
-	"github.com/ilxqx/vef-framework-go/timex"
+	"github.com/coldsmirk/vef-framework-go/decimal"
+	"github.com/coldsmirk/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/timex"
 )
 
 // OperatorInfo bundles operator identity for action logging.

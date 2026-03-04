@@ -1,6 +1,6 @@
 package shared
 
-import "github.com/ilxqx/vef-framework-go/approval"
+import "github.com/coldsmirk/vef-framework-go/approval"
 
 // CreateFlowInitiatorCmd contains the parameters for creating a flow initiator.
 type CreateFlowInitiatorCmd struct {

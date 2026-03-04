@@ -6,12 +6,12 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/crud"
-	"github.com/ilxqx/vef-framework-go/i18n"
-	"github.com/ilxqx/vef-framework-go/internal/orm"
-	"github.com/ilxqx/vef-framework-go/internal/testx"
-	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/crud"
+	"github.com/coldsmirk/vef-framework-go/i18n"
+	"github.com/coldsmirk/vef-framework-go/internal/orm"
+	"github.com/coldsmirk/vef-framework-go/internal/testx"
+	"github.com/coldsmirk/vef-framework-go/result"
 )
 
 func init() {

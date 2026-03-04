@@ -2,12 +2,12 @@ package crud
 
 import (
 	"github.com/gofiber/fiber/v3"
-	"github.com/ilxqx/go-streams"
+	"github.com/coldsmirk/go-streams"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/mold"
-	"github.com/ilxqx/vef-framework-go/orm"
-	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/mold"
+	"github.com/coldsmirk/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/result"
 )
 
 // FindAll provides a fluent interface for building find all endpoints.

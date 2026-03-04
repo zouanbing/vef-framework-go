@@ -10,7 +10,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/minio"
 	"github.com/testcontainers/testcontainers-go/wait"
 
-	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/config"
 )
 
 func NewMinIOContainer(ctx context.Context, t testing.TB) *MinIOContainer {

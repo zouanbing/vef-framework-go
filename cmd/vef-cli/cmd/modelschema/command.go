@@ -42,7 +42,7 @@ Example usage:
   //go:generate vef-cli generate-model-schema -i models -o schemas -p schemas
 
   // Using full GitHub path (no installation required)
-  //go:generate go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-model-schema -i models -o schemas -p schemas
+  //go:generate go run github.com/coldsmirk/vef-framework-go/cmd/vef-cli@latest generate-model-schema -i models -o schemas -p schemas
 `,
 		RunE: runGenerateModelSchema,
 	}

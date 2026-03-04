@@ -5,8 +5,8 @@ import (
 	"embed"
 	"fmt"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/orm"
 	"github.com/uptrace/bun"
 )
 

@@ -10,12 +10,12 @@ import (
 	"github.com/uptrace/bun"
 	"go.uber.org/fx"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/apptest"
-	"github.com/ilxqx/vef-framework-go/internal/testx"
-	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/security"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/internal/apptest"
+	"github.com/coldsmirk/vef-framework-go/internal/testx"
+	"github.com/coldsmirk/vef-framework-go/result"
+	"github.com/coldsmirk/vef-framework-go/security"
 )
 
 // SchemaResourceTestSuite tests the schema API resource functionality.

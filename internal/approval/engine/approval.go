@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/coldsmirk/vef-framework-go/approval"
 )
 
 // ApprovalProcessor handles approval nodes.

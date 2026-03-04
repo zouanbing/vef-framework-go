@@ -7,13 +7,13 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/ilxqx/go-collections"
-	"github.com/ilxqx/go-streams"
+	"github.com/coldsmirk/go-collections"
+	"github.com/coldsmirk/go-streams"
 
-	"github.com/ilxqx/vef-framework-go/event"
-	"github.com/ilxqx/vef-framework-go/null"
-	"github.com/ilxqx/vef-framework-go/reflectx"
-	"github.com/ilxqx/vef-framework-go/strx"
+	"github.com/coldsmirk/vef-framework-go/event"
+	"github.com/coldsmirk/vef-framework-go/null"
+	"github.com/coldsmirk/vef-framework-go/reflectx"
+	"github.com/coldsmirk/vef-framework-go/strx"
 )
 
 // Promoter defines the interface for automatic file field promotion and cleanup.

@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/uptrace/bun/schema"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/orm"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/internal/orm"
 )
 
 func init() {

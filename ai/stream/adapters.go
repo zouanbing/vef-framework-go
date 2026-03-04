@@ -3,7 +3,7 @@ package stream
 import (
 	"io"
 
-	"github.com/ilxqx/vef-framework-go/ai"
+	"github.com/coldsmirk/vef-framework-go/ai"
 )
 
 // Role represents the role of a message sender.

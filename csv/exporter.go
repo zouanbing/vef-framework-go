@@ -7,7 +7,7 @@ import (
 	"os"
 	"reflect"
 
-	"github.com/ilxqx/vef-framework-go/tabular"
+	"github.com/coldsmirk/vef-framework-go/tabular"
 )
 
 type exporter struct {

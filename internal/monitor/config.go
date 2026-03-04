@@ -3,7 +3,7 @@ package monitor
 import (
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/config"
 )
 
 const (

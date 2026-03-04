@@ -3,7 +3,7 @@ package security
 import (
 	"context"
 
-	"github.com/ilxqx/vef-framework-go/event"
+	"github.com/coldsmirk/vef-framework-go/event"
 )
 
 const eventTypeLogin = "vef.security.login"

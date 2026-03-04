@@ -9,7 +9,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/redis"
 	"github.com/testcontainers/testcontainers-go/wait"
 
-	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/config"
 )
 
 func NewRedisContainer(ctx context.Context, t testing.TB) *RedisContainer {

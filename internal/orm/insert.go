@@ -8,7 +8,7 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
 
-	collections "github.com/ilxqx/go-collections"
+	collections "github.com/coldsmirk/go-collections"
 )
 
 // NewInsertQuery creates a new InsertQuery instance with the provided database instance.

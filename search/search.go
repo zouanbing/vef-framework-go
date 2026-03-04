@@ -4,15 +4,15 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/ilxqx/go-streams"
+	"github.com/coldsmirk/go-streams"
 	"github.com/samber/lo"
 	"github.com/spf13/cast"
 
-	"github.com/ilxqx/vef-framework-go/dbx"
-	"github.com/ilxqx/vef-framework-go/internal/log"
-	"github.com/ilxqx/vef-framework-go/monad"
-	"github.com/ilxqx/vef-framework-go/null"
-	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/dbx"
+	"github.com/coldsmirk/vef-framework-go/internal/log"
+	"github.com/coldsmirk/vef-framework-go/monad"
+	"github.com/coldsmirk/vef-framework-go/null"
+	"github.com/coldsmirk/vef-framework-go/orm"
 )
 
 var (

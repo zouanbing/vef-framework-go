@@ -11,9 +11,9 @@ import (
 	"github.com/samber/lo"
 	"golang.org/x/text/language"
 
-	vefconfig "github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/i18n/locales"
-	"github.com/ilxqx/vef-framework-go/internal/log"
+	vefconfig "github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/i18n/locales"
+	"github.com/coldsmirk/vef-framework-go/internal/log"
 )
 
 // DefaultLanguage is the default language for the i18n system.

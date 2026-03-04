@@ -3,8 +3,8 @@ package middleware
 import (
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/ilxqx/vef-framework-go/httpx"
-	"github.com/ilxqx/vef-framework-go/internal/app"
+	"github.com/coldsmirk/vef-framework-go/httpx"
+	"github.com/coldsmirk/vef-framework-go/internal/app"
 )
 
 // NewContentTypeMiddleware enforces JSON/multipart for POST/PUT requests.

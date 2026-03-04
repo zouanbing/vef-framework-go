@@ -26,7 +26,7 @@ Example usage in go:generate:
   //go:generate vef-cli generate-build-info -o internal/vef/build_info.go -p vef
 
   // Or using full GitHub path (no installation required)
-  //go:generate go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-build-info -o internal/vef/build_info.go -p vef
+  //go:generate go run github.com/coldsmirk/vef-framework-go/cmd/vef-cli@latest generate-build-info -o internal/vef/build_info.go -p vef
 
 `,
 		RunE: func(cmd *cobra.Command, _ []string) error {

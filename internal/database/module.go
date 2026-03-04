@@ -7,8 +7,8 @@ import (
 	"github.com/uptrace/bun"
 	"go.uber.org/fx"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/internal/log"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/internal/log"
 )
 
 var (

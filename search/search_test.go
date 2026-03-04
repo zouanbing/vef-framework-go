@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ilxqx/vef-framework-go/monad"
+	"github.com/coldsmirk/vef-framework-go/monad"
 )
 
 // Test structs with various field types and conditions

@@ -7,7 +7,7 @@ import (
 	"reflect"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/ilxqx/go-streams"
+	"github.com/coldsmirk/go-streams"
 	"github.com/samber/lo"
 
 	enlocale "github.com/go-playground/locales/en"
@@ -17,11 +17,11 @@ import (
 	entranslation "github.com/go-playground/validator/v10/translations/en"
 	zhtranslation "github.com/go-playground/validator/v10/translations/zh"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/i18n"
-	"github.com/ilxqx/vef-framework-go/internal/log"
-	"github.com/ilxqx/vef-framework-go/null"
-	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/i18n"
+	"github.com/coldsmirk/vef-framework-go/internal/log"
+	"github.com/coldsmirk/vef-framework-go/null"
+	"github.com/coldsmirk/vef-framework-go/result"
 )
 
 const (

@@ -1,7 +1,7 @@
 package password
 
 import (
-	"github.com/ilxqx/vef-framework-go/cryptox"
+	"github.com/coldsmirk/vef-framework-go/cryptox"
 )
 
 type cipherEncoder struct {

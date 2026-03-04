@@ -12,8 +12,8 @@ import (
 	"github.com/muesli/termenv"
 	"github.com/uptrace/bun"
 
-	"github.com/ilxqx/vef-framework-go/internal/database/sqlguard"
-	"github.com/ilxqx/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/internal/database/sqlguard"
+	"github.com/coldsmirk/vef-framework-go/log"
 )
 
 // whitespaceRegex matches consecutive whitespace characters (spaces, tabs, newlines).

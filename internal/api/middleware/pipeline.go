@@ -3,7 +3,7 @@ package middleware
 import (
 	"slices"
 
-	"github.com/ilxqx/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/api"
 )
 
 // Chain manages the middleware chain for API requests.

@@ -3,7 +3,7 @@ package security
 import (
 	"context"
 
-	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/orm"
 )
 
 // PermissionChecker verifies if a Principal has a specific permission.

@@ -2,13 +2,13 @@
 
 📖 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
-[![GitHub Release](https://img.shields.io/github/v/release/ilxqx/vef-framework-go)](https://github.com/ilxqx/vef-framework-go/releases)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/ilxqx/vef-framework-go/test.yml?branch=main)](https://github.com/ilxqx/vef-framework-go/actions/workflows/test.yml)
-[![Coverage](https://img.shields.io/codecov/c/github/ilxqx/vef-framework-go)](https://codecov.io/gh/ilxqx/vef-framework-go)
-[![Go Reference](https://pkg.go.dev/badge/github.com/ilxqx/vef-framework-go.svg)](https://pkg.go.dev/github.com/ilxqx/vef-framework-go)
-[![Go Report Card](https://goreportcard.com/badge/github.com/ilxqx/vef-framework-go)](https://goreportcard.com/report/github.com/ilxqx/vef-framework-go)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ilxqx/vef-framework-go)
-[![License](https://img.shields.io/github/license/ilxqx/vef-framework-go)](https://github.com/ilxqx/vef-framework-go/blob/main/LICENSE)
+[![GitHub Release](https://img.shields.io/github/v/release/coldsmirk/vef-framework-go)](https://github.com/coldsmirk/vef-framework-go/releases)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/coldsmirk/vef-framework-go/test.yml?branch=main)](https://github.com/coldsmirk/vef-framework-go/actions/workflows/test.yml)
+[![Coverage](https://img.shields.io/codecov/c/github/coldsmirk/vef-framework-go)](https://codecov.io/gh/coldsmirk/vef-framework-go)
+[![Go Reference](https://pkg.go.dev/badge/github.com/coldsmirk/vef-framework-go.svg)](https://pkg.go.dev/github.com/coldsmirk/vef-framework-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/coldsmirk/vef-framework-go)](https://goreportcard.com/report/github.com/coldsmirk/vef-framework-go)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/coldsmirk/vef-framework-go)
+[![License](https://img.shields.io/github/license/coldsmirk/vef-framework-go)](https://github.com/coldsmirk/vef-framework-go/blob/main/LICENSE)
 
 A modern Go web development framework built on Uber FX dependency injection and Fiber, designed for rapid enterprise application development with opinionated conventions and comprehensive built-in features.
 
@@ -29,7 +29,7 @@ A modern Go web development framework built on Uber FX dependency injection and 
 ### Installation
 
 ```bash
-go get github.com/ilxqx/vef-framework-go
+go get github.com/coldsmirk/vef-framework-go
 ```
 
 **Requirements:** Go 1.25.0 or higher
@@ -48,7 +48,7 @@ Create `main.go`:
 ```go
 package main
 
-import "github.com/ilxqx/vef-framework-go"
+import "github.com/coldsmirk/vef-framework-go"
 
 func main() {
     vef.Run()
@@ -124,7 +124,7 @@ Each module exports a `vef.Module()` that encapsulates its dependencies. The mai
 package main
 
 import (
-    "github.com/ilxqx/vef-framework-go"
+    "github.com/coldsmirk/vef-framework-go"
     "my-app/internal/auth"
     "my-app/internal/sys"
     ivef "my-app/internal/vef"
@@ -149,7 +149,7 @@ func main() {
 package sys
 
 import (
-    "github.com/ilxqx/vef-framework-go"
+    "github.com/coldsmirk/vef-framework-go"
     "my-app/internal/sys/resources"
 )
 
@@ -227,8 +227,8 @@ All models should embed `orm.Model` for automatic audit field management:
 package models
 
 import (
-    "github.com/ilxqx/vef-framework-go/null"
-    "github.com/ilxqx/vef-framework-go/orm"
+    "github.com/coldsmirk/vef-framework-go/null"
+    "github.com/coldsmirk/vef-framework-go/orm"
 )
 
 type User struct {
@@ -284,7 +284,7 @@ type User struct {
 ```go
 package payloads
 
-import "github.com/ilxqx/vef-framework-go/api"
+import "github.com/coldsmirk/vef-framework-go/api"
 
 type UserSearch struct {
     api.P
@@ -335,8 +335,8 @@ type UserUpdateParams struct {
 package resources
 
 import (
-    "github.com/ilxqx/vef-framework-go/api"
-    "github.com/ilxqx/vef-framework-go/crud"
+    "github.com/coldsmirk/vef-framework-go/api"
+    "github.com/coldsmirk/vef-framework-go/crud"
 )
 
 type UserResource struct {
@@ -526,7 +526,7 @@ FindOptions: crud.NewFindOptions[User, UserSearch]().
 **FindTree:**
 
 ```go
-import "github.com/ilxqx/vef-framework-go/tree"
+import "github.com/coldsmirk/vef-framework-go/tree"
 
 FindTree: crud.NewFindTree[models.Organization, payloads.OrganizationSearch](
     buildOrganizationTree,
@@ -936,7 +936,7 @@ allow_origins = ["*"]
 ### Cache
 
 ```go
-import "github.com/ilxqx/vef-framework-go/cache"
+import "github.com/coldsmirk/vef-framework-go/cache"
 
 // In-memory cache
 memCache := cache.NewMemory[models.User](
@@ -959,7 +959,7 @@ user, err := memCache.GetOrLoad(ctx, "user:123", func(ctx context.Context) (mode
 ### Event Bus
 
 ```go
-import "github.com/ilxqx/vef-framework-go/event"
+import "github.com/coldsmirk/vef-framework-go/event"
 
 // Publishing
 bus.Publish(event.NewBaseEvent("user.created",
@@ -981,7 +981,7 @@ vef.Invoke(func(bus event.Bus, logger log.Logger) {
 Based on [gocron](https://github.com/go-co-op/gocron):
 
 ```go
-import "github.com/ilxqx/vef-framework-go/cron"
+import "github.com/coldsmirk/vef-framework-go/cron"
 
 vef.Invoke(func(scheduler cron.Scheduler) {
     // Cron expression (5-field: min hour day month weekday)
@@ -1059,13 +1059,13 @@ Common rules: `required`, `omitempty`, `min`, `max`, `len`, `email`, `url`, `uui
 **Generate Build Info:**
 
 ```bash
-go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-build-info -o internal/vef/build_info.go -p vef
+go run github.com/coldsmirk/vef-framework-go/cmd/vef-cli@latest generate-build-info -o internal/vef/build_info.go -p vef
 ```
 
 **Generate Model Schema** (type-safe field accessors):
 
 ```bash
-go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-model-schema -i ./models -o ./schemas -p schemas
+go run github.com/coldsmirk/vef-framework-go/cmd/vef-cli@latest generate-model-schema -i ./models -o ./schemas -p schemas
 ```
 
 Usage in queries:
@@ -1117,7 +1117,7 @@ Prefer parameter injection in handler methods; use `contextx` in utility functio
 ### Error Handling
 
 ```go
-import "github.com/ilxqx/vef-framework-go/result"
+import "github.com/coldsmirk/vef-framework-go/result"
 
 return result.Ok(data).Response(ctx)
 return result.Err("Operation failed")

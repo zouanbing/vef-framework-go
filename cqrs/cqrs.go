@@ -3,7 +3,7 @@ package cqrs
 import (
 	"context"
 
-	icqrs "github.com/ilxqx/vef-framework-go/internal/cqrs"
+	icqrs "github.com/coldsmirk/vef-framework-go/internal/cqrs"
 )
 
 type (

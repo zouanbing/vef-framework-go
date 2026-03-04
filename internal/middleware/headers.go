@@ -3,7 +3,7 @@ package middleware
 import (
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/ilxqx/vef-framework-go/internal/app"
+	"github.com/coldsmirk/vef-framework-go/internal/app"
 )
 
 // NewHeadersMiddleware sets headers after handler execution to avoid being overwritten by application code.

@@ -1,8 +1,8 @@
 package crud
 
 import (
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/sortx"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/sortx"
 )
 
 // CreateManyParams is a wrapper type for batch create parameters.

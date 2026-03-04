@@ -4,10 +4,10 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/spf13/cast"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	isecurity "github.com/ilxqx/vef-framework-go/internal/security"
-	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/security"
+	"github.com/coldsmirk/vef-framework-go/api"
+	isecurity "github.com/coldsmirk/vef-framework-go/internal/security"
+	"github.com/coldsmirk/vef-framework-go/result"
+	"github.com/coldsmirk/vef-framework-go/security"
 )
 
 // SignatureStrategy implements api.AuthStrategy for HMAC signature authentication.

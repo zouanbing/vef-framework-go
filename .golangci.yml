@@ -203,7 +203,7 @@ formatters:
       sections:
         - standard
         - default
-        - prefix(github.com/ilxqx/vef-framework-go)
+        - prefix(github.com/coldsmirk/vef-framework-go)
         - blank
         - dot
         - alias
@@ -220,11 +220,11 @@ formatters:
         - pattern: 'a[b:len(a)]'
           replacement: 'a[b:]'
     gofumpt:
-      module-path: github.com/ilxqx/vef-framework-go
+      module-path: github.com/coldsmirk/vef-framework-go
       extra-rules: true
     goimports:
       local-prefixes:
-        - github.com/ilxqx/vef-framework-go
+        - github.com/coldsmirk/vef-framework-go
     golines:
       max-len: 200
       tab-len: 8

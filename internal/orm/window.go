@@ -5,7 +5,7 @@ import (
 
 	"github.com/uptrace/bun/schema"
 
-	"github.com/ilxqx/vef-framework-go/sortx"
+	"github.com/coldsmirk/vef-framework-go/sortx"
 )
 
 // WindowPartitionable defines window functions that support partitioning.

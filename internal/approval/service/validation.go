@@ -6,9 +6,9 @@ import (
 	"maps"
 	"slices"
 
-	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
-	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/approval"
+	"github.com/coldsmirk/vef-framework-go/internal/approval/shared"
+	"github.com/coldsmirk/vef-framework-go/orm"
 )
 
 // ValidationService provides validation operations.

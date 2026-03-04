@@ -3,7 +3,7 @@ package security
 import (
 	"cmp"
 
-	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/orm"
 )
 
 const (

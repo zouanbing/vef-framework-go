@@ -3,7 +3,7 @@ package null
 import (
 	dec "github.com/shopspring/decimal"
 
-	"github.com/ilxqx/vef-framework-go/decimal"
+	"github.com/coldsmirk/vef-framework-go/decimal"
 )
 
 // Decimal is a nullable decimal.Decimal. It supports SQL and JSON serialization.

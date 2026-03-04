@@ -7,14 +7,14 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/timeout"
-	"github.com/ilxqx/go-collections"
-	"github.com/ilxqx/go-streams"
+	"github.com/coldsmirk/go-collections"
+	"github.com/coldsmirk/go-streams"
 	"github.com/samber/lo"
 
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/internal/api/shared"
-	"github.com/ilxqx/vef-framework-go/internal/log"
-	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/coldsmirk/vef-framework-go/api"
+	"github.com/coldsmirk/vef-framework-go/internal/api/shared"
+	"github.com/coldsmirk/vef-framework-go/internal/log"
+	"github.com/coldsmirk/vef-framework-go/result"
 )
 
 var logger = log.Named("api")
