@@ -34,7 +34,10 @@ func (p *HandleProcessor) Process(ctx context.Context, pc *ProcessContext) (*Pro
 		return handleEmptyAssignee(ctx, pc, p.assigneeService)
 	}
 
-	assignees = applyDelegation(ctx, pc.DB, pc.Instance.FlowID, assignees)
+	assignees, err = applyDelegation(ctx, pc.DB, pc.Instance.FlowID, assignees)
+	if err != nil {
+		return nil, err
+	}
 
 	if err := createTasksWithDelegation(ctx, pc, assignees); err != nil {
 		return nil, err
@@ -51,4 +54,3 @@ func (p *HandleProcessor) resolveAndDeduplicateAssignees(ctx context.Context, pc
 
 	return deduplicateAssignees(pc.Node, assignees), nil
 }
-

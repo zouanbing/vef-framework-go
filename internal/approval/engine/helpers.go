@@ -3,7 +3,8 @@ package engine
 import (
 	"context"
 	"fmt"
-	"time"
+
+	collections "github.com/ilxqx/go-collections"
 
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/internal/approval/strategy"
@@ -13,15 +14,17 @@ import (
 
 // saveFormSnapshot persists a snapshot of the form data at the current node.
 func saveFormSnapshot(ctx context.Context, pc *ProcessContext) error {
-	_, err := pc.DB.NewInsert().
+	if _, err := pc.DB.NewInsert().
 		Model(&approval.FormSnapshot{
 			InstanceID: pc.Instance.ID,
 			NodeID:     pc.Node.ID,
 			FormData:   pc.FormData.ToMap(),
 		}).
-		Exec(ctx)
+		Exec(ctx); err != nil {
+		return fmt.Errorf("save form snapshot: %w", err)
+	}
 
-	return err
+	return nil
 }
 
 // resolveAssignees loads the node's assignee configs and resolves them to concrete users.
@@ -47,21 +50,20 @@ func resolveAssignees(ctx context.Context, pc *ProcessContext) ([]approval.Resol
 }
 
 // deduplicateAssignees removes duplicate assignees based on UserID.
-// Returns the original slice unchanged if the node's DuplicateHandlerAction is "none".
+// Returns the original slice unchanged if the node's DuplicateAssigneeAction is "none".
 func deduplicateAssignees(node *approval.FlowNode, assignees []approval.ResolvedAssignee) []approval.ResolvedAssignee {
-	if node.DuplicateHandlerAction == approval.DuplicateHandlerNone {
+	if node.DuplicateAssigneeAction == approval.DuplicateAssigneeNone {
 		return assignees
 	}
 
-	seen := make(map[string]struct{}, len(assignees))
+	seen := collections.NewHashSet[string]()
 	result := make([]approval.ResolvedAssignee, 0, len(assignees))
 
 	for _, a := range assignees {
-		if _, ok := seen[a.UserID]; ok {
+		if !seen.Add(a.UserID) {
 			continue
 		}
 
-		seen[a.UserID] = struct{}{}
 		result = append(result, a)
 	}
 
@@ -69,23 +71,44 @@ func deduplicateAssignees(node *approval.FlowNode, assignees []approval.Resolved
 }
 
 // applyDelegation resolves delegation chains for each assignee, replacing delegators with delegates.
-func applyDelegation(ctx context.Context, db orm.DB, flowID string, assignees []approval.ResolvedAssignee) []approval.ResolvedAssignee {
-	categoryID := loadFlowCategoryID(ctx, db, flowID)
+func applyDelegation(ctx context.Context, db orm.DB, flowID string, assignees []approval.ResolvedAssignee) ([]approval.ResolvedAssignee, error) {
+	categoryID, err := loadFlowCategoryID(ctx, db, flowID)
+	if err != nil {
+		return nil, err
+	}
+
 	result := make([]approval.ResolvedAssignee, len(assignees))
 
 	for i, assignee := range assignees {
-		finalID, originalID := resolveDelegationChain(ctx, db, assignee.UserID, flowID, categoryID)
-		if finalID != assignee.UserID {
+		delegateeID, delegatorID, err := resolveDelegationChain(ctx, db, assignee.UserID, flowID, categoryID)
+		if err != nil {
+			return nil, err
+		}
+
+		if delegateeID != assignee.UserID {
 			result[i] = approval.ResolvedAssignee{
-				UserID:         finalID,
-				DelegateFromID: &originalID,
+				UserID:      delegateeID,
+				DelegatorID: &delegatorID,
 			}
 		} else {
 			result[i] = assignee
 		}
 	}
 
-	return result
+	return result, nil
+}
+
+// buildTask creates a base task from the process context with the given assignee ID.
+func buildTask(pc *ProcessContext, assigneeID string, deadline *timex.DateTime) *approval.Task {
+	return &approval.Task{
+		TenantID:   pc.Instance.TenantID,
+		InstanceID: pc.Instance.ID,
+		NodeID:     pc.Node.ID,
+		AssigneeID: assigneeID,
+		SortOrder:  0,
+		Status:     approval.TaskPending,
+		Deadline:   deadline,
+	}
 }
 
 // createTasksForUsers creates pending tasks for a list of user IDs with sortOrder=0.
@@ -98,17 +121,7 @@ func createTasksForUsers(ctx context.Context, pc *ProcessContext, userIDs []stri
 	deadline := computeDeadline(pc.Node)
 
 	for _, uid := range userIDs {
-		task := &approval.Task{
-			TenantID:   pc.Instance.TenantID,
-			InstanceID: pc.Instance.ID,
-			NodeID:     pc.Node.ID,
-			AssigneeID: uid,
-			SortOrder:  0,
-			Status:     approval.TaskPending,
-			Deadline:   deadline,
-		}
-
-		if _, err := pc.DB.NewInsert().Model(task).Exec(ctx); err != nil {
+		if _, err := pc.DB.NewInsert().Model(buildTask(pc, uid, deadline)).Exec(ctx); err != nil {
 			return nil, fmt.Errorf("create task: %w", err)
 		}
 	}
@@ -117,22 +130,22 @@ func createTasksForUsers(ctx context.Context, pc *ProcessContext, userIDs []stri
 }
 
 // handleEmptyAssignee handles the case when no assignees are resolved.
-// The behavior depends on the node's EmptyHandlerAction configuration.
+// The behavior depends on the node's EmptyAssigneeAction configuration.
 func handleEmptyAssignee(ctx context.Context, pc *ProcessContext, assigneeService approval.AssigneeService) (*ProcessResult, error) {
-	switch pc.Node.EmptyHandlerAction {
-	case approval.EmptyHandlerAutoPass:
+	switch pc.Node.EmptyAssigneeAction {
+	case approval.EmptyAssigneeAutoPass:
 		return &ProcessResult{Action: NodeActionContinue}, nil
 
-	case approval.EmptyHandlerTransferAdmin:
+	case approval.EmptyAssigneeTransferAdmin:
 		return createTasksForUsers(ctx, pc, pc.Node.AdminUserIDs)
 
-	case approval.EmptyHandlerTransferApplicant:
+	case approval.EmptyAssigneeTransferApplicant:
 		return createTasksForUsers(ctx, pc, []string{pc.ApplicantID})
 
-	case approval.EmptyHandlerTransferSpecified:
+	case approval.EmptyAssigneeTransferSpecified:
 		return createTasksForUsers(ctx, pc, pc.Node.FallbackUserIDs)
 
-	case approval.EmptyHandlerTransferSuperior:
+	case approval.EmptyAssigneeTransferSuperior:
 		superiorID, err := getSuperior(ctx, assigneeService, pc.ApplicantID)
 		if err != nil {
 			return nil, err
@@ -149,24 +162,13 @@ func handleEmptyAssignee(ctx context.Context, pc *ProcessContext, assigneeServic
 	}
 }
 
-// createTasksWithDelegation creates tasks for resolved assignees, setting DelegateFromID when applicable.
+// createTasksWithDelegation creates tasks for resolved assignees, setting DelegatorID when applicable.
 func createTasksWithDelegation(ctx context.Context, pc *ProcessContext, assignees []approval.ResolvedAssignee) error {
 	deadline := computeDeadline(pc.Node)
 
 	for _, assignee := range assignees {
-		task := &approval.Task{
-			TenantID:   pc.Instance.TenantID,
-			InstanceID: pc.Instance.ID,
-			NodeID:     pc.Node.ID,
-			AssigneeID: assignee.UserID,
-			SortOrder:  0,
-			Status:     approval.TaskPending,
-			Deadline:   deadline,
-		}
-
-		if assignee.DelegateFromID != nil {
-			task.DelegateFromID = assignee.DelegateFromID
-		}
+		task := buildTask(pc, assignee.UserID, deadline)
+		task.DelegatorID = assignee.DelegatorID
 
 		if _, err := pc.DB.NewInsert().Model(task).Exec(ctx); err != nil {
 			return fmt.Errorf("create task: %w", err)
@@ -176,10 +178,10 @@ func createTasksWithDelegation(ctx context.Context, pc *ProcessContext, assignee
 	return nil
 }
 
-// getSuperior retrieves the superior user ID, returning empty string if assigneeService is nil.
+// getSuperior retrieves the superior user ID. Returns ErrAssigneeServiceNotConfigured if assigneeService is nil.
 func getSuperior(ctx context.Context, assigneeService approval.AssigneeService, userID string) (string, error) {
 	if assigneeService == nil {
-		return "", nil
+		return "", ErrAssigneeServiceNotConfigured
 	}
 
 	return assigneeService.GetSuperior(ctx, userID)
@@ -192,44 +194,51 @@ func computeDeadline(node *approval.FlowNode) *timex.DateTime {
 		return nil
 	}
 
-	d := timex.DateTime(timex.Now().Unwrap().Add(time.Duration(node.TimeoutHours) * time.Hour))
-
-	return &d
+	return new(timex.Now().AddHours(node.TimeoutHours))
 }
 
 // loadFlowCategoryID loads the category ID for a flow.
-func loadFlowCategoryID(ctx context.Context, db orm.DB, flowID string) string {
+func loadFlowCategoryID(ctx context.Context, db orm.DB, flowID string) (string, error) {
 	var flow approval.Flow
+	flow.ID = flowID
 
-	if err := db.NewSelect().Model(&flow).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", flowID)
-	}).Scan(ctx); err != nil {
-		return ""
+	if err := db.NewSelect().
+		Model(&flow).
+		Select("category_id").
+		WherePK().
+		Scan(ctx); err != nil {
+		return "", fmt.Errorf("load flow category: %w", err)
 	}
 
-	return flow.CategoryID
+	return flow.CategoryID, nil
 }
 
 // resolveDelegationChain resolves a delegation chain A->B->C with cycle detection.
 // Matching priority: flow-specific > category-specific > global (by created_at DESC).
-func resolveDelegationChain(ctx context.Context, db orm.DB, userID, flowID, flowCategoryID string) (string, string) {
+func resolveDelegationChain(ctx context.Context, db orm.DB, userID, flowID, flowCategoryID string) (string, string, error) {
 	const maxDepth = 10
 
-	currentID := userID
-	originalID := userID
-	visited := map[string]bool{userID: true}
-	now := time.Now()
+	var (
+		currentID  = userID
+		originalID = userID
+		visited    = collections.NewHashSetFrom(userID)
+		now        = timex.Now()
+	)
 
 	for range maxDepth {
 		var delegations []approval.Delegation
 
-		err := db.NewSelect().Model(&delegations).Where(func(c orm.ConditionBuilder) {
-			c.Equals("delegator_id", currentID)
-			c.IsTrue("is_active")
-		}).OrderByDesc("created_at").Limit(100).Scan(ctx)
-		if err != nil {
-			// DB error during delegation lookup; fall back to original assignee
-			break
+		if err := db.NewSelect().
+			Model(&delegations).
+			Select("delegatee_id", "start_time", "end_time", "flow_category_id", "flow_id").
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Equals("delegator_id", currentID).
+					IsTrue("is_active")
+			}).
+			OrderByDesc("created_at").
+			Limit(100).
+			Scan(ctx); err != nil {
+			return "", "", fmt.Errorf("load delegations for user %s: %w", currentID, err)
 		}
 
 		if len(delegations) == 0 {
@@ -242,34 +251,34 @@ func resolveDelegationChain(ctx context.Context, db orm.DB, userID, flowID, flow
 		}
 
 		nextID := matched.DelegateeID
-		if visited[nextID] {
+		if visited.Contains(nextID) {
 			break
 		}
 
-		visited[nextID] = true
+		visited.Add(nextID)
 		currentID = nextID
 	}
 
 	if currentID == originalID {
-		return currentID, ""
+		return currentID, "", nil
 	}
 
-	return currentID, originalID
+	return currentID, originalID, nil
 }
 
 // matchDelegation finds the best matching delegation with priority:
 // flow-specific > category-specific > global.
-func matchDelegation(delegations []approval.Delegation, now time.Time, flowID, flowCategoryID string) *approval.Delegation {
+func matchDelegation(delegations []approval.Delegation, now timex.DateTime, flowID, flowCategoryID string) *approval.Delegation {
 	var categoryMatch, globalMatch *approval.Delegation
 
 	for i := range delegations {
 		d := &delegations[i]
 
-		if !d.StartTime.IsZero() && now.Before(d.StartTime.Unwrap()) {
+		if !d.StartTime.IsZero() && now.Before(d.StartTime) {
 			continue
 		}
 
-		if !d.EndTime.IsZero() && now.After(d.EndTime.Unwrap()) {
+		if !d.EndTime.IsZero() && now.After(d.EndTime) {
 			continue
 		}
 
@@ -289,7 +298,7 @@ func matchDelegation(delegations []approval.Delegation, now time.Time, flowID, f
 			categoryMatch = d
 		}
 
-		if d.FlowID == nil && d.FlowCategoryID == nil && globalMatch == nil {
+		if d.FlowCategoryID == nil && globalMatch == nil {
 			globalMatch = d
 		}
 	}

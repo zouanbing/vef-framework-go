@@ -30,6 +30,7 @@ func (s *Scanner) ScanTimeouts(ctx context.Context) {
 
 	if err := s.db.NewSelect().
 		Model(&tasks).
+		Select("id", "node_id", "instance_id", "assignee_id", "deadline", "tenant_id", "status").
 		Where(func(cb orm.ConditionBuilder) {
 			cb.In("status", []string{string(approval.TaskPending), string(approval.TaskWaiting)}).
 				IsNotNull("deadline").
@@ -60,6 +61,7 @@ func (s *Scanner) processTimeout(ctx context.Context, task *approval.Task) error
 
 	if err := s.db.NewSelect().
 		Model(&node).
+		Select("timeout_action", "admin_user_ids", "key").
 		Where(func(cb orm.ConditionBuilder) {
 			cb.Equals("id", task.NodeID)
 		}).

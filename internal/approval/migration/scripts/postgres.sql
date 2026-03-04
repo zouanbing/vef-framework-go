@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS apv_flow (
     business_status_field VARCHAR(64),
     -- Permission config
     admin_user_ids JSONB NOT NULL DEFAULT '[]',
-    is_all_initiate_allowed BOOLEAN NOT NULL DEFAULT true,
+    is_all_initiation_allowed BOOLEAN NOT NULL DEFAULT true,
     -- Other
     instance_title_template VARCHAR(256) NOT NULL DEFAULT '{{.flowName}}-{{.instanceNo}}',
     is_active BOOLEAN NOT NULL DEFAULT false,
@@ -89,7 +89,7 @@ COMMENT ON COLUMN apv_flow.business_pk_field IS '业务表主键字段';
 COMMENT ON COLUMN apv_flow.business_title_field IS '标题字段映射';
 COMMENT ON COLUMN apv_flow.business_status_field IS '状态字段映射';
 COMMENT ON COLUMN apv_flow.admin_user_ids IS '流程管理员ID';
-COMMENT ON COLUMN apv_flow.is_all_initiate_allowed IS '是否允许所有人发起';
+COMMENT ON COLUMN apv_flow.is_all_initiation_allowed IS '是否允许所有人发起';
 COMMENT ON COLUMN apv_flow.instance_title_template IS '实例标题模板';
 COMMENT ON COLUMN apv_flow.is_active IS '是否启用';
 COMMENT ON COLUMN apv_flow.current_version IS '当前版本号';
@@ -176,8 +176,8 @@ CREATE TABLE IF NOT EXISTS apv_flow_node (
     approval_method VARCHAR(16) NOT NULL DEFAULT 'parallel',
     pass_rule VARCHAR(16) NOT NULL DEFAULT 'all',
     pass_ratio NUMERIC(3,2) NOT NULL DEFAULT 1.00 CONSTRAINT ck_apv_flow_node__pass_ratio CHECK (pass_ratio >= 0 AND pass_ratio <= 1),
-    -- Empty handler config
-    empty_handler_action VARCHAR(32) NOT NULL DEFAULT 'auto_pass',
+    -- Empty assignee config
+    empty_assignee_action VARCHAR(32) NOT NULL DEFAULT 'auto_pass',
     fallback_user_ids JSONB NOT NULL DEFAULT '[]',
     admin_user_ids JSONB NOT NULL DEFAULT '[]',
     same_applicant_action VARCHAR(32) NOT NULL DEFAULT 'self_approve',
@@ -202,7 +202,7 @@ CREATE TABLE IF NOT EXISTS apv_flow_node (
     timeout_notify_before_hours INTEGER NOT NULL DEFAULT 0 CONSTRAINT ck_apv_flow_node__timeout_notify_before_hours CHECK (timeout_notify_before_hours >= 0),
     urge_cooldown_minutes INTEGER NOT NULL DEFAULT 0 CONSTRAINT ck_apv_flow_node__urge_cooldown_minutes CHECK (urge_cooldown_minutes >= 0),
     -- Advanced config
-    duplicate_handler_action VARCHAR(32) NOT NULL DEFAULT 'none',
+    duplicate_assignee_action VARCHAR(32) NOT NULL DEFAULT 'none',
     is_read_confirm_required BOOLEAN NOT NULL DEFAULT false,
     branches JSONB,
     CONSTRAINT uk_apv_flow_node__flow_version_id_key UNIQUE (flow_version_id, key),
@@ -224,7 +224,7 @@ COMMENT ON COLUMN apv_flow_node.execution_type IS '执行类型';
 COMMENT ON COLUMN apv_flow_node.approval_method IS '审批方式';
 COMMENT ON COLUMN apv_flow_node.pass_rule IS '通过规则';
 COMMENT ON COLUMN apv_flow_node.pass_ratio IS '通过比例';
-COMMENT ON COLUMN apv_flow_node.empty_handler_action IS '无处理人时处理方式';
+COMMENT ON COLUMN apv_flow_node.empty_assignee_action IS '无处理人时处理方式';
 COMMENT ON COLUMN apv_flow_node.fallback_user_ids IS '备选处理人ID';
 COMMENT ON COLUMN apv_flow_node.admin_user_ids IS '审批管理员ID';
 COMMENT ON COLUMN apv_flow_node.same_applicant_action IS '审批人与提交人同一人时处理方式';
@@ -243,7 +243,7 @@ COMMENT ON COLUMN apv_flow_node.timeout_hours IS '超时时间';
 COMMENT ON COLUMN apv_flow_node.timeout_action IS '超时动作';
 COMMENT ON COLUMN apv_flow_node.timeout_notify_before_hours IS '超时通知的提前小时数';
 COMMENT ON COLUMN apv_flow_node.urge_cooldown_minutes IS '催办冷却时间';
-COMMENT ON COLUMN apv_flow_node.duplicate_handler_action IS '连续审批人重复时处理方式';
+COMMENT ON COLUMN apv_flow_node.duplicate_assignee_action IS '连续审批人重复时处理方式';
 COMMENT ON COLUMN apv_flow_node.is_read_confirm_required IS '是否需要全员已阅后才继续';
 COMMENT ON COLUMN apv_flow_node.branches IS '条件分支配置';
 
@@ -429,7 +429,7 @@ CREATE TABLE IF NOT EXISTS apv_task (
     node_id VARCHAR(32) NOT NULL,
     -- Assignee info
     assignee_id VARCHAR(32) NOT NULL,
-    delegate_from_id VARCHAR(32),
+    delegator_id VARCHAR(32),
     sort_order INTEGER NOT NULL DEFAULT 0,
     -- Task status
     status VARCHAR(16) NOT NULL DEFAULT 'pending',
@@ -458,7 +458,7 @@ COMMENT ON COLUMN apv_task.tenant_id IS '租户ID';
 COMMENT ON COLUMN apv_task.instance_id IS '流程实例ID';
 COMMENT ON COLUMN apv_task.node_id IS '节点ID';
 COMMENT ON COLUMN apv_task.assignee_id IS '审批人ID';
-COMMENT ON COLUMN apv_task.delegate_from_id IS '委托人ID';
+COMMENT ON COLUMN apv_task.delegator_id IS '委托人ID';
 COMMENT ON COLUMN apv_task.sort_order IS '审批顺序';
 COMMENT ON COLUMN apv_task.status IS '任务状态';
 COMMENT ON COLUMN apv_task.read_at IS '阅读时间';
@@ -499,8 +499,8 @@ CREATE TABLE IF NOT EXISTS apv_action_log (
     rollback_to_node_id VARCHAR(32),
     -- Dynamic assignee info
     add_assignee_type VARCHAR(16),
-    add_assignee_to_ids JSONB NOT NULL DEFAULT '[]',
-    remove_assignee_ids JSONB NOT NULL DEFAULT '[]',
+    added_assignee_ids JSONB NOT NULL DEFAULT '[]',
+    removed_assignee_ids JSONB NOT NULL DEFAULT '[]',
     -- CC info
     cc_user_ids JSONB NOT NULL DEFAULT '[]',
     -- Attachments
@@ -529,8 +529,8 @@ COMMENT ON COLUMN apv_action_log.meta IS '元数据';
 COMMENT ON COLUMN apv_action_log.transfer_to_id IS '转交用户ID';
 COMMENT ON COLUMN apv_action_log.rollback_to_node_id IS '回退节点ID';
 COMMENT ON COLUMN apv_action_log.add_assignee_type IS '加签方式';
-COMMENT ON COLUMN apv_action_log.add_assignee_to_ids IS '加签用户ID';
-COMMENT ON COLUMN apv_action_log.remove_assignee_ids IS '减签用户ID';
+COMMENT ON COLUMN apv_action_log.added_assignee_ids IS '加签用户ID';
+COMMENT ON COLUMN apv_action_log.removed_assignee_ids IS '减签用户ID';
 COMMENT ON COLUMN apv_action_log.cc_user_ids IS '抄送用户ID';
 COMMENT ON COLUMN apv_action_log.attachments IS '附件列表';
 
@@ -546,7 +546,7 @@ CREATE TABLE IF NOT EXISTS apv_parallel_record (
     node_id VARCHAR(32) NOT NULL,
     task_id VARCHAR(32) NOT NULL,
     assignee_id VARCHAR(32) NOT NULL,
-    result VARCHAR(16),
+    decision VARCHAR(16),
     opinion TEXT,
     CONSTRAINT fk_apv_parallel_record__instance_id FOREIGN KEY (instance_id) REFERENCES apv_instance(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
@@ -559,7 +559,7 @@ COMMENT ON COLUMN apv_parallel_record.instance_id IS '流程实例ID';
 COMMENT ON COLUMN apv_parallel_record.node_id IS '节点ID';
 COMMENT ON COLUMN apv_parallel_record.task_id IS '关联任务ID';
 COMMENT ON COLUMN apv_parallel_record.assignee_id IS '审批人ID';
-COMMENT ON COLUMN apv_parallel_record.result IS '审批结果';
+COMMENT ON COLUMN apv_parallel_record.decision IS '审批决定';
 COMMENT ON COLUMN apv_parallel_record.opinion IS '审批意见';
 
 -- For parallel pass-rule evaluation: count results per node

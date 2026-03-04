@@ -17,11 +17,11 @@ import (
 // AddAssigneeCmd dynamically adds assignees to a task.
 type AddAssigneeCmd struct {
 	cqrs.BaseCommand
-	InstanceID string
-	TaskID     string
-	UserIDs    []string
-	AddType    string // "before", "after", "parallel"
-	Operator   approval.OperatorInfo
+
+	TaskID   string
+	UserIDs  []string
+	AddType  approval.AddAssigneeType
+	Operator approval.OperatorInfo
 }
 
 // AddAssigneeHandler handles the AddAssigneeCmd command.
@@ -31,17 +31,31 @@ type AddAssigneeHandler struct {
 }
 
 // NewAddAssigneeHandler creates a new AddAssigneeHandler.
-func NewAddAssigneeHandler(db orm.DB, pub *dispatcher.EventPublisher) *AddAssigneeHandler {
-	return &AddAssigneeHandler{db: db, publisher: pub}
+func NewAddAssigneeHandler(db orm.DB, publisher *dispatcher.EventPublisher) *AddAssigneeHandler {
+	return &AddAssigneeHandler{db: db, publisher: publisher}
 }
 
 func (h *AddAssigneeHandler) Handle(ctx context.Context, cmd AddAssigneeCmd) (cqrs.Unit, error) {
 	db := contextx.DB(ctx, h.db)
 
+	var task approval.Task
+	task.ID = cmd.TaskID
+
+	if err := db.NewSelect().
+		Model(&task).
+		WherePK().
+		Scan(ctx); err != nil {
+		return cqrs.Unit{}, shared.ErrTaskNotFound
+	}
+
 	var instance approval.Instance
-	if err := db.NewSelect().Model(&instance).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", cmd.InstanceID)
-	}).Scan(ctx); err != nil {
+	instance.ID = task.InstanceID
+
+	if err := db.NewSelect().
+		Model(&instance).
+		Select("status", "tenant_id").
+		WherePK().
+		Scan(ctx); err != nil {
 		return cqrs.Unit{}, shared.ErrInstanceNotFound
 	}
 
@@ -49,18 +63,14 @@ func (h *AddAssigneeHandler) Handle(ctx context.Context, cmd AddAssigneeCmd) (cq
 		return cqrs.Unit{}, shared.ErrInstanceCompleted
 	}
 
-	var task approval.Task
-	if err := db.NewSelect().Model(&task).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", cmd.TaskID)
-		c.Equals("instance_id", cmd.InstanceID)
-	}).Scan(ctx); err != nil {
-		return cqrs.Unit{}, shared.ErrTaskNotFound
-	}
-
 	var node approval.FlowNode
-	if err := db.NewSelect().Model(&node).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", task.NodeID)
-	}).Scan(ctx); err != nil {
+	node.ID = task.NodeID
+
+	if err := db.NewSelect().
+		Model(&node).
+		Select("is_add_assignee_allowed", "add_assignee_types").
+		WherePK().
+		Scan(ctx); err != nil {
 		return cqrs.Unit{}, fmt.Errorf("load node: %w", err)
 	}
 
@@ -72,22 +82,27 @@ func (h *AddAssigneeHandler) Handle(ctx context.Context, cmd AddAssigneeCmd) (cq
 		return cqrs.Unit{}, shared.ErrNotAssignee
 	}
 
-	addType := approval.AddAssigneeType(cmd.AddType)
-	if !addType.IsValid() {
+	if !cmd.AddType.IsValid() {
 		return cqrs.Unit{}, shared.ErrInvalidAddAssigneeType
 	}
 
-	if len(node.AddAssigneeTypes) > 0 && !slices.Contains(node.AddAssigneeTypes, cmd.AddType) {
+	if len(node.AddAssigneeTypes) > 0 && !slices.Contains(node.AddAssigneeTypes, string(cmd.AddType)) {
 		return cqrs.Unit{}, shared.ErrInvalidAddAssigneeType
 	}
 
 	// Find current max sort_order for this node
 	var lastTask approval.Task
 	baseSortOrder := task.SortOrder
-	if err := db.NewSelect().Model(&lastTask).Where(func(c orm.ConditionBuilder) {
-		c.Equals("instance_id", instance.ID)
-		c.Equals("node_id", task.NodeID)
-	}).OrderByDesc("sort_order").Limit(1).Scan(ctx); err == nil {
+	if err := db.NewSelect().
+		Model(&lastTask).
+		Select("sort_order").
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("instance_id", instance.ID).
+				Equals("node_id", task.NodeID)
+		}).
+		OrderByDesc("sort_order").
+		Limit(1).
+		Scan(ctx); err == nil {
 		baseSortOrder = lastTask.SortOrder
 	}
 
@@ -99,14 +114,18 @@ func (h *AddAssigneeHandler) Handle(ctx context.Context, cmd AddAssigneeCmd) (cq
 			AssigneeID:      userID,
 			SortOrder:       baseSortOrder + i + 1,
 			ParentTaskID:    new(task.ID),
-			AddAssigneeType: new(string(addType)),
+			AddAssigneeType: &cmd.AddType,
 		}
-		switch addType {
+		switch cmd.AddType {
 		case approval.AddAssigneeBefore:
 			newTask.Status = approval.TaskPending
 			if engine.TaskStateMachine.CanTransition(task.Status, approval.TaskWaiting) {
 				task.Status = approval.TaskWaiting
-				if _, err := db.NewUpdate().Model(&task).WherePK().Exec(ctx); err != nil {
+				if _, err := db.NewUpdate().
+					Model(&task).
+					Select("status").
+					WherePK().
+					Exec(ctx); err != nil {
 					return cqrs.Unit{}, fmt.Errorf("update original task: %w", err)
 				}
 			}
@@ -116,7 +135,9 @@ func (h *AddAssigneeHandler) Handle(ctx context.Context, cmd AddAssigneeCmd) (cq
 			newTask.Status = approval.TaskPending
 		}
 
-		if _, err := db.NewInsert().Model(newTask).Exec(ctx); err != nil {
+		if _, err := db.NewInsert().
+			Model(newTask).
+			Exec(ctx); err != nil {
 			return cqrs.Unit{}, fmt.Errorf("insert assignee task: %w", err)
 		}
 	}
@@ -124,14 +145,16 @@ func (h *AddAssigneeHandler) Handle(ctx context.Context, cmd AddAssigneeCmd) (cq
 	actionLog := cmd.Operator.NewActionLog(instance.ID, approval.ActionAddAssignee)
 	actionLog.NodeID = new(task.NodeID)
 	actionLog.TaskID = new(task.ID)
-	actionLog.AddAssigneeType = new(cmd.AddType)
-	actionLog.AddAssigneeToIDs = cmd.UserIDs
-	if _, err := db.NewInsert().Model(actionLog).Exec(ctx); err != nil {
+	actionLog.AddAssigneeType = &cmd.AddType
+	actionLog.AddedAssigneeIDs = cmd.UserIDs
+	if _, err := db.NewInsert().
+		Model(actionLog).
+		Exec(ctx); err != nil {
 		return cqrs.Unit{}, fmt.Errorf("insert action log: %w", err)
 	}
 
 	if err := h.publisher.PublishAll(ctx, db, []approval.DomainEvent{
-		approval.NewAssigneesAddedEvent(instance.ID, task.NodeID, task.ID, addType, cmd.UserIDs),
+		approval.NewAssigneesAddedEvent(instance.ID, task.NodeID, task.ID, cmd.AddType, cmd.UserIDs),
 	}); err != nil {
 		return cqrs.Unit{}, err
 	}

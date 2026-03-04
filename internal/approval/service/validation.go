@@ -37,11 +37,14 @@ func (s *ValidationService) ValidateRollbackTarget(ctx context.Context, db orm.D
 		return shared.ErrRollbackNotAllowed
 
 	case approval.RollbackPrevious:
-		count, err := db.NewSelect().Model((*approval.FlowEdge)(nil)).Where(func(c orm.ConditionBuilder) {
-			c.Equals("source_node_id", targetNodeID)
-			c.Equals("target_node_id", currentNode.ID)
-			c.Equals("flow_version_id", instance.FlowVersionID)
-		}).Count(ctx)
+		count, err := db.NewSelect().
+			Model((*approval.FlowEdge)(nil)).
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Equals("source_node_id", targetNodeID).
+					Equals("target_node_id", currentNode.ID).
+					Equals("flow_version_id", instance.FlowVersionID)
+			}).
+			Count(ctx)
 		if err != nil {
 			return fmt.Errorf("find previous node: %w", err)
 		}
@@ -53,10 +56,14 @@ func (s *ValidationService) ValidateRollbackTarget(ctx context.Context, db orm.D
 	case approval.RollbackStart:
 		var startNode approval.FlowNode
 
-		if err := db.NewSelect().Model(&startNode).Where(func(c orm.ConditionBuilder) {
-			c.Equals("flow_version_id", instance.FlowVersionID)
-			c.Equals("kind", string(approval.NodeStart))
-		}).Scan(ctx); err != nil {
+		if err := db.NewSelect().
+			Model(&startNode).
+			Select("id").
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Equals("flow_version_id", instance.FlowVersionID).
+					Equals("kind", string(approval.NodeStart))
+			}).
+			Scan(ctx); err != nil {
 			return fmt.Errorf("find start node: %w", err)
 		}
 
@@ -65,10 +72,13 @@ func (s *ValidationService) ValidateRollbackTarget(ctx context.Context, db orm.D
 		}
 
 	case approval.RollbackAny:
-		count, err := db.NewSelect().Model((*approval.FlowNode)(nil)).Where(func(c orm.ConditionBuilder) {
-			c.Equals("id", targetNodeID)
-			c.Equals("flow_version_id", instance.FlowVersionID)
-		}).Count(ctx)
+		count, err := db.NewSelect().
+			Model((*approval.FlowNode)(nil)).
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Equals("id", targetNodeID).
+					Equals("flow_version_id", instance.FlowVersionID)
+			}).
+			Count(ctx)
 		if err != nil {
 			return fmt.Errorf("find rollback target node: %w", err)
 		}
@@ -79,11 +89,15 @@ func (s *ValidationService) ValidateRollbackTarget(ctx context.Context, db orm.D
 
 	case approval.RollbackSpecified:
 		var targetNode approval.FlowNode
-		if err := db.NewSelect().Model(&targetNode).
-			Where(func(c orm.ConditionBuilder) {
-				c.Equals("id", targetNodeID)
-				c.Equals("flow_version_id", instance.FlowVersionID)
-			}).Scan(ctx); err != nil {
+
+		if err := db.NewSelect().
+			Model(&targetNode).
+			Select("key").
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Equals("id", targetNodeID).
+					Equals("flow_version_id", instance.FlowVersionID)
+			}).
+			Scan(ctx); err != nil {
 			return shared.ErrInvalidRollbackTarget
 		}
 
@@ -142,6 +156,7 @@ func (s *ValidationService) CheckInitiationPermission(ctx context.Context, db or
 
 	if err := db.NewSelect().
 		Model(&initiators).
+		Select("kind", "ids").
 		Where(func(cb orm.ConditionBuilder) {
 			cb.Equals("flow_id", flowID)
 		}).

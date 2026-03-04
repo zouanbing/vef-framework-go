@@ -199,12 +199,12 @@ func (s *CCProcessorTestSuite) TestSingleCCConfig() {
 		s.Assert().Len(records, 2, "Should create 2 CC records")
 
 		userIDs := make([]string, len(records))
-		for i, r := range records {
-			userIDs[i] = r.CCUserID
-			s.Assert().Equal(instance.ID, r.InstanceID, "Record should reference instance")
-			s.Assert().NotNil(r.NodeID, "Record should reference node")
-			s.Assert().Equal(s.nodeID, *r.NodeID, "Record should reference correct node")
-			s.Assert().False(r.IsManual, "Record should not be manual")
+		for i, record := range records {
+			userIDs[i] = record.CCUserID
+			s.Assert().Equal(instance.ID, record.InstanceID, "Record should reference instance")
+			s.Assert().NotNil(record.NodeID, "Record should reference node")
+			s.Assert().Equal(s.nodeID, *record.NodeID, "Record should reference correct node")
+			s.Assert().False(record.IsManual, "Record should not be manual")
 		}
 		s.Assert().ElementsMatch([]string{"cc-user-1", "cc-user-2"}, userIDs, "Should create records for all CC users")
 	})

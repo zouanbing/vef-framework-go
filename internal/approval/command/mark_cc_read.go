@@ -15,6 +15,7 @@ import (
 // MarkCCReadCmd marks CC records as read for a user.
 type MarkCCReadCmd struct {
 	cqrs.BaseCommand
+
 	InstanceID string
 	UserID     string
 }
@@ -35,11 +36,16 @@ func (h *MarkCCReadHandler) Handle(ctx context.Context, cmd MarkCCReadCmd) (cqrs
 
 	// Query unread CC records for this user in this instance
 	var records []approval.CCRecord
-	if err := db.NewSelect().Model(&records).Where(func(c orm.ConditionBuilder) {
-		c.Equals("instance_id", cmd.InstanceID)
-		c.Equals("cc_user_id", cmd.UserID)
-		c.IsNull("read_at")
-	}).Scan(ctx); err != nil {
+
+	if err := db.NewSelect().
+		Model(&records).
+		Select("id", "node_id").
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("instance_id", cmd.InstanceID).
+				Equals("cc_user_id", cmd.UserID).
+				IsNull("read_at")
+		}).
+		Scan(ctx); err != nil {
 		return cqrs.Unit{}, fmt.Errorf("query unread cc records: %w", err)
 	}
 
@@ -50,15 +56,15 @@ func (h *MarkCCReadHandler) Handle(ctx context.Context, cmd MarkCCReadCmd) (cqrs
 	// Batch update read_at
 	now := timex.Now()
 	recordIDs := make([]string, 0, len(records))
-	for _, r := range records {
-		recordIDs = append(recordIDs, r.ID)
+	for _, record := range records {
+		recordIDs = append(recordIDs, record.ID)
 	}
 
-	if _, err := db.NewUpdate().Model((*approval.CCRecord)(nil)).
-		Set("read_at = ?", now).
-		Where(func(c orm.ConditionBuilder) {
-			c.In("id", recordIDs)
-		}).Exec(ctx); err != nil {
+	if _, err := db.NewUpdate().
+		Model((*approval.CCRecord)(nil)).
+		Set("read_at", now).
+		Where(func(cb orm.ConditionBuilder) { cb.In("id", recordIDs) }).
+		Exec(ctx); err != nil {
 		return cqrs.Unit{}, fmt.Errorf("update cc records read_at: %w", err)
 	}
 

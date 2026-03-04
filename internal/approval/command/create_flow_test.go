@@ -75,13 +75,13 @@ func (s *CreateFlowTestSuite) TearDownTest() {
 
 func (s *CreateFlowTestSuite) TestCreateFlowSuccess() {
 	cmd := command.CreateFlowCmd{
-		TenantID:              "tenant-1",
-		Code:                  "leave",
-		Name:                  "Leave Approval",
-		CategoryID:            s.categoryID,
-		BindingMode:           approval.BindingStandalone,
-		IsAllInitiateAllowed:  true,
-		InstanceTitleTemplate: "{{.applicantName}}'s leave request",
+		TenantID:               "tenant-1",
+		Code:                   "leave",
+		Name:                   "Leave Approval",
+		CategoryID:             s.categoryID,
+		BindingMode:            approval.BindingStandalone,
+		IsAllInitiationAllowed: true,
+		InstanceTitleTemplate:  "{{.applicantName}}'s leave request",
 	}
 
 	result, err := s.handler.Handle(s.ctx, cmd)
@@ -94,7 +94,7 @@ func (s *CreateFlowTestSuite) TestCreateFlowSuccess() {
 	s.Assert().Equal("Leave Approval", result.Name, "Should set Name")
 	s.Assert().Equal(s.categoryID, result.CategoryID, "Should set CategoryID")
 	s.Assert().Equal(approval.BindingStandalone, result.BindingMode, "Should set BindingMode")
-	s.Assert().True(result.IsAllInitiateAllowed, "Should set IsAllInitiateAllowed")
+	s.Assert().True(result.IsAllInitiationAllowed, "Should set IsAllInitiationAllowed")
 	s.Assert().True(result.IsActive, "Should default IsActive to true")
 	s.Assert().Equal(0, result.CurrentVersion, "Should default CurrentVersion to 0")
 

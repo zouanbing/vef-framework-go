@@ -52,7 +52,11 @@ func (p *ApprovalProcessor) resolveAndProcessAssignees(ctx context.Context, pc *
 	}
 
 	assignees = deduplicateAssignees(pc.Node, assignees)
-	assignees = applyDelegation(ctx, pc.DB, pc.Instance.FlowID, assignees)
+
+	assignees, err = applyDelegation(ctx, pc.DB, pc.Instance.FlowID, assignees)
+	if err != nil {
+		return nil, err
+	}
 
 	return assignees, nil
 }
@@ -80,8 +84,8 @@ func (p *ApprovalProcessor) createApprovalTasks(ctx context.Context, pc *Process
 			Status:     status,
 		}
 
-		if assignee.DelegateFromID != nil {
-			task.DelegateFromID = assignee.DelegateFromID
+		if assignee.DelegatorID != nil {
+			task.DelegatorID = assignee.DelegatorID
 		}
 
 		if _, err := pc.DB.NewInsert().Model(task).Exec(ctx); err != nil {
@@ -134,4 +138,3 @@ func (p *ApprovalProcessor) isSameApplicant(assignees []approval.ResolvedAssigne
 		return a.UserID != applicantID
 	})
 }
-

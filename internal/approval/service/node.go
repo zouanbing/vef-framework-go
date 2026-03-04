@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	collections "github.com/ilxqx/go-collections"
+
 	"github.com/ilxqx/vef-framework-go/approval"
 	"github.com/ilxqx/vef-framework-go/internal/approval/dispatcher"
 	"github.com/ilxqx/vef-framework-go/internal/approval/engine"
@@ -78,9 +80,13 @@ func (s *NodeService) HandleNodeCompletion(
 func (s *NodeService) TriggerNodeCC(ctx context.Context, db orm.DB, instance *approval.Instance, node *approval.FlowNode, completionResult approval.PassRuleResult) error {
 	var ccConfigs []approval.FlowNodeCC
 
-	if err := db.NewSelect().Model(&ccConfigs).Where(func(c orm.ConditionBuilder) {
-		c.Equals("node_id", node.ID)
-	}).Scan(ctx); err != nil {
+	if err := db.NewSelect().
+		Model(&ccConfigs).
+		Select("timing", "ids").
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("node_id", node.ID)
+		}).
+		Scan(ctx); err != nil {
 		return fmt.Errorf("load cc configs for node %s: %w", node.ID, err)
 	}
 
@@ -110,15 +116,14 @@ func (s *NodeService) TriggerNodeCC(ctx context.Context, db orm.DB, instance *ap
 		return nil
 	}
 
-	records := make([]approval.CCRecord, 0, len(ccUserIDs))
-	for _, userID := range ccUserIDs {
-		record := approval.CCRecord{
+	records := make([]approval.CCRecord, len(ccUserIDs))
+	for i, userID := range ccUserIDs {
+		records[i] = approval.CCRecord{
 			InstanceID: instance.ID,
 			NodeID:     new(node.ID),
 			CCUserID:   userID,
 			IsManual:   false,
 		}
-		records = append(records, record)
 	}
 
 	if _, err := db.NewInsert().Model(&records).Exec(ctx); err != nil {
@@ -126,24 +131,27 @@ func (s *NodeService) TriggerNodeCC(ctx context.Context, db orm.DB, instance *ap
 	}
 
 	return s.publisher.PublishAll(ctx, db, []approval.DomainEvent{
-		approval.NewCcNotifiedEvent(instance.ID, node.ID, ccUserIDs, false),
+		approval.NewCCNotifiedEvent(instance.ID, node.ID, ccUserIDs, false),
 	})
 }
 
 // CheckCCNodeCompletion checks if all CC records for CC nodes are read and advances the flow.
 func (s *NodeService) CheckCCNodeCompletion(ctx context.Context, db orm.DB, instanceID string, records []approval.CCRecord) error {
-	nodeIDs := make(map[string]struct{})
-	for _, r := range records {
-		if r.NodeID != nil {
-			nodeIDs[*r.NodeID] = struct{}{}
+	nodeIDs := collections.NewHashSet[string]()
+	for _, record := range records {
+		if record.NodeID != nil {
+			nodeIDs.Add(*record.NodeID)
 		}
 	}
 
-	for nodeID := range nodeIDs {
+	for _, nodeID := range nodeIDs.ToSlice() {
 		var node approval.FlowNode
-		if err := db.NewSelect().Model(&node).Where(func(c orm.ConditionBuilder) {
-			c.Equals("id", nodeID)
-		}).Scan(ctx); err != nil {
+		node.ID = nodeID
+
+		if err := db.NewSelect().
+			Model(&node).
+			WherePK().
+			Scan(ctx); err != nil {
 			continue
 		}
 
@@ -151,20 +159,26 @@ func (s *NodeService) CheckCCNodeCompletion(ctx context.Context, db orm.DB, inst
 			continue
 		}
 
-		unreadCount, err := db.NewSelect().Model((*approval.CCRecord)(nil)).Where(func(c orm.ConditionBuilder) {
-			c.Equals("instance_id", instanceID)
-			c.Equals("node_id", nodeID)
-			c.IsNull("read_at")
-		}).Count(ctx)
+		unreadCount, err := db.NewSelect().
+			Model((*approval.CCRecord)(nil)).
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Equals("instance_id", instanceID).
+					Equals("node_id", nodeID).
+					IsNull("read_at")
+			}).
+			Count(ctx)
 		if err != nil {
 			return fmt.Errorf("count unread cc records: %w", err)
 		}
 
 		if unreadCount == 0 {
 			var instance approval.Instance
-			if err := db.NewSelect().Model(&instance).Where(func(c orm.ConditionBuilder) {
-				c.Equals("id", instanceID)
-			}).Scan(ctx); err != nil {
+			instance.ID = instanceID
+
+			if err := db.NewSelect().
+				Model(&instance).
+				WherePK().
+				Scan(ctx); err != nil {
 				return fmt.Errorf("find instance for cc advance: %w", err)
 			}
 

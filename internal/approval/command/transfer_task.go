@@ -16,7 +16,7 @@ import (
 // TransferTaskCmd transfers a pending task to another user.
 type TransferTaskCmd struct {
 	cqrs.BaseCommand
-	InstanceID   string
+
 	TaskID       string
 	Operator     approval.OperatorInfo
 	Opinion      string
@@ -35,19 +35,19 @@ type TransferTaskHandler struct {
 func NewTransferTaskHandler(
 	db orm.DB,
 	taskSvc *service.TaskService,
-	pub *dispatcher.EventPublisher,
+	publisher *dispatcher.EventPublisher,
 ) *TransferTaskHandler {
 	return &TransferTaskHandler{
 		db:        db,
 		taskSvc:   taskSvc,
-		publisher: pub,
+		publisher: publisher,
 	}
 }
 
 func (h *TransferTaskHandler) Handle(ctx context.Context, cmd TransferTaskCmd) (cqrs.Unit, error) {
 	db := contextx.DB(ctx, h.db)
 
-	tc, err := h.taskSvc.PrepareOperation(ctx, db, cmd.InstanceID, cmd.TaskID, cmd.Operator.ID, cmd.FormData)
+	tc, err := h.taskSvc.PrepareOperation(ctx, db, cmd.TaskID, cmd.Operator.ID, cmd.FormData)
 	if err != nil {
 		return cqrs.Unit{}, err
 	}
@@ -88,7 +88,11 @@ func (h *TransferTaskHandler) Handle(ctx context.Context, cmd TransferTaskCmd) (
 		return cqrs.Unit{}, err
 	}
 
-	if _, err := db.NewUpdate().Model(instance).WherePK().Exec(ctx); err != nil {
+	if _, err := db.NewUpdate().
+		Model(instance).
+		Select("form_data").
+		WherePK().
+		Exec(ctx); err != nil {
 		return cqrs.Unit{}, fmt.Errorf("update instance: %w", err)
 	}
 

@@ -42,15 +42,15 @@ func (s *DeployFlowTestSuite) SetupSuite() {
 	s.Require().NoError(err, "Should insert test category")
 
 	flow := &approval.Flow{
-		TenantID:              "default",
-		CategoryID:            category.ID,
-		Code:                  "deploy-test-flow",
-		Name:                  "Deploy Test Flow",
-		BindingMode:           approval.BindingStandalone,
-		IsAllInitiateAllowed:  true,
-		InstanceTitleTemplate: "Test",
-		IsActive:              true,
-		CurrentVersion:        0,
+		TenantID:               "default",
+		CategoryID:             category.ID,
+		Code:                   "deploy-test-flow",
+		Name:                   "Deploy Test Flow",
+		BindingMode:            approval.BindingStandalone,
+		IsAllInitiationAllowed: true,
+		InstanceTitleTemplate:  "Test",
+		IsActive:               true,
+		CurrentVersion:         0,
 	}
 	_, err = s.db.NewInsert().Model(flow).Exec(s.ctx)
 	s.Require().NoError(err, "Should insert test flow")

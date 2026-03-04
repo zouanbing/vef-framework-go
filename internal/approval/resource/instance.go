@@ -86,7 +86,6 @@ func (r *InstanceResource) Start(ctx fiber.Ctx, principal security.Principal, pa
 type ProcessTaskParams struct {
 	api.P
 
-	InstanceID   string         `json:"instanceId" validate:"required"`
 	TaskID       string         `json:"taskId" validate:"required"`
 	Action       string         `json:"action" validate:"required,oneof=approve reject transfer rollback handle"`
 	Opinion      string         `json:"opinion"`
@@ -105,23 +104,20 @@ func (r *InstanceResource) ProcessTask(ctx fiber.Ctx, principal security.Princip
 	switch params.Action {
 	case "approve", "handle":
 		_, err = cqrs.Send[command.ApproveTaskCmd, cqrs.Unit](ctx.Context(), r.bus, command.ApproveTaskCmd{
-			InstanceID: params.InstanceID,
-			TaskID:     params.TaskID,
-			Operator:   operator,
-			Opinion:    params.Opinion,
-			FormData:   params.FormData,
+			TaskID:   params.TaskID,
+			Operator: operator,
+			Opinion:  params.Opinion,
+			FormData: params.FormData,
 		})
 	case "reject":
 		_, err = cqrs.Send[command.RejectTaskCmd, cqrs.Unit](ctx.Context(), r.bus, command.RejectTaskCmd{
-			InstanceID: params.InstanceID,
-			TaskID:     params.TaskID,
-			Operator:   operator,
-			Opinion:    params.Opinion,
-			FormData:   params.FormData,
+			TaskID:   params.TaskID,
+			Operator: operator,
+			Opinion:  params.Opinion,
+			FormData: params.FormData,
 		})
 	case "transfer":
 		_, err = cqrs.Send[command.TransferTaskCmd, cqrs.Unit](ctx.Context(), r.bus, command.TransferTaskCmd{
-			InstanceID:   params.InstanceID,
 			TaskID:       params.TaskID,
 			Operator:     operator,
 			Opinion:      params.Opinion,
@@ -130,7 +126,6 @@ func (r *InstanceResource) ProcessTask(ctx fiber.Ctx, principal security.Princip
 		})
 	case "rollback":
 		_, err = cqrs.Send[command.RollbackTaskCmd, cqrs.Unit](ctx.Context(), r.bus, command.RollbackTaskCmd{
-			InstanceID:   params.InstanceID,
 			TaskID:       params.TaskID,
 			Operator:     operator,
 			Opinion:      params.Opinion,
@@ -244,10 +239,9 @@ func (r *InstanceResource) MarkCcRead(ctx fiber.Ctx, principal security.Principa
 type AddAssigneeParams struct {
 	api.P
 
-	InstanceID string   `json:"instanceId" validate:"required"`
-	TaskID     string   `json:"taskId" validate:"required"`
-	UserIDs    []string `json:"userIds" validate:"required,min=1,max=50"`
-	AddType    string   `json:"addType" validate:"required,oneof=before after parallel"`
+	TaskID  string   `json:"taskId" validate:"required"`
+	UserIDs []string `json:"userIds" validate:"required,min=1,max=50"`
+	AddType string   `json:"addType" validate:"required,oneof=before after parallel"`
 }
 
 // AddAssignee dynamically adds assignees to a task.
@@ -258,11 +252,10 @@ func (r *InstanceResource) AddAssignee(ctx fiber.Ctx, principal security.Princip
 	}
 
 	if _, err := cqrs.Send[command.AddAssigneeCmd, cqrs.Unit](ctx.Context(), r.bus, command.AddAssigneeCmd{
-		InstanceID: params.InstanceID,
-		TaskID:     params.TaskID,
-		UserIDs:    params.UserIDs,
-		AddType:    params.AddType,
-		Operator:   operator,
+		TaskID:   params.TaskID,
+		UserIDs:  params.UserIDs,
+		AddType:  approval.AddAssigneeType(params.AddType),
+		Operator: operator,
 	}); err != nil {
 		return err
 	}
@@ -409,18 +402,16 @@ func (r *InstanceResource) GetActionLogs(ctx fiber.Ctx, params GetActionLogsPara
 type UrgeTaskParams struct {
 	api.P
 
-	InstanceID string `json:"instanceId" validate:"required"`
-	TaskID     string `json:"taskId" validate:"required"`
-	Message    string `json:"message"`
+	TaskID  string `json:"taskId" validate:"required"`
+	Message string `json:"message"`
 }
 
 // UrgeTask sends an urge notification for a pending task.
 func (r *InstanceResource) UrgeTask(ctx fiber.Ctx, principal security.Principal, params UrgeTaskParams) error {
 	if _, err := cqrs.Send[command.UrgeTaskCmd, cqrs.Unit](ctx.Context(), r.bus, command.UrgeTaskCmd{
-		InstanceID: params.InstanceID,
-		TaskID:     params.TaskID,
-		UrgerID:    principal.ID,
-		Message:    params.Message,
+		TaskID:  params.TaskID,
+		UrgerID: principal.ID,
+		Message: params.Message,
 	}); err != nil {
 		return err
 	}

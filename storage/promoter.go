@@ -301,7 +301,7 @@ func (p *defaultPromoter[T]) promoteFiles(ctx context.Context, model *T) error {
 			return p.promoteUploadedFileField(ctx, fieldValue, field.isArray, field.typ, field.attrs)
 
 		case MetaTypeRichText:
-			return p.promoteContentField(ctx, fieldValue, extractHtmlURLs, replaceHTMLURLs, field.typ, field.attrs)
+			return p.promoteContentField(ctx, fieldValue, extractHtmlURLs, replaceHtmlURLs, field.typ, field.attrs)
 
 		case MetaTypeMarkdown:
 			return p.promoteContentField(ctx, fieldValue, extractMarkdownURLs, replaceMarkdownURLs, field.typ, field.attrs)

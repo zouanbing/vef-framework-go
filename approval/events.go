@@ -239,7 +239,7 @@ type TaskApprovedEvent struct {
 	InstanceID   string         `json:"instanceId"`
 	NodeID       string         `json:"nodeId"`
 	OperatorID   string         `json:"operatorId"`
-	Opinion      string         `json:"opinion"`
+	Opinion      *string        `json:"opinion,omitempty"`
 	OccurredTime timex.DateTime `json:"occurredTime"`
 }
 
@@ -249,7 +249,7 @@ func NewTaskApprovedEvent(taskID, instanceID, nodeID, operatorID, opinion string
 		InstanceID:   instanceID,
 		NodeID:       nodeID,
 		OperatorID:   operatorID,
-		Opinion:      opinion,
+		Opinion:      new(opinion),
 		OccurredTime: timex.Now(),
 	}
 }
@@ -263,7 +263,7 @@ type TaskRejectedEvent struct {
 	InstanceID   string         `json:"instanceId"`
 	NodeID       string         `json:"nodeId"`
 	OperatorID   string         `json:"operatorId"`
-	Opinion      string         `json:"opinion"`
+	Opinion      *string        `json:"opinion,omitempty"`
 	OccurredTime timex.DateTime `json:"occurredTime"`
 }
 
@@ -273,7 +273,7 @@ func NewTaskRejectedEvent(taskID, instanceID, nodeID, operatorID, opinion string
 		InstanceID:   instanceID,
 		NodeID:       nodeID,
 		OperatorID:   operatorID,
-		Opinion:      opinion,
+		Opinion:      new(opinion),
 		OccurredTime: timex.Now(),
 	}
 }
@@ -288,7 +288,7 @@ type TaskTransferredEvent struct {
 	NodeID       string         `json:"nodeId"`
 	FromUserID   string         `json:"fromUserId"`
 	ToUserID     string         `json:"toUserId"`
-	Reason       string         `json:"reason"`
+	Reason       *string        `json:"reason,omitempty"`
 	OccurredTime timex.DateTime `json:"occurredTime"`
 }
 
@@ -299,7 +299,7 @@ func NewTaskTransferredEvent(taskID, instanceID, nodeID, fromUserID, toUserID, r
 		NodeID:       nodeID,
 		FromUserID:   fromUserID,
 		ToUserID:     toUserID,
-		Reason:       reason,
+		Reason:       new(reason),
 		OccurredTime: timex.Now(),
 	}
 }
@@ -388,7 +388,7 @@ type CCNotifiedEvent struct {
 	OccurredTime timex.DateTime `json:"occurredTime"`
 }
 
-func NewCcNotifiedEvent(instanceID, nodeID string, ccUserIDs []string, isManual bool) *CCNotifiedEvent {
+func NewCCNotifiedEvent(instanceID, nodeID string, ccUserIDs []string, isManual bool) *CCNotifiedEvent {
 	return &CCNotifiedEvent{
 		InstanceID:   instanceID,
 		NodeID:       nodeID,
@@ -456,7 +456,7 @@ type TaskUrgedEvent struct {
 	TaskID       string         `json:"taskId"`
 	UrgerID      string         `json:"urgerId"`
 	TargetUserID string         `json:"targetUserId"`
-	Message      string         `json:"message"`
+	Message      *string        `json:"message,omitempty"`
 	OccurredTime timex.DateTime `json:"occurredTime"`
 }
 
@@ -467,7 +467,7 @@ func NewTaskUrgedEvent(instanceID, nodeID, taskID, urgerID, targetUserID, messag
 		TaskID:       taskID,
 		UrgerID:      urgerID,
 		TargetUserID: targetUserID,
-		Message:      message,
+		Message:      new(message),
 		OccurredTime: timex.Now(),
 	}
 }

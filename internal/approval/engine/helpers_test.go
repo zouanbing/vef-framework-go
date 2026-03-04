@@ -1,10 +1,12 @@
 package engine
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/ilxqx/vef-framework-go/approval"
@@ -15,13 +17,13 @@ import (
 func TestDeduplicateAssignees(t *testing.T) {
 	tests := []struct {
 		name      string
-		action    approval.DuplicateHandlerAction
+		action    approval.DuplicateAssigneeAction
 		assignees []approval.ResolvedAssignee
 		expected  []approval.ResolvedAssignee
 	}{
 		{
 			name:   "NoneAction",
-			action: approval.DuplicateHandlerNone,
+			action: approval.DuplicateAssigneeNone,
 			assignees: []approval.ResolvedAssignee{
 				{UserID: "u1"}, {UserID: "u1"}, {UserID: "u2"},
 			},
@@ -31,7 +33,7 @@ func TestDeduplicateAssignees(t *testing.T) {
 		},
 		{
 			name:   "RemoveDuplicates",
-			action: approval.DuplicateHandlerAutoPass,
+			action: approval.DuplicateAssigneeAutoPass,
 			assignees: []approval.ResolvedAssignee{
 				{UserID: "u1"}, {UserID: "u2"}, {UserID: "u1"}, {UserID: "u3"},
 			},
@@ -41,7 +43,7 @@ func TestDeduplicateAssignees(t *testing.T) {
 		},
 		{
 			name:   "NoDuplicates",
-			action: approval.DuplicateHandlerAutoPass,
+			action: approval.DuplicateAssigneeAutoPass,
 			assignees: []approval.ResolvedAssignee{
 				{UserID: "u1"}, {UserID: "u2"}, {UserID: "u3"},
 			},
@@ -51,12 +53,12 @@ func TestDeduplicateAssignees(t *testing.T) {
 		},
 		{
 			name:     "EmptySlice",
-			action:   approval.DuplicateHandlerAutoPass,
+			action:   approval.DuplicateAssigneeAutoPass,
 			expected: []approval.ResolvedAssignee{},
 		},
 		{
 			name:   "AllSame",
-			action: approval.DuplicateHandlerAutoPass,
+			action: approval.DuplicateAssigneeAutoPass,
 			assignees: []approval.ResolvedAssignee{
 				{UserID: "u1"}, {UserID: "u1"}, {UserID: "u1"},
 			},
@@ -68,17 +70,16 @@ func TestDeduplicateAssignees(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			node := &approval.FlowNode{DuplicateHandlerAction: tt.action}
+			node := &approval.FlowNode{DuplicateAssigneeAction: tt.action}
 			got := deduplicateAssignees(node, tt.assignees)
 			assert.Equal(t, tt.expected, got, "Should return expected assignees")
 		})
 	}
 }
 
-
 // TestMatchDelegation tests match delegation scenarios.
 func TestMatchDelegation(t *testing.T) {
-	now := time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC)
+	now := timex.DateTime(time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC))
 	past := now.Add(-24 * time.Hour)
 	future := now.Add(24 * time.Hour)
 
@@ -188,11 +189,86 @@ func TestMatchDelegation(t *testing.T) {
 	}
 }
 
+// TestComputeDeadline tests compute deadline scenarios.
+func TestComputeDeadline(t *testing.T) {
+	t.Run("ZeroTimeout", func(t *testing.T) {
+		node := &approval.FlowNode{TimeoutHours: 0}
+		assert.Nil(t, computeDeadline(node), "Should return nil when timeout is zero")
+	})
+
+	t.Run("NegativeTimeout", func(t *testing.T) {
+		node := &approval.FlowNode{TimeoutHours: -1}
+		assert.Nil(t, computeDeadline(node), "Should return nil when timeout is negative")
+	})
+
+	t.Run("PositiveTimeout", func(t *testing.T) {
+		node := &approval.FlowNode{TimeoutHours: 24}
+		before := time.Now()
+		deadline := computeDeadline(node)
+		after := time.Now()
+
+		require.NotNil(t, deadline, "Should return non-nil deadline")
+		d := deadline.Unwrap()
+		assert.True(t, d.After(before.Add(23*time.Hour+59*time.Minute)), "Deadline should be approximately 24 hours from now")
+		assert.True(t, d.Before(after.Add(24*time.Hour+time.Minute)), "Deadline should be approximately 24 hours from now")
+	})
+}
+
+// MockAssigneeService is a mock implementation of approval.AssigneeService for testing.
+type MockAssigneeService struct {
+	mock.Mock
+}
+
+func (m *MockAssigneeService) GetSuperior(ctx context.Context, userID string) (string, error) {
+	args := m.Called(ctx, userID)
+	return args.String(0), args.Error(1)
+}
+
+func (m *MockAssigneeService) GetDeptLeaders(ctx context.Context, deptID string) ([]string, error) {
+	args := m.Called(ctx, deptID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]string), args.Error(1)
+}
+
+func (m *MockAssigneeService) GetRoleUsers(ctx context.Context, roleID string) ([]string, error) {
+	args := m.Called(ctx, roleID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]string), args.Error(1)
+}
+
 // TestGetSuperior tests get superior scenarios.
 func TestGetSuperior(t *testing.T) {
 	t.Run("NilOrgService", func(t *testing.T) {
-		uid, err := getSuperior(t.Context(), nil, "user1")
-		require.NoError(t, err, "Should not return error when orgService is nil")
-		assert.Empty(t, uid, "Should return empty string when orgService is nil")
+		_, err := getSuperior(t.Context(), nil, "user1")
+		assert.ErrorIs(t, err, ErrAssigneeServiceNotConfigured, "Should return ErrAssigneeServiceNotConfigured when orgService is nil")
+	})
+
+	t.Run("WithService", func(t *testing.T) {
+		svc := new(MockAssigneeService)
+		svc.On("GetSuperior", mock.Anything, "user1").
+			Return("superior1", nil).
+			Once()
+
+		uid, err := getSuperior(t.Context(), svc, "user1")
+		require.NoError(t, err, "Should not return error")
+		assert.Equal(t, "superior1", uid, "Should return superior ID from service")
+
+		svc.AssertExpectations(t)
+	})
+
+	t.Run("WithServiceError", func(t *testing.T) {
+		svc := new(MockAssigneeService)
+		svc.On("GetSuperior", mock.Anything, "user1").
+			Return("", assert.AnError).
+			Once()
+
+		_, err := getSuperior(t.Context(), svc, "user1")
+		assert.ErrorIs(t, err, assert.AnError, "Should propagate service error")
+
+		svc.AssertExpectations(t)
 	})
 }

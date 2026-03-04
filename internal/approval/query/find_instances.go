@@ -14,6 +14,7 @@ import (
 // FindInstancesQuery queries instances with filtering and pagination.
 type FindInstancesQuery struct {
 	cqrs.BaseQuery
+
 	TenantID    string
 	ApplicantID string
 	Status      string
@@ -40,19 +41,19 @@ func (h *FindInstancesHandler) Handle(ctx context.Context, query FindInstancesQu
 	sq := db.NewSelect().Model(&instances)
 
 	if query.TenantID != "" {
-		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("tenant_id", query.TenantID) })
+		sq = sq.Where(func(cb orm.ConditionBuilder) { cb.Equals("tenant_id", query.TenantID) })
 	}
 	if query.ApplicantID != "" {
-		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("applicant_id", query.ApplicantID) })
+		sq = sq.Where(func(cb orm.ConditionBuilder) { cb.Equals("applicant_id", query.ApplicantID) })
 	}
 	if query.Status != "" {
-		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("status", query.Status) })
+		sq = sq.Where(func(cb orm.ConditionBuilder) { cb.Equals("status", query.Status) })
 	}
 	if query.FlowID != "" {
-		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("flow_id", query.FlowID) })
+		sq = sq.Where(func(cb orm.ConditionBuilder) { cb.Equals("flow_id", query.FlowID) })
 	}
 	if query.Keyword != "" {
-		sq = sq.Where(func(c orm.ConditionBuilder) { c.Contains("title", query.Keyword) })
+		sq = sq.Where(func(cb orm.ConditionBuilder) { cb.Contains("title", query.Keyword) })
 	}
 
 	sq = sq.OrderByDesc("created_at")

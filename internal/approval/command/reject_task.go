@@ -15,20 +15,20 @@ import (
 // RejectTaskCmd rejects a pending task.
 type RejectTaskCmd struct {
 	cqrs.BaseCommand
-	InstanceID string
-	TaskID     string
-	Operator   approval.OperatorInfo
-	Opinion    string
-	FormData   map[string]any
+
+	TaskID   string
+	Operator approval.OperatorInfo
+	Opinion  string
+	FormData map[string]any
 }
 
 // RejectTaskHandler handles the RejectTaskCmd command.
 type RejectTaskHandler struct {
-	db        orm.DB
-	taskSvc   *service.TaskService
-	nodeSvc   *service.NodeService
-	validSvc  *service.ValidationService
-	publisher *dispatcher.EventPublisher
+	db            orm.DB
+	taskSvc       *service.TaskService
+	nodeSvc       *service.NodeService
+	validationSvc *service.ValidationService
+	publisher     *dispatcher.EventPublisher
 }
 
 // NewRejectTaskHandler creates a new RejectTaskHandler.
@@ -36,27 +36,27 @@ func NewRejectTaskHandler(
 	db orm.DB,
 	taskSvc *service.TaskService,
 	nodeSvc *service.NodeService,
-	validSvc *service.ValidationService,
-	pub *dispatcher.EventPublisher,
+	validationSvc *service.ValidationService,
+	publisher *dispatcher.EventPublisher,
 ) *RejectTaskHandler {
 	return &RejectTaskHandler{
-		db:        db,
-		taskSvc:   taskSvc,
-		nodeSvc:   nodeSvc,
-		validSvc:  validSvc,
-		publisher: pub,
+		db:            db,
+		taskSvc:       taskSvc,
+		nodeSvc:       nodeSvc,
+		validationSvc: validationSvc,
+		publisher:     publisher,
 	}
 }
 
 func (h *RejectTaskHandler) Handle(ctx context.Context, cmd RejectTaskCmd) (cqrs.Unit, error) {
 	db := contextx.DB(ctx, h.db)
 
-	tc, err := h.taskSvc.PrepareOperation(ctx, db, cmd.InstanceID, cmd.TaskID, cmd.Operator.ID, cmd.FormData)
+	tc, err := h.taskSvc.PrepareOperation(ctx, db, cmd.TaskID, cmd.Operator.ID, cmd.FormData)
 	if err != nil {
 		return cqrs.Unit{}, err
 	}
 
-	if err := h.validSvc.ValidateOpinion(tc.Node, cmd.Opinion); err != nil {
+	if err := h.validationSvc.ValidateOpinion(tc.Node, cmd.Opinion); err != nil {
 		return cqrs.Unit{}, err
 	}
 
@@ -80,7 +80,11 @@ func (h *RejectTaskHandler) Handle(ctx context.Context, cmd RejectTaskCmd) (cqrs
 		return cqrs.Unit{}, err
 	}
 
-	if _, err := db.NewUpdate().Model(instance).WherePK().Exec(ctx); err != nil {
+	if _, err := db.NewUpdate().
+		Model(instance).
+		Select("form_data", "current_node_id", "status", "finished_at").
+		WherePK().
+		Exec(ctx); err != nil {
 		return cqrs.Unit{}, fmt.Errorf("update instance: %w", err)
 	}
 

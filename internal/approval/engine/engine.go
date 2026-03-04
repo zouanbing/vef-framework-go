@@ -169,6 +169,7 @@ func (e *FlowEngine) findMatchingEdge(ctx context.Context, db orm.DB, sourceNode
 
 	if err := db.NewSelect().
 		Model(&edges).
+		Select("target_node_id").
 		Where(func(cb orm.ConditionBuilder) {
 			cb.Equals("source_node_id", sourceNodeID).
 				ApplyIf(branchID != nil, func(cb orm.ConditionBuilder) {
@@ -196,6 +197,7 @@ func (e *FlowEngine) EvaluateNodeCompletion(ctx context.Context, db orm.DB, inst
 
 	err := db.NewSelect().
 		Model(&tasks).
+		Select("status").
 		Where(func(cb orm.ConditionBuilder) {
 			cb.Equals("instance_id", instance.ID).
 				Equals("node_id", node.ID)
@@ -273,4 +275,3 @@ func NormalizePassRatio(ratio float64) float64 {
 
 	return ratio
 }
-

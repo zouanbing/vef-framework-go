@@ -13,6 +13,7 @@ import (
 // GetActionLogsQuery retrieves action logs for an instance.
 type GetActionLogsQuery struct {
 	cqrs.BaseQuery
+
 	InstanceID string
 }
 
@@ -30,9 +31,12 @@ func (h *GetActionLogsHandler) Handle(ctx context.Context, query GetActionLogsQu
 	db := contextx.DB(ctx, h.db)
 
 	var logs []approval.ActionLog
-	if err := db.NewSelect().Model(&logs).Where(func(c orm.ConditionBuilder) {
-		c.Equals("instance_id", query.InstanceID)
-	}).OrderBy("created_at").Scan(ctx); err != nil {
+
+	if err := db.NewSelect().
+		Model(&logs).
+		Where(func(cb orm.ConditionBuilder) { cb.Equals("instance_id", query.InstanceID) }).
+		OrderBy("created_at").
+		Scan(ctx); err != nil {
 		return nil, fmt.Errorf("query action logs: %w", err)
 	}
 

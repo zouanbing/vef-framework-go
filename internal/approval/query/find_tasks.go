@@ -14,6 +14,7 @@ import (
 // FindTasksQuery queries tasks with filtering and pagination.
 type FindTasksQuery struct {
 	cqrs.BaseQuery
+
 	TenantID   string
 	AssigneeID string
 	InstanceID string
@@ -39,16 +40,16 @@ func (h *FindTasksHandler) Handle(ctx context.Context, query FindTasksQuery) (*p
 	sq := db.NewSelect().Model(&tasks)
 
 	if query.TenantID != "" {
-		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("tenant_id", query.TenantID) })
+		sq = sq.Where(func(cb orm.ConditionBuilder) { cb.Equals("tenant_id", query.TenantID) })
 	}
 	if query.AssigneeID != "" {
-		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("assignee_id", query.AssigneeID) })
+		sq = sq.Where(func(cb orm.ConditionBuilder) { cb.Equals("assignee_id", query.AssigneeID) })
 	}
 	if query.InstanceID != "" {
-		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("instance_id", query.InstanceID) })
+		sq = sq.Where(func(cb orm.ConditionBuilder) { cb.Equals("instance_id", query.InstanceID) })
 	}
 	if query.Status != "" {
-		sq = sq.Where(func(c orm.ConditionBuilder) { c.Equals("status", query.Status) })
+		sq = sq.Where(func(cb orm.ConditionBuilder) { cb.Equals("status", query.Status) })
 	}
 
 	sq = sq.OrderByDesc("created_at")

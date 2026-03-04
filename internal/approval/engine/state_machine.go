@@ -111,7 +111,7 @@ func buildTaskStateMachine() *StateMachine[approval.TaskStatus] {
 	sm.AddTransition(approval.TaskPending, approval.TaskHandled, "handle")
 	sm.AddTransition(approval.TaskPending, approval.TaskRejected, "reject")
 	sm.AddTransition(approval.TaskPending, approval.TaskTransferred, "transfer")
-	sm.AddTransition(approval.TaskPending, approval.TaskRollback, "rollback")
+	sm.AddTransition(approval.TaskPending, approval.TaskRolledBack, "rollback")
 	sm.AddTransition(approval.TaskPending, approval.TaskCanceled, "cancel")
 	sm.AddTransition(approval.TaskPending, approval.TaskWaiting, "wait_for_before")
 	sm.AddTransition(approval.TaskPending, approval.TaskRemoved, "remove")

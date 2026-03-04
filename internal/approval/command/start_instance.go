@@ -76,7 +76,7 @@ func (h *StartInstanceHandler) Handle(ctx context.Context, cmd StartInstanceCmd)
 		return nil, shared.ErrFlowNotActive
 	}
 
-	if !flow.IsAllInitiateAllowed {
+	if !flow.IsAllInitiationAllowed {
 		allowed, err := h.validationSvc.CheckInitiationPermission(ctx, db, flow.ID, cmd.Applicant.ID, cmd.Applicant.DeptID)
 		if err != nil {
 			return nil, fmt.Errorf("check initiation permission: %w", err)

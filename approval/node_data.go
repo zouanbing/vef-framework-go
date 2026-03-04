@@ -40,7 +40,7 @@ func applyBaseNodeData(node *FlowNode, data *BaseNodeData) {
 type TaskNodeData struct {
 	Assignees                []AssigneeDefinition  `json:"assignees,omitempty"`
 	ExecutionType            ExecutionType         `json:"executionType,omitempty"`
-	EmptyHandlerAction       EmptyHandlerAction    `json:"emptyHandler,omitempty"`
+	EmptyAssigneeAction      EmptyAssigneeAction   `json:"emptyAssigneeAction,omitempty"`
 	FallbackUserIDs          []string              `json:"fallbackUserIds,omitempty"`
 	AdminUserIDs             []string              `json:"adminUserIds,omitempty"`
 	IsTransferAllowed        bool                  `json:"isTransferAllowed,omitempty"`
@@ -69,8 +69,8 @@ func applyTaskNodeData(node *FlowNode, data *TaskNodeData) {
 		node.ExecutionType = data.ExecutionType
 	}
 
-	if data.EmptyHandlerAction != "" {
-		node.EmptyHandlerAction = data.EmptyHandlerAction
+	if data.EmptyAssigneeAction != "" {
+		node.EmptyAssigneeAction = data.EmptyAssigneeAction
 	}
 
 	node.FallbackUserIDs = data.FallbackUserIDs
@@ -125,19 +125,19 @@ type ApprovalNodeData struct {
 	BaseNodeData
 	TaskNodeData
 
-	ApprovalMethod          ApprovalMethod         `json:"approvalMethod,omitempty"`
-	PassRule                PassRule               `json:"passRule,omitempty"`
-	PassRatio               decimal.Decimal        `json:"passRatio,omitempty"`
-	SameApplicantAction     SameApplicantAction    `json:"sameApplicantAction,omitempty"`
-	DuplicateHandlerAction  DuplicateHandlerAction `json:"duplicateHandlerAction,omitempty"`
-	RollbackType            RollbackType           `json:"rollbackType,omitempty"`
-	RollbackDataStrategy    RollbackDataStrategy   `json:"rollbackDataStrategy,omitempty"`
-	RollbackTargetKeys      []string               `json:"rollbackTargetKeys,omitempty"`
-	IsRollbackAllowed       bool                   `json:"isRollbackAllowed,omitempty"`
-	IsAddAssigneeAllowed    bool                   `json:"isAddAssigneeAllowed,omitempty"`
-	AddAssigneeTypes        []string               `json:"addAssigneeTypes,omitempty"`
-	IsRemoveAssigneeAllowed bool                   `json:"isRemoveAssigneeAllowed,omitempty"`
-	IsManualCCAllowed       bool                   `json:"isManualCcAllowed,omitempty"`
+	ApprovalMethod          ApprovalMethod          `json:"approvalMethod,omitempty"`
+	PassRule                PassRule                `json:"passRule,omitempty"`
+	PassRatio               decimal.Decimal         `json:"passRatio,omitempty"`
+	SameApplicantAction     SameApplicantAction     `json:"sameApplicantAction,omitempty"`
+	DuplicateAssigneeAction DuplicateAssigneeAction `json:"duplicateAssigneeAction,omitempty"`
+	RollbackType            RollbackType            `json:"rollbackType,omitempty"`
+	RollbackDataStrategy    RollbackDataStrategy    `json:"rollbackDataStrategy,omitempty"`
+	RollbackTargetKeys      []string                `json:"rollbackTargetKeys,omitempty"`
+	IsRollbackAllowed       bool                    `json:"isRollbackAllowed,omitempty"`
+	IsAddAssigneeAllowed    bool                    `json:"isAddAssigneeAllowed,omitempty"`
+	AddAssigneeTypes        []string                `json:"addAssigneeTypes,omitempty"`
+	IsRemoveAssigneeAllowed bool                    `json:"isRemoveAssigneeAllowed,omitempty"`
+	IsManualCCAllowed       bool                    `json:"isManualCcAllowed,omitempty"`
 }
 
 // Kind returns the node kind.
@@ -164,8 +164,8 @@ func (d *ApprovalNodeData) ApplyTo(node *FlowNode) {
 		node.SameApplicantAction = d.SameApplicantAction
 	}
 
-	if d.DuplicateHandlerAction != "" {
-		node.DuplicateHandlerAction = d.DuplicateHandlerAction
+	if d.DuplicateAssigneeAction != "" {
+		node.DuplicateAssigneeAction = d.DuplicateAssigneeAction
 	}
 
 	if d.RollbackType != "" {

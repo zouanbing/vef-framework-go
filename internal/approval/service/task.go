@@ -40,7 +40,11 @@ func (s *TaskService) FinishTask(ctx context.Context, db orm.DB, task *approval.
 	task.Status = status
 	task.FinishedAt = new(timex.Now())
 
-	if _, err := db.NewUpdate().Model(task).WherePK().Exec(ctx); err != nil {
+	if _, err := db.NewUpdate().
+		Model(task).
+		Select("status", "finished_at").
+		WherePK().
+		Exec(ctx); err != nil {
 		return fmt.Errorf("update task: %w", err)
 	}
 
@@ -51,11 +55,16 @@ func (s *TaskService) FinishTask(ctx context.Context, db orm.DB, task *approval.
 func (s *TaskService) ActivateNextSequentialTask(ctx context.Context, db orm.DB, instance *approval.Instance, node *approval.FlowNode) error {
 	var nextTask approval.Task
 
-	err := db.NewSelect().Model(&nextTask).Where(func(c orm.ConditionBuilder) {
-		c.Equals("instance_id", instance.ID)
-		c.Equals("node_id", node.ID)
-		c.Equals("status", approval.TaskWaiting)
-	}).OrderBy("sort_order").Limit(1).Scan(ctx)
+	err := db.NewSelect().
+		Model(&nextTask).
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("instance_id", instance.ID).
+				Equals("node_id", node.ID).
+				Equals("status", approval.TaskWaiting)
+		}).
+		OrderBy("sort_order").
+		Limit(1).
+		Scan(ctx)
 
 	if err != nil {
 		if result.IsRecordNotFound(err) {
@@ -71,32 +80,40 @@ func (s *TaskService) ActivateNextSequentialTask(ctx context.Context, db orm.DB,
 
 	nextTask.Status = approval.TaskPending
 
-	_, err = db.NewUpdate().Model(&nextTask).WherePK().Exec(ctx)
+	_, err = db.NewUpdate().
+		Model(&nextTask).
+		Select("status").
+		WherePK().
+		Exec(ctx)
 
 	return err
 }
 
 // CancelRemainingTasks cancels all pending/waiting tasks on the given node.
 func (s *TaskService) CancelRemainingTasks(ctx context.Context, db orm.DB, instanceID, nodeID string) error {
-	_, err := db.NewUpdate().Model((*approval.Task)(nil)).
+	_, err := db.NewUpdate().
+		Model((*approval.Task)(nil)).
 		Set("status", approval.TaskCanceled).
-		Where(func(c orm.ConditionBuilder) {
-			c.Equals("instance_id", instanceID)
-			c.Equals("node_id", nodeID)
-			c.In("status", cancelableTaskStatuses)
-		}).Exec(ctx)
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("instance_id", instanceID).
+				Equals("node_id", nodeID).
+				In("status", cancelableTaskStatuses)
+		}).
+		Exec(ctx)
 
 	return err
 }
 
 // CancelInstanceTasks cancels all pending/waiting tasks for an entire instance.
 func (s *TaskService) CancelInstanceTasks(ctx context.Context, db orm.DB, instanceID string) error {
-	_, err := db.NewUpdate().Model((*approval.Task)(nil)).
+	_, err := db.NewUpdate().
+		Model((*approval.Task)(nil)).
 		Set("status", approval.TaskCanceled).
-		Where(func(c orm.ConditionBuilder) {
-			c.Equals("instance_id", instanceID)
-			c.In("status", cancelableTaskStatuses)
-		}).Exec(ctx)
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("instance_id", instanceID).
+				In("status", cancelableTaskStatuses)
+		}).
+		Exec(ctx)
 
 	return err
 }
@@ -105,29 +122,38 @@ func (s *TaskService) CancelInstanceTasks(ctx context.Context, db orm.DB, instan
 // node-level operations (e.g., remove assignee). Returns true if the operator
 // is a peer assignee on the same node or a flow admin.
 func (s *TaskService) IsAuthorizedForNodeOperation(ctx context.Context, db orm.DB, task approval.Task, operatorID string) bool {
-	peerCount, err := db.NewSelect().Model((*approval.Task)(nil)).Where(func(c orm.ConditionBuilder) {
-		c.Equals("instance_id", task.InstanceID)
-		c.Equals("node_id", task.NodeID)
-		c.Equals("assignee_id", operatorID)
-		c.In("status", []string{string(approval.TaskPending), string(approval.TaskWaiting)})
-	}).Count(ctx)
+	peerCount, err := db.NewSelect().
+		Model((*approval.Task)(nil)).
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("instance_id", task.InstanceID).
+				Equals("node_id", task.NodeID).
+				Equals("assignee_id", operatorID).
+				In("status", []string{string(approval.TaskPending), string(approval.TaskWaiting)})
+		}).
+		Count(ctx)
 	if err == nil && peerCount > 0 {
 		return true
 	}
 
 	var instance approval.Instance
+	instance.ID = task.InstanceID
 
-	if err := db.NewSelect().Model(&instance).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", task.InstanceID)
-	}).Scan(ctx); err != nil {
+	if err := db.NewSelect().
+		Model(&instance).
+		Select("flow_id").
+		WherePK().
+		Scan(ctx); err != nil {
 		return false
 	}
 
 	var flow approval.Flow
+	flow.ID = instance.FlowID
 
-	if err := db.NewSelect().Model(&flow).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", instance.FlowID)
-	}).Scan(ctx); err != nil {
+	if err := db.NewSelect().
+		Model(&flow).
+		Select("admin_user_ids").
+		WherePK().
+		Scan(ctx); err != nil {
 		return false
 	}
 
@@ -139,10 +165,14 @@ func (s *TaskService) IsAuthorizedForNodeOperation(ctx context.Context, db orm.D
 // completion under pass-rule evaluation).
 func (s *TaskService) CanRemoveAssigneeTask(ctx context.Context, db orm.DB, eng *engine.FlowEngine, node *approval.FlowNode, task approval.Task) (bool, error) {
 	var tasks []approval.Task
-	if err := db.NewSelect().Model(&tasks).Where(func(c orm.ConditionBuilder) {
-		c.Equals("instance_id", task.InstanceID)
-		c.Equals("node_id", task.NodeID)
-	}).Scan(ctx); err != nil {
+
+	if err := db.NewSelect().
+		Model(&tasks).
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("instance_id", task.InstanceID).
+				Equals("node_id", task.NodeID)
+		}).
+		Scan(ctx); err != nil {
 		return false, fmt.Errorf("query node tasks: %w", err)
 	}
 
@@ -172,8 +202,8 @@ func (s *TaskService) CanRemoveAssigneeTask(ctx context.Context, db orm.DB, eng 
 
 // PrepareOperation loads task context and merges editable form data.
 // Callers that require opinion validation should invoke ValidateOpinion separately.
-func (s *TaskService) PrepareOperation(ctx context.Context, db orm.DB, instanceID, taskID, operatorID string, formData map[string]any) (*TaskContext, error) {
-	tc, err := s.loadContext(ctx, db, instanceID, taskID, operatorID)
+func (s *TaskService) PrepareOperation(ctx context.Context, db orm.DB, taskID, operatorID string, formData map[string]any) (*TaskContext, error) {
+	tc, err := s.loadContext(ctx, db, taskID, operatorID)
 	if err != nil {
 		return nil, err
 	}
@@ -209,24 +239,29 @@ func (s *TaskService) InsertActionLog(ctx context.Context, db orm.DB, instanceID
 }
 
 // loadContext loads and validates the instance, task, and node for task processing.
-func (s *TaskService) loadContext(ctx context.Context, db orm.DB, instanceID, taskID, operatorID string) (*TaskContext, error) {
+func (s *TaskService) loadContext(ctx context.Context, db orm.DB, taskID, operatorID string) (*TaskContext, error) {
+	var task approval.Task
+	task.ID = taskID
+
+	if err := db.NewSelect().
+		Model(&task).
+		WherePK().
+		Scan(ctx); err != nil {
+		return nil, shared.ErrTaskNotFound
+	}
+
 	var instance approval.Instance
-	if err := db.NewSelect().Model(&instance).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", instanceID)
-	}).Scan(ctx); err != nil {
+	instance.ID = task.InstanceID
+
+	if err := db.NewSelect().
+		Model(&instance).
+		WherePK().
+		Scan(ctx); err != nil {
 		return nil, shared.ErrInstanceNotFound
 	}
 
 	if instance.Status != approval.InstanceRunning {
 		return nil, shared.ErrInstanceCompleted
-	}
-
-	var task approval.Task
-	if err := db.NewSelect().Model(&task).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", taskID)
-		c.Equals("instance_id", instanceID)
-	}).Scan(ctx); err != nil {
-		return nil, shared.ErrTaskNotFound
 	}
 
 	if task.AssigneeID != operatorID {
@@ -238,9 +273,12 @@ func (s *TaskService) loadContext(ctx context.Context, db orm.DB, instanceID, ta
 	}
 
 	var node approval.FlowNode
-	if err := db.NewSelect().Model(&node).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", task.NodeID)
-	}).Scan(ctx); err != nil {
+	node.ID = task.NodeID
+
+	if err := db.NewSelect().
+		Model(&node).
+		WherePK().
+		Scan(ctx); err != nil {
 		return nil, fmt.Errorf("load node: %w", err)
 	}
 

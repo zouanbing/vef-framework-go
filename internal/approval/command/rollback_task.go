@@ -18,7 +18,7 @@ import (
 // RollbackTaskCmd rolls back a task to a previous node.
 type RollbackTaskCmd struct {
 	cqrs.BaseCommand
-	InstanceID   string
+
 	TaskID       string
 	Operator     approval.OperatorInfo
 	Opinion      string
@@ -28,34 +28,34 @@ type RollbackTaskCmd struct {
 
 // RollbackTaskHandler handles the RollbackTaskCmd command.
 type RollbackTaskHandler struct {
-	db        orm.DB
-	taskSvc   *service.TaskService
-	validSvc  *service.ValidationService
-	engine    *engine.FlowEngine
-	publisher *dispatcher.EventPublisher
+	db            orm.DB
+	taskSvc       *service.TaskService
+	validationSvc *service.ValidationService
+	engine        *engine.FlowEngine
+	publisher     *dispatcher.EventPublisher
 }
 
 // NewRollbackTaskHandler creates a new RollbackTaskHandler.
 func NewRollbackTaskHandler(
 	db orm.DB,
 	taskSvc *service.TaskService,
-	validSvc *service.ValidationService,
+	validationSvc *service.ValidationService,
 	eng *engine.FlowEngine,
-	pub *dispatcher.EventPublisher,
+	publisher *dispatcher.EventPublisher,
 ) *RollbackTaskHandler {
 	return &RollbackTaskHandler{
-		db:        db,
-		taskSvc:   taskSvc,
-		validSvc:  validSvc,
-		engine:    eng,
-		publisher: pub,
+		db:            db,
+		taskSvc:       taskSvc,
+		validationSvc: validationSvc,
+		engine:        eng,
+		publisher:     publisher,
 	}
 }
 
 func (h *RollbackTaskHandler) Handle(ctx context.Context, cmd RollbackTaskCmd) (cqrs.Unit, error) {
 	db := contextx.DB(ctx, h.db)
 
-	tc, err := h.taskSvc.PrepareOperation(ctx, db, cmd.InstanceID, cmd.TaskID, cmd.Operator.ID, cmd.FormData)
+	tc, err := h.taskSvc.PrepareOperation(ctx, db, cmd.TaskID, cmd.Operator.ID, cmd.FormData)
 	if err != nil {
 		return cqrs.Unit{}, err
 	}
@@ -70,11 +70,11 @@ func (h *RollbackTaskHandler) Handle(ctx context.Context, cmd RollbackTaskCmd) (
 		return cqrs.Unit{}, fmt.Errorf("target node ID required for rollback")
 	}
 
-	if err := h.validSvc.ValidateRollbackTarget(ctx, db, instance, node, cmd.TargetNodeID); err != nil {
+	if err := h.validationSvc.ValidateRollbackTarget(ctx, db, instance, node, cmd.TargetNodeID); err != nil {
 		return cqrs.Unit{}, err
 	}
 
-	if err := h.taskSvc.FinishTask(ctx, db, task, approval.TaskRollback); err != nil {
+	if err := h.taskSvc.FinishTask(ctx, db, task, approval.TaskRolledBack); err != nil {
 		return cqrs.Unit{}, err
 	}
 
@@ -86,10 +86,14 @@ func (h *RollbackTaskHandler) Handle(ctx context.Context, cmd RollbackTaskCmd) (
 	if node.RollbackDataStrategy == approval.RollbackDataKeep {
 		var snapshot approval.FormSnapshot
 
-		err := db.NewSelect().Model(&snapshot).Where(func(c orm.ConditionBuilder) {
-			c.Equals("instance_id", instance.ID)
-			c.Equals("node_id", cmd.TargetNodeID)
-		}).Scan(ctx)
+		err := db.NewSelect().
+			Model(&snapshot).
+			Select("form_data").
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Equals("instance_id", instance.ID).
+					Equals("node_id", cmd.TargetNodeID)
+			}).
+			Scan(ctx)
 
 		switch {
 		case err == nil && snapshot.FormData != nil:
@@ -102,9 +106,12 @@ func (h *RollbackTaskHandler) Handle(ctx context.Context, cmd RollbackTaskCmd) (
 	instance.CurrentNodeID = new(cmd.TargetNodeID)
 
 	var targetNode approval.FlowNode
-	if err := db.NewSelect().Model(&targetNode).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", cmd.TargetNodeID)
-	}).Scan(ctx); err != nil {
+	targetNode.ID = cmd.TargetNodeID
+
+	if err := db.NewSelect().
+		Model(&targetNode).
+		WherePK().
+		Scan(ctx); err != nil {
 		return cqrs.Unit{}, fmt.Errorf("find target node: %w", err)
 	}
 
@@ -130,7 +137,11 @@ func (h *RollbackTaskHandler) Handle(ctx context.Context, cmd RollbackTaskCmd) (
 		return cqrs.Unit{}, err
 	}
 
-	if _, err := db.NewUpdate().Model(instance).WherePK().Exec(ctx); err != nil {
+	if _, err := db.NewUpdate().
+		Model(instance).
+		Select("form_data", "current_node_id", "status", "finished_at").
+		WherePK().
+		Exec(ctx); err != nil {
 		return cqrs.Unit{}, fmt.Errorf("update instance: %w", err)
 	}
 

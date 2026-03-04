@@ -17,6 +17,7 @@ import (
 // ResubmitCmd resubmits a returned instance.
 type ResubmitCmd struct {
 	cqrs.BaseCommand
+
 	InstanceID string
 	Operator   approval.OperatorInfo
 	FormData   map[string]any
@@ -33,18 +34,21 @@ type ResubmitHandler struct {
 func NewResubmitHandler(
 	db orm.DB,
 	eng *engine.FlowEngine,
-	pub *dispatcher.EventPublisher,
+	publisher *dispatcher.EventPublisher,
 ) *ResubmitHandler {
-	return &ResubmitHandler{db: db, engine: eng, publisher: pub}
+	return &ResubmitHandler{db: db, engine: eng, publisher: publisher}
 }
 
 func (h *ResubmitHandler) Handle(ctx context.Context, cmd ResubmitCmd) (cqrs.Unit, error) {
 	db := contextx.DB(ctx, h.db)
 
 	var instance approval.Instance
-	if err := db.NewSelect().Model(&instance).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", cmd.InstanceID)
-	}).Scan(ctx); err != nil {
+	instance.ID = cmd.InstanceID
+
+	if err := db.NewSelect().
+		Model(&instance).
+		WherePK().
+		Scan(ctx); err != nil {
 		return cqrs.Unit{}, shared.ErrInstanceNotFound
 	}
 
@@ -69,7 +73,11 @@ func (h *ResubmitHandler) Handle(ctx context.Context, cmd ResubmitCmd) (cqrs.Uni
 		return cqrs.Unit{}, fmt.Errorf("start process on resubmit: %w", err)
 	}
 
-	if _, err := db.NewUpdate().Model(&instance).WherePK().Exec(ctx); err != nil {
+	if _, err := db.NewUpdate().
+		Model(&instance).
+		Select("form_data", "status", "current_node_id", "finished_at").
+		WherePK().
+		Exec(ctx); err != nil {
 		return cqrs.Unit{}, fmt.Errorf("update instance: %w", err)
 	}
 

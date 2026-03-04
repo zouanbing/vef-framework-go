@@ -14,6 +14,7 @@ import (
 // GetFlowGraphQuery retrieves the flow graph for a published flow.
 type GetFlowGraphQuery struct {
 	cqrs.BaseQuery
+
 	FlowID string
 }
 
@@ -31,31 +32,42 @@ func (h *GetFlowGraphHandler) Handle(ctx context.Context, query GetFlowGraphQuer
 	db := contextx.DB(ctx, h.db)
 
 	var flow approval.Flow
-	if err := db.NewSelect().Model(&flow).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", query.FlowID)
-	}).Scan(ctx); err != nil {
+	flow.ID = query.FlowID
+
+	if err := db.NewSelect().
+		Model(&flow).
+		WherePK().
+		Scan(ctx); err != nil {
 		return nil, shared.ErrFlowNotFound
 	}
 
 	var version approval.FlowVersion
-	if err := db.NewSelect().Model(&version).Where(func(c orm.ConditionBuilder) {
-		c.Equals("flow_id", query.FlowID)
-		c.Equals("status", string(approval.VersionPublished))
-	}).Scan(ctx); err != nil {
+
+	if err := db.NewSelect().
+		Model(&version).
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("flow_id", query.FlowID).
+				Equals("status", string(approval.VersionPublished))
+		}).
+		Scan(ctx); err != nil {
 		return nil, shared.ErrNoPublishedVersion
 	}
 
 	var nodes []approval.FlowNode
-	if err := db.NewSelect().Model(&nodes).Where(func(c orm.ConditionBuilder) {
-		c.Equals("flow_version_id", version.ID)
-	}).Scan(ctx); err != nil {
+
+	if err := db.NewSelect().
+		Model(&nodes).
+		Where(func(cb orm.ConditionBuilder) { cb.Equals("flow_version_id", version.ID) }).
+		Scan(ctx); err != nil {
 		return nil, fmt.Errorf("query nodes: %w", err)
 	}
 
 	var edges []approval.FlowEdge
-	if err := db.NewSelect().Model(&edges).Where(func(c orm.ConditionBuilder) {
-		c.Equals("flow_version_id", version.ID)
-	}).Scan(ctx); err != nil {
+
+	if err := db.NewSelect().
+		Model(&edges).
+		Where(func(cb orm.ConditionBuilder) { cb.Equals("flow_version_id", version.ID) }).
+		Scan(ctx); err != nil {
 		return nil, fmt.Errorf("query edges: %w", err)
 	}
 

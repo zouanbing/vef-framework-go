@@ -14,6 +14,7 @@ import (
 // GetInstanceDetailQuery retrieves the full detail of an instance.
 type GetInstanceDetailQuery struct {
 	cqrs.BaseQuery
+
 	InstanceID string
 }
 
@@ -31,30 +32,41 @@ func (h *GetInstanceDetailHandler) Handle(ctx context.Context, query GetInstance
 	db := contextx.DB(ctx, h.db)
 
 	var instance approval.Instance
-	if err := db.NewSelect().Model(&instance).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", query.InstanceID)
-	}).Scan(ctx); err != nil {
+	instance.ID = query.InstanceID
+
+	if err := db.NewSelect().
+		Model(&instance).
+		WherePK().
+		Scan(ctx); err != nil {
 		return nil, fmt.Errorf("query instance: %w", err)
 	}
 
 	var tasks []approval.Task
-	if err := db.NewSelect().Model(&tasks).Where(func(c orm.ConditionBuilder) {
-		c.Equals("instance_id", query.InstanceID)
-	}).OrderBy("sort_order").Scan(ctx); err != nil {
+
+	if err := db.NewSelect().
+		Model(&tasks).
+		Where(func(cb orm.ConditionBuilder) { cb.Equals("instance_id", query.InstanceID) }).
+		OrderBy("sort_order").
+		Scan(ctx); err != nil {
 		return nil, fmt.Errorf("query tasks: %w", err)
 	}
 
 	var actionLogs []approval.ActionLog
-	if err := db.NewSelect().Model(&actionLogs).Where(func(c orm.ConditionBuilder) {
-		c.Equals("instance_id", query.InstanceID)
-	}).OrderBy("created_at").Scan(ctx); err != nil {
+
+	if err := db.NewSelect().
+		Model(&actionLogs).
+		Where(func(cb orm.ConditionBuilder) { cb.Equals("instance_id", query.InstanceID) }).
+		OrderBy("created_at").
+		Scan(ctx); err != nil {
 		return nil, fmt.Errorf("query action logs: %w", err)
 	}
 
 	var flowNodes []approval.FlowNode
-	if err := db.NewSelect().Model(&flowNodes).Where(func(c orm.ConditionBuilder) {
-		c.Equals("flow_version_id", instance.FlowVersionID)
-	}).Scan(ctx); err != nil {
+
+	if err := db.NewSelect().
+		Model(&flowNodes).
+		Where(func(cb orm.ConditionBuilder) { cb.Equals("flow_version_id", instance.FlowVersionID) }).
+		Scan(ctx); err != nil {
 		return nil, fmt.Errorf("query flow nodes: %w", err)
 	}
 

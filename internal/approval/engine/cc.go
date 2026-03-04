@@ -25,7 +25,7 @@ func (p *CCProcessor) Process(ctx context.Context, pc *ProcessContext) (*Process
 	var events []approval.DomainEvent
 	if len(ccUserIDs) > 0 {
 		events = []approval.DomainEvent{
-			approval.NewCcNotifiedEvent(pc.Instance.ID, pc.Node.ID, ccUserIDs, false),
+			approval.NewCCNotifiedEvent(pc.Instance.ID, pc.Node.ID, ccUserIDs, false),
 		}
 	}
 
@@ -43,6 +43,7 @@ func (p *CCProcessor) createCCRecords(ctx context.Context, pc *ProcessContext) (
 
 	if err := pc.DB.NewSelect().
 		Model(&ccConfigs).
+		Select("ids").
 		Where(func(cb orm.ConditionBuilder) {
 			cb.Equals("node_id", pc.Node.ID)
 		}).

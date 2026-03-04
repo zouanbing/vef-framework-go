@@ -81,8 +81,8 @@ func extractHtmlURLs(content string) []string {
 	return urlSet.ToSlice()
 }
 
-// replaceHTMLURLs replaces URLs in HTML content based on the replacement map.
-func replaceHTMLURLs(content string, replacements map[string]string) string {
+// replaceHtmlURLs replaces URLs in HTML content based on the replacement map.
+func replaceHtmlURLs(content string, replacements map[string]string) string {
 	if content == "" || len(replacements) == 0 {
 		return content
 	}
@@ -100,17 +100,17 @@ func replaceHTMLURLs(content string, replacements map[string]string) string {
 			quote := groups[2].String()
 			oldURL := groups[3].String()
 
-			_, _ = result.WriteString(content[lastIndex:groups[0].Index])
+			result.WriteString(content[lastIndex:groups[0].Index])
 
 			if newURL, ok := replacements[oldURL]; ok {
 				// Preserve original quote type to maintain HTML consistency
-				_, _ = result.WriteString(attrName)
-				_ = result.WriteByte('=')
-				_, _ = result.WriteString(quote)
-				_, _ = result.WriteString(newURL)
-				_, _ = result.WriteString(quote)
+				result.WriteString(attrName)
+				result.WriteByte('=')
+				result.WriteString(quote)
+				result.WriteString(newURL)
+				result.WriteString(quote)
 			} else {
-				_, _ = result.WriteString(groups[0].String())
+				result.WriteString(groups[0].String())
 			}
 
 			lastIndex = groups[0].Index + groups[0].Length
@@ -119,7 +119,7 @@ func replaceHTMLURLs(content string, replacements map[string]string) string {
 		match, err = htmlAttrReplacePattern.FindNextMatch(match)
 	}
 
-	_, _ = result.WriteString(content[lastIndex:])
+	result.WriteString(content[lastIndex:])
 
 	return result.String()
 }
@@ -157,19 +157,19 @@ func extractMarkdownURLs(content string) []string {
 func buildMarkdownReplacement(prefix, text, newURL, title string) string {
 	var sb strings.Builder
 
-	_, _ = sb.WriteString(prefix)
-	_ = sb.WriteByte('[')
-	_, _ = sb.WriteString(text)
-	_ = sb.WriteByte(']')
-	_ = sb.WriteByte('(')
-	_, _ = sb.WriteString(newURL)
+	sb.WriteString(prefix)
+	sb.WriteByte('[')
+	sb.WriteString(text)
+	sb.WriteByte(']')
+	sb.WriteByte('(')
+	sb.WriteString(newURL)
 
 	if title != "" {
-		_ = sb.WriteByte(' ')
-		_, _ = sb.WriteString(title)
+		sb.WriteByte(' ')
+		sb.WriteString(title)
 	}
 
-	_ = sb.WriteByte(')')
+	sb.WriteByte(')')
 
 	return sb.String()
 }
@@ -192,9 +192,9 @@ func replaceMarkdownURLs(content string, replacements map[string]string) string 
 
 			// Preserve optional title if present
 			title := ""
-			if idx := strings.IndexAny(url, `"'`); idx > 0 {
-				title = url[idx:]
-				url = strings.TrimSpace(url[:idx])
+			if index := strings.IndexAny(url, `"'`); index > 0 {
+				title = url[index:]
+				url = strings.TrimSpace(url[:index])
 			}
 
 			if newURL, ok := replacements[url]; ok {

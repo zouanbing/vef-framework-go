@@ -17,6 +17,7 @@ import (
 // RemoveAssigneeCmd removes an assignee by canceling their task.
 type RemoveAssigneeCmd struct {
 	cqrs.BaseCommand
+
 	TaskID   string
 	Operator approval.OperatorInfo
 }
@@ -36,10 +37,10 @@ func NewRemoveAssigneeHandler(
 	taskSvc *service.TaskService,
 	nodeSvc *service.NodeService,
 	eng *engine.FlowEngine,
-	pub *dispatcher.EventPublisher,
+	publisher *dispatcher.EventPublisher,
 ) *RemoveAssigneeHandler {
 	return &RemoveAssigneeHandler{
-		db: db, taskSvc: taskSvc, nodeSvc: nodeSvc, engine: eng, publisher: pub,
+		db: db, taskSvc: taskSvc, nodeSvc: nodeSvc, engine: eng, publisher: publisher,
 	}
 }
 
@@ -47,16 +48,22 @@ func (h *RemoveAssigneeHandler) Handle(ctx context.Context, cmd RemoveAssigneeCm
 	db := contextx.DB(ctx, h.db)
 
 	var task approval.Task
-	if err := db.NewSelect().Model(&task).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", cmd.TaskID)
-	}).Scan(ctx); err != nil {
+	task.ID = cmd.TaskID
+
+	if err := db.NewSelect().
+		Model(&task).
+		WherePK().
+		Scan(ctx); err != nil {
 		return cqrs.Unit{}, shared.ErrTaskNotFound
 	}
 
 	var node approval.FlowNode
-	if err := db.NewSelect().Model(&node).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", task.NodeID)
-	}).Scan(ctx); err != nil {
+	node.ID = task.NodeID
+
+	if err := db.NewSelect().
+		Model(&node).
+		WherePK().
+		Scan(ctx); err != nil {
 		return cqrs.Unit{}, fmt.Errorf("load node: %w", err)
 	}
 
@@ -82,9 +89,12 @@ func (h *RemoveAssigneeHandler) Handle(ctx context.Context, cmd RemoveAssigneeCm
 	}
 
 	var instance approval.Instance
-	if err := db.NewSelect().Model(&instance).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", task.InstanceID)
-	}).Scan(ctx); err != nil {
+	instance.ID = task.InstanceID
+
+	if err := db.NewSelect().
+		Model(&instance).
+		WherePK().
+		Scan(ctx); err != nil {
 		return cqrs.Unit{}, fmt.Errorf("load instance: %w", err)
 	}
 
@@ -97,7 +107,7 @@ func (h *RemoveAssigneeHandler) Handle(ctx context.Context, cmd RemoveAssigneeCm
 	actionLog := cmd.Operator.NewActionLog(task.InstanceID, approval.ActionRemoveAssignee)
 	actionLog.NodeID = new(task.NodeID)
 	actionLog.TaskID = new(task.ID)
-	actionLog.RemoveAssigneeIDs = []string{task.AssigneeID}
+	actionLog.RemovedAssigneeIDs = []string{task.AssigneeID}
 	if _, err := db.NewInsert().Model(actionLog).Exec(ctx); err != nil {
 		return cqrs.Unit{}, fmt.Errorf("insert action log: %w", err)
 	}
@@ -112,7 +122,11 @@ func (h *RemoveAssigneeHandler) Handle(ctx context.Context, cmd RemoveAssigneeCm
 	}
 	events = append(events, completionEvents...)
 
-	if _, err := db.NewUpdate().Model(&instance).WherePK().Exec(ctx); err != nil {
+	if _, err := db.NewUpdate().
+		Model(&instance).
+		Select("current_node_id", "status", "finished_at").
+		WherePK().
+		Exec(ctx); err != nil {
 		return cqrs.Unit{}, fmt.Errorf("update instance: %w", err)
 	}
 

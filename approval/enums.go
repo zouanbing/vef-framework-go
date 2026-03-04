@@ -84,15 +84,15 @@ const (
 	PassAnyReject PassRule = "any_reject" // Any one rejection fails
 )
 
-// EmptyHandlerAction represents the action when no assignee is found.
-type EmptyHandlerAction string
+// EmptyAssigneeAction represents the action when no assignee is found.
+type EmptyAssigneeAction string
 
 const (
-	EmptyHandlerAutoPass          EmptyHandlerAction = "auto_pass"
-	EmptyHandlerTransferAdmin     EmptyHandlerAction = "transfer_admin"
-	EmptyHandlerTransferSuperior  EmptyHandlerAction = "transfer_superior"
-	EmptyHandlerTransferApplicant EmptyHandlerAction = "transfer_applicant"
-	EmptyHandlerTransferSpecified EmptyHandlerAction = "transfer_specified"
+	EmptyAssigneeAutoPass          EmptyAssigneeAction = "auto_pass"
+	EmptyAssigneeTransferAdmin     EmptyAssigneeAction = "transfer_admin"
+	EmptyAssigneeTransferSuperior  EmptyAssigneeAction = "transfer_superior"
+	EmptyAssigneeTransferApplicant EmptyAssigneeAction = "transfer_applicant"
+	EmptyAssigneeTransferSpecified EmptyAssigneeAction = "transfer_specified"
 )
 
 // SameApplicantAction represents the action when the assignee is the same as the applicant.
@@ -108,9 +108,9 @@ const (
 type RollbackType string
 
 const (
-	RollbackNone     RollbackType = "none"
-	RollbackPrevious RollbackType = "previous" // To previous node
-	RollbackStart    RollbackType = "start"    // To start node (applicant)
+	RollbackNone      RollbackType = "none"
+	RollbackPrevious  RollbackType = "previous"  // To previous node
+	RollbackStart     RollbackType = "start"     // To start node (applicant)
 	RollbackAny       RollbackType = "any"       // To any node
 	RollbackSpecified RollbackType = "specified" // To specified nodes
 )
@@ -138,12 +138,12 @@ func (t AddAssigneeType) IsValid() bool {
 	return t == AddAssigneeBefore || t == AddAssigneeAfter || t == AddAssigneeParallel
 }
 
-// DuplicateHandlerAction represents the action for duplicate assignees in a chain.
-type DuplicateHandlerAction string
+// DuplicateAssigneeAction represents the action for duplicate assignees in a chain.
+type DuplicateAssigneeAction string
 
 const (
-	DuplicateHandlerNone     DuplicateHandlerAction = "none"
-	DuplicateHandlerAutoPass DuplicateHandlerAction = "auto_pass"
+	DuplicateAssigneeNone     DuplicateAssigneeAction = "none"
+	DuplicateAssigneeAutoPass DuplicateAssigneeAction = "auto_pass"
 )
 
 // AssigneeKind represents the kind of assignee.
@@ -185,7 +185,7 @@ const (
 	TaskRejected    TaskStatus = "rejected"
 	TaskHandled     TaskStatus = "handled"
 	TaskTransferred TaskStatus = "transferred"
-	TaskRollback    TaskStatus = "rollback"
+	TaskRolledBack  TaskStatus = "rolled_back"
 	TaskCanceled    TaskStatus = "canceled"
 	TaskRemoved     TaskStatus = "removed"
 	TaskSkipped     TaskStatus = "skipped"
@@ -197,7 +197,7 @@ func (s TaskStatus) IsFinal() bool {
 		s == TaskRejected ||
 		s == TaskHandled ||
 		s == TaskTransferred ||
-		s == TaskRollback ||
+		s == TaskRolledBack ||
 		s == TaskCanceled ||
 		s == TaskRemoved ||
 		s == TaskSkipped

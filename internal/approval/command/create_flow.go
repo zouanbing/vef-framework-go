@@ -15,21 +15,21 @@ import (
 type CreateFlowCmd struct {
 	cqrs.BaseCommand
 
-	TenantID              string
-	Code                  string
-	Name                  string
-	CategoryID            string
-	Icon                  *string
-	Description           *string
-	BindingMode           approval.BindingMode
-	BusinessTable         *string
-	BusinessPkField       *string
-	BusinessTitleField    *string
-	BusinessStatusField   *string
-	AdminUserIDs          []string
-	IsAllInitiateAllowed  bool
-	InstanceTitleTemplate string
-	Initiators            []shared.CreateFlowInitiatorCmd
+	TenantID               string
+	Code                   string
+	Name                   string
+	CategoryID             string
+	Icon                   *string
+	Description            *string
+	BindingMode            approval.BindingMode
+	BusinessTable          *string
+	BusinessPkField        *string
+	BusinessTitleField     *string
+	BusinessStatusField    *string
+	AdminUserIDs           []string
+	IsAllInitiationAllowed bool
+	InstanceTitleTemplate  string
+	Initiators             []shared.CreateFlowInitiatorCmd
 }
 
 // CreateFlowHandler handles the CreateFlowCmd command.
@@ -67,22 +67,22 @@ func (h *CreateFlowHandler) Handle(ctx context.Context, cmd CreateFlowCmd) (*app
 	}
 
 	flow := approval.Flow{
-		TenantID:              tenantID,
-		CategoryID:            cmd.CategoryID,
-		Code:                  cmd.Code,
-		Name:                  cmd.Name,
-		Icon:                  cmd.Icon,
-		Description:           cmd.Description,
-		BindingMode:           cmd.BindingMode,
-		BusinessTable:         cmd.BusinessTable,
-		BusinessPkField:       cmd.BusinessPkField,
-		BusinessTitleField:    cmd.BusinessTitleField,
-		BusinessStatusField:   cmd.BusinessStatusField,
-		AdminUserIDs:          cmd.AdminUserIDs,
-		IsAllInitiateAllowed:  cmd.IsAllInitiateAllowed,
-		InstanceTitleTemplate: cmd.InstanceTitleTemplate,
-		IsActive:              true,
-		CurrentVersion:        0,
+		TenantID:               tenantID,
+		CategoryID:             cmd.CategoryID,
+		Code:                   cmd.Code,
+		Name:                   cmd.Name,
+		Icon:                   cmd.Icon,
+		Description:            cmd.Description,
+		BindingMode:            cmd.BindingMode,
+		BusinessTable:          cmd.BusinessTable,
+		BusinessPkField:        cmd.BusinessPkField,
+		BusinessTitleField:     cmd.BusinessTitleField,
+		BusinessStatusField:    cmd.BusinessStatusField,
+		AdminUserIDs:           cmd.AdminUserIDs,
+		IsAllInitiationAllowed: cmd.IsAllInitiationAllowed,
+		InstanceTitleTemplate:  cmd.InstanceTitleTemplate,
+		IsActive:               true,
+		CurrentVersion:         0,
 	}
 	if _, err := db.NewInsert().
 		Model(&flow).

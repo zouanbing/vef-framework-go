@@ -51,8 +51,8 @@ func approvalFlowDef() approval.FlowDefinition {
 					CCs: []approval.CCDefinition{
 						{Kind: approval.CCUser, IDs: []string{"cc-user-1"}, Timing: approval.CCTimingAlways},
 					},
-					ExecutionType:      approval.ExecutionManual,
-					EmptyHandlerAction: approval.EmptyHandlerAutoPass,
+					ExecutionType:       approval.ExecutionManual,
+					EmptyAssigneeAction: approval.EmptyAssigneeAutoPass,
 				},
 				ApprovalMethod: approval.ApprovalSequential,
 				PassRule:       approval.PassAll,

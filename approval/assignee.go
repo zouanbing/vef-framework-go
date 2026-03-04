@@ -18,8 +18,8 @@ type AssigneeService interface {
 
 // ResolvedAssignee represents a resolved assignee with optional delegation info.
 type ResolvedAssignee struct {
-	UserID         string
-	DelegateFromID *string
+	UserID      string
+	DelegatorID *string
 }
 
 // PrincipalDeptResolver resolves department info from a security principal.

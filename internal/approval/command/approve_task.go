@@ -15,20 +15,20 @@ import (
 // ApproveTaskCmd approves (or handles) a pending task.
 type ApproveTaskCmd struct {
 	cqrs.BaseCommand
-	InstanceID string
-	TaskID     string
-	Operator   approval.OperatorInfo
-	Opinion    string
-	FormData   map[string]any
+
+	TaskID   string
+	Operator approval.OperatorInfo
+	Opinion  string
+	FormData map[string]any
 }
 
 // ApproveTaskHandler handles the ApproveTaskCmd command.
 type ApproveTaskHandler struct {
-	db        orm.DB
-	taskSvc   *service.TaskService
-	nodeSvc   *service.NodeService
-	validSvc  *service.ValidationService
-	publisher *dispatcher.EventPublisher
+	db            orm.DB
+	taskSvc       *service.TaskService
+	nodeSvc       *service.NodeService
+	validationSvc *service.ValidationService
+	publisher     *dispatcher.EventPublisher
 }
 
 // NewApproveTaskHandler creates a new ApproveTaskHandler.
@@ -37,26 +37,26 @@ func NewApproveTaskHandler(
 	taskSvc *service.TaskService,
 	nodeSvc *service.NodeService,
 	validSvc *service.ValidationService,
-	pub *dispatcher.EventPublisher,
+	publisher *dispatcher.EventPublisher,
 ) *ApproveTaskHandler {
 	return &ApproveTaskHandler{
-		db:        db,
-		taskSvc:   taskSvc,
-		nodeSvc:   nodeSvc,
-		validSvc:  validSvc,
-		publisher: pub,
+		db:            db,
+		taskSvc:       taskSvc,
+		nodeSvc:       nodeSvc,
+		validationSvc: validSvc,
+		publisher:     publisher,
 	}
 }
 
 func (h *ApproveTaskHandler) Handle(ctx context.Context, cmd ApproveTaskCmd) (cqrs.Unit, error) {
 	db := contextx.DB(ctx, h.db)
 
-	tc, err := h.taskSvc.PrepareOperation(ctx, db, cmd.InstanceID, cmd.TaskID, cmd.Operator.ID, cmd.FormData)
+	tc, err := h.taskSvc.PrepareOperation(ctx, db, cmd.TaskID, cmd.Operator.ID, cmd.FormData)
 	if err != nil {
 		return cqrs.Unit{}, err
 	}
 
-	if err := h.validSvc.ValidateOpinion(tc.Node, cmd.Opinion); err != nil {
+	if err := h.validationSvc.ValidateOpinion(tc.Node, cmd.Opinion); err != nil {
 		return cqrs.Unit{}, err
 	}
 
@@ -91,7 +91,11 @@ func (h *ApproveTaskHandler) Handle(ctx context.Context, cmd ApproveTaskCmd) (cq
 		return cqrs.Unit{}, err
 	}
 
-	if _, err := db.NewUpdate().Model(instance).WherePK().Exec(ctx); err != nil {
+	if _, err := db.NewUpdate().
+		Model(instance).
+		Select("form_data", "current_node_id", "status", "finished_at").
+		WherePK().
+		Exec(ctx); err != nil {
 		return cqrs.Unit{}, fmt.Errorf("update instance: %w", err)
 	}
 

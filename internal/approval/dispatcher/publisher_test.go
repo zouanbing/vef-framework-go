@@ -34,7 +34,7 @@ func TestEventNames(t *testing.T) {
 		{"TaskTimeout", approval.NewTaskTimeoutEvent("t1", "i1", "n1", "u1", timex.Now()), "approval.task.timeout"},
 		{"AssigneesAdded", approval.NewAssigneesAddedEvent("i1", "n1", "t1", approval.AddAssigneeBefore, []string{"u1"}), "approval.task.assignee_added"},
 		{"AssigneesRemoved", approval.NewAssigneesRemovedEvent("i1", "n1", "t1", []string{"u1"}), "approval.task.assignee_removed"},
-		{"CcNotified", approval.NewCcNotifiedEvent("i1", "n1", []string{"u1"}, true), "approval.cc.notified"},
+		{"CcNotified", approval.NewCCNotifiedEvent("i1", "n1", []string{"u1"}, true), "approval.cc.notified"},
 		{"FlowPublished", approval.NewFlowPublishedEvent("f1", "v1"), "approval.flow.published"},
 	}
 
@@ -127,7 +127,8 @@ func TestEventConstructors(t *testing.T) {
 		assert.Equal(t, "i1", evt.InstanceID, "Should set InstanceID")
 		assert.Equal(t, "n1", evt.NodeID, "Should set NodeID")
 		assert.Equal(t, "op1", evt.OperatorID, "Should set OperatorID")
-		assert.Equal(t, "looks good", evt.Opinion, "Should set Opinion")
+		require.NotNil(t, evt.Opinion, "Should set Opinion")
+		assert.Equal(t, "looks good", *evt.Opinion, "Should set Opinion")
 	})
 
 	t.Run("TaskRejectedEvent", func(t *testing.T) {
@@ -137,7 +138,8 @@ func TestEventConstructors(t *testing.T) {
 		assert.Equal(t, "i1", evt.InstanceID, "Should set InstanceID")
 		assert.Equal(t, "n1", evt.NodeID, "Should set NodeID")
 		assert.Equal(t, "op1", evt.OperatorID, "Should set OperatorID")
-		assert.Equal(t, "not acceptable", evt.Opinion, "Should set Opinion")
+		require.NotNil(t, evt.Opinion, "Should set Opinion")
+		assert.Equal(t, "not acceptable", *evt.Opinion, "Should set Opinion")
 	})
 
 	t.Run("TaskTransferredEvent", func(t *testing.T) {
@@ -148,7 +150,8 @@ func TestEventConstructors(t *testing.T) {
 		assert.Equal(t, "n1", evt.NodeID, "Should set NodeID")
 		assert.Equal(t, "from", evt.FromUserID, "Should set FromUserID")
 		assert.Equal(t, "to", evt.ToUserID, "Should set ToUserID")
-		assert.Equal(t, "reason", evt.Reason, "Should set Reason")
+		require.NotNil(t, evt.Reason, "Should set Reason")
+		assert.Equal(t, "reason", *evt.Reason, "Should set Reason")
 	})
 
 	t.Run("TaskTimeoutEvent", func(t *testing.T) {
@@ -182,7 +185,7 @@ func TestEventConstructors(t *testing.T) {
 	})
 
 	t.Run("CcNotifiedManual", func(t *testing.T) {
-		evt := approval.NewCcNotifiedEvent("i1", "n1", []string{"u1", "u2"}, true)
+		evt := approval.NewCCNotifiedEvent("i1", "n1", []string{"u1", "u2"}, true)
 		require.NotNil(t, evt, "Should create event")
 		assert.Equal(t, "i1", evt.InstanceID, "Should set InstanceID")
 		assert.Equal(t, "n1", evt.NodeID, "Should set NodeID")
@@ -191,7 +194,7 @@ func TestEventConstructors(t *testing.T) {
 	})
 
 	t.Run("CcNotifiedAutomatic", func(t *testing.T) {
-		evt := approval.NewCcNotifiedEvent("i1", "n1", []string{"u1"}, false)
+		evt := approval.NewCCNotifiedEvent("i1", "n1", []string{"u1"}, false)
 		require.NotNil(t, evt, "Should create event")
 		assert.False(t, evt.IsManual, "Should be automatic CC")
 	})
@@ -223,7 +226,7 @@ func TestEventOccurredAtAll(t *testing.T) {
 		approval.NewTaskTimeoutEvent("t1", "i1", "n1", "u1", deadline),
 		approval.NewAssigneesAddedEvent("i1", "n1", "t1", approval.AddAssigneeBefore, []string{"u1"}),
 		approval.NewAssigneesRemovedEvent("i1", "n1", "t1", []string{"u1"}),
-		approval.NewCcNotifiedEvent("i1", "n1", []string{"u1"}, false),
+		approval.NewCCNotifiedEvent("i1", "n1", []string{"u1"}, false),
 		approval.NewFlowPublishedEvent("f1", "v1"),
 	}
 
@@ -249,7 +252,8 @@ func TestToMap(t *testing.T) {
 		assert.Equal(t, "n1", m["nodeId"], "Should contain nodeId")
 		assert.Equal(t, "from", m["fromUserId"], "Should contain fromUserId")
 		assert.Equal(t, "to", m["toUserId"], "Should contain toUserId")
-		assert.Equal(t, "reason", m["reason"], "Should contain reason")
+		require.IsType(t, (*string)(nil), m["reason"], "Should contain reason as *string")
+		assert.Equal(t, "reason", *m["reason"].(*string), "Should contain reason")
 	})
 
 	t.Run("NonStructValue", func(t *testing.T) {

@@ -18,6 +18,7 @@ import (
 // WithdrawCmd withdraws an approval instance.
 type WithdrawCmd struct {
 	cqrs.BaseCommand
+
 	InstanceID string
 	Operator   approval.OperatorInfo
 	Reason     string
@@ -34,18 +35,21 @@ type WithdrawHandler struct {
 func NewWithdrawHandler(
 	db orm.DB,
 	taskSvc *service.TaskService,
-	pub *dispatcher.EventPublisher,
+	publisher *dispatcher.EventPublisher,
 ) *WithdrawHandler {
-	return &WithdrawHandler{db: db, taskSvc: taskSvc, publisher: pub}
+	return &WithdrawHandler{db: db, taskSvc: taskSvc, publisher: publisher}
 }
 
 func (h *WithdrawHandler) Handle(ctx context.Context, cmd WithdrawCmd) (cqrs.Unit, error) {
 	db := contextx.DB(ctx, h.db)
 
 	var instance approval.Instance
-	if err := db.NewSelect().Model(&instance).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", cmd.InstanceID)
-	}).Scan(ctx); err != nil {
+	instance.ID = cmd.InstanceID
+
+	if err := db.NewSelect().
+		Model(&instance).
+		WherePK().
+		Scan(ctx); err != nil {
 		return cqrs.Unit{}, shared.ErrInstanceNotFound
 	}
 
@@ -61,7 +65,11 @@ func (h *WithdrawHandler) Handle(ctx context.Context, cmd WithdrawCmd) (cqrs.Uni
 	instance.Status = approval.InstanceWithdrawn
 	instance.FinishedAt = &now
 
-	if _, err := db.NewUpdate().Model(&instance).WherePK().Exec(ctx); err != nil {
+	if _, err := db.NewUpdate().
+		Model(&instance).
+		Select("status", "finished_at").
+		WherePK().
+		Exec(ctx); err != nil {
 		return cqrs.Unit{}, fmt.Errorf("update instance: %w", err)
 	}
 

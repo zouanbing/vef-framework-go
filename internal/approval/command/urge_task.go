@@ -18,10 +18,10 @@ import (
 // UrgeTaskCmd sends an urge notification for a pending task.
 type UrgeTaskCmd struct {
 	cqrs.BaseCommand
-	InstanceID string
-	TaskID     string
-	UrgerID    string
-	Message    string
+
+	TaskID  string
+	UrgerID string
+	Message string
 }
 
 // UrgeTaskHandler handles the UrgeTaskCmd command.
@@ -31,8 +31,8 @@ type UrgeTaskHandler struct {
 }
 
 // NewUrgeTaskHandler creates a new UrgeTaskHandler.
-func NewUrgeTaskHandler(db orm.DB, pub *dispatcher.EventPublisher) *UrgeTaskHandler {
-	return &UrgeTaskHandler{db: db, publisher: pub}
+func NewUrgeTaskHandler(db orm.DB, publisher *dispatcher.EventPublisher) *UrgeTaskHandler {
+	return &UrgeTaskHandler{db: db, publisher: publisher}
 }
 
 func (h *UrgeTaskHandler) Handle(ctx context.Context, cmd UrgeTaskCmd) (cqrs.Unit, error) {
@@ -40,10 +40,13 @@ func (h *UrgeTaskHandler) Handle(ctx context.Context, cmd UrgeTaskCmd) (cqrs.Uni
 
 	// Load the task
 	var task approval.Task
-	if err := db.NewSelect().Model(&task).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", cmd.TaskID)
-		c.Equals("instance_id", cmd.InstanceID)
-	}).Scan(ctx); err != nil {
+	task.ID = cmd.TaskID
+
+	if err := db.NewSelect().
+		Model(&task).
+		Select("status", "node_id", "instance_id", "assignee_id").
+		WherePK().
+		Scan(ctx); err != nil {
 		return cqrs.Unit{}, shared.ErrTaskNotFound
 	}
 
@@ -54,9 +57,13 @@ func (h *UrgeTaskHandler) Handle(ctx context.Context, cmd UrgeTaskCmd) (cqrs.Uni
 
 	// Load node to check cooldown settings
 	var node approval.FlowNode
-	if err := db.NewSelect().Model(&node).Where(func(c orm.ConditionBuilder) {
-		c.Equals("id", task.NodeID)
-	}).Scan(ctx); err != nil {
+	node.ID = task.NodeID
+
+	if err := db.NewSelect().
+		Model(&node).
+		Select("urge_cooldown_minutes").
+		WherePK().
+		Scan(ctx); err != nil {
 		return cqrs.Unit{}, fmt.Errorf("load node: %w", err)
 	}
 
@@ -68,11 +75,14 @@ func (h *UrgeTaskHandler) Handle(ctx context.Context, cmd UrgeTaskCmd) (cqrs.Uni
 
 	cooldownSince := timex.DateTime(time.Now().Add(-time.Duration(cooldownMinutes) * time.Minute))
 
-	existingCount, err := db.NewSelect().Model((*approval.UrgeRecord)(nil)).Where(func(c orm.ConditionBuilder) {
-		c.Equals("task_id", cmd.TaskID)
-		c.Equals("urger_id", cmd.UrgerID)
-		c.GreaterThan("created_at", cooldownSince)
-	}).Count(ctx)
+	existingCount, err := db.NewSelect().
+		Model((*approval.UrgeRecord)(nil)).
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("task_id", cmd.TaskID).
+				Equals("urger_id", cmd.UrgerID).
+				GreaterThan("created_at", cooldownSince)
+		}).
+		Count(ctx)
 	if err != nil {
 		return cqrs.Unit{}, fmt.Errorf("check urge cooldown: %w", err)
 	}
@@ -86,7 +96,7 @@ func (h *UrgeTaskHandler) Handle(ctx context.Context, cmd UrgeTaskCmd) (cqrs.Uni
 
 	// Insert urge record
 	record := &approval.UrgeRecord{
-		InstanceID:   cmd.InstanceID,
+		InstanceID:   task.InstanceID,
 		NodeID:       task.NodeID,
 		TaskID:       new(cmd.TaskID),
 		UrgerID:      cmd.UrgerID,
@@ -99,7 +109,7 @@ func (h *UrgeTaskHandler) Handle(ctx context.Context, cmd UrgeTaskCmd) (cqrs.Uni
 
 	// Publish urge event
 	event := approval.NewTaskUrgedEvent(
-		cmd.InstanceID, task.NodeID, cmd.TaskID,
+		task.InstanceID, task.NodeID, cmd.TaskID,
 		cmd.UrgerID, task.AssigneeID, cmd.Message,
 	)
 

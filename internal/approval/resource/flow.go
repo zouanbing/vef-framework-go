@@ -40,21 +40,21 @@ func NewFlowResource(bus cqrs.Bus) api.Resource {
 type CreateFlowParams struct {
 	api.P
 
-	TenantID              string                  `json:"tenantId" validate:"required"`
-	Code                  string                  `json:"code" validate:"required"`
-	Name                  string                  `json:"name" validate:"required"`
-	CategoryID            string                  `json:"categoryId" validate:"required"`
-	Icon                  *string                 `json:"icon"`
-	Description           *string                 `json:"description"`
-	BindingMode           approval.BindingMode    `json:"bindingMode" validate:"required"`
-	BusinessTable         *string                 `json:"businessTable"`
-	BusinessPkField       *string                 `json:"businessPkField"`
-	BusinessTitleField    *string                 `json:"businessTitleField"`
-	BusinessStatusField   *string                 `json:"businessStatusField"`
-	AdminUserIDs          []string                `json:"adminUserIds"`
-	IsAllInitiateAllowed  bool                    `json:"isAllInitiateAllowed"`
-	InstanceTitleTemplate string                  `json:"instanceTitleTemplate"`
-	Initiators            []CreateInitiatorParams `json:"initiators"`
+	TenantID               string                  `json:"tenantId" validate:"required"`
+	Code                   string                  `json:"code" validate:"required"`
+	Name                   string                  `json:"name" validate:"required"`
+	CategoryID             string                  `json:"categoryId" validate:"required"`
+	Icon                   *string                 `json:"icon"`
+	Description            *string                 `json:"description"`
+	BindingMode            approval.BindingMode    `json:"bindingMode" validate:"required"`
+	BusinessTable          *string                 `json:"businessTable"`
+	BusinessPkField        *string                 `json:"businessPkField"`
+	BusinessTitleField     *string                 `json:"businessTitleField"`
+	BusinessStatusField    *string                 `json:"businessStatusField"`
+	AdminUserIDs           []string                `json:"adminUserIds"`
+	IsAllInitiationAllowed bool                    `json:"isAllInitiationAllowed"`
+	InstanceTitleTemplate  string                  `json:"instanceTitleTemplate"`
+	Initiators             []CreateInitiatorParams `json:"initiators"`
 }
 
 // CreateInitiatorParams contains the parameters for a flow initiator.
@@ -77,21 +77,21 @@ func (r *FlowResource) Create(ctx fiber.Ctx, params CreateFlowParams) error {
 		ctx.Context(),
 		r.bus,
 		command.CreateFlowCmd{
-			TenantID:              params.TenantID,
-			Code:                  params.Code,
-			Name:                  params.Name,
-			CategoryID:            params.CategoryID,
-			Icon:                  params.Icon,
-			Description:           params.Description,
-			BindingMode:           params.BindingMode,
-			BusinessTable:         params.BusinessTable,
-			BusinessPkField:       params.BusinessPkField,
-			BusinessTitleField:    params.BusinessTitleField,
-			BusinessStatusField:   params.BusinessStatusField,
-			AdminUserIDs:          params.AdminUserIDs,
-			IsAllInitiateAllowed:  params.IsAllInitiateAllowed,
-			InstanceTitleTemplate: params.InstanceTitleTemplate,
-			Initiators:            initiators,
+			TenantID:               params.TenantID,
+			Code:                   params.Code,
+			Name:                   params.Name,
+			CategoryID:             params.CategoryID,
+			Icon:                   params.Icon,
+			Description:            params.Description,
+			BindingMode:            params.BindingMode,
+			BusinessTable:          params.BusinessTable,
+			BusinessPkField:        params.BusinessPkField,
+			BusinessTitleField:     params.BusinessTitleField,
+			BusinessStatusField:    params.BusinessStatusField,
+			AdminUserIDs:           params.AdminUserIDs,
+			IsAllInitiationAllowed: params.IsAllInitiationAllowed,
+			InstanceTitleTemplate:  params.InstanceTitleTemplate,
+			Initiators:             initiators,
 		},
 	)
 	if err != nil {
