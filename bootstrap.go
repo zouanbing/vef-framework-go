@@ -22,6 +22,7 @@ import (
 	"github.com/coldsmirk/vef-framework-go/internal/redis"
 	"github.com/coldsmirk/vef-framework-go/internal/schema"
 	"github.com/coldsmirk/vef-framework-go/internal/security"
+	isequence "github.com/coldsmirk/vef-framework-go/internal/sequence"
 	"github.com/coldsmirk/vef-framework-go/internal/storage"
 	"github.com/coldsmirk/vef-framework-go/log"
 )
@@ -53,6 +54,7 @@ func Run(options ...fx.Option) {
 		redis.Module,
 		mold.Module,
 		storage.Module,
+		isequence.Module,
 		schema.Module,
 		monitor.Module,
 		mcp.Module,
