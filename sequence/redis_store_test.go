@@ -45,8 +45,6 @@ func (s *RedisStoreTestSuite) SetupTest() {
 	s.client.FlushDB(context.Background())
 }
 
-// --- Load ---
-
 func (s *RedisStoreTestSuite) TestLoad() {
 	ctx := context.Background()
 
@@ -112,8 +110,6 @@ func (s *RedisStoreTestSuite) TestLoad() {
 		s.Equal(500, loaded.CurrentValue)
 	})
 }
-
-// --- Increment ---
 
 func (s *RedisStoreTestSuite) TestIncrement() {
 	ctx := context.Background()
@@ -187,8 +183,6 @@ func (s *RedisStoreTestSuite) TestIncrement() {
 		s.Equal(1001, newVal)
 	})
 }
-
-// --- Concurrency ---
 
 func (s *RedisStoreTestSuite) TestConcurrency() {
 	ctx := context.Background()

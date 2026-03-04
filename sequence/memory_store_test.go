@@ -19,7 +19,7 @@ func TestNewMemoryStore(t *testing.T) {
 	})
 
 	t.Run("ImplementsStoreInterface", func(t *testing.T) {
-		var _ Store = NewMemoryStore()
+		var _ Store = (*MemoryStore)(nil)
 	})
 }
 

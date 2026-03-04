@@ -14,8 +14,6 @@ import (
 	"github.com/coldsmirk/vef-framework-go/timex"
 )
 
-// --- helpers ---
-
 func newTestRule(key string, opts ...func(*sequence.Rule)) *sequence.Rule {
 	rule := &sequence.Rule{
 		Key:              key,
@@ -39,8 +37,6 @@ func newTestEngine(rules ...*sequence.Rule) sequence.Generator {
 
 	return NewGenerator(store)
 }
-
-// --- TestGenerate ---
 
 func TestGenerate(t *testing.T) {
 	ctx := context.Background()
@@ -161,8 +157,6 @@ func TestGenerate(t *testing.T) {
 	})
 }
 
-// --- TestGenerateN ---
-
 func TestGenerateN(t *testing.T) {
 	ctx := context.Background()
 
@@ -232,8 +226,6 @@ func TestGenerateN(t *testing.T) {
 		assert.Equal(t, "0004", batch2[1])
 	})
 }
-
-// --- TestNeedsReset ---
 
 func TestNeedsReset(t *testing.T) {
 	now := timex.Now()
@@ -322,8 +314,6 @@ func TestNeedsReset(t *testing.T) {
 	})
 }
 
-// --- TestOverflow ---
-
 func TestOverflow(t *testing.T) {
 	ctx := context.Background()
 
@@ -405,8 +395,6 @@ func TestOverflow(t *testing.T) {
 	})
 }
 
-// --- TestStartValue ---
-
 func TestStartValue(t *testing.T) {
 	ctx := context.Background()
 
@@ -422,8 +410,6 @@ func TestStartValue(t *testing.T) {
 		assert.Equal(t, "0101", result) // start at 100, first = 101
 	})
 }
-
-// --- TestConcurrentGenerate ---
 
 func TestConcurrentGenerate(t *testing.T) {
 	ctx := context.Background()
