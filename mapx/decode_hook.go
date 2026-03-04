@@ -1,6 +1,7 @@
 package mapx
 
 import (
+	"encoding/json"
 	"mime/multipart"
 	"reflect"
 
@@ -36,6 +37,7 @@ var (
 	valueOrZeroMethodIndex int
 
 	// Multipart.FileHeader types.
+	jsonRawMessageType     = reflect.TypeFor[json.RawMessage]()
 	fileHeaderPtrType      = reflect.TypeFor[*multipart.FileHeader]()
 	fileHeaderPtrSliceType = reflect.TypeFor[[]*multipart.FileHeader]()
 )
@@ -214,6 +216,21 @@ func isNullValue(t reflect.Type) bool {
 	name := t.Name()
 
 	return len(name) >= 5 && name[:5] == "Value"
+}
+
+// convertJSONRawMessage handles conversion of arbitrary data to json.RawMessage.
+// When the target type is json.RawMessage ([]byte), it re-marshals the source value to JSON bytes.
+func convertJSONRawMessage(from, to reflect.Type, value any) (any, error) {
+	if to != jsonRawMessageType {
+		return value, nil
+	}
+
+	data, err := json.Marshal(value)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.RawMessage(data), nil
 }
 
 // convertFileHeader handles conversion from []*multipart.FileHeader to *multipart.FileHeader.
