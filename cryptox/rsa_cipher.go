@@ -299,7 +299,7 @@ func (r *rsaCipher) Sign(data string) (string, error) {
 	}
 
 	hash := sha256.New()
-	_, _ = hash.Write([]byte(data))
+	hash.Write([]byte(data))
 	hashed := hash.Sum(nil)
 
 	var (
@@ -331,7 +331,7 @@ func (r *rsaCipher) Verify(data, signature string) (bool, error) {
 	}
 
 	hash := sha256.New()
-	_, _ = hash.Write([]byte(data))
+	hash.Write([]byte(data))
 	hashed := hash.Sum(nil)
 
 	if r.signMode == RsaSignModePSS {

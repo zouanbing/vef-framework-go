@@ -251,12 +251,11 @@ func (suite *InsertTestSuite) TestColumnSelection() {
 		suite.NotEmpty(user.ID, "Should set ID after insert")
 
 		var retrieved User
+		retrieved.ID = user.ID
 
 		err = suite.db.NewSelect().
 			Model(&retrieved).
-			Where(func(cb orm.ConditionBuilder) {
-				cb.PKEquals(user.ID)
-			}).
+			WherePK().
 			Scan(suite.ctx)
 		suite.NoError(err, "Should retrieve inserted record")
 		suite.Equal("Exclude User", retrieved.Name, "Should preserve name value")

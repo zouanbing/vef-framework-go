@@ -73,11 +73,11 @@ func (s *RelayTestSuite) getRecord(recordID string) *approval.EventOutbox {
 	s.T().Helper()
 
 	var record approval.EventOutbox
+	record.ID = recordID
+
 	err := s.db.NewSelect().
 		Model(&record).
-		Where(func(cb orm.ConditionBuilder) {
-			cb.PKEquals(recordID)
-		}).
+		WherePK().
 		Scan(s.ctx)
 	s.Require().NoError(err, "Should fetch EventOutbox record")
 

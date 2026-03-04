@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"reflect"
+	"strings"
 
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/feature"
@@ -214,6 +215,12 @@ func (q *BunUpdateQuery) setColumn(name string, value any) {
 	if q.query.DB().HasFeature(feature.UpdateMultiTable) {
 		q.query.Set("? = ?", q.eb.Column(name), value)
 	} else {
+		// Strip table alias prefix (e.g., "t.field_name" → "field_name")
+		// since databases without UpdateMultiTable do not support aliased SET targets.
+		if _, after, ok := strings.Cut(name, "."); ok {
+			name = after
+		}
+
 		q.query.Set("? = ?", bun.Name(name), value)
 	}
 

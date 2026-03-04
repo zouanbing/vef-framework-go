@@ -76,7 +76,7 @@ func SM3Bytes(data []byte) string {
 // HmacMD5 computes the HMAC-MD5 of the data using the provided key.
 func HmacMD5(key, data []byte) string {
 	mac := hmac.New(md5.New, key)
-	_, _ = mac.Write(data)
+	mac.Write(data)
 
 	return hex.EncodeToString(mac.Sum(nil))
 }
@@ -84,7 +84,7 @@ func HmacMD5(key, data []byte) string {
 // HmacSHA1 computes the HMAC-SHA1 of the data using the provided key.
 func HmacSHA1(key, data []byte) string {
 	mac := hmac.New(sha1.New, key)
-	_, _ = mac.Write(data)
+	mac.Write(data)
 
 	return hex.EncodeToString(mac.Sum(nil))
 }
@@ -92,7 +92,7 @@ func HmacSHA1(key, data []byte) string {
 // HmacSHA256 computes the HMAC-SHA256 of the data using the provided key.
 func HmacSHA256(key, data []byte) string {
 	mac := hmac.New(sha256.New, key)
-	_, _ = mac.Write(data)
+	mac.Write(data)
 
 	return hex.EncodeToString(mac.Sum(nil))
 }
@@ -100,7 +100,7 @@ func HmacSHA256(key, data []byte) string {
 // HmacSHA512 computes the HMAC-SHA512 of the data using the provided key.
 func HmacSHA512(key, data []byte) string {
 	mac := hmac.New(sha512.New, key)
-	_, _ = mac.Write(data)
+	mac.Write(data)
 
 	return hex.EncodeToString(mac.Sum(nil))
 }
@@ -108,7 +108,7 @@ func HmacSHA512(key, data []byte) string {
 // HmacSM3 computes the HMAC-SM3 (Chinese National Standard) of the data using the provided key.
 func HmacSM3(key, data []byte) string {
 	mac := hmac.New(sm3.New, key)
-	_, _ = mac.Write(data)
+	mac.Write(data)
 
 	return hex.EncodeToString(mac.Sum(nil))
 }

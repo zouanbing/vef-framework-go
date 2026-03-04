@@ -194,7 +194,7 @@ func (e *ecdsaCipher) Sign(data string) (string, error) {
 	}
 
 	hash := sha256.New()
-	_, _ = hash.Write([]byte(data))
+	hash.Write([]byte(data))
 	hashed := hash.Sum(nil)
 
 	r, s, err := ecdsa.Sign(rand.Reader, e.privateKey, hashed)
@@ -226,7 +226,7 @@ func (e *ecdsaCipher) Verify(data, signature string) (bool, error) {
 	}
 
 	hash := sha256.New()
-	_, _ = hash.Write([]byte(data))
+	hash.Write([]byte(data))
 	hashed := hash.Sum(nil)
 
 	valid := ecdsa.Verify(e.publicKey, hashed, sig.R, sig.S)

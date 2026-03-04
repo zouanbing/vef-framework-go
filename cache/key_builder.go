@@ -50,13 +50,5 @@ func (k *PrefixKeyBuilder) Build(keyParts ...string) string {
 		return k.prefix
 	}
 
-	key := strings.Join(keyParts, k.separator)
-
-	var sb strings.Builder
-	sb.Grow(len(k.prefix) + len(k.separator) + len(key))
-	_, _ = sb.WriteString(k.prefix)
-	_, _ = sb.WriteString(k.separator)
-	_, _ = sb.WriteString(key)
-
-	return sb.String()
+	return k.prefix + k.separator + strings.Join(keyParts, k.separator)
 }

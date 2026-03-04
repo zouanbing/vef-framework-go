@@ -85,11 +85,11 @@ func (s *CreateFlowTestSuite) TestCreateFlowSuccess() {
 
 	// Verify DB record
 	var flow approval.Flow
+	flow.ID = result.ID
+
 	err = s.db.NewSelect().
 		Model(&flow).
-		Where(func(cb orm.ConditionBuilder) {
-			cb.PKEquals(result.ID)
-		}).
+		WherePK().
 		Scan(s.ctx)
 	s.Require().NoError(err, "Should find flow in DB")
 	s.Assert().Equal("leave", flow.Code, "DB record should have correct Code")

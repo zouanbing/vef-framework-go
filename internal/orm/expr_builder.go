@@ -20,12 +20,7 @@ func (b *QueryExprBuilder) Column(column string, withTableAlias ...bool) schema.
 	if ok {
 		alias, name := before, after
 		if strings.HasPrefix(alias, "?") {
-			var sb strings.Builder
-			sb.Grow(len(alias) + 2)
-			_, _ = sb.WriteString(alias)
-			_, _ = sb.WriteString(".?")
-
-			return b.Expr(sb.String(), bun.Name(name))
+			return b.Expr(alias+".?", bun.Name(name))
 		}
 
 		return b.Expr("?.?", bun.Name(alias), bun.Name(name))

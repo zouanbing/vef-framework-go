@@ -255,12 +255,11 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 
 		// Verify only selected columns were updated
 		var updatedUser User
+		updatedUser.ID = tu.ID
 
 		err = suite.db.NewSelect().
 			Model(&updatedUser).
-			Where(func(cb orm.ConditionBuilder) {
-				cb.PKEquals(tu.ID)
-			}).
+			WherePK().
 			Scan(suite.ctx)
 		suite.NoError(err, "Should fetch updated user")
 
@@ -277,12 +276,11 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 		tu := suite.testUsers[1]
 
 		var user User
+		user.ID = tu.ID
 
 		err := suite.db.NewSelect().
 			Model(&user).
-			Where(func(cb orm.ConditionBuilder) {
-				cb.PKEquals(tu.ID)
-			}).
+			WherePK().
 			Scan(suite.ctx)
 		suite.NoError(err, "Should fetch user")
 
@@ -305,12 +303,11 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 
 		// Verify all columns were updated
 		var updatedUser User
+		updatedUser.ID = user.ID
 
 		err = suite.db.NewSelect().
 			Model(&updatedUser).
-			Where(func(cb orm.ConditionBuilder) {
-				cb.PKEquals(user.ID)
-			}).
+			WherePK().
 			Scan(suite.ctx)
 		suite.NoError(err, "Should fetch updated user")
 
@@ -327,12 +324,11 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 		tu := suite.testUsers[2]
 
 		var user User
+		user.ID = tu.ID
 
 		err := suite.db.NewSelect().
 			Model(&user).
-			Where(func(cb orm.ConditionBuilder) {
-				cb.PKEquals(tu.ID)
-			}).
+			WherePK().
 			Scan(suite.ctx)
 		suite.NoError(err, "Should fetch user")
 
@@ -358,12 +354,11 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 
 		// Verify excluded columns were NOT updated
 		var updatedUser User
+		updatedUser.ID = user.ID
 
 		err = suite.db.NewSelect().
 			Model(&updatedUser).
-			Where(func(cb orm.ConditionBuilder) {
-				cb.PKEquals(user.ID)
-			}).
+			WherePK().
 			Scan(suite.ctx)
 		suite.NoError(err, "Should fetch updated user")
 
@@ -380,12 +375,11 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 		tu := suite.testUsers[0]
 
 		var user User
+		user.ID = tu.ID
 
 		err := suite.db.NewSelect().
 			Model(&user).
-			Where(func(cb orm.ConditionBuilder) {
-				cb.PKEquals(tu.ID)
-			}).
+			WherePK().
 			Scan(suite.ctx)
 		suite.NoError(err, "Should fetch user")
 
@@ -414,12 +408,11 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 
 		// Verify only age was updated
 		var updatedUser User
+		updatedUser.ID = user.ID
 
 		err = suite.db.NewSelect().
 			Model(&updatedUser).
-			Where(func(cb orm.ConditionBuilder) {
-				cb.PKEquals(user.ID)
-			}).
+			WherePK().
 			Scan(suite.ctx)
 		suite.NoError(err, "Should fetch updated user")
 
@@ -565,12 +558,11 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 		tp := suite.testPosts[0]
 
 		var post Post
+		post.ID = tp.ID
 
 		err := suite.db.NewSelect().
 			Model(&post).
-			Where(func(cb orm.ConditionBuilder) {
-				cb.PKEquals(tp.ID)
-			}).
+			WherePK().
 			Scan(suite.ctx)
 		suite.NoError(err, "Should fetch post")
 
@@ -594,12 +586,11 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 
 		// Verify the update
 		var updatedPost Post
+		updatedPost.ID = post.ID
 
 		err = suite.db.NewSelect().
 			Model(&updatedPost).
-			Where(func(cb orm.ConditionBuilder) {
-				cb.PKEquals(post.ID)
-			}).
+			WherePK().
 			Scan(suite.ctx)
 		suite.NoError(err, "Should retrieve updated post")
 		suite.Equal("UT Updated Title from Model", updatedPost.Title, "Title should be from model")
@@ -613,12 +604,11 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 		tp := suite.testPosts[2]
 
 		var post Post
+		post.ID = tp.ID
 
 		err := suite.db.NewSelect().
 			Model(&post).
-			Where(func(cb orm.ConditionBuilder) {
-				cb.PKEquals(tp.ID)
-			}).
+			WherePK().
 			Scan(suite.ctx)
 		suite.NoError(err, "Should fetch post")
 
@@ -645,12 +635,11 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 
 		// Verify the update
 		var updatedPost Post
+		updatedPost.ID = post.ID
 
 		err = suite.db.NewSelect().
 			Model(&updatedPost).
-			Where(func(cb orm.ConditionBuilder) {
-				cb.PKEquals(post.ID)
-			}).
+			WherePK().
 			Scan(suite.ctx)
 		suite.NoError(err, "Should retrieve updated post")
 		suite.Equal("UT Updated Title from Model", updatedPost.Title, "Title should be from model")
@@ -675,6 +664,31 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 		suite.Equal(int64(1), rowsAffected, "Should affect 1 row")
 
 		suite.T().Logf("Updated using Set method")
+	})
+
+	suite.Run("SetWithAliasedColumn", func() {
+		result, err := suite.db.NewUpdate().
+			Model((*Post)(nil)).
+			Set("p.updated_by", "alias_test").
+			Where(func(cb orm.ConditionBuilder) {
+				cb.PKEquals(suite.testPosts[0].ID)
+			}).
+			Exec(suite.ctx)
+
+		suite.NoError(err, "Set with aliased column should strip alias on non-multi-table databases")
+
+		rowsAffected, _ := result.RowsAffected()
+		suite.Equal(int64(1), rowsAffected, "Should affect 1 row")
+
+		var updatedPost Post
+		updatedPost.ID = suite.testPosts[0].ID
+
+		err = suite.db.NewSelect().
+			Model(&updatedPost).
+			WherePK().
+			Scan(suite.ctx)
+		suite.NoError(err, "Should retrieve updated post")
+		suite.Equal("alias_test", updatedPost.UpdatedBy, "Updated_by should reflect the Set value")
 	})
 
 	suite.Run("SetExprMethod", func() {
@@ -773,12 +787,11 @@ func (suite *UpdateTestSuite) TestUpdateFlags() {
 		// Verify each post was updated with its specific value
 		for i, post := range posts {
 			var updatedPost Post
+			updatedPost.ID = post.ID
 
 			err = suite.db.NewSelect().
 				Model(&updatedPost).
-				Where(func(cb orm.ConditionBuilder) {
-					cb.PKEquals(post.ID)
-				}).
+				WherePK().
 				Scan(suite.ctx)
 			suite.NoError(err, "Should retrieve updated post")
 			suite.Equal(1000+i*100, updatedPost.ViewCount, "View count should match bulk update value")
