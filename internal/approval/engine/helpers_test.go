@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ilxqx/vef-framework-go/approval"
+	"github.com/ilxqx/vef-framework-go/decimal"
 	"github.com/ilxqx/vef-framework-go/timex"
 )
 
@@ -270,5 +271,64 @@ func TestGetSuperior(t *testing.T) {
 		assert.ErrorIs(t, err, assert.AnError, "Should propagate service error")
 
 		svc.AssertExpectations(t)
+	})
+}
+
+// TestBuildPassRuleContext tests buildPassRuleContext scenarios.
+func TestBuildPassRuleContext(t *testing.T) {
+	t.Run("EmptyTasks", func(t *testing.T) {
+		node := &approval.FlowNode{PassRatio: decimal.NewFromInt(50)}
+		prc := buildPassRuleContext(node, nil)
+
+		assert.Equal(t, 0, prc.TotalCount, "Should have zero total")
+		assert.Equal(t, 0, prc.ApprovedCount, "Should have zero approved")
+		assert.Equal(t, 0, prc.RejectedCount, "Should have zero rejected")
+		assert.InDelta(t, 50.0, prc.PassRatio, 0.001, "Should normalize ratio")
+	})
+
+	t.Run("CountsActionableTasks", func(t *testing.T) {
+		node := &approval.FlowNode{PassRatio: decimal.NewFromFloat(0.8)}
+		tasks := []approval.Task{
+			{Status: approval.TaskApproved},
+			{Status: approval.TaskRejected},
+			{Status: approval.TaskPending},
+			{Status: approval.TaskHandled},
+		}
+
+		prc := buildPassRuleContext(node, tasks)
+		assert.Equal(t, 4, prc.TotalCount, "Should count all actionable tasks")
+		assert.Equal(t, 2, prc.ApprovedCount, "Should count approved + handled")
+		assert.Equal(t, 1, prc.RejectedCount, "Should count rejected")
+		assert.InDelta(t, 80.0, prc.PassRatio, 0.001, "Should normalize 0.8 to 80")
+	})
+
+	t.Run("ExcludesNonActionable", func(t *testing.T) {
+		node := &approval.FlowNode{PassRatio: decimal.NewFromInt(0)}
+		tasks := []approval.Task{
+			{Status: approval.TaskApproved},
+			{Status: approval.TaskTransferred},
+			{Status: approval.TaskCanceled},
+			{Status: approval.TaskRemoved},
+			{Status: approval.TaskSkipped},
+		}
+
+		prc := buildPassRuleContext(node, tasks)
+		assert.Equal(t, 1, prc.TotalCount, "Should only count actionable task")
+		assert.Equal(t, 1, prc.ApprovedCount, "Should count the one approved task")
+	})
+}
+
+// TestPublishEventsNilPublisher tests publishEvents with nil publisher.
+func TestPublishEventsNilPublisher(t *testing.T) {
+	eng := NewFlowEngine(nil, nil, nil)
+
+	t.Run("NilPublisherNoEvents", func(t *testing.T) {
+		err := eng.publishEvents(t.Context(), nil)
+		assert.NoError(t, err, "Should not error with nil publisher and no events")
+	})
+
+	t.Run("NilPublisherWithEvents", func(t *testing.T) {
+		err := eng.publishEvents(t.Context(), nil, approval.NewInstanceCompletedEvent("inst-1", approval.InstanceApproved))
+		assert.NoError(t, err, "Should not error with nil publisher even with events")
 	})
 }

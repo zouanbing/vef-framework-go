@@ -2,6 +2,7 @@ package engine_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,6 +18,18 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/testx"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
+
+// StubProcessor is a configurable mock NodeProcessor for constructor tests.
+type StubProcessor struct {
+	kind approval.NodeKind
+	err  error
+}
+
+func (p *StubProcessor) NodeKind() approval.NodeKind { return p.kind }
+
+func (p *StubProcessor) Process(context.Context, *engine.ProcessContext) (*engine.ProcessResult, error) {
+	return nil, p.err
+}
 
 // --- Suite Infrastructure ---
 
@@ -77,13 +90,61 @@ func TestNormalizePassRatio(t *testing.T) {
 
 // TestNewFlowEngine tests new flow engine constructor via behavior.
 func TestNewFlowEngine(t *testing.T) {
-	t.Run("UnregisteredProcessorFails", func(t *testing.T) {
+	t.Run("EmptyProcessors", func(t *testing.T) {
 		eng := engine.NewFlowEngine(nil, nil, nil)
+		require.NotNil(t, eng, "Should create engine with nil processors")
+
 		node := &approval.FlowNode{Kind: approval.NodeStart, Name: "Start"}
 		node.ID = "test-start"
-
 		err := eng.ProcessNode(t.Context(), nil, &approval.Instance{}, node)
-		assert.ErrorIs(t, err, engine.ErrProcessorNotFound, "Should fail for unregistered processor")
+		assert.ErrorIs(t, err, engine.ErrProcessorNotFound, "Should fail for any node kind")
+	})
+
+	t.Run("RegistersProcessors", func(t *testing.T) {
+		stubErr := errors.New("stub reached")
+		eng := engine.NewFlowEngine(nil, []engine.NodeProcessor{
+			&StubProcessor{kind: approval.NodeStart, err: stubErr},
+		}, nil)
+
+		node := &approval.FlowNode{Kind: approval.NodeStart, Name: "Start"}
+		node.ID = "test-start"
+		err := eng.ProcessNode(t.Context(), nil, &approval.Instance{}, node)
+		assert.ErrorIs(t, err, stubErr, "Should reach the registered processor")
+		assert.NotErrorIs(t, err, engine.ErrProcessorNotFound, "Should not be processor-not-found")
+	})
+
+	t.Run("AllProcessorTypes", func(t *testing.T) {
+		kinds := []approval.NodeKind{
+			approval.NodeStart, approval.NodeEnd, approval.NodeApproval,
+			approval.NodeCC, approval.NodeCondition, approval.NodeHandle,
+		}
+		var procs []engine.NodeProcessor
+		for _, k := range kinds {
+			procs = append(procs, &StubProcessor{kind: k, err: errors.New("reached-" + string(k))})
+		}
+
+		eng := engine.NewFlowEngine(nil, procs, nil)
+		for _, k := range kinds {
+			node := &approval.FlowNode{Kind: k, Name: string(k)}
+			node.ID = "test-" + string(k)
+			err := eng.ProcessNode(t.Context(), nil, &approval.Instance{}, node)
+			assert.NotErrorIs(t, err, engine.ErrProcessorNotFound, "Processor for %s should be found", k)
+		}
+	})
+
+	t.Run("DuplicateOverrides", func(t *testing.T) {
+		errFirst := errors.New("first")
+		errSecond := errors.New("second")
+		eng := engine.NewFlowEngine(nil, []engine.NodeProcessor{
+			&StubProcessor{kind: approval.NodeStart, err: errFirst},
+			&StubProcessor{kind: approval.NodeStart, err: errSecond},
+		}, nil)
+
+		node := &approval.FlowNode{Kind: approval.NodeStart, Name: "Start"}
+		node.ID = "test-start"
+		err := eng.ProcessNode(t.Context(), nil, &approval.Instance{}, node)
+		assert.ErrorIs(t, err, errSecond, "Last registered processor should win")
+		assert.NotErrorIs(t, err, errFirst, "First processor should be overridden")
 	})
 }
 

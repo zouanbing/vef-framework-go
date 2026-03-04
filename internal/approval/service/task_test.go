@@ -1,521 +1,322 @@
-package service
+package service_test
 
 import (
 	"context"
-	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/ilxqx/vef-framework-go/approval"
-	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/internal/approval/engine"
-	"github.com/ilxqx/vef-framework-go/internal/approval/migration"
+	"github.com/ilxqx/vef-framework-go/internal/approval/service"
 	"github.com/ilxqx/vef-framework-go/internal/approval/shared"
 	"github.com/ilxqx/vef-framework-go/internal/testx"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
 
+func init() {
+	registry.Add(func(env *testx.DBEnv) suite.TestingSuite {
+		return &TaskServiceTestSuite{ctx: env.Ctx, db: env.DB}
+	})
+}
+
+// TaskServiceTestSuite tests the TaskService.
+type TaskServiceTestSuite struct {
+	suite.Suite
+
+	ctx     context.Context
+	db      orm.DB
+	svc     *service.TaskService
+	fixture *SvcFixture
+}
+
+func (s *TaskServiceTestSuite) SetupSuite() {
+	s.svc = service.NewTaskService()
+	s.fixture = setupSvcFixture(s.T(), s.ctx, s.db)
+}
+
+func (s *TaskServiceTestSuite) TearDownTest() {
+	_, _ = s.db.NewDelete().Model((*approval.ActionLog)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(s.ctx)
+	_, _ = s.db.NewDelete().Model((*approval.Task)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(s.ctx)
+	_, _ = s.db.NewDelete().Model((*approval.Instance)(nil)).Where(func(cb orm.ConditionBuilder) { cb.IsNotNull("id") }).Exec(s.ctx)
+}
+
+func (s *TaskServiceTestSuite) TearDownSuite() {
+	cleanAllServiceData(s.ctx, s.db)
+}
+
 // --- FinishTask ---
 
-func TestFinishTask(t *testing.T) {
-	testx.ForEachDB(t, func(t *testing.T, env *testx.DBEnv) {
-		if env.DS.Kind != config.Postgres {
-			t.Skip("Service tests only run on PostgreSQL")
-		}
+func (s *TaskServiceTestSuite) TestFinishTask() {
+	s.Run("ValidTransition", func() {
+		task := insertTask(s.T(), s.ctx, s.db, s.fixture, approval.TaskPending)
+		err := s.svc.FinishTask(s.ctx, s.db, task, approval.TaskApproved)
+		s.Require().NoError(err, "Should finish task")
 
-		require.NoError(t, migration.Migrate(env.Ctx, env.DB, env.DS.Kind))
-		fix := setupSvcFixture(t, env)
-		svc := NewTaskService()
+		s.Assert().Equal(approval.TaskApproved, task.Status, "Should update status in memory")
+		s.Assert().NotNil(task.FinishedAt, "Should set FinishedAt")
 
-		t.Run("ValidTransition", func(t *testing.T) {
-			task := insertTask(t, env, fix, approval.TaskPending)
-			err := svc.FinishTask(env.Ctx, env.DB, task, approval.TaskApproved)
-			require.NoError(t, err, "Should finish task")
+		// Verify DB
+		var dbTask approval.Task
+		dbTask.ID = task.ID
+		s.Require().NoError(s.db.NewSelect().Model(&dbTask).WherePK().Scan(s.ctx))
+		s.Assert().Equal(approval.TaskApproved, dbTask.Status, "DB should reflect new status")
+		s.Assert().NotNil(dbTask.FinishedAt, "DB should have FinishedAt")
+	})
 
-			assert.Equal(t, approval.TaskApproved, task.Status, "Should update status in memory")
-			assert.NotNil(t, task.FinishedAt, "Should set FinishedAt")
-
-			// Verify DB
-			var dbTask approval.Task
-			dbTask.ID = task.ID
-			require.NoError(t, env.DB.NewSelect().Model(&dbTask).WherePK().Scan(env.Ctx))
-			assert.Equal(t, approval.TaskApproved, dbTask.Status, "DB should reflect new status")
-			assert.NotNil(t, dbTask.FinishedAt, "DB should have FinishedAt")
-		})
-
-		t.Run("InvalidTransition", func(t *testing.T) {
-			task := insertTask(t, env, fix, approval.TaskApproved)
-			err := svc.FinishTask(env.Ctx, env.DB, task, approval.TaskPending)
-			assert.ErrorIs(t, err, shared.ErrInvalidTaskTransition, "Should reject invalid transition")
-		})
+	s.Run("InvalidTransition", func() {
+		task := insertTask(s.T(), s.ctx, s.db, s.fixture, approval.TaskApproved)
+		err := s.svc.FinishTask(s.ctx, s.db, task, approval.TaskPending)
+		s.Assert().ErrorIs(err, shared.ErrInvalidTaskTransition, "Should reject invalid transition")
 	})
 }
 
 // --- CancelRemainingTasks ---
 
-func TestCancelRemainingTasks(t *testing.T) {
-	testx.ForEachDB(t, func(t *testing.T, env *testx.DBEnv) {
-		if env.DS.Kind != config.Postgres {
-			t.Skip("Service tests only run on PostgreSQL")
-		}
+func (s *TaskServiceTestSuite) TestCancelRemainingTasks() {
+	s.Run("CancelsPendingAndWaiting", func() {
+		inst := s.fixture.createInstance(s.T(), s.ctx, s.db, approval.InstanceRunning)
+		nodeID := s.fixture.NodeIDs[0]
+		insertTaskWithDetails(s.T(), s.ctx, s.db, inst.ID, nodeID, approval.TaskPending, 1)
+		insertTaskWithDetails(s.T(), s.ctx, s.db, inst.ID, nodeID, approval.TaskWaiting, 2)
+		insertTaskWithDetails(s.T(), s.ctx, s.db, inst.ID, nodeID, approval.TaskApproved, 3)
 
-		require.NoError(t, migration.Migrate(env.Ctx, env.DB, env.DS.Kind))
-		fix := setupSvcFixture(t, env)
-		svc := NewTaskService()
+		err := s.svc.CancelRemainingTasks(s.ctx, s.db, inst.ID, nodeID)
+		s.Require().NoError(err)
 
-		t.Run("CancelsPendingAndWaiting", func(t *testing.T) {
-			inst := fix.createInstance(t, env, approval.InstanceRunning)
-			instID := inst.ID
-			nodeID := fix.NodeIDs[0]
-			insertTaskWithDetails(t, env, instID, nodeID, approval.TaskPending, 1)
-			insertTaskWithDetails(t, env, instID, nodeID, approval.TaskWaiting, 2)
-			insertTaskWithDetails(t, env, instID, nodeID, approval.TaskApproved, 3)
+		var tasks []approval.Task
+		s.Require().NoError(s.db.NewSelect().
+			Model(&tasks).
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Equals("instance_id", inst.ID).Equals("node_id", nodeID)
+			}).
+			OrderBy("sort_order").
+			Scan(s.ctx))
 
-			err := svc.CancelRemainingTasks(env.Ctx, env.DB, instID, nodeID)
-			require.NoError(t, err)
-
-			var tasks []approval.Task
-			require.NoError(t, env.DB.NewSelect().
-				Model(&tasks).
-				Where(func(cb orm.ConditionBuilder) {
-					cb.Equals("instance_id", instID).Equals("node_id", nodeID)
-				}).
-				OrderBy("sort_order").
-				Scan(env.Ctx))
-
-			assert.Equal(t, approval.TaskCanceled, tasks[0].Status, "Pending should be canceled")
-			assert.Equal(t, approval.TaskCanceled, tasks[1].Status, "Waiting should be canceled")
-			assert.Equal(t, approval.TaskApproved, tasks[2].Status, "Approved should remain unchanged")
-		})
+		s.Assert().Equal(approval.TaskCanceled, tasks[0].Status, "Pending should be canceled")
+		s.Assert().Equal(approval.TaskCanceled, tasks[1].Status, "Waiting should be canceled")
+		s.Assert().Equal(approval.TaskApproved, tasks[2].Status, "Approved should remain unchanged")
 	})
 }
 
 // --- CancelInstanceTasks ---
 
-func TestCancelInstanceTasks(t *testing.T) {
-	testx.ForEachDB(t, func(t *testing.T, env *testx.DBEnv) {
-		if env.DS.Kind != config.Postgres {
-			t.Skip("Service tests only run on PostgreSQL")
-		}
+func (s *TaskServiceTestSuite) TestCancelInstanceTasks() {
+	s.Run("CancelsAllPendingWaitingForInstance", func() {
+		inst := s.fixture.createInstance(s.T(), s.ctx, s.db, approval.InstanceRunning)
+		insertTaskWithDetails(s.T(), s.ctx, s.db, inst.ID, s.fixture.NodeIDs[0], approval.TaskPending, 1)
+		insertTaskWithDetails(s.T(), s.ctx, s.db, inst.ID, s.fixture.NodeIDs[1], approval.TaskWaiting, 1)
+		insertTaskWithDetails(s.T(), s.ctx, s.db, inst.ID, s.fixture.NodeIDs[0], approval.TaskRejected, 2)
 
-		require.NoError(t, migration.Migrate(env.Ctx, env.DB, env.DS.Kind))
-		fix := setupSvcFixture(t, env)
-		svc := NewTaskService()
+		err := s.svc.CancelInstanceTasks(s.ctx, s.db, inst.ID)
+		s.Require().NoError(err)
 
-		t.Run("CancelsAllPendingWaitingForInstance", func(t *testing.T) {
-			inst := fix.createInstance(t, env, approval.InstanceRunning)
-			instID := inst.ID
-			insertTaskWithDetails(t, env, instID, fix.NodeIDs[0], approval.TaskPending, 1)
-			insertTaskWithDetails(t, env, instID, fix.NodeIDs[1], approval.TaskWaiting, 1)
-			insertTaskWithDetails(t, env, instID, fix.NodeIDs[0], approval.TaskRejected, 2)
+		var tasks []approval.Task
+		s.Require().NoError(s.db.NewSelect().
+			Model(&tasks).
+			Where(func(cb orm.ConditionBuilder) { cb.Equals("instance_id", inst.ID) }).
+			Scan(s.ctx))
 
-			err := svc.CancelInstanceTasks(env.Ctx, env.DB, instID)
-			require.NoError(t, err)
-
-			var tasks []approval.Task
-			require.NoError(t, env.DB.NewSelect().
-				Model(&tasks).
-				Where(func(cb orm.ConditionBuilder) { cb.Equals("instance_id", instID) }).
-				Scan(env.Ctx))
-
-			canceledCount := 0
-			for _, task := range tasks {
-				if task.Status == approval.TaskCanceled {
-					canceledCount++
-				}
+		canceledCount := 0
+		for _, task := range tasks {
+			if task.Status == approval.TaskCanceled {
+				canceledCount++
 			}
-			assert.Equal(t, 2, canceledCount, "Should cancel 2 tasks")
-		})
+		}
+		s.Assert().Equal(2, canceledCount, "Should cancel 2 tasks")
 	})
 }
 
 // --- ActivateNextSequentialTask ---
 
-func TestActivateNextSequentialTask(t *testing.T) {
-	testx.ForEachDB(t, func(t *testing.T, env *testx.DBEnv) {
-		if env.DS.Kind != config.Postgres {
-			t.Skip("Service tests only run on PostgreSQL")
-		}
+func (s *TaskServiceTestSuite) TestActivateNextSequentialTask() {
+	s.Run("ActivatesNextWaitingTask", func() {
+		inst := s.fixture.createInstance(s.T(), s.ctx, s.db, approval.InstanceRunning)
+		nodeID := s.fixture.NodeIDs[0]
+		insertTaskWithDetails(s.T(), s.ctx, s.db, inst.ID, nodeID, approval.TaskWaiting, 1)
+		insertTaskWithDetails(s.T(), s.ctx, s.db, inst.ID, nodeID, approval.TaskWaiting, 2)
 
-		require.NoError(t, migration.Migrate(env.Ctx, env.DB, env.DS.Kind))
-		fix := setupSvcFixture(t, env)
-		svc := NewTaskService()
+		instance := &approval.Instance{}
+		instance.ID = inst.ID
+		node := &approval.FlowNode{}
+		node.ID = nodeID
 
-		t.Run("ActivatesNextWaitingTask", func(t *testing.T) {
-			inst := fix.createInstance(t, env, approval.InstanceRunning)
-			instID := inst.ID
-			nodeID := fix.NodeIDs[0]
-			insertTaskWithDetails(t, env, instID, nodeID, approval.TaskWaiting, 1)
-			insertTaskWithDetails(t, env, instID, nodeID, approval.TaskWaiting, 2)
+		err := s.svc.ActivateNextSequentialTask(s.ctx, s.db, instance, node)
+		s.Require().NoError(err)
 
-			instance := &approval.Instance{}
-			instance.ID = instID
-			node := &approval.FlowNode{}
-			node.ID = nodeID
+		var tasks []approval.Task
+		s.Require().NoError(s.db.NewSelect().
+			Model(&tasks).
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Equals("instance_id", inst.ID).Equals("node_id", nodeID)
+			}).
+			OrderBy("sort_order").
+			Scan(s.ctx))
 
-			err := svc.ActivateNextSequentialTask(env.Ctx, env.DB, instance, node)
-			require.NoError(t, err)
+		s.Assert().Equal(approval.TaskPending, tasks[0].Status, "First waiting task should become pending")
+		s.Assert().Equal(approval.TaskWaiting, tasks[1].Status, "Second waiting task should remain waiting")
+	})
 
-			var tasks []approval.Task
-			require.NoError(t, env.DB.NewSelect().
-				Model(&tasks).
-				Where(func(cb orm.ConditionBuilder) {
-					cb.Equals("instance_id", instID).Equals("node_id", nodeID)
-				}).
-				OrderBy("sort_order").
-				Scan(env.Ctx))
+	s.Run("NoWaitingTasks", func() {
+		inst := s.fixture.createInstance(s.T(), s.ctx, s.db, approval.InstanceRunning)
 
-			assert.Equal(t, approval.TaskPending, tasks[0].Status, "First waiting task should become pending")
-			assert.Equal(t, approval.TaskWaiting, tasks[1].Status, "Second waiting task should remain waiting")
-		})
+		instance := &approval.Instance{}
+		instance.ID = inst.ID
+		node := &approval.FlowNode{}
+		node.ID = s.fixture.NodeIDs[1]
 
-		t.Run("NoWaitingTasks", func(t *testing.T) {
-			inst2 := fix.createInstance(t, env, approval.InstanceRunning)
-
-			instance := &approval.Instance{}
-			instance.ID = inst2.ID
-			node := &approval.FlowNode{}
-			node.ID = fix.NodeIDs[1]
-
-			err := svc.ActivateNextSequentialTask(env.Ctx, env.DB, instance, node)
-			assert.NoError(t, err, "Should not error when no waiting tasks exist")
-		})
+		err := s.svc.ActivateNextSequentialTask(s.ctx, s.db, instance, node)
+		s.Assert().NoError(err, "Should not error when no waiting tasks exist")
 	})
 }
 
 // --- PrepareOperation ---
 
-func TestPrepareOperation(t *testing.T) {
-	testx.ForEachDB(t, func(t *testing.T, env *testx.DBEnv) {
-		if env.DS.Kind != config.Postgres {
-			t.Skip("Service tests only run on PostgreSQL")
-		}
+func (s *TaskServiceTestSuite) TestPrepareOperation() {
+	s.Run("Success", func() {
+		nodeID, instanceID, taskID := setupPrepareOperationData(s.T(), s.ctx, s.db, s.fixture, approval.InstanceRunning, approval.TaskPending, "op-user-1")
 
-		require.NoError(t, migration.Migrate(env.Ctx, env.DB, env.DS.Kind))
-		fix := setupSvcFixture(t, env)
-		svc := NewTaskService()
-		ctx := env.Ctx
+		tc, err := s.svc.PrepareOperation(s.ctx, s.db, taskID, "op-user-1", nil)
+		s.Require().NoError(err)
+		s.Assert().Equal(instanceID, tc.Instance.ID)
+		s.Assert().Equal(taskID, tc.Task.ID)
+		s.Assert().Equal(nodeID, tc.Node.ID)
+	})
 
-		t.Run("Success", func(t *testing.T) {
-			nodeID, instanceID, taskID := setupPrepareOperationData(t, env, fix, ctx, approval.InstanceRunning, approval.TaskPending, "op-user-1")
+	s.Run("TaskNotFound", func() {
+		_, err := s.svc.PrepareOperation(s.ctx, s.db, "non-existent", "op-user-1", nil)
+		s.Assert().ErrorIs(err, shared.ErrTaskNotFound)
+	})
 
-			tc, err := svc.PrepareOperation(ctx, env.DB, taskID, "op-user-1", nil)
-			require.NoError(t, err)
-			assert.Equal(t, instanceID, tc.Instance.ID)
-			assert.Equal(t, taskID, tc.Task.ID)
-			assert.Equal(t, nodeID, tc.Node.ID)
-		})
+	s.Run("InstanceCompleted", func() {
+		_, _, taskID := setupPrepareOperationData(s.T(), s.ctx, s.db, s.fixture, approval.InstanceApproved, approval.TaskPending, "op-user-2")
 
-		t.Run("TaskNotFound", func(t *testing.T) {
-			_, err := svc.PrepareOperation(ctx, env.DB, "non-existent", "op-user-1", nil)
-			assert.ErrorIs(t, err, shared.ErrTaskNotFound)
-		})
+		_, err := s.svc.PrepareOperation(s.ctx, s.db, taskID, "op-user-2", nil)
+		s.Assert().ErrorIs(err, shared.ErrInstanceCompleted)
+	})
 
-		t.Run("InstanceCompleted", func(t *testing.T) {
-			_, _, taskID := setupPrepareOperationData(t, env, fix, ctx, approval.InstanceApproved, approval.TaskPending, "op-user-2")
+	s.Run("NotAssignee", func() {
+		_, _, taskID := setupPrepareOperationData(s.T(), s.ctx, s.db, s.fixture, approval.InstanceRunning, approval.TaskPending, "op-user-3")
 
-			_, err := svc.PrepareOperation(ctx, env.DB, taskID, "op-user-2", nil)
-			assert.ErrorIs(t, err, shared.ErrInstanceCompleted)
-		})
+		_, err := s.svc.PrepareOperation(s.ctx, s.db, taskID, "wrong-user", nil)
+		s.Assert().ErrorIs(err, shared.ErrNotAssignee)
+	})
 
-		t.Run("NotAssignee", func(t *testing.T) {
-			_, _, taskID := setupPrepareOperationData(t, env, fix, ctx, approval.InstanceRunning, approval.TaskPending, "op-user-3")
+	s.Run("TaskNotPending", func() {
+		_, _, taskID := setupPrepareOperationData(s.T(), s.ctx, s.db, s.fixture, approval.InstanceRunning, approval.TaskApproved, "op-user-4")
 
-			_, err := svc.PrepareOperation(ctx, env.DB, taskID, "wrong-user", nil)
-			assert.ErrorIs(t, err, shared.ErrNotAssignee)
-		})
-
-		t.Run("TaskNotPending", func(t *testing.T) {
-			_, _, taskID := setupPrepareOperationData(t, env, fix, ctx, approval.InstanceRunning, approval.TaskApproved, "op-user-4")
-
-			_, err := svc.PrepareOperation(ctx, env.DB, taskID, "op-user-4", nil)
-			assert.ErrorIs(t, err, shared.ErrTaskNotPending)
-		})
+		_, err := s.svc.PrepareOperation(s.ctx, s.db, taskID, "op-user-4", nil)
+		s.Assert().ErrorIs(err, shared.ErrTaskNotPending)
 	})
 }
 
 // --- InsertActionLog ---
 
-func TestInsertActionLog(t *testing.T) {
-	testx.ForEachDB(t, func(t *testing.T, env *testx.DBEnv) {
-		if env.DS.Kind != config.Postgres {
-			t.Skip("Service tests only run on PostgreSQL")
-		}
+func (s *TaskServiceTestSuite) TestInsertActionLog() {
+	s.Run("WithAllFields", func() {
+		inst := s.fixture.createInstance(s.T(), s.ctx, s.db, approval.InstanceRunning)
+		task := insertTaskWithDetails(s.T(), s.ctx, s.db, inst.ID, s.fixture.NodeIDs[0], approval.TaskPending, 1)
+		operator := approval.OperatorInfo{ID: "log-user-1", Name: "Logger"}
 
-		require.NoError(t, migration.Migrate(env.Ctx, env.DB, env.DS.Kind))
-		fix := setupSvcFixture(t, env)
-		svc := NewTaskService()
+		err := s.svc.InsertActionLog(s.ctx, s.db, inst.ID, task, operator, approval.ActionApprove, "looks good", "transfer-to-1", "rollback-node-1")
+		s.Require().NoError(err)
 
-		t.Run("WithAllFields", func(t *testing.T) {
-			inst := fix.createInstance(t, env, approval.InstanceRunning)
-			task := insertTaskWithDetails(t, env, inst.ID, fix.NodeIDs[0], approval.TaskPending, 1)
-			operator := approval.OperatorInfo{ID: "log-user-1", Name: "Logger"}
+		var log approval.ActionLog
+		s.Require().NoError(s.db.NewSelect().
+			Model(&log).
+			Where(func(cb orm.ConditionBuilder) { cb.Equals("instance_id", inst.ID) }).
+			Scan(s.ctx))
 
-			err := svc.InsertActionLog(env.Ctx, env.DB, inst.ID, task, operator, approval.ActionApprove, "looks good", "transfer-to-1", "rollback-node-1")
-			require.NoError(t, err)
+		s.Assert().Equal(approval.ActionApprove, log.Action)
+		s.Assert().Equal("log-user-1", log.OperatorID)
+		s.Assert().NotNil(log.Opinion)
+		s.Assert().Equal("looks good", *log.Opinion)
+		s.Assert().NotNil(log.TransferToID)
+		s.Assert().Equal("transfer-to-1", *log.TransferToID)
+		s.Assert().NotNil(log.RollbackToNodeID)
+		s.Assert().Equal("rollback-node-1", *log.RollbackToNodeID)
+	})
 
-			var log approval.ActionLog
-			require.NoError(t, env.DB.NewSelect().
-				Model(&log).
-				Where(func(cb orm.ConditionBuilder) { cb.Equals("instance_id", inst.ID) }).
-				Scan(env.Ctx))
+	s.Run("WithEmptyOptionalFields", func() {
+		inst := s.fixture.createInstance(s.T(), s.ctx, s.db, approval.InstanceRunning)
+		task := insertTaskWithDetails(s.T(), s.ctx, s.db, inst.ID, s.fixture.NodeIDs[1], approval.TaskPending, 1)
+		operator := approval.OperatorInfo{ID: "log-user-2", Name: "Logger2"}
 
-			assert.Equal(t, approval.ActionApprove, log.Action)
-			assert.Equal(t, "log-user-1", log.OperatorID)
-			assert.NotNil(t, log.Opinion)
-			assert.Equal(t, "looks good", *log.Opinion)
-			assert.NotNil(t, log.TransferToID)
-			assert.Equal(t, "transfer-to-1", *log.TransferToID)
-			assert.NotNil(t, log.RollbackToNodeID)
-			assert.Equal(t, "rollback-node-1", *log.RollbackToNodeID)
-		})
+		err := s.svc.InsertActionLog(s.ctx, s.db, inst.ID, task, operator, approval.ActionSubmit, "", "", "")
+		s.Require().NoError(err)
 
-		t.Run("WithEmptyOptionalFields", func(t *testing.T) {
-			inst2 := fix.createInstance(t, env, approval.InstanceRunning)
-			task := insertTaskWithDetails(t, env, inst2.ID, fix.NodeIDs[1], approval.TaskPending, 1)
-			operator := approval.OperatorInfo{ID: "log-user-2", Name: "Logger2"}
+		var log approval.ActionLog
+		s.Require().NoError(s.db.NewSelect().
+			Model(&log).
+			Where(func(cb orm.ConditionBuilder) { cb.Equals("instance_id", inst.ID) }).
+			Scan(s.ctx))
 
-			err := svc.InsertActionLog(env.Ctx, env.DB, inst2.ID, task, operator, approval.ActionSubmit, "", "", "")
-			require.NoError(t, err)
-
-			var log approval.ActionLog
-			require.NoError(t, env.DB.NewSelect().
-				Model(&log).
-				Where(func(cb orm.ConditionBuilder) { cb.Equals("instance_id", inst2.ID) }).
-				Scan(env.Ctx))
-
-			assert.Nil(t, log.Opinion, "Should not set opinion when empty")
-			assert.Nil(t, log.TransferToID, "Should not set transfer_to_id when empty")
-			assert.Nil(t, log.RollbackToNodeID, "Should not set rollback_to_node_id when empty")
-		})
+		s.Assert().Nil(log.Opinion, "Should not set opinion when empty")
+		s.Assert().Nil(log.TransferToID, "Should not set transfer_to_id when empty")
+		s.Assert().Nil(log.RollbackToNodeID, "Should not set rollback_to_node_id when empty")
 	})
 }
 
 // --- IsAuthorizedForNodeOperation ---
 
-func TestIsAuthorizedForNodeOperation(t *testing.T) {
-	testx.ForEachDB(t, func(t *testing.T, env *testx.DBEnv) {
-		if env.DS.Kind != config.Postgres {
-			t.Skip("Service tests only run on PostgreSQL")
+func (s *TaskServiceTestSuite) TestIsAuthorizedForNodeOperation() {
+	s.Run("PeerAssignee", func() {
+		inst := s.fixture.createInstance(s.T(), s.ctx, s.db, approval.InstanceRunning)
+		nodeID := s.fixture.NodeIDs[0]
+		insertTaskWithDetails(s.T(), s.ctx, s.db, inst.ID, nodeID, approval.TaskPending, 1)
+		peerTask := insertTaskWithAssignee(s.T(), s.ctx, s.db, inst.ID, nodeID, approval.TaskPending, 2, "peer-user")
+
+		result := s.svc.IsAuthorizedForNodeOperation(s.ctx, s.db, *peerTask, "peer-user")
+		s.Assert().True(result, "Peer assignee should be authorized")
+	})
+
+	s.Run("FlowAdmin", func() {
+		// Update fixture flow with admin users
+		_, err := s.db.NewUpdate().
+			Model((*approval.Flow)(nil)).
+			Set("admin_user_ids", []string{"admin-user"}).
+			Where(func(cb orm.ConditionBuilder) { cb.Equals("id", s.fixture.FlowID) }).
+			Exec(s.ctx)
+		s.Require().NoError(err)
+
+		inst := s.fixture.createInstance(s.T(), s.ctx, s.db, approval.InstanceRunning)
+
+		task := approval.Task{
+			InstanceID: inst.ID,
+			NodeID:     s.fixture.NodeIDs[1],
+			AssigneeID: "other-user",
+			Status:     approval.TaskPending,
 		}
 
-		require.NoError(t, migration.Migrate(env.Ctx, env.DB, env.DS.Kind))
-		fix := setupSvcFixture(t, env)
-		svc := NewTaskService()
+		result := s.svc.IsAuthorizedForNodeOperation(s.ctx, s.db, task, "admin-user")
+		s.Assert().True(result, "Flow admin should be authorized")
+	})
 
-		t.Run("PeerAssignee", func(t *testing.T) {
-			inst := fix.createInstance(t, env, approval.InstanceRunning)
-			instID := inst.ID
-			nodeID := fix.NodeIDs[0]
-			insertTaskWithDetails(t, env, instID, nodeID, approval.TaskPending, 1)
-			peerTask := insertTaskWithDetailsAndAssignee(t, env, instID, nodeID, approval.TaskPending, 2, "peer-user")
+	s.Run("Unauthorized", func() {
+		task := approval.Task{
+			InstanceID: "non-existent",
+			NodeID:     "non-existent-node",
+			AssigneeID: "other",
+			Status:     approval.TaskPending,
+		}
 
-			result := svc.IsAuthorizedForNodeOperation(env.Ctx, env.DB, *peerTask, "peer-user")
-			assert.True(t, result, "Peer assignee should be authorized")
-		})
-
-		t.Run("FlowAdmin", func(t *testing.T) {
-			// Update fixture flow with admin users
-			_, err := env.DB.NewUpdate().
-				Model((*approval.Flow)(nil)).
-				Set("admin_user_ids", []string{"admin-user"}).
-				Where(func(cb orm.ConditionBuilder) { cb.Equals("id", fix.FlowID) }).
-				Exec(env.Ctx)
-			require.NoError(t, err)
-
-			inst := fix.createInstance(t, env, approval.InstanceRunning)
-
-			task := approval.Task{
-				InstanceID: inst.ID,
-				NodeID:     fix.NodeIDs[1],
-				AssigneeID: "other-user",
-				Status:     approval.TaskPending,
-			}
-
-			result := svc.IsAuthorizedForNodeOperation(env.Ctx, env.DB, task, "admin-user")
-			assert.True(t, result, "Flow admin should be authorized")
-		})
-
-		t.Run("Unauthorized", func(t *testing.T) {
-			task := approval.Task{
-				InstanceID: "non-existent",
-				NodeID:     "non-existent-node",
-				AssigneeID: "other",
-				Status:     approval.TaskPending,
-			}
-
-			result := svc.IsAuthorizedForNodeOperation(env.Ctx, env.DB, task, "random-user")
-			assert.False(t, result, "Random user should not be authorized")
-		})
+		result := s.svc.IsAuthorizedForNodeOperation(s.ctx, s.db, task, "random-user")
+		s.Assert().False(result, "Random user should not be authorized")
 	})
 }
 
 // --- CanRemoveAssigneeTask ---
 
-func TestCanRemoveAssigneeTask(t *testing.T) {
-	testx.ForEachDB(t, func(t *testing.T, env *testx.DBEnv) {
-		if env.DS.Kind != config.Postgres {
-			t.Skip("Service tests only run on PostgreSQL")
-		}
+func (s *TaskServiceTestSuite) TestCanRemoveAssigneeTask() {
+	s.Run("HasOtherActionableTasks", func() {
+		inst := s.fixture.createInstance(s.T(), s.ctx, s.db, approval.InstanceRunning)
+		nodeID := s.fixture.NodeIDs[0]
+		task1 := insertTaskWithDetails(s.T(), s.ctx, s.db, inst.ID, nodeID, approval.TaskPending, 1)
+		insertTaskWithDetails(s.T(), s.ctx, s.db, inst.ID, nodeID, approval.TaskPending, 2)
 
-		require.NoError(t, migration.Migrate(env.Ctx, env.DB, env.DS.Kind))
-		fix := setupSvcFixture(t, env)
-		svc := NewTaskService()
-		eng := engine.NewFlowEngine(nil, nil, nil)
-
-		t.Run("HasOtherActionableTasks", func(t *testing.T) {
-			inst := fix.createInstance(t, env, approval.InstanceRunning)
-			instID := inst.ID
-			nodeID := fix.NodeIDs[0]
-			task1 := insertTaskWithDetails(t, env, instID, nodeID, approval.TaskPending, 1)
-			insertTaskWithDetails(t, env, instID, nodeID, approval.TaskPending, 2)
-
-			node := &approval.FlowNode{PassRule: approval.PassAll}
-			node.ID = nodeID
-			canRemove, err := svc.CanRemoveAssigneeTask(env.Ctx, env.DB, eng, node, *task1)
-			require.NoError(t, err)
-			assert.True(t, canRemove, "Should allow removal when other actionable tasks exist")
-		})
+		node := &approval.FlowNode{PassRule: approval.PassAll}
+		node.ID = nodeID
+		canRemove, err := s.svc.CanRemoveAssigneeTask(s.ctx, s.db, engine.NewFlowEngine(nil, nil, nil), node, *task1)
+		s.Require().NoError(err)
+		s.Assert().True(canRemove, "Should allow removal when other actionable tasks exist")
 	})
-}
-
-// --- Test helpers ---
-
-// SvcFixture holds IDs of records created to satisfy FK constraints.
-type SvcFixture struct {
-	CategoryID string
-	FlowID     string
-	VersionID  string
-	NodeIDs    []string
-	instNo     int
-}
-
-func setupSvcFixture(t *testing.T, env *testx.DBEnv) *SvcFixture {
-	t.Helper()
-	cat := &approval.FlowCategory{TenantID: "default", Code: "svc-test-cat", Name: "Svc Test Cat"}
-	_, err := env.DB.NewInsert().Model(cat).Exec(env.Ctx)
-	require.NoError(t, err)
-
-	flow := &approval.Flow{
-		TenantID: "default", CategoryID: cat.ID, Code: "svc-test-flow", Name: "Svc Test Flow",
-		BindingMode: approval.BindingStandalone, IsAllInitiationAllowed: true, IsActive: true,
-	}
-	_, err = env.DB.NewInsert().Model(flow).Exec(env.Ctx)
-	require.NoError(t, err)
-
-	version := &approval.FlowVersion{FlowID: flow.ID, Version: 1, Status: approval.VersionPublished}
-	_, err = env.DB.NewInsert().Model(version).Exec(env.Ctx)
-	require.NoError(t, err)
-
-	// Create several nodes for tests that need different nodes
-	var nodeIDs []string
-	for i := range 6 {
-		node := &approval.FlowNode{
-			FlowVersionID: version.ID, Key: "svc-node-" + string(rune('a'+i)),
-			Kind: approval.NodeApproval, Name: "Svc Node",
-		}
-		_, err = env.DB.NewInsert().Model(node).Exec(env.Ctx)
-		require.NoError(t, err)
-		nodeIDs = append(nodeIDs, node.ID)
-	}
-
-	return &SvcFixture{CategoryID: cat.ID, FlowID: flow.ID, VersionID: version.ID, NodeIDs: nodeIDs}
-}
-
-func (f *SvcFixture) createInstance(t *testing.T, env *testx.DBEnv, status approval.InstanceStatus) *approval.Instance {
-	t.Helper()
-	f.instNo++
-	inst := &approval.Instance{
-		TenantID: "default", FlowID: f.FlowID, FlowVersionID: f.VersionID,
-		Title: "Svc Test", InstanceNo: "SVC-" + string(rune('0'+f.instNo)),
-		ApplicantID: "applicant", Status: status,
-	}
-	_, err := env.DB.NewInsert().Model(inst).Exec(env.Ctx)
-	require.NoError(t, err)
-	return inst
-}
-
-func insertTask(t *testing.T, env *testx.DBEnv, fix *SvcFixture, status approval.TaskStatus) *approval.Task {
-	t.Helper()
-	inst := fix.createInstance(t, env, approval.InstanceRunning)
-	task := &approval.Task{
-		TenantID:   "default",
-		InstanceID: inst.ID,
-		NodeID:     fix.NodeIDs[0],
-		AssigneeID: "user-svc-test",
-		SortOrder:  1,
-		Status:     status,
-	}
-	_, err := env.DB.NewInsert().Model(task).Exec(env.Ctx)
-	require.NoError(t, err)
-	return task
-}
-
-func insertTaskWithDetails(t *testing.T, env *testx.DBEnv, instanceID, nodeID string, status approval.TaskStatus, sortOrder int) *approval.Task {
-	t.Helper()
-	task := &approval.Task{
-		TenantID:   "default",
-		InstanceID: instanceID,
-		NodeID:     nodeID,
-		AssigneeID: "user-default",
-		SortOrder:  sortOrder,
-		Status:     status,
-	}
-	_, err := env.DB.NewInsert().Model(task).Exec(env.Ctx)
-	require.NoError(t, err)
-	return task
-}
-
-func insertTaskWithDetailsAndAssignee(t *testing.T, env *testx.DBEnv, instanceID, nodeID string, status approval.TaskStatus, sortOrder int, assigneeID string) *approval.Task {
-	t.Helper()
-	task := &approval.Task{
-		TenantID:   "default",
-		InstanceID: instanceID,
-		NodeID:     nodeID,
-		AssigneeID: assigneeID,
-		SortOrder:  sortOrder,
-		Status:     status,
-	}
-	_, err := env.DB.NewInsert().Model(task).Exec(env.Ctx)
-	require.NoError(t, err)
-	return task
-}
-
-func setupPrepareOperationData(t *testing.T, env *testx.DBEnv, fix *SvcFixture, ctx context.Context, instanceStatus approval.InstanceStatus, taskStatus approval.TaskStatus, assigneeID string) (nodeID, instanceID, taskID string) {
-	t.Helper()
-
-	node := &approval.FlowNode{
-		FlowVersionID: fix.VersionID,
-		Key:           "prep-node-" + assigneeID,
-		Kind:          approval.NodeApproval,
-		Name:          "Prep Node",
-	}
-	_, err := env.DB.NewInsert().Model(node).Exec(ctx)
-	require.NoError(t, err)
-
-	instance := &approval.Instance{
-		TenantID:      "default",
-		FlowID:        fix.FlowID,
-		FlowVersionID: fix.VersionID,
-		Title:         "Prep Instance",
-		InstanceNo:    "PREP-" + assigneeID,
-		ApplicantID:   "applicant",
-		Status:        instanceStatus,
-	}
-	_, err = env.DB.NewInsert().Model(instance).Exec(ctx)
-	require.NoError(t, err)
-
-	task := &approval.Task{
-		TenantID:   "default",
-		InstanceID: instance.ID,
-		NodeID:     node.ID,
-		AssigneeID: assigneeID,
-		SortOrder:  1,
-		Status:     taskStatus,
-	}
-	_, err = env.DB.NewInsert().Model(task).Exec(ctx)
-	require.NoError(t, err)
-
-	return node.ID, instance.ID, task.ID
 }

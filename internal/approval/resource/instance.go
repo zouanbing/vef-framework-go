@@ -62,7 +62,7 @@ type StartInstanceParams struct {
 }
 
 // Start creates a new flow instance.
-func (r *InstanceResource) Start(ctx fiber.Ctx, principal security.Principal, params StartInstanceParams) error {
+func (r *InstanceResource) Start(ctx fiber.Ctx, principal *security.Principal, params StartInstanceParams) error {
 	operator, err := r.resolveOperator(ctx.Context(), principal)
 	if err != nil {
 		return err
@@ -95,7 +95,7 @@ type ProcessTaskParams struct {
 }
 
 // ProcessTask handles task actions (approve/reject/transfer/rollback/handle).
-func (r *InstanceResource) ProcessTask(ctx fiber.Ctx, principal security.Principal, params ProcessTaskParams) error {
+func (r *InstanceResource) ProcessTask(ctx fiber.Ctx, principal *security.Principal, params ProcessTaskParams) error {
 	operator, err := r.resolveOperator(ctx.Context(), principal)
 	if err != nil {
 		return err
@@ -152,7 +152,7 @@ type WithdrawParams struct {
 }
 
 // Withdraw withdraws an instance.
-func (r *InstanceResource) Withdraw(ctx fiber.Ctx, principal security.Principal, params WithdrawParams) error {
+func (r *InstanceResource) Withdraw(ctx fiber.Ctx, principal *security.Principal, params WithdrawParams) error {
 	operator, err := r.resolveOperator(ctx.Context(), principal)
 	if err != nil {
 		return err
@@ -178,7 +178,7 @@ type ResubmitParams struct {
 }
 
 // Resubmit resubmits a returned instance.
-func (r *InstanceResource) Resubmit(ctx fiber.Ctx, principal security.Principal, params ResubmitParams) error {
+func (r *InstanceResource) Resubmit(ctx fiber.Ctx, principal *security.Principal, params ResubmitParams) error {
 	operator, err := r.resolveOperator(ctx.Context(), principal)
 	if err != nil {
 		return err
@@ -204,7 +204,7 @@ type AddCcParams struct {
 }
 
 // AddCc adds CC records for an instance.
-func (r *InstanceResource) AddCc(ctx fiber.Ctx, principal security.Principal, params AddCcParams) error {
+func (r *InstanceResource) AddCc(ctx fiber.Ctx, principal *security.Principal, params AddCcParams) error {
 	if _, err := cqrs.Send[command.AddCCCmd, cqrs.Unit](ctx.Context(), r.bus, command.AddCCCmd{
 		InstanceID: params.InstanceID,
 		CCUserIDs:  params.CcUserIDs,
@@ -224,7 +224,7 @@ type MarkCcReadParams struct {
 }
 
 // MarkCcRead marks CC records as read for the user.
-func (r *InstanceResource) MarkCcRead(ctx fiber.Ctx, principal security.Principal, params MarkCcReadParams) error {
+func (r *InstanceResource) MarkCcRead(ctx fiber.Ctx, principal *security.Principal, params MarkCcReadParams) error {
 	if _, err := cqrs.Send[command.MarkCCReadCmd, cqrs.Unit](ctx.Context(), r.bus, command.MarkCCReadCmd{
 		InstanceID: params.InstanceID,
 		UserID:     principal.ID,
@@ -245,7 +245,7 @@ type AddAssigneeParams struct {
 }
 
 // AddAssignee dynamically adds assignees to a task.
-func (r *InstanceResource) AddAssignee(ctx fiber.Ctx, principal security.Principal, params AddAssigneeParams) error {
+func (r *InstanceResource) AddAssignee(ctx fiber.Ctx, principal *security.Principal, params AddAssigneeParams) error {
 	operator, err := r.resolveOperator(ctx.Context(), principal)
 	if err != nil {
 		return err
@@ -271,7 +271,7 @@ type RemoveAssigneeParams struct {
 }
 
 // RemoveAssignee removes an assignee by canceling their task.
-func (r *InstanceResource) RemoveAssignee(ctx fiber.Ctx, principal security.Principal, params RemoveAssigneeParams) error {
+func (r *InstanceResource) RemoveAssignee(ctx fiber.Ctx, principal *security.Principal, params RemoveAssigneeParams) error {
 	operator, err := r.resolveOperator(ctx.Context(), principal)
 	if err != nil {
 		return err
@@ -288,8 +288,8 @@ func (r *InstanceResource) RemoveAssignee(ctx fiber.Ctx, principal security.Prin
 }
 
 // resolveOperator builds an OperatorInfo from the authenticated principal.
-func (r *InstanceResource) resolveOperator(ctx context.Context, principal security.Principal) (approval.OperatorInfo, error) {
-	deptID, deptName, err := r.deptResolver.Resolve(ctx, &principal)
+func (r *InstanceResource) resolveOperator(ctx context.Context, principal *security.Principal) (approval.OperatorInfo, error) {
+	deptID, deptName, err := r.deptResolver.Resolve(ctx, principal)
 	if err != nil {
 		return approval.OperatorInfo{}, fmt.Errorf("resolve operator dept: %w", err)
 	}
@@ -407,7 +407,7 @@ type UrgeTaskParams struct {
 }
 
 // UrgeTask sends an urge notification for a pending task.
-func (r *InstanceResource) UrgeTask(ctx fiber.Ctx, principal security.Principal, params UrgeTaskParams) error {
+func (r *InstanceResource) UrgeTask(ctx fiber.Ctx, principal *security.Principal, params UrgeTaskParams) error {
 	if _, err := cqrs.Send[command.UrgeTaskCmd, cqrs.Unit](ctx.Context(), r.bus, command.UrgeTaskCmd{
 		TaskID:  params.TaskID,
 		UrgerID: principal.ID,

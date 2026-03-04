@@ -138,7 +138,7 @@ type PublishVersionParams struct {
 }
 
 // PublishVersion publishes a flow version.
-func (r *FlowResource) PublishVersion(ctx fiber.Ctx, principal security.Principal, params PublishVersionParams) error {
+func (r *FlowResource) PublishVersion(ctx fiber.Ctx, principal *security.Principal, params PublishVersionParams) error {
 	if _, err := cqrs.Send[command.PublishVersionCmd, cqrs.Unit](
 		ctx.Context(),
 		r.bus,
