@@ -50,12 +50,7 @@ func resolveAssignees(ctx context.Context, pc *ProcessContext) ([]approval.Resol
 }
 
 // deduplicateAssignees removes duplicate assignees based on UserID.
-// Returns the original slice unchanged if the node's DuplicateAssigneeAction is "none".
-func deduplicateAssignees(node *approval.FlowNode, assignees []approval.ResolvedAssignee) []approval.ResolvedAssignee {
-	if node.DuplicateAssigneeAction == approval.DuplicateAssigneeNone {
-		return assignees
-	}
-
+func deduplicateAssignees(assignees []approval.ResolvedAssignee) []approval.ResolvedAssignee {
 	seen := collections.NewHashSet[string]()
 	result := make([]approval.ResolvedAssignee, 0, len(assignees))
 
@@ -68,6 +63,65 @@ func deduplicateAssignees(node *approval.FlowNode, assignees []approval.Resolved
 	}
 
 	return result
+}
+
+// findPreviousApprovalApprovers returns the set of assignee IDs who approved in the
+// most recent approval node before the current one within the same instance.
+// Returns an empty set if no previous approval node exists.
+func findPreviousApprovalApprovers(ctx context.Context, db orm.DB, instance *approval.Instance, currentNodeID string) (collections.Set[string], error) {
+	// Step 1: Find all approval node IDs in this flow version (excluding current node)
+	var approvalNodeIDs []string
+
+	if err := db.NewSelect().
+		Model((*approval.FlowNode)(nil)).
+		Select("id").
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("flow_version_id", instance.FlowVersionID).
+				Equals("kind", string(approval.NodeApproval)).
+				NotEquals("id", currentNodeID)
+		}).
+		Scan(ctx, &approvalNodeIDs); err != nil {
+		return nil, fmt.Errorf("find approval nodes: %w", err)
+	}
+
+	if len(approvalNodeIDs) == 0 {
+		return collections.NewHashSet[string](), nil
+	}
+
+	// Step 2: Find the most recently processed approval node by looking at
+	// the latest task created for any of these approval nodes in this instance
+	var prevNodeID string
+
+	if err := db.NewSelect().
+		Model((*approval.Task)(nil)).
+		Select("node_id").
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("instance_id", instance.ID).
+				In("node_id", approvalNodeIDs)
+		}).
+		OrderByDesc("created_at").
+		Limit(1).
+		Scan(ctx, &prevNodeID); err != nil {
+		// No previous approval node has been processed yet
+		return collections.NewHashSet[string](), nil
+	}
+
+	// Step 3: Get assignee IDs of approved tasks in the previous approval node
+	var approvedAssigneeIDs []string
+
+	if err := db.NewSelect().
+		Model((*approval.Task)(nil)).
+		Select("assignee_id").
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("instance_id", instance.ID).
+				Equals("node_id", prevNodeID).
+				Equals("status", string(approval.TaskApproved))
+		}).
+		Scan(ctx, &approvedAssigneeIDs); err != nil {
+		return nil, fmt.Errorf("find approved assignees in previous node: %w", err)
+	}
+
+	return collections.NewHashSetFrom(approvedAssigneeIDs...), nil
 }
 
 // applyDelegation resolves delegation chains for each assignee, replacing delegators with delegates.

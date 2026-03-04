@@ -6,6 +6,8 @@ import (
 	"slices"
 
 	"github.com/coldsmirk/vef-framework-go/approval"
+	"github.com/coldsmirk/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/timex"
 )
 
 // ApprovalProcessor handles approval nodes.
@@ -42,6 +44,10 @@ func (p *ApprovalProcessor) Process(ctx context.Context, pc *ProcessContext) (*P
 		return nil, err
 	}
 
+	if pc.Node.ConsecutiveApproverAction == approval.ConsecutiveApproverAutoPass {
+		return p.autoPassConsecutiveApprovers(ctx, pc)
+	}
+
 	return &ProcessResult{Action: NodeActionWait}, nil
 }
 
@@ -51,7 +57,7 @@ func (p *ApprovalProcessor) resolveAndProcessAssignees(ctx context.Context, pc *
 		return nil, err
 	}
 
-	assignees = deduplicateAssignees(pc.Node, assignees)
+	assignees = deduplicateAssignees(assignees)
 
 	assignees, err = applyDelegation(ctx, pc.DB, pc.Instance.FlowID, assignees)
 	if err != nil {
@@ -124,6 +130,90 @@ func (p *ApprovalProcessor) handleSameApplicant(ctx context.Context, pc *Process
 
 		return &ProcessResult{Action: NodeActionWait}, nil
 	}
+}
+
+// autoPassConsecutiveApprovers marks tasks as approved for assignees who already
+// approved in the immediately preceding approval node.
+func (p *ApprovalProcessor) autoPassConsecutiveApprovers(ctx context.Context, pc *ProcessContext) (*ProcessResult, error) {
+	prevApprovers, err := findPreviousApprovalApprovers(ctx, pc.DB, pc.Instance, pc.Node.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if prevApprovers.Size() == 0 {
+		return &ProcessResult{Action: NodeActionWait}, nil
+	}
+
+	var tasks []approval.Task
+
+	if err := pc.DB.NewSelect().
+		Model(&tasks).
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("instance_id", pc.Instance.ID).
+				Equals("node_id", pc.Node.ID)
+		}).
+		OrderBy("sort_order").
+		Scan(ctx); err != nil {
+		return nil, fmt.Errorf("query tasks for consecutive approver check: %w", err)
+	}
+
+	now := timex.Now()
+	autoPassedAny := false
+
+	for i := range tasks {
+		task := &tasks[i]
+
+		if task.Status != approval.TaskPending || !prevApprovers.Contains(task.AssigneeID) {
+			continue
+		}
+
+		task.Status = approval.TaskApproved
+		task.FinishedAt = new(now)
+
+		if _, err := pc.DB.NewUpdate().
+			Model(task).
+			Select("status", "finished_at").
+			WherePK().
+			Exec(ctx); err != nil {
+			return nil, fmt.Errorf("auto-pass consecutive approver task: %w", err)
+		}
+
+		autoPassedAny = true
+
+		// For sequential approval, activate the next waiting task
+		if pc.Node.ApprovalMethod == approval.ApprovalSequential {
+			for j := i + 1; j < len(tasks); j++ {
+				if tasks[j].Status == approval.TaskWaiting {
+					tasks[j].Status = approval.TaskPending
+
+					if _, err := pc.DB.NewUpdate().
+						Model(&tasks[j]).
+						Select("status").
+						WherePK().
+						Exec(ctx); err != nil {
+						return nil, fmt.Errorf("activate next sequential task: %w", err)
+					}
+
+					break
+				}
+			}
+		}
+	}
+
+	if !autoPassedAny {
+		return &ProcessResult{Action: NodeActionWait}, nil
+	}
+
+	// If all tasks are now complete, advance to the next node
+	allComplete := !slices.ContainsFunc(tasks, func(t approval.Task) bool {
+		return t.Status == approval.TaskPending || t.Status == approval.TaskWaiting
+	})
+
+	if allComplete {
+		return &ProcessResult{Action: NodeActionContinue}, nil
+	}
+
+	return &ProcessResult{Action: NodeActionWait}, nil
 }
 
 func (p *ApprovalProcessor) isSameApplicant(assignees []approval.ResolvedAssignee, applicantID string) bool {

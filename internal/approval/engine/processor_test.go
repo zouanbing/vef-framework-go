@@ -9,6 +9,7 @@ import (
 	"github.com/coldsmirk/vef-framework-go/internal/approval/engine"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/strategy"
 	"github.com/coldsmirk/vef-framework-go/orm"
+	"github.com/coldsmirk/vef-framework-go/timex"
 )
 
 // ProcessorTestBase provides shared test helpers for processor test suites
@@ -58,11 +59,11 @@ func (b *ProcessorTestBase) InitFKChain(t require.TestingT, code string, nodeKin
 	b.FlowVersionID = version.ID
 
 	node := &approval.FlowNode{
-		FlowVersionID:           version.ID,
-		Key:                     code + "-node-1",
-		Kind:                    nodeKind,
-		Name:                    nodeName + " Node",
-		DuplicateAssigneeAction: approval.DuplicateAssigneeAutoPass,
+		FlowVersionID:             version.ID,
+		Key:                       code + "-node-1",
+		Kind:                      nodeKind,
+		Name:                      nodeName + " Node",
+		ConsecutiveApproverAction: approval.ConsecutiveApproverNone,
 	}
 	_, err = b.DB.NewInsert().Model(node).Exec(b.Ctx)
 	require.NoError(t, err, "Should insert test flow node")
@@ -104,9 +105,7 @@ func (b *ProcessorTestBase) NewInstance(t require.TestingT, applicantID string) 
 
 // NewNode builds a FlowNode value with the base's nodeID and optional overrides.
 func (b *ProcessorTestBase) NewNode(opts ...func(*approval.FlowNode)) *approval.FlowNode {
-	node := &approval.FlowNode{
-		DuplicateAssigneeAction: approval.DuplicateAssigneeAutoPass,
-	}
+	node := &approval.FlowNode{}
 	node.ID = b.NodeID
 
 	for _, opt := range opts {
@@ -151,6 +150,57 @@ func (b *ProcessorTestBase) QueryFormSnapshots(t require.TestingT, instanceID st
 	require.NoError(t, err, "Should query form snapshots")
 
 	return snapshots
+}
+
+// InsertPreviousApprovalNode creates another approval node in the same flow version
+// and returns its ID. Used for consecutive approver auto-pass tests.
+func (b *ProcessorTestBase) InsertPreviousApprovalNode(t require.TestingT, key string) string {
+	node := &approval.FlowNode{
+		FlowVersionID: b.FlowVersionID,
+		Key:           key,
+		Kind:          approval.NodeApproval,
+		Name:          "Previous Approval",
+	}
+	_, err := b.DB.NewInsert().Model(node).Exec(b.Ctx)
+	require.NoError(t, err, "Should insert previous approval node")
+
+	return node.ID
+}
+
+// InsertApprovedTasks creates approved tasks for a given node/instance.
+func (b *ProcessorTestBase) InsertApprovedTasks(t require.TestingT, instanceID, nodeID string, assigneeIDs []string) {
+	now := timex.Now()
+
+	for _, assigneeID := range assigneeIDs {
+		task := &approval.Task{
+			TenantID:   "default",
+			InstanceID: instanceID,
+			NodeID:     nodeID,
+			AssigneeID: assigneeID,
+			Status:     approval.TaskApproved,
+			FinishedAt: new(now),
+		}
+		_, err := b.DB.NewInsert().Model(task).Exec(b.Ctx)
+		require.NoError(t, err, "Should insert approved task")
+	}
+}
+
+// InsertRejectedTasks creates rejected tasks for a given node/instance.
+func (b *ProcessorTestBase) InsertRejectedTasks(t require.TestingT, instanceID, nodeID string, assigneeIDs []string) {
+	now := timex.Now()
+
+	for _, assigneeID := range assigneeIDs {
+		task := &approval.Task{
+			TenantID:   "default",
+			InstanceID: instanceID,
+			NodeID:     nodeID,
+			AssigneeID: assigneeID,
+			Status:     approval.TaskRejected,
+			FinishedAt: new(now),
+		}
+		_, err := b.DB.NewInsert().Model(task).Exec(b.Ctx)
+		require.NoError(t, err, "Should insert rejected task")
+	}
 }
 
 // NewProcessContext creates a ProcessContext from the given instance and node.

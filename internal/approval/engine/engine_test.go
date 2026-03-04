@@ -269,25 +269,25 @@ func (s *FlowEngineTestSuite) SetupSuite() {
 
 	// Create nodes: start → approval → end
 	startNode := &approval.FlowNode{
-		FlowVersionID:           version.ID,
-		Key:                     "start",
-		Kind:                    approval.NodeStart,
-		Name:                    "Start",
-		DuplicateAssigneeAction: approval.DuplicateAssigneeAutoPass,
+		FlowVersionID:             version.ID,
+		Key:                       "start",
+		Kind:                      approval.NodeStart,
+		Name:                      "Start",
+		ConsecutiveApproverAction: approval.ConsecutiveApproverNone,
 	}
 	_, err = s.db.NewInsert().Model(startNode).Exec(s.ctx)
 	s.Require().NoError(err, "Should insert start node")
 	s.startNodeID = startNode.ID
 
 	approvalNode := &approval.FlowNode{
-		FlowVersionID:           version.ID,
-		Key:                     "approval",
-		Kind:                    approval.NodeApproval,
-		Name:                    "Approval",
-		PassRule:                approval.PassAll,
-		PassRatio:               decimal.NewFromInt(0),
-		EmptyAssigneeAction:     approval.EmptyAssigneeAutoPass,
-		DuplicateAssigneeAction: approval.DuplicateAssigneeAutoPass,
+		FlowVersionID:             version.ID,
+		Key:                       "approval",
+		Kind:                      approval.NodeApproval,
+		Name:                      "Approval",
+		PassRule:                  approval.PassAll,
+		PassRatio:                 decimal.NewFromInt(0),
+		EmptyAssigneeAction:       approval.EmptyAssigneeAutoPass,
+		ConsecutiveApproverAction: approval.ConsecutiveApproverNone,
 	}
 	_, err = s.db.NewInsert().Model(approvalNode).Exec(s.ctx)
 	s.Require().NoError(err, "Should insert approval node")

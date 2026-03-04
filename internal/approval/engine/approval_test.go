@@ -308,9 +308,7 @@ func (s *ApprovalProcessorTestSuite) TestProcessDeduplication() {
 	instance := s.NewInstance(s.T(), "applicant-1")
 	s.InsertAssigneeConfig(s.T(), []string{"user-1", "user-1", "user-2"})
 
-	pc := s.NewProcessContext(instance, s.NewNode(func(n *approval.FlowNode) {
-		n.DuplicateAssigneeAction = approval.DuplicateAssigneeAutoPass
-	}))
+	pc := s.NewProcessContext(instance, s.NewNode())
 
 	result, err := s.processor.Process(s.Ctx, pc)
 	s.Require().NoError(err, "Should process without error")
@@ -361,6 +359,197 @@ func (s *ApprovalProcessorTestSuite) TestProcessMultipleAssigneeConfigs() {
 		assigneeIDs[i] = task.AssigneeID
 	}
 	s.Assert().ElementsMatch([]string{"user-1", "user-2", "user-3"}, assigneeIDs, "Should resolve assignees from all configs")
+}
+
+func (s *ApprovalProcessorTestSuite) TestConsecutiveApproverAutoPass() {
+	s.Run("AutoPassMatchingApprovers", func() {
+		defer s.CleanTransientData(s.T())
+
+		prevNodeID := s.InsertPreviousApprovalNode(s.T(), "prev-approval")
+		instance := s.NewInstance(s.T(), "applicant-1")
+		s.InsertApprovedTasks(s.T(), instance.ID, prevNodeID, []string{"user-1", "user-2"})
+		s.InsertAssigneeConfig(s.T(), []string{"user-1", "user-2", "user-3"})
+
+		pc := s.NewProcessContext(instance, s.NewNode(func(n *approval.FlowNode) {
+			n.ConsecutiveApproverAction = approval.ConsecutiveApproverAutoPass
+		}))
+
+		result, err := s.processor.Process(s.Ctx, pc)
+		s.Require().NoError(err, "Should process without error")
+		s.Assert().Equal(engine.NodeActionWait, result.Action, "Should wait because user-3 still needs approval")
+
+		tasks := s.QueryTasks(s.T(), instance.ID)
+		// Filter tasks for current node only
+		var currentNodeTasks []approval.Task
+		for _, t := range tasks {
+			if t.NodeID == s.NodeID {
+				currentNodeTasks = append(currentNodeTasks, t)
+			}
+		}
+		s.Require().Len(currentNodeTasks, 3, "Should create 3 tasks")
+
+		approvedCount := 0
+		pendingCount := 0
+		for _, t := range currentNodeTasks {
+			switch t.Status {
+			case approval.TaskApproved:
+				approvedCount++
+				s.Assert().NotNil(t.FinishedAt, "Auto-passed task should have FinishedAt set")
+			case approval.TaskPending:
+				pendingCount++
+			}
+		}
+		s.Assert().Equal(2, approvedCount, "Should auto-pass 2 matching approvers")
+		s.Assert().Equal(1, pendingCount, "Should leave 1 task pending")
+	})
+
+	s.Run("NoneActionNoAutoPass", func() {
+		defer s.CleanTransientData(s.T())
+
+		prevNodeID := s.InsertPreviousApprovalNode(s.T(), "prev-approval-none")
+		instance := s.NewInstance(s.T(), "applicant-1")
+		s.InsertApprovedTasks(s.T(), instance.ID, prevNodeID, []string{"user-1"})
+		s.InsertAssigneeConfig(s.T(), []string{"user-1", "user-2"})
+
+		pc := s.NewProcessContext(instance, s.NewNode(func(n *approval.FlowNode) {
+			n.ConsecutiveApproverAction = approval.ConsecutiveApproverNone
+		}))
+
+		result, err := s.processor.Process(s.Ctx, pc)
+		s.Require().NoError(err, "Should process without error")
+		s.Assert().Equal(engine.NodeActionWait, result.Action, "Should wait for manual approval")
+
+		tasks := s.QueryTasks(s.T(), instance.ID)
+		var currentNodeTasks []approval.Task
+		for _, t := range tasks {
+			if t.NodeID == s.NodeID {
+				currentNodeTasks = append(currentNodeTasks, t)
+			}
+		}
+		s.Require().Len(currentNodeTasks, 2, "Should create 2 tasks")
+
+		for _, t := range currentNodeTasks {
+			s.Assert().Equal(approval.TaskPending, t.Status, "All tasks should be pending with none action")
+		}
+	})
+
+	s.Run("PreviousApproverRejected", func() {
+		defer s.CleanTransientData(s.T())
+
+		prevNodeID := s.InsertPreviousApprovalNode(s.T(), "prev-approval-reject")
+		instance := s.NewInstance(s.T(), "applicant-1")
+		s.InsertRejectedTasks(s.T(), instance.ID, prevNodeID, []string{"user-1"})
+		s.InsertAssigneeConfig(s.T(), []string{"user-1", "user-2"})
+
+		pc := s.NewProcessContext(instance, s.NewNode(func(n *approval.FlowNode) {
+			n.ConsecutiveApproverAction = approval.ConsecutiveApproverAutoPass
+		}))
+
+		result, err := s.processor.Process(s.Ctx, pc)
+		s.Require().NoError(err, "Should process without error")
+		s.Assert().Equal(engine.NodeActionWait, result.Action, "Should wait for manual approval")
+
+		tasks := s.QueryTasks(s.T(), instance.ID)
+		var currentNodeTasks []approval.Task
+		for _, t := range tasks {
+			if t.NodeID == s.NodeID {
+				currentNodeTasks = append(currentNodeTasks, t)
+			}
+		}
+
+		for _, t := range currentNodeTasks {
+			s.Assert().Equal(approval.TaskPending, t.Status, "No auto-pass when previous approver rejected")
+		}
+	})
+
+	s.Run("NoPreviousApprovalNode", func() {
+		defer s.CleanTransientData(s.T())
+
+		instance := s.NewInstance(s.T(), "applicant-1")
+		s.InsertAssigneeConfig(s.T(), []string{"user-1", "user-2"})
+
+		pc := s.NewProcessContext(instance, s.NewNode(func(n *approval.FlowNode) {
+			n.ConsecutiveApproverAction = approval.ConsecutiveApproverAutoPass
+		}))
+
+		result, err := s.processor.Process(s.Ctx, pc)
+		s.Require().NoError(err, "Should process without error")
+		s.Assert().Equal(engine.NodeActionWait, result.Action, "Should wait when no previous approval node")
+
+		tasks := s.QueryTasks(s.T(), instance.ID)
+		for _, t := range tasks {
+			s.Assert().Equal(approval.TaskPending, t.Status, "All tasks should be pending with no previous node")
+		}
+	})
+
+	s.Run("AllAutoPassedNodeContinues", func() {
+		defer s.CleanTransientData(s.T())
+
+		prevNodeID := s.InsertPreviousApprovalNode(s.T(), "prev-approval-all")
+		instance := s.NewInstance(s.T(), "applicant-1")
+		s.InsertApprovedTasks(s.T(), instance.ID, prevNodeID, []string{"user-1", "user-2"})
+		s.InsertAssigneeConfig(s.T(), []string{"user-1", "user-2"})
+
+		pc := s.NewProcessContext(instance, s.NewNode(func(n *approval.FlowNode) {
+			n.ConsecutiveApproverAction = approval.ConsecutiveApproverAutoPass
+		}))
+
+		result, err := s.processor.Process(s.Ctx, pc)
+		s.Require().NoError(err, "Should process without error")
+		s.Assert().Equal(engine.NodeActionContinue, result.Action, "Should continue when all tasks are auto-passed")
+	})
+
+	s.Run("SequentialAutoPassChain", func() {
+		defer s.CleanTransientData(s.T())
+
+		prevNodeID := s.InsertPreviousApprovalNode(s.T(), "prev-approval-seq")
+		instance := s.NewInstance(s.T(), "applicant-1")
+		s.InsertApprovedTasks(s.T(), instance.ID, prevNodeID, []string{"user-1", "user-2"})
+		s.InsertAssigneeConfig(s.T(), []string{"user-1", "user-2", "user-3"})
+
+		pc := s.NewProcessContext(instance, s.NewNode(func(n *approval.FlowNode) {
+			n.ApprovalMethod = approval.ApprovalSequential
+			n.ConsecutiveApproverAction = approval.ConsecutiveApproverAutoPass
+		}))
+
+		result, err := s.processor.Process(s.Ctx, pc)
+		s.Require().NoError(err, "Should process without error")
+		s.Assert().Equal(engine.NodeActionWait, result.Action, "Should wait because user-3 still needs approval")
+
+		tasks := s.QueryTasks(s.T(), instance.ID)
+		var currentNodeTasks []approval.Task
+		for _, t := range tasks {
+			if t.NodeID == s.NodeID {
+				currentNodeTasks = append(currentNodeTasks, t)
+			}
+		}
+		s.Require().Len(currentNodeTasks, 3, "Should create 3 sequential tasks")
+
+		// user-1 (sort_order=1): auto-passed
+		s.Assert().Equal(approval.TaskApproved, currentNodeTasks[0].Status, "First task should be auto-passed")
+		// user-2 (sort_order=2): activated then auto-passed
+		s.Assert().Equal(approval.TaskApproved, currentNodeTasks[1].Status, "Second task should be auto-passed")
+		// user-3 (sort_order=3): activated to pending
+		s.Assert().Equal(approval.TaskPending, currentNodeTasks[2].Status, "Third task should be activated to pending")
+	})
+
+	s.Run("SequentialAllAutoPassedContinues", func() {
+		defer s.CleanTransientData(s.T())
+
+		prevNodeID := s.InsertPreviousApprovalNode(s.T(), "prev-approval-seq-all")
+		instance := s.NewInstance(s.T(), "applicant-1")
+		s.InsertApprovedTasks(s.T(), instance.ID, prevNodeID, []string{"user-1", "user-2"})
+		s.InsertAssigneeConfig(s.T(), []string{"user-1", "user-2"})
+
+		pc := s.NewProcessContext(instance, s.NewNode(func(n *approval.FlowNode) {
+			n.ApprovalMethod = approval.ApprovalSequential
+			n.ConsecutiveApproverAction = approval.ConsecutiveApproverAutoPass
+		}))
+
+		result, err := s.processor.Process(s.Ctx, pc)
+		s.Require().NoError(err, "Should process without error")
+		s.Assert().Equal(engine.NodeActionContinue, result.Action, "Should continue when all sequential tasks are auto-passed")
+	})
 }
 
 func (s *ApprovalProcessorTestSuite) TestDBError() {

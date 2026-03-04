@@ -52,5 +52,5 @@ func (p *HandleProcessor) resolveAndDeduplicateAssignees(ctx context.Context, pc
 		return nil, err
 	}
 
-	return deduplicateAssignees(pc.Node, assignees), nil
+	return deduplicateAssignees(assignees), nil
 }

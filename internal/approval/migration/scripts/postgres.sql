@@ -202,7 +202,7 @@ CREATE TABLE IF NOT EXISTS apv_flow_node (
     timeout_notify_before_hours INTEGER NOT NULL DEFAULT 0 CONSTRAINT ck_apv_flow_node__timeout_notify_before_hours CHECK (timeout_notify_before_hours >= 0),
     urge_cooldown_minutes INTEGER NOT NULL DEFAULT 0 CONSTRAINT ck_apv_flow_node__urge_cooldown_minutes CHECK (urge_cooldown_minutes >= 0),
     -- Advanced config
-    duplicate_assignee_action VARCHAR(32) NOT NULL DEFAULT 'none',
+    consecutive_approver_action VARCHAR(32) NOT NULL DEFAULT 'none',
     is_read_confirm_required BOOLEAN NOT NULL DEFAULT false,
     branches JSONB,
     CONSTRAINT uk_apv_flow_node__flow_version_id_key UNIQUE (flow_version_id, key),
@@ -243,7 +243,7 @@ COMMENT ON COLUMN apv_flow_node.timeout_hours IS '超时时间';
 COMMENT ON COLUMN apv_flow_node.timeout_action IS '超时动作';
 COMMENT ON COLUMN apv_flow_node.timeout_notify_before_hours IS '超时通知的提前小时数';
 COMMENT ON COLUMN apv_flow_node.urge_cooldown_minutes IS '催办冷却时间';
-COMMENT ON COLUMN apv_flow_node.duplicate_assignee_action IS '连续审批人重复时处理方式';
+COMMENT ON COLUMN apv_flow_node.consecutive_approver_action IS '相邻审批节点同一审批人处理方式';
 COMMENT ON COLUMN apv_flow_node.is_read_confirm_required IS '是否需要全员已阅后才继续';
 COMMENT ON COLUMN apv_flow_node.branches IS '条件分支配置';
 

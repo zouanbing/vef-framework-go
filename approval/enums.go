@@ -138,12 +138,13 @@ func (t AddAssigneeType) IsValid() bool {
 	return t == AddAssigneeBefore || t == AddAssigneeAfter || t == AddAssigneeParallel
 }
 
-// DuplicateAssigneeAction represents the action for duplicate assignees in a chain.
-type DuplicateAssigneeAction string
+// ConsecutiveApproverAction represents the action when the same approver appears
+// in consecutive approval nodes and approved in the previous node.
+type ConsecutiveApproverAction string
 
 const (
-	DuplicateAssigneeNone     DuplicateAssigneeAction = "none"
-	DuplicateAssigneeAutoPass DuplicateAssigneeAction = "auto_pass"
+	ConsecutiveApproverNone     ConsecutiveApproverAction = "none"
+	ConsecutiveApproverAutoPass ConsecutiveApproverAction = "auto_pass"
 )
 
 // AssigneeKind represents the kind of assignee.

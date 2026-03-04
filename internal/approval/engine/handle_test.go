@@ -193,9 +193,7 @@ func (s *HandleProcessorTestSuite) TestProcessDeduplication() {
 	instance := s.NewInstance(s.T(), "applicant-1")
 	s.InsertAssigneeConfig(s.T(), []string{"user-1", "user-1", "user-2"})
 
-	pc := s.NewProcessContext(instance, s.NewNode(func(n *approval.FlowNode) {
-		n.DuplicateAssigneeAction = approval.DuplicateAssigneeAutoPass
-	}))
+	pc := s.NewProcessContext(instance, s.NewNode())
 
 	result, err := s.processor.Process(s.Ctx, pc)
 	s.Require().NoError(err, "Should process without error")
@@ -209,22 +207,6 @@ func (s *HandleProcessorTestSuite) TestProcessDeduplication() {
 		assigneeIDs[i] = task.AssigneeID
 	}
 	s.Assert().ElementsMatch([]string{"user-1", "user-2"}, assigneeIDs, "Should deduplicate assignees")
-}
-
-func (s *HandleProcessorTestSuite) TestProcessNoDuplication() {
-	instance := s.NewInstance(s.T(), "applicant-1")
-	s.InsertAssigneeConfig(s.T(), []string{"user-1", "user-1", "user-2"})
-
-	pc := s.NewProcessContext(instance, s.NewNode(func(n *approval.FlowNode) {
-		n.DuplicateAssigneeAction = approval.DuplicateAssigneeNone
-	}))
-
-	result, err := s.processor.Process(s.Ctx, pc)
-	s.Require().NoError(err, "Should process without error")
-	s.Assert().Equal(engine.NodeActionWait, result.Action, "Should wait for handle tasks")
-
-	tasks := s.QueryTasks(s.T(), instance.ID)
-	s.Assert().Len(tasks, 3, "Should create 3 tasks without deduplication")
 }
 
 func (s *HandleProcessorTestSuite) TestProcessMultipleAssigneeConfigs() {

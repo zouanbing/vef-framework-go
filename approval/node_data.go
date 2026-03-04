@@ -125,19 +125,19 @@ type ApprovalNodeData struct {
 	BaseNodeData
 	TaskNodeData
 
-	ApprovalMethod          ApprovalMethod          `json:"approvalMethod,omitempty"`
-	PassRule                PassRule                `json:"passRule,omitempty"`
-	PassRatio               decimal.Decimal         `json:"passRatio,omitempty"`
-	SameApplicantAction     SameApplicantAction     `json:"sameApplicantAction,omitempty"`
-	DuplicateAssigneeAction DuplicateAssigneeAction `json:"duplicateAssigneeAction,omitempty"`
-	RollbackType            RollbackType            `json:"rollbackType,omitempty"`
-	RollbackDataStrategy    RollbackDataStrategy    `json:"rollbackDataStrategy,omitempty"`
-	RollbackTargetKeys      []string                `json:"rollbackTargetKeys,omitempty"`
-	IsRollbackAllowed       bool                    `json:"isRollbackAllowed,omitempty"`
-	IsAddAssigneeAllowed    bool                    `json:"isAddAssigneeAllowed,omitempty"`
-	AddAssigneeTypes        []string                `json:"addAssigneeTypes,omitempty"`
-	IsRemoveAssigneeAllowed bool                    `json:"isRemoveAssigneeAllowed,omitempty"`
-	IsManualCCAllowed       bool                    `json:"isManualCcAllowed,omitempty"`
+	ApprovalMethod            ApprovalMethod            `json:"approvalMethod,omitempty"`
+	PassRule                  PassRule                  `json:"passRule,omitempty"`
+	PassRatio                 decimal.Decimal           `json:"passRatio,omitempty"`
+	SameApplicantAction       SameApplicantAction       `json:"sameApplicantAction,omitempty"`
+	ConsecutiveApproverAction ConsecutiveApproverAction `json:"consecutiveApproverAction,omitempty"`
+	RollbackType              RollbackType              `json:"rollbackType,omitempty"`
+	RollbackDataStrategy      RollbackDataStrategy      `json:"rollbackDataStrategy,omitempty"`
+	RollbackTargetKeys        []string                  `json:"rollbackTargetKeys,omitempty"`
+	IsRollbackAllowed         bool                      `json:"isRollbackAllowed,omitempty"`
+	IsAddAssigneeAllowed      bool                      `json:"isAddAssigneeAllowed,omitempty"`
+	AddAssigneeTypes          []string                  `json:"addAssigneeTypes,omitempty"`
+	IsRemoveAssigneeAllowed   bool                      `json:"isRemoveAssigneeAllowed,omitempty"`
+	IsManualCCAllowed         bool                      `json:"isManualCcAllowed,omitempty"`
 }
 
 // Kind returns the node kind.
@@ -164,8 +164,8 @@ func (d *ApprovalNodeData) ApplyTo(node *FlowNode) {
 		node.SameApplicantAction = d.SameApplicantAction
 	}
 
-	if d.DuplicateAssigneeAction != "" {
-		node.DuplicateAssigneeAction = d.DuplicateAssigneeAction
+	if d.ConsecutiveApproverAction != "" {
+		node.ConsecutiveApproverAction = d.ConsecutiveApproverAction
 	}
 
 	if d.RollbackType != "" {

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	collections "github.com/coldsmirk/go-collections"
+
 	"github.com/coldsmirk/vef-framework-go/approval"
 	"github.com/coldsmirk/vef-framework-go/orm"
 )
@@ -51,9 +53,15 @@ func (p *CCProcessor) createCCRecords(ctx context.Context, pc *ProcessContext) (
 		return nil, fmt.Errorf("load cc configs: %w", err)
 	}
 
+	seen := collections.NewHashSet[string]()
 	var ccUserIDs []string
+
 	for _, cfg := range ccConfigs {
-		ccUserIDs = append(ccUserIDs, cfg.IDs...)
+		for _, id := range cfg.IDs {
+			if seen.Add(id) {
+				ccUserIDs = append(ccUserIDs, id)
+			}
+		}
 	}
 
 	if len(ccUserIDs) == 0 {

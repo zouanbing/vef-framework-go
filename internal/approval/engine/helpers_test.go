@@ -18,23 +18,11 @@ import (
 func TestDeduplicateAssignees(t *testing.T) {
 	tests := []struct {
 		name      string
-		action    approval.DuplicateAssigneeAction
 		assignees []approval.ResolvedAssignee
 		expected  []approval.ResolvedAssignee
 	}{
 		{
-			name:   "NoneAction",
-			action: approval.DuplicateAssigneeNone,
-			assignees: []approval.ResolvedAssignee{
-				{UserID: "u1"}, {UserID: "u1"}, {UserID: "u2"},
-			},
-			expected: []approval.ResolvedAssignee{
-				{UserID: "u1"}, {UserID: "u1"}, {UserID: "u2"},
-			},
-		},
-		{
-			name:   "RemoveDuplicates",
-			action: approval.DuplicateAssigneeAutoPass,
+			name: "RemoveDuplicates",
 			assignees: []approval.ResolvedAssignee{
 				{UserID: "u1"}, {UserID: "u2"}, {UserID: "u1"}, {UserID: "u3"},
 			},
@@ -43,8 +31,7 @@ func TestDeduplicateAssignees(t *testing.T) {
 			},
 		},
 		{
-			name:   "NoDuplicates",
-			action: approval.DuplicateAssigneeAutoPass,
+			name: "NoDuplicates",
 			assignees: []approval.ResolvedAssignee{
 				{UserID: "u1"}, {UserID: "u2"}, {UserID: "u3"},
 			},
@@ -54,12 +41,10 @@ func TestDeduplicateAssignees(t *testing.T) {
 		},
 		{
 			name:     "EmptySlice",
-			action:   approval.DuplicateAssigneeAutoPass,
 			expected: []approval.ResolvedAssignee{},
 		},
 		{
-			name:   "AllSame",
-			action: approval.DuplicateAssigneeAutoPass,
+			name: "AllSame",
 			assignees: []approval.ResolvedAssignee{
 				{UserID: "u1"}, {UserID: "u1"}, {UserID: "u1"},
 			},
@@ -71,8 +56,7 @@ func TestDeduplicateAssignees(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			node := &approval.FlowNode{DuplicateAssigneeAction: tt.action}
-			got := deduplicateAssignees(node, tt.assignees)
+			got := deduplicateAssignees(tt.assignees)
 			assert.Equal(t, tt.expected, got, "Should return expected assignees")
 		})
 	}

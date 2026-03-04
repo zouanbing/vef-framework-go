@@ -88,37 +88,37 @@ type FlowNode struct {
 	orm.BaseModel `bun:"table:apv_flow_node,alias:afn"`
 	orm.Model
 
-	FlowVersionID            string                  `json:"flowVersionId" bun:"flow_version_id"`
-	Key                      string                  `json:"key" bun:"key"`
-	Kind                     NodeKind                `json:"kind" bun:"kind"`
-	Name                     string                  `json:"name" bun:"name"`
-	Description              *string                 `json:"description" bun:"description,nullzero"`
-	ExecutionType            ExecutionType           `json:"executionType" bun:"execution_type"`
-	ApprovalMethod           ApprovalMethod          `json:"approvalMethod" bun:"approval_method"`
-	PassRule                 PassRule                `json:"passRule" bun:"pass_rule"`
-	PassRatio                decimal.Decimal         `json:"passRatio" bun:"pass_ratio"`
-	EmptyAssigneeAction      EmptyAssigneeAction     `json:"emptyAssigneeAction" bun:"empty_assignee_action"`
-	FallbackUserIDs          []string                `json:"fallbackUserIds" bun:"fallback_user_ids,type:jsonb,nullzero"`
-	AdminUserIDs             []string                `json:"adminUserIds" bun:"admin_user_ids,type:jsonb,nullzero"`
-	SameApplicantAction      SameApplicantAction     `json:"sameApplicantAction" bun:"same_applicant_action"`
-	IsRollbackAllowed        bool                    `json:"isRollbackAllowed" bun:"is_rollback_allowed"`
-	RollbackType             RollbackType            `json:"rollbackType" bun:"rollback_type"`
-	RollbackDataStrategy     RollbackDataStrategy    `json:"rollbackDataStrategy" bun:"rollback_data_strategy"`
-	RollbackTargetKeys       []string                `json:"rollbackTargetKeys" bun:"rollback_target_keys,type:jsonb,nullzero"`
-	IsAddAssigneeAllowed     bool                    `json:"isAddAssigneeAllowed" bun:"is_add_assignee_allowed"`
-	AddAssigneeTypes         []string                `json:"addAssigneeTypes" bun:"add_assignee_types,type:jsonb,nullzero"`
-	IsRemoveAssigneeAllowed  bool                    `json:"isRemoveAssigneeAllowed" bun:"is_remove_assignee_allowed"`
-	FieldPermissions         map[string]Permission   `json:"fieldPermissions" bun:"field_permissions,type:jsonb,nullzero"`
-	IsManualCCAllowed        bool                    `json:"isManualCcAllowed" bun:"is_manual_cc_allowed"`
-	IsTransferAllowed        bool                    `json:"isTransferAllowed" bun:"is_transfer_allowed"`
-	IsOpinionRequired        bool                    `json:"isOpinionRequired" bun:"is_opinion_required"`
-	TimeoutHours             int                     `json:"timeoutHours" bun:"timeout_hours"`
-	TimeoutAction            TimeoutAction           `json:"timeoutAction" bun:"timeout_action"`
-	TimeoutNotifyBeforeHours int                     `json:"timeoutNotifyBeforeHours" bun:"timeout_notify_before_hours"`
-	UrgeCooldownMinutes      int                     `json:"urgeCooldownMinutes" bun:"urge_cooldown_minutes"`
-	DuplicateAssigneeAction  DuplicateAssigneeAction `json:"duplicateAssigneeAction" bun:"duplicate_assignee_action"`
-	IsReadConfirmRequired    bool                    `json:"isReadConfirmRequired" bun:"is_read_confirm_required"`
-	Branches                 []ConditionBranch       `json:"branches" bun:"branches,type:jsonb,nullzero"`
+	FlowVersionID             string                    `json:"flowVersionId" bun:"flow_version_id"`
+	Key                       string                    `json:"key" bun:"key"`
+	Kind                      NodeKind                  `json:"kind" bun:"kind"`
+	Name                      string                    `json:"name" bun:"name"`
+	Description               *string                   `json:"description" bun:"description,nullzero"`
+	ExecutionType             ExecutionType             `json:"executionType" bun:"execution_type"`
+	ApprovalMethod            ApprovalMethod            `json:"approvalMethod" bun:"approval_method"`
+	PassRule                  PassRule                  `json:"passRule" bun:"pass_rule"`
+	PassRatio                 decimal.Decimal           `json:"passRatio" bun:"pass_ratio"`
+	EmptyAssigneeAction       EmptyAssigneeAction       `json:"emptyAssigneeAction" bun:"empty_assignee_action"`
+	FallbackUserIDs           []string                  `json:"fallbackUserIds" bun:"fallback_user_ids,type:jsonb,nullzero"`
+	AdminUserIDs              []string                  `json:"adminUserIds" bun:"admin_user_ids,type:jsonb,nullzero"`
+	SameApplicantAction       SameApplicantAction       `json:"sameApplicantAction" bun:"same_applicant_action"`
+	IsRollbackAllowed         bool                      `json:"isRollbackAllowed" bun:"is_rollback_allowed"`
+	RollbackType              RollbackType              `json:"rollbackType" bun:"rollback_type"`
+	RollbackDataStrategy      RollbackDataStrategy      `json:"rollbackDataStrategy" bun:"rollback_data_strategy"`
+	RollbackTargetKeys        []string                  `json:"rollbackTargetKeys" bun:"rollback_target_keys,type:jsonb,nullzero"`
+	IsAddAssigneeAllowed      bool                      `json:"isAddAssigneeAllowed" bun:"is_add_assignee_allowed"`
+	AddAssigneeTypes          []string                  `json:"addAssigneeTypes" bun:"add_assignee_types,type:jsonb,nullzero"`
+	IsRemoveAssigneeAllowed   bool                      `json:"isRemoveAssigneeAllowed" bun:"is_remove_assignee_allowed"`
+	FieldPermissions          map[string]Permission     `json:"fieldPermissions" bun:"field_permissions,type:jsonb,nullzero"`
+	IsManualCCAllowed         bool                      `json:"isManualCcAllowed" bun:"is_manual_cc_allowed"`
+	IsTransferAllowed         bool                      `json:"isTransferAllowed" bun:"is_transfer_allowed"`
+	IsOpinionRequired         bool                      `json:"isOpinionRequired" bun:"is_opinion_required"`
+	TimeoutHours              int                       `json:"timeoutHours" bun:"timeout_hours"`
+	TimeoutAction             TimeoutAction             `json:"timeoutAction" bun:"timeout_action"`
+	TimeoutNotifyBeforeHours  int                       `json:"timeoutNotifyBeforeHours" bun:"timeout_notify_before_hours"`
+	UrgeCooldownMinutes       int                       `json:"urgeCooldownMinutes" bun:"urge_cooldown_minutes"`
+	ConsecutiveApproverAction ConsecutiveApproverAction `json:"consecutiveApproverAction" bun:"consecutive_approver_action"`
+	IsReadConfirmRequired     bool                      `json:"isReadConfirmRequired" bun:"is_read_confirm_required"`
+	Branches                  []ConditionBranch         `json:"branches" bun:"branches,type:jsonb,nullzero"`
 }
 
 // FlowEdge represents a directed edge between two flow nodes.

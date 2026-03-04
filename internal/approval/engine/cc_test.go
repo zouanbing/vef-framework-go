@@ -247,6 +247,37 @@ func (s *CCProcessorTestSuite) TestMultipleCCConfigs() {
 	s.Assert().Len(records, 3, "Should create records from all CC configs")
 }
 
+func (s *CCProcessorTestSuite) TestCCDeduplication() {
+	instance := s.newInstance()
+	s.insertCCConfig([]string{"cc-user-1", "cc-user-2"})
+	s.insertCCConfig([]string{"cc-user-2", "cc-user-3"})
+
+	pc := &engine.ProcessContext{
+		DB:       s.db,
+		Instance: instance,
+		Node:     s.newNode(false),
+	}
+
+	result, err := s.processor.Process(s.ctx, pc)
+	s.Require().NoError(err, "Should process without error")
+	s.Assert().Equal(engine.NodeActionContinue, result.Action, "Should continue")
+	s.Require().Len(result.Events, 1, "Should emit one CC event")
+
+	var records []approval.CCRecord
+	err = s.db.NewSelect().
+		Model(&records).
+		Where(func(cb orm.ConditionBuilder) { cb.Equals("instance_id", instance.ID) }).
+		Scan(s.ctx)
+	s.Require().NoError(err, "Should query CC records")
+	s.Assert().Len(records, 3, "Should create 3 deduplicated records (cc-user-2 not duplicated)")
+
+	userIDs := make([]string, len(records))
+	for i, r := range records {
+		userIDs[i] = r.CCUserID
+	}
+	s.Assert().ElementsMatch([]string{"cc-user-1", "cc-user-2", "cc-user-3"}, userIDs, "Should deduplicate CC users")
+}
+
 func (s *CCProcessorTestSuite) TestCCConfigWithEmptyIDs() {
 	instance := s.newInstance()
 	s.insertCCConfig([]string{})

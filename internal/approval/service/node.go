@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/coldsmirk/go-collections"
 	streams "github.com/coldsmirk/go-streams"
 
 	"github.com/coldsmirk/vef-framework-go/approval"
@@ -94,21 +95,31 @@ func (s *NodeService) TriggerNodeCC(ctx context.Context, db orm.DB, instance *ap
 		return nil
 	}
 
+	seen := collections.NewHashSet[string]()
 	var ccUserIDs []string
+
+	appendUnique := func(ids []string) {
+		for _, id := range ids {
+			if seen.Add(id) {
+				ccUserIDs = append(ccUserIDs, id)
+			}
+		}
+	}
+
 	for _, cfg := range ccConfigs {
 		switch cfg.Timing {
 		case approval.CCTimingAlways:
-			ccUserIDs = append(ccUserIDs, cfg.IDs...)
+			appendUnique(cfg.IDs)
 		case approval.CCTimingOnApprove:
 			if completionResult == approval.PassRulePassed {
-				ccUserIDs = append(ccUserIDs, cfg.IDs...)
+				appendUnique(cfg.IDs)
 			}
 		case approval.CCTimingOnReject:
 			if completionResult == approval.PassRuleRejected {
-				ccUserIDs = append(ccUserIDs, cfg.IDs...)
+				appendUnique(cfg.IDs)
 			}
 		default:
-			ccUserIDs = append(ccUserIDs, cfg.IDs...)
+			appendUnique(cfg.IDs)
 		}
 	}
 
