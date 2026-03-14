@@ -83,7 +83,7 @@ func (h *StartInstanceHandler) Handle(ctx context.Context, cmd StartInstanceCmd)
 	}
 
 	if !flow.IsAllInitiationAllowed {
-		allowed, err := h.validationSvc.CheckInitiationPermission(ctx, db, flow.ID, cmd.Applicant.ID, cmd.Applicant.DeptID)
+		allowed, err := h.validationSvc.CheckInitiationPermission(ctx, db, flow.ID, cmd.Applicant.ID, cmd.Applicant.DepartmentID)
 		if err != nil {
 			return nil, fmt.Errorf("check initiation permission: %w", err)
 		}
@@ -148,8 +148,8 @@ func (h *StartInstanceHandler) Handle(ctx context.Context, cmd StartInstanceCmd)
 		InstanceNo:        instanceNo,
 		ApplicantID:       cmd.Applicant.ID,
 		ApplicantName:     cmd.Applicant.Name,
-		ApplicantDeptID:   cmd.Applicant.DeptID,
-		ApplicantDeptName: cmd.Applicant.DeptName,
+		ApplicantDepartmentID:   cmd.Applicant.DepartmentID,
+		ApplicantDepartmentName: cmd.Applicant.DepartmentName,
 		Status:            approval.InstanceRunning,
 		BusinessRecordID:  cmd.BusinessRecordID,
 		FormData:          cmd.FormData,

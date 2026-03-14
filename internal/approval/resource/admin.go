@@ -22,14 +22,14 @@ type AdminResource struct {
 	api.Resource
 
 	bus          cqrs.Bus
-	deptResolver approval.PrincipalDeptResolver
+	departmentResolver approval.PrincipalDepartmentResolver
 }
 
 // NewAdminResource creates a new admin resource.
-func NewAdminResource(bus cqrs.Bus, deptResolver approval.PrincipalDeptResolver) api.Resource {
+func NewAdminResource(bus cqrs.Bus, departmentResolver approval.PrincipalDepartmentResolver) api.Resource {
 	return &AdminResource{
 		bus:          bus,
-		deptResolver: deptResolver,
+		departmentResolver: departmentResolver,
 		Resource: api.NewRPCResource(
 			"approval/admin",
 			api.WithOperations(
@@ -201,7 +201,7 @@ func (r *AdminResource) ReassignTask(ctx fiber.Ctx, principal *security.Principa
 
 // resolveOperator builds an OperatorInfo from the authenticated principal.
 func (r *AdminResource) resolveOperator(ctx context.Context, principal *security.Principal) (approval.OperatorInfo, error) {
-	deptID, deptName, err := r.deptResolver.Resolve(ctx, principal)
+	departmentID, departmentName, err := r.departmentResolver.Resolve(ctx, principal)
 	if err != nil {
 		return approval.OperatorInfo{}, fmt.Errorf("resolve operator dept: %w", err)
 	}
@@ -209,7 +209,7 @@ func (r *AdminResource) resolveOperator(ctx context.Context, principal *security
 	return approval.OperatorInfo{
 		ID:       principal.ID,
 		Name:     principal.Name,
-		DeptID:   deptID,
-		DeptName: deptName,
+		DepartmentID:   departmentID,
+		DepartmentName: departmentName,
 	}, nil
 }

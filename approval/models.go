@@ -10,8 +10,8 @@ import (
 type OperatorInfo struct {
 	ID       string  `json:"id"`
 	Name     string  `json:"name"`
-	DeptID   *string `json:"deptId,omitempty"`
-	DeptName *string `json:"deptName,omitempty"`
+	DepartmentID   *string `json:"departmentId,omitempty"`
+	DepartmentName *string `json:"departmentName,omitempty"`
 }
 
 // NewActionLog creates an ActionLog with the operator fields pre-filled.
@@ -21,8 +21,8 @@ func (o OperatorInfo) NewActionLog(instanceID string, action ActionType) *Action
 		Action:           action,
 		OperatorID:       o.ID,
 		OperatorName:     o.Name,
-		OperatorDeptID:   o.DeptID,
-		OperatorDeptName: o.DeptName,
+		OperatorDepartmentID:   o.DepartmentID,
+		OperatorDepartmentName: o.DepartmentName,
 	}
 }
 
@@ -201,8 +201,8 @@ type Instance struct {
 	InstanceNo        string          `json:"instanceNo" bun:"instance_no"`
 	ApplicantID       string          `json:"applicantId" bun:"applicant_id"`
 	ApplicantName     string          `json:"applicantName" bun:"applicant_name"`
-	ApplicantDeptID   *string         `json:"applicantDeptId" bun:"applicant_dept_id,nullzero"`
-	ApplicantDeptName *string         `json:"applicantDeptName" bun:"applicant_dept_name,nullzero"`
+	ApplicantDepartmentID   *string         `json:"applicantDepartmentId" bun:"applicant_department_id,nullzero"`
+	ApplicantDepartmentName *string         `json:"applicantDepartmentName" bun:"applicant_department_name,nullzero"`
 	Status            InstanceStatus  `json:"status" bun:"status"`
 	CurrentNodeID     *string         `json:"currentNodeId" bun:"current_node_id,nullzero"`
 	FinishedAt        *timex.DateTime `json:"finishedAt" bun:"finished_at,nullzero"`
@@ -258,8 +258,8 @@ type ActionLog struct {
 	Action             ActionType       `json:"action" bun:"action"`
 	OperatorID         string           `json:"operatorId" bun:"operator_id"`
 	OperatorName       string           `json:"operatorName" bun:"operator_name"`
-	OperatorDeptID     *string          `json:"operatorDeptId" bun:"operator_dept_id,nullzero"`
-	OperatorDeptName   *string          `json:"operatorDeptName" bun:"operator_dept_name,nullzero"`
+	OperatorDepartmentID     *string          `json:"operatorDepartmentId" bun:"operator_department_id,nullzero"`
+	OperatorDepartmentName   *string          `json:"operatorDepartmentName" bun:"operator_department_name,nullzero"`
 	IPAddress          *string          `json:"ipAddress" bun:"ip_address,nullzero"`
 	UserAgent          *string          `json:"userAgent" bun:"user_agent,nullzero"`
 	Opinion            *string          `json:"opinion" bun:"opinion,nullzero"`

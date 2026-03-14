@@ -20,7 +20,7 @@ func (*FindAvailableFlowsMockAssigneeService) GetSuperior(context.Context, strin
 	return nil, nil
 }
 
-func (*FindAvailableFlowsMockAssigneeService) GetDeptLeaders(context.Context, string) ([]approval.UserInfo, error) {
+func (*FindAvailableFlowsMockAssigneeService) GetDepartmentLeaders(context.Context, string) ([]approval.UserInfo, error) {
 	return nil, nil
 }
 
@@ -146,7 +146,7 @@ func (s *FindAvailableFlowsTestSuite) SetupSuite() {
 	s.insertPublishedVersion(flow4.ID, 1)
 	_, err = s.db.NewInsert().Model(&approval.FlowInitiator{
 		FlowID: flow4.ID,
-		Kind:   approval.InitiatorDept,
+		Kind:   approval.InitiatorDepartment,
 		IDs:    []string{"dept-a"},
 	}).Exec(s.ctx)
 	s.Require().NoError(err, "Should insert department initiator")
@@ -240,22 +240,22 @@ func (s *FindAvailableFlowsTestSuite) TestUserWithInitiatorAccess() {
 	s.Assert().True(foundRestricted, "user-a should see the restricted flow via initiator rule")
 }
 
-func (s *FindAvailableFlowsTestSuite) TestUserWithDeptInitiatorAccess() {
+func (s *FindAvailableFlowsTestSuite) TestUserWithDepartmentInitiatorAccess() {
 	result, err := s.handler.Handle(s.ctx, query.FindAvailableFlowsQuery{
 		UserID:          "user-dept",
-		ApplicantDeptID: new("dept-a"),
+		ApplicantDepartmentID: new("dept-a"),
 		Pageable:        page.Pageable{Page: 1, Size: 10},
 	})
 	s.Require().NoError(err, "Should query without error")
 
-	foundDeptFlow := false
+	foundDepartmentFlow := false
 	for _, item := range result.Items {
 		if item.FlowID == s.deptFlowID {
-			foundDeptFlow = true
+			foundDepartmentFlow = true
 		}
 	}
 
-	s.Assert().True(foundDeptFlow, "User in matching department should see department-restricted flow")
+	s.Assert().True(foundDepartmentFlow, "User in matching department should see department-restricted flow")
 }
 
 func (s *FindAvailableFlowsTestSuite) TestUserWithRoleInitiatorAccess() {

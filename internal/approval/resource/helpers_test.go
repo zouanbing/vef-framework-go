@@ -27,7 +27,7 @@ func (*MockAssigneeService) GetSuperior(context.Context, string) (*approval.User
 	return nil, errors.New("not implemented")
 }
 
-func (*MockAssigneeService) GetDeptLeaders(context.Context, string) ([]approval.UserInfo, error) {
+func (*MockAssigneeService) GetDepartmentLeaders(context.Context, string) ([]approval.UserInfo, error) {
 	return nil, errors.New("not implemented")
 }
 
@@ -47,10 +47,10 @@ func (*MockUserInfoResolver) ResolveUsers(_ context.Context, userIDs []string) (
 	return result, nil
 }
 
-// MockPrincipalDeptResolver is a test implementation of approval.PrincipalDeptResolver.
-type MockPrincipalDeptResolver struct{}
+// MockPrincipalDepartmentResolver is a test implementation of approval.PrincipalDepartmentResolver.
+type MockPrincipalDepartmentResolver struct{}
 
-func (*MockPrincipalDeptResolver) Resolve(context.Context, *security.Principal) (deptID, deptName *string, err error) {
+func (*MockPrincipalDepartmentResolver) Resolve(context.Context, *security.Principal) (departmentID, departmentName *string, err error) {
 	return nil, nil, nil
 }
 
@@ -95,7 +95,7 @@ func setupResourceApp(s *apptest.Suite) (orm.DB, string) {
 		fx.Provide(
 			fx.Annotate(func() approval.AssigneeService { return &MockAssigneeService{} }, fx.As(new(approval.AssigneeService))),
 			fx.Annotate(func() approval.UserInfoResolver { return &MockUserInfoResolver{} }, fx.As(new(approval.UserInfoResolver))),
-			fx.Annotate(func() approval.PrincipalDeptResolver { return &MockPrincipalDeptResolver{} }, fx.As(new(approval.PrincipalDeptResolver))),
+			fx.Annotate(func() approval.PrincipalDepartmentResolver { return &MockPrincipalDepartmentResolver{} }, fx.As(new(approval.PrincipalDepartmentResolver))),
 			fx.Annotate(func() approval.InstanceNoGenerator { return &MockInstanceNoGenerator{} }, fx.As(new(approval.InstanceNoGenerator))),
 		),
 		fx.Decorate(

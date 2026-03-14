@@ -33,7 +33,7 @@ func (*ConditionProcessor) Process(ctx context.Context, pc *ProcessContext) (*Pr
 	evalCtx := &approval.EvaluationContext{
 		FormData:        formData,
 		ApplicantID:     pc.Instance.ApplicantID,
-		ApplicantDeptID: pc.Instance.ApplicantDeptID,
+		ApplicantDepartmentID: pc.Instance.ApplicantDepartmentID,
 	}
 
 	var defaultBranch *approval.ConditionBranch

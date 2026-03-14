@@ -372,8 +372,8 @@ CREATE TABLE IF NOT EXISTS apv_instance (
     instance_no VARCHAR(64) NOT NULL,
     applicant_id VARCHAR(32) NOT NULL,
     applicant_name VARCHAR(128) NOT NULL DEFAULT '',
-    applicant_dept_id VARCHAR(32),
-    applicant_dept_name VARCHAR(128),
+    applicant_department_id VARCHAR(32),
+    applicant_department_name VARCHAR(128),
     -- Status info
     status VARCHAR(16) NOT NULL DEFAULT 'running',
     current_node_id VARCHAR(32),
@@ -400,8 +400,8 @@ COMMENT ON COLUMN apv_instance.title IS '申请标题';
 COMMENT ON COLUMN apv_instance.instance_no IS '实例编号';
 COMMENT ON COLUMN apv_instance.applicant_id IS '申请人ID';
 COMMENT ON COLUMN apv_instance.applicant_name IS '申请人姓名';
-COMMENT ON COLUMN apv_instance.applicant_dept_id IS '申请人部门ID';
-COMMENT ON COLUMN apv_instance.applicant_dept_name IS '申请人部门名称';
+COMMENT ON COLUMN apv_instance.applicant_department_id IS '申请人部门ID';
+COMMENT ON COLUMN apv_instance.applicant_department_name IS '申请人部门名称';
 COMMENT ON COLUMN apv_instance.status IS '实例状态';
 COMMENT ON COLUMN apv_instance.current_node_id IS '当前节点ID';
 COMMENT ON COLUMN apv_instance.finished_at IS '完成时间';
@@ -498,8 +498,8 @@ CREATE TABLE IF NOT EXISTS apv_action_log (
     action VARCHAR(16) NOT NULL,
     operator_id VARCHAR(32) NOT NULL,
     operator_name VARCHAR(128) NOT NULL,
-    operator_dept_id VARCHAR(32),
-    operator_dept_name VARCHAR(128),
+    operator_department_id VARCHAR(32),
+    operator_department_name VARCHAR(128),
     ip_address VARCHAR(64),
     user_agent VARCHAR(512),
     opinion TEXT,
@@ -531,8 +531,8 @@ COMMENT ON COLUMN apv_action_log.task_id IS '任务ID';
 COMMENT ON COLUMN apv_action_log.action IS '操作类型';
 COMMENT ON COLUMN apv_action_log.operator_id IS '操作人ID';
 COMMENT ON COLUMN apv_action_log.operator_name IS '操作人姓名';
-COMMENT ON COLUMN apv_action_log.operator_dept_id IS '操作人部门ID';
-COMMENT ON COLUMN apv_action_log.operator_dept_name IS '操作人部门名称';
+COMMENT ON COLUMN apv_action_log.operator_department_id IS '操作人部门ID';
+COMMENT ON COLUMN apv_action_log.operator_department_name IS '操作人部门名称';
 COMMENT ON COLUMN apv_action_log.ip_address IS '操作人IP地址';
 COMMENT ON COLUMN apv_action_log.user_agent IS '操作人用户代理';
 COMMENT ON COLUMN apv_action_log.opinion IS '审批意见';

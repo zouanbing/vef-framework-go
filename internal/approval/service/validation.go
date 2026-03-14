@@ -436,7 +436,7 @@ func (s *ValidationService) CheckInitiationPermission(ctx context.Context, db or
 				return true, nil
 			}
 
-		case approval.InitiatorDept:
+		case approval.InitiatorDepartment:
 			if applicantDeptID == nil {
 				continue
 			}

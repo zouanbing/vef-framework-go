@@ -19,7 +19,7 @@ type ResolveContext struct {
 	DB              orm.DB
 	ApplicantID     string
 	ApplicantName   string
-	ApplicantDeptID *string
+	ApplicantDepartmentID *string
 	FormData        approval.FormData
 	UserResolver    approval.UserInfoResolver
 
@@ -29,7 +29,7 @@ type ResolveContext struct {
 
 // AssigneeResolver resolves assignees for a specific kind.
 type AssigneeResolver interface {
-	// Kind returns the assignee kind this resolver handles (user, role, dept_leader, superior, etc.).
+	// Kind returns the assignee kind this resolver handles (user, role, department_leader, superior, etc.).
 	Kind() approval.AssigneeKind
 	// Resolve resolves concrete assignees from the assignee configuration in ResolveContext.
 	Resolve(ctx context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error)
@@ -100,27 +100,27 @@ func (r *RoleAssigneeResolver) Resolve(ctx context.Context, rc *ResolveContext) 
 	}))
 }
 
-// NewDeptAssigneeResolver creates a new DeptAssigneeResolver.
-func NewDeptAssigneeResolver(svc approval.AssigneeService) AssigneeResolver {
-	return &DeptAssigneeResolver{svc: svc}
+// NewDepartmentAssigneeResolver creates a new DepartmentAssigneeResolver.
+func NewDepartmentAssigneeResolver(svc approval.AssigneeService) AssigneeResolver {
+	return &DepartmentAssigneeResolver{svc: svc}
 }
 
-// DeptAssigneeResolver resolves department leaders as assignees.
-type DeptAssigneeResolver struct {
+// DepartmentAssigneeResolver resolves department leaders as assignees.
+type DepartmentAssigneeResolver struct {
 	svc approval.AssigneeService
 }
 
-func (*DeptAssigneeResolver) Kind() approval.AssigneeKind { return approval.AssigneeDept }
+func (*DepartmentAssigneeResolver) Kind() approval.AssigneeKind { return approval.AssigneeDepartment }
 
-func (r *DeptAssigneeResolver) Resolve(ctx context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error) {
+func (r *DepartmentAssigneeResolver) Resolve(ctx context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error) {
 	if r.svc == nil {
 		return nil, ErrAssigneeServiceNil
 	}
 
-	return streams.CollectResults(streams.FlatMapErr(streams.FromSlice(rc.IDs), func(deptID string) (streams.Stream[approval.ResolvedAssignee], error) {
-		leaders, err := r.svc.GetDeptLeaders(ctx, deptID)
+	return streams.CollectResults(streams.FlatMapErr(streams.FromSlice(rc.IDs), func(departmentID string) (streams.Stream[approval.ResolvedAssignee], error) {
+		leaders, err := r.svc.GetDepartmentLeaders(ctx, departmentID)
 		if err != nil {
-			return streams.Empty[approval.ResolvedAssignee](), fmt.Errorf("dept assignee resolver: %w", err)
+			return streams.Empty[approval.ResolvedAssignee](), fmt.Errorf("department assignee resolver: %w", err)
 		}
 
 		return streams.MapTo(streams.FromSlice(leaders), userInfoToResolvedAssignee), nil
@@ -174,30 +174,32 @@ func (r *SuperiorAssigneeResolver) Resolve(ctx context.Context, rc *ResolveConte
 	return []approval.ResolvedAssignee{{UserID: info.ID, UserName: info.Name}}, nil
 }
 
-// NewDeptLeaderAssigneeResolver creates a new DeptLeaderAssigneeResolver.
-func NewDeptLeaderAssigneeResolver(svc approval.AssigneeService) AssigneeResolver {
-	return &DeptLeaderAssigneeResolver{svc: svc}
+// NewDepartmentLeaderAssigneeResolver creates a new DepartmentLeaderAssigneeResolver.
+func NewDepartmentLeaderAssigneeResolver(svc approval.AssigneeService) AssigneeResolver {
+	return &DepartmentLeaderAssigneeResolver{svc: svc}
 }
 
-// DeptLeaderAssigneeResolver resolves department leaders as assignees.
-type DeptLeaderAssigneeResolver struct {
+// DepartmentLeaderAssigneeResolver resolves department leaders as assignees.
+type DepartmentLeaderAssigneeResolver struct {
 	svc approval.AssigneeService
 }
 
-func (*DeptLeaderAssigneeResolver) Kind() approval.AssigneeKind { return approval.AssigneeDeptLeader }
+func (*DepartmentLeaderAssigneeResolver) Kind() approval.AssigneeKind {
+	return approval.AssigneeDepartmentLeader
+}
 
-func (r *DeptLeaderAssigneeResolver) Resolve(ctx context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error) {
+func (r *DepartmentLeaderAssigneeResolver) Resolve(ctx context.Context, rc *ResolveContext) ([]approval.ResolvedAssignee, error) {
 	if r.svc == nil {
 		return nil, ErrAssigneeServiceNil
 	}
 
-	if rc.ApplicantDeptID == nil || *rc.ApplicantDeptID == "" {
+	if rc.ApplicantDepartmentID == nil || *rc.ApplicantDepartmentID == "" {
 		return []approval.ResolvedAssignee{}, nil
 	}
 
-	leaders, err := r.svc.GetDeptLeaders(ctx, *rc.ApplicantDeptID)
+	leaders, err := r.svc.GetDepartmentLeaders(ctx, *rc.ApplicantDepartmentID)
 	if err != nil {
-		return nil, fmt.Errorf("dept leader assignee resolver: %w", err)
+		return nil, fmt.Errorf("department leader assignee resolver: %w", err)
 	}
 
 	return streams.MapTo(streams.FromSlice(leaders), userInfoToResolvedAssignee).Collect(), nil

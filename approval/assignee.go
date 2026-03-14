@@ -23,8 +23,8 @@ type UserInfoResolver interface {
 type AssigneeService interface {
 	// GetSuperior returns the direct superior's user info for the given user.
 	GetSuperior(ctx context.Context, userID string) (*UserInfo, error)
-	// GetDeptLeaders returns the leader user info for the given department.
-	GetDeptLeaders(ctx context.Context, deptID string) ([]UserInfo, error)
+	// GetDepartmentLeaders returns the leader user info for the given department.
+	GetDepartmentLeaders(ctx context.Context, departmentID string) ([]UserInfo, error)
 	// GetRoleUsers returns all user info for users that have the given role.
 	GetRoleUsers(ctx context.Context, roleID string) ([]UserInfo, error)
 }
@@ -37,11 +37,11 @@ type ResolvedAssignee struct {
 	DelegatorName *string
 }
 
-// PrincipalDeptResolver resolves department info from a security principal.
+// PrincipalDepartmentResolver resolves department info from a security principal.
 // Implemented by host apps since Principal.Details is business-specific.
-type PrincipalDeptResolver interface {
+type PrincipalDepartmentResolver interface {
 	// Resolve extracts the department ID and name from the given security principal.
-	Resolve(ctx context.Context, principal *security.Principal) (deptID, deptName *string, err error)
+	Resolve(ctx context.Context, principal *security.Principal) (departmentID, departmentName *string, err error)
 }
 
 // AssigneeDefinition represents an assignee configuration in the flow definition.

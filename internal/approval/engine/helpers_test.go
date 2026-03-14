@@ -222,8 +222,8 @@ func (m *MockAssigneeService) GetSuperior(ctx context.Context, userID string) (*
 	return args.Get(0).(*approval.UserInfo), args.Error(1)
 }
 
-func (m *MockAssigneeService) GetDeptLeaders(ctx context.Context, deptID string) ([]approval.UserInfo, error) {
-	args := m.Called(ctx, deptID)
+func (m *MockAssigneeService) GetDepartmentLeaders(ctx context.Context, departmentID string) ([]approval.UserInfo, error) {
+	args := m.Called(ctx, departmentID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -244,7 +244,7 @@ func (m *MockAssigneeService) GetRoleUsers(ctx context.Context, roleID string) (
 func TestGetSuperior(t *testing.T) {
 	t.Run("NilOrgService", func(t *testing.T) {
 		_, err := getSuperior(t.Context(), nil, "user1")
-		assert.ErrorIs(t, err, ErrAssigneeServiceNotConfigured, "Should return ErrAssigneeServiceNotConfigured when orgService is nil")
+		assert.ErrorIs(t, err, ErrAssigneeServiceNotConfigured, "Should return ErrAssigneeServiceNotConfigured when OrganizationService is nil")
 	})
 
 	t.Run("WithService", func(t *testing.T) {

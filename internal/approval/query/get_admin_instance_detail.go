@@ -139,7 +139,7 @@ func (h *GetAdminInstanceDetailHandler) Handle(ctx context.Context, query GetAdm
 			Action:           string(log.Action),
 			OperatorID:       log.OperatorID,
 			OperatorName:     log.OperatorName,
-			OperatorDeptName: log.OperatorDeptName,
+			OperatorDepartmentName: log.OperatorDepartmentName,
 			TransferToID:     log.TransferToID,
 			TransferToName:   log.TransferToName,
 			Opinion:          log.Opinion,

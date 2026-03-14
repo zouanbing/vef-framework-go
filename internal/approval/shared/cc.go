@@ -26,12 +26,12 @@ type CCUserResolver func(cfg approval.FlowNodeCC, formData approval.FormData) ([
 type CCConfigSelector func(cfg approval.FlowNodeCC) bool
 
 // ResolveCCUserIDs resolves CC recipients from static IDs or form-field values.
-// CCRole and CCDept kinds require external user resolution and are not supported here.
+// CCRole and CCDepartment kinds require external user resolution and are not supported here.
 func ResolveCCUserIDs(cfg approval.FlowNodeCC, formData approval.FormData) ([]string, error) {
 	switch cfg.Kind {
 	case approval.CCUser:
 		return NormalizeUniqueIDs(cfg.IDs), nil
-	case approval.CCRole, approval.CCDept:
+	case approval.CCRole, approval.CCDepartment:
 		// Role and department CC kinds require external user resolution (e.g., via AssigneeService).
 		// Skip silently here; callers that need role/dept resolution should inject an alternative resolver.
 		return nil, nil

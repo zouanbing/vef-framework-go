@@ -47,7 +47,7 @@ func resolveAssignees(ctx context.Context, pc *ProcessContext) ([]approval.Resol
 		DB:              pc.DB,
 		ApplicantID:     pc.ApplicantID,
 		ApplicantName:   pc.ApplicantName,
-		ApplicantDeptID: pc.Instance.ApplicantDeptID,
+		ApplicantDepartmentID: pc.Instance.ApplicantDepartmentID,
 		FormData:        pc.FormData,
 		UserResolver:    pc.UserResolver,
 	})

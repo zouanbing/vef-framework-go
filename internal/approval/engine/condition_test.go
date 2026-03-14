@@ -211,7 +211,7 @@ func TestConditionProcessor(t *testing.T) {
 	})
 
 	t.Run("EvaluationContextWiring", func(t *testing.T) {
-		deptID := "dept_sales"
+		departmentID := "dept_sales"
 
 		var captured *approval.EvaluationContext
 
@@ -232,7 +232,7 @@ func TestConditionProcessor(t *testing.T) {
 		pc := &ProcessContext{
 			Instance: &approval.Instance{
 				ApplicantID:     "user_42",
-				ApplicantDeptID: &deptID,
+				ApplicantDepartmentID: &departmentID,
 				FormData:        map[string]any{"key": "value"},
 			},
 			Node:     &approval.FlowNode{Branches: branches},
@@ -243,11 +243,11 @@ func TestConditionProcessor(t *testing.T) {
 		require.NoError(t, err, "Should process without error")
 		require.NotNil(t, captured, "Should have captured evaluation context")
 		assert.Equal(t, "user_42", captured.ApplicantID, "Should pass ApplicantID")
-		assert.Equal(t, &deptID, captured.ApplicantDeptID, "Should pass ApplicantDeptID pointer")
+		assert.Equal(t, &departmentID, captured.ApplicantDepartmentID, "Should pass ApplicantDepartmentID pointer")
 		assert.Equal(t, "value", captured.FormData.Get("key"), "Should pass FormData")
 	})
 
-	t.Run("NilApplicantDeptID", func(t *testing.T) {
+	t.Run("NilApplicantDepartmentID", func(t *testing.T) {
 		var captured *approval.EvaluationContext
 
 		captureEvaluator := &MockConditionEvaluator{
@@ -272,7 +272,7 @@ func TestConditionProcessor(t *testing.T) {
 
 		_, err := processor.Process(context.Background(), pc)
 		require.NoError(t, err, "Should process without error")
-		assert.Nil(t, captured.ApplicantDeptID, "Should pass nil ApplicantDeptID")
+		assert.Nil(t, captured.ApplicantDepartmentID, "Should pass nil ApplicantDepartmentID")
 	})
 }
 
@@ -468,9 +468,9 @@ func TestEvaluateGroupConditions(t *testing.T) {
 
 		t.Run("DeptSubjectMatch", func(t *testing.T) {
 			conditions := []approval.Condition{
-				{Kind: approval.ConditionField, Subject: "applicantDeptId", Operator: "eq", Value: "dept_001"},
+				{Kind: approval.ConditionField, Subject: "applicantDepartmentId", Operator: "eq", Value: "dept_001"},
 			}
-			evalCtx := &approval.EvaluationContext{FormData: approval.NewFormData(nil), ApplicantID: "u1", ApplicantDeptID: new("dept_001")}
+			evalCtx := &approval.EvaluationContext{FormData: approval.NewFormData(nil), ApplicantID: "u1", ApplicantDepartmentID: new("dept_001")}
 
 			match, err := evaluateGroupConditions(realRegistry, t.Context(), evalCtx, conditions)
 			require.NoError(t, err, "Should not return error for dept condition")
@@ -479,9 +479,9 @@ func TestEvaluateGroupConditions(t *testing.T) {
 
 		t.Run("DeptSubjectNoMatch", func(t *testing.T) {
 			conditions := []approval.Condition{
-				{Kind: approval.ConditionField, Subject: "applicantDeptId", Operator: "eq", Value: "dept_999"},
+				{Kind: approval.ConditionField, Subject: "applicantDepartmentId", Operator: "eq", Value: "dept_999"},
 			}
-			evalCtx := &approval.EvaluationContext{FormData: approval.NewFormData(nil), ApplicantID: "u1", ApplicantDeptID: new("dept_001")}
+			evalCtx := &approval.EvaluationContext{FormData: approval.NewFormData(nil), ApplicantID: "u1", ApplicantDepartmentID: new("dept_001")}
 
 			match, err := evaluateGroupConditions(realRegistry, t.Context(), evalCtx, conditions)
 			require.NoError(t, err, "Should not return error for dept condition")
@@ -559,9 +559,9 @@ func TestEvaluateGroupConditions(t *testing.T) {
 
 		t.Run("DeptContext", func(t *testing.T) {
 			conditions := []approval.Condition{
-				{Kind: approval.ConditionExpression, Expression: `applicantDeptId == "finance"`},
+				{Kind: approval.ConditionExpression, Expression: `applicantDepartmentId == "finance"`},
 			}
-			evalCtx := &approval.EvaluationContext{FormData: approval.NewFormData(nil), ApplicantID: "u1", ApplicantDeptID: new("finance")}
+			evalCtx := &approval.EvaluationContext{FormData: approval.NewFormData(nil), ApplicantID: "u1", ApplicantDepartmentID: new("finance")}
 
 			match, err := evaluateGroupConditions(realRegistry, t.Context(), evalCtx, conditions)
 			require.NoError(t, err, "Should not return error for dept expression")

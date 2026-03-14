@@ -83,7 +83,7 @@ type ActionLog struct {
 	Action           string         `json:"action"`
 	OperatorID       string         `json:"operatorId"`
 	OperatorName     string         `json:"operatorName"`
-	OperatorDeptName *string        `json:"operatorDeptName,omitempty"`
+	OperatorDepartmentName *string        `json:"operatorDepartmentName,omitempty"`
 	TransferToID     *string        `json:"transferToId,omitempty"`
 	TransferToName   *string        `json:"transferToName,omitempty"`
 	Opinion          *string        `json:"opinion,omitempty"`

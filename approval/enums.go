@@ -30,7 +30,7 @@ type InitiatorKind string
 const (
 	InitiatorUser InitiatorKind = "user"
 	InitiatorRole InitiatorKind = "role"
-	InitiatorDept InitiatorKind = "dept"
+	InitiatorDepartment InitiatorKind = "department"
 )
 
 // StorageMode represents the storage mode of form data at the FlowVersion level.
@@ -178,10 +178,10 @@ type AssigneeKind string
 const (
 	AssigneeUser       AssigneeKind = "user"
 	AssigneeRole       AssigneeKind = "role"
-	AssigneeDept       AssigneeKind = "dept"        // Department head
+	AssigneeDepartment       AssigneeKind = "department"        // Department head
 	AssigneeSelf       AssigneeKind = "self"        // Applicant themselves
 	AssigneeSuperior   AssigneeKind = "superior"    // Direct superior
-	AssigneeDeptLeader AssigneeKind = "dept_leader" // Continuous multi-level supervisor
+	AssigneeDepartmentLeader AssigneeKind = "department_leader" // Continuous multi-level supervisor
 	AssigneeFormField  AssigneeKind = "form_field"  // Based on form field
 )
 
@@ -264,7 +264,7 @@ type CCKind string
 const (
 	CCUser      CCKind = "user"
 	CCRole      CCKind = "role"
-	CCDept      CCKind = "dept"
+	CCDepartment      CCKind = "department"
 	CCFormField CCKind = "form_field"
 )
 

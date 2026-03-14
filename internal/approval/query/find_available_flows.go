@@ -22,7 +22,7 @@ type FindAvailableFlowsQuery struct {
 
 	UserID          string
 	TenantID        *string
-	ApplicantDeptID *string
+	ApplicantDepartmentID *string
 	Keyword         *string
 }
 
@@ -95,7 +95,7 @@ func (h *FindAvailableFlowsHandler) Handle(ctx context.Context, query FindAvaila
 		return nil, fmt.Errorf("query flow initiators: %w", err)
 	}
 
-	initiatorFlowIDs, err := h.matchInitiatorFlowIDs(ctx, initiators, query.UserID, query.ApplicantDeptID)
+	initiatorFlowIDs, err := h.matchInitiatorFlowIDs(ctx, initiators, query.UserID, query.ApplicantDepartmentID)
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +204,7 @@ func (h *FindAvailableFlowsHandler) matchInitiatorFlowIDs(
 				matchedFlowIDs.Add(initiator.FlowID)
 			}
 
-		case approval.InitiatorDept:
+		case approval.InitiatorDepartment:
 			if applicantDeptID != nil && slices.Contains(initiator.IDs, *applicantDeptID) {
 				matchedFlowIDs.Add(initiator.FlowID)
 			}

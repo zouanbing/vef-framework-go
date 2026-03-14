@@ -16,10 +16,10 @@ var Module = fx.Module(
 		// Assignee resolvers
 		fx.Annotate(NewUserAssigneeResolver, fx.ResultTags(`group:"vef:approval:assignee_resolvers"`)),
 		fx.Annotate(NewRoleAssigneeResolver, fx.ResultTags(`group:"vef:approval:assignee_resolvers"`)),
-		fx.Annotate(NewDeptAssigneeResolver, fx.ResultTags(`group:"vef:approval:assignee_resolvers"`)),
+		fx.Annotate(NewDepartmentAssigneeResolver, fx.ResultTags(`group:"vef:approval:assignee_resolvers"`)),
 		fx.Annotate(NewSelfAssigneeResolver, fx.ResultTags(`group:"vef:approval:assignee_resolvers"`)),
 		fx.Annotate(NewSuperiorAssigneeResolver, fx.ResultTags(`group:"vef:approval:assignee_resolvers"`)),
-		fx.Annotate(NewDeptLeaderAssigneeResolver, fx.ResultTags(`group:"vef:approval:assignee_resolvers"`)),
+		fx.Annotate(NewDepartmentLeaderAssigneeResolver, fx.ResultTags(`group:"vef:approval:assignee_resolvers"`)),
 		fx.Annotate(NewFormFieldAssigneeResolver, fx.ResultTags(`group:"vef:approval:assignee_resolvers"`)),
 
 		// Condition evaluators

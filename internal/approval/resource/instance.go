@@ -22,14 +22,14 @@ type InstanceResource struct {
 	api.Resource
 
 	bus          cqrs.Bus
-	deptResolver approval.PrincipalDeptResolver
+	departmentResolver approval.PrincipalDepartmentResolver
 }
 
 // NewInstanceResource creates a new instance resource.
-func NewInstanceResource(bus cqrs.Bus, deptResolver approval.PrincipalDeptResolver) api.Resource {
+func NewInstanceResource(bus cqrs.Bus, departmentResolver approval.PrincipalDepartmentResolver) api.Resource {
 	return &InstanceResource{
 		bus:          bus,
-		deptResolver: deptResolver,
+		departmentResolver: departmentResolver,
 		Resource: api.NewRPCResource(
 			"approval/instance",
 			api.WithOperations(
@@ -289,7 +289,7 @@ func (r *InstanceResource) RemoveAssignee(ctx fiber.Ctx, principal *security.Pri
 
 // resolveOperator builds an OperatorInfo from the authenticated principal.
 func (r *InstanceResource) resolveOperator(ctx context.Context, principal *security.Principal) (approval.OperatorInfo, error) {
-	deptID, deptName, err := r.deptResolver.Resolve(ctx, principal)
+	departmentID, departmentName, err := r.departmentResolver.Resolve(ctx, principal)
 	if err != nil {
 		return approval.OperatorInfo{}, fmt.Errorf("resolve operator dept: %w", err)
 	}
@@ -297,8 +297,8 @@ func (r *InstanceResource) resolveOperator(ctx context.Context, principal *secur
 	return approval.OperatorInfo{
 		ID:       principal.ID,
 		Name:     principal.Name,
-		DeptID:   deptID,
-		DeptName: deptName,
+		DepartmentID:   departmentID,
+		DepartmentName: departmentName,
 	}, nil
 }
 

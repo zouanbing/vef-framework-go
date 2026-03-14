@@ -44,15 +44,15 @@ func (*ExpressionConditionEvaluator) Kind() approval.ConditionKind {
 }
 
 func (*ExpressionConditionEvaluator) Evaluate(_ context.Context, cond approval.Condition, ec *approval.EvaluationContext) (bool, error) {
-	var deptID string
-	if ec.ApplicantDeptID != nil {
-		deptID = *ec.ApplicantDeptID
+	var departmentID string
+	if ec.ApplicantDepartmentID != nil {
+		departmentID = *ec.ApplicantDepartmentID
 	}
 
 	env := map[string]any{
-		"formData":        ec.FormData.ToMap(),
-		"applicantId":     ec.ApplicantID,
-		"applicantDeptId": deptID,
+		"formData":              ec.FormData.ToMap(),
+		"applicantId":           ec.ApplicantID,
+		"applicantDepartmentId": departmentID,
 	}
 
 	program, err := expr.Compile(cond.Expression, expr.Env(env), expr.AsBool())
@@ -110,7 +110,7 @@ func buildFieldExpression(cond approval.Condition) string {
 // resolveSubjectExpr maps a condition subject to its expr-lang accessor.
 func resolveSubjectExpr(subject string) string {
 	switch subject {
-	case "applicantId", "applicantDeptId":
+	case "applicantId", "applicantDepartmentId":
 		return subject
 	default:
 		return fmt.Sprintf(`formData["%s"]`, subject)

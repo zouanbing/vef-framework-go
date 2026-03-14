@@ -28,7 +28,7 @@ func TestFieldConditionEvaluator(t *testing.T) {
 			"int_val":    int64(100),
 		},
 		ApplicantID:     "user1",
-		ApplicantDeptID: new("dept1"),
+		ApplicantDepartmentID: new("dept1"),
 	}
 
 	tests := []struct {
@@ -91,7 +91,7 @@ func TestFieldConditionEvaluator(t *testing.T) {
 
 		// Special subjects
 		{"ApplicantSubject", approval.Condition{Kind: approval.ConditionField, Subject: "applicantId", Operator: "eq", Value: "user1"}, true},
-		{"DeptSubject", approval.Condition{Kind: approval.ConditionField, Subject: "applicantDeptId", Operator: "eq", Value: "dept1"}, true},
+		{"DepartmentSubject", approval.Condition{Kind: approval.ConditionField, Subject: "applicantDepartmentId", Operator: "eq", Value: "dept1"}, true},
 
 		// Unknown operator
 		{"UnknownOperator", approval.Condition{Kind: approval.ConditionField, Subject: "name", Operator: "unknown_op", Value: "x"}, false},
@@ -172,7 +172,7 @@ func TestExpressionConditionEvaluator(t *testing.T) {
 		ec := &approval.EvaluationContext{
 			FormData:        approval.FormData{"amount": 5000},
 			ApplicantID:     "user1",
-			ApplicantDeptID: new("dept1"),
+			ApplicantDepartmentID: new("dept1"),
 		}
 
 		result, err := e.Evaluate(ctx, approval.Condition{Expression: "formData.amount > 3000"}, ec)
@@ -188,7 +188,7 @@ func TestExpressionConditionEvaluator(t *testing.T) {
 		ec := &approval.EvaluationContext{
 			FormData:        approval.FormData{"amount": 5000, "department": "sales"},
 			ApplicantID:     "user1",
-			ApplicantDeptID: new("dept1"),
+			ApplicantDepartmentID: new("dept1"),
 		}
 
 		result, err := e.Evaluate(ctx, approval.Condition{Expression: `formData.amount > 1000 && formData.department == "sales"`}, ec)
@@ -204,15 +204,15 @@ func TestExpressionConditionEvaluator(t *testing.T) {
 		ec := &approval.EvaluationContext{
 			FormData:        approval.FormData{},
 			ApplicantID:     "user1",
-			ApplicantDeptID: new("dept_sales"),
+			ApplicantDepartmentID: new("dept_sales"),
 		}
 
 		result, err := e.Evaluate(ctx, approval.Condition{Expression: `applicantId == "user1"`}, ec)
 		require.NoError(t, err, "Should evaluate applicantId expression")
 		assert.True(t, result, "Should match applicant ID")
 
-		result, err = e.Evaluate(ctx, approval.Condition{Expression: `applicantDeptId == "dept_sales"`}, ec)
-		require.NoError(t, err, "Should evaluate applicantDeptId expression")
+		result, err = e.Evaluate(ctx, approval.Condition{Expression: `applicantDepartmentId == "dept_sales"`}, ec)
+		require.NoError(t, err, "Should evaluate applicantDepartmentId expression")
 		assert.True(t, result, "Should match applicant dept ID")
 	})
 
@@ -233,7 +233,7 @@ func TestExpressionConditionEvaluator(t *testing.T) {
 		ec := &approval.EvaluationContext{
 			FormData:        approval.FormData{"amount": "not_a_number"},
 			ApplicantID:     "user1",
-			ApplicantDeptID: new("dept1"),
+			ApplicantDepartmentID: new("dept1"),
 		}
 		_, err := e.Evaluate(ctx, approval.Condition{Expression: "formData.amount > 100"}, ec)
 		require.Error(t, err, "Should fail when expression evaluation fails at runtime")
@@ -262,7 +262,7 @@ func TestBuildFieldExpression(t *testing.T) {
 		{"IsEmpty", approval.Condition{Subject: "field", Operator: "is_empty"}, `len(formData["field"] ?? "") == 0`},
 		{"IsNotEmpty", approval.Condition{Subject: "field", Operator: "is_not_empty"}, `len(formData["field"] ?? "") > 0`},
 		{"ApplicantSubject", approval.Condition{Subject: "applicantId", Operator: "eq", Value: "u1"}, `applicantId == "u1"`},
-		{"DeptSubject", approval.Condition{Subject: "applicantDeptId", Operator: "eq", Value: "d1"}, `applicantDeptId == "d1"`},
+		{"DepartmentSubject", approval.Condition{Subject: "applicantDepartmentId", Operator: "eq", Value: "d1"}, `applicantDepartmentId == "d1"`},
 		{"Unknown", approval.Condition{Subject: "x", Operator: "nope"}, "false"},
 	}
 

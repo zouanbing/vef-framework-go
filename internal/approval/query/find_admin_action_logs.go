@@ -79,7 +79,7 @@ func (h *FindAdminActionLogsHandler) Handle(ctx context.Context, query FindAdmin
 			Action:           string(log.Action),
 			OperatorID:       log.OperatorID,
 			OperatorName:     log.OperatorName,
-			OperatorDeptName: log.OperatorDeptName,
+			OperatorDepartmentName: log.OperatorDepartmentName,
 			TransferToID:     log.TransferToID,
 			TransferToName:   log.TransferToName,
 			Opinion:          log.Opinion,

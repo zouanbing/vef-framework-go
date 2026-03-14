@@ -31,7 +31,7 @@ type ConditionBranch struct {
 type EvaluationContext struct {
 	FormData        FormData
 	ApplicantID     string
-	ApplicantDeptID *string
+	ApplicantDepartmentID *string
 }
 
 // ConditionEvaluator evaluates branch conditions.

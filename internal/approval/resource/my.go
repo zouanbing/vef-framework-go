@@ -18,14 +18,14 @@ type MyResource struct {
 	api.Resource
 
 	bus          cqrs.Bus
-	deptResolver approval.PrincipalDeptResolver
+	departmentResolver approval.PrincipalDepartmentResolver
 }
 
 // NewMyResource creates a new self-service resource.
-func NewMyResource(bus cqrs.Bus, deptResolver approval.PrincipalDeptResolver) api.Resource {
+func NewMyResource(bus cqrs.Bus, departmentResolver approval.PrincipalDepartmentResolver) api.Resource {
 	return &MyResource{
 		bus:          bus,
-		deptResolver: deptResolver,
+		departmentResolver: departmentResolver,
 		Resource: api.NewRPCResource(
 			"approval/my",
 			api.WithOperations(
@@ -53,7 +53,7 @@ type FindAvailableFlowsParams struct {
 
 // FindAvailableFlows queries flows the current user is allowed to initiate.
 func (r *MyResource) FindAvailableFlows(ctx fiber.Ctx, principal *security.Principal, params FindAvailableFlowsParams) error {
-	deptID, _, err := r.deptResolver.Resolve(ctx.Context(), principal)
+	departmentID, _, err := r.departmentResolver.Resolve(ctx.Context(), principal)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (r *MyResource) FindAvailableFlows(ctx fiber.Ctx, principal *security.Princ
 	res, err := cqrs.Send[query.FindAvailableFlowsQuery, *page.Page[my.AvailableFlow]](ctx.Context(), r.bus, query.FindAvailableFlowsQuery{
 		UserID:          principal.ID,
 		TenantID:        params.TenantID,
-		ApplicantDeptID: deptID,
+		ApplicantDepartmentID: departmentID,
 		Keyword:         params.Keyword,
 		Pageable:        page.Pageable{Page: params.Page, Size: params.PageSize},
 	})

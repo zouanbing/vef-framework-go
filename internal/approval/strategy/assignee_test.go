@@ -28,8 +28,8 @@ func (m *MockAssigneeService) GetSuperior(_ context.Context, userID string) (*ap
 	return nil, nil
 }
 
-func (m *MockAssigneeService) GetDeptLeaders(_ context.Context, deptID string) ([]approval.UserInfo, error) {
-	if leaders, ok := m.deptLeaders[deptID]; ok {
+func (m *MockAssigneeService) GetDepartmentLeaders(_ context.Context, departmentID string) ([]approval.UserInfo, error) {
+	if leaders, ok := m.deptLeaders[departmentID]; ok {
 		return leaders, nil
 	}
 
@@ -53,7 +53,7 @@ func (*ErrAssigneeService) GetSuperior(context.Context, string) (*approval.UserI
 	return nil, errAssigneeSvc
 }
 
-func (*ErrAssigneeService) GetDeptLeaders(context.Context, string) ([]approval.UserInfo, error) {
+func (*ErrAssigneeService) GetDepartmentLeaders(context.Context, string) ([]approval.UserInfo, error) {
 	return nil, errAssigneeSvc
 }
 
@@ -202,51 +202,51 @@ func TestSuperiorAssigneeResolver(t *testing.T) {
 	})
 }
 
-// --- DeptLeaderAssigneeResolver ---
+// --- DepartmentLeaderAssigneeResolver ---
 
-func TestDeptLeaderAssigneeResolver(t *testing.T) {
+func TestDepartmentLeaderAssigneeResolver(t *testing.T) {
 	svc := &MockAssigneeService{
 		deptLeaders: map[string][]approval.UserInfo{
 			"dept1": {{ID: "leader1", Name: "Leader 1"}, {ID: "leader2", Name: "Leader 2"}},
 		},
 	}
-	r := NewDeptLeaderAssigneeResolver(svc)
-	assert.Equal(t, approval.AssigneeDeptLeader, r.Kind(), "Kind should be AssigneeDeptLeader")
+	r := NewDepartmentLeaderAssigneeResolver(svc)
+	assert.Equal(t, approval.AssigneeDepartmentLeader, r.Kind(), "Kind should be AssigneeDepartmentLeader")
 
 	t.Run("WithLeaders", func(t *testing.T) {
-		result, err := r.Resolve(context.Background(), &ResolveContext{ApplicantDeptID: new("dept1")})
+		result, err := r.Resolve(context.Background(), &ResolveContext{ApplicantDepartmentID: new("dept1")})
 		require.NoError(t, err, "Should resolve without error")
 		assertResolvedAssignees(t, result, []approval.UserInfo{{ID: "leader1", Name: "Leader 1"}, {ID: "leader2", Name: "Leader 2"}})
 	})
 
 	t.Run("UnknownDept", func(t *testing.T) {
-		result, err := r.Resolve(context.Background(), &ResolveContext{ApplicantDeptID: new("unknown")})
+		result, err := r.Resolve(context.Background(), &ResolveContext{ApplicantDepartmentID: new("unknown")})
 		require.NoError(t, err, "Should resolve without error")
 		assertUserIDs(t, result)
 	})
 
 	t.Run("NilService", func(t *testing.T) {
-		_, err := NewDeptLeaderAssigneeResolver(nil).Resolve(context.Background(), &ResolveContext{ApplicantDeptID: new("dept1")})
+		_, err := NewDepartmentLeaderAssigneeResolver(nil).Resolve(context.Background(), &ResolveContext{ApplicantDepartmentID: new("dept1")})
 		require.ErrorIs(t, err, ErrAssigneeServiceNil, "Should return ErrAssigneeServiceNil")
 	})
 
 	t.Run("ServiceError", func(t *testing.T) {
-		_, err := NewDeptLeaderAssigneeResolver(&ErrAssigneeService{}).Resolve(context.Background(), &ResolveContext{ApplicantDeptID: new("dept1")})
+		_, err := NewDepartmentLeaderAssigneeResolver(&ErrAssigneeService{}).Resolve(context.Background(), &ResolveContext{ApplicantDepartmentID: new("dept1")})
 		require.ErrorIs(t, err, errAssigneeSvc, "Should wrap underlying service error")
 	})
 }
 
-// --- DeptAssigneeResolver ---
+// --- DepartmentAssigneeResolver ---
 
-func TestDeptAssigneeResolver(t *testing.T) {
+func TestDepartmentAssigneeResolver(t *testing.T) {
 	svc := &MockAssigneeService{
 		deptLeaders: map[string][]approval.UserInfo{
 			"dept1": {{ID: "leader1", Name: "Leader 1"}},
 			"dept2": {{ID: "leader2", Name: "Leader 2"}, {ID: "leader3", Name: "Leader 3"}},
 		},
 	}
-	r := NewDeptAssigneeResolver(svc)
-	assert.Equal(t, approval.AssigneeDept, r.Kind(), "Kind should be AssigneeDept")
+	r := NewDepartmentAssigneeResolver(svc)
+	assert.Equal(t, approval.AssigneeDepartment, r.Kind(), "Kind should be AssigneeDept")
 
 	tests := []struct {
 		name     string
@@ -268,12 +268,12 @@ func TestDeptAssigneeResolver(t *testing.T) {
 	}
 
 	t.Run("NilService", func(t *testing.T) {
-		_, err := NewDeptAssigneeResolver(nil).Resolve(context.Background(), &ResolveContext{IDs: []string{"dept1"}})
+		_, err := NewDepartmentAssigneeResolver(nil).Resolve(context.Background(), &ResolveContext{IDs: []string{"dept1"}})
 		require.ErrorIs(t, err, ErrAssigneeServiceNil, "Should return ErrAssigneeServiceNil")
 	})
 
 	t.Run("ServiceError", func(t *testing.T) {
-		_, err := NewDeptAssigneeResolver(&ErrAssigneeService{}).Resolve(context.Background(), &ResolveContext{IDs: []string{"dept1"}})
+		_, err := NewDepartmentAssigneeResolver(&ErrAssigneeService{}).Resolve(context.Background(), &ResolveContext{IDs: []string{"dept1"}})
 		require.ErrorIs(t, err, errAssigneeSvc, "Should wrap underlying service error")
 	})
 }
