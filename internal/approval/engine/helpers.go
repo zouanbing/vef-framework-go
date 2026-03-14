@@ -227,11 +227,13 @@ func createTasksForUsers(ctx context.Context, pc *ProcessContext, userIDs []stri
 
 	deadline := computeDeadline(pc.Node)
 
-	for _, uid := range normalizedIDs {
-		assignee := approval.ResolvedAssignee{UserID: uid, UserName: names[uid]}
-		if _, err := pc.DB.NewInsert().Model(buildTask(pc, assignee, deadline)).Exec(ctx); err != nil {
-			return nil, fmt.Errorf("create task: %w", err)
-		}
+	tasks := make([]*approval.Task, len(normalizedIDs))
+	for i, uid := range normalizedIDs {
+		tasks[i] = buildTask(pc, approval.ResolvedAssignee{UserID: uid, UserName: names[uid]}, deadline)
+	}
+
+	if _, err := pc.DB.NewInsert().Model(&tasks).Exec(ctx); err != nil {
+		return nil, fmt.Errorf("create tasks: %w", err)
 	}
 
 	return &ProcessResult{Action: NodeActionWait}, nil
@@ -274,10 +276,13 @@ func handleEmptyAssignee(ctx context.Context, pc *ProcessContext, assigneeServic
 func createTasksWithDelegation(ctx context.Context, pc *ProcessContext, assignees []approval.ResolvedAssignee) error {
 	deadline := computeDeadline(pc.Node)
 
-	for _, assignee := range assignees {
-		if _, err := pc.DB.NewInsert().Model(buildTask(pc, assignee, deadline)).Exec(ctx); err != nil {
-			return fmt.Errorf("create task: %w", err)
-		}
+	tasks := make([]*approval.Task, len(assignees))
+	for i, assignee := range assignees {
+		tasks[i] = buildTask(pc, assignee, deadline)
+	}
+
+	if _, err := pc.DB.NewInsert().Model(&tasks).Exec(ctx); err != nil {
+		return fmt.Errorf("create tasks: %w", err)
 	}
 
 	return nil

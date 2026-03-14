@@ -65,7 +65,12 @@ func (*ExpressionConditionEvaluator) Evaluate(_ context.Context, cond approval.C
 		return false, fmt.Errorf("run expression: %w", err)
 	}
 
-	return result.(bool), nil
+	boolResult, ok := result.(bool)
+	if !ok {
+		return false, fmt.Errorf("expression returned non-bool type: %T", result)
+	}
+
+	return boolResult, nil
 }
 
 // buildFieldExpression converts a structured field condition to an expr-lang expression string.

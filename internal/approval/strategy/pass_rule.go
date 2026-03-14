@@ -80,6 +80,11 @@ func NewOneRejectStrategy() approval.PassRuleStrategy {
 }
 
 // OneRejectStrategy fails when any assignee rejects (veto power).
+// Note: the Evaluate logic is identical to AllPassStrategy because both strategies
+// share the same semantics under the current PassRuleContext model — any rejection
+// causes failure, and all must approve for success. They are kept separate as distinct
+// PassRule enum values so they can diverge if PassRuleContext is extended in the future
+// (e.g., with an "abstain" status).
 type OneRejectStrategy struct{}
 
 func (*OneRejectStrategy) Rule() approval.PassRule { return approval.PassAnyReject }

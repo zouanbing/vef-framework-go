@@ -6,6 +6,15 @@ import (
 	"github.com/coldsmirk/vef-framework-go/timex"
 )
 
+// stringPtrOrNil returns nil for empty strings, or a pointer to the string value.
+func stringPtrOrNil(s string) *string {
+	if s == "" {
+		return nil
+	}
+
+	return &s
+}
+
 // DomainEvent is the base interface for all approval domain events.
 type DomainEvent interface {
 	// EventName returns the unique event identifier (e.g., "approval.instance.created").
@@ -253,7 +262,7 @@ func NewTaskApprovedEvent(taskID, instanceID, nodeID, operatorID, opinion string
 		InstanceID:   instanceID,
 		NodeID:       nodeID,
 		OperatorID:   operatorID,
-		Opinion:      new(opinion),
+		Opinion:      stringPtrOrNil(opinion),
 		OccurredTime: timex.Now(),
 	}
 }
@@ -277,7 +286,7 @@ func NewTaskHandledEvent(taskID, instanceID, nodeID, operatorID, opinion string)
 		InstanceID:   instanceID,
 		NodeID:       nodeID,
 		OperatorID:   operatorID,
-		Opinion:      new(opinion),
+		Opinion:      stringPtrOrNil(opinion),
 		OccurredTime: timex.Now(),
 	}
 }
@@ -301,7 +310,7 @@ func NewTaskRejectedEvent(taskID, instanceID, nodeID, operatorID, opinion string
 		InstanceID:   instanceID,
 		NodeID:       nodeID,
 		OperatorID:   operatorID,
-		Opinion:      new(opinion),
+		Opinion:      stringPtrOrNil(opinion),
 		OccurredTime: timex.Now(),
 	}
 }
@@ -331,7 +340,7 @@ func NewTaskTransferredEvent(taskID, instanceID, nodeID, fromUserID, fromUserNam
 		FromUserName: fromUserName,
 		ToUserID:     toUserID,
 		ToUserName:   toUserName,
-		Reason:       new(reason),
+		Reason:       stringPtrOrNil(reason),
 		OccurredTime: timex.Now(),
 	}
 }
@@ -361,7 +370,7 @@ func NewTaskReassignedEvent(taskID, instanceID, nodeID, fromUserID, fromUserName
 		FromUserName: fromUserName,
 		ToUserID:     toUserID,
 		ToUserName:   toUserName,
-		Reason:       new(reason),
+		Reason:       stringPtrOrNil(reason),
 		OccurredTime: timex.Now(),
 	}
 }
@@ -543,7 +552,7 @@ func NewTaskUrgedEvent(instanceID, nodeID, taskID, urgerID, urgerName, targetUse
 		UrgerName:      urgerName,
 		TargetUserID:   targetUserID,
 		TargetUserName: targetUserName,
-		Message:        new(message),
+		Message:        stringPtrOrNil(message),
 		OccurredTime:   timex.Now(),
 	}
 }

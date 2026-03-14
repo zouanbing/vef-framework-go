@@ -216,6 +216,17 @@ func TestExpressionConditionEvaluator(t *testing.T) {
 		assert.True(t, result, "Should match applicant dept ID")
 	})
 
+	t.Run("NilDepartmentID", func(t *testing.T) {
+		ec := &approval.EvaluationContext{
+			FormData:    approval.FormData{},
+			ApplicantID: "user1",
+		}
+
+		result, err := e.Evaluate(ctx, approval.Condition{Expression: `applicantDepartmentId == ""`}, ec)
+		require.NoError(t, err, "Should evaluate with nil department ID")
+		assert.True(t, result, "Should resolve nil department ID as empty string")
+	})
+
 	t.Run("SyntaxError", func(t *testing.T) {
 		ec := &approval.EvaluationContext{FormData: approval.FormData{}}
 		_, err := e.Evaluate(ctx, approval.Condition{Expression: "invalid @@@ syntax"}, ec)

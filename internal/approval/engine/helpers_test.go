@@ -185,6 +185,10 @@ func TestMatchDelegation(t *testing.T) {
 
 // TestComputeDeadline tests compute deadline scenarios.
 func TestComputeDeadline(t *testing.T) {
+	t.Run("NilNode", func(t *testing.T) {
+		assert.Nil(t, computeDeadline(nil), "Should return nil for nil node")
+	})
+
 	t.Run("ZeroTimeout", func(t *testing.T) {
 		node := &approval.FlowNode{TimeoutHours: 0}
 		assert.Nil(t, computeDeadline(node), "Should return nil when timeout is zero")

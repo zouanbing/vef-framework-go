@@ -2,7 +2,6 @@ package resource
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/gofiber/fiber/v3"
 
@@ -199,17 +198,6 @@ func (r *AdminResource) ReassignTask(ctx fiber.Ctx, principal *security.Principa
 	return result.Ok().Response(ctx)
 }
 
-// resolveOperator builds an OperatorInfo from the authenticated principal.
 func (r *AdminResource) resolveOperator(ctx context.Context, principal *security.Principal) (approval.OperatorInfo, error) {
-	departmentID, departmentName, err := r.departmentResolver.Resolve(ctx, principal)
-	if err != nil {
-		return approval.OperatorInfo{}, fmt.Errorf("resolve operator dept: %w", err)
-	}
-
-	return approval.OperatorInfo{
-		ID:       principal.ID,
-		Name:     principal.Name,
-		DepartmentID:   departmentID,
-		DepartmentName: departmentName,
-	}, nil
+	return resolveOperator(ctx, r.departmentResolver, principal)
 }

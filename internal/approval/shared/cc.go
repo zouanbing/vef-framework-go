@@ -33,7 +33,7 @@ func ResolveCCUserIDs(cfg approval.FlowNodeCC, formData approval.FormData) ([]st
 		return NormalizeUniqueIDs(cfg.IDs), nil
 	case approval.CCRole, approval.CCDepartment:
 		// Role and department CC kinds require external user resolution (e.g., via AssigneeService).
-		// Skip silently here; callers that need role/dept resolution should inject an alternative resolver.
+		// Skip silently here; callers that need role/department resolution should inject an alternative resolver.
 		return nil, nil
 	case approval.CCFormField:
 		// handled below

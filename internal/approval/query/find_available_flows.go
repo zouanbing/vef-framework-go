@@ -59,7 +59,7 @@ func (h *FindAvailableFlowsHandler) Handle(ctx context.Context, query FindAvaila
 		return nil, fmt.Errorf("query all-allowed flows: %w", err)
 	}
 
-	// Find flows with user/dept/role initiator rules.
+	// Find flows with user/department/role initiator rules.
 	// Load all initiators and filter in Go since JSON/array containment varies across dialects.
 	// Scope initiator query to tenant's flows when TenantID is specified.
 	var tenantFlowIDs []string
@@ -192,7 +192,7 @@ func (h *FindAvailableFlowsHandler) matchInitiatorFlowIDs(
 	ctx context.Context,
 	initiators []approval.FlowInitiator,
 	userID string,
-	applicantDeptID *string,
+	applicantDepartmentID *string,
 ) ([]string, error) {
 	matchedFlowIDs := collections.NewHashSet[string]()
 	roleMembershipCache := make(map[string]bool)
@@ -205,7 +205,7 @@ func (h *FindAvailableFlowsHandler) matchInitiatorFlowIDs(
 			}
 
 		case approval.InitiatorDepartment:
-			if applicantDeptID != nil && slices.Contains(initiator.IDs, *applicantDeptID) {
+			if applicantDepartmentID != nil && slices.Contains(initiator.IDs, *applicantDepartmentID) {
 				matchedFlowIDs.Add(initiator.FlowID)
 			}
 

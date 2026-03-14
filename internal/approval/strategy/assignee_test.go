@@ -16,7 +16,7 @@ import (
 // MockAssigneeService is a configurable mock for approval.AssigneeService.
 type MockAssigneeService struct {
 	superiors   map[string]approval.UserInfo
-	deptLeaders map[string][]approval.UserInfo
+	departmentLeaders map[string][]approval.UserInfo
 	roleUsers   map[string][]approval.UserInfo
 }
 
@@ -29,7 +29,7 @@ func (m *MockAssigneeService) GetSuperior(_ context.Context, userID string) (*ap
 }
 
 func (m *MockAssigneeService) GetDepartmentLeaders(_ context.Context, departmentID string) ([]approval.UserInfo, error) {
-	if leaders, ok := m.deptLeaders[departmentID]; ok {
+	if leaders, ok := m.departmentLeaders[departmentID]; ok {
 		return leaders, nil
 	}
 
@@ -206,7 +206,7 @@ func TestSuperiorAssigneeResolver(t *testing.T) {
 
 func TestDepartmentLeaderAssigneeResolver(t *testing.T) {
 	svc := &MockAssigneeService{
-		deptLeaders: map[string][]approval.UserInfo{
+		departmentLeaders: map[string][]approval.UserInfo{
 			"dept1": {{ID: "leader1", Name: "Leader 1"}, {ID: "leader2", Name: "Leader 2"}},
 		},
 	}
@@ -219,7 +219,19 @@ func TestDepartmentLeaderAssigneeResolver(t *testing.T) {
 		assertResolvedAssignees(t, result, []approval.UserInfo{{ID: "leader1", Name: "Leader 1"}, {ID: "leader2", Name: "Leader 2"}})
 	})
 
-	t.Run("UnknownDept", func(t *testing.T) {
+	t.Run("NilDepartmentID", func(t *testing.T) {
+		result, err := r.Resolve(context.Background(), &ResolveContext{})
+		require.NoError(t, err, "Should resolve without error when department ID is nil")
+		assert.Empty(t, result, "Should return empty result")
+	})
+
+	t.Run("EmptyDepartmentID", func(t *testing.T) {
+		result, err := r.Resolve(context.Background(), &ResolveContext{ApplicantDepartmentID: new("")})
+		require.NoError(t, err, "Should resolve without error when department ID is empty")
+		assert.Empty(t, result, "Should return empty result")
+	})
+
+	t.Run("UnknownDepartment", func(t *testing.T) {
 		result, err := r.Resolve(context.Background(), &ResolveContext{ApplicantDepartmentID: new("unknown")})
 		require.NoError(t, err, "Should resolve without error")
 		assertUserIDs(t, result)
@@ -240,13 +252,13 @@ func TestDepartmentLeaderAssigneeResolver(t *testing.T) {
 
 func TestDepartmentAssigneeResolver(t *testing.T) {
 	svc := &MockAssigneeService{
-		deptLeaders: map[string][]approval.UserInfo{
+		departmentLeaders: map[string][]approval.UserInfo{
 			"dept1": {{ID: "leader1", Name: "Leader 1"}},
 			"dept2": {{ID: "leader2", Name: "Leader 2"}, {ID: "leader3", Name: "Leader 3"}},
 		},
 	}
 	r := NewDepartmentAssigneeResolver(svc)
-	assert.Equal(t, approval.AssigneeDepartment, r.Kind(), "Kind should be AssigneeDept")
+	assert.Equal(t, approval.AssigneeDepartment, r.Kind(), "Kind should be AssigneeDepartment")
 
 	tests := []struct {
 		name     string
@@ -368,7 +380,7 @@ func TestCompositeAssigneeResolver(t *testing.T) {
 	svc := &MockAssigneeService{
 		roleUsers:   map[string][]approval.UserInfo{"admin": {{ID: "u1", Name: "User U1"}}},
 		superiors:   map[string]approval.UserInfo{"emp1": {ID: "mgr1", Name: "Manager 1"}},
-		deptLeaders: map[string][]approval.UserInfo{"dept1": {{ID: "leader1", Name: "Leader 1"}}},
+		departmentLeaders: map[string][]approval.UserInfo{"dept1": {{ID: "leader1", Name: "Leader 1"}}},
 	}
 
 	t.Run("MultipleKinds", func(t *testing.T) {

@@ -466,26 +466,26 @@ func TestEvaluateGroupConditions(t *testing.T) {
 			assert.True(t, match, "Should match when applicant ID equals expected value")
 		})
 
-		t.Run("DeptSubjectMatch", func(t *testing.T) {
+		t.Run("DepartmentSubjectMatch", func(t *testing.T) {
 			conditions := []approval.Condition{
 				{Kind: approval.ConditionField, Subject: "applicantDepartmentId", Operator: "eq", Value: "dept_001"},
 			}
 			evalCtx := &approval.EvaluationContext{FormData: approval.NewFormData(nil), ApplicantID: "u1", ApplicantDepartmentID: new("dept_001")}
 
 			match, err := evaluateGroupConditions(realRegistry, t.Context(), evalCtx, conditions)
-			require.NoError(t, err, "Should not return error for dept condition")
-			assert.True(t, match, "Should match when dept ID equals expected value")
+			require.NoError(t, err, "Should not return error for department condition")
+			assert.True(t, match, "Should match when department ID equals expected value")
 		})
 
-		t.Run("DeptSubjectNoMatch", func(t *testing.T) {
+		t.Run("DepartmentSubjectNoMatch", func(t *testing.T) {
 			conditions := []approval.Condition{
 				{Kind: approval.ConditionField, Subject: "applicantDepartmentId", Operator: "eq", Value: "dept_999"},
 			}
 			evalCtx := &approval.EvaluationContext{FormData: approval.NewFormData(nil), ApplicantID: "u1", ApplicantDepartmentID: new("dept_001")}
 
 			match, err := evaluateGroupConditions(realRegistry, t.Context(), evalCtx, conditions)
-			require.NoError(t, err, "Should not return error for dept condition")
-			assert.False(t, match, "Should not match when dept ID differs from expected value")
+			require.NoError(t, err, "Should not return error for department condition")
+			assert.False(t, match, "Should not match when department ID differs from expected value")
 		})
 
 		t.Run("Operators", func(t *testing.T) {
@@ -557,15 +557,15 @@ func TestEvaluateGroupConditions(t *testing.T) {
 			assert.True(t, match, "Should match when applicant equals expected value")
 		})
 
-		t.Run("DeptContext", func(t *testing.T) {
+		t.Run("DepartmentContext", func(t *testing.T) {
 			conditions := []approval.Condition{
 				{Kind: approval.ConditionExpression, Expression: `applicantDepartmentId == "finance"`},
 			}
 			evalCtx := &approval.EvaluationContext{FormData: approval.NewFormData(nil), ApplicantID: "u1", ApplicantDepartmentID: new("finance")}
 
 			match, err := evaluateGroupConditions(realRegistry, t.Context(), evalCtx, conditions)
-			require.NoError(t, err, "Should not return error for dept expression")
-			assert.True(t, match, "Should match when dept equals expected value in expression")
+			require.NoError(t, err, "Should not return error for department expression")
+			assert.True(t, match, "Should match when department equals expected value in expression")
 		})
 
 		t.Run("ComplexExpression", func(t *testing.T) {

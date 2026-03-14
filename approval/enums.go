@@ -28,8 +28,8 @@ const (
 type InitiatorKind string
 
 const (
-	InitiatorUser InitiatorKind = "user"
-	InitiatorRole InitiatorKind = "role"
+	InitiatorUser       InitiatorKind = "user"
+	InitiatorRole       InitiatorKind = "role"
 	InitiatorDepartment InitiatorKind = "department"
 )
 
@@ -176,13 +176,13 @@ const (
 type AssigneeKind string
 
 const (
-	AssigneeUser       AssigneeKind = "user"
-	AssigneeRole       AssigneeKind = "role"
+	AssigneeUser             AssigneeKind = "user"
+	AssigneeRole             AssigneeKind = "role"
 	AssigneeDepartment       AssigneeKind = "department"        // Department head
-	AssigneeSelf       AssigneeKind = "self"        // Applicant themselves
-	AssigneeSuperior   AssigneeKind = "superior"    // Direct superior
+	AssigneeSelf             AssigneeKind = "self"              // Applicant themselves
+	AssigneeSuperior         AssigneeKind = "superior"          // Direct superior
 	AssigneeDepartmentLeader AssigneeKind = "department_leader" // Continuous multi-level supervisor
-	AssigneeFormField  AssigneeKind = "form_field"  // Based on form field
+	AssigneeFormField        AssigneeKind = "form_field"        // Based on form field
 )
 
 // InstanceStatus represents the status of a flow instance.
@@ -262,10 +262,10 @@ const (
 type CCKind string
 
 const (
-	CCUser      CCKind = "user"
-	CCRole      CCKind = "role"
-	CCDepartment      CCKind = "department"
-	CCFormField CCKind = "form_field"
+	CCUser       CCKind = "user"
+	CCRole       CCKind = "role"
+	CCDepartment CCKind = "department"
+	CCFormField  CCKind = "form_field"
 )
 
 // CCTiming represents the timing of CC notification.

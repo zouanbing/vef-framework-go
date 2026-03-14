@@ -8,6 +8,8 @@ import (
 	"slices"
 	"strings"
 
+	collections "github.com/coldsmirk/go-collections"
+
 	"github.com/coldsmirk/vef-framework-go/approval"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/shared"
 	"github.com/coldsmirk/vef-framework-go/orm"
@@ -263,17 +265,17 @@ func validateUploadField(field approval.FormFieldDefinition, value any) error {
 }
 
 func validateSelectField(field approval.FormFieldDefinition, value any) error {
-	allowedValues := make(map[string]struct{}, len(field.Options))
+	allowedValues := collections.NewHashSet[string]()
 	for _, option := range field.Options {
-		allowedValues[fmt.Sprint(option.Value)] = struct{}{}
+		allowedValues.Add(fmt.Sprint(option.Value))
 	}
 
 	validateValue := func(item any) error {
-		if len(allowedValues) == 0 {
+		if allowedValues.IsEmpty() {
 			return nil
 		}
 
-		if _, ok := allowedValues[fmt.Sprint(item)]; !ok {
+		if !allowedValues.Contains(fmt.Sprint(item)) {
 			return newFormValidationError(fmt.Sprintf("字段 %s 取值无效", fieldLabel(field)))
 		}
 
@@ -412,7 +414,7 @@ func FilterEditableFormData(formData map[string]any, permissions map[string]appr
 }
 
 // CheckInitiationPermission checks if the applicant is allowed to initiate the flow.
-func (s *ValidationService) CheckInitiationPermission(ctx context.Context, db orm.DB, flowID, applicantID string, applicantDeptID *string) (bool, error) {
+func (s *ValidationService) CheckInitiationPermission(ctx context.Context, db orm.DB, flowID, applicantID string, applicantDepartmentID *string) (bool, error) {
 	var initiators []approval.FlowInitiator
 
 	if err := db.NewSelect().
@@ -437,11 +439,11 @@ func (s *ValidationService) CheckInitiationPermission(ctx context.Context, db or
 			}
 
 		case approval.InitiatorDepartment:
-			if applicantDeptID == nil {
+			if applicantDepartmentID == nil {
 				continue
 			}
 
-			if slices.Contains(initiator.IDs, *applicantDeptID) {
+			if slices.Contains(initiator.IDs, *applicantDepartmentID) {
 				return true, nil
 			}
 

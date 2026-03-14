@@ -17,6 +17,21 @@ import (
 
 var errUnsupportedAction = errors.New("unsupported action")
 
+// resolveOperator builds an OperatorInfo from the authenticated principal.
+func resolveOperator(ctx context.Context, resolver approval.PrincipalDepartmentResolver, principal *security.Principal) (approval.OperatorInfo, error) {
+	departmentID, departmentName, err := resolver.Resolve(ctx, principal)
+	if err != nil {
+		return approval.OperatorInfo{}, fmt.Errorf("resolve operator department: %w", err)
+	}
+
+	return approval.OperatorInfo{
+		ID:             principal.ID,
+		Name:           principal.Name,
+		DepartmentID:   departmentID,
+		DepartmentName: departmentName,
+	}, nil
+}
+
 // InstanceResource handles instance lifecycle and queries.
 type InstanceResource struct {
 	api.Resource
@@ -287,19 +302,8 @@ func (r *InstanceResource) RemoveAssignee(ctx fiber.Ctx, principal *security.Pri
 	return result.Ok().Response(ctx)
 }
 
-// resolveOperator builds an OperatorInfo from the authenticated principal.
 func (r *InstanceResource) resolveOperator(ctx context.Context, principal *security.Principal) (approval.OperatorInfo, error) {
-	departmentID, departmentName, err := r.departmentResolver.Resolve(ctx, principal)
-	if err != nil {
-		return approval.OperatorInfo{}, fmt.Errorf("resolve operator dept: %w", err)
-	}
-
-	return approval.OperatorInfo{
-		ID:       principal.ID,
-		Name:     principal.Name,
-		DepartmentID:   departmentID,
-		DepartmentName: departmentName,
-	}, nil
+	return resolveOperator(ctx, r.departmentResolver, principal)
 }
 
 // UrgeTaskParams contains the parameters for urging a task.
