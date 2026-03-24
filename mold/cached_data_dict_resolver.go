@@ -6,8 +6,8 @@ import (
 
 	"github.com/coldsmirk/vef-framework-go/cache"
 	"github.com/coldsmirk/vef-framework-go/event"
-	ilog "github.com/coldsmirk/vef-framework-go/internal/log"
-	"github.com/coldsmirk/vef-framework-go/log"
+	ilog "github.com/coldsmirk/vef-framework-go/internal/logger"
+	"github.com/coldsmirk/vef-framework-go/logx"
 )
 
 const (
@@ -46,7 +46,7 @@ func PublishDataDictChangedEvent(publisher event.Publisher, keys ...string) {
 type CachedDataDictResolver struct {
 	loader    DataDictLoader
 	dictCache cache.Cache[map[string]string]
-	logger    log.Logger
+	logger    logx.Logger
 }
 
 // NewCachedDataDictResolver constructs a caching resolver for dictionary lookups.

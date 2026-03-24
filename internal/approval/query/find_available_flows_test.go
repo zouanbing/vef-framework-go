@@ -242,9 +242,9 @@ func (s *FindAvailableFlowsTestSuite) TestUserWithInitiatorAccess() {
 
 func (s *FindAvailableFlowsTestSuite) TestUserWithDepartmentInitiatorAccess() {
 	result, err := s.handler.Handle(s.ctx, query.FindAvailableFlowsQuery{
-		UserID:          "user-dept",
+		UserID:                "user-dept",
 		ApplicantDepartmentID: new("dept-a"),
-		Pageable:        page.Pageable{Page: 1, Size: 10},
+		Pageable:              page.Pageable{Page: 1, Size: 10},
 	})
 	s.Require().NoError(err, "Should query without error")
 

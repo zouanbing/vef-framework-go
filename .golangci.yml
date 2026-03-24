@@ -215,7 +215,7 @@ linters:
       - path: 'null/(date|date_time|time)\.go'
         linters:
           - dupl
-      - path: 'internal/log/'
+      - path: 'internal/logger/'
         linters:
           - revive
         note: 'intentional package name matching standard lib, aliased at call sites'

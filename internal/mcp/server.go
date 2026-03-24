@@ -11,7 +11,7 @@ import (
 	smcp "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/coldsmirk/vef-framework-go/config"
-	ilog "github.com/coldsmirk/vef-framework-go/internal/log"
+	ilog "github.com/coldsmirk/vef-framework-go/internal/logger"
 	"github.com/coldsmirk/vef-framework-go/mcp"
 )
 

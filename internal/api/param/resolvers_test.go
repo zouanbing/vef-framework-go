@@ -20,7 +20,7 @@ import (
 	"github.com/coldsmirk/vef-framework-go/event"
 	"github.com/coldsmirk/vef-framework-go/internal/app"
 	"github.com/coldsmirk/vef-framework-go/internal/apptest"
-	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/logx"
 	"github.com/coldsmirk/vef-framework-go/mold"
 	"github.com/coldsmirk/vef-framework-go/orm"
 	"github.com/coldsmirk/vef-framework-go/result"
@@ -231,7 +231,7 @@ func (*TestParamResolversResource) VerifyDB(ctx fiber.Ctx, db orm.DB) error {
 	return result.Ok(map[string]any{"injected": injected}).Response(ctx)
 }
 
-func (*TestParamResolversResource) VerifyLogger(ctx fiber.Ctx, logger log.Logger) error {
+func (*TestParamResolversResource) VerifyLogger(ctx fiber.Ctx, logger logx.Logger) error {
 	injected := logger != nil
 
 	return result.Ok(map[string]any{"injected": injected}).Response(ctx)

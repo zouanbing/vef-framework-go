@@ -1,4 +1,4 @@
-package log //nolint:revive // intentional package name
+package logx
 
 // Level represents a logging priority. Higher levels are more important.
 type Level int8

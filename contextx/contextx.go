@@ -5,7 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/logx"
 	"github.com/coldsmirk/vef-framework-go/orm"
 	"github.com/coldsmirk/vef-framework-go/reflectx"
 	"github.com/coldsmirk/vef-framework-go/security"
@@ -54,8 +54,8 @@ func SetPrincipal(ctx context.Context, principal *security.Principal) context.Co
 	return setValue(ctx, KeyPrincipal, principal)
 }
 
-func Logger(ctx context.Context, fallbacks ...log.Logger) log.Logger {
-	if logger, ok := ctx.Value(KeyLogger).(log.Logger); ok {
+func Logger(ctx context.Context, fallbacks ...logx.Logger) logx.Logger {
+	if logger, ok := ctx.Value(KeyLogger).(logx.Logger); ok {
 		return logger
 	}
 
@@ -68,7 +68,7 @@ func Logger(ctx context.Context, fallbacks ...log.Logger) log.Logger {
 	return nil
 }
 
-func SetLogger(ctx context.Context, logger log.Logger) context.Context {
+func SetLogger(ctx context.Context, logger logx.Logger) context.Context {
 	return setValue(ctx, KeyLogger, logger)
 }
 

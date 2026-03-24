@@ -9,12 +9,12 @@ import (
 
 	"github.com/coldsmirk/vef-framework-go/config"
 	"github.com/coldsmirk/vef-framework-go/internal/contract"
-	"github.com/coldsmirk/vef-framework-go/internal/log"
+	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
 	"github.com/coldsmirk/vef-framework-go/monitor"
 	"github.com/coldsmirk/vef-framework-go/version"
 )
 
-var logger = log.Named("monitor")
+var logger = loggerpkg.Named("monitor")
 
 // Module is the FX module for system monitoring functionality.
 var Module = fx.Module(

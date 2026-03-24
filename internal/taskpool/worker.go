@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/logx"
 )
 
 // WorkerDelegate defines pluggable task execution logic.
@@ -41,7 +41,7 @@ type Worker[TIn, TOut any] struct {
 	id       int
 	pool     *WorkerPool[TIn, TOut]
 	delegate WorkerDelegate[TIn, TOut]
-	logger   log.Logger
+	logger   logx.Logger
 
 	state      workerState
 	stateMu    sync.RWMutex

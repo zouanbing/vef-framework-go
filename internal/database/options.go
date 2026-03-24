@@ -5,14 +5,14 @@ import (
 
 	"github.com/coldsmirk/vef-framework-go/config"
 	"github.com/coldsmirk/vef-framework-go/internal/database/sqlguard"
-	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/logx"
 )
 
 type databaseOptions struct {
 	Config          *config.DataSourceConfig
 	PoolConfig      *ConnectionPoolConfig
 	EnableQueryHook bool
-	Logger          log.Logger
+	Logger          logx.Logger
 	BunOptions      []bun.DBOption
 	SQLGuardConfig  *sqlguard.Config
 }
@@ -48,7 +48,7 @@ func DisableQueryHook() Option {
 	}
 }
 
-func WithLogger(logger log.Logger) Option {
+func WithLogger(logger logx.Logger) Option {
 	return func(opts *databaseOptions) {
 		opts.Logger = logger
 	}

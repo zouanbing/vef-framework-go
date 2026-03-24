@@ -19,7 +19,7 @@ import (
 
 	"github.com/coldsmirk/vef-framework-go/config"
 	"github.com/coldsmirk/vef-framework-go/i18n"
-	"github.com/coldsmirk/vef-framework-go/internal/log"
+	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
 	"github.com/coldsmirk/vef-framework-go/null"
 	"github.com/coldsmirk/vef-framework-go/result"
 )
@@ -30,7 +30,7 @@ const (
 )
 
 var (
-	logger     = log.Named("validator")
+	logger     = loggerpkg.Named("validator")
 	translator ut.Translator
 	validator  *v.Validate
 )

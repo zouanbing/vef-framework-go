@@ -8,11 +8,11 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/coldsmirk/vef-framework-go/config"
-	"github.com/coldsmirk/vef-framework-go/internal/log"
+	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
 )
 
 var (
-	logger = log.Named("database")
+	logger = loggerpkg.Named("database")
 	Module = fx.Module(
 		"vef:database",
 		fx.Provide(

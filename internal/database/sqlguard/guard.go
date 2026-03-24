@@ -6,7 +6,7 @@ import (
 
 	"github.com/ajitpratap0/GoSQLX/pkg/gosqlx"
 
-	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/logx"
 )
 
 var (
@@ -37,12 +37,12 @@ func (e *GuardError) Unwrap() error {
 // Guard coordinates sql rule checking.
 type Guard struct {
 	rules  []Rule
-	logger log.Logger
+	logger logx.Logger
 }
 
 // NewGuard creates a new sql guard with the given rules.
 // If no rules are provided, the default rules are used.
-func NewGuard(logger log.Logger, rules ...Rule) *Guard {
+func NewGuard(logger logx.Logger, rules ...Rule) *Guard {
 	if len(rules) == 0 {
 		rules = DefaultRules()
 	}

@@ -8,8 +8,8 @@ import (
 
 // OperatorInfo bundles operator identity for action logging.
 type OperatorInfo struct {
-	ID       string  `json:"id"`
-	Name     string  `json:"name"`
+	ID             string  `json:"id"`
+	Name           string  `json:"name"`
 	DepartmentID   *string `json:"departmentId,omitempty"`
 	DepartmentName *string `json:"departmentName,omitempty"`
 }
@@ -17,10 +17,10 @@ type OperatorInfo struct {
 // NewActionLog creates an ActionLog with the operator fields pre-filled.
 func (o OperatorInfo) NewActionLog(instanceID string, action ActionType) *ActionLog {
 	return &ActionLog{
-		InstanceID:       instanceID,
-		Action:           action,
-		OperatorID:       o.ID,
-		OperatorName:     o.Name,
+		InstanceID:             instanceID,
+		Action:                 action,
+		OperatorID:             o.ID,
+		OperatorName:           o.Name,
 		OperatorDepartmentID:   o.DepartmentID,
 		OperatorDepartmentName: o.DepartmentName,
 	}
@@ -194,20 +194,20 @@ type Instance struct {
 	orm.BaseModel `bun:"table:apv_instance,alias:ai"`
 	orm.Model
 
-	TenantID          string          `json:"tenantId" bun:"tenant_id"`
-	FlowID            string          `json:"flowId" bun:"flow_id"`
-	FlowVersionID     string          `json:"flowVersionId" bun:"flow_version_id"`
-	Title             string          `json:"title" bun:"title"`
-	InstanceNo        string          `json:"instanceNo" bun:"instance_no"`
-	ApplicantID       string          `json:"applicantId" bun:"applicant_id"`
-	ApplicantName     string          `json:"applicantName" bun:"applicant_name"`
+	TenantID                string          `json:"tenantId" bun:"tenant_id"`
+	FlowID                  string          `json:"flowId" bun:"flow_id"`
+	FlowVersionID           string          `json:"flowVersionId" bun:"flow_version_id"`
+	Title                   string          `json:"title" bun:"title"`
+	InstanceNo              string          `json:"instanceNo" bun:"instance_no"`
+	ApplicantID             string          `json:"applicantId" bun:"applicant_id"`
+	ApplicantName           string          `json:"applicantName" bun:"applicant_name"`
 	ApplicantDepartmentID   *string         `json:"applicantDepartmentId" bun:"applicant_department_id,nullzero"`
 	ApplicantDepartmentName *string         `json:"applicantDepartmentName" bun:"applicant_department_name,nullzero"`
-	Status            InstanceStatus  `json:"status" bun:"status"`
-	CurrentNodeID     *string         `json:"currentNodeId" bun:"current_node_id,nullzero"`
-	FinishedAt        *timex.DateTime `json:"finishedAt" bun:"finished_at,nullzero"`
-	BusinessRecordID  *string         `json:"businessRecordId" bun:"business_record_id,nullzero"`
-	FormData          map[string]any  `json:"formData" bun:"form_data,type:jsonb,nullzero"`
+	Status                  InstanceStatus  `json:"status" bun:"status"`
+	CurrentNodeID           *string         `json:"currentNodeId" bun:"current_node_id,nullzero"`
+	FinishedAt              *timex.DateTime `json:"finishedAt" bun:"finished_at,nullzero"`
+	BusinessRecordID        *string         `json:"businessRecordId" bun:"business_record_id,nullzero"`
+	FormData                map[string]any  `json:"formData" bun:"form_data,type:jsonb,nullzero"`
 }
 
 // Task represents an approval task.
@@ -252,26 +252,26 @@ type ActionLog struct {
 	orm.IDModel
 	orm.CreatedModel
 
-	InstanceID         string           `json:"instanceId" bun:"instance_id"`
-	NodeID             *string          `json:"nodeId" bun:"node_id,nullzero"`
-	TaskID             *string          `json:"taskId" bun:"task_id,nullzero"`
-	Action             ActionType       `json:"action" bun:"action"`
-	OperatorID         string           `json:"operatorId" bun:"operator_id"`
-	OperatorName       string           `json:"operatorName" bun:"operator_name"`
-	OperatorDepartmentID     *string          `json:"operatorDepartmentId" bun:"operator_department_id,nullzero"`
-	OperatorDepartmentName   *string          `json:"operatorDepartmentName" bun:"operator_department_name,nullzero"`
-	IPAddress          *string          `json:"ipAddress" bun:"ip_address,nullzero"`
-	UserAgent          *string          `json:"userAgent" bun:"user_agent,nullzero"`
-	Opinion            *string          `json:"opinion" bun:"opinion,nullzero"`
-	TransferToID       *string          `json:"transferToId" bun:"transfer_to_id,nullzero"`
-	TransferToName     *string          `json:"transferToName" bun:"transfer_to_name,nullzero"`
-	RollbackToNodeID   *string          `json:"rollbackToNodeId" bun:"rollback_to_node_id,nullzero"`
-	AddAssigneeType    *AddAssigneeType `json:"addAssigneeType" bun:"add_assignee_type,nullzero"`
-	AddedAssigneeIDs   []string         `json:"addedAssigneeIds" bun:"added_assignee_ids,type:jsonb"`
-	RemovedAssigneeIDs []string         `json:"removedAssigneeIds" bun:"removed_assignee_ids,type:jsonb"`
-	CCUserIDs          []string         `json:"ccUserIds" bun:"cc_user_ids,type:jsonb"`
-	Attachments        []string         `json:"attachments" bun:"attachments,type:jsonb,nullzero"`
-	Meta               map[string]any   `json:"meta" bun:"meta,type:jsonb,nullzero"`
+	InstanceID             string           `json:"instanceId" bun:"instance_id"`
+	NodeID                 *string          `json:"nodeId" bun:"node_id,nullzero"`
+	TaskID                 *string          `json:"taskId" bun:"task_id,nullzero"`
+	Action                 ActionType       `json:"action" bun:"action"`
+	OperatorID             string           `json:"operatorId" bun:"operator_id"`
+	OperatorName           string           `json:"operatorName" bun:"operator_name"`
+	OperatorDepartmentID   *string          `json:"operatorDepartmentId" bun:"operator_department_id,nullzero"`
+	OperatorDepartmentName *string          `json:"operatorDepartmentName" bun:"operator_department_name,nullzero"`
+	IPAddress              *string          `json:"ipAddress" bun:"ip_address,nullzero"`
+	UserAgent              *string          `json:"userAgent" bun:"user_agent,nullzero"`
+	Opinion                *string          `json:"opinion" bun:"opinion,nullzero"`
+	TransferToID           *string          `json:"transferToId" bun:"transfer_to_id,nullzero"`
+	TransferToName         *string          `json:"transferToName" bun:"transfer_to_name,nullzero"`
+	RollbackToNodeID       *string          `json:"rollbackToNodeId" bun:"rollback_to_node_id,nullzero"`
+	AddAssigneeType        *AddAssigneeType `json:"addAssigneeType" bun:"add_assignee_type,nullzero"`
+	AddedAssigneeIDs       []string         `json:"addedAssigneeIds" bun:"added_assignee_ids,type:jsonb"`
+	RemovedAssigneeIDs     []string         `json:"removedAssigneeIds" bun:"removed_assignee_ids,type:jsonb"`
+	CCUserIDs              []string         `json:"ccUserIds" bun:"cc_user_ids,type:jsonb"`
+	Attachments            []string         `json:"attachments" bun:"attachments,type:jsonb,nullzero"`
+	Meta                   map[string]any   `json:"meta" bun:"meta,type:jsonb,nullzero"`
 }
 
 // CCRecord represents a CC notification record.

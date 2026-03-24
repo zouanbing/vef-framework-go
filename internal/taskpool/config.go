@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/logx"
 )
 
 const (
@@ -28,7 +28,7 @@ type Config[TIn, TOut any] struct {
 	DelegateFactory     DelegateFactory[TIn, TOut]
 	DelegateConfig      any
 	HealthCheckInterval time.Duration
-	Logger              log.Logger
+	Logger              logx.Logger
 }
 
 type DelegateFactory[TIn, TOut any] func() WorkerDelegate[TIn, TOut]

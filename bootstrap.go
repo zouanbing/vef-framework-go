@@ -13,7 +13,7 @@ import (
 	"github.com/coldsmirk/vef-framework-go/internal/cron"
 	"github.com/coldsmirk/vef-framework-go/internal/database"
 	"github.com/coldsmirk/vef-framework-go/internal/event"
-	ilog "github.com/coldsmirk/vef-framework-go/internal/log"
+	ilog "github.com/coldsmirk/vef-framework-go/internal/logger"
 	"github.com/coldsmirk/vef-framework-go/internal/mcp"
 	"github.com/coldsmirk/vef-framework-go/internal/middleware"
 	"github.com/coldsmirk/vef-framework-go/internal/mold"
@@ -24,7 +24,7 @@ import (
 	"github.com/coldsmirk/vef-framework-go/internal/security"
 	isequence "github.com/coldsmirk/vef-framework-go/internal/sequence"
 	"github.com/coldsmirk/vef-framework-go/internal/storage"
-	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/logx"
 )
 
 // Default timeout for framework startup and shutdown.
@@ -32,7 +32,7 @@ const defaultTimeout = 30 * time.Second
 
 func newFxLogger() fxevent.Logger {
 	return &fxevent.SlogLogger{
-		Logger: ilog.NewSLogger("vef", 5, log.LevelWarn),
+		Logger: ilog.NewSLogger("vef", 5, logx.LevelWarn),
 	}
 }
 

@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/logx"
 	"github.com/coldsmirk/vef-framework-go/mold"
 	"github.com/coldsmirk/vef-framework-go/null"
 	"github.com/coldsmirk/vef-framework-go/reflectx"
@@ -40,7 +40,7 @@ var (
 // TranslateTransformer is a translator-based transformer that converts values to readable names
 // Supports multiple translators and delegates to the appropriate one based on translation kind (from tag parameters).
 type TranslateTransformer struct {
-	logger      log.Logger
+	logger      logx.Logger
 	translators []mold.Translator
 }
 

@@ -15,9 +15,9 @@ import (
 
 // MockAssigneeService is a configurable mock for approval.AssigneeService.
 type MockAssigneeService struct {
-	superiors   map[string]approval.UserInfo
+	superiors         map[string]approval.UserInfo
 	departmentLeaders map[string][]approval.UserInfo
-	roleUsers   map[string][]approval.UserInfo
+	roleUsers         map[string][]approval.UserInfo
 }
 
 func (m *MockAssigneeService) GetSuperior(_ context.Context, userID string) (*approval.UserInfo, error) {
@@ -378,8 +378,8 @@ func TestFormFieldAssigneeResolver(t *testing.T) {
 
 func TestCompositeAssigneeResolver(t *testing.T) {
 	svc := &MockAssigneeService{
-		roleUsers:   map[string][]approval.UserInfo{"admin": {{ID: "u1", Name: "User U1"}}},
-		superiors:   map[string]approval.UserInfo{"emp1": {ID: "mgr1", Name: "Manager 1"}},
+		roleUsers:         map[string][]approval.UserInfo{"admin": {{ID: "u1", Name: "User U1"}}},
+		superiors:         map[string]approval.UserInfo{"emp1": {ID: "mgr1", Name: "Manager 1"}},
 		departmentLeaders: map[string][]approval.UserInfo{"dept1": {{ID: "leader1", Name: "Leader 1"}}},
 	}
 

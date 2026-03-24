@@ -7,11 +7,11 @@ import (
 
 	"github.com/coldsmirk/vef-framework-go/config"
 	"github.com/coldsmirk/vef-framework-go/cron"
-	"github.com/coldsmirk/vef-framework-go/internal/log"
+	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
 )
 
 var (
-	logger = log.Named("approval:dispatcher")
+	logger = loggerpkg.Named("approval:dispatcher")
 
 	// Module provides the event publisher, dispatcher, and relay.
 	Module = fx.Module(

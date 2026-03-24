@@ -36,14 +36,14 @@ func resolveOperator(ctx context.Context, resolver approval.PrincipalDepartmentR
 type InstanceResource struct {
 	api.Resource
 
-	bus          cqrs.Bus
+	bus                cqrs.Bus
 	departmentResolver approval.PrincipalDepartmentResolver
 }
 
 // NewInstanceResource creates a new instance resource.
 func NewInstanceResource(bus cqrs.Bus, departmentResolver approval.PrincipalDepartmentResolver) api.Resource {
 	return &InstanceResource{
-		bus:          bus,
+		bus:                bus,
 		departmentResolver: departmentResolver,
 		Resource: api.NewRPCResource(
 			"approval/instance",

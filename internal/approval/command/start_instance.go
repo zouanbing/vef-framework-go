@@ -141,18 +141,18 @@ func (h *StartInstanceHandler) Handle(ctx context.Context, cmd StartInstanceCmd)
 	}
 
 	instance := &approval.Instance{
-		TenantID:          flow.TenantID,
-		FlowID:            flow.ID,
-		FlowVersionID:     version.ID,
-		Title:             title,
-		InstanceNo:        instanceNo,
-		ApplicantID:       cmd.Applicant.ID,
-		ApplicantName:     cmd.Applicant.Name,
+		TenantID:                flow.TenantID,
+		FlowID:                  flow.ID,
+		FlowVersionID:           version.ID,
+		Title:                   title,
+		InstanceNo:              instanceNo,
+		ApplicantID:             cmd.Applicant.ID,
+		ApplicantName:           cmd.Applicant.Name,
 		ApplicantDepartmentID:   cmd.Applicant.DepartmentID,
 		ApplicantDepartmentName: cmd.Applicant.DepartmentName,
-		Status:            approval.InstanceRunning,
-		BusinessRecordID:  cmd.BusinessRecordID,
-		FormData:          cmd.FormData,
+		Status:                  approval.InstanceRunning,
+		BusinessRecordID:        cmd.BusinessRecordID,
+		FormData:                cmd.FormData,
 	}
 
 	if _, err := db.NewInsert().

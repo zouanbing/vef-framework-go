@@ -13,7 +13,7 @@ import (
 	"github.com/uptrace/bun"
 
 	"github.com/coldsmirk/vef-framework-go/internal/database/sqlguard"
-	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/logx"
 )
 
 // whitespaceRegex matches consecutive whitespace characters (spaces, tabs, newlines).
@@ -23,7 +23,7 @@ var whitespaceRegex = regexp.MustCompile(`\s+`)
 const guardErrorStashKey = "__sqlguard_error"
 
 type queryHook struct {
-	logger   log.Logger
+	logger   logx.Logger
 	output   *termenv.Output
 	sqlGuard *sqlguard.Guard
 }
@@ -125,7 +125,7 @@ func (qh *queryHook) formatQuery(query string) termenv.Style {
 	return qh.output.String(normalized).Foreground(termenv.ANSIBrightBlack)
 }
 
-func addQueryHook(db *bun.DB, logger log.Logger, guardConfig *sqlguard.Config) {
+func addQueryHook(db *bun.DB, logger logx.Logger, guardConfig *sqlguard.Config) {
 	var guard *sqlguard.Guard
 	if guardConfig != nil && guardConfig.Enabled {
 		guard = sqlguard.NewGuard(logger)

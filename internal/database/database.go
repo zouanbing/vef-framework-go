@@ -7,10 +7,10 @@ import (
 	"github.com/uptrace/bun/schema"
 
 	"github.com/coldsmirk/vef-framework-go/config"
-	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/logx"
 )
 
-func logDBVersion(provider DatabaseProvider, db *bun.DB, logger log.Logger) error {
+func logDBVersion(provider DatabaseProvider, db *bun.DB, logger logx.Logger) error {
 	version, err := provider.QueryVersion(db)
 	if err != nil {
 		return wrapVersionQueryError(provider.Kind(), err)

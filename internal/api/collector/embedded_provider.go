@@ -4,13 +4,13 @@ import (
 	"reflect"
 
 	"github.com/coldsmirk/vef-framework-go/api"
-	"github.com/coldsmirk/vef-framework-go/internal/log"
+	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
 	"github.com/coldsmirk/vef-framework-go/reflectx"
 )
 
 var (
 	providerType = reflect.TypeFor[api.OperationsProvider]()
-	logger       = log.Named("api.collector")
+	logger       = loggerpkg.Named("api.collector")
 )
 
 // EmbeddedProviderCollector collects API specs from embedded anonymous structs

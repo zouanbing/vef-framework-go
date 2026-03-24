@@ -44,12 +44,12 @@ func resolveAssignees(ctx context.Context, pc *ProcessContext) ([]approval.Resol
 	}
 
 	return pc.Registry.CompositeAssigneeResolver().ResolveAll(ctx, assignees, &strategy.ResolveContext{
-		DB:              pc.DB,
-		ApplicantID:     pc.ApplicantID,
-		ApplicantName:   pc.ApplicantName,
+		DB:                    pc.DB,
+		ApplicantID:           pc.ApplicantID,
+		ApplicantName:         pc.ApplicantName,
 		ApplicantDepartmentID: pc.Instance.ApplicantDepartmentID,
-		FormData:        pc.FormData,
-		UserResolver:    pc.UserResolver,
+		FormData:              pc.FormData,
+		UserResolver:          pc.UserResolver,
 	})
 }
 

@@ -20,14 +20,14 @@ import (
 type AdminResource struct {
 	api.Resource
 
-	bus          cqrs.Bus
+	bus                cqrs.Bus
 	departmentResolver approval.PrincipalDepartmentResolver
 }
 
 // NewAdminResource creates a new admin resource.
 func NewAdminResource(bus cqrs.Bus, departmentResolver approval.PrincipalDepartmentResolver) api.Resource {
 	return &AdminResource{
-		bus:          bus,
+		bus:                bus,
 		departmentResolver: departmentResolver,
 		Resource: api.NewRPCResource(
 			"approval/admin",

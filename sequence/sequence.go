@@ -3,11 +3,11 @@ package sequence
 import (
 	"context"
 
-	"github.com/coldsmirk/vef-framework-go/internal/log"
+	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
 	"github.com/coldsmirk/vef-framework-go/timex"
 )
 
-var logger = log.Named("sequence")
+var logger = loggerpkg.Named("sequence")
 
 // Generator provides serial number generation.
 type Generator interface {

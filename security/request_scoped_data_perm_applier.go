@@ -3,7 +3,7 @@ package security
 import (
 	"fmt"
 
-	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/logx"
 	"github.com/coldsmirk/vef-framework-go/orm"
 )
 
@@ -14,7 +14,7 @@ import (
 type RequestScopedDataPermApplier struct {
 	principal *Principal
 	dataScope DataScope
-	logger    log.Logger
+	logger    logx.Logger
 }
 
 // NewRequestScopedDataPermApplier creates a new request-scoped data permission applier.
@@ -22,7 +22,7 @@ type RequestScopedDataPermApplier struct {
 func NewRequestScopedDataPermApplier(
 	principal *Principal,
 	dataScope DataScope,
-	logger log.Logger,
+	logger logx.Logger,
 ) DataPermissionApplier {
 	return &RequestScopedDataPermApplier{
 		principal: principal,

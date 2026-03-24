@@ -29,8 +29,8 @@ type ConditionBranch struct {
 
 // EvaluationContext provides context for condition evaluation.
 type EvaluationContext struct {
-	FormData        FormData
-	ApplicantID     string
+	FormData              FormData
+	ApplicantID           string
 	ApplicantDepartmentID *string
 }
 

@@ -13,11 +13,11 @@ import (
 
 	"github.com/coldsmirk/vef-framework-go/api"
 	"github.com/coldsmirk/vef-framework-go/internal/api/shared"
-	"github.com/coldsmirk/vef-framework-go/internal/log"
+	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
 	"github.com/coldsmirk/vef-framework-go/result"
 )
 
-var logger = log.Named("api")
+var logger = loggerpkg.Named("api")
 
 type EngineOption func(*engine)
 

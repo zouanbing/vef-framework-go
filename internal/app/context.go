@@ -3,7 +3,7 @@ package app
 import (
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/logx"
 	"github.com/coldsmirk/vef-framework-go/orm"
 	"github.com/coldsmirk/vef-framework-go/security"
 )
@@ -13,7 +13,7 @@ import (
 type CustomCtx struct {
 	fiber.DefaultCtx
 
-	logger    log.Logger
+	logger    logx.Logger
 	principal *security.Principal
 	db        orm.DB
 }
@@ -29,12 +29,12 @@ func (c *CustomCtx) DB() orm.DB {
 }
 
 // Logger returns the logger instance for the current request.
-func (c *CustomCtx) Logger() log.Logger {
+func (c *CustomCtx) Logger() logx.Logger {
 	return c.logger
 }
 
 // SetLogger sets the logger instance for the current request.
-func (c *CustomCtx) SetLogger(logger log.Logger) {
+func (c *CustomCtx) SetLogger(logger logx.Logger) {
 	c.logger = logger
 }
 

@@ -8,12 +8,12 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/coldsmirk/vef-framework-go/internal/log"
+	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
 	"github.com/coldsmirk/vef-framework-go/tabular"
 	"github.com/coldsmirk/vef-framework-go/validator"
 )
 
-var logger = log.Named("csv")
+var logger = loggerpkg.Named("csv")
 
 type importer struct {
 	schema  *tabular.Schema

@@ -231,9 +231,9 @@ func TestConditionProcessor(t *testing.T) {
 		}
 		pc := &ProcessContext{
 			Instance: &approval.Instance{
-				ApplicantID:     "user_42",
+				ApplicantID:           "user_42",
 				ApplicantDepartmentID: &departmentID,
-				FormData:        map[string]any{"key": "value"},
+				FormData:              map[string]any{"key": "value"},
 			},
 			Node:     &approval.FlowNode{Branches: branches},
 			Registry: registry,

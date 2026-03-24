@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/logx"
 	"github.com/coldsmirk/vef-framework-go/mold"
 )
 
@@ -18,7 +18,7 @@ var ErrDataDictResolverNotConfigured = errors.New("data dictionary resolver is n
 
 // DataDictTranslator is a data dictionary translator that converts code values to readable names.
 type DataDictTranslator struct {
-	logger   log.Logger
+	logger   logx.Logger
 	resolver mold.DataDictResolver
 }
 

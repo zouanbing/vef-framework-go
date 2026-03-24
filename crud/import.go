@@ -12,7 +12,7 @@ import (
 	"github.com/coldsmirk/vef-framework-go/excel"
 	"github.com/coldsmirk/vef-framework-go/httpx"
 	"github.com/coldsmirk/vef-framework-go/i18n"
-	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/logx"
 	"github.com/coldsmirk/vef-framework-go/orm"
 	"github.com/coldsmirk/vef-framework-go/result"
 	"github.com/coldsmirk/vef-framework-go/tabular"
@@ -92,11 +92,11 @@ type importConfig struct {
 	Format TabularFormat `json:"format"`
 }
 
-func (i *importOperation[TModel]) importData() func(ctx fiber.Ctx, db orm.DB, logger log.Logger, config importConfig, params importParams) error {
+func (i *importOperation[TModel]) importData() func(ctx fiber.Ctx, db orm.DB, logger logx.Logger, config importConfig, params importParams) error {
 	excelImporter := excel.NewImporterFor[TModel](i.excelOpts...)
 	csvImporter := csv.NewImporterFor[TModel](i.csvOpts...)
 
-	return func(ctx fiber.Ctx, db orm.DB, logger log.Logger, config importConfig, params importParams) error {
+	return func(ctx fiber.Ctx, db orm.DB, logger logx.Logger, config importConfig, params importParams) error {
 		// Import requests must use multipart/form-data format
 		if httpx.IsJSON(ctx) {
 			return result.Err(i18n.T("import_requires_multipart"))

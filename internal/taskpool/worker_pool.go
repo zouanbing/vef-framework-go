@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/logx"
 )
 
 // WorkerPool manages elastic worker scaling with priority queues.
 type WorkerPool[TIn, TOut any] struct {
 	config Config[TIn, TOut]
-	logger log.Logger
+	logger logx.Logger
 
 	workers  []*Worker[TIn, TOut]
 	workerMu sync.RWMutex

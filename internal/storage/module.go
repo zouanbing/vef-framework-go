@@ -7,11 +7,11 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/coldsmirk/vef-framework-go/internal/contract"
-	"github.com/coldsmirk/vef-framework-go/internal/log"
+	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
 	"github.com/coldsmirk/vef-framework-go/storage"
 )
 
-var logger = log.Named("storage")
+var logger = loggerpkg.Named("storage")
 
 var Module = fx.Module(
 	"vef:storage",

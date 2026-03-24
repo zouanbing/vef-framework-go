@@ -16,12 +16,12 @@ import (
 
 // ResolveContext provides context for assignee resolution.
 type ResolveContext struct {
-	DB              orm.DB
-	ApplicantID     string
-	ApplicantName   string
+	DB                    orm.DB
+	ApplicantID           string
+	ApplicantName         string
 	ApplicantDepartmentID *string
-	FormData        approval.FormData
-	UserResolver    approval.UserInfoResolver
+	FormData              approval.FormData
+	UserResolver          approval.UserInfoResolver
 
 	IDs       []string
 	FormField *string

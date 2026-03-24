@@ -4,11 +4,11 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/coldsmirk/vef-framework-go/event"
-	"github.com/coldsmirk/vef-framework-go/internal/log"
+	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
 	"github.com/coldsmirk/vef-framework-go/mold"
 )
 
-var logger = log.Named("mold")
+var logger = loggerpkg.Named("mold")
 
 // Module defines the fx module for the transformer package.
 var Module = fx.Module(

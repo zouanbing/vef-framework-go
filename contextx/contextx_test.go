@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/logx"
 	"github.com/coldsmirk/vef-framework-go/orm"
 	"github.com/coldsmirk/vef-framework-go/security"
 )
@@ -32,7 +32,7 @@ func RunInFiber(t *testing.T, fn func(t *testing.T, ctx fiber.Ctx)) {
 	assert.Equal(t, 200, resp.StatusCode, "Should return 200 status code")
 }
 
-type MockLogger struct{ log.Logger }
+type MockLogger struct{ logx.Logger }
 
 type MockDB struct{ orm.DB }
 

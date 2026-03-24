@@ -5,8 +5,8 @@ import (
 
 	"github.com/coldsmirk/vef-framework-go/cache"
 	"github.com/coldsmirk/vef-framework-go/event"
-	ilog "github.com/coldsmirk/vef-framework-go/internal/log"
-	"github.com/coldsmirk/vef-framework-go/log"
+	ilog "github.com/coldsmirk/vef-framework-go/internal/logger"
+	"github.com/coldsmirk/vef-framework-go/logx"
 )
 
 // eventTypeRolePermissionsChanged is the event type for role permissions changes.
@@ -35,7 +35,7 @@ func PublishRolePermissionsChangedEvent(publisher event.Publisher, roles ...stri
 type CachedRolePermissionsLoader struct {
 	loader    RolePermissionsLoader
 	permCache cache.Cache[map[string]DataScope]
-	logger    log.Logger
+	logger    logx.Logger
 }
 
 // NewCachedRolePermissionsLoader creates a new cached role permissions loader.

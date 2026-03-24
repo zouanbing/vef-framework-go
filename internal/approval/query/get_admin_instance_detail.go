@@ -135,15 +135,15 @@ func (h *GetAdminInstanceDetailHandler) Handle(ctx context.Context, query GetAdm
 
 	for i, log := range actionLogs {
 		detail.ActionLogs[i] = admin.ActionLog{
-			LogID:            log.ID,
-			Action:           string(log.Action),
-			OperatorID:       log.OperatorID,
-			OperatorName:     log.OperatorName,
+			LogID:                  log.ID,
+			Action:                 string(log.Action),
+			OperatorID:             log.OperatorID,
+			OperatorName:           log.OperatorName,
 			OperatorDepartmentName: log.OperatorDepartmentName,
-			TransferToID:     log.TransferToID,
-			TransferToName:   log.TransferToName,
-			Opinion:          log.Opinion,
-			CreatedAt:        log.CreatedAt,
+			TransferToID:           log.TransferToID,
+			TransferToName:         log.TransferToName,
+			Opinion:                log.Opinion,
+			CreatedAt:              log.CreatedAt,
 		}
 	}
 

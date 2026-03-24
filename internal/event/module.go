@@ -7,11 +7,11 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/coldsmirk/vef-framework-go/event"
-	"github.com/coldsmirk/vef-framework-go/internal/log"
+	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
 )
 
 var (
-	logger = log.Named("event")
+	logger = loggerpkg.Named("event")
 	Module = fx.Module(
 		"vef:event",
 		fx.Provide(

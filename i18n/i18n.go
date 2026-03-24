@@ -13,14 +13,14 @@ import (
 
 	vefconfig "github.com/coldsmirk/vef-framework-go/config"
 	"github.com/coldsmirk/vef-framework-go/i18n/locales"
-	"github.com/coldsmirk/vef-framework-go/internal/log"
+	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
 )
 
 // DefaultLanguage is the default language for the i18n system.
 const DefaultLanguage = "zh-CN"
 
 var (
-	logger             = log.Named("i18n")
+	logger             = loggerpkg.Named("i18n")
 	supportedLanguages = []string{"zh-CN", "en"}
 	translator         Translator
 )

@@ -1,4 +1,4 @@
-package log //nolint:revive // intentional package name
+package logger
 
 import (
 	"os"
@@ -7,13 +7,13 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/coldsmirk/vef-framework-go/config"
-	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/logx"
 )
 
-var logger = newLogger()
+var rootLogger = newLogger()
 
-func Named(name string) log.Logger {
-	return logger.Named(name)
+func Named(name string) logx.Logger {
+	return rootLogger.Named(name)
 }
 
 func newLogger() *zapLogger {

@@ -20,10 +20,10 @@ type FindAvailableFlowsQuery struct {
 	cqrs.BaseQuery
 	page.Pageable
 
-	UserID          string
-	TenantID        *string
+	UserID                string
+	TenantID              *string
 	ApplicantDepartmentID *string
-	Keyword         *string
+	Keyword               *string
 }
 
 // FindAvailableFlowsHandler handles the FindAvailableFlowsQuery.

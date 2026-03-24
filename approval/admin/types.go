@@ -79,15 +79,15 @@ type TaskDetailInfo struct {
 
 // ActionLog represents an action log entry in the admin view.
 type ActionLog struct {
-	LogID            string         `json:"logId"`
-	Action           string         `json:"action"`
-	OperatorID       string         `json:"operatorId"`
-	OperatorName     string         `json:"operatorName"`
+	LogID                  string         `json:"logId"`
+	Action                 string         `json:"action"`
+	OperatorID             string         `json:"operatorId"`
+	OperatorName           string         `json:"operatorName"`
 	OperatorDepartmentName *string        `json:"operatorDepartmentName,omitempty"`
-	TransferToID     *string        `json:"transferToId,omitempty"`
-	TransferToName   *string        `json:"transferToName,omitempty"`
-	Opinion          *string        `json:"opinion,omitempty"`
-	CreatedAt        timex.DateTime `json:"createdAt"`
+	TransferToID           *string        `json:"transferToId,omitempty"`
+	TransferToName         *string        `json:"transferToName,omitempty"`
+	Opinion                *string        `json:"opinion,omitempty"`
+	CreatedAt              timex.DateTime `json:"createdAt"`
 }
 
 // FlowNodeInfo represents a flow node in the admin instance detail view.

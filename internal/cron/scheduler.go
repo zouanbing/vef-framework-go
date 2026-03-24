@@ -7,10 +7,10 @@ import (
 	"github.com/go-co-op/gocron/v2"
 	"go.uber.org/fx"
 
-	"github.com/coldsmirk/vef-framework-go/internal/log"
+	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
 )
 
-var logger = log.Named("cron")
+var logger = loggerpkg.Named("cron")
 
 // newScheduler creates a new gocron scheduler with optimal configuration for production use.
 func newScheduler(lc fx.Lifecycle) (gocron.Scheduler, error) {

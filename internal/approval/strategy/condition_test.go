@@ -27,7 +27,7 @@ func TestFieldConditionEvaluator(t *testing.T) {
 			"empty_str":  "",
 			"int_val":    int64(100),
 		},
-		ApplicantID:     "user1",
+		ApplicantID:           "user1",
 		ApplicantDepartmentID: new("dept1"),
 	}
 
@@ -170,8 +170,8 @@ func TestExpressionConditionEvaluator(t *testing.T) {
 
 	t.Run("SimpleComparison", func(t *testing.T) {
 		ec := &approval.EvaluationContext{
-			FormData:        approval.FormData{"amount": 5000},
-			ApplicantID:     "user1",
+			FormData:              approval.FormData{"amount": 5000},
+			ApplicantID:           "user1",
 			ApplicantDepartmentID: new("dept1"),
 		}
 
@@ -186,8 +186,8 @@ func TestExpressionConditionEvaluator(t *testing.T) {
 
 	t.Run("LogicalCombination", func(t *testing.T) {
 		ec := &approval.EvaluationContext{
-			FormData:        approval.FormData{"amount": 5000, "department": "sales"},
-			ApplicantID:     "user1",
+			FormData:              approval.FormData{"amount": 5000, "department": "sales"},
+			ApplicantID:           "user1",
 			ApplicantDepartmentID: new("dept1"),
 		}
 
@@ -202,8 +202,8 @@ func TestExpressionConditionEvaluator(t *testing.T) {
 
 	t.Run("BuiltInVariables", func(t *testing.T) {
 		ec := &approval.EvaluationContext{
-			FormData:        approval.FormData{},
-			ApplicantID:     "user1",
+			FormData:              approval.FormData{},
+			ApplicantID:           "user1",
 			ApplicantDepartmentID: new("dept_sales"),
 		}
 
@@ -242,8 +242,8 @@ func TestExpressionConditionEvaluator(t *testing.T) {
 
 	t.Run("RuntimeError", func(t *testing.T) {
 		ec := &approval.EvaluationContext{
-			FormData:        approval.FormData{"amount": "not_a_number"},
-			ApplicantID:     "user1",
+			FormData:              approval.FormData{"amount": "not_a_number"},
+			ApplicantID:           "user1",
 			ApplicantDepartmentID: new("dept1"),
 		}
 		_, err := e.Evaluate(ctx, approval.Condition{Expression: "formData.amount > 100"}, ec)

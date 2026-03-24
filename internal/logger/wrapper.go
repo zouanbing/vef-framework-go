@@ -1,45 +1,45 @@
-package log
+package logger
 
 import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/logx"
 )
 
 type zapLogger struct {
 	logger *zap.SugaredLogger
 }
 
-func (l *zapLogger) Named(name string) log.Logger {
+func (l *zapLogger) Named(name string) logx.Logger {
 	return &zapLogger{
 		logger: l.logger.Named(name),
 	}
 }
 
-func (l *zapLogger) WithCallerSkip(skip int) log.Logger {
+func (l *zapLogger) WithCallerSkip(skip int) logx.Logger {
 	return &zapLogger{
 		logger: l.logger.WithOptions(zap.AddCallerSkip(skip)),
 	}
 }
 
-func (l *zapLogger) Enabled(level log.Level) bool {
+func (l *zapLogger) Enabled(level logx.Level) bool {
 	zapLevel := toZapLevel(level)
 
 	return l.logger.Level().Enabled(zapLevel)
 }
 
-func toZapLevel(level log.Level) zapcore.Level {
+func toZapLevel(level logx.Level) zapcore.Level {
 	switch level {
-	case log.LevelDebug:
+	case logx.LevelDebug:
 		return zap.DebugLevel
-	case log.LevelWarn:
+	case logx.LevelWarn:
 		return zap.WarnLevel
-	case log.LevelError:
+	case logx.LevelError:
 		return zap.ErrorLevel
-	case log.LevelPanic:
+	case logx.LevelPanic:
 		return zap.PanicLevel
-	case log.LevelInfo:
+	case logx.LevelInfo:
 		fallthrough
 	default:
 		return zap.InfoLevel

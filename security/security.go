@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/coldsmirk/vef-framework-go/internal/log"
+	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
 )
 
-var logger = log.Named("security")
+var logger = loggerpkg.Named("security")
 
 // AuthTokens holds the access and refresh token pair issued after successful authentication.
 type AuthTokens struct {

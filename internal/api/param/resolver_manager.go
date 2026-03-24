@@ -9,13 +9,13 @@ import (
 	"github.com/coldsmirk/vef-framework-go/api"
 	"github.com/coldsmirk/vef-framework-go/contextx"
 	"github.com/coldsmirk/vef-framework-go/internal/api/shared"
-	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/logx"
 	"github.com/coldsmirk/vef-framework-go/reflectx"
 	"github.com/coldsmirk/vef-framework-go/validator"
 )
 
 var (
-	loggerType       = reflect.TypeFor[log.Logger]()
+	loggerType       = reflect.TypeFor[logx.Logger]()
 	withLoggerMethod = "WithLogger"
 )
 
@@ -134,7 +134,7 @@ func hasWithLoggerMethod(t reflect.Type) bool {
 	return loggerType.AssignableTo(method.Type.In(1))
 }
 
-func callWithLogger(field reflect.Value, logger log.Logger) reflect.Value {
+func callWithLogger(field reflect.Value, logger logx.Logger) reflect.Value {
 	if method := reflectx.FindMethod(field, withLoggerMethod); method.IsValid() {
 		if results := method.Call([]reflect.Value{reflect.ValueOf(logger)}); len(results) > 0 {
 			return results[0]

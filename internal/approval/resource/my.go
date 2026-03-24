@@ -17,14 +17,14 @@ import (
 type MyResource struct {
 	api.Resource
 
-	bus          cqrs.Bus
+	bus                cqrs.Bus
 	departmentResolver approval.PrincipalDepartmentResolver
 }
 
 // NewMyResource creates a new self-service resource.
 func NewMyResource(bus cqrs.Bus, departmentResolver approval.PrincipalDepartmentResolver) api.Resource {
 	return &MyResource{
-		bus:          bus,
+		bus:                bus,
 		departmentResolver: departmentResolver,
 		Resource: api.NewRPCResource(
 			"approval/my",
@@ -59,11 +59,11 @@ func (r *MyResource) FindAvailableFlows(ctx fiber.Ctx, principal *security.Princ
 	}
 
 	res, err := cqrs.Send[query.FindAvailableFlowsQuery, *page.Page[my.AvailableFlow]](ctx.Context(), r.bus, query.FindAvailableFlowsQuery{
-		UserID:          principal.ID,
-		TenantID:        params.TenantID,
+		UserID:                principal.ID,
+		TenantID:              params.TenantID,
 		ApplicantDepartmentID: departmentID,
-		Keyword:         params.Keyword,
-		Pageable:        page.Pageable{Page: params.Page, Size: params.PageSize},
+		Keyword:               params.Keyword,
+		Pageable:              page.Pageable{Page: params.Page, Size: params.PageSize},
 	})
 	if err != nil {
 		return err

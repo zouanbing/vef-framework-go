@@ -9,7 +9,7 @@ import (
 	"github.com/coldsmirk/vef-framework-go/cron"
 	"github.com/coldsmirk/vef-framework-go/event"
 	"github.com/coldsmirk/vef-framework-go/internal/api/shared"
-	"github.com/coldsmirk/vef-framework-go/log"
+	"github.com/coldsmirk/vef-framework-go/logx"
 	"github.com/coldsmirk/vef-framework-go/mold"
 	"github.com/coldsmirk/vef-framework-go/orm"
 	"github.com/coldsmirk/vef-framework-go/security"
@@ -27,7 +27,7 @@ func NewDBResolver() api.HandlerParamResolver {
 }
 
 func NewLoggerResolver() api.HandlerParamResolver {
-	return newContextResolver(func(ctx fiber.Ctx) log.Logger { return contextx.Logger(ctx) })
+	return newContextResolver(func(ctx fiber.Ctx) logx.Logger { return contextx.Logger(ctx) })
 }
 
 func NewPrincipalResolver() api.HandlerParamResolver {
