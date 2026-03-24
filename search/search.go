@@ -9,14 +9,14 @@ import (
 	"github.com/spf13/cast"
 
 	"github.com/coldsmirk/vef-framework-go/dbx"
-	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
+	"github.com/coldsmirk/vef-framework-go/internal/logx"
 	"github.com/coldsmirk/vef-framework-go/monad"
 	"github.com/coldsmirk/vef-framework-go/null"
 	"github.com/coldsmirk/vef-framework-go/orm"
 )
 
 var (
-	logger    = loggerpkg.Named("search")
+	logger    = logx.Named("search")
 	rangeType = reflect.TypeFor[monad.Range[int]]()
 )
 

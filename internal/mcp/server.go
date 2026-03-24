@@ -11,11 +11,11 @@ import (
 	smcp "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/coldsmirk/vef-framework-go/config"
-	ilog "github.com/coldsmirk/vef-framework-go/internal/logger"
+	ilogx "github.com/coldsmirk/vef-framework-go/internal/logx"
 	"github.com/coldsmirk/vef-framework-go/mcp"
 )
 
-var logger = ilog.Named("mcp")
+var logger = ilogx.Named("mcp")
 
 type ServerParams struct {
 	fx.In

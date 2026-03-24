@@ -6,12 +6,12 @@ import (
 
 	"github.com/coldsmirk/vef-framework-go/config"
 	"github.com/coldsmirk/vef-framework-go/event"
-	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
+	"github.com/coldsmirk/vef-framework-go/internal/logx"
 	"github.com/coldsmirk/vef-framework-go/password"
 	"github.com/coldsmirk/vef-framework-go/security"
 )
 
-var logger = loggerpkg.Named("security")
+var logger = logx.Named("security")
 
 var Module = fx.Module(
 	"vef:security",

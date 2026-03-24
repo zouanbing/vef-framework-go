@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/coldsmirk/vef-framework-go/config"
-	ilog "github.com/coldsmirk/vef-framework-go/internal/logger"
+	ilogx "github.com/coldsmirk/vef-framework-go/internal/logx"
 	"github.com/coldsmirk/vef-framework-go/logx"
 	"github.com/coldsmirk/vef-framework-go/mapx"
 )
@@ -31,7 +31,7 @@ func newConfig() (config.Config, error) {
 	v := viper.NewWithOptions(
 		viper.EnvKeyReplacer(strings.NewReplacer(".", "_")),
 		viper.KeyDelimiter("."),
-		viper.WithLogger(ilog.NewSLogger("config", 3, logx.LevelWarn)),
+		viper.WithLogger(ilogx.NewSLogger("config", 3, logx.LevelWarn)),
 	)
 	v.SetEnvPrefix(config.EnvKeyPrefix)
 	v.AllowEmptyEnv(true)

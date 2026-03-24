@@ -8,7 +8,7 @@ import (
 
 	"github.com/coldsmirk/vef-framework-go/contextx"
 	"github.com/coldsmirk/vef-framework-go/internal/app"
-	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
+	"github.com/coldsmirk/vef-framework-go/internal/logx"
 )
 
 // NewLoggerMiddleware creates request-scoped loggers to correlate all log entries within a request.
@@ -16,7 +16,7 @@ func NewLoggerMiddleware() app.Middleware {
 	return &SimpleMiddleware{
 		handler: func(ctx fiber.Ctx) error {
 			requestID := requestid.FromContext(ctx)
-			logger := loggerpkg.Named(fmt.Sprintf("request_id:%s", requestID))
+			logger := logx.Named(fmt.Sprintf("request_id:%s", requestID))
 			contextx.SetLogger(ctx, logger)
 			contextx.SetRequestID(ctx, requestID)
 

@@ -7,12 +7,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
+	"github.com/coldsmirk/vef-framework-go/internal/logx"
 )
 
 // TestGuardCheck tests guard check functionality.
 func TestGuardCheck(t *testing.T) {
-	logger := loggerpkg.Named("test")
+	logger := logx.Named("test")
 	guard := NewGuard(logger)
 
 	tests := []struct {
@@ -50,7 +50,7 @@ func TestGuardCheck(t *testing.T) {
 
 // TestGuardCustomRules tests guard custom rules functionality.
 func TestGuardCustomRules(t *testing.T) {
-	logger := loggerpkg.Named("test")
+	logger := logx.Named("test")
 	guard := NewGuard(logger, new(DropStatementRule))
 
 	// DROP should be blocked
@@ -68,7 +68,7 @@ func TestGuardCustomRules(t *testing.T) {
 
 // TestGuardEmptyRulesUsesDefaults tests guard empty rules uses defaults functionality.
 func TestGuardEmptyRulesUsesDefaults(t *testing.T) {
-	logger := loggerpkg.Named("test")
+	logger := logx.Named("test")
 	guard := NewGuard(logger)
 
 	assert.Len(t, guard.rules, 3, "Should use 3 default rules when none provided")

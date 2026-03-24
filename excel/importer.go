@@ -8,12 +8,12 @@ import (
 	"github.com/coldsmirk/go-streams"
 	"github.com/xuri/excelize/v2"
 
-	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
+	"github.com/coldsmirk/vef-framework-go/internal/logx"
 	"github.com/coldsmirk/vef-framework-go/tabular"
 	"github.com/coldsmirk/vef-framework-go/validator"
 )
 
-var logger = loggerpkg.Named("excel")
+var logger = logx.Named("excel")
 
 type importer struct {
 	schema  *tabular.Schema

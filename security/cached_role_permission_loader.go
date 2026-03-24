@@ -5,7 +5,7 @@ import (
 
 	"github.com/coldsmirk/vef-framework-go/cache"
 	"github.com/coldsmirk/vef-framework-go/event"
-	ilog "github.com/coldsmirk/vef-framework-go/internal/logger"
+	ilogx "github.com/coldsmirk/vef-framework-go/internal/logx"
 	"github.com/coldsmirk/vef-framework-go/logx"
 )
 
@@ -47,7 +47,7 @@ func NewCachedRolePermissionsLoader(
 	cached := &CachedRolePermissionsLoader{
 		loader:    loader,
 		permCache: cache.NewMemory[map[string]DataScope](),
-		logger:    ilog.Named("security:cached_role_permissions_loader"),
+		logger:    ilogx.Named("security:cached_role_permissions_loader"),
 	}
 
 	// Subscribe to role permissions change events

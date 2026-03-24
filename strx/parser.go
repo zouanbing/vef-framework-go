@@ -4,10 +4,10 @@ import (
 	"strings"
 	"unicode"
 
-	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
+	"github.com/coldsmirk/vef-framework-go/internal/logx"
 )
 
-var logger = loggerpkg.Named("strx")
+var logger = logx.Named("strx")
 
 const (
 	// DefaultKey is the key used for values without an explicit key.

@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"slices"
 
-	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
+	"github.com/coldsmirk/vef-framework-go/internal/logx"
 )
 
 // Importer defines the interface for importing tabular data.
@@ -32,7 +32,7 @@ type Exporter interface {
 	Export(data any) (*bytes.Buffer, error)
 }
 
-var logger = loggerpkg.Named("tabular")
+var logger = logx.Named("tabular")
 
 // Schema contains the pre-parsed tabular metadata for a struct type.
 type Schema struct {

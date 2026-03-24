@@ -3,11 +3,11 @@ package orm
 import (
 	"github.com/uptrace/bun"
 
-	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
+	"github.com/coldsmirk/vef-framework-go/internal/logx"
 )
 
 // logger is the named logger instance for the Orm package.
-var logger = loggerpkg.Named("orm")
+var logger = logx.Named("orm")
 
 // New creates a new DB instance that wraps the provided bun.IDB.
 // This function is used by the dependency injection system to provide DB instances.

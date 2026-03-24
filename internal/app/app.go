@@ -11,7 +11,7 @@ import (
 
 	"github.com/coldsmirk/vef-framework-go/api"
 	"github.com/coldsmirk/vef-framework-go/config"
-	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
+	"github.com/coldsmirk/vef-framework-go/internal/logx"
 	"github.com/coldsmirk/vef-framework-go/version"
 )
 
@@ -25,7 +25,7 @@ type Middleware interface {
 	Apply(router fiber.Router)
 }
 
-var logger = loggerpkg.Named("app")
+var logger = logx.Named("app")
 
 // App represents the VEF application server.
 // It wraps a Fiber application and manages the HTTP server lifecycle.

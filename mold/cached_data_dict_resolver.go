@@ -6,7 +6,7 @@ import (
 
 	"github.com/coldsmirk/vef-framework-go/cache"
 	"github.com/coldsmirk/vef-framework-go/event"
-	ilog "github.com/coldsmirk/vef-framework-go/internal/logger"
+	ilogx "github.com/coldsmirk/vef-framework-go/internal/logx"
 	"github.com/coldsmirk/vef-framework-go/logx"
 )
 
@@ -65,7 +65,7 @@ func NewCachedDataDictResolver(
 	resolver := &CachedDataDictResolver{
 		loader:    loader,
 		dictCache: cache.NewMemory[map[string]string](),
-		logger:    ilog.Named("translate:cached_data_dict_resolver"),
+		logger:    ilogx.Named("translate:cached_data_dict_resolver"),
 	}
 
 	bus.Subscribe(eventTypeDataDictChanged, resolver.handleInvalidation)

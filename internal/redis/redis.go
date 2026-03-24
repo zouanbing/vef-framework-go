@@ -11,10 +11,10 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/coldsmirk/vef-framework-go/config"
-	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
+	"github.com/coldsmirk/vef-framework-go/internal/logx"
 )
 
-var logger = loggerpkg.Named("redis")
+var logger = logx.Named("redis")
 
 // NewClient creates a Redis client with adaptive pool sizing to balance performance and resource usage.
 func NewClient(cfg *config.RedisConfig, appCfg *config.AppConfig) *redis.Client {

@@ -6,11 +6,11 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/coldsmirk/vef-framework-go/cron"
-	loggerpkg "github.com/coldsmirk/vef-framework-go/internal/logger"
+	"github.com/coldsmirk/vef-framework-go/internal/logx"
 )
 
 var (
-	logger = loggerpkg.Named("approval:timeout")
+	logger = logx.Named("approval:timeout")
 
 	// Module provides the timeout scanner and cron job registration.
 	Module = fx.Module(
