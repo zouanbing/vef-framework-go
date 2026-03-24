@@ -10,13 +10,13 @@ import (
 	"github.com/coldsmirk/vef-framework-go/logx"
 )
 
-type sLogHandler struct {
+type slogHandler struct {
 	logger      logx.Logger
 	attrs       []slog.Attr
 	levelFilter logx.Level
 }
 
-func (s sLogHandler) Enabled(_ context.Context, level slog.Level) bool {
+func (s slogHandler) Enabled(_ context.Context, level slog.Level) bool {
 	logLevel := slogLevelToLogLevel(level)
 
 	return s.logger.Enabled(logLevel) && logLevel >= s.levelFilter
@@ -35,7 +35,7 @@ func slogLevelToLogLevel(level slog.Level) logx.Level {
 	}
 }
 
-func (s sLogHandler) Handle(_ context.Context, record slog.Record) error {
+func (s slogHandler) Handle(_ context.Context, record slog.Record) error {
 	fields := make([]string, 0, record.NumAttrs()+len(s.attrs))
 
 	record.Attrs(func(attr slog.Attr) bool {
@@ -66,16 +66,16 @@ func (s sLogHandler) Handle(_ context.Context, record slog.Record) error {
 	return nil
 }
 
-func (s sLogHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return &sLogHandler{
+func (s slogHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return &slogHandler{
 		logger:      s.logger,
 		attrs:       append(s.attrs, attrs...),
 		levelFilter: s.levelFilter,
 	}
 }
 
-func (s sLogHandler) WithGroup(name string) slog.Handler {
-	return &sLogHandler{
+func (s slogHandler) WithGroup(name string) slog.Handler {
+	return &slogHandler{
 		logger:      s.logger.Named(name),
 		attrs:       s.attrs,
 		levelFilter: s.levelFilter,
@@ -115,7 +115,7 @@ func NewSLogHandler(name string, callerSkip int, levelFilter ...logx.Level) slog
 		level = levelFilter[0]
 	}
 
-	return &sLogHandler{
+	return &slogHandler{
 		logger:      Named(name).WithCallerSkip(callerSkip),
 		levelFilter: level,
 	}
