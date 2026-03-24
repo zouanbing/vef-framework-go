@@ -1,5 +1,9 @@
 # VEF Framework Go
 
+<p align="center">
+  <img src="./mascot.png" alt="VEF Framework 吉祥物" width="200">
+</p>
+
 📖 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
 [![GitHub Release](https://img.shields.io/github/v/release/coldsmirk/vef-framework-go)](https://github.com/coldsmirk/vef-framework-go/releases)
@@ -12,7 +16,7 @@
 
 VEF Framework Go 是一个面向企业应用的 Go 框架。它把 Uber FX 依赖注入、Fiber HTTP 框架和 Bun 数据访问组合在一起，并内置 API 资源模型、认证鉴权、RBAC、校验、缓存、事件、存储、MCP 等常用能力。
 
-> 本 README 刻意保持简洁。更详细的教程、参考手册和架构说明会逐步迁移到专门的文档站点。
+> 本 README 刻意保持简洁。更详细的教程、参考手册和架构说明请查看[文档站点](https://coldsmirk.github.io/vef-framework-go-docs)。
 
 > 当前项目仍处于 1.0 之前的快速迭代阶段，后续仍可能出现破坏性变更。
 
@@ -95,11 +99,12 @@ my-app/
 
 ## 文档入口
 
+- 文档站点：<https://coldsmirk.github.io/vef-framework-go-docs>
 - API 参考：<https://pkg.go.dev/github.com/coldsmirk/vef-framework-go>
 - 仓库知识图谱：<https://deepwiki.com/coldsmirk/vef-framework-go>
 - 测试规范：[TESTING.md](./TESTING.md)
 
-如果你需要分步骤教程、架构细节或特性级参考，请优先查看专门的文档站点，而不是继续膨胀这个 README。
+如果你需要分步骤教程、架构细节或特性级参考，请优先查看[文档站点](https://coldsmirk.github.io/vef-framework-go-docs)，而不是继续膨胀这个 README。
 
 ## 开发
 

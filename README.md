@@ -1,5 +1,9 @@
 # VEF Framework Go
 
+<p align="center">
+  <img src="./mascot.png" alt="VEF Framework Mascot" width="200">
+</p>
+
 📖 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
 [![GitHub Release](https://img.shields.io/github/v/release/coldsmirk/vef-framework-go)](https://github.com/coldsmirk/vef-framework-go/releases)
@@ -12,7 +16,7 @@
 
 VEF Framework Go is an opinionated Go framework for enterprise applications. It combines Uber FX for dependency injection, Fiber for HTTP handling, and Bun for data access, with built-in support for API resources, authentication, RBAC, validation, caching, events, storage, MCP, and more.
 
-> This README is intentionally brief. Detailed tutorials and reference material are being moved to the dedicated documentation site.
+> This README is intentionally brief. Detailed tutorials and reference material are available on the [documentation site](https://coldsmirk.github.io/vef-framework-go-docs).
 
 > Development status: the project is still pre-1.0. Expect breaking changes while conventions and APIs continue to evolve.
 
@@ -95,11 +99,12 @@ my-app/
 
 ## Documentation
 
+- Documentation site: <https://coldsmirk.github.io/vef-framework-go-docs>
 - API reference: <https://pkg.go.dev/github.com/coldsmirk/vef-framework-go>
 - Repository knowledge map: <https://deepwiki.com/coldsmirk/vef-framework-go>
 - Testing conventions: [TESTING.md](./TESTING.md)
 
-If you need step-by-step guides, architectural deep dives, or feature-specific reference, prefer the dedicated documentation site rather than expanding this README.
+If you need step-by-step guides, architectural deep dives, or feature-specific reference, prefer the [documentation site](https://coldsmirk.github.io/vef-framework-go-docs) rather than expanding this README.
 
 ## Development
 
