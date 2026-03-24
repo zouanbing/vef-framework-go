@@ -31,7 +31,8 @@ func TestFromUnix(t *testing.T) {
 	timestamp := int64(1703514645)
 	dt := FromUnix(timestamp, 0)
 
-	expected := MakeTime(2023, 12, 25, 22, 30, 45)
+	testLocation := time.FixedZone("UTC+8", 8*60*60)
+	expected := time.Date(2023, 12, 25, 22, 30, 45, 0, testLocation)
 	assert.True(t, expected.Equal(dt.Unwrap()), "FromUnix should create correct datetime")
 }
 
@@ -40,7 +41,8 @@ func TestFromUnixMilli(t *testing.T) {
 	timestamp := int64(1703514645000)
 	dt := FromUnixMilli(timestamp)
 
-	expected := MakeTime(2023, 12, 25, 22, 30, 45)
+	testLocation := time.FixedZone("UTC+8", 8*60*60)
+	expected := time.Date(2023, 12, 25, 22, 30, 45, 0, testLocation)
 	assert.True(t, expected.Equal(dt.Unwrap()), "FromUnixMilli should create correct datetime")
 }
 
@@ -49,7 +51,8 @@ func TestFromUnixMicro(t *testing.T) {
 	timestamp := int64(1703514645000000)
 	dt := FromUnixMicro(timestamp)
 
-	expected := MakeTime(2023, 12, 25, 22, 30, 45)
+	testLocation := time.FixedZone("UTC+8", 8*60*60)
+	expected := time.Date(2023, 12, 25, 22, 30, 45, 0, testLocation)
 	assert.True(t, expected.Equal(dt.Unwrap()), "FromUnixMicro should create correct datetime")
 }
 
@@ -268,7 +271,8 @@ func TestDateTimeComponents(t *testing.T) {
 
 // TestDateTimeUnixMethods tests date time unix methods functionality.
 func TestDateTimeUnixMethods(t *testing.T) {
-	dt := DateTime(MakeTime(2023, 12, 25, 14, 30, 45))
+	testLocation := time.FixedZone("UTC+8", 8*60*60)
+	dt := DateTime(time.Date(2023, 12, 25, 14, 30, 45, 0, testLocation))
 
 	expectedUnix := int64(1703485845)
 	assert.Equal(t, int(expectedUnix), int(dt.Unix()), "Unix timestamp should match")

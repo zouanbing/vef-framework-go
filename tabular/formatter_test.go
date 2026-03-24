@@ -124,7 +124,8 @@ func TestDefaultFormatterFormatNullTypes(t *testing.T) {
 func TestDefaultFormatterFormatTimeTypes(t *testing.T) {
 	formatter := NewDefaultFormatter("")
 
-	testTime := time.Date(2024, 1, 15, 14, 30, 45, 0, time.Local)
+	testLocation := time.FixedZone("UTC+8", 8*60*60)
+	testTime := time.Date(2024, 1, 15, 14, 30, 45, 0, testLocation)
 
 	tests := []struct {
 		name     string
@@ -151,7 +152,8 @@ func TestDefaultFormatterFormatTimeTypes(t *testing.T) {
 
 // TestDefaultFormatterFormatTimeTypesWithFormat tests DefaultFormatter Format time types with format scenarios.
 func TestDefaultFormatterFormatTimeTypesWithFormat(t *testing.T) {
-	testTime := time.Date(2024, 1, 15, 14, 30, 45, 0, time.Local)
+	testLocation := time.FixedZone("UTC+8", 8*60*60)
+	testTime := time.Date(2024, 1, 15, 14, 30, 45, 0, testLocation)
 
 	tests := []struct {
 		name     string
@@ -160,7 +162,7 @@ func TestDefaultFormatterFormatTimeTypesWithFormat(t *testing.T) {
 		expected string
 	}{
 		{"TimeTimeCustomFormat", "2006-01-02", testTime, "2024-01-15"},
-		{"TimeTimeRFC3339", time.RFC3339, testTime, "2024-01-15T14:30:45+08:00"},
+		{"TimeTimeRFC3339", time.RFC3339, testTime, testTime.Format(time.RFC3339)},
 		{"DateTimeCustomFormat", "2006/01/02 15:04", timex.DateTime(testTime), "2024/01/15 14:30"},
 		{"DateCustomFormat", "2006年01月02日", timex.Date(testTime), "2024年01月15日"},
 		{"TimeCustomFormat", "15:04", timex.Time(testTime), "14:30"},
