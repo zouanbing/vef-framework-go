@@ -215,6 +215,13 @@ linters:
       - path: 'null/(date|date_time|time)\.go'
         linters:
           - dupl
+      - path: 'internal/approval/strategy/condition\.go'
+        linters:
+          - err113
+      - path: 'internal/log/'
+        linters:
+          - revive
+        note: 'intentional package name matching standard lib, aliased at call sites'
 
 formatters:
   enable:
