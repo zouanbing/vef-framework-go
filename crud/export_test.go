@@ -32,8 +32,8 @@ func init() {
 
 // ExportEmployee is the test model for export tests (uses tabular tags).
 type ExportEmployee struct {
-	bun.BaseModel `bun:"table:export_employee,alias:ee"`
-	orm.FullAuditedModel     `tabular:"-" bun:"extend"`
+	bun.BaseModel        `bun:"table:export_employee,alias:ee"`
+	orm.FullAuditedModel `tabular:"-" bun:"extend"`
 
 	Name   string `json:"name"   tabular:"姓名,width=20" bun:",notnull"`
 	Email  string `json:"email"  tabular:"邮箱,width=25" bun:",notnull"`

@@ -238,8 +238,8 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 		// Create a NEW user instance (not from database query)
 		user := User{
 			FullAuditedModel: orm.FullAuditedModel{ID: tu.ID},
-			Name:  "UT Alice Updated",
-			Age:   99,
+			Name:             "UT Alice Updated",
+			Age:              99,
 		}
 
 		result, err := suite.db.NewUpdate().
@@ -733,7 +733,7 @@ func (suite *UpdateTestSuite) TestUpdateFlags() {
 		// Update with a full User model but only set Name, leave Age as zero
 		partialUpdate := &User{
 			FullAuditedModel: orm.FullAuditedModel{ID: tu.ID},
-			Name:  "UT Alice Updated with OmitZero",
+			Name:             "UT Alice Updated with OmitZero",
 			// Age will be zero, OmitZero should skip it
 		}
 
