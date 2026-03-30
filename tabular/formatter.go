@@ -7,7 +7,6 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/coldsmirk/vef-framework-go/null"
 	"github.com/coldsmirk/vef-framework-go/timex"
 )
 
@@ -27,81 +26,6 @@ type defaultFormatter struct {
 func (f *defaultFormatter) Format(value any) (string, error) {
 	if value == nil {
 		return "", nil
-	}
-
-	// Handle null types first - extract underlying value or return empty for invalid
-	switch v := value.(type) {
-	case null.String:
-		return v.ValueOrZero(), nil
-	case null.Int:
-		if !v.Valid {
-			return "", nil
-		}
-
-		value = v.ValueOrZero()
-
-	case null.Int16:
-		if !v.Valid {
-			return "", nil
-		}
-
-		value = v.ValueOrZero()
-
-	case null.Int32:
-		if !v.Valid {
-			return "", nil
-		}
-
-		value = v.ValueOrZero()
-
-	case null.Float:
-		if !v.Valid {
-			return "", nil
-		}
-
-		value = v.ValueOrZero()
-
-	case null.Bool:
-		if !v.Valid {
-			return "", nil
-		}
-
-		value = v.ValueOrZero()
-
-	case null.Byte:
-		if !v.Valid {
-			return "", nil
-		}
-
-		value = v.ValueOrZero()
-
-	case null.DateTime:
-		if !v.Valid {
-			return "", nil
-		}
-
-		value = v.ValueOrZero()
-
-	case null.Date:
-		if !v.Valid {
-			return "", nil
-		}
-
-		value = v.ValueOrZero()
-
-	case null.Time:
-		if !v.Valid {
-			return "", nil
-		}
-
-		value = v.ValueOrZero()
-
-	case null.Decimal:
-		if !v.Valid {
-			return "", nil
-		}
-
-		value = v.ValueOrZero()
 	}
 
 	// Handle pointer types

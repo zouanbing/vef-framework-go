@@ -2,7 +2,6 @@ package crud
 
 import (
 	"github.com/coldsmirk/vef-framework-go/api"
-	"github.com/coldsmirk/vef-framework-go/null"
 )
 
 // Default column mapping for DataOption.
@@ -53,7 +52,7 @@ type TreeDataOption struct {
 	// Unique identifier for the tree node
 	ID string `json:"-" bun:"id"`
 	// Parent node identifier (null for root nodes)
-	ParentID null.String `json:"-" bun:"parent_id"`
+	ParentID *string `json:"-" bun:"parent_id"`
 	// Nested child options forming the tree structure
 	Children []TreeDataOption `json:"children,omitempty" bun:"-"`
 }

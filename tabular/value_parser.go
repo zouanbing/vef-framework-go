@@ -8,8 +8,6 @@ import (
 	"github.com/spf13/cast"
 
 	"github.com/coldsmirk/vef-framework-go/decimal"
-	"github.com/coldsmirk/vef-framework-go/null"
-	"github.com/coldsmirk/vef-framework-go/timex"
 )
 
 // ValueParser defines the interface for custom value parsers.
@@ -21,19 +19,8 @@ type ValueParser interface {
 
 var (
 	// Cached reflect types for performance.
-	typeNullString   = reflect.TypeFor[null.String]()
-	typeNullInt      = reflect.TypeFor[null.Int]()
-	typeNullInt16    = reflect.TypeFor[null.Int16]()
-	typeNullInt32    = reflect.TypeFor[null.Int32]()
-	typeNullFloat    = reflect.TypeFor[null.Float]()
-	typeNullBool     = reflect.TypeFor[null.Bool]()
-	typeNullByte     = reflect.TypeFor[null.Byte]()
-	typeNullDateTime = reflect.TypeFor[null.DateTime]()
-	typeNullDate     = reflect.TypeFor[null.Date]()
-	typeNullTime     = reflect.TypeFor[null.Time]()
-	typeNullDecimal  = reflect.TypeFor[null.Decimal]()
-	typeTime         = reflect.TypeFor[time.Time]()
-	typeDecimal      = reflect.TypeFor[decimal.Decimal]()
+	typeTime    = reflect.TypeFor[time.Time]()
+	typeDecimal = reflect.TypeFor[decimal.Decimal]()
 )
 
 // defaultParser is the built-in parser that handles common Go types.
@@ -66,116 +53,11 @@ func (p *defaultParser) Parse(cellValue string, targetType reflect.Type) (any, e
 
 // parseValue parses the cell value to the target type.
 func (p *defaultParser) parseValue(cellValue string, targetType reflect.Type) (any, error) {
-	if value, ok, err := p.parseNullType(cellValue, targetType); ok {
-		return value, err
-	}
-
 	if value, ok, err := p.parseStructType(cellValue, targetType); ok {
 		return value, err
 	}
 
 	return p.parseBasicType(cellValue, targetType)
-}
-
-// parseNullType handles all null.* types.
-func (p *defaultParser) parseNullType(cellValue string, targetType reflect.Type) (any, bool, error) {
-	switch targetType {
-	case typeNullString:
-		return null.StringFrom(cellValue), true, nil
-
-	case typeNullInt:
-		v, err := cast.ToInt64E(cellValue)
-		if err != nil {
-			return null.Int{}, true, fmt.Errorf("parse int: %w", err)
-		}
-
-		return null.IntFrom(v), true, nil
-
-	case typeNullInt16:
-		v, err := cast.ToInt16E(cellValue)
-		if err != nil {
-			return null.Int16{}, true, fmt.Errorf("parse int16: %w", err)
-		}
-
-		return null.Int16From(v), true, nil
-
-	case typeNullInt32:
-		v, err := cast.ToInt32E(cellValue)
-		if err != nil {
-			return null.Int32{}, true, fmt.Errorf("parse int32: %w", err)
-		}
-
-		return null.Int32From(v), true, nil
-
-	case typeNullFloat:
-		v, err := cast.ToFloat64E(cellValue)
-		if err != nil {
-			return null.Float{}, true, fmt.Errorf("parse float: %w", err)
-		}
-
-		return null.FloatFrom(v), true, nil
-
-	case typeNullBool:
-		v, err := cast.ToBoolE(cellValue)
-		if err != nil {
-			return null.Bool{}, true, fmt.Errorf("parse bool: %w", err)
-		}
-
-		return null.BoolFrom(v), true, nil
-
-	case typeNullByte:
-		v, err := cast.ToUint8E(cellValue)
-		if err != nil {
-			return null.Byte{}, true, fmt.Errorf("parse byte: %w", err)
-		}
-
-		return null.ByteFrom(v), true, nil
-
-	case typeNullDateTime:
-		v, err := p.parseTemporalValue(cellValue, time.DateTime)
-		if err != nil {
-			return null.DateTime{}, true, fmt.Errorf("parse datetime: %w", err)
-		}
-
-		return null.DateTimeFrom(timex.DateTime(v)), true, nil
-
-	case typeNullDate:
-		v, err := p.parseTemporalValue(cellValue, time.DateOnly)
-		if err != nil {
-			return null.Date{}, true, fmt.Errorf("parse date: %w", err)
-		}
-
-		return null.DateFrom(timex.Date(v)), true, nil
-
-	case typeNullTime:
-		v, err := p.parseTemporalValue(cellValue, time.TimeOnly)
-		if err != nil {
-			return null.Time{}, true, fmt.Errorf("parse time: %w", err)
-		}
-
-		return null.TimeFrom(timex.Time(v)), true, nil
-
-	case typeNullDecimal:
-		v, err := decimal.NewFromString(cellValue)
-		if err != nil {
-			return null.Decimal{}, true, fmt.Errorf("parse decimal: %w", err)
-		}
-
-		return null.DecimalFrom(v), true, nil
-
-	default:
-		return nil, false, nil
-	}
-}
-
-// parseTemporalValue parses temporal values with format handling.
-func (p *defaultParser) parseTemporalValue(cellValue, defaultFormat string) (time.Time, error) {
-	format := p.format
-	if format == "" {
-		format = defaultFormat
-	}
-
-	return time.ParseInLocation(format, cellValue, time.Local)
 }
 
 // parseStructType handles struct types like time.Time and decimal.Decimal.

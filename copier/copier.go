@@ -2,73 +2,46 @@ package copier
 
 import "github.com/jinzhu/copier"
 
-// defaultConverters contains all built-in type converters for null types.
+// defaultConverters contains built-in type converters for value↔pointer conversions.
 var defaultConverters = []TypeConverter{
-	// null.String converters
-	nullStringToStringConverter,
-	nullStringToStringPtrConverter,
-	stringToNullStringConverter,
-	stringPtrToNullStringConverter,
-
-	// null.Int converters
-	nullIntToIntConverter,
-	nullIntToIntPtrConverter,
-	intToNullIntConverter,
-	intPtrToNullIntConverter,
-
-	// null.Int16 converters
-	nullInt16ToInt16Converter,
-	nullInt16ToInt16PtrConverter,
-	int16ToNullInt16Converter,
-	int16PtrToNullInt16Converter,
-
-	// null.Int32 converters
-	nullInt32ToInt32Converter,
-	nullInt32ToInt32PtrConverter,
-	int32ToNullInt32Converter,
-	int32PtrToNullInt32Converter,
-
-	// null.Float converters
-	nullFloatToFloatConverter,
-	nullFloatToFloatPtrConverter,
-	floatToNullFloatConverter,
-	floatPtrToNullFloatConverter,
-
-	// null.Byte converters
-	nullByteToByteConverter,
-	nullByteToBytePtrConverter,
-	byteToNullByteConverter,
-	bytePtrToNullByteConverter,
-
-	// null.Bool converters
-	nullBoolToBoolConverter,
-	nullBoolToBoolPtrConverter,
-	boolToNullBoolConverter,
-	boolPtrToNullBoolConverter,
-
-	// null.DateTime converters
-	nullDateTimeToDateTimeConverter,
-	nullDateTimeToDateTimePtrConverter,
-	dateTimeToNullDateTimeConverter,
-	dateTimePtrToNullDateTimeConverter,
-
-	// null.Date converters
-	nullDateToDateConverter,
-	nullDateToDatePtrConverter,
-	dateToNullDateConverter,
-	datePtrToNullDateConverter,
-
-	// null.Time converters
-	nullTimeToTimeConverter,
-	nullTimeToTimePtrConverter,
-	timeToNullTimeConverter,
-	timePtrToNullTimeConverter,
-
-	// null.Decimal converters
-	nullDecimalToDecimalConverter,
-	nullDecimalToDecimalPtrConverter,
-	decimalToNullDecimalConverter,
-	decimalPtrToNullDecimalConverter,
+	stringToStringPtrConverter,
+	stringPtrToStringConverter,
+	boolToBoolPtrConverter,
+	boolPtrToBoolConverter,
+	intToIntPtrConverter,
+	intPtrToIntConverter,
+	int8ToInt8PtrConverter,
+	int8PtrToInt8Converter,
+	int16ToInt16PtrConverter,
+	int16PtrToInt16Converter,
+	int32ToInt32PtrConverter,
+	int32PtrToInt32Converter,
+	int64ToInt64PtrConverter,
+	int64PtrToInt64Converter,
+	uintToUintPtrConverter,
+	uintPtrToUintConverter,
+	uint8ToUint8PtrConverter,
+	uint8PtrToUint8Converter,
+	uint16ToUint16PtrConverter,
+	uint16PtrToUint16Converter,
+	uint32ToUint32PtrConverter,
+	uint32PtrToUint32Converter,
+	uint64ToUint64PtrConverter,
+	uint64PtrToUint64Converter,
+	float32ToFloat32PtrConverter,
+	float32PtrToFloat32Converter,
+	float64ToFloat64PtrConverter,
+	float64PtrToFloat64Converter,
+	decimalToDecimalPtrConverter,
+	decimalPtrToDecimalConverter,
+	timeToTimePtrConverter,
+	timePtrToTimeConverter,
+	dateTimeToDateTimePtrConverter,
+	dateTimePtrToDateTimeConverter,
+	dateToDatePtrConverter,
+	datePtrToDateConverter,
+	timexTimeToTimexTimePtrConverter,
+	timexTimePtrToTimexTimeConverter,
 }
 
 type (

@@ -8,9 +8,6 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/coldsmirk/vef-framework-go/null"
-	"github.com/coldsmirk/vef-framework-go/timex"
 )
 
 // TestDefaultParserParseEmptyString tests DefaultParser Parse empty string scenarios.
@@ -25,8 +22,6 @@ func TestDefaultParserParseEmptyString(t *testing.T) {
 		{"Int", reflect.TypeFor[int]()},
 		{"Float", reflect.TypeFor[float64]()},
 		{"Bool", reflect.TypeFor[bool]()},
-		{"NullString", reflect.TypeFor[null.String]()},
-		{"NullInt", reflect.TypeFor[null.Int]()},
 	}
 
 	for _, tt := range tests {
@@ -160,138 +155,32 @@ func TestDefaultParserParsePointerTypes(t *testing.T) {
 	}
 }
 
-// TestDefaultParserParseNullTypes tests DefaultParser Parse null types scenarios.
-func TestDefaultParserParseNullTypes(t *testing.T) {
-	parser := NewDefaultParser("")
-
-	tests := []struct {
-		name       string
-		cellValue  string
-		targetType reflect.Type
-		expected   any
-	}{
-		{"NullString", "test", typeNullString, null.StringFrom("test")},
-		{"NullInt", "42", typeNullInt, null.IntFrom(42)},
-		{"NullInt16", "123", typeNullInt16, null.Int16From(123)},
-		{"NullInt32", "456", typeNullInt32, null.Int32From(456)},
-		{"NullFloat", "3.14", typeNullFloat, null.FloatFrom(3.14)},
-		{"NullBool", "true", typeNullBool, null.BoolFrom(true)},
-		{"NullByte", "255", typeNullByte, null.ByteFrom(255)},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result, err := parser.Parse(tt.cellValue, tt.targetType)
-			assert.NoError(t, err, "Should not return error")
-			assert.Equal(t, tt.expected, result, "Should equal expected value")
-		})
-	}
-}
-
-// TestDefaultParserParseInvalidNullTypes tests DefaultParser Parse invalid null types scenarios.
-func TestDefaultParserParseInvalidNullTypes(t *testing.T) {
-	parser := NewDefaultParser("")
-
-	tests := []struct {
-		name       string
-		cellValue  string
-		targetType reflect.Type
-	}{
-		{"InvalidNullInt", "not_a_number", typeNullInt},
-		{"InvalidNullFloat", "abc", typeNullFloat},
-		{"InvalidNullBool", "maybe", typeNullBool},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, err := parser.Parse(tt.cellValue, tt.targetType)
-			assert.Error(t, err, "Should return error")
-		})
-	}
-}
-
 // TestDefaultParserParseTimeTypes tests DefaultParser Parse time types scenarios.
 func TestDefaultParserParseTimeTypes(t *testing.T) {
 	parser := NewDefaultParser("")
 
 	testTimeStr := "2024-01-15 14:30:45"
-	testDateStr := "2024-01-15"
-	testTimeOnlyStr := "14:30:45"
 
-	tests := []struct {
-		name       string
-		cellValue  string
-		targetType reflect.Type
-		validate   func(*testing.T, any)
-	}{
-		{
-			name:       "TimeTime",
-			cellValue:  testTimeStr,
-			targetType: typeTime,
-			validate: func(t *testing.T, result any) {
-				parsed := result.(time.Time)
-				expected := time.Date(2024, 1, 15, 14, 30, 45, 0, time.Local)
-				assert.Equal(t, expected, parsed, "Should equal expected value")
-			},
-		},
-		{
-			name:       "NullDateTime",
-			cellValue:  testTimeStr,
-			targetType: typeNullDateTime,
-			validate: func(t *testing.T, result any) {
-				nullDT := result.(null.DateTime)
-				assert.True(t, nullDT.Valid, "Should be valid")
+	result, err := parser.Parse(testTimeStr, typeTime)
+	require.NoError(t, err, "Should not return error")
 
-				expected := timex.DateTime(time.Date(2024, 1, 15, 14, 30, 45, 0, time.Local))
-				assert.Equal(t, expected, nullDT.ValueOrZero(), "Should equal expected value")
-			},
-		},
-		{
-			name:       "NullDate",
-			cellValue:  testDateStr,
-			targetType: typeNullDate,
-			validate: func(t *testing.T, result any) {
-				nullDate := result.(null.Date)
-				assert.True(t, nullDate.Valid, "Should be valid")
-
-				expected := timex.Date(time.Date(2024, 1, 15, 0, 0, 0, 0, time.Local))
-				assert.Equal(t, expected, nullDate.ValueOrZero(), "Should equal expected value")
-			},
-		},
-		{
-			name:       "NullTime",
-			cellValue:  testTimeOnlyStr,
-			targetType: typeNullTime,
-			validate: func(t *testing.T, result any) {
-				nullTime := result.(null.Time)
-				assert.True(t, nullTime.Valid, "Should be valid")
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result, err := parser.Parse(tt.cellValue, tt.targetType)
-			require.NoError(t, err, "Should not return error")
-			tt.validate(t, result)
-		})
-	}
+	parsed := result.(time.Time)
+	expected := time.Date(2024, 1, 15, 14, 30, 45, 0, time.Local)
+	assert.Equal(t, expected, parsed, "Should equal expected value")
 }
 
 // TestDefaultParserParseTimeTypesWithFormat tests DefaultParser Parse time types with format scenarios.
 func TestDefaultParserParseTimeTypesWithFormat(t *testing.T) {
 	tests := []struct {
-		name       string
-		format     string
-		cellValue  string
-		targetType reflect.Type
-		validate   func(*testing.T, any)
+		name      string
+		format    string
+		cellValue string
+		validate  func(*testing.T, any)
 	}{
 		{
-			name:       "TimeTimeCustomFormat",
-			format:     "2006-01-02",
-			cellValue:  "2024-01-15",
-			targetType: typeTime,
+			name:      "TimeTimeCustomFormat",
+			format:    "2006-01-02",
+			cellValue: "2024-01-15",
 			validate: func(t *testing.T, result any) {
 				parsed := result.(time.Time)
 				expected := time.Date(2024, 1, 15, 0, 0, 0, 0, time.Local)
@@ -299,10 +188,9 @@ func TestDefaultParserParseTimeTypesWithFormat(t *testing.T) {
 			},
 		},
 		{
-			name:       "TimeTimeRFC3339",
-			format:     time.RFC3339,
-			cellValue:  "2024-01-15T14:30:45+08:00",
-			targetType: typeTime,
+			name:      "TimeTimeRFC3339",
+			format:    time.RFC3339,
+			cellValue: "2024-01-15T14:30:45+08:00",
 			validate: func(t *testing.T, result any) {
 				parsed := result.(time.Time)
 				assert.Equal(t, 2024, parsed.Year(), "Should equal expected value")
@@ -310,34 +198,12 @@ func TestDefaultParserParseTimeTypesWithFormat(t *testing.T) {
 				assert.Equal(t, 15, parsed.Day(), "Should equal expected value")
 			},
 		},
-		{
-			name:       "NullDateTimeCustomFormat",
-			format:     "2006/01/02 15:04",
-			cellValue:  "2024/01/15 14:30",
-			targetType: typeNullDateTime,
-			validate: func(t *testing.T, result any) {
-				nullDT := result.(null.DateTime)
-				assert.True(t, nullDT.Valid, "Should be valid")
-				dt := nullDT.ValueOrZero()
-				assert.Equal(t, 2024, time.Time(dt).Year(), "Should equal expected value")
-			},
-		},
-		{
-			name:       "NullDateCustomFormat",
-			format:     "2006年01月02日",
-			cellValue:  "2024年01月15日",
-			targetType: typeNullDate,
-			validate: func(t *testing.T, result any) {
-				nullDate := result.(null.Date)
-				assert.True(t, nullDate.Valid, "Should be valid")
-			},
-		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			parser := NewDefaultParser(tt.format)
-			result, err := parser.Parse(tt.cellValue, tt.targetType)
+			result, err := parser.Parse(tt.cellValue, typeTime)
 			require.NoError(t, err, "Should not return error")
 			tt.validate(t, result)
 		})
@@ -348,23 +214,8 @@ func TestDefaultParserParseTimeTypesWithFormat(t *testing.T) {
 func TestDefaultParserParseInvalidTimeTypes(t *testing.T) {
 	parser := NewDefaultParser("")
 
-	tests := []struct {
-		name       string
-		cellValue  string
-		targetType reflect.Type
-	}{
-		{"InvalidTimeTime", "not_a_time", typeTime},
-		{"InvalidNullDateTime", "invalid", typeNullDateTime},
-		{"InvalidNullDate", "2024-13-45", typeNullDate},
-		{"InvalidNullTime", "25:99:99", typeNullTime},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, err := parser.Parse(tt.cellValue, tt.targetType)
-			assert.Error(t, err, "Should return error")
-		})
-	}
+	_, err := parser.Parse("not_a_time", typeTime)
+	assert.Error(t, err, "Should return error for invalid time")
 }
 
 // TestDefaultParserParseDecimalTypes tests DefaultParser Parse decimal types scenarios.
@@ -372,31 +223,22 @@ func TestDefaultParserParseDecimalTypes(t *testing.T) {
 	parser := NewDefaultParser("")
 
 	tests := []struct {
-		name       string
-		cellValue  string
-		targetType reflect.Type
-		expected   string
+		name      string
+		cellValue string
+		expected  string
 	}{
-		{"DecimalInteger", "100", typeDecimal, "100"},
-		{"DecimalFloat", "3.14", typeDecimal, "3.14"},
-		{"DecimalScientific", "1.23e+2", typeDecimal, "123"},
-		{"NullDecimalValid", "99.99", typeNullDecimal, "99.99"},
+		{"DecimalInteger", "100", "100"},
+		{"DecimalFloat", "3.14", "3.14"},
+		{"DecimalScientific", "1.23e+2", "123"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := parser.Parse(tt.cellValue, tt.targetType)
+			result, err := parser.Parse(tt.cellValue, typeDecimal)
 			assert.NoError(t, err, "Should not return error")
 
-			switch tt.targetType {
-			case typeDecimal:
-				d := result.(decimal.Decimal)
-				assert.Equal(t, tt.expected, d.String(), "Should equal expected value")
-			case typeNullDecimal:
-				nd := result.(null.Decimal)
-				assert.True(t, nd.Valid, "Should be valid")
-				assert.Equal(t, tt.expected, nd.ValueOrZero().String(), "Should equal expected value")
-			}
+			d := result.(decimal.Decimal)
+			assert.Equal(t, tt.expected, d.String(), "Should equal expected value")
 		})
 	}
 }
@@ -405,21 +247,8 @@ func TestDefaultParserParseDecimalTypes(t *testing.T) {
 func TestDefaultParserParseInvalidDecimalTypes(t *testing.T) {
 	parser := NewDefaultParser("")
 
-	tests := []struct {
-		name       string
-		cellValue  string
-		targetType reflect.Type
-	}{
-		{"InvalidDecimal", "not_a_number", typeDecimal},
-		{"InvalidNullDecimal", "abc", typeNullDecimal},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, err := parser.Parse(tt.cellValue, tt.targetType)
-			assert.Error(t, err, "Should return error")
-		})
-	}
+	_, err := parser.Parse("not_a_number", typeDecimal)
+	assert.Error(t, err, "Should return error for invalid decimal")
 }
 
 // TestDefaultParserParseUnsupportedTypes tests DefaultParser Parse unsupported types scenarios.
@@ -483,20 +312,18 @@ func TestDefaultParserParseUnicodeStrings(t *testing.T) {
 	parser := NewDefaultParser("")
 
 	tests := []struct {
-		name       string
-		cellValue  string
-		targetType reflect.Type
-		expected   any
+		name      string
+		cellValue string
+		expected  string
 	}{
-		{"ChineseCharacters", "你好世界", reflect.TypeFor[string](), "你好世界"},
-		{"EmojiCharacters", "👍🎉", reflect.TypeFor[string](), "👍🎉"},
-		{"MixedUnicode", "Hello世界🌍", reflect.TypeFor[string](), "Hello世界🌍"},
-		{"NullStringUnicode", "测试数据", typeNullString, null.StringFrom("测试数据")},
+		{"ChineseCharacters", "你好世界", "你好世界"},
+		{"EmojiCharacters", "👍🎉", "👍🎉"},
+		{"MixedUnicode", "Hello世界🌍", "Hello世界🌍"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := parser.Parse(tt.cellValue, tt.targetType)
+			result, err := parser.Parse(tt.cellValue, reflect.TypeFor[string]())
 			assert.NoError(t, err, "Should not return error")
 			assert.Equal(t, tt.expected, result, "Should equal expected value")
 		})
@@ -594,27 +421,4 @@ func TestDefaultParserParseEmptyStringForPointer(t *testing.T) {
 	result, err := parser.Parse("", reflect.TypeFor[*string]())
 	assert.NoError(t, err, "Should not return error")
 	assert.Nil(t, result, "Should be nil")
-}
-
-// TestDefaultParserParseEmptyStringForNullTypes tests DefaultParser Parse empty string for null types scenarios.
-func TestDefaultParserParseEmptyStringForNullTypes(t *testing.T) {
-	parser := NewDefaultParser("")
-
-	tests := []struct {
-		name       string
-		targetType reflect.Type
-	}{
-		{"NullString", typeNullString},
-		{"NullInt", typeNullInt},
-		{"NullFloat", typeNullFloat},
-		{"NullBool", typeNullBool},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result, err := parser.Parse("", tt.targetType)
-			assert.NoError(t, err, "Should not return error")
-			assert.Equal(t, reflect.Zero(tt.targetType).Interface(), result, "Should equal expected value")
-		})
-	}
 }

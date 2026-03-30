@@ -23,7 +23,6 @@ require (
 	github.com/gofiber/utils/v2 v2.0.2
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
-	github.com/guregu/null/v6 v6.0.0
 	github.com/hbollon/go-edlib v1.7.0
 	github.com/invopop/jsonschema v0.13.0
 	github.com/jinzhu/copier v0.4.0

@@ -13,21 +13,8 @@ var (
 	defaultDecoderTagName = "json"
 
 	// DecoderHook composes multiple decode hooks for comprehensive type conversion.
-	// It includes hooks for null types, text unmarshalling, time parsing, URL parsing, IP parsing, and basic type conversion.
 	DecoderHook = mapstructure.ComposeDecodeHookFunc(
 		convertJSONRawMessage,
-		convertNullBool,
-		convertNullString,
-		convertNullInt,
-		convertNullInt16,
-		convertNullInt32,
-		convertNullFloat,
-		convertNullByte,
-		convertNullDateTime,
-		convertNullDate,
-		convertNullTime,
-		convertNullDecimal,
-		convertNullValue,
 		convertFileHeader,
 		mapstructure.TextUnmarshallerHookFunc(),
 		mapstructure.StringToTimeHookFunc(time.DateTime),

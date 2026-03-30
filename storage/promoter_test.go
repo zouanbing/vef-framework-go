@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/coldsmirk/vef-framework-go/event"
-	"github.com/coldsmirk/vef-framework-go/null"
 )
 
 // MockService is a mock implementation of Service for testing.
@@ -118,12 +117,6 @@ type TestModelWithPointers struct {
 	Avatar  *string `meta:"uploaded_file"`
 	Content *string `meta:"richtext"`
 	Summary *string `meta:"markdown"`
-}
-
-type TestModelWithNull struct {
-	Avatar  null.String `meta:"uploaded_file"`
-	Content null.String `meta:"richtext"`
-	Summary null.String `meta:"markdown"`
 }
 
 func testModelType() reflect.Type {
@@ -686,80 +679,6 @@ func TestPromoterTypes(t *testing.T) {
 
 		assert.Nil(t, model.Avatar, "Nil avatar pointer should remain nil")
 		assert.Nil(t, model.Content, "Nil content pointer should remain nil")
-	})
-
-	t.Run("NullTypesCreate", func(t *testing.T) {
-		t.Log("Testing file promotion with null.String types")
-
-		service := NewMockService()
-		promoter := NewPromoter[TestModelWithNull](service)
-
-		model := TestModelWithNull{
-			Avatar:  null.StringFrom("temp/2025/01/15/avatar.jpg"),
-			Content: null.StringFrom(`<a href="temp/2025/01/15/doc.pdf">Download</a>`),
-			Summary: null.StringFrom(`![Image](temp/2025/01/15/pic.jpg)`),
-		}
-
-		err := promoter.Promote(context.Background(), &model, nil)
-		require.NoError(t, err, "Promotion with null types should succeed")
-
-		assert.True(t, model.Avatar.Valid, "Avatar should be valid after promotion")
-		assert.Equal(t, "2025/01/15/avatar.jpg", model.Avatar.String,
-			"Null avatar should be promoted")
-
-		assert.True(t, model.Content.Valid, "Content should be valid after promotion")
-		assert.Contains(t, model.Content.String, `href="2025/01/15/doc.pdf"`,
-			"Null content URL should be promoted")
-
-		assert.True(t, model.Summary.Valid, "Summary should be valid after promotion")
-		assert.Contains(t, model.Summary.String, `](2025/01/15/pic.jpg)`,
-			"Null summary URL should be promoted")
-	})
-
-	t.Run("NullTypesUpdate", func(t *testing.T) {
-		t.Log("Testing null type field updates")
-
-		service := NewMockService()
-		promoter := NewPromoter[TestModelWithNull](service)
-
-		service.files["2025/01/15/old_avatar.jpg"] = true
-
-		oldModel := &TestModelWithNull{
-			Avatar: null.StringFrom("2025/01/15/old_avatar.jpg"),
-		}
-
-		newModel := &TestModelWithNull{
-			Avatar: null.NewString("", false),
-		}
-
-		err := promoter.Promote(context.Background(), newModel, oldModel)
-		require.NoError(t, err, "Update to invalid null should succeed")
-
-		assert.False(t, newModel.Avatar.Valid,
-			"Avatar should be invalid after update")
-
-		assert.False(t, service.files["2025/01/15/old_avatar.jpg"],
-			"Old avatar should be deleted when field becomes invalid")
-	})
-
-	t.Run("NullTypesInvalidNull", func(t *testing.T) {
-		t.Log("Testing invalid null.String handling")
-
-		service := NewMockService()
-		promoter := NewPromoter[TestModelWithNull](service)
-
-		model := TestModelWithNull{
-			Avatar:  null.NewString("temp/2025/01/15/avatar.jpg", false),
-			Content: null.NewString("<img src=\"temp/pic.jpg\">", false),
-		}
-
-		err := promoter.Promote(context.Background(), &model, nil)
-		require.NoError(t, err, "Invalid null types should be handled gracefully")
-
-		assert.False(t, model.Avatar.Valid,
-			"Invalid avatar should remain invalid")
-		assert.False(t, model.Content.Valid,
-			"Invalid content should remain invalid")
 	})
 }
 

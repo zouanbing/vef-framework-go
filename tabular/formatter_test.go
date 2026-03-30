@@ -7,7 +7,6 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/coldsmirk/vef-framework-go/null"
 	"github.com/coldsmirk/vef-framework-go/timex"
 )
 
@@ -86,40 +85,6 @@ func TestDefaultFormatterFormatPointerTypes(t *testing.T) {
 	}
 }
 
-// TestDefaultFormatterFormatNullTypes tests DefaultFormatter Format null types scenarios.
-func TestDefaultFormatterFormatNullTypes(t *testing.T) {
-	formatter := NewDefaultFormatter("")
-
-	tests := []struct {
-		name     string
-		input    any
-		expected string
-	}{
-		{"NullStringValid", null.StringFrom("test"), "test"},
-		{"NullStringInvalid", null.String{}, ""},
-		{"NullIntValid", null.IntFrom(42), "42"},
-		{"NullIntInvalid", null.Int{}, ""},
-		{"NullInt16Valid", null.Int16From(123), "123"},
-		{"NullInt16Invalid", null.Int16{}, ""},
-		{"NullInt32Valid", null.Int32From(456), "456"},
-		{"NullInt32Invalid", null.Int32{}, ""},
-		{"NullFloatValid", null.FloatFrom(3.14), "3.14"},
-		{"NullFloatInvalid", null.Float{}, ""},
-		{"NullBoolValid", null.BoolFrom(true), "true"},
-		{"NullBoolInvalid", null.Bool{}, ""},
-		{"NullByteValid", null.ByteFrom(255), "255"},
-		{"NullByteInvalid", null.Byte{}, ""},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result, err := formatter.Format(tt.input)
-			assert.NoError(t, err, "Should not return error")
-			assert.Equal(t, tt.expected, result, "Should equal expected value")
-		})
-	}
-}
-
 // TestDefaultFormatterFormatTimeTypes tests DefaultFormatter Format time types scenarios.
 func TestDefaultFormatterFormatTimeTypes(t *testing.T) {
 	formatter := NewDefaultFormatter("")
@@ -133,12 +98,6 @@ func TestDefaultFormatterFormatTimeTypes(t *testing.T) {
 		expected string
 	}{
 		{"TimeTime", testTime, "2024-01-15 14:30:45"},
-		{"NullDateTimeValid", null.DateTimeFrom(timex.DateTime(testTime)), "2024-01-15 14:30:45"},
-		{"NullDateTimeInvalid", null.DateTime{}, ""},
-		{"NullDateValid", null.DateFrom(timex.Date(testTime)), "2024-01-15"},
-		{"NullDateInvalid", null.Date{}, ""},
-		{"NullTimeValid", null.TimeFrom(timex.Time(testTime)), "14:30:45"},
-		{"NullTimeInvalid", null.Time{}, ""},
 	}
 
 	for _, tt := range tests {
@@ -216,8 +175,6 @@ func TestDefaultFormatterFormatDecimalType(t *testing.T) {
 		{"DecimalInteger", decimal.NewFromInt(100), "100"},
 		{"DecimalFloat", decimal.NewFromFloat(3.14), "3.14"},
 		{"DecimalString", decimal.RequireFromString("123.456"), "123.456"},
-		{"NullDecimalValid", null.DecimalFrom(decimal.NewFromFloat(99.99)), "99.99"},
-		{"NullDecimalInvalid", null.Decimal{}, ""},
 	}
 
 	for _, tt := range tests {
@@ -281,7 +238,6 @@ func TestDefaultFormatterFormatUnicodeStrings(t *testing.T) {
 		{"ChineseCharacters", "你好世界", "你好世界"},
 		{"EmojiCharacters", "👍🎉", "👍🎉"},
 		{"MixedUnicode", "Hello世界🌍", "Hello世界🌍"},
-		{"NullStringUnicode", null.StringFrom("测试数据"), "测试数据"},
 	}
 
 	for _, tt := range tests {

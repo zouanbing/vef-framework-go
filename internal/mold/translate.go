@@ -11,7 +11,6 @@ import (
 
 	"github.com/coldsmirk/vef-framework-go/logx"
 	"github.com/coldsmirk/vef-framework-go/mold"
-	"github.com/coldsmirk/vef-framework-go/null"
 	"github.com/coldsmirk/vef-framework-go/reflectx"
 )
 
@@ -30,11 +29,6 @@ var (
 	ErrNoTranslatorSupportsKind = errors.New("no translator supports the given kind")
 	// ErrUnsupportedFieldType is returned when the field type is not supported for translation.
 	ErrUnsupportedFieldType = errors.New("unsupported field type for translation")
-
-	nullStringType = reflect.TypeFor[null.String]()
-	nullIntType    = reflect.TypeFor[null.Int]()
-	nullInt16Type  = reflect.TypeFor[null.Int16]()
-	nullInt32Type  = reflect.TypeFor[null.Int32]()
 )
 
 // TranslateTransformer is a translator-based transformer that converts values to readable names
@@ -45,10 +39,9 @@ type TranslateTransformer struct {
 }
 
 // extractStringValue extracts string value from supported field types:
-// - string, *string, null.String
+// - string, *string
 // - int, int8, int16, int32, int64 and their pointer forms
 // - uint, uint8, uint16, uint32, uint64 and their pointer forms
-// - null.Int, null.Int16, null.Int32
 // Returns empty string and an error for unsupported types.
 func extractStringValue(fieldName string, field reflect.Value) (string, error) {
 	if !field.IsValid() {
@@ -71,36 +64,9 @@ func extractStringValue(fieldName string, field reflect.Value) (string, error) {
 	case fieldKind == reflect.Pointer:
 		return extractPointerStringValue(fieldName, field)
 
-	case fieldType == nullStringType:
-		return field.Interface().(null.String).ValueOrZero(), nil
-
-	case fieldType == nullIntType:
-		nullInt := field.Interface().(null.Int)
-		if !nullInt.Valid {
-			return "", nil
-		}
-
-		return cast.ToStringE(nullInt.Int64)
-
-	case fieldType == nullInt16Type:
-		nullInt16 := field.Interface().(null.Int16)
-		if !nullInt16.Valid {
-			return "", nil
-		}
-
-		return cast.ToStringE(nullInt16.Int16)
-
-	case fieldType == nullInt32Type:
-		nullInt32 := field.Interface().(null.Int32)
-		if !nullInt32.Valid {
-			return "", nil
-		}
-
-		return cast.ToStringE(nullInt32.Int32)
-
 	default:
 		return "", fmt.Errorf(
-			"%w: field %q has unsupported type %v (supported: string, *string, null.String, null.Int, null.Int16, null.Int32, integers and their pointer forms)",
+			"%w: field %q has unsupported type %v (supported: string, *string, integers and their pointer forms)",
 			ErrUnsupportedFieldType,
 			fieldName,
 			fieldType,
@@ -141,7 +107,7 @@ func isUnsignedInt(kind reflect.Kind) bool {
 }
 
 // setTranslatedValue sets the translated string value to the target field.
-// Supports string, *string, and null.String types.
+// Supports string and *string types.
 func setTranslatedValue(translatedField reflect.Value, translated, translatedFieldName string) error {
 	translatedFieldType := translatedField.Type()
 	fieldKind := translatedFieldType.Kind()
@@ -163,12 +129,6 @@ func setTranslatedValue(translatedField reflect.Value, translated, translatedFie
 		}
 
 		translatedField.Elem().SetString(translated)
-
-		return nil
-	}
-
-	if translatedFieldType == nullStringType {
-		translatedField.Set(reflect.ValueOf(null.StringFrom(translated)))
 
 		return nil
 	}

@@ -11,16 +11,15 @@ import (
 	"github.com/coldsmirk/go-streams"
 
 	"github.com/coldsmirk/vef-framework-go/event"
-	"github.com/coldsmirk/vef-framework-go/null"
 	"github.com/coldsmirk/vef-framework-go/reflectx"
 	"github.com/coldsmirk/vef-framework-go/strx"
 )
 
 // Promoter defines the interface for automatic file field promotion and cleanup.
 // It supports three types of meta information fields:
-// - uploaded_file: Direct file fields (string, *string, null.String, []string)
-// - richtext: Rich text fields (string, *string, null.String), automatically extracts and processes resource references in HTML
-// - markdown: Markdown fields (string, *string, null.String), automatically extracts and processes resource references in Markdown.
+// - uploaded_file: Direct file fields (string, *string, []string)
+// - richtext: Rich text fields (string, *string), automatically extracts and processes resource references in HTML
+// - markdown: Markdown fields (string, *string), automatically extracts and processes resource references in Markdown.
 type Promoter[T any] interface {
 	// Promote handles file promotion and cleanup based on the scenario:
 	// - newModel != nil && oldModel == nil: Create (promote new files)
@@ -45,8 +44,6 @@ const (
 	tagMeta = "meta"
 )
 
-var nullStringType = reflect.TypeFor[null.String]()
-
 func getStringValue(fieldValue reflect.Value) (string, bool) {
 	fieldType := fieldValue.Type()
 
@@ -60,14 +57,6 @@ func getStringValue(fieldValue reflect.Value) (string, bool) {
 		}
 
 		return fieldValue.Elem().String(), true
-	}
-
-	if fieldType == nullStringType {
-		if ns := fieldValue.Interface().(null.String); ns.Valid {
-			return ns.String, true
-		}
-
-		return "", false
 	}
 
 	return "", false
@@ -85,12 +74,6 @@ func setStringValue(fieldValue reflect.Value, value string) {
 	if fieldType.Kind() == reflect.Pointer && fieldType.Elem().Kind() == reflect.String {
 		strValue := value
 		fieldValue.Set(reflect.ValueOf(&strValue))
-
-		return
-	}
-
-	if fieldType == nullStringType {
-		fieldValue.Set(reflect.ValueOf(null.StringFrom(value)))
 	}
 }
 
@@ -133,11 +116,7 @@ func isStringType(fieldType reflect.Type) bool {
 		return true
 	}
 
-	if fieldType.Kind() == reflect.Pointer && fieldType.Elem().Kind() == reflect.String {
-		return true
-	}
-
-	return fieldType == nullStringType
+	return fieldType.Kind() == reflect.Pointer && fieldType.Elem().Kind() == reflect.String
 }
 
 func isStringSliceType(fieldType reflect.Type) bool {

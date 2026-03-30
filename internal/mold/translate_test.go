@@ -12,7 +12,6 @@ import (
 	"github.com/coldsmirk/vef-framework-go/internal/app"
 	"github.com/coldsmirk/vef-framework-go/internal/apptest"
 	"github.com/coldsmirk/vef-framework-go/mold"
-	"github.com/coldsmirk/vef-framework-go/null"
 )
 
 // TranslateTransformerTestSuite tests the TranslateTransformer functionality.
@@ -205,48 +204,6 @@ func (suite *TranslateTransformerTestSuite) TestTranslatePointerField() {
 		suite.Equal("Medium Priority", *test.PriorityName, "PriorityName should be updated")
 
 		suite.T().Logf("Priority: %s -> PriorityName: %s (overwritten)", *test.Priority, *test.PriorityName)
-	})
-}
-
-// TestTranslateNullStringField tests translation with null.String field type.
-func (suite *TranslateTransformerTestSuite) TestTranslateNullStringField() {
-	suite.T().Log("Testing translate transformer with null.String field type")
-
-	suite.Run("TranslateValidNullString", func() {
-		type TestStruct struct {
-			Status     null.String `mold:"translate=dict:status"`
-			StatusName null.String
-		}
-
-		test := &TestStruct{
-			Status:     null.StringFrom("pending"),
-			StatusName: null.String{},
-		}
-
-		err := suite.transformer.Struct(suite.ctx, test)
-		suite.NoError(err, "Translation should succeed for null.String field")
-		suite.True(test.StatusName.Valid, "StatusName should be valid after translation")
-		suite.Equal("Pending Status", test.StatusName.String, "StatusName should be translated correctly")
-
-		suite.T().Logf("Status: %s (valid=%v) -> StatusName: %s (valid=%v)",
-			test.Status.String, test.Status.Valid, test.StatusName.String, test.StatusName.Valid)
-	})
-
-	suite.Run("TranslateInvalidNullString", func() {
-		type TestStruct struct {
-			Status     null.String `mold:"translate=dict:status"`
-			StatusName null.String
-		}
-
-		test := &TestStruct{
-			Status:     null.String{}, // Invalid by default
-			StatusName: null.String{},
-		}
-
-		err := suite.transformer.Struct(suite.ctx, test)
-		suite.NoError(err, "Translation should skip invalid null.String field")
-		// StatusName should remain invalid when Status is invalid
-		suite.T().Log("Status is invalid, StatusName remains unset")
 	})
 }
 
@@ -514,15 +471,12 @@ func (suite *TranslateTransformerTestSuite) TestTranslateIntegration() {
 			StatusName   string
 			Priority     *string `mold:"translate=dict:priority"`
 			PriorityName *string
-			Category     null.String `mold:"translate=dict:status"`
-			CategoryName null.String
 		}
 
 		priority := "low"
 		test := &ComplexStruct{
 			Status:   "active",
 			Priority: &priority,
-			Category: null.StringFrom("inactive"),
 		}
 
 		err := suite.transformer.Struct(suite.ctx, test)
@@ -531,13 +485,10 @@ func (suite *TranslateTransformerTestSuite) TestTranslateIntegration() {
 		suite.Equal("Active Status", test.StatusName, "StatusName should be translated")
 		suite.Require().NotNil(test.PriorityName, "PriorityName should be initialized")
 		suite.Equal("Low Priority", *test.PriorityName, "PriorityName should be translated")
-		suite.True(test.CategoryName.Valid, "CategoryName should be valid")
-		suite.Equal("Inactive Status", test.CategoryName.String, "CategoryName should be translated")
 
-		suite.T().Logf("Complex translation: Status=%s->%s, Priority=%s->%s, Category=%s->%s",
+		suite.T().Logf("Complex translation: Status=%s->%s, Priority=%s->%s",
 			test.Status, test.StatusName,
-			*test.Priority, *test.PriorityName,
-			test.Category.String, test.CategoryName.String)
+			*test.Priority, *test.PriorityName)
 	})
 }
 

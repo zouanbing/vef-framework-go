@@ -2,8 +2,6 @@ package security
 
 import (
 	"context"
-
-	"github.com/guregu/null/v6"
 )
 
 // UserInfoLoader retrieves extended user information for the current session.
@@ -35,17 +33,17 @@ type UserMenu struct {
 	Type     UserMenuType   `json:"type"`
 	Path     string         `json:"path"`
 	Name     string         `json:"name"`
-	Icon     null.String    `json:"icon"`
+	Icon     *string        `json:"icon"`
 	Meta     map[string]any `json:"metadata,omitempty"`
 	Children []UserMenu     `json:"children,omitempty"`
 }
 
 type UserInfo struct {
-	ID         string      `json:"id"`
-	Name       string      `json:"name"`
-	Gender     Gender      `json:"gender"`
-	Avatar     null.String `json:"avatar"`
-	PermTokens []string    `json:"permTokens"`
-	Menus      []UserMenu  `json:"menus"`
-	Details    any         `json:"details,omitempty"`
+	ID         string     `json:"id"`
+	Name       string     `json:"name"`
+	Gender     Gender     `json:"gender"`
+	Avatar     *string    `json:"avatar"`
+	PermTokens []string   `json:"permTokens"`
+	Menus      []UserMenu `json:"menus"`
+	Details    any        `json:"details,omitempty"`
 }

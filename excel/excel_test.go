@@ -7,25 +7,25 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/xuri/excelize/v2"
 
-	"github.com/coldsmirk/vef-framework-go/null"
 	"github.com/coldsmirk/vef-framework-go/tabular"
 )
 
 // TestUser is a test struct for Excel operations.
 type TestUser struct {
-	ID        string      `tabular:"width=15"                                      validate:"required"`
-	Name      string      `tabular:"姓名,width=20"                                   validate:"required"`
-	Email     string      `tabular:"邮箱,width=25"                                   validate:"email"`
-	Age       int         `tabular:"name=年龄,width=10"                              validate:"gte=0,lte=150"`
-	Salary    float64     `tabular:"name=薪资,width=15,format=%.2f"`
-	CreatedAt time.Time   `tabular:"name=创建时间,width=20,format=2006-01-02 15:04:05"`
-	Status    int         `tabular:"name=状态,width=10"`
-	Remark    null.String `tabular:"name=备注,width=30"`
-	Password  string      `tabular:"-"` // Ignored field
+	ID        string    `tabular:"width=15"                                      validate:"required"`
+	Name      string    `tabular:"姓名,width=20"                                   validate:"required"`
+	Email     string    `tabular:"邮箱,width=25"                                   validate:"email"`
+	Age       int       `tabular:"name=年龄,width=10"                              validate:"gte=0,lte=150"`
+	Salary    float64   `tabular:"name=薪资,width=15,format=%.2f"`
+	CreatedAt time.Time `tabular:"name=创建时间,width=20,format=2006-01-02 15:04:05"`
+	Status    int       `tabular:"name=状态,width=10"`
+	Remark    *string   `tabular:"name=备注,width=30"`
+	Password  string    `tabular:"-"` // Ignored field
 }
 
 // TestExporterExportToFile tests exporter export to file functionality.
@@ -40,7 +40,7 @@ func TestExporterExportToFile(t *testing.T) {
 			Salary:    10000.50,
 			CreatedAt: now,
 			Status:    1,
-			Remark:    null.StringFrom("测试用户1"),
+			Remark:    lo.ToPtr("测试用户1"),
 			Password:  "secret123",
 		},
 		{
@@ -51,7 +51,7 @@ func TestExporterExportToFile(t *testing.T) {
 			Salary:    8000.75,
 			CreatedAt: now,
 			Status:    2,
-			Remark:    null.String{},
+			Remark:    nil,
 			Password:  "secret456",
 		},
 	}
@@ -85,7 +85,7 @@ func TestImporterImportFromFile(t *testing.T) {
 			Salary:    10000.50,
 			CreatedAt: now,
 			Status:    1,
-			Remark:    null.StringFrom("测试用户1"),
+			Remark:    lo.ToPtr("测试用户1"),
 		},
 		{
 			ID:        "2",
@@ -95,7 +95,7 @@ func TestImporterImportFromFile(t *testing.T) {
 			Salary:    8000.75,
 			CreatedAt: now,
 			Status:    2,
-			Remark:    null.String{},
+			Remark:    nil,
 		},
 	}
 
@@ -126,12 +126,12 @@ func TestImporterImportFromFile(t *testing.T) {
 	assert.Equal(t, 30, imported[0].Age, "Should equal expected value")
 	assert.InDelta(t, 10000.50, imported[0].Salary, 0.01, "Salary should be within delta of expected value")
 	assert.Equal(t, 1, imported[0].Status, "Should equal expected value")
-	assert.True(t, imported[0].Remark.Valid, "Should be valid")
-	assert.Equal(t, "测试用户1", imported[0].Remark.ValueOrZero(), "Should equal expected value")
+	assert.True(t, imported[0].Remark != nil, "Should be valid")
+	assert.Equal(t, "测试用户1", *imported[0].Remark, "Should equal expected value")
 
 	assert.Equal(t, "2", imported[1].ID, "Should equal expected value")
 	assert.Equal(t, "李四", imported[1].Name, "Should equal expected value")
-	assert.False(t, imported[1].Remark.Valid, "Should not be valid")
+	assert.False(t, imported[1].Remark != nil, "Should not be valid")
 }
 
 // TestSchemaParseTags tests schema parse tags functionality.
@@ -274,7 +274,7 @@ func TestExportCustomFormatter(t *testing.T) {
 			Salary:    10000.50,
 			CreatedAt: time.Date(2024, 1, 1, 12, 0, 0, 0, time.Local),
 			Status:    1,
-			Remark:    null.StringFrom("测试用户"),
+			Remark:    lo.ToPtr("测试用户"),
 		},
 	}
 
@@ -307,7 +307,7 @@ func TestExportToBuffer(t *testing.T) {
 			Salary:    10000.50,
 			CreatedAt: time.Now(),
 			Status:    1,
-			Remark:    null.StringFrom("测试"),
+			Remark:    lo.ToPtr("测试"),
 		},
 	}
 
@@ -395,7 +395,7 @@ func TestImportCustomParser(t *testing.T) {
 			Salary:    10000.50,
 			CreatedAt: now,
 			Status:    1,
-			Remark:    null.StringFrom("测试"),
+			Remark:    lo.ToPtr("测试"),
 		},
 	}
 
@@ -568,7 +568,7 @@ func TestImportMissingColumns(t *testing.T) {
 	assert.Equal(t, 30, imported[0].Age, "Should equal expected value")
 	assert.Equal(t, 0.0, imported[0].Salary, "Should equal expected value")
 	assert.Equal(t, 0, imported[0].Status, "Should equal expected value")
-	assert.False(t, imported[0].Remark.Valid, "Should not be valid")
+	assert.False(t, imported[0].Remark != nil, "Should not be valid")
 }
 
 // TestImportInvalidData tests import invalid data functionality.
@@ -662,7 +662,7 @@ func TestExportNullValues(t *testing.T) {
 			Salary:    10000.50,
 			CreatedAt: time.Now(),
 			Status:    1,
-			Remark:    null.String{},
+			Remark:    nil,
 		},
 		{
 			ID:        "2",
@@ -672,7 +672,7 @@ func TestExportNullValues(t *testing.T) {
 			Salary:    8000.00,
 			CreatedAt: time.Now(),
 			Status:    2,
-			Remark:    null.StringFrom("有备注"),
+			Remark:    lo.ToPtr("有备注"),
 		},
 	}
 
@@ -697,9 +697,9 @@ func TestExportNullValues(t *testing.T) {
 	assert.Empty(t, importErrors, "Should be empty")
 	assert.Len(t, imported, 2, "Length should be 2")
 
-	assert.False(t, imported[0].Remark.Valid, "Should not be valid")
-	assert.True(t, imported[1].Remark.Valid, "Should be valid")
-	assert.Equal(t, "有备注", imported[1].Remark.ValueOrZero(), "Should equal expected value")
+	assert.False(t, imported[0].Remark != nil, "Should not be valid")
+	assert.True(t, imported[1].Remark != nil, "Should be valid")
+	assert.Equal(t, "有备注", *imported[1].Remark, "Should equal expected value")
 }
 
 // TestRoundTrip tests round trip functionality.
@@ -714,7 +714,7 @@ func TestRoundTrip(t *testing.T) {
 			Salary:    10000.50,
 			CreatedAt: now,
 			Status:    1,
-			Remark:    null.StringFrom("测试用户1"),
+			Remark:    lo.ToPtr("测试用户1"),
 		},
 		{
 			ID:        "2",
@@ -724,7 +724,7 @@ func TestRoundTrip(t *testing.T) {
 			Salary:    8000.75,
 			CreatedAt: now,
 			Status:    2,
-			Remark:    null.String{},
+			Remark:    nil,
 		},
 	}
 
@@ -756,10 +756,10 @@ func TestRoundTrip(t *testing.T) {
 		assert.Equal(t, original[i].Age, imported[i].Age, "Should equal expected value")
 		assert.InDelta(t, original[i].Salary, imported[i].Salary, 0.01, "Salary should be within delta of original value")
 		assert.Equal(t, original[i].Status, imported[i].Status, "Should equal expected value")
-		assert.Equal(t, original[i].Remark.Valid, imported[i].Remark.Valid, "Should equal expected value")
+		assert.Equal(t, original[i].Remark != nil, imported[i].Remark != nil, "Should equal expected value")
 
-		if original[i].Remark.Valid {
-			assert.Equal(t, original[i].Remark.ValueOrZero(), imported[i].Remark.ValueOrZero(), "Should equal expected value")
+		if original[i].Remark != nil {
+			assert.Equal(t, *original[i].Remark, *imported[i].Remark, "Should equal expected value")
 		}
 	}
 }

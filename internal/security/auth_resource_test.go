@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/guregu/null/v6"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/fx"
@@ -750,7 +750,7 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoSuccess() {
 		ID:     "user001",
 		Name:   "Test User",
 		Gender: security.GenderMale,
-		Avatar: null.StringFrom(avatarURL),
+		Avatar: &avatarURL,
 		PermTokens: []string{
 			"user:read",
 			"user:write",
@@ -761,13 +761,13 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoSuccess() {
 				Type: security.UserMenuTypeDirectory,
 				Path: "/system",
 				Name: "System Management",
-				Icon: null.StringFrom("setting"),
+				Icon: lo.ToPtr("setting"),
 				Children: []security.UserMenu{
 					{
 						Type: security.UserMenuTypeMenu,
 						Path: "/system/users",
 						Name: "User Management",
-						Icon: null.StringFrom("user"),
+						Icon: lo.ToPtr("user"),
 					},
 				},
 			},

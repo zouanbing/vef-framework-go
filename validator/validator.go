@@ -20,7 +20,6 @@ import (
 	"github.com/coldsmirk/vef-framework-go/config"
 	"github.com/coldsmirk/vef-framework-go/i18n"
 	"github.com/coldsmirk/vef-framework-go/internal/logx"
-	"github.com/coldsmirk/vef-framework-go/null"
 	"github.com/coldsmirk/vef-framework-go/result"
 )
 
@@ -94,19 +93,6 @@ type CustomTypeFunc = func(field reflect.Value) any
 
 func RegisterTypeFunc(fn CustomTypeFunc, types ...any) {
 	validator.RegisterCustomTypeFunc(fn, types...)
-}
-
-func RegisterNullValueTypeFunc[T any]() {
-	validator.RegisterCustomTypeFunc(
-		func(field reflect.Value) any {
-			if nv, ok := field.Interface().(null.Value[T]); ok && nv.Valid {
-				return nv.V
-			}
-
-			return nil
-		},
-		null.Value[T]{},
-	)
 }
 
 func Validate(value any) error {

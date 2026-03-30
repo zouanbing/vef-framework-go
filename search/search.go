@@ -11,7 +11,6 @@ import (
 	"github.com/coldsmirk/vef-framework-go/dbx"
 	"github.com/coldsmirk/vef-framework-go/internal/logx"
 	"github.com/coldsmirk/vef-framework-go/monad"
-	"github.com/coldsmirk/vef-framework-go/null"
 	"github.com/coldsmirk/vef-framework-go/orm"
 )
 
@@ -46,10 +45,7 @@ func (f Search) Apply(cb orm.ConditionBuilder, target any, defaultAlias ...strin
 			continue
 		}
 
-		fieldValue, valid := extractFieldValue(field.Interface())
-		if !valid {
-			continue
-		}
+		fieldValue := extractFieldValue(field.Interface())
 
 		alias := getColumnAlias(c.Alias, defaultAlias...)
 		columns := streams.MapTo(
@@ -61,33 +57,13 @@ func (f Search) Apply(cb orm.ConditionBuilder, target any, defaultAlias ...strin
 	}
 }
 
-func extractFieldValue(fieldValue any) (any, bool) {
-	switch nv := fieldValue.(type) {
-	case null.String:
-		return nv.ValueOrZero(), nv.Valid
-	case null.Int:
-		return nv.ValueOrZero(), nv.Valid
-	case null.Int16:
-		return nv.ValueOrZero(), nv.Valid
-	case null.Int32:
-		return nv.ValueOrZero(), nv.Valid
-	case null.Float:
-		return nv.ValueOrZero(), nv.Valid
-	case null.Bool:
-		return nv.ValueOrZero(), nv.Valid
-	case null.Byte:
-		return nv.ValueOrZero(), nv.Valid
-	case null.DateTime:
-		return nv.ValueOrZero(), nv.Valid
-	case null.Date:
-		return nv.ValueOrZero(), nv.Valid
-	case null.Time:
-		return nv.ValueOrZero(), nv.Valid
-	case null.Decimal:
-		return nv.ValueOrZero(), nv.Valid
-	default:
-		return fieldValue, true
+func extractFieldValue(fieldValue any) any {
+	rv := reflect.ValueOf(fieldValue)
+	if rv.Kind() == reflect.Pointer {
+		return rv.Elem().Interface()
 	}
+
+	return fieldValue
 }
 
 func getColumnAlias(alias string, defaultAlias ...string) string {

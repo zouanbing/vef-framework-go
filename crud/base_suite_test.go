@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/guregu/null/v6"
 	"github.com/uptrace/bun"
 	"go.uber.org/fx"
 
@@ -43,13 +42,13 @@ type Employee struct {
 type EmployeeSearch struct {
 	api.P
 
-	ID           null.String `json:"id"           search:"eq"`
-	Keyword      null.String `json:"keyword"      search:"contains,column=name|description"`
-	Email        null.String `json:"email"        search:"eq"`
-	Status       null.String `json:"status"       search:"eq"`
-	Age          []int       `json:"age"          search:"between"`
-	Position     null.String `json:"position"     search:"eq"`
-	DepartmentID null.String `json:"departmentId" search:"eq"`
+	ID           *string `json:"id"           search:"eq"`
+	Keyword      *string `json:"keyword"      search:"contains,column=name|description"`
+	Email        *string `json:"email"        search:"eq"`
+	Status       *string `json:"status"       search:"eq"`
+	Age          []int   `json:"age"          search:"between"`
+	Position     *string `json:"position"     search:"eq"`
+	DepartmentID *string `json:"departmentId" search:"eq"`
 }
 
 // Department is the tree-based test model.
@@ -69,10 +68,10 @@ type Department struct {
 type DepartmentSearch struct {
 	api.P
 
-	ID       null.String `json:"id"       search:"eq"`
-	Keyword  null.String `json:"keyword"  search:"contains,column=name|description"`
-	Code     null.String `json:"code"     search:"eq"`
-	ParentID null.String `json:"parentId" search:"eq"`
+	ID       *string `json:"id"       search:"eq"`
+	Keyword  *string `json:"keyword"  search:"contains,column=name|description"`
+	Code     *string `json:"code"     search:"eq"`
+	ParentID *string `json:"parentId" search:"eq"`
 }
 
 // ProjectAssignment is the composite-PK test model.

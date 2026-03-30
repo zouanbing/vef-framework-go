@@ -9,23 +9,23 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/coldsmirk/vef-framework-go/null"
 	"github.com/coldsmirk/vef-framework-go/tabular"
 )
 
 type TestUser struct {
-	ID       string      `tabular:"用户ID"                 validate:"required"`
-	Name     string      `tabular:"姓名"                   validate:"required"`
-	Email    string      `tabular:"邮箱"                   validate:"email"`
-	Age      int         `tabular:"年龄"                   validate:"gte=0,lte=150"`
-	Salary   float64     `tabular:"薪资,format=%.2f"`
-	Birthday time.Time   `tabular:"生日,format=2006-01-02"`
-	Active   bool        `tabular:"激活状态"`
-	Remark   null.String `tabular:"备注"`
-	Password string      `tabular:"-"` // Ignored field
+	ID       string    `tabular:"用户ID"                 validate:"required"`
+	Name     string    `tabular:"姓名"                   validate:"required"`
+	Email    string    `tabular:"邮箱"                   validate:"email"`
+	Age      int       `tabular:"年龄"                   validate:"gte=0,lte=150"`
+	Salary   float64   `tabular:"薪资,format=%.2f"`
+	Birthday time.Time `tabular:"生日,format=2006-01-02"`
+	Active   bool      `tabular:"激活状态"`
+	Remark   *string   `tabular:"备注"`
+	Password string    `tabular:"-"` // Ignored field
 }
 
 // TestCSVExportImport tests CSV export import functionality.
@@ -39,7 +39,7 @@ func TestCSVExportImport(t *testing.T) {
 			Salary:   10000.50,
 			Birthday: time.Date(1994, 1, 15, 0, 0, 0, 0, time.UTC),
 			Active:   true,
-			Remark:   null.StringFrom("测试用户1"),
+			Remark:   lo.ToPtr("测试用户1"),
 		},
 		{
 			ID:       "2",
@@ -49,7 +49,7 @@ func TestCSVExportImport(t *testing.T) {
 			Salary:   8000.75,
 			Birthday: time.Date(1999, 5, 20, 0, 0, 0, 0, time.UTC),
 			Active:   false,
-			Remark:   null.String{},
+			Remark:   nil,
 		},
 	}
 
@@ -81,8 +81,8 @@ func TestCSVExportImport(t *testing.T) {
 	assert.InDelta(t, 10000.50, importedUsers[0].Salary, 0.01, "Salary should be within delta of expected value")
 	assert.Equal(t, "1994-01-15", importedUsers[0].Birthday.Format("2006-01-02"), "Should equal expected value")
 	assert.True(t, importedUsers[0].Active, "Should be true")
-	assert.True(t, importedUsers[0].Remark.Valid, "Should be valid")
-	assert.Equal(t, "测试用户1", importedUsers[0].Remark.ValueOrZero(), "Should equal expected value")
+	assert.True(t, importedUsers[0].Remark != nil, "Should be valid")
+	assert.Equal(t, "测试用户1", *importedUsers[0].Remark, "Should equal expected value")
 
 	assert.Equal(t, "2", importedUsers[1].ID, "Should equal expected value")
 	assert.Equal(t, "李四", importedUsers[1].Name, "Should equal expected value")
@@ -91,7 +91,7 @@ func TestCSVExportImport(t *testing.T) {
 	assert.InDelta(t, 8000.75, importedUsers[1].Salary, 0.01, "Salary should be within delta of expected value")
 	assert.Equal(t, "1999-05-20", importedUsers[1].Birthday.Format("2006-01-02"), "Should equal expected value")
 	assert.False(t, importedUsers[1].Active, "Should be false")
-	assert.False(t, importedUsers[1].Remark.Valid, "Should not be valid")
+	assert.False(t, importedUsers[1].Remark != nil, "Should not be valid")
 }
 
 // TestCSVImportWithCustomDelimiter tests CSV import with custom delimiter functionality.
@@ -457,7 +457,7 @@ func TestImportMissingColumns(t *testing.T) {
 	assert.Equal(t, "1", imported[0].ID, "Should equal expected value")
 	assert.Equal(t, "张三", imported[0].Name, "Should equal expected value")
 	assert.Equal(t, 0.0, imported[0].Salary, "Should equal expected value")
-	assert.False(t, imported[0].Remark.Valid, "Should not be valid")
+	assert.False(t, imported[0].Remark != nil, "Should not be valid")
 }
 
 // TestImportInvalidData tests import invalid data functionality.
@@ -529,7 +529,7 @@ func TestExportNullValues(t *testing.T) {
 			Salary:   10000.50,
 			Birthday: time.Now(),
 			Active:   true,
-			Remark:   null.String{},
+			Remark:   nil,
 		},
 		{
 			ID:       "2",
@@ -539,7 +539,7 @@ func TestExportNullValues(t *testing.T) {
 			Salary:   8000.00,
 			Birthday: time.Now(),
 			Active:   false,
-			Remark:   null.StringFrom("有备注"),
+			Remark:   lo.ToPtr("有备注"),
 		},
 	}
 
@@ -556,9 +556,9 @@ func TestExportNullValues(t *testing.T) {
 	require.True(t, ok, "Should be ok")
 	assert.Len(t, imported, 2, "Length should be 2")
 
-	assert.False(t, imported[0].Remark.Valid, "Should not be valid")
-	assert.True(t, imported[1].Remark.Valid, "Should be valid")
-	assert.Equal(t, "有备注", imported[1].Remark.ValueOrZero(), "Should equal expected value")
+	assert.False(t, imported[0].Remark != nil, "Should not be valid")
+	assert.True(t, imported[1].Remark != nil, "Should be valid")
+	assert.Equal(t, "有备注", *imported[1].Remark, "Should equal expected value")
 }
 
 // TestRoundTrip tests round trip functionality.
@@ -572,7 +572,7 @@ func TestRoundTrip(t *testing.T) {
 			Salary:   10000.50,
 			Birthday: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 			Active:   true,
-			Remark:   null.StringFrom("测试用户1"),
+			Remark:   lo.ToPtr("测试用户1"),
 		},
 		{
 			ID:       "2",
@@ -582,7 +582,7 @@ func TestRoundTrip(t *testing.T) {
 			Salary:   8000.75,
 			Birthday: time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC),
 			Active:   false,
-			Remark:   null.String{},
+			Remark:   nil,
 		},
 	}
 
@@ -606,10 +606,10 @@ func TestRoundTrip(t *testing.T) {
 		assert.Equal(t, original[i].Age, imported[i].Age, "Should equal expected value")
 		assert.InDelta(t, original[i].Salary, imported[i].Salary, 0.01, "Salary should be within delta of original value")
 		assert.Equal(t, original[i].Active, imported[i].Active, "Should equal expected value")
-		assert.Equal(t, original[i].Remark.Valid, imported[i].Remark.Valid, "Should equal expected value")
+		assert.Equal(t, original[i].Remark != nil, imported[i].Remark != nil, "Should equal expected value")
 
-		if original[i].Remark.Valid {
-			assert.Equal(t, original[i].Remark.ValueOrZero(), imported[i].Remark.ValueOrZero(), "Should equal expected value")
+		if original[i].Remark != nil {
+			assert.Equal(t, *original[i].Remark, *imported[i].Remark, "Should equal expected value")
 		}
 	}
 }

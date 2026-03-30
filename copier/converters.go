@@ -1,127 +1,117 @@
 package copier
 
 import (
+	"time"
+
 	"github.com/samber/lo"
 
-	"github.com/coldsmirk/vef-framework-go/null"
+	"github.com/coldsmirk/vef-framework-go/decimal"
+	"github.com/coldsmirk/vef-framework-go/timex"
 )
 
-// Nullable defines the interface for null wrapper types.
-type Nullable[T any] interface {
-	// ValueOrZero returns the underlying value, or the zero value of T if null.
-	ValueOrZero() T
-	// Ptr returns a pointer to the underlying value, or nil if null.
-	Ptr() *T
-}
-
-// makeNullToValueConverter creates a converter from null type to value type.
-func makeNullToValueConverter[N Nullable[T], T any]() TypeConverter {
-	return TypeConverter{
-		SrcType: lo.Empty[N](),
-		DstType: lo.Empty[T](),
-		Fn: func(src any) (any, error) {
-			return src.(N).ValueOrZero(), nil
-		},
-	}
-}
-
-// makeNullToPtrConverter creates a converter from null type to pointer type.
-func makeNullToPtrConverter[N Nullable[T], T any]() TypeConverter {
-	return TypeConverter{
-		SrcType: lo.Empty[N](),
-		DstType: lo.Empty[*T](),
-		Fn: func(src any) (any, error) {
-			return src.(N).Ptr(), nil
-		},
-	}
-}
-
-// makeValueToNullConverter creates a converter from value type to null type.
-func makeValueToNullConverter[T, N any](fromFn func(T) N) TypeConverter {
+// makeValueToPtrConverter creates a converter from value type to pointer type.
+func makeValueToPtrConverter[T any]() TypeConverter {
 	return TypeConverter{
 		SrcType: lo.Empty[T](),
-		DstType: lo.Empty[N](),
+		DstType: lo.Empty[*T](),
 		Fn: func(src any) (any, error) {
-			return fromFn(src.(T)), nil
+			v := src.(T)
+
+			return &v, nil
 		},
 	}
 }
 
-// makePtrToNullConverter creates a converter from pointer type to null type.
-func makePtrToNullConverter[T, N any](fromPtrFn func(*T) N) TypeConverter {
+// makePtrToValueConverter creates a converter from pointer type to value type.
+// If the pointer is nil, the zero value of T is returned.
+func makePtrToValueConverter[T any]() TypeConverter {
 	return TypeConverter{
 		SrcType: lo.Empty[*T](),
-		DstType: lo.Empty[N](),
+		DstType: lo.Empty[T](),
 		Fn: func(src any) (any, error) {
-			return fromPtrFn(src.(*T)), nil
+			if p := src.(*T); p != nil {
+				return *p, nil
+			}
+
+			return lo.Empty[T](), nil
 		},
 	}
 }
 
 var (
-	// Null.String converters.
-	nullStringToStringConverter    = makeNullToValueConverter[null.String]()
-	nullStringToStringPtrConverter = makeNullToPtrConverter[null.String]()
-	stringToNullStringConverter    = makeValueToNullConverter(null.StringFrom)
-	stringPtrToNullStringConverter = makePtrToNullConverter(null.StringFromPtr)
+	// String converters.
+	stringToStringPtrConverter = makeValueToPtrConverter[string]()
+	stringPtrToStringConverter = makePtrToValueConverter[string]()
 
-	// Null.Int converters.
-	nullIntToIntConverter    = makeNullToValueConverter[null.Int]()
-	nullIntToIntPtrConverter = makeNullToPtrConverter[null.Int]()
-	intToNullIntConverter    = makeValueToNullConverter(null.IntFrom)
-	intPtrToNullIntConverter = makePtrToNullConverter(null.IntFromPtr)
+	// Bool converters.
+	boolToBoolPtrConverter = makeValueToPtrConverter[bool]()
+	boolPtrToBoolConverter = makePtrToValueConverter[bool]()
 
-	// Null.Int16 converters.
-	nullInt16ToInt16Converter    = makeNullToValueConverter[null.Int16]()
-	nullInt16ToInt16PtrConverter = makeNullToPtrConverter[null.Int16]()
-	int16ToNullInt16Converter    = makeValueToNullConverter(null.Int16From)
-	int16PtrToNullInt16Converter = makePtrToNullConverter(null.Int16FromPtr)
+	// Int converters.
+	intToIntPtrConverter = makeValueToPtrConverter[int]()
+	intPtrToIntConverter = makePtrToValueConverter[int]()
 
-	// Null.Int32 converters.
-	nullInt32ToInt32Converter    = makeNullToValueConverter[null.Int32]()
-	nullInt32ToInt32PtrConverter = makeNullToPtrConverter[null.Int32]()
-	int32ToNullInt32Converter    = makeValueToNullConverter(null.Int32From)
-	int32PtrToNullInt32Converter = makePtrToNullConverter(null.Int32FromPtr)
+	// Int8 converters.
+	int8ToInt8PtrConverter = makeValueToPtrConverter[int8]()
+	int8PtrToInt8Converter = makePtrToValueConverter[int8]()
 
-	// Null.Float converters.
-	nullFloatToFloatConverter    = makeNullToValueConverter[null.Float]()
-	nullFloatToFloatPtrConverter = makeNullToPtrConverter[null.Float]()
-	floatToNullFloatConverter    = makeValueToNullConverter(null.FloatFrom)
-	floatPtrToNullFloatConverter = makePtrToNullConverter(null.FloatFromPtr)
+	// Int16 converters.
+	int16ToInt16PtrConverter = makeValueToPtrConverter[int16]()
+	int16PtrToInt16Converter = makePtrToValueConverter[int16]()
 
-	// Null.Byte converters.
-	nullByteToByteConverter    = makeNullToValueConverter[null.Byte]()
-	nullByteToBytePtrConverter = makeNullToPtrConverter[null.Byte]()
-	byteToNullByteConverter    = makeValueToNullConverter(null.ByteFrom)
-	bytePtrToNullByteConverter = makePtrToNullConverter(null.ByteFromPtr)
+	// Int32 converters.
+	int32ToInt32PtrConverter = makeValueToPtrConverter[int32]()
+	int32PtrToInt32Converter = makePtrToValueConverter[int32]()
 
-	// Null.Bool converters.
-	nullBoolToBoolConverter    = makeNullToValueConverter[null.Bool]()
-	nullBoolToBoolPtrConverter = makeNullToPtrConverter[null.Bool]()
-	boolToNullBoolConverter    = makeValueToNullConverter(null.BoolFrom)
-	boolPtrToNullBoolConverter = makePtrToNullConverter(null.BoolFromPtr)
+	// Int64 converters.
+	int64ToInt64PtrConverter = makeValueToPtrConverter[int64]()
+	int64PtrToInt64Converter = makePtrToValueConverter[int64]()
 
-	// Null.DateTime converters.
-	nullDateTimeToDateTimeConverter    = makeNullToValueConverter[null.DateTime]()
-	nullDateTimeToDateTimePtrConverter = makeNullToPtrConverter[null.DateTime]()
-	dateTimeToNullDateTimeConverter    = makeValueToNullConverter(null.DateTimeFrom)
-	dateTimePtrToNullDateTimeConverter = makePtrToNullConverter(null.DateTimeFromPtr)
+	// Uint converters.
+	uintToUintPtrConverter = makeValueToPtrConverter[uint]()
+	uintPtrToUintConverter = makePtrToValueConverter[uint]()
 
-	// Null.Date converters.
-	nullDateToDateConverter    = makeNullToValueConverter[null.Date]()
-	nullDateToDatePtrConverter = makeNullToPtrConverter[null.Date]()
-	dateToNullDateConverter    = makeValueToNullConverter(null.DateFrom)
-	datePtrToNullDateConverter = makePtrToNullConverter(null.DateFromPtr)
+	// Uint8 converters.
+	uint8ToUint8PtrConverter = makeValueToPtrConverter[uint8]()
+	uint8PtrToUint8Converter = makePtrToValueConverter[uint8]()
 
-	// Null.Time converters.
-	nullTimeToTimeConverter    = makeNullToValueConverter[null.Time]()
-	nullTimeToTimePtrConverter = makeNullToPtrConverter[null.Time]()
-	timeToNullTimeConverter    = makeValueToNullConverter(null.TimeFrom)
-	timePtrToNullTimeConverter = makePtrToNullConverter(null.TimeFromPtr)
+	// Uint16 converters.
+	uint16ToUint16PtrConverter = makeValueToPtrConverter[uint16]()
+	uint16PtrToUint16Converter = makePtrToValueConverter[uint16]()
 
-	// Null.Decimal converters.
-	nullDecimalToDecimalConverter    = makeNullToValueConverter[null.Decimal]()
-	nullDecimalToDecimalPtrConverter = makeNullToPtrConverter[null.Decimal]()
-	decimalToNullDecimalConverter    = makeValueToNullConverter(null.DecimalFrom)
-	decimalPtrToNullDecimalConverter = makePtrToNullConverter(null.DecimalFromPtr)
+	// Uint32 converters.
+	uint32ToUint32PtrConverter = makeValueToPtrConverter[uint32]()
+	uint32PtrToUint32Converter = makePtrToValueConverter[uint32]()
+
+	// Uint64 converters.
+	uint64ToUint64PtrConverter = makeValueToPtrConverter[uint64]()
+	uint64PtrToUint64Converter = makePtrToValueConverter[uint64]()
+
+	// Float32 converters.
+	float32ToFloat32PtrConverter = makeValueToPtrConverter[float32]()
+	float32PtrToFloat32Converter = makePtrToValueConverter[float32]()
+
+	// Float64 converters.
+	float64ToFloat64PtrConverter = makeValueToPtrConverter[float64]()
+	float64PtrToFloat64Converter = makePtrToValueConverter[float64]()
+
+	// Decimal.Decimal converters.
+	decimalToDecimalPtrConverter = makeValueToPtrConverter[decimal.Decimal]()
+	decimalPtrToDecimalConverter = makePtrToValueConverter[decimal.Decimal]()
+
+	// time.Time converters.
+	timeToTimePtrConverter = makeValueToPtrConverter[time.Time]()
+	timePtrToTimeConverter = makePtrToValueConverter[time.Time]()
+
+	// timex.DateTime converters.
+	dateTimeToDateTimePtrConverter = makeValueToPtrConverter[timex.DateTime]()
+	dateTimePtrToDateTimeConverter = makePtrToValueConverter[timex.DateTime]()
+
+	// timex.Date converters.
+	dateToDatePtrConverter = makeValueToPtrConverter[timex.Date]()
+	datePtrToDateConverter = makePtrToValueConverter[timex.Date]()
+
+	// timex.Time converters.
+	timexTimeToTimexTimePtrConverter = makeValueToPtrConverter[timex.Time]()
+	timexTimePtrToTimexTimeConverter = makePtrToValueConverter[timex.Time]()
 )
