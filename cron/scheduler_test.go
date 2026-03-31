@@ -24,9 +24,7 @@ func TestNewScheduler(t *testing.T) {
 	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
-		if err := gocronScheduler.Shutdown(); err != nil {
-			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
-		}
+		assert.NoError(t, gocronScheduler.Shutdown(), "Should shutdown gocron scheduler")
 	}()
 
 	scheduler := NewScheduler(gocronScheduler)
@@ -39,9 +37,7 @@ func TestSchedulerNewJobOneTime(t *testing.T) {
 	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
-		if err := gocronScheduler.Shutdown(); err != nil {
-			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
-		}
+		assert.NoError(t, gocronScheduler.Shutdown(), "Should shutdown gocron scheduler")
 	}()
 
 	scheduler := NewScheduler(gocronScheduler)
@@ -77,9 +73,7 @@ func TestSchedulerNewJobDuration(t *testing.T) {
 	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
-		if err := gocronScheduler.Shutdown(); err != nil {
-			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
-		}
+		assert.NoError(t, gocronScheduler.Shutdown(), "Should shutdown gocron scheduler")
 	}()
 
 	scheduler := NewScheduler(gocronScheduler)
@@ -114,9 +108,7 @@ func TestSchedulerNewJobCron(t *testing.T) {
 	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
-		if err := gocronScheduler.Shutdown(); err != nil {
-			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
-		}
+		assert.NoError(t, gocronScheduler.Shutdown(), "Should shutdown gocron scheduler")
 	}()
 
 	scheduler := NewScheduler(gocronScheduler)
@@ -151,9 +143,7 @@ func TestSchedulerNewJobDurationRandom(t *testing.T) {
 	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
-		if err := gocronScheduler.Shutdown(); err != nil {
-			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
-		}
+		assert.NoError(t, gocronScheduler.Shutdown(), "Should shutdown gocron scheduler")
 	}()
 
 	scheduler := NewScheduler(gocronScheduler)
@@ -190,9 +180,7 @@ func TestSchedulerJobs(t *testing.T) {
 	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
-		if err := gocronScheduler.Shutdown(); err != nil {
-			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
-		}
+		assert.NoError(t, gocronScheduler.Shutdown(), "Should shutdown gocron scheduler")
 	}()
 
 	scheduler := NewScheduler(gocronScheduler)
@@ -219,9 +207,7 @@ func TestSchedulerRemoveJob(t *testing.T) {
 	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
-		if err := gocronScheduler.Shutdown(); err != nil {
-			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
-		}
+		assert.NoError(t, gocronScheduler.Shutdown(), "Should shutdown gocron scheduler")
 	}()
 
 	scheduler := NewScheduler(gocronScheduler)
@@ -250,9 +236,7 @@ func TestSchedulerRemoveByTags(t *testing.T) {
 	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
-		if err := gocronScheduler.Shutdown(); err != nil {
-			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
-		}
+		assert.NoError(t, gocronScheduler.Shutdown(), "Should shutdown gocron scheduler")
 	}()
 
 	scheduler := NewScheduler(gocronScheduler)
@@ -298,9 +282,7 @@ func TestSchedulerUpdateJob(t *testing.T) {
 	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
-		if err := gocronScheduler.Shutdown(); err != nil {
-			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
-		}
+		assert.NoError(t, gocronScheduler.Shutdown(), "Should shutdown gocron scheduler")
 	}()
 
 	scheduler := NewScheduler(gocronScheduler)
@@ -346,9 +328,7 @@ func TestSchedulerWithContext(t *testing.T) {
 	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
-		if err := gocronScheduler.Shutdown(); err != nil {
-			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
-		}
+		assert.NoError(t, gocronScheduler.Shutdown(), "Should shutdown gocron scheduler")
 	}()
 
 	scheduler := NewScheduler(gocronScheduler)
@@ -390,9 +370,7 @@ func TestSchedulerStopJobs(t *testing.T) {
 	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
-		if err := gocronScheduler.Shutdown(); err != nil {
-			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
-		}
+		assert.NoError(t, gocronScheduler.Shutdown(), "Should shutdown gocron scheduler")
 	}()
 
 	scheduler := NewScheduler(gocronScheduler)
@@ -432,9 +410,7 @@ func TestJobRunNow(t *testing.T) {
 	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
-		if err := gocronScheduler.Shutdown(); err != nil {
-			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
-		}
+		assert.NoError(t, gocronScheduler.Shutdown(), "Should shutdown gocron scheduler")
 	}()
 
 	scheduler := NewScheduler(gocronScheduler)
@@ -472,9 +448,7 @@ func TestJobNextRuns(t *testing.T) {
 	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
-		if err := gocronScheduler.Shutdown(); err != nil {
-			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
-		}
+		assert.NoError(t, gocronScheduler.Shutdown(), "Should shutdown gocron scheduler")
 	}()
 
 	scheduler := NewScheduler(gocronScheduler)

@@ -3,41 +3,29 @@ package monad
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestNewRange tests the NewRange constructor with different types.
 func TestNewRange(t *testing.T) {
 	t.Run("IntRange", func(t *testing.T) {
 		r := NewRange(1, 10)
-		if r.Start != 1 {
-			t.Errorf("Expected Start to be 1, got %d", r.Start)
-		}
-
-		if r.End != 10 {
-			t.Errorf("Expected End to be 10, got %d", r.End)
-		}
+		assert.Equal(t, 1, r.Start, "Should set Start to 1")
+		assert.Equal(t, 10, r.End, "Should set End to 10")
 	})
 
 	t.Run("StringRange", func(t *testing.T) {
 		r := NewRange("a", "z")
-		if r.Start != "a" {
-			t.Errorf("Expected Start to be 'a', got %s", r.Start)
-		}
-
-		if r.End != "z" {
-			t.Errorf("Expected End to be 'z', got %s", r.End)
-		}
+		assert.Equal(t, "a", r.Start, "Should set Start to 'a'")
+		assert.Equal(t, "z", r.End, "Should set End to 'z'")
 	})
 
 	t.Run("FloatRange", func(t *testing.T) {
 		r := NewRange(1.5, 9.5)
-		if r.Start != 1.5 {
-			t.Errorf("Expected Start to be 1.5, got %f", r.Start)
-		}
-
-		if r.End != 9.5 {
-			t.Errorf("Expected End to be 9.5, got %f", r.End)
-		}
+		assert.Equal(t, 1.5, r.Start, "Should set Start to 1.5")
+		assert.Equal(t, 9.5, r.End, "Should set End to 9.5")
 	})
 }
 
@@ -60,10 +48,7 @@ func TestRangeContains(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := tt.r.Contains(tt.value)
-			if result != tt.expected {
-				t.Errorf("Expected Contains(%d) to be %t, got %t", tt.value, tt.expected, result)
-			}
+			assert.Equal(t, tt.expected, tt.r.Contains(tt.value), "Should return expected Contains result")
 		})
 	}
 }
@@ -86,10 +71,7 @@ func TestRangeContainsString(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := strRange.Contains(tt.value)
-			if result != tt.expected {
-				t.Errorf("Expected Contains(%s) to be %t, got %t", tt.value, tt.expected, result)
-			}
+			assert.Equal(t, tt.expected, strRange.Contains(tt.value), "Should return expected Contains result")
 		})
 	}
 }
@@ -112,10 +94,7 @@ func TestRangeContainsFloat(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := floatRange.Contains(tt.value)
-			if result != tt.expected {
-				t.Errorf("Expected Contains(%f) to be %t, got %t", tt.value, tt.expected, result)
-			}
+			assert.Equal(t, tt.expected, floatRange.Contains(tt.value), "Should return expected Contains result")
 		})
 	}
 }
@@ -137,10 +116,7 @@ func TestRangeIsValid(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := tt.r.IsValid()
-			if result != tt.expected {
-				t.Errorf("Expected IsValid() to be %t, got %t", tt.expected, result)
-			}
+			assert.Equal(t, tt.expected, tt.r.IsValid(), "Should return expected IsValid result")
 		})
 	}
 }
@@ -161,10 +137,7 @@ func TestRangeIsEmpty(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := tt.r.IsEmpty()
-			if result != tt.expected {
-				t.Errorf("Expected IsEmpty() to be %t, got %t", tt.expected, result)
-			}
+			assert.Equal(t, tt.expected, tt.r.IsEmpty(), "Should return expected IsEmpty result")
 		})
 	}
 }
@@ -189,15 +162,8 @@ func TestRangeOverlaps(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := tt.r1.Overlaps(tt.r2)
-			if result != tt.expected {
-				t.Errorf("Expected %v.Overlaps(%v) to be %t, got %t", tt.r1, tt.r2, tt.expected, result)
-			}
-
-			reverseResult := tt.r2.Overlaps(tt.r1)
-			if reverseResult != tt.expected {
-				t.Errorf("Expected symmetry: %v.Overlaps(%v) should also be %t, got %t", tt.r2, tt.r1, tt.expected, reverseResult)
-			}
+			assert.Equal(t, tt.expected, tt.r1.Overlaps(tt.r2), "Should return expected Overlaps result")
+			assert.Equal(t, tt.expected, tt.r2.Overlaps(tt.r1), "Should be symmetric")
 		})
 	}
 }
@@ -211,80 +177,26 @@ func TestRangeIntersection(t *testing.T) {
 		expected Range[int]
 		isEmpty  bool
 	}{
-		{
-			"CompleteOverlap",
-			NewRange(1, 10),
-			NewRange(3, 7),
-			NewRange(3, 7),
-			false,
-		},
-		{
-			"PartialOverlap",
-			NewRange(1, 5),
-			NewRange(3, 8),
-			NewRange(3, 5),
-			false,
-		},
-		{
-			"AdjacentRanges",
-			NewRange(1, 5),
-			NewRange(5, 10),
-			NewRange(5, 5),
-			false,
-		},
-		{
-			"NoOverlap",
-			NewRange(1, 3),
-			NewRange(5, 10),
-			NewRange(3, 1),
-			true,
-		},
-		{
-			"SameRange",
-			NewRange(1, 10),
-			NewRange(1, 10),
-			NewRange(1, 10),
-			false,
-		},
-		{
-			"ReverseOverlap",
-			NewRange(5, 10),
-			NewRange(1, 7),
-			NewRange(5, 7),
-			false,
-		},
-		{
-			"SinglePoint",
-			NewRange(1, 5),
-			NewRange(5, 5),
-			NewRange(5, 5),
-			false,
-		},
+		{"CompleteOverlap", NewRange(1, 10), NewRange(3, 7), NewRange(3, 7), false},
+		{"PartialOverlap", NewRange(1, 5), NewRange(3, 8), NewRange(3, 5), false},
+		{"AdjacentRanges", NewRange(1, 5), NewRange(5, 10), NewRange(5, 5), false},
+		{"NoOverlap", NewRange(1, 3), NewRange(5, 10), NewRange(3, 1), true},
+		{"SameRange", NewRange(1, 10), NewRange(1, 10), NewRange(1, 10), false},
+		{"ReverseOverlap", NewRange(5, 10), NewRange(1, 7), NewRange(5, 7), false},
+		{"SinglePoint", NewRange(1, 5), NewRange(5, 5), NewRange(5, 5), false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := tt.r1.Intersection(tt.r2)
-
-			if tt.isEmpty {
-				if result.IsNotEmpty() {
-					t.Errorf("Expected empty intersection, got %v", result)
-				}
-			} else {
-				if result != tt.expected {
-					t.Errorf("Expected intersection %v, got %v", tt.expected, result)
-				}
-			}
-
 			reverseResult := tt.r2.Intersection(tt.r1)
+
 			if tt.isEmpty {
-				if reverseResult.IsNotEmpty() {
-					t.Errorf("Expected symmetric empty intersection, got %v", reverseResult)
-				}
+				assert.True(t, result.IsEmpty(), "Should return empty intersection")
+				assert.True(t, reverseResult.IsEmpty(), "Should return symmetric empty intersection")
 			} else {
-				if reverseResult != tt.expected {
-					t.Errorf("Expected symmetric intersection %v, got %v", tt.expected, reverseResult)
-				}
+				assert.Equal(t, tt.expected, result, "Should return expected intersection")
+				assert.Equal(t, tt.expected, reverseResult, "Should return symmetric intersection")
 			}
 		})
 	}
@@ -293,25 +205,13 @@ func TestRangeIntersection(t *testing.T) {
 // TestRangeIntersectionString tests intersection calculation with string ranges.
 func TestRangeIntersectionString(t *testing.T) {
 	t.Run("OverlappingStringRanges", func(t *testing.T) {
-		r1 := NewRange("c", "m")
-		r2 := NewRange("f", "z")
-
-		intersection := r1.Intersection(r2)
-		expected := NewRange("f", "m")
-
-		if intersection != expected {
-			t.Errorf("Expected string intersection %v, got %v", expected, intersection)
-		}
+		intersection := NewRange("c", "m").Intersection(NewRange("f", "z"))
+		assert.Equal(t, NewRange("f", "m"), intersection, "Should return correct string intersection")
 	})
 
 	t.Run("NonOverlappingStringRanges", func(t *testing.T) {
-		r3 := NewRange("a", "b")
-		r4 := NewRange("x", "z")
-
-		noOverlap := r3.Intersection(r4)
-		if noOverlap.IsNotEmpty() {
-			t.Errorf("Expected empty intersection for non-overlapping string ranges, got %v", noOverlap)
-		}
+		noOverlap := NewRange("a", "b").Intersection(NewRange("x", "z"))
+		assert.True(t, noOverlap.IsEmpty(), "Should return empty intersection for non-overlapping string ranges")
 	})
 }
 
@@ -320,92 +220,56 @@ func TestRangeJSONMarshaling(t *testing.T) {
 	r := NewRange(5, 15)
 
 	data, err := json.Marshal(r)
-	if err != nil {
-		t.Fatalf("Marshal error: %v", err)
-	}
+	require.NoError(t, err, "Should marshal without error")
 
 	var result Range[int]
 
 	err = json.Unmarshal(data, &result)
-	if err != nil {
-		t.Fatalf("Unmarshal error: %v", err)
-	}
+	require.NoError(t, err, "Should unmarshal without error")
 
-	if result != r {
-		t.Errorf("Expected %v, got %v", r, result)
-	}
+	assert.Equal(t, r, result, "Should round-trip through JSON")
 }
 
 // TestRangeWithDifferentTypes tests range operations with various numeric types.
 func TestRangeWithDifferentTypes(t *testing.T) {
 	t.Run("Int8Range", func(t *testing.T) {
-		r := NewRange[int8](1, 10)
-		if !r.Contains(5) {
-			t.Error("int8 range should contain 5")
-		}
+		assert.True(t, NewRange[int8](1, 10).Contains(5), "Should contain value in int8 range")
 	})
 
 	t.Run("Int16Range", func(t *testing.T) {
-		r := NewRange[int16](100, 200)
-		if !r.Contains(150) {
-			t.Error("int16 range should contain 150")
-		}
+		assert.True(t, NewRange[int16](100, 200).Contains(150), "Should contain value in int16 range")
 	})
 
 	t.Run("Int32Range", func(t *testing.T) {
-		r := NewRange[int32](1000, 2000)
-		if !r.Contains(1500) {
-			t.Error("int32 range should contain 1500")
-		}
+		assert.True(t, NewRange[int32](1000, 2000).Contains(1500), "Should contain value in int32 range")
 	})
 
 	t.Run("Int64Range", func(t *testing.T) {
-		r := NewRange[int64](10000, 20000)
-		if !r.Contains(15000) {
-			t.Error("int64 range should contain 15000")
-		}
+		assert.True(t, NewRange[int64](10000, 20000).Contains(15000), "Should contain value in int64 range")
 	})
 
 	t.Run("Uint8Range", func(t *testing.T) {
-		r := NewRange[uint8](10, 250)
-		if !r.Contains(100) {
-			t.Error("uint8 range should contain 100")
-		}
+		assert.True(t, NewRange[uint8](10, 250).Contains(100), "Should contain value in uint8 range")
 	})
 
 	t.Run("Uint16Range", func(t *testing.T) {
-		r := NewRange[uint16](1000, 50000)
-		if !r.Contains(25000) {
-			t.Error("uint16 range should contain 25000")
-		}
+		assert.True(t, NewRange[uint16](1000, 50000).Contains(25000), "Should contain value in uint16 range")
 	})
 
 	t.Run("Uint32Range", func(t *testing.T) {
-		r := NewRange[uint32](100000, 500000)
-		if !r.Contains(300000) {
-			t.Error("uint32 range should contain 300000")
-		}
+		assert.True(t, NewRange[uint32](100000, 500000).Contains(300000), "Should contain value in uint32 range")
 	})
 
 	t.Run("Uint64Range", func(t *testing.T) {
-		r := NewRange[uint64](1000000, 5000000)
-		if !r.Contains(3000000) {
-			t.Error("uint64 range should contain 3000000")
-		}
+		assert.True(t, NewRange[uint64](1000000, 5000000).Contains(3000000), "Should contain value in uint64 range")
 	})
 
 	t.Run("Float32Range", func(t *testing.T) {
-		r := NewRange[float32](1.1, 9.9)
-		if !r.Contains(5.5) {
-			t.Error("float32 range should contain 5.5")
-		}
+		assert.True(t, NewRange[float32](1.1, 9.9).Contains(5.5), "Should contain value in float32 range")
 	})
 
 	t.Run("Float64Range", func(t *testing.T) {
-		r := NewRange[float64](1.1, 9.9)
-		if !r.Contains(5.5) {
-			t.Error("float64 range should contain 5.5")
-		}
+		assert.True(t, NewRange(1.1, 9.9).Contains(5.5), "Should contain value in float64 range")
 	})
 }
 
@@ -413,90 +277,47 @@ func TestRangeWithDifferentTypes(t *testing.T) {
 func TestRangeEdgeCases(t *testing.T) {
 	t.Run("MaximumUint8Value", func(t *testing.T) {
 		maxRange := NewRange[uint8](0, 255)
-		if !maxRange.IsValid() {
-			t.Error("Max uint8 range should be valid")
-		}
-
-		if !maxRange.Contains(255) {
-			t.Error("Max uint8 range should contain 255")
-		}
+		assert.True(t, maxRange.IsValid(), "Should be valid for max uint8 range")
+		assert.True(t, maxRange.Contains(255), "Should contain max uint8 value")
 	})
 
 	t.Run("NegativeRangeContains", func(t *testing.T) {
 		negRange := NewRange(-100, -10)
-		if !negRange.IsValid() {
-			t.Error("Negative range should be valid")
-		}
-
-		if !negRange.Contains(-50) {
-			t.Error("Negative range should contain -50")
-		}
-
-		if negRange.Contains(-5) {
-			t.Error("Negative range should not contain -5")
-		}
+		assert.True(t, negRange.IsValid(), "Should be valid for negative range")
+		assert.True(t, negRange.Contains(-50), "Should contain value in negative range")
+		assert.False(t, negRange.Contains(-5), "Should not contain value outside negative range")
 	})
 
 	t.Run("NegativeRangeIntersection", func(t *testing.T) {
 		r1 := NewRange(-10, 0)
 		r2 := NewRange(-5, 5)
-
-		if !r1.Overlaps(r2) {
-			t.Error("Negative ranges should overlap")
-		}
-
-		intersection := r1.Intersection(r2)
-
-		expected := NewRange(-5, 0)
-		if intersection != expected {
-			t.Errorf("Expected negative intersection %v, got %v", expected, intersection)
-		}
+		assert.True(t, r1.Overlaps(r2), "Should detect overlap in negative ranges")
+		assert.Equal(t, NewRange(-5, 0), r1.Intersection(r2), "Should return correct negative intersection")
 	})
 }
 
 // TestRangeStringOperations tests comprehensive string range operations.
 func TestRangeStringOperations(t *testing.T) {
 	t.Run("StringRangeContains", func(t *testing.T) {
-		r1 := NewRange("apple", "orange")
-
-		if !r1.Contains("mango") {
-			t.Error("Range [apple, orange] should contain 'mango'")
-		}
-
-		if r1.Contains("pear") {
-			t.Error("Range [apple, orange] should not contain 'pear'")
-		}
+		r := NewRange("apple", "orange")
+		assert.True(t, r.Contains("mango"), "Should contain 'mango' in [apple, orange]")
+		assert.False(t, r.Contains("pear"), "Should not contain 'pear' in [apple, orange]")
 	})
 
 	t.Run("OverlappingStringRanges", func(t *testing.T) {
 		r1 := NewRange("apple", "orange")
 		r2 := NewRange("banana", "zebra")
-
-		if !r1.Overlaps(r2) {
-			t.Error("String ranges should overlap")
-		}
+		assert.True(t, r1.Overlaps(r2), "Should detect overlap in string ranges")
 
 		intersection := r1.Intersection(r2)
-		expectedStart := "banana"
-		expectedEnd := "orange"
-
-		if intersection.Start != expectedStart || intersection.End != expectedEnd {
-			t.Errorf("Expected string intersection [%s, %s], got [%s, %s]",
-				expectedStart, expectedEnd, intersection.Start, intersection.End)
-		}
+		assert.Equal(t, "banana", intersection.Start, "Should have correct intersection Start")
+		assert.Equal(t, "orange", intersection.End, "Should have correct intersection End")
 	})
 
 	t.Run("NonOverlappingStringRanges", func(t *testing.T) {
 		r3 := NewRange("aaa", "bbb")
 		r4 := NewRange("yyy", "zzz")
-
-		if r3.Overlaps(r4) {
-			t.Error("Non-overlapping string ranges should not overlap")
-		}
-
-		noOverlap := r3.Intersection(r4)
-		if noOverlap.IsNotEmpty() {
-			t.Error("Non-overlapping string ranges should have empty intersection")
-		}
+		assert.False(t, r3.Overlaps(r4), "Should not overlap for distant string ranges")
+		assert.True(t, r3.Intersection(r4).IsEmpty(), "Should have empty intersection for non-overlapping string ranges")
 	})
 }

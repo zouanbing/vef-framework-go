@@ -51,7 +51,7 @@ func TestMemoryEventBusBasicPublishSubscribe(t *testing.T) {
 				receivedEvent.Type(), receivedEvent.Source(), receivedEvent.ID())
 
 		case <-time.After(100 * time.Millisecond):
-			t.Fatal("Timeout waiting for event delivery")
+			require.Fail(t, "Timeout waiting for event delivery")
 		}
 	})
 
@@ -117,7 +117,7 @@ func TestMemoryEventBusBasicPublishSubscribe(t *testing.T) {
 				subscriberCount, testEvent.Type(), testEvent.Source())
 
 		case <-time.After(100 * time.Millisecond):
-			t.Fatal("Timeout waiting for event delivery to all subscribers")
+			require.Fail(t, "Timeout waiting for event delivery to all subscribers")
 		}
 	})
 
@@ -180,7 +180,7 @@ func TestMemoryEventBusBasicPublishSubscribe(t *testing.T) {
 				userEvents[0].Type(), orderEvents[0].Type())
 
 		case <-time.After(100 * time.Millisecond):
-			t.Fatal("Timeout waiting for events")
+			require.Fail(t, "Timeout waiting for events")
 		}
 	})
 }
@@ -422,7 +422,7 @@ func TestMemoryEventBusLifecycle(t *testing.T) {
 			t.Logf("✓ Event processed after start - ID: %s", receivedEvent.ID())
 
 		case <-time.After(100 * time.Millisecond):
-			t.Fatal("Timeout waiting for event after start")
+			require.Fail(t, "Timeout waiting for event after start")
 		}
 	})
 }
@@ -487,7 +487,7 @@ func TestMemoryEventBusMiddleware(t *testing.T) {
 			t.Logf("✓ Middleware processed event - ID: %s", processedID)
 
 		case <-time.After(100 * time.Millisecond):
-			t.Fatal("Timeout waiting for middleware processing")
+			require.Fail(t, "Timeout waiting for middleware processing")
 		}
 	})
 
@@ -553,7 +553,7 @@ func TestMemoryEventBusMiddleware(t *testing.T) {
 			t.Logf("✓ Middleware chain processed in order: %v", actualOrder)
 
 		case <-time.After(100 * time.Millisecond):
-			t.Fatal("Timeout waiting for middleware chain processing")
+			require.Fail(t, "Timeout waiting for middleware chain processing")
 		}
 	})
 }
@@ -632,7 +632,7 @@ func TestMemoryEventBusConcurrency(t *testing.T) {
 				numPublishers, numSubscribers, eventsPerPublisher, actualTotal)
 
 		case <-time.After(5 * time.Second):
-			t.Fatal("Timeout waiting for concurrent event processing")
+			require.Fail(t, "Timeout waiting for concurrent event processing")
 		}
 	})
 
@@ -667,7 +667,7 @@ func TestMemoryEventBusConcurrency(t *testing.T) {
 			t.Logf("✓ Concurrent subscribe/unsubscribe verified - %d routines completed without deadlock or panic", numRoutines)
 
 		case <-time.After(5 * time.Second):
-			t.Fatal("Timeout during concurrent subscribe/unsubscribe")
+			require.Fail(t, "Timeout during concurrent subscribe/unsubscribe")
 		}
 	})
 }
