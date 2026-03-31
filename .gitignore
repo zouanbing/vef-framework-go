@@ -29,6 +29,7 @@ go.work.sum
 
 .cursor/
 .windsurf/
+.kiro/
 cmd/CMD_DEV.md
 docs/plans/
 

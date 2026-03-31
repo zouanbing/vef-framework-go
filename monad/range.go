@@ -40,6 +40,11 @@ func (r Range[T]) IsEmpty() bool {
 	return r.Start > r.End
 }
 
+// IsNotEmpty returns true if the range contains at least one value (start <= end).
+func (r Range[T]) IsNotEmpty() bool {
+	return r.Start <= r.End
+}
+
 // Overlaps checks if this range overlaps with another range.
 func (r Range[T]) Overlaps(other Range[T]) bool {
 	return r.Start <= other.End && other.Start <= r.End

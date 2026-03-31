@@ -6,8 +6,8 @@ require (
 	ariga.io/atlas v1.1.0
 	github.com/ajitpratap0/GoSQLX v1.13.0
 	github.com/bwmarrin/snowflake v0.3.0
-	github.com/coldsmirk/go-collections v0.3.2
-	github.com/coldsmirk/go-streams v0.3.1
+	github.com/coldsmirk/go-collections v0.4.0
+	github.com/coldsmirk/go-streams v0.5.0
 	github.com/dlclark/regexp2 v1.11.5
 	github.com/dop251/goja v0.0.0-20260311135729-065cd970411c
 	github.com/dustin/go-humanize v1.0.1
@@ -15,7 +15,7 @@ require (
 	github.com/go-co-op/gocron/v2 v2.19.1
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
-	github.com/go-playground/validator/v10 v10.30.1
+	github.com/go-playground/validator/v10 v10.30.2
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/go-testfixtures/testfixtures/v3 v3.19.0
 	github.com/go-viper/mapstructure/v2 v2.5.0
@@ -92,7 +92,7 @@ require (
 	github.com/ebitengine/purego v0.10.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
-	github.com/gabriel-vasile/mimetype v1.4.12 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.13 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect

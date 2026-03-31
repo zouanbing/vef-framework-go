@@ -62,14 +62,11 @@ func WithDefaultRateLimit(rateLimit *api.RateLimitConfig) EngineOption {
 
 func WithRouters(routers ...api.RouterStrategy) EngineOption {
 	return func(e *engine) {
-		e.routerOperations = streams.CollectTo(
+		e.routerOperations = streams.ToHashMapC(
 			streams.FromSlice(routers),
-			streams.ToHashMapCollector(
-				func(router api.RouterStrategy) api.RouterStrategy { return router },
-				func(api.RouterStrategy) collections.ConcurrentSet[api.Identifier] {
-					return collections.NewConcurrentHashSet[api.Identifier]()
-				},
-			),
+			func(router api.RouterStrategy) (api.RouterStrategy, collections.ConcurrentSet[api.Identifier]) {
+				return router, collections.NewConcurrentHashSet[api.Identifier]()
+			},
 		)
 	}
 }

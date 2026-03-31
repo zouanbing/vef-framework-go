@@ -267,7 +267,7 @@ func TestRangeIntersection(t *testing.T) {
 			result := tt.r1.Intersection(tt.r2)
 
 			if tt.isEmpty {
-				if !result.IsEmpty() {
+				if result.IsNotEmpty() {
 					t.Errorf("Expected empty intersection, got %v", result)
 				}
 			} else {
@@ -278,7 +278,7 @@ func TestRangeIntersection(t *testing.T) {
 
 			reverseResult := tt.r2.Intersection(tt.r1)
 			if tt.isEmpty {
-				if !reverseResult.IsEmpty() {
+				if reverseResult.IsNotEmpty() {
 					t.Errorf("Expected symmetric empty intersection, got %v", reverseResult)
 				}
 			} else {
@@ -309,7 +309,7 @@ func TestRangeIntersectionString(t *testing.T) {
 		r4 := NewRange("x", "z")
 
 		noOverlap := r3.Intersection(r4)
-		if !noOverlap.IsEmpty() {
+		if noOverlap.IsNotEmpty() {
 			t.Errorf("Expected empty intersection for non-overlapping string ranges, got %v", noOverlap)
 		}
 	})
@@ -495,7 +495,7 @@ func TestRangeStringOperations(t *testing.T) {
 		}
 
 		noOverlap := r3.Intersection(r4)
-		if !noOverlap.IsEmpty() {
+		if noOverlap.IsNotEmpty() {
 			t.Error("Non-overlapping string ranges should have empty intersection")
 		}
 	})

@@ -138,8 +138,7 @@ func (i *importer) buildColumnMapping(headerRow []string) (map[int]int, error) {
 	// Use streams to build name-to-index mapping
 	nameToSchemaIdx := streams.ToMap(
 		streams.ZipWithIndex(streams.FromSlice(columns)).ToPairs(),
-		func(p streams.Pair[int, *tabular.Column]) string { return p.Second.Name },
-		func(p streams.Pair[int, *tabular.Column]) int { return p.First },
+		func(p streams.Pair[int, *tabular.Column]) (string, int) { return p.Second.Name, p.First },
 	)
 
 	seen := make(map[string]bool)

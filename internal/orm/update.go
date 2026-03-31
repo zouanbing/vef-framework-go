@@ -291,13 +291,13 @@ func (q *BunUpdateQuery) beforeUpdate() {
 		processAutoColumns(q, table, modelValue, mv)
 	}
 
-	if !q.returningColumns.IsEmpty() {
+	if q.returningColumns.IsNotEmpty() {
 		q.query.Returning("?", buildReturningExpr(q.returningColumns.Values(), q.eb))
 	}
 }
 
 func (q *BunUpdateQuery) skipCreateAuditColumns(table *schema.Table) {
-	if q.hasSet || !q.selectedColumns.IsEmpty() {
+	if q.hasSet || q.selectedColumns.IsNotEmpty() {
 		return
 	}
 

@@ -31,6 +31,10 @@ func (r *returningColumns) IsEmpty() bool {
 	return len(r.order) == 0
 }
 
+func (r *returningColumns) IsNotEmpty() bool {
+	return !r.IsEmpty()
+}
+
 func (r *returningColumns) Values() []string {
 	values := make([]string, len(r.order))
 	copy(values, r.order)

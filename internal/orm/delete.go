@@ -201,7 +201,7 @@ func (q *BunDeleteQuery) ApplyIf(condition bool, fns ...ApplyFunc[DeleteQuery]) 
 }
 
 func (q *BunDeleteQuery) beforeDelete() {
-	if !q.returningColumns.IsEmpty() {
+	if q.returningColumns.IsNotEmpty() {
 		q.query.Returning("?", buildReturningExpr(q.returningColumns.Values(), q.eb))
 	}
 }

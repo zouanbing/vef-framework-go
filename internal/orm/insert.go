@@ -199,7 +199,7 @@ func (q *BunInsertQuery) beforeInsert() {
 		processAutoColumns(q, table, modelValue, mv)
 	}
 
-	if !q.returningColumns.IsEmpty() {
+	if q.returningColumns.IsNotEmpty() {
 		q.query.Returning("?", buildReturningExpr(q.returningColumns.Values(), q.eb))
 	}
 }
