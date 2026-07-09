@@ -18,21 +18,24 @@ import (
 type CreateFlowCmd struct {
 	cqrs.BaseCommand
 
-	TenantID               string
-	Code                   string
-	Name                   string
-	CategoryID             string
-	Icon                   *string
-	Description            *string
-	BindingMode            approval.BindingMode
-	BusinessTable          *string
-	BusinessPkField        *string
-	BusinessStatusField    *string
-	AdminUserIDs           []string
-	IsAllInitiationAllowed bool
-	InstanceTitleTemplate  string
-	Initiators             []shared.CreateFlowInitiatorCmd
-	Caller                 approval.CallerContext
+	TenantID                string
+	Code                    string
+	Name                    string
+	CategoryID              string
+	Icon                    *string
+	Description             *string
+	BindingMode             approval.BindingMode
+	BusinessTable           *string
+	BusinessPKField         *string
+	BusinessStatusField     *string
+	BusinessInstanceIDField *string
+	BusinessStartedAtField  *string
+	BusinessFinishedAtField *string
+	AdminUserIDs            []string
+	IsAllInitiationAllowed  bool
+	InstanceTitleTemplate   string
+	Initiators              []shared.CreateFlowInitiatorCmd
+	Caller                  approval.CallerContext
 }
 
 // CreateFlowHandler handles the CreateFlowCmd command.
@@ -53,11 +56,24 @@ func (h *CreateFlowHandler) Handle(ctx context.Context, cmd CreateFlowCmd) (*app
 		return nil, shared.ErrFlowNotFound
 	}
 
-	if err := validateBusinessIdentifiers(cmd.BindingMode, cmd.BusinessTable, cmd.BusinessPkField, cmd.BusinessStatusField); err != nil {
+	if err := validateFlowEnums(cmd.BindingMode, cmd.Initiators); err != nil {
 		return nil, err
 	}
 
-	if err := validateBusinessBindingComplete(cmd.BindingMode, cmd.BusinessTable, cmd.BusinessPkField, cmd.BusinessStatusField); err != nil {
+	if err := validateBusinessIdentifiers(cmd.BindingMode,
+		cmd.BusinessTable, cmd.BusinessPKField, cmd.BusinessStatusField,
+		cmd.BusinessInstanceIDField, cmd.BusinessStartedAtField, cmd.BusinessFinishedAtField,
+	); err != nil {
+		return nil, err
+	}
+
+	if err := validateBusinessBindingComplete(cmd.BindingMode, cmd.BusinessTable, cmd.BusinessPKField, cmd.BusinessStatusField); err != nil {
+		return nil, err
+	}
+
+	if err := validateBusinessColumnsDistinct(cmd.BindingMode,
+		cmd.BusinessStatusField, cmd.BusinessInstanceIDField, cmd.BusinessStartedAtField, cmd.BusinessFinishedAtField,
+	); err != nil {
 		return nil, err
 	}
 
@@ -81,21 +97,24 @@ func (h *CreateFlowHandler) Handle(ctx context.Context, cmd CreateFlowCmd) (*app
 	}
 
 	flow := approval.Flow{
-		TenantID:               tenantID,
-		CategoryID:             cmd.CategoryID,
-		Code:                   cmd.Code,
-		Name:                   cmd.Name,
-		Icon:                   cmd.Icon,
-		Description:            cmd.Description,
-		BindingMode:            cmd.BindingMode,
-		BusinessTable:          cmd.BusinessTable,
-		BusinessPkField:        cmd.BusinessPkField,
-		BusinessStatusField:    cmd.BusinessStatusField,
-		AdminUserIDs:           cmd.AdminUserIDs,
-		IsAllInitiationAllowed: cmd.IsAllInitiationAllowed,
-		InstanceTitleTemplate:  cmd.InstanceTitleTemplate,
-		IsActive:               true,
-		CurrentVersion:         0,
+		TenantID:                tenantID,
+		CategoryID:              cmd.CategoryID,
+		Code:                    cmd.Code,
+		Name:                    cmd.Name,
+		Icon:                    cmd.Icon,
+		Description:             cmd.Description,
+		BindingMode:             cmd.BindingMode,
+		BusinessTable:           cmd.BusinessTable,
+		BusinessPKField:         cmd.BusinessPKField,
+		BusinessStatusField:     cmd.BusinessStatusField,
+		BusinessInstanceIDField: cmd.BusinessInstanceIDField,
+		BusinessStartedAtField:  cmd.BusinessStartedAtField,
+		BusinessFinishedAtField: cmd.BusinessFinishedAtField,
+		AdminUserIDs:            cmd.AdminUserIDs,
+		IsAllInitiationAllowed:  cmd.IsAllInitiationAllowed,
+		InstanceTitleTemplate:   cmd.InstanceTitleTemplate,
+		IsActive:                true,
+		CurrentVersion:          0,
 	}
 	if _, err := db.NewInsert().
 		Model(&flow).
@@ -121,7 +140,7 @@ func (h *CreateFlowHandler) Handle(ctx context.Context, cmd CreateFlowCmd) (*app
 	}
 
 	behavior.EventCollectorFromContext(ctx).Add(
-		approval.NewFlowCreatedEvent(flow.ID, flow.TenantID, flow.Code, flow.Name, flow.CategoryID),
+		approval.NewFlowCreatedEvent(&flow),
 	)
 
 	return &flow, nil

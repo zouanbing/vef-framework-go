@@ -43,17 +43,33 @@ var (
 	// admin saves the flow rather than silently no-op'ing the status write-back
 	// on the first completed instance.
 	ErrBindingIncomplete = result.Err(i18n.T("approval_binding_incomplete"), result.WithCode(ErrCodeBindingIncomplete))
+
+	// ErrInvalidBindingMode rejects an out-of-enum flow binding mode at save
+	// time — an unknown value would silently behave like "standalone" and
+	// disable the business write-back.
+	ErrInvalidBindingMode = result.Err(i18n.T("approval_invalid_binding_mode"), result.WithCode(ErrCodeInvalidBindingMode))
+
+	// ErrInvalidInitiatorKind rejects an out-of-enum initiator kind at save
+	// time — an unknown value would silently never match any user.
+	ErrInvalidInitiatorKind = result.Err(i18n.T("approval_invalid_initiator_kind"), result.WithCode(ErrCodeInvalidInitiatorKind))
 	// ErrInvalidStorageMode rejects a deploy whose storage mode is neither
 	// "json" nor "table". The mode is fixed for the version's lifetime and
 	// drives whether a dedicated physical form table is generated at publish,
 	// so an unrecognized value must be caught when the version is created.
 	ErrInvalidStorageMode = result.Err(i18n.T("approval_invalid_storage_mode"), result.WithCode(ErrCodeInvalidStorageMode))
 	// ErrFlowBindingLocked rejects changing a flow's business-binding
-	// configuration (mode / table / pk / status) while any instance of the flow
-	// is still running. Re-pointing the binding mid-flight would make in-flight
-	// instances write their outcome back to a different business record than they
-	// were started against, so the binding is frozen until they complete.
+	// configuration (mode / table / pk / status / optional linkage columns)
+	// while any instance of the flow is still running. Re-pointing the binding
+	// mid-flight would make in-flight instances write their outcome back to a
+	// different business record than they were started against, so the binding
+	// is frozen until they complete.
 	ErrFlowBindingLocked = result.Err(i18n.T("approval_flow_binding_locked"), result.WithCode(ErrCodeFlowBindingLocked))
+	// ErrBindingColumnsConflict rejects two business-binding fields naming the
+	// same column. The write-back emits a single UPDATE whose SET list would
+	// then assign the column twice — a runtime SQL error surfacing in the
+	// applicant's start transaction — so the conflict is caught when the admin
+	// saves the flow instead.
+	ErrBindingColumnsConflict = result.Err(i18n.T("approval_binding_columns_conflict"), result.WithCode(ErrCodeBindingColumnsConflict))
 
 	ErrInstanceNotFound          = result.Err(i18n.T("approval_instance_not_found"), result.WithCode(ErrCodeInstanceNotFound))
 	ErrInstanceCompleted         = result.Err(i18n.T("approval_instance_completed"), result.WithCode(ErrCodeInstanceCompleted))
@@ -83,7 +99,6 @@ var (
 	ErrAssigneeResolveFailed = result.Err(i18n.T("approval_assignee_resolve_failed"), result.WithCode(ErrCodeAssigneeResolveFailed))
 
 	ErrFormValidationFailed = result.Err(i18n.T("approval_form_validation_failed"), result.WithCode(ErrCodeFormValidationFailed))
-	ErrFieldNotEditable     = result.Err(i18n.T("approval_field_not_editable"), result.WithCode(ErrCodeFieldNotEditable))
 	// ErrFormDataTooLarge rejects submissions whose JSON-encoded form data
 	// would exceed FormDataMaxBytes. Stops malicious clients from blowing
 	// up the JSONB column or driving the runtime into OOM via deeply
@@ -92,9 +107,6 @@ var (
 		i18n.T("approval_form_data_too_large"),
 		result.WithCode(ErrCodeFormValidationFailed),
 	)
-
-	ErrDelegationNotFound = result.Err(i18n.T("approval_delegation_not_found"), result.WithCode(ErrCodeDelegationNotFound))
-	ErrDelegationConflict = result.Err(i18n.T("approval_delegation_conflict"), result.WithCode(ErrCodeDelegationConflict))
 
 	ErrAccessDenied = result.Err(i18n.T("approval_access_denied"), result.WithCode(ErrCodeAccessDenied))
 	// ErrTerminateNotAllowed rejects force-closing an instance whose status

@@ -13,8 +13,11 @@ const (
 	ErrCodeInvalidTitleTemplate      = 40009
 	ErrCodeInvalidFormDesign         = 40010
 	ErrCodeBindingIncomplete         = 40011
-	ErrCodeInvalidStorageMode        = 40012
-	ErrCodeFlowBindingLocked         = 40013
+	ErrCodeInvalidBindingMode        = 40012
+	ErrCodeInvalidInitiatorKind      = 40013
+	ErrCodeInvalidStorageMode        = 40014
+	ErrCodeFlowBindingLocked         = 40015
+	ErrCodeBindingColumnsConflict    = 40016
 
 	ErrCodeInstanceNotFound          = 40101
 	ErrCodeInstanceCompleted         = 40102
@@ -44,10 +47,6 @@ const (
 	ErrCodeAssigneeResolveFailed = 40302
 
 	ErrCodeFormValidationFailed = 40401
-	ErrCodeFieldNotEditable     = 40402
-
-	ErrCodeDelegationNotFound = 40501
-	ErrCodeDelegationConflict = 40502
 
 	ErrCodeUrgeCooldown = 40601
 

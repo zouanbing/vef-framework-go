@@ -67,6 +67,16 @@ func (h *AddAssigneeHandler) Handle(ctx context.Context, cmd AddAssigneeCmd) (cq
 		return cqrs.Unit{}, shared.ErrInvalidAddAssigneeType
 	}
 
+	sequential := node.ApprovalMethod == approval.ApprovalSequential
+
+	// A sequential node advances one task at a time through its sort-ordered
+	// queue, so a "parallel" addition has nothing to join. Deploy validation
+	// refuses to configure the type; this guards the empty-config default
+	// that allows every type.
+	if sequential && cmd.AddType == approval.AddAssigneeParallel {
+		return cqrs.Unit{}, shared.ErrInvalidAddAssigneeType
+	}
+
 	userIDs := shared.NormalizeUniqueIDs(cmd.UserIDs)
 	if len(userIDs) == 0 {
 		return cqrs.Unit{}, shared.ErrNoUsersSpecified
@@ -75,7 +85,7 @@ func (h *AddAssigneeHandler) Handle(ctx context.Context, cmd AddAssigneeCmd) (cq
 	var nodeTasks []approval.Task
 	if err := db.NewSelect().
 		Model(&nodeTasks).
-		Select("assignee_id", "status", "sort_order").
+		Select("assignee_id", "status", "sort_order", "visit_id").
 		Where(func(cb orm.ConditionBuilder) {
 			cb.Equals("instance_id", instance.ID).
 				Equals("node_id", task.NodeID)
@@ -95,6 +105,19 @@ func (h *AddAssigneeHandler) Handle(ctx context.Context, cmd AddAssigneeCmd) (cq
 
 		if nodeTask.Status == approval.TaskPending || nodeTask.Status == approval.TaskWaiting {
 			existingAssignees.Add(nodeTask.AssigneeID)
+
+			continue
+		}
+
+		// A user who already decided in the open visit must not be added
+		// back: pass rules count per task, so a second task would force the
+		// same person to decide twice in one round. Removed / transferred
+		// users exited the round and may legitimately be re-added.
+		if nodeTask.VisitID == task.VisitID {
+			switch nodeTask.Status {
+			case approval.TaskApproved, approval.TaskRejected, approval.TaskHandled:
+				existingAssignees.Add(nodeTask.AssigneeID)
+			}
 		}
 	}
 
@@ -111,6 +134,36 @@ func (h *AddAssigneeHandler) Handle(ctx context.Context, cmd AddAssigneeCmd) (cq
 
 	pendingDeadline := shared.ComputeTaskDeadline(node.TimeoutHours)
 	userInfos := shared.ResolveUserInfoMapSilent(ctx, h.userResolver, insertUsers)
+
+	// insertBase is the sort position of the first inserted task. Parallel
+	// nodes append after the node's max sort order — position is cosmetic
+	// there. Sequential nodes splice into the live queue relative to the
+	// anchor: "before" additions take over the anchor's position (the anchor
+	// and the tail behind it shift back), "after" additions slot in right
+	// behind it, so the queue reaches them in add order.
+	insertBase := baseSortOrder + 1
+
+	if sequential {
+		shiftFrom := task.SortOrder
+		if cmd.AddType == approval.AddAssigneeAfter {
+			shiftFrom++
+		}
+
+		insertBase = shiftFrom
+
+		if _, err := db.NewUpdate().
+			Model((*approval.Task)(nil)).
+			SetExpr("sort_order", func(eb orm.ExprBuilder) any {
+				return eb.Add(eb.Column("sort_order"), len(insertUsers))
+			}).
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Equals("visit_id", task.VisitID).
+					GreaterThanOrEqual("sort_order", shiftFrom)
+			}).
+			Exec(ctx); err != nil {
+			return cqrs.Unit{}, fmt.Errorf("shift sequential queue: %w", err)
+		}
+	}
 
 	// For AddAssigneeBefore, suspend the original task before inserting new
 	// ones. The task was already validated as Pending by LoadTaskContextForNodeOperation
@@ -143,17 +196,19 @@ func (h *AddAssigneeHandler) Handle(ctx context.Context, cmd AddAssigneeCmd) (cq
 			AssigneeName:           info.Name,
 			AssigneeDepartmentID:   info.DepartmentID,
 			AssigneeDepartmentName: info.DepartmentName,
-			SortOrder:              baseSortOrder + i + 1,
+			SortOrder:              insertBase + i,
 			ParentTaskID:           new(task.ID),
 			AddAssigneeType:        &cmd.AddType,
 		}
-		switch cmd.AddType {
-		case approval.AddAssigneeBefore, approval.AddAssigneeParallel:
-			newTask.Status = approval.TaskPending
-			newTask.Deadline = pendingDeadline
-		case approval.AddAssigneeAfter:
+		switch {
+		case cmd.AddType == approval.AddAssigneeAfter, sequential && i > 0:
+			// Queued: promoted by the sequential queue, or activated by the
+			// parallel parent/child dependency once the anchor finishes.
 			newTask.Status = approval.TaskWaiting
 			newTask.Deadline = nil
+		default:
+			newTask.Status = approval.TaskPending
+			newTask.Deadline = pendingDeadline
 		}
 
 		if _, err := db.NewInsert().
@@ -162,15 +217,7 @@ func (h *AddAssigneeHandler) Handle(ctx context.Context, cmd AddAssigneeCmd) (cq
 			return cqrs.Unit{}, fmt.Errorf("insert assignee task: %w", err)
 		}
 
-		eventCollector.Add(approval.NewTaskCreatedEvent(
-			newTask.ID,
-			newTask.TenantID,
-			instance.ID,
-			task.NodeID,
-			userID,
-			info.Name,
-			newTask.Deadline,
-		))
+		eventCollector.Add(approval.NewTaskCreatedEvent(instance, newTask, node))
 	}
 
 	actionLog := cmd.Operator.NewActionLog(instance.ID, approval.ActionAddAssignee)
@@ -181,7 +228,7 @@ func (h *AddAssigneeHandler) Handle(ctx context.Context, cmd AddAssigneeCmd) (cq
 	behavior.ActionLogCollectorFromContext(ctx).Add(actionLog)
 
 	eventCollector.Add(
-		approval.NewAssigneesAddedEvent(instance.ID, instance.TenantID, task.NodeID, task.ID, cmd.AddType, insertUsers, shared.UserInfoNames(userInfos)),
+		approval.NewAssigneesAddedEvent(instance, task, node, cmd.AddType, shared.UserInfos(insertUsers, userInfos)),
 	)
 
 	return cqrs.Unit{}, nil

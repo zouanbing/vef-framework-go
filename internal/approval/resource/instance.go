@@ -83,6 +83,7 @@ type InstanceResource struct {
 	bus                cqrs.Bus
 	departmentResolver approval.PrincipalDepartmentResolver
 	tenantResolver     approval.PrincipalTenantResolver
+	globalsResolver    approval.InstanceGlobalsResolver
 }
 
 // NewInstanceResource creates a new instance resource.
@@ -90,11 +91,13 @@ func NewInstanceResource(
 	bus cqrs.Bus,
 	departmentResolver approval.PrincipalDepartmentResolver,
 	tenantResolver approval.PrincipalTenantResolver,
+	globalsResolver approval.InstanceGlobalsResolver,
 ) api.Resource {
 	return &InstanceResource{
 		bus:                bus,
 		departmentResolver: departmentResolver,
 		tenantResolver:     tenantResolver,
+		globalsResolver:    globalsResolver,
 		Resource: api.NewRPCResource(
 			"approval/instance",
 			api.WithOperations(
@@ -129,30 +132,39 @@ func NewInstanceResource(
 	}
 }
 
-// StartInstanceParams contains the parameters for starting a new instance.
-type StartInstanceParams struct {
+// StartParams contains the parameters for starting a new instance.
+type StartParams struct {
 	api.P
 
-	TenantID         string         `json:"tenantId" validate:"required"`
-	FlowCode         string         `json:"flowCode" validate:"required"`
-	BusinessRecordID *string        `json:"businessRecordId"`
-	FormData         map[string]any `json:"formData"`
+	TenantID    string         `json:"tenantId" validate:"required"`
+	FlowCode    string         `json:"flowCode" validate:"required"`
+	BusinessRef *string        `json:"businessRef" validate:"omitempty,max=512"`
+	FormData    map[string]any `json:"formData"`
 }
 
 // Start creates a new flow instance.
-func (r *InstanceResource) Start(ctx fiber.Ctx, principal *security.Principal, params StartInstanceParams) error {
+func (r *InstanceResource) Start(ctx fiber.Ctx, principal *security.Principal, params StartParams) error {
 	actor, err := resolveActor(ctx.Context(), r.departmentResolver, r.tenantResolver, principal)
 	if err != nil {
 		return err
 	}
 
+	// Globals participate in condition routing, so they are resolved
+	// server-side from the principal — never accepted from the request body,
+	// where an applicant could forge them to steer the flow.
+	globals, err := r.globalsResolver.Resolve(ctx.Context(), principal, params.FlowCode)
+	if err != nil {
+		return fmt.Errorf("resolve instance globals: %w", err)
+	}
+
 	instance, err := cqrs.Send[command.StartInstanceCmd, *approval.Instance](ctx.Context(), r.bus, command.StartInstanceCmd{
-		TenantID:         params.TenantID,
-		FlowCode:         params.FlowCode,
-		Applicant:        actor.Operator,
-		BusinessRecordID: params.BusinessRecordID,
-		FormData:         params.FormData,
-		Caller:           actor.Caller,
+		TenantID:    params.TenantID,
+		FlowCode:    params.FlowCode,
+		Applicant:   actor.Operator,
+		BusinessRef: params.BusinessRef,
+		FormData:    params.FormData,
+		Globals:     globals,
+		Caller:      actor.Caller,
 	})
 	if err != nil {
 		return err

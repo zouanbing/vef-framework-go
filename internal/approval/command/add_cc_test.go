@@ -126,9 +126,11 @@ func (s *AddCCTestSuite) TestAddCCDuplicateFiltered() {
 	// Insert existing CC record
 	nodeIDPtr := new(string)
 	*nodeIDPtr = s.nodeID
+	visit := ensureActiveVisit(s.T(), s.ctx, s.db, "default", inst.ID, s.nodeID)
 	existing := &approval.CCRecord{
 		InstanceID: inst.ID,
 		NodeID:     nodeIDPtr,
+		VisitID:    &visit.ID,
 		CCUserID:   "cc-user-1",
 		IsManual:   true,
 	}
@@ -242,9 +244,11 @@ func (s *AddCCTestSuite) TestAddCCEventUsesInsertedUserIDs() {
 	inst := s.insertInstance(s.nodeID, "operator-7")
 
 	// Existing user should be filtered out from insertion and event payload.
+	visit := ensureActiveVisit(s.T(), s.ctx, s.db, "default", inst.ID, s.nodeID)
 	existing := &approval.CCRecord{
 		InstanceID: inst.ID,
 		NodeID:     &s.nodeID,
+		VisitID:    &visit.ID,
 		CCUserID:   "cc-user-1",
 		IsManual:   true,
 	}
@@ -264,7 +268,11 @@ func (s *AddCCTestSuite) TestAddCCEventUsesInsertedUserIDs() {
 	evt, ok := captured[len(captured)-1].(*approval.CCNotifiedEvent)
 	s.Require().True(ok, "Latest captured event should be *CCNotifiedEvent")
 
-	actual := append([]string(nil), evt.CCUserIDs...)
+	actual := make([]string, len(evt.Recipients))
+	for i, r := range evt.Recipients {
+		actual[i] = r.ID
+	}
+
 	slices.Sort(actual)
 
 	expected := []string{"cc-user-2", "cc-user-3"}
@@ -300,9 +308,9 @@ func (s *AddCCTestSuite) TestAddCCShouldDeduplicateAndIgnoreEmptyUserIDs() {
 	s.Require().NotEmpty(captured, "Should publish at least one cc-notified event")
 	evt, ok := captured[len(captured)-1].(*approval.CCNotifiedEvent)
 	s.Require().True(ok, "Latest captured event should be *CCNotifiedEvent")
-	s.Require().Len(evt.CCUserIDs, 2, "Event should contain deduplicated ccUserIds")
-	s.Assert().Equal("cc-user-2", evt.CCUserIDs[0], "Event should preserve first-seen CC user order")
-	s.Assert().Equal("cc-user-3", evt.CCUserIDs[1], "Event should preserve first-seen CC user order")
+	s.Require().Len(evt.Recipients, 2, "Event should contain deduplicated recipients")
+	s.Assert().Equal("cc-user-2", evt.Recipients[0].ID, "Event should preserve first-seen CC user order")
+	s.Assert().Equal("cc-user-3", evt.Recipients[1].ID, "Event should preserve first-seen CC user order")
 }
 
 func (s *AddCCTestSuite) TestAddCCShouldRejectUnauthorizedOperator() {

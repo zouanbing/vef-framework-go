@@ -92,7 +92,7 @@ func (h *RollbackTaskHandler) Handle(ctx context.Context, cmd RollbackTaskCmd) (
 		return cqrs.Unit{}, err
 	}
 
-	canceledEvents, err := h.taskSvc.CancelRemainingTasks(ctx, db, instance.ID, node.ID, "节点被回退，剩余任务取消")
+	canceledEvents, err := h.taskSvc.CancelRemainingTasks(ctx, db, instance, node, "节点被回退，剩余任务取消")
 	if err != nil {
 		return cqrs.Unit{}, err
 	}
@@ -122,6 +122,11 @@ func (h *RollbackTaskHandler) Handle(ctx context.Context, cmd RollbackTaskCmd) (
 		return cqrs.Unit{}, fmt.Errorf("find target node: %w", err)
 	}
 
+	var opinion *string
+	if cmd.Opinion != "" {
+		opinion = &cmd.Opinion
+	}
+
 	events := canceledEvents
 
 	if targetNode.Kind == approval.NodeStart {
@@ -139,7 +144,7 @@ func (h *RollbackTaskHandler) Handle(ctx context.Context, cmd RollbackTaskCmd) (
 		}
 
 		events = append(events,
-			approval.NewInstanceReturnedEvent(instance.ID, instance.TenantID, node.ID, targetNodeID, cmd.Operator.ID),
+			approval.NewInstanceReturnedEvent(instance, node, &targetNode, cmd.Operator, opinion),
 		)
 	} else {
 		// Rollback to intermediate node: status stays running but
@@ -159,7 +164,7 @@ func (h *RollbackTaskHandler) Handle(ctx context.Context, cmd RollbackTaskCmd) (
 		}
 
 		events = append(events,
-			approval.NewInstanceRolledBackEvent(instance.ID, instance.TenantID, node.ID, targetNodeID, cmd.Operator.ID),
+			approval.NewInstanceRolledBackEvent(instance, node, &targetNode, cmd.Operator, opinion),
 		)
 	}
 

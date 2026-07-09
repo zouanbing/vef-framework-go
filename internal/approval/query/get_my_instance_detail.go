@@ -56,18 +56,18 @@ func (h *GetMyInstanceDetailHandler) Handle(ctx context.Context, query GetMyInst
 
 	detail := &my.InstanceDetail{
 		Instance: my.InstanceInfo{
-			InstanceID:       instance.ID,
-			InstanceNo:       instance.InstanceNo,
-			Title:            instance.Title,
-			FlowName:         flow.Name,
-			FlowIcon:         flow.Icon,
-			Applicant:        instance.Applicant(),
-			Status:           string(instance.Status),
-			CurrentNodeID:    instance.CurrentNodeID,
-			BusinessRecordID: instance.BusinessRecordID,
-			FormData:         instance.FormData,
-			CreatedAt:        instance.CreatedAt,
-			FinishedAt:       instance.FinishedAt,
+			InstanceID:    instance.ID,
+			InstanceNo:    instance.InstanceNo,
+			Title:         instance.Title,
+			FlowName:      flow.Name,
+			FlowIcon:      flow.Icon,
+			Applicant:     instance.Applicant(),
+			Status:        string(instance.Status),
+			CurrentNodeID: instance.CurrentNodeID,
+			BusinessRef:   instance.BusinessRef,
+			FormData:      instance.FormData,
+			CreatedAt:     instance.CreatedAt,
+			FinishedAt:    instance.FinishedAt,
 		},
 		FormSchema:       bundle.FormSchema,
 		Timeline:         buildInstanceTimeline(bundle),
@@ -113,8 +113,13 @@ func (*GetMyInstanceDetailHandler) computeActions(
 	}
 
 	hasPendingTask := false
+	hasOwnTask := false
 
 	for _, t := range tasks {
+		if t.AssigneeID == userID {
+			hasOwnTask = true
+		}
+
 		if t.Status != approval.TaskPending {
 			continue
 		}
@@ -155,7 +160,11 @@ func (*GetMyInstanceDetailHandler) computeActions(
 		}
 	}
 
-	if hasPendingTask {
+	// Urge mirrors TaskService.IsUrgeAuthorized: only the applicant or a
+	// user who has (or had) an assignee task may urge — CC-only viewers are
+	// excluded, so the offered set cannot drift from what UrgeTaskHandler
+	// accepts.
+	if hasPendingTask && (isApplicant || hasOwnTask) {
 		actions.Add("urge")
 	}
 

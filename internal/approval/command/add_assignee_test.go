@@ -30,12 +30,13 @@ func init() {
 type AddAssigneeTestSuite struct {
 	suite.Suite
 
-	ctx     context.Context
-	db      orm.DB
-	bus     *eventtest.FakeBus
-	handler *BusPublishingHandler[command.AddAssigneeCmd, cqrs.Unit]
-	fixture *MinimalFixture
-	nodeID  string
+	ctx       context.Context
+	db        orm.DB
+	bus       *eventtest.FakeBus
+	handler   *BusPublishingHandler[command.AddAssigneeCmd, cqrs.Unit]
+	fixture   *MinimalFixture
+	nodeID    string
+	seqNodeID string
 
 	instanceSeq int
 }
@@ -55,6 +56,73 @@ func (s *AddAssigneeTestSuite) SetupSuite() {
 	_, err := s.db.NewInsert().Model(node).Exec(s.ctx)
 	s.Require().NoError(err, "Add-assignee test node should insert successfully")
 	s.nodeID = node.ID
+
+	seqNode := &approval.FlowNode{
+		FlowVersionID:        s.fixture.VersionID,
+		Key:                  "add-assignee-seq-node",
+		Kind:                 approval.NodeApproval,
+		Name:                 "Sequential Add Assignee Node",
+		ApprovalMethod:       approval.ApprovalSequential,
+		IsAddAssigneeAllowed: true,
+	}
+	_, err = s.db.NewInsert().Model(seqNode).Exec(s.ctx)
+	s.Require().NoError(err, "Sequential add-assignee test node should insert successfully")
+	s.seqNodeID = seqNode.ID
+}
+
+// setupSequentialData creates an instance on the sequential node with one
+// Pending head task followed by Waiting queue tasks, mirroring the engine's
+// initial staggering.
+func (s *AddAssigneeTestSuite) setupSequentialData(assigneeIDs ...string) (*approval.Instance, []approval.Task) {
+	s.instanceSeq++
+	inst := &approval.Instance{
+		TenantID:      "default",
+		FlowID:        s.fixture.FlowID,
+		FlowVersionID: s.fixture.VersionID,
+		Title:         "Sequential Add Assignee Test",
+		InstanceNo:    fmt.Sprintf("AAS-%04d", s.instanceSeq),
+		ApplicantID:   "applicant-1",
+		Status:        approval.InstanceRunning,
+		CurrentNodeID: &s.seqNodeID,
+	}
+	_, err := s.db.NewInsert().Model(inst).Exec(s.ctx)
+	s.Require().NoError(err, "Sequential test instance should insert successfully")
+
+	visitID := ensureActiveVisit(s.T(), s.ctx, s.db, "default", inst.ID, s.seqNodeID).ID
+
+	tasks := make([]approval.Task, 0, len(assigneeIDs))
+	for i, assigneeID := range assigneeIDs {
+		task := approval.Task{
+			TenantID:   "default",
+			InstanceID: inst.ID,
+			NodeID:     s.seqNodeID,
+			VisitID:    visitID,
+			AssigneeID: assigneeID,
+			SortOrder:  i + 1,
+			Status:     approval.TaskWaiting,
+		}
+		if i == 0 {
+			task.Status = approval.TaskPending
+		}
+
+		_, err := s.db.NewInsert().Model(&task).Exec(s.ctx)
+		s.Require().NoError(err, "Sequential test task should insert successfully")
+
+		tasks = append(tasks, task)
+	}
+
+	return inst, tasks
+}
+
+// loadQueue returns the instance's tasks ordered by queue position.
+func (s *AddAssigneeTestSuite) loadQueue(instanceID string) []approval.Task {
+	var tasks []approval.Task
+	s.Require().NoError(s.db.NewSelect().Model(&tasks).
+		Where(func(cb orm.ConditionBuilder) { cb.Equals("instance_id", instanceID) }).
+		OrderBy("sort_order").
+		Scan(s.ctx), "Queue tasks should load")
+
+	return tasks
 }
 
 func (s *AddAssigneeTestSuite) TearDownTest() {
@@ -127,11 +195,89 @@ func (s *AddAssigneeTestSuite) TestAddAssigneeSuccess() {
 		tc, ok := evt.(*approval.TaskCreatedEvent)
 		s.Require().True(ok, "Event should be *TaskCreatedEvent")
 
-		assignees = append(assignees, tc.AssigneeID)
+		assignees = append(assignees, tc.Assignee.ID)
 	}
 
 	s.Assert().ElementsMatch([]string{"new-user-1", "new-user-2"}, assignees,
 		"TaskCreatedEvent should cover all newly added assignees")
+}
+
+func (s *AddAssigneeTestSuite) TestAddAssigneeSequential() {
+	operator := approval.UserInfo{ID: "seq-user-1", Name: "Seq Operator"}
+
+	s.Run("RejectsParallel", func() {
+		_, tasks := s.setupSequentialData("seq-user-1", "seq-user-2")
+
+		_, err := s.handler.Handle(s.ctx, command.AddAssigneeCmd{
+			TaskID:   tasks[0].ID,
+			UserIDs:  []string{"new-user-1"},
+			AddType:  approval.AddAssigneeParallel,
+			Operator: operator,
+			Caller:   approval.SystemCaller,
+		})
+		s.Require().ErrorIs(err, shared.ErrInvalidAddAssigneeType,
+			"A sequential queue has no parallel lane, so parallel additions must be rejected")
+
+		queue := s.loadQueue(tasks[0].InstanceID)
+		s.Assert().Len(queue, 2, "No task should be inserted on rejection")
+	})
+
+	s.Run("BeforeSplicesQueueHead", func() {
+		_, tasks := s.setupSequentialData("seq-user-1", "seq-user-2")
+
+		_, err := s.handler.Handle(s.ctx, command.AddAssigneeCmd{
+			TaskID:   tasks[0].ID,
+			UserIDs:  []string{"new-user-1", "new-user-2"},
+			AddType:  approval.AddAssigneeBefore,
+			Operator: operator,
+			Caller:   approval.SystemCaller,
+		})
+		s.Require().NoError(err, "Before addition on a sequential node should succeed")
+
+		queue := s.loadQueue(tasks[0].InstanceID)
+		s.Require().Len(queue, 4, "Queue should hold anchor, tail, and both added tasks")
+
+		s.Assert().Equal("new-user-1", queue[0].AssigneeID, "First added assignee should take over the queue head")
+		s.Assert().Equal(approval.TaskPending, queue[0].Status, "Only the spliced-in head may be actionable")
+		s.Assert().Equal("new-user-2", queue[1].AssigneeID, "Second added assignee should queue behind the first")
+		s.Assert().Equal(approval.TaskWaiting, queue[1].Status, "Second added assignee should wait its turn")
+		s.Assert().Equal("seq-user-1", queue[2].AssigneeID, "The anchor should shift behind the added run")
+		s.Assert().Equal(approval.TaskWaiting, queue[2].Status, "The anchor should be suspended until the added run finishes")
+		s.Assert().Equal("seq-user-2", queue[3].AssigneeID, "The original tail should shift with the anchor")
+		s.Assert().Equal(approval.TaskWaiting, queue[3].Status, "The original tail should stay queued")
+
+		pending := 0
+		for _, task := range queue {
+			if task.Status == approval.TaskPending {
+				pending++
+			}
+		}
+
+		s.Assert().Equal(1, pending, "A sequential node must never hold two actionable tasks")
+	})
+
+	s.Run("AfterSplicesBehindAnchor", func() {
+		_, tasks := s.setupSequentialData("seq-user-1", "seq-user-2")
+
+		_, err := s.handler.Handle(s.ctx, command.AddAssigneeCmd{
+			TaskID:   tasks[0].ID,
+			UserIDs:  []string{"new-user-1"},
+			AddType:  approval.AddAssigneeAfter,
+			Operator: operator,
+			Caller:   approval.SystemCaller,
+		})
+		s.Require().NoError(err, "After addition on a sequential node should succeed")
+
+		queue := s.loadQueue(tasks[0].InstanceID)
+		s.Require().Len(queue, 3, "Queue should hold anchor, added task, and tail")
+
+		s.Assert().Equal("seq-user-1", queue[0].AssigneeID, "The anchor should keep the queue head")
+		s.Assert().Equal(approval.TaskPending, queue[0].Status, "The anchor should stay actionable")
+		s.Assert().Equal("new-user-1", queue[1].AssigneeID, "The added assignee should slot in right behind the anchor")
+		s.Assert().Equal(approval.TaskWaiting, queue[1].Status, "The added assignee should wait for the anchor")
+		s.Assert().Equal("seq-user-2", queue[2].AssigneeID, "The original tail should shift back by one")
+		s.Assert().Equal(approval.TaskWaiting, queue[2].Status, "The original tail should stay queued")
+	})
 }
 
 func (s *AddAssigneeTestSuite) TestAddAssigneeNotAllowed() {
@@ -539,9 +685,9 @@ func (s *AddAssigneeTestSuite) TestAddAssigneeShouldDeduplicateUserIDsAndIgnoreE
 	s.Require().NotEmpty(captured, "Should publish at least one assignee-added event")
 	evt, ok := captured[len(captured)-1].(*approval.AssigneesAddedEvent)
 	s.Require().True(ok, "Latest captured event should be *AssigneesAddedEvent")
-	s.Require().Len(evt.AssigneeIDs, 2, "Event should carry deduplicated assignee IDs")
-	s.Assert().Equal("new-user-1", evt.AssigneeIDs[0], "Event should preserve first-seen assignee order")
-	s.Assert().Equal("new-user-2", evt.AssigneeIDs[1], "Event should preserve first-seen assignee order")
+	s.Require().Len(evt.Assignees, 2, "Event should carry deduplicated assignees")
+	s.Assert().Equal("new-user-1", evt.Assignees[0].ID, "Event should preserve first-seen assignee order")
+	s.Assert().Equal("new-user-2", evt.Assignees[1].ID, "Event should preserve first-seen assignee order")
 }
 
 func (s *AddAssigneeTestSuite) TestAddAssigneeShouldSkipExistingActiveAssignee() {
@@ -586,8 +732,8 @@ func (s *AddAssigneeTestSuite) TestAddAssigneeShouldSkipExistingActiveAssignee()
 	s.Require().NotEmpty(captured, "Should publish at least one assignee-added event")
 	evt, ok := captured[len(captured)-1].(*approval.AssigneesAddedEvent)
 	s.Require().True(ok, "Latest captured event should be *AssigneesAddedEvent")
-	s.Require().Len(evt.AssigneeIDs, 1, "Event should only include newly inserted assignee")
-	s.Assert().Equal("new-user-2", evt.AssigneeIDs[0], "Event should exclude existing active assignee")
+	s.Require().Len(evt.Assignees, 1, "Event should only include newly inserted assignee")
+	s.Assert().Equal("new-user-2", evt.Assignees[0].ID, "Event should exclude existing active assignee")
 }
 
 func (s *AddAssigneeTestSuite) TestAddAssigneeShouldBeConcurrencySafe() {
@@ -734,4 +880,35 @@ func (s *AddAssigneeTestSuite) TestAddAssigneeAndPrepareOperationShouldAvoidDead
 	case <-time.After(5 * time.Second):
 		s.FailNow("PrepareOperation should not block indefinitely")
 	}
+}
+
+func (s *AddAssigneeTestSuite) TestAddAssigneeSkipsDecidedUserInOpenVisit() {
+	inst, task := s.setupData("decider-b")
+
+	finished := timex.Now()
+	decided := &approval.Task{
+		TenantID:   "default",
+		InstanceID: inst.ID,
+		NodeID:     s.nodeID,
+		VisitID:    task.VisitID,
+		AssigneeID: "decider-a",
+		SortOrder:  2,
+		Status:     approval.TaskApproved,
+		FinishedAt: &finished,
+	}
+	_, err := s.db.NewInsert().Model(decided).Exec(s.ctx)
+	s.Require().NoError(err, "Should insert already-decided task")
+
+	_, err = s.handler.Handle(s.ctx, command.AddAssigneeCmd{
+		TaskID:   task.ID,
+		UserIDs:  []string{"decider-a"},
+		AddType:  approval.AddAssigneeParallel,
+		Operator: approval.UserInfo{ID: "decider-b", Name: "Decider B"},
+		Caller:   approval.SystemCaller,
+	})
+	s.Require().NoError(err, "Re-adding a decided user is silently skipped, not an error")
+
+	queue := s.loadQueue(inst.ID)
+	s.Assert().Len(queue, 2,
+		"No task may be inserted for a user who already decided in the open visit — pass rules count per task")
 }

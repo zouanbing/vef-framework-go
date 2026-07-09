@@ -21,8 +21,8 @@ import (
 // every update so the merged row satisfies the ck_apv_delegation__time_range
 // CHECK constraint; a real client always sends these.
 const (
-	delegationStart = "2030-01-01T00:00:00Z"
-	delegationEnd   = "2030-06-01T00:00:00Z"
+	delegationStart = "2030-01-01 00:00:00"
+	delegationEnd   = "2030-06-01 00:00:00"
 )
 
 // DelegationOwnershipTestSuite exercises the owner-scoping enforced on the
@@ -207,4 +207,20 @@ func (s *DelegationOwnershipTestSuite) delegationExists(id string) bool {
 	s.Require().NoError(err, "check delegation %q", id)
 
 	return exists
+}
+
+func (s *DelegationOwnershipTestSuite) TestDelegationCreateRequiresTimeWindow() {
+	token := s.GenerateToken(newTenantUser("tim", "Tim", "user"))
+
+	resp := s.MakeRPCRequestWithToken(api.Request{
+		Identifier: api.Identifier{Resource: "approval/delegation", Action: "create", Version: "v1"},
+		Params: map[string]any{
+			"delegatorId": "tim",
+			"delegateeId": "tom",
+			"endTime":     delegationEnd,
+		},
+	}, token)
+
+	s.Require().Equal(http.StatusBadRequest, resp.StatusCode,
+		"create without startTime must fail validation instead of persisting a zero-dated window")
 }

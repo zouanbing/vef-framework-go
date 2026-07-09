@@ -69,7 +69,7 @@ func (h *WithdrawInstanceHandler) Handle(ctx context.Context, cmd WithdrawInstan
 		return cqrs.Unit{}, err
 	}
 
-	canceledEvents, err := h.taskSvc.CancelInstanceTasks(ctx, db, cmd.InstanceID, "申请已撤回，任务取消")
+	canceledEvents, err := h.taskSvc.CancelInstanceTasks(ctx, db, instance, "申请已撤回，任务取消")
 	if err != nil {
 		return cqrs.Unit{}, fmt.Errorf("cancel tasks on withdraw: %w", err)
 	}
@@ -78,15 +78,18 @@ func (h *WithdrawInstanceHandler) Handle(ctx context.Context, cmd WithdrawInstan
 		return cqrs.Unit{}, err
 	}
 
-	actionLog := cmd.Operator.NewActionLog(cmd.InstanceID, approval.ActionWithdraw)
+	var reason *string
 	if cmd.Reason != "" {
-		actionLog.Opinion = &cmd.Reason
+		reason = &cmd.Reason
 	}
+
+	actionLog := cmd.Operator.NewActionLog(cmd.InstanceID, approval.ActionWithdraw)
+	actionLog.Opinion = reason
 
 	behavior.ActionLogCollectorFromContext(ctx).Add(actionLog)
 
 	behavior.EventCollectorFromContext(ctx).Add(append(canceledEvents,
-		approval.NewInstanceWithdrawnEvent(cmd.InstanceID, instance.TenantID, cmd.Operator.ID),
+		approval.NewInstanceWithdrawnEvent(instance, cmd.Operator, reason),
 	)...)
 
 	return cqrs.Unit{}, nil

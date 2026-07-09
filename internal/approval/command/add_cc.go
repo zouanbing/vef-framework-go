@@ -8,6 +8,7 @@ import (
 	"github.com/coldsmirk/vef-framework-go/approval"
 	"github.com/coldsmirk/vef-framework-go/contextx"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/behavior"
+	"github.com/coldsmirk/vef-framework-go/internal/approval/engine"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/service"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/shared"
 	"github.com/coldsmirk/vef-framework-go/internal/cqrs"
@@ -56,7 +57,7 @@ func (h *AddCCHandler) Handle(ctx context.Context, cmd AddCCCmd) (cqrs.Unit, err
 
 	if err := db.NewSelect().
 		Model(&node).
-		Select("is_manual_cc_allowed").
+		Select("name", "is_manual_cc_allowed").
 		WherePK().
 		Scan(ctx); err != nil {
 		return cqrs.Unit{}, fmt.Errorf("load current node: %w", err)
@@ -87,7 +88,12 @@ func (h *AddCCHandler) Handle(ctx context.Context, cmd AddCCCmd) (cqrs.Unit, err
 
 	ccUserInfos := shared.ResolveUserInfoMapSilent(ctx, h.userResolver, userIDs)
 
-	insertedUserIDs, err := shared.InsertManualCCRecords(ctx, db, cmd.InstanceID, *instance.CurrentNodeID, userIDs, ccUserInfos)
+	visit, err := engine.FindActiveNodeVisit(ctx, db, cmd.InstanceID, *instance.CurrentNodeID)
+	if err != nil {
+		return cqrs.Unit{}, err
+	}
+
+	insertedUserIDs, err := shared.InsertManualCCRecords(ctx, db, cmd.InstanceID, *instance.CurrentNodeID, visit.ID, userIDs, ccUserInfos)
 	if err != nil {
 		return cqrs.Unit{}, err
 	}
@@ -102,7 +108,7 @@ func (h *AddCCHandler) Handle(ctx context.Context, cmd AddCCCmd) (cqrs.Unit, err
 	behavior.ActionLogCollectorFromContext(ctx).Add(actionLog)
 
 	behavior.EventCollectorFromContext(ctx).Add(
-		approval.NewCCNotifiedEvent(cmd.InstanceID, instance.TenantID, *instance.CurrentNodeID, insertedUserIDs, shared.UserInfoNames(ccUserInfos), true),
+		approval.NewCCNotifiedEvent(instance, &node, shared.UserInfos(insertedUserIDs, ccUserInfos), true),
 	)
 
 	return cqrs.Unit{}, nil

@@ -53,7 +53,7 @@ func (h *FindAdminTasksHandler) Handle(ctx context.Context, query FindAdminTasks
 					cb.Equals("status", *query.Status)
 				})
 		}).
-		OrderByDesc("created_at")
+		OrderByDesc("created_at", "id")
 
 	sq = applyPageable(sq, &query.Pageable)
 
@@ -85,15 +85,14 @@ func (h *FindAdminTasksHandler) Handle(ctx context.Context, query FindAdminTasks
 	items := make([]admin.Task, len(tasks))
 	for i, t := range tasks {
 		item := admin.Task{
-			TaskID:       t.ID,
-			InstanceID:   t.InstanceID,
-			NodeName:     nodeMap[t.NodeID],
-			AssigneeID:   t.AssigneeID,
-			AssigneeName: t.AssigneeName,
-			Status:       string(t.Status),
-			CreatedAt:    t.CreatedAt,
-			Deadline:     t.Deadline,
-			FinishedAt:   t.FinishedAt,
+			TaskID:     t.ID,
+			InstanceID: t.InstanceID,
+			NodeName:   nodeMap[t.NodeID],
+			Assignee:   t.Assignee(),
+			Status:     string(t.Status),
+			CreatedAt:  t.CreatedAt,
+			Deadline:   t.Deadline,
+			FinishedAt: t.FinishedAt,
 		}
 		if inst := instanceMap[t.InstanceID]; inst != nil {
 			item.InstanceTitle = inst.Title

@@ -104,6 +104,7 @@ func (s *UpdateFlowTestSuite) TestUpdateFlowSuccess() {
 	desc := "Updated description"
 
 	cmd := command.UpdateFlowCmd{
+		BindingMode:            approval.BindingStandalone,
 		FlowID:                 s.flowID,
 		Name:                   "Updated Flow",
 		Icon:                   &icon,
@@ -144,6 +145,7 @@ func (s *UpdateFlowTestSuite) TestUpdateFlowSuccess() {
 
 func (s *UpdateFlowTestSuite) TestUpdateFlowNotFound() {
 	cmd := command.UpdateFlowCmd{
+		BindingMode:            approval.BindingStandalone,
 		FlowID:                 "non-existent-flow-id",
 		Name:                   "Updated Flow",
 		IsAllInitiationAllowed: true,
@@ -209,7 +211,7 @@ func (s *UpdateFlowTestSuite) TestUpdateFlowBindingGuardWhileRunning() {
 		Name:                  "Original Flow",
 		BindingMode:           approval.BindingBusiness,
 		BusinessTable:         &table,
-		BusinessPkField:       &pk,
+		BusinessPKField:       &pk,
 		BusinessStatusField:   &status,
 		InstanceTitleTemplate: "Original Template",
 		Caller:                approval.SystemCaller,
@@ -228,6 +230,33 @@ func (s *UpdateFlowTestSuite) TestUpdateFlowBindingGuardWhileRunning() {
 	})
 	s.Require().NoError(err, "Non-binding edit must be allowed while an instance runs")
 	s.Assert().Equal("Renamed While Running", updated.Name, "Should apply the non-binding edit")
+
+	// Re-baseline to a business binding so a linkage-column-only change can be
+	// probed against the same running instance.
+	_, err = s.db.NewUpdate().
+		Model((*approval.Flow)(nil)).
+		Set("binding_mode", approval.BindingBusiness).
+		Set("business_table", table).
+		Set("business_pk_field", pk).
+		Set("business_status_field", status).
+		Where(func(cb orm.ConditionBuilder) { cb.PKEquals(s.flowID) }).
+		Exec(s.ctx)
+	s.Require().NoError(err, "Should reset flow to a business baseline")
+
+	instanceCol := "apv_instance_id"
+	_, err = s.handler.Handle(s.ctx, command.UpdateFlowCmd{
+		FlowID:                  s.flowID,
+		Name:                    "Renamed While Running",
+		BindingMode:             approval.BindingBusiness,
+		BusinessTable:           &table,
+		BusinessPKField:         &pk,
+		BusinessStatusField:     &status,
+		BusinessInstanceIDField: &instanceCol,
+		InstanceTitleTemplate:   "Original Template",
+		Caller:                  approval.SystemCaller,
+	})
+	s.Require().Error(err, "Adding a linkage column is a binding change and must be blocked while an instance runs")
+	s.Assert().ErrorIs(err, shared.ErrFlowBindingLocked, "Should return ErrFlowBindingLocked for a linkage-column change")
 }
 
 func (s *UpdateFlowTestSuite) TestUpdateAllFields() {
@@ -235,6 +264,7 @@ func (s *UpdateFlowTestSuite) TestUpdateAllFields() {
 	desc := "All fields description"
 
 	cmd := command.UpdateFlowCmd{
+		BindingMode:            approval.BindingStandalone,
 		FlowID:                 s.flowID,
 		Name:                   "All Fields Updated",
 		Icon:                   &icon,
@@ -282,7 +312,7 @@ func (s *UpdateFlowTestSuite) TestUpdateFlowToBusinessBinding() {
 		Name:                   "Now Business Bound",
 		BindingMode:            approval.BindingBusiness,
 		BusinessTable:          &table,
-		BusinessPkField:        &pk,
+		BusinessPKField:        &pk,
 		BusinessStatusField:    &status,
 		IsAllInitiationAllowed: true,
 		InstanceTitleTemplate:  "Template",
@@ -320,17 +350,23 @@ func (s *UpdateFlowTestSuite) TestUpdateFlowBusinessToStandaloneClearsFields() {
 	table := "t_orders"
 	pk := "id"
 	status := "approval_status"
+	instanceCol := "apv_instance_id"
+	startedCol := "apv_started_at"
+	finishedCol := "apv_finished_at"
 
 	_, err := s.handler.Handle(s.ctx, command.UpdateFlowCmd{
-		FlowID:                 s.flowID,
-		Name:                   "Business",
-		BindingMode:            approval.BindingBusiness,
-		BusinessTable:          &table,
-		BusinessPkField:        &pk,
-		BusinessStatusField:    &status,
-		IsAllInitiationAllowed: true,
-		InstanceTitleTemplate:  "Template",
-		Caller:                 approval.SystemCaller,
+		FlowID:                  s.flowID,
+		Name:                    "Business",
+		BindingMode:             approval.BindingBusiness,
+		BusinessTable:           &table,
+		BusinessPKField:         &pk,
+		BusinessStatusField:     &status,
+		BusinessInstanceIDField: &instanceCol,
+		BusinessStartedAtField:  &startedCol,
+		BusinessFinishedAtField: &finishedCol,
+		IsAllInitiationAllowed:  true,
+		InstanceTitleTemplate:   "Template",
+		Caller:                  approval.SystemCaller,
 	})
 	s.Require().NoError(err, "Should set the business binding first")
 
@@ -352,6 +388,40 @@ func (s *UpdateFlowTestSuite) TestUpdateFlowBusinessToStandaloneClearsFields() {
 	s.Require().NoError(s.db.NewSelect().Model(&flow).WherePK().Scan(s.ctx))
 	s.Assert().Equal(approval.BindingStandalone, flow.BindingMode)
 	s.Assert().Nil(flow.BusinessTable, "business_table should clear to NULL")
-	s.Assert().Nil(flow.BusinessPkField, "business_pk_field should clear to NULL")
+	s.Assert().Nil(flow.BusinessPKField, "business_pk_field should clear to NULL")
 	s.Assert().Nil(flow.BusinessStatusField, "business_status_field should clear to NULL")
+	s.Assert().Nil(flow.BusinessInstanceIDField, "business_instance_id_field should clear to NULL")
+	s.Assert().Nil(flow.BusinessStartedAtField, "business_started_at_field should clear to NULL")
+	s.Assert().Nil(flow.BusinessFinishedAtField, "business_finished_at_field should clear to NULL")
+}
+
+func (s *UpdateFlowTestSuite) TestUpdateFlowRejectsInvalidEnums() {
+	s.Run("BindingMode", func() {
+		_, err := s.handler.Handle(s.ctx, command.UpdateFlowCmd{
+			FlowID:                 s.flowID,
+			BindingMode:            "bogus",
+			Name:                   "Enum Guard Flow",
+			IsAllInitiationAllowed: true,
+			InstanceTitleTemplate:  "t",
+			Caller:                 approval.SystemCaller,
+		})
+		s.Require().ErrorIs(err, shared.ErrInvalidBindingMode,
+			"An out-of-enum binding mode would silently disable the business write-back and must be rejected")
+	})
+
+	s.Run("InitiatorKind", func() {
+		_, err := s.handler.Handle(s.ctx, command.UpdateFlowCmd{
+			FlowID:                 s.flowID,
+			BindingMode:            approval.BindingStandalone,
+			Name:                   "Enum Guard Flow",
+			IsAllInitiationAllowed: true,
+			InstanceTitleTemplate:  "t",
+			Initiators: []shared.CreateFlowInitiatorCmd{
+				{Kind: "sideways", IDs: []string{"u1"}},
+			},
+			Caller: approval.SystemCaller,
+		})
+		s.Require().ErrorIs(err, shared.ErrInvalidInitiatorKind,
+			"An out-of-enum initiator kind would silently never match and must be rejected")
+	})
 }

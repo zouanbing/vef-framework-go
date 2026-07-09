@@ -8,7 +8,12 @@ import (
 )
 
 var (
-	ErrUnknownNodeKind   = errors.New("unknown node kind")
+	// ErrUnknownNodeKind reports a node definition whose kind is not one of
+	// the NodeKind enum values.
+	ErrUnknownNodeKind = errors.New("unknown node kind")
+
+	// ErrNodeDataUnmarshal reports node data JSON that failed to decode into
+	// the kind's typed payload.
 	ErrNodeDataUnmarshal = errors.New("node data unmarshal failed")
 )
 
@@ -24,7 +29,11 @@ type Position struct {
 	Y float64 `json:"y"`
 }
 
-// NodeDefinition represents a node in the flow definition.
+// NodeDefinition represents a node in the flow definition. The node kind
+// travels in `kind`, deliberately not React Flow's `type`: in React Flow,
+// `type` selects the rendering component and belongs to whichever client
+// renders the graph, so the persisted contract carries the business
+// discriminator and stays decoupled from rendering concerns.
 type NodeDefinition struct {
 	ID       string          `json:"id"`
 	Kind     NodeKind        `json:"kind"`

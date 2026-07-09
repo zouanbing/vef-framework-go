@@ -4,47 +4,44 @@ import "github.com/coldsmirk/vef-framework-go/timex"
 
 // InstanceCreatedEvent fired when a new instance is created.
 type InstanceCreatedEvent struct {
-	InstanceID    string         `json:"instanceId"`
-	TenantID      string         `json:"tenantId"`
-	FlowID        string         `json:"flowId"`
-	Title         string         `json:"title"`
-	ApplicantID   string         `json:"applicantId"`
-	ApplicantName string         `json:"applicantName"`
-	OccurredTime  timex.DateTime `json:"occurredTime"`
+	InstanceEventBase
 }
 
-func NewInstanceCreatedEvent(instanceID, tenantID, flowID, title, applicantID, applicantName string) *InstanceCreatedEvent {
-	return &InstanceCreatedEvent{
-		InstanceID:    instanceID,
-		TenantID:      tenantID,
-		FlowID:        flowID,
-		Title:         title,
-		ApplicantID:   applicantID,
-		ApplicantName: applicantName,
-		OccurredTime:  timex.Now(),
-	}
+func NewInstanceCreatedEvent(instance *Instance) *InstanceCreatedEvent {
+	return &InstanceCreatedEvent{InstanceEventBase: NewInstanceEventBase(instance)}
 }
 
 func (*InstanceCreatedEvent) EventType() string { return EventTypeInstanceCreated }
 
 // InstanceCompletedEvent fired when instance reaches a final status.
 type InstanceCompletedEvent struct {
-	InstanceID   string         `json:"instanceId"`
-	TenantID     string         `json:"tenantId"`
-	FinalStatus  InstanceStatus `json:"finalStatus"`
-	FinishedAt   timex.DateTime `json:"finishedAt"`
-	OccurredTime timex.DateTime `json:"occurredTime"`
+	InstanceEventBase
+
+	// FinalStatus is always one of the IsFinal() statuses — approved,
+	// rejected, or terminated. Paused states (returned / withdrawn) never
+	// fire this event.
+	FinalStatus InstanceStatus `json:"finalStatus"`
+	FinishedAt  timex.DateTime `json:"finishedAt"`
+
+	// Reason is the administrator's stated reason when FinalStatus is
+	// terminated; nil for approved / rejected completions, whose deciding
+	// opinions live on the task events.
+	Reason *string `json:"reason,omitempty"`
 }
 
-func NewInstanceCompletedEvent(instanceID, tenantID string, finalStatus InstanceStatus) *InstanceCompletedEvent {
-	now := timex.Now()
+// NewInstanceCompletedEvent builds the completion event. FinishedAt is taken
+// from the instance (every completion path stamps it before publishing) and
+// falls back to now for defensive completeness.
+func NewInstanceCompletedEvent(instance *Instance, finalStatus InstanceStatus) *InstanceCompletedEvent {
+	finishedAt := timex.Now()
+	if instance.FinishedAt != nil {
+		finishedAt = *instance.FinishedAt
+	}
 
 	return &InstanceCompletedEvent{
-		InstanceID:   instanceID,
-		TenantID:     tenantID,
-		FinalStatus:  finalStatus,
-		FinishedAt:   now,
-		OccurredTime: now,
+		InstanceEventBase: NewInstanceEventBase(instance),
+		FinalStatus:       finalStatus,
+		FinishedAt:        finishedAt,
 	}
 }
 
@@ -52,64 +49,78 @@ func (*InstanceCompletedEvent) EventType() string { return EventTypeInstanceComp
 
 // InstanceWithdrawnEvent fired when applicant withdraws the instance.
 type InstanceWithdrawnEvent struct {
-	InstanceID   string         `json:"instanceId"`
-	TenantID     string         `json:"tenantId"`
-	OperatorID   string         `json:"operatorId"`
-	OccurredTime timex.DateTime `json:"occurredTime"`
+	InstanceEventBase
+
+	Operator UserInfo `json:"operator"`
+
+	// Reason is the applicant's stated withdrawal reason, when provided.
+	Reason *string `json:"reason,omitempty"`
 }
 
-func NewInstanceWithdrawnEvent(instanceID, tenantID, operatorID string) *InstanceWithdrawnEvent {
+func NewInstanceWithdrawnEvent(instance *Instance, operator UserInfo, reason *string) *InstanceWithdrawnEvent {
 	return &InstanceWithdrawnEvent{
-		InstanceID:   instanceID,
-		TenantID:     tenantID,
-		OperatorID:   operatorID,
-		OccurredTime: timex.Now(),
+		InstanceEventBase: NewInstanceEventBase(instance),
+		Operator:          operator,
+		Reason:            reason,
 	}
 }
 
 func (*InstanceWithdrawnEvent) EventType() string { return EventTypeInstanceWithdrawn }
 
-// InstanceRolledBackEvent fired when instance is rolled back.
+// InstanceRolledBackEvent fired when a task decision sends the flow back to
+// an intermediate node (the instance keeps running). Rolling back to the
+// start node fires InstanceReturnedEvent instead.
 type InstanceRolledBackEvent struct {
-	InstanceID   string         `json:"instanceId"`
-	TenantID     string         `json:"tenantId"`
-	FromNodeID   string         `json:"fromNodeId"`
-	ToNodeID     string         `json:"toNodeId"`
-	OperatorID   string         `json:"operatorId"`
-	OccurredTime timex.DateTime `json:"occurredTime"`
+	InstanceEventBase
+
+	FromNodeID   string   `json:"fromNodeId"`
+	FromNodeName string   `json:"fromNodeName"`
+	ToNodeID     string   `json:"toNodeId"`
+	ToNodeName   string   `json:"toNodeName"`
+	Operator     UserInfo `json:"operator"`
+
+	// Opinion is the rollback opinion provided by the operator, if any.
+	Opinion *string `json:"opinion,omitempty"`
 }
 
-func NewInstanceRolledBackEvent(instanceID, tenantID, fromNodeID, toNodeID, operatorID string) *InstanceRolledBackEvent {
+func NewInstanceRolledBackEvent(instance *Instance, fromNode, toNode *FlowNode, operator UserInfo, opinion *string) *InstanceRolledBackEvent {
 	return &InstanceRolledBackEvent{
-		InstanceID:   instanceID,
-		TenantID:     tenantID,
-		FromNodeID:   fromNodeID,
-		ToNodeID:     toNodeID,
-		OperatorID:   operatorID,
-		OccurredTime: timex.Now(),
+		InstanceEventBase: NewInstanceEventBase(instance),
+		FromNodeID:        fromNode.ID,
+		FromNodeName:      fromNode.Name,
+		ToNodeID:          toNode.ID,
+		ToNodeName:        toNode.Name,
+		Operator:          operator,
+		Opinion:           opinion,
 	}
 }
 
 func (*InstanceRolledBackEvent) EventType() string { return EventTypeInstanceRolledBack }
 
-// InstanceReturnedEvent fired when instance is returned to the initiator.
+// InstanceReturnedEvent fired when the flow is sent back to the initiator:
+// the instance pauses as returned until the applicant resubmits or abandons.
 type InstanceReturnedEvent struct {
-	InstanceID   string         `json:"instanceId"`
-	TenantID     string         `json:"tenantId"`
-	FromNodeID   string         `json:"fromNodeId"`
-	ToNodeID     string         `json:"toNodeId"`
-	OperatorID   string         `json:"operatorId"`
-	OccurredTime timex.DateTime `json:"occurredTime"`
+	InstanceEventBase
+
+	FromNodeID   string   `json:"fromNodeId"`
+	FromNodeName string   `json:"fromNodeName"`
+	ToNodeID     string   `json:"toNodeId"`
+	ToNodeName   string   `json:"toNodeName"`
+	Operator     UserInfo `json:"operator"`
+
+	// Opinion is the rollback opinion provided by the operator, if any.
+	Opinion *string `json:"opinion,omitempty"`
 }
 
-func NewInstanceReturnedEvent(instanceID, tenantID, fromNodeID, toNodeID, operatorID string) *InstanceReturnedEvent {
+func NewInstanceReturnedEvent(instance *Instance, fromNode, toNode *FlowNode, operator UserInfo, opinion *string) *InstanceReturnedEvent {
 	return &InstanceReturnedEvent{
-		InstanceID:   instanceID,
-		TenantID:     tenantID,
-		FromNodeID:   fromNodeID,
-		ToNodeID:     toNodeID,
-		OperatorID:   operatorID,
-		OccurredTime: timex.Now(),
+		InstanceEventBase: NewInstanceEventBase(instance),
+		FromNodeID:        fromNode.ID,
+		FromNodeName:      fromNode.Name,
+		ToNodeID:          toNode.ID,
+		ToNodeName:        toNode.Name,
+		Operator:          operator,
+		Opinion:           opinion,
 	}
 }
 
@@ -117,46 +128,46 @@ func (*InstanceReturnedEvent) EventType() string { return EventTypeInstanceRetur
 
 // InstanceResubmittedEvent fired when the initiator resubmits a returned instance.
 type InstanceResubmittedEvent struct {
-	InstanceID   string         `json:"instanceId"`
-	TenantID     string         `json:"tenantId"`
-	OperatorID   string         `json:"operatorId"`
-	OccurredTime timex.DateTime `json:"occurredTime"`
+	InstanceEventBase
+
+	Operator UserInfo `json:"operator"`
 }
 
-func NewInstanceResubmittedEvent(instanceID, tenantID, operatorID string) *InstanceResubmittedEvent {
+func NewInstanceResubmittedEvent(instance *Instance, operator UserInfo) *InstanceResubmittedEvent {
 	return &InstanceResubmittedEvent{
-		InstanceID:   instanceID,
-		TenantID:     tenantID,
-		OperatorID:   operatorID,
-		OccurredTime: timex.Now(),
+		InstanceEventBase: NewInstanceEventBase(instance),
+		Operator:          operator,
 	}
 }
 
 func (*InstanceResubmittedEvent) EventType() string { return EventTypeInstanceResubmitted }
 
-// InstanceBindingFailedEvent fires when business binding (writing the final
-// status back to the host's business table) fails after the approval itself
-// has already committed. Subscribers retry asynchronously; the approval is
-// not rolled back. Operators can grep these events for stuck bindings.
+// InstanceBindingFailedEvent fires when the engine-owned business write-back
+// fails after the driving approval action has already committed. Subscribers
+// retry asynchronously; the approval is not rolled back. Operators can grep
+// these events for stuck bindings. The started trigger never appears here —
+// its write-back runs inside the start transaction and a failure rolls back
+// the initiation instead of firing this event.
 type InstanceBindingFailedEvent struct {
-	InstanceID    string         `json:"instanceId"`
-	TenantID      string         `json:"tenantId"`
-	FlowID        string         `json:"flowId"`
-	FinalStatus   InstanceStatus `json:"finalStatus"`
+	InstanceEventBase
+
+	// Trigger is the lifecycle moment whose write-back failed (completed /
+	// returned / withdrawn / resubmitted).
+	Trigger BindingTrigger `json:"trigger"`
+	// Status is the instance status the write-back attempted to persist into
+	// the business status column at that moment.
+	Status        InstanceStatus `json:"status"`
 	BusinessTable string         `json:"businessTable"`
 	ErrorMessage  string         `json:"errorMessage"`
-	OccurredTime  timex.DateTime `json:"occurredTime"`
 }
 
-func NewInstanceBindingFailedEvent(instanceID, tenantID, flowID string, finalStatus InstanceStatus, businessTable, errorMessage string) *InstanceBindingFailedEvent {
+func NewInstanceBindingFailedEvent(instance *Instance, trigger BindingTrigger, status InstanceStatus, businessTable, errorMessage string) *InstanceBindingFailedEvent {
 	return &InstanceBindingFailedEvent{
-		InstanceID:    instanceID,
-		TenantID:      tenantID,
-		FlowID:        flowID,
-		FinalStatus:   finalStatus,
-		BusinessTable: businessTable,
-		ErrorMessage:  errorMessage,
-		OccurredTime:  timex.Now(),
+		InstanceEventBase: NewInstanceEventBase(instance),
+		Trigger:           trigger,
+		Status:            status,
+		BusinessTable:     businessTable,
+		ErrorMessage:      errorMessage,
 	}
 }
 

@@ -145,19 +145,37 @@ func (*ValidationService) ValidateRollbackTarget(ctx context.Context, db orm.DB,
 		}
 
 	case approval.RollbackAny:
-		count, err := db.NewSelect().
-			Model((*approval.FlowNode)(nil)).
+		// "Any" is bounded by the visit trail, not the whole graph: the
+		// target must be a decision point (approval / handle) or the start
+		// node, and one this instance actually traversed. "Any node in the
+		// version" would let a task holder target the End node and
+		// force-complete the instance as approved, or teleport onto a
+		// branch that routing never chose.
+		var targetNode approval.FlowNode
+
+		if err := db.NewSelect().
+			Model(&targetNode).
+			Select("kind").
 			Where(func(cb orm.ConditionBuilder) {
 				cb.Equals("id", targetNodeID).
 					Equals("flow_version_id", instance.FlowVersionID)
 			}).
-			Count(ctx)
-		if err != nil {
+			Scan(ctx); err != nil {
+			if result.IsRecordNotFound(err) {
+				return shared.ErrInvalidRollbackTarget
+			}
+
 			return fmt.Errorf("find rollback target node: %w", err)
 		}
 
-		if count == 0 {
+		switch targetNode.Kind {
+		case approval.NodeApproval, approval.NodeHandle, approval.NodeStart:
+		default:
 			return shared.ErrInvalidRollbackTarget
+		}
+
+		if err := requireConcludedVisit(ctx, db, instance.ID, targetNodeID); err != nil {
+			return err
 		}
 
 	case approval.RollbackSpecified:
@@ -181,6 +199,40 @@ func (*ValidationService) ValidateRollbackTarget(ctx context.Context, db orm.DB,
 		if !slices.Contains(currentNode.RollbackTargetKeys, targetNode.Key) {
 			return shared.ErrInvalidRollbackTarget
 		}
+
+		// Deploy validation pins the keys to approval/handle nodes; at
+		// runtime the target must additionally have been traversed — a key
+		// on a branch that routing never chose is not a valid destination.
+		if err := requireConcludedVisit(ctx, db, instance.ID, targetNodeID); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// requireConcludedVisit checks the instance has finished at least one
+// traversal of the node — the visit trail is the source of truth for
+// "rollback returns to somewhere the flow has actually been".
+func requireConcludedVisit(ctx context.Context, db orm.DB, instanceID, nodeID string) error {
+	visited, err := db.NewSelect().
+		Model((*approval.NodeVisit)(nil)).
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("instance_id", instanceID).
+				Equals("node_id", nodeID).
+				In("status", []approval.NodeVisitStatus{
+					approval.NodeVisitPassed,
+					approval.NodeVisitRejected,
+					approval.NodeVisitReturned,
+				})
+		}).
+		Exists(ctx)
+	if err != nil {
+		return fmt.Errorf("check rollback target visits: %w", err)
+	}
+
+	if !visited {
+		return shared.ErrInvalidRollbackTarget
 	}
 
 	return nil
@@ -199,6 +251,9 @@ func validateFormField(field approval.FormFieldDefinition, value any) error {
 	case approval.FieldUpload:
 		return validateUploadField(field, value)
 
+	case approval.FieldTable:
+		return validateTableField(field, value)
+
 	case approval.FieldNumber:
 		number, ok := shared.ToFloat64(value)
 		if !ok {
@@ -213,6 +268,89 @@ func validateFormField(field approval.FormFieldDefinition, value any) error {
 	default:
 		return nil
 	}
+}
+
+// validateTableField checks a detail-table value: a list of row objects,
+// each row validated column by column with the same rules scalar fields
+// use. For the table itself, Validation.MinLength / MaxLength bound the
+// row count; "required = at least one row" is enforced by the caller's
+// shared empty-value check (an empty list is an empty value).
+func validateTableField(field approval.FormFieldDefinition, value any) error {
+	rows, ok := value.([]any)
+	if !ok {
+		return newFormValidationError(i18n.T(shared.ErrMessageFormFieldMustBeRowList, map[string]any{"field": fieldLabel(field)}))
+	}
+
+	if field.Validation != nil {
+		if field.Validation.MinLength != nil && len(rows) < *field.Validation.MinLength {
+			return newFormValidationError(i18n.T(shared.ErrMessageFormFieldMinRows, map[string]any{
+				"field": fieldLabel(field), "min": *field.Validation.MinLength,
+			}))
+		}
+
+		if field.Validation.MaxLength != nil && len(rows) > *field.Validation.MaxLength {
+			return newFormValidationError(i18n.T(shared.ErrMessageFormFieldMaxRows, map[string]any{
+				"field": fieldLabel(field), "max": *field.Validation.MaxLength,
+			}))
+		}
+	}
+
+	for i, raw := range rows {
+		row, ok := raw.(map[string]any)
+		if !ok {
+			return newFormValidationError(i18n.T(shared.ErrMessageFormFieldMustBeRowObject, map[string]any{
+				"field": fieldLabel(field), "row": i + 1,
+			}))
+		}
+
+		if err := validateTableRow(field, row, i+1); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// validateTableRow applies each column definition to one row, mirroring the
+// top-level required/empty handling before delegating to the scalar checks.
+// Rows are closed like the top-level form: a key with no matching column is
+// rejected instead of silently accumulating in the stored form data.
+func validateTableRow(field approval.FormFieldDefinition, row map[string]any, rowNumber int) error {
+	columnKeys := collections.NewHashSetWithCapacity[string](len(field.Columns))
+	for _, column := range field.Columns {
+		columnKeys.Add(column.Key)
+	}
+
+	for key := range row {
+		if !columnKeys.Contains(key) {
+			return newFormValidationError(i18n.T(shared.ErrMessageFormFieldTableCell, map[string]any{
+				"field": fieldLabel(field), "row": rowNumber,
+				"message": i18n.T(shared.ErrMessageFormFieldNotDefined, map[string]any{"field": key}),
+			}))
+		}
+	}
+
+	for _, column := range field.Columns {
+		cell, exists := row[column.Key]
+		if !exists || isEmptyFormValue(cell) {
+			if column.IsRequired {
+				return newFormValidationError(i18n.T(shared.ErrMessageFormFieldTableCell, map[string]any{
+					"field": fieldLabel(field), "row": rowNumber,
+					"message": i18n.T(shared.ErrMessageFormFieldRequired, map[string]any{"field": fieldLabel(column)}),
+				}))
+			}
+
+			continue
+		}
+
+		if err := validateFormField(column, cell); err != nil {
+			return newFormValidationError(i18n.T(shared.ErrMessageFormFieldTableCell, map[string]any{
+				"field": fieldLabel(field), "row": rowNumber, "message": err.Error(),
+			}))
+		}
+	}
+
+	return nil
 }
 
 func validateStringRule(field approval.FormFieldDefinition, value string) error {

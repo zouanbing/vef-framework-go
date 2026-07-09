@@ -15,6 +15,11 @@ const (
 	BindingBusiness   BindingMode = "business"   // Business: links to existing business data table
 )
 
+// IsValid checks if the BindingMode is a valid value.
+func (m BindingMode) IsValid() bool {
+	return m == BindingStandalone || m == BindingBusiness
+}
+
 // VersionStatus represents the status of a flow version.
 type VersionStatus string
 
@@ -32,6 +37,11 @@ const (
 	InitiatorRole       InitiatorKind = "role"
 	InitiatorDepartment InitiatorKind = "department"
 )
+
+// IsValid checks if the InitiatorKind is a valid value.
+func (k InitiatorKind) IsValid() bool {
+	return k == InitiatorUser || k == InitiatorRole || k == InitiatorDepartment
+}
 
 // StorageMode represents the storage mode of form data at the FlowVersion level.
 // It determines the physical storage location and format of form data, and is fixed when a version is published.
@@ -383,12 +393,17 @@ const (
 	FieldNumber   FieldKind = "number"
 	FieldDate     FieldKind = "date"
 	FieldUpload   FieldKind = "upload"
+	// FieldTable is a single-level detail table: its value is a list of rows,
+	// each row an object keyed by the field's Columns. Columns must not nest
+	// another table — approval forms are applications, not data models; deep
+	// structures belong to business tables reached via the business binding.
+	FieldTable FieldKind = "table"
 )
 
 // IsValid reports whether the field kind is one of the defined values.
 func (k FieldKind) IsValid() bool {
 	switch k {
-	case FieldInput, FieldTextarea, FieldSelect, FieldNumber, FieldDate, FieldUpload:
+	case FieldInput, FieldTextarea, FieldSelect, FieldNumber, FieldDate, FieldUpload, FieldTable:
 		return true
 	default:
 		return false
