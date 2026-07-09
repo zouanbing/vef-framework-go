@@ -46,6 +46,9 @@ CREATE TABLE IF NOT EXISTS apv_flow (
     business_table VARCHAR(64) COMMENT 'Biz Table',
     business_pk_field VARCHAR(64) COMMENT 'Biz PK',
     business_status_field VARCHAR(64) COMMENT 'Status Field',
+    business_instance_id_field VARCHAR(64) COMMENT 'Instance ID Field',
+    business_started_at_field VARCHAR(64) COMMENT 'Started At Field',
+    business_finished_at_field VARCHAR(64) COMMENT 'Finished At Field',
     -- Permission config
     admin_user_ids JSON NOT NULL DEFAULT (JSON_ARRAY()) COMMENT 'Admins',
     is_all_initiation_allowed BOOLEAN NOT NULL DEFAULT true COMMENT 'Open Start',
@@ -215,6 +218,7 @@ CREATE TABLE IF NOT EXISTS apv_instance (
     updated_by VARCHAR(32) NOT NULL DEFAULT 'system' COMMENT 'Updater',
     tenant_id VARCHAR(32) NOT NULL COMMENT 'Tenant',
     flow_id VARCHAR(32) NOT NULL COMMENT 'Flow',
+    flow_code VARCHAR(64) NOT NULL COMMENT 'Flow Code',
     flow_version_id VARCHAR(32) NOT NULL COMMENT 'Version',
     -- Application info
     title VARCHAR(256) NOT NULL COMMENT 'Title',
@@ -228,15 +232,18 @@ CREATE TABLE IF NOT EXISTS apv_instance (
     current_node_id VARCHAR(32) COMMENT 'Current Node',
     finished_at DATETIME NULL COMMENT 'Finished',
     -- Business association
-    business_record_id VARCHAR(128) COMMENT 'Biz Record',
+    business_ref VARCHAR(512) COMMENT 'Biz Ref',
     -- Form data
     form_data JSON COMMENT 'Form Data',
+    -- Host-supplied global variables snapshotted at instance start
+    globals JSON COMMENT 'Instance Globals',
     CONSTRAINT pk_apv_instance PRIMARY KEY (id),
     CONSTRAINT fk_apv_instance__flow_id FOREIGN KEY (flow_id) REFERENCES apv_flow(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_apv_instance__flow_version_id FOREIGN KEY (flow_version_id) REFERENCES apv_flow_version(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT uk_apv_instance__instance_no UNIQUE (instance_no),
     INDEX idx_apv_instance__tenant_id (tenant_id),
     INDEX idx_apv_instance__tenant_id_status_created_at (tenant_id, status, created_at DESC),
+    INDEX idx_apv_instance__business_ref (business_ref),
     INDEX idx_apv_instance__tenant_id_applicant_id_status (tenant_id, applicant_id, status),
     INDEX idx_apv_instance__flow_id_status_created_at (flow_id, status, created_at),
     INDEX idx_apv_instance__applicant_id_status_created_at (applicant_id, status, created_at DESC),
@@ -315,7 +322,9 @@ CREATE TABLE IF NOT EXISTS apv_task (
     INDEX idx_apv_task__tenant_id_assignee_id_status (tenant_id, assignee_id, status),
     INDEX idx_apv_task__instance_id_node_id_status (instance_id, node_id, status),
     INDEX idx_apv_task__assignee_id_status_created_at (assignee_id, status, created_at),
+    INDEX idx_apv_task__assignee_id_status_finished_at (assignee_id, status, finished_at),
     INDEX idx_apv_task__instance_id_status_assignee_id (instance_id, status, assignee_id),
+    INDEX idx_apv_task__visit_id (visit_id),
     INDEX idx_apv_task__deadline_active (is_timeout, status, deadline)
 ) COMMENT 'Task';
 
@@ -365,6 +374,7 @@ CREATE TABLE IF NOT EXISTS apv_cc_record (
     created_by VARCHAR(32) NOT NULL DEFAULT 'system' COMMENT 'Creator',
     instance_id VARCHAR(32) NOT NULL COMMENT 'Instance',
     node_id VARCHAR(32) COMMENT 'Node',
+    visit_id VARCHAR(32) COMMENT 'Visit',
     task_id VARCHAR(32) COMMENT 'Task',
     cc_user_id VARCHAR(32) NOT NULL COMMENT 'User',
     cc_user_name VARCHAR(128) NOT NULL DEFAULT '' COMMENT 'User Name',
@@ -372,11 +382,10 @@ CREATE TABLE IF NOT EXISTS apv_cc_record (
     cc_user_department_name VARCHAR(128) COMMENT 'User Dept Name',
     is_manual BOOLEAN NOT NULL DEFAULT false COMMENT 'Manual',
     read_at DATETIME NULL COMMENT 'Read',
-    -- Generated column for partial unique index: only enforce when node_id IS NOT NULL
-    _unique_node_id VARCHAR(32) AS (node_id) STORED,
     CONSTRAINT pk_apv_cc_record PRIMARY KEY (id),
     CONSTRAINT fk_apv_cc_record__instance_id FOREIGN KEY (instance_id) REFERENCES apv_instance(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT uk_apv_cc_record__instance_id_node_id_cc_user_id UNIQUE (instance_id, _unique_node_id, cc_user_id),
+    -- NULL visit_ids never conflict, so the pair enforces per-visit dedup only
+    CONSTRAINT uk_apv_cc_record__visit_id_cc_user_id UNIQUE (visit_id, cc_user_id),
     INDEX idx_apv_cc_record__instance_id (instance_id),
     INDEX idx_apv_cc_record__cc_user_id_read_at (cc_user_id, read_at)
 ) COMMENT 'CC Record';
@@ -468,9 +477,10 @@ CREATE TABLE IF NOT EXISTS apv_form_table (
     flow_id VARCHAR(32) NOT NULL COMMENT 'Flow',
     version_id VARCHAR(32) NOT NULL COMMENT 'Version',
     physical_table_name VARCHAR(64) NOT NULL COMMENT 'Physical Table Name',
+    source_field_key VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'Source Field',
     CONSTRAINT pk_apv_form_table PRIMARY KEY (id),
     CONSTRAINT fk_apv_form_table__version_id FOREIGN KEY (version_id) REFERENCES apv_flow_version(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    UNIQUE INDEX uk_apv_form_table__version_id (version_id)
+    UNIQUE INDEX uk_apv_form_table__version_id_source_field_key (version_id, source_field_key)
 ) COMMENT 'Form Table';
 
 -- Form table column: column definitions projected from the form schema

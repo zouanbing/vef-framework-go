@@ -26,21 +26,30 @@ type Flow struct {
 	orm.BaseModel `bun:"table:apv_flow,alias:af"`
 	orm.FullAuditedModel
 
-	TenantID               string      `json:"tenantId" bun:"tenant_id"`
-	CategoryID             string      `json:"categoryId" bun:"category_id"`
-	Code                   string      `json:"code" bun:"code"`
-	Name                   string      `json:"name" bun:"name"`
-	Icon                   *string     `json:"icon" bun:"icon,nullzero"`
-	Description            *string     `json:"description" bun:"description,nullzero"`
-	BindingMode            BindingMode `json:"bindingMode" bun:"binding_mode"`
-	BusinessTable          *string     `json:"businessTable" bun:"business_table,nullzero"`
-	BusinessPkField        *string     `json:"businessPkField" bun:"business_pk_field,nullzero"`
-	BusinessStatusField    *string     `json:"businessStatusField" bun:"business_status_field,nullzero"`
-	AdminUserIDs           []string    `json:"adminUserIds" bun:"admin_user_ids,type:jsonb"`
-	IsAllInitiationAllowed bool        `json:"isAllInitiationAllowed" bun:"is_all_initiation_allowed"`
-	InstanceTitleTemplate  string      `json:"instanceTitleTemplate" bun:"instance_title_template"`
-	IsActive               bool        `json:"isActive" bun:"is_active"`
-	CurrentVersion         int         `json:"currentVersion" bun:"current_version"`
+	TenantID            string      `json:"tenantId" bun:"tenant_id"`
+	CategoryID          string      `json:"categoryId" bun:"category_id"`
+	Code                string      `json:"code" bun:"code"`
+	Name                string      `json:"name" bun:"name"`
+	Icon                *string     `json:"icon" bun:"icon,nullzero"`
+	Description         *string     `json:"description" bun:"description,nullzero"`
+	BindingMode         BindingMode `json:"bindingMode" bun:"binding_mode"`
+	BusinessTable       *string     `json:"businessTable" bun:"business_table,nullzero"`
+	BusinessPKField     *string     `json:"businessPkField" bun:"business_pk_field,nullzero"`
+	BusinessStatusField *string     `json:"businessStatusField" bun:"business_status_field,nullzero"`
+	// BusinessInstanceIDField / BusinessStartedAtField / BusinessFinishedAtField
+	// are the optional legs of the engine-owned write-back: when set, the
+	// engine keeps the named business columns in sync with the instance
+	// (see BindingTrigger for the linkage matrix); when nil, that column is
+	// simply never touched. Only the status column is mandatory for a
+	// business-bound flow.
+	BusinessInstanceIDField *string  `json:"businessInstanceIdField" bun:"business_instance_id_field,nullzero"`
+	BusinessStartedAtField  *string  `json:"businessStartedAtField" bun:"business_started_at_field,nullzero"`
+	BusinessFinishedAtField *string  `json:"businessFinishedAtField" bun:"business_finished_at_field,nullzero"`
+	AdminUserIDs            []string `json:"adminUserIds" bun:"admin_user_ids,type:jsonb"`
+	IsAllInitiationAllowed  bool     `json:"isAllInitiationAllowed" bun:"is_all_initiation_allowed"`
+	InstanceTitleTemplate   string   `json:"instanceTitleTemplate" bun:"instance_title_template"`
+	IsActive                bool     `json:"isActive" bun:"is_active"`
+	CurrentVersion          int      `json:"currentVersion" bun:"current_version"`
 }
 
 // FlowCategory represents a category for grouping flows.
@@ -79,7 +88,9 @@ type FlowVersion struct {
 // version whose StorageMode is StorageTable. It is the single source of truth
 // for what DDL the framework generated: the engine consults it (idempotency)
 // before creating a table for a version, and operators can map a version to
-// its projection table through it. One row per version (version_id is unique).
+// its projection table through it. One row per physical table: the main
+// projection table plus one child table per detail-table field, disambiguated
+// by SourceFieldKey ((version_id, source_field_key) is unique).
 type FormTable struct {
 	orm.BaseModel `bun:"table:apv_form_table,alias:aft"`
 	orm.CreationAuditedModel
@@ -87,6 +98,9 @@ type FormTable struct {
 	FlowID            string `json:"flowId" bun:"flow_id"`
 	VersionID         string `json:"versionId" bun:"version_id"`
 	PhysicalTableName string `json:"physicalTableName" bun:"physical_table_name"`
+	// SourceFieldKey names the detail-table field this child table projects;
+	// empty for the version's main projection table.
+	SourceFieldKey string `json:"sourceFieldKey" bun:"source_field_key"`
 }
 
 // FormTableColumn records a single generated column of a FormTable. It mirrors
@@ -198,8 +212,13 @@ type Instance struct {
 	orm.BaseModel `bun:"table:apv_instance,alias:ai"`
 	orm.FullAuditedModel
 
-	TenantID                string          `json:"tenantId" bun:"tenant_id"`
-	FlowID                  string          `json:"flowId" bun:"flow_id"`
+	TenantID string `json:"tenantId" bun:"tenant_id"`
+	FlowID   string `json:"flowId" bun:"flow_id"`
+	// FlowCode snapshots the flow's business code at instance creation, like
+	// the applicant fields. Flow codes are immutable (update_flow never
+	// touches code), so the snapshot cannot drift; carrying it here lets
+	// every event and projection self-describe without joining apv_flow.
+	FlowCode                string          `json:"flowCode" bun:"flow_code"`
 	FlowVersionID           string          `json:"flowVersionId" bun:"flow_version_id"`
 	Title                   string          `json:"title" bun:"title"`
 	InstanceNo              string          `json:"instanceNo" bun:"instance_no"`
@@ -210,8 +229,19 @@ type Instance struct {
 	Status                  InstanceStatus  `json:"status" bun:"status"`
 	CurrentNodeID           *string         `json:"currentNodeId" bun:"current_node_id,nullzero"`
 	FinishedAt              *timex.DateTime `json:"finishedAt" bun:"finished_at,nullzero"`
-	BusinessRecordID        *string         `json:"businessRecordId" bun:"business_record_id,nullzero"`
-	FormData                map[string]any  `json:"formData" bun:"form_data,type:jsonb,nullzero"`
+	// BusinessRef is the opaque reference to the bound business record. The
+	// engine never parses it — hosts choose the shape (single primary key,
+	// composite key as JSON, business number, …). The engine-owned write-back
+	// resolves it through BusinessRefResolver; non-single-key shapes register
+	// a custom resolver.
+	BusinessRef *string        `json:"businessRef" bun:"business_ref,nullzero"`
+	FormData    map[string]any `json:"formData" bun:"form_data,type:jsonb,nullzero"`
+	// Globals is the host-supplied global-variable snapshot taken at instance
+	// start (tenant attributes, applicant roles, business limits, …). Condition
+	// evaluation resolves field subjects and expression bindings against it, so
+	// routing stays deterministic across re-evaluation — like the applicant
+	// department, it reflects the world at initiation, not live state.
+	Globals map[string]any `json:"globals" bun:"globals,type:jsonb,nullzero"`
 }
 
 // Applicant returns the applicant as a person snapshot.
@@ -383,8 +413,13 @@ type CCRecord struct {
 	orm.Model
 	orm.CreationTrackedModel
 
-	InstanceID           string          `json:"instanceId" bun:"instance_id"`
-	NodeID               *string         `json:"nodeId" bun:"node_id,nullzero"`
+	InstanceID string  `json:"instanceId" bun:"instance_id"`
+	NodeID     *string `json:"nodeId" bun:"node_id,nullzero"`
+	// VisitID scopes the record to one node traversal: a rollback redo gets
+	// its own notification and read-confirm cycle instead of being silently
+	// satisfied by a prior round's records. Nil only for instance-level
+	// records that are not anchored to a node.
+	VisitID              *string         `json:"visitId" bun:"visit_id,nullzero"`
 	TaskID               *string         `json:"taskId" bun:"task_id,nullzero"`
 	CCUserID             string          `json:"ccUserId" bun:"cc_user_id"`
 	CCUserName           string          `json:"ccUserName" bun:"cc_user_name"`

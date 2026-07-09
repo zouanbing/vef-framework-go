@@ -6,46 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
-
-// TestSnowflakeEdgeCases tests snowflake edge cases functionality.
-func TestSnowflakeEdgeCases(t *testing.T) {
-	t.Run("MaximumNodeID", func(t *testing.T) {
-		generator, err := NewSnowflakeIDGenerator(63)
-		require.NoError(t, err, "TestSnowflakeEdgeCases should complete without error")
-
-		id := generator.Generate()
-		assert.NotEmpty(t, id, "Max node ID should generate valid IDs")
-	})
-
-	t.Run("NodeIDExceedingMaximum", func(t *testing.T) {
-		_, err := NewSnowflakeIDGenerator(64)
-		assert.Error(t, err, "TestSnowflakeEdgeCases should return an error")
-		assert.Contains(t, err.Error(), "failed to create snowflake node", "Error should describe snowflake node creation failure")
-	})
-
-	t.Run("NegativeNodeID", func(t *testing.T) {
-		_, err := NewSnowflakeIDGenerator(-1)
-		assert.Error(t, err, "TestSnowflakeEdgeCases should return an error")
-		assert.Contains(t, err.Error(), "failed to create snowflake node", "Error should describe snowflake node creation failure")
-	})
-
-	t.Run("RapidSequenceGeneration", func(t *testing.T) {
-		generator, err := NewSnowflakeIDGenerator(1)
-		require.NoError(t, err, "TestSnowflakeEdgeCases should complete without error")
-
-		ids := make(map[string]bool)
-
-		for range 5000 {
-			id := generator.Generate()
-			assert.False(t, ids[id], "Rapid sequence generation should produce unique IDs")
-			ids[id] = true
-		}
-
-		assert.Len(t, ids, 5000, "All rapid sequence IDs should be unique")
-	})
-}
 
 // TestRandomIdGeneratorEdgeCases tests random id generator edge cases functionality.
 func TestRandomIdGeneratorEdgeCases(t *testing.T) {
@@ -180,7 +141,6 @@ func TestInterfaceCompliance(t *testing.T) {
 			NewRandomIDGenerator(WithAlphabet("abc"), WithLength(10)),
 			DefaultXIDGenerator,
 			DefaultUUIDGenerator,
-			DefaultSnowflakeIDGenerator,
 		}
 
 		for i, generator := range generators {
@@ -189,14 +149,6 @@ func TestInterfaceCompliance(t *testing.T) {
 			id := generator.Generate()
 			assert.NotEmpty(t, id, "Generator %d should produce ID", i)
 		}
-	})
-
-	t.Run("SnowflakeGeneratorFromConstructor", func(t *testing.T) {
-		generator, err := NewSnowflakeIDGenerator(1)
-		require.NoError(t, err, "TestInterfaceCompliance should complete without error")
-
-		id := generator.Generate()
-		assert.NotEmpty(t, id, "Snowflake generator should produce ID")
 	})
 }
 
@@ -211,7 +163,6 @@ func TestMemoryUsage(t *testing.T) {
 			if i%100 == 0 {
 				DefaultXIDGenerator.Generate()
 				DefaultUUIDGenerator.Generate()
-				DefaultSnowflakeIDGenerator.Generate()
 			}
 		}
 
@@ -225,7 +176,6 @@ func TestStringManipulation(t *testing.T) {
 		generators := []IDGenerator{
 			DefaultXIDGenerator,
 			DefaultUUIDGenerator,
-			DefaultSnowflakeIDGenerator,
 			NewRandomIDGenerator(WithAlphabet("0123456789abcdef"), WithLength(16)),
 		}
 

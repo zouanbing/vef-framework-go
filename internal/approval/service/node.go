@@ -62,7 +62,7 @@ func (s *NodeService) HandleNodeCompletion(
 			return nil, fmt.Errorf("trigger node cc: %w", err)
 		}
 
-		canceledEvents, err := s.taskSvc.CancelRemainingTasks(ctx, db, instance.ID, node.ID, "节点已通过，剩余任务无需处理")
+		canceledEvents, err := s.taskSvc.CancelRemainingTasks(ctx, db, instance, node, "节点已通过，剩余任务无需处理")
 		if err != nil {
 			return nil, err
 		}
@@ -82,7 +82,7 @@ func (s *NodeService) HandleNodeCompletion(
 			return nil, fmt.Errorf("trigger node cc: %w", err)
 		}
 
-		canceledEvents, err := s.taskSvc.CancelRemainingTasks(ctx, db, instance.ID, node.ID, "节点已拒绝，剩余任务无需处理")
+		canceledEvents, err := s.taskSvc.CancelRemainingTasks(ctx, db, instance, node, "节点已拒绝，剩余任务无需处理")
 		if err != nil {
 			return nil, err
 		}
@@ -102,7 +102,7 @@ func (s *NodeService) HandleNodeCompletion(
 		}
 
 		return append(canceledEvents,
-			approval.NewInstanceCompletedEvent(instance.ID, instance.TenantID, approval.InstanceRejected),
+			approval.NewInstanceCompletedEvent(instance, approval.InstanceRejected),
 		), nil
 
 	default:
@@ -157,7 +157,14 @@ func (s *NodeService) TriggerNodeCC(ctx context.Context, db orm.DB, instance *ap
 
 	ccUserInfos := shared.ResolveUserInfoMapSilent(ctx, s.userResolver, resolved)
 
-	insertedUserIDs, err := shared.InsertAutoCCRecords(ctx, db, instance.ID, node.ID, resolved, ccUserInfos)
+	// Completion-timing CC belongs to the traversal being concluded; the
+	// visit is still open here (HandleNodeCompletion concludes it after).
+	visit, err := engine.FindActiveNodeVisit(ctx, db, instance.ID, node.ID)
+	if err != nil {
+		return err
+	}
+
+	insertedUserIDs, err := shared.InsertAutoCCRecords(ctx, db, instance.ID, node.ID, visit.ID, resolved, ccUserInfos)
 	if err != nil {
 		return fmt.Errorf("insert cc records: %w", err)
 	}
@@ -166,7 +173,7 @@ func (s *NodeService) TriggerNodeCC(ctx context.Context, db orm.DB, instance *ap
 		return nil
 	}
 
-	evt := approval.NewCCNotifiedEvent(instance.ID, instance.TenantID, node.ID, insertedUserIDs, shared.UserInfoNames(ccUserInfos), false)
+	evt := approval.NewCCNotifiedEvent(instance, node, shared.UserInfos(insertedUserIDs, ccUserInfos), false)
 
 	if collector, ok := behavior.TryEventCollectorFromContext(ctx); ok {
 		collector.Add(evt)
@@ -231,7 +238,12 @@ func (s *NodeService) AdvanceCCNodeIfAllRead(ctx context.Context, db orm.DB, ins
 		return nil
 	}
 
-	hasUnread, err := shared.HasUnreadCCRecords(ctx, db, instanceID, currentNodeID)
+	visit, err := engine.FindActiveNodeVisit(ctx, db, instanceID, currentNodeID)
+	if err != nil {
+		return err
+	}
+
+	hasUnread, err := shared.HasUnreadCCRecords(ctx, db, instanceID, currentNodeID, visit.ID)
 	if err != nil {
 		return err
 	}

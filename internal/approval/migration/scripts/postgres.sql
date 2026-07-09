@@ -58,6 +58,9 @@ CREATE TABLE IF NOT EXISTS apv_flow (
     business_table VARCHAR(64),
     business_pk_field VARCHAR(64),
     business_status_field VARCHAR(64),
+    business_instance_id_field VARCHAR(64),
+    business_started_at_field VARCHAR(64),
+    business_finished_at_field VARCHAR(64),
     -- Permission config
     admin_user_ids JSONB NOT NULL DEFAULT '[]',
     is_all_initiation_allowed BOOLEAN NOT NULL DEFAULT true,
@@ -86,6 +89,9 @@ COMMENT ON COLUMN apv_flow.binding_mode IS 'Binding Mode';
 COMMENT ON COLUMN apv_flow.business_table IS 'Biz Table';
 COMMENT ON COLUMN apv_flow.business_pk_field IS 'Biz PK';
 COMMENT ON COLUMN apv_flow.business_status_field IS 'Status Field';
+COMMENT ON COLUMN apv_flow.business_instance_id_field IS 'Instance ID Field';
+COMMENT ON COLUMN apv_flow.business_started_at_field IS 'Started At Field';
+COMMENT ON COLUMN apv_flow.business_finished_at_field IS 'Finished At Field';
 COMMENT ON COLUMN apv_flow.admin_user_ids IS 'Admins';
 COMMENT ON COLUMN apv_flow.is_all_initiation_allowed IS 'Open Start';
 COMMENT ON COLUMN apv_flow.instance_title_template IS 'Title Template';
@@ -329,6 +335,7 @@ CREATE TABLE IF NOT EXISTS apv_instance (
     updated_by VARCHAR(32) NOT NULL DEFAULT 'system',
     tenant_id VARCHAR(32) NOT NULL,
     flow_id VARCHAR(32) NOT NULL,
+    flow_code VARCHAR(64) NOT NULL,
     flow_version_id VARCHAR(32) NOT NULL,
     -- Application info
     title VARCHAR(256) NOT NULL,
@@ -342,9 +349,11 @@ CREATE TABLE IF NOT EXISTS apv_instance (
     current_node_id VARCHAR(32),
     finished_at TIMESTAMP,
     -- Business association
-    business_record_id VARCHAR(128),
+    business_ref VARCHAR(512),
     -- Form data
     form_data JSONB,
+    -- Host-supplied global variables snapshotted at instance start
+    globals JSONB,
     CONSTRAINT fk_apv_instance__flow_id FOREIGN KEY (flow_id) REFERENCES apv_flow(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_apv_instance__flow_version_id FOREIGN KEY (flow_version_id) REFERENCES apv_flow_version(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT uk_apv_instance__instance_no UNIQUE (instance_no)
@@ -358,6 +367,7 @@ COMMENT ON COLUMN apv_instance.created_by IS 'Creator';
 COMMENT ON COLUMN apv_instance.updated_by IS 'Updater';
 COMMENT ON COLUMN apv_instance.tenant_id IS 'Tenant';
 COMMENT ON COLUMN apv_instance.flow_id IS 'Flow';
+COMMENT ON COLUMN apv_instance.flow_code IS 'Flow Code';
 COMMENT ON COLUMN apv_instance.flow_version_id IS 'Version';
 COMMENT ON COLUMN apv_instance.title IS 'Title';
 COMMENT ON COLUMN apv_instance.instance_no IS 'No.';
@@ -368,11 +378,13 @@ COMMENT ON COLUMN apv_instance.applicant_department_name IS 'Dept Name';
 COMMENT ON COLUMN apv_instance.status IS 'Status';
 COMMENT ON COLUMN apv_instance.current_node_id IS 'Current Node';
 COMMENT ON COLUMN apv_instance.finished_at IS 'Finished';
-COMMENT ON COLUMN apv_instance.business_record_id IS 'Biz Record';
+COMMENT ON COLUMN apv_instance.business_ref IS 'Biz Ref';
 COMMENT ON COLUMN apv_instance.form_data IS 'Form Data';
+COMMENT ON COLUMN apv_instance.globals IS 'Instance Globals';
 
 CREATE INDEX IF NOT EXISTS idx_apv_instance__tenant_id ON apv_instance(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_apv_instance__tenant_id_status_created_at ON apv_instance(tenant_id, status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_apv_instance__business_ref ON apv_instance(business_ref);
 CREATE INDEX IF NOT EXISTS idx_apv_instance__tenant_id_applicant_id_status ON apv_instance(tenant_id, applicant_id, status);
 CREATE INDEX IF NOT EXISTS idx_apv_instance__flow_id_status_created_at ON apv_instance(flow_id, status, created_at);
 CREATE INDEX IF NOT EXISTS idx_apv_instance__applicant_id_status_created_at ON apv_instance(applicant_id, status, created_at DESC);
@@ -484,7 +496,9 @@ CREATE INDEX IF NOT EXISTS idx_apv_task__tenant_id ON apv_task(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_apv_task__tenant_id_assignee_id_status ON apv_task(tenant_id, assignee_id, status);
 CREATE INDEX IF NOT EXISTS idx_apv_task__instance_id_node_id_status ON apv_task(instance_id, node_id, status);
 CREATE INDEX IF NOT EXISTS idx_apv_task__assignee_id_status_created_at ON apv_task(assignee_id, status, created_at);
+CREATE INDEX IF NOT EXISTS idx_apv_task__assignee_id_status_finished_at ON apv_task(assignee_id, status, finished_at);
 CREATE INDEX IF NOT EXISTS idx_apv_task__instance_id_status_assignee_id ON apv_task(instance_id, status, assignee_id);
+CREATE INDEX IF NOT EXISTS idx_apv_task__visit_id ON apv_task(visit_id);
 CREATE INDEX IF NOT EXISTS idx_apv_task__deadline_active ON apv_task(deadline) WHERE deadline IS NOT NULL AND is_timeout = FALSE AND status IN ('pending', 'waiting');
 CREATE UNIQUE INDEX IF NOT EXISTS uk_apv_task__instance_id_node_id_assignee_id_active ON apv_task(instance_id, node_id, assignee_id) WHERE status IN ('pending', 'waiting');
 
@@ -561,6 +575,8 @@ CREATE TABLE IF NOT EXISTS apv_cc_record (
     created_by VARCHAR(32) NOT NULL DEFAULT 'system',
     instance_id VARCHAR(32) NOT NULL,
     node_id VARCHAR(32),
+    -- One node traversal owns each record; nil for instance-level records
+    visit_id VARCHAR(32),
     task_id VARCHAR(32),
     cc_user_id VARCHAR(32) NOT NULL,
     cc_user_name VARCHAR(128) NOT NULL DEFAULT '',
@@ -587,7 +603,7 @@ COMMENT ON COLUMN apv_cc_record.read_at IS 'Read';
 
 CREATE INDEX IF NOT EXISTS idx_apv_cc_record__instance_id ON apv_cc_record(instance_id);
 CREATE INDEX IF NOT EXISTS idx_apv_cc_record__cc_user_id_read_at ON apv_cc_record(cc_user_id, read_at);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_apv_cc_record__instance_id_node_id_cc_user_id ON apv_cc_record(instance_id, node_id, cc_user_id) WHERE node_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_apv_cc_record__visit_id_cc_user_id ON apv_cc_record(visit_id, cc_user_id) WHERE visit_id IS NOT NULL;
 
 --------------------------------------------------------------------------------
 -- Extension Tables
@@ -716,6 +732,8 @@ CREATE TABLE IF NOT EXISTS apv_form_table (
     flow_id VARCHAR(32) NOT NULL,
     version_id VARCHAR(32) NOT NULL,
     physical_table_name VARCHAR(64) NOT NULL,
+    -- Detail-table field this child table projects; '' = the main table
+    source_field_key VARCHAR(64) NOT NULL DEFAULT '',
     CONSTRAINT fk_apv_form_table__version_id FOREIGN KEY (version_id) REFERENCES apv_flow_version(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -726,8 +744,9 @@ COMMENT ON COLUMN apv_form_table.created_by IS 'Creator';
 COMMENT ON COLUMN apv_form_table.flow_id IS 'Flow';
 COMMENT ON COLUMN apv_form_table.version_id IS 'Version';
 COMMENT ON COLUMN apv_form_table.physical_table_name IS 'Physical Table Name';
+COMMENT ON COLUMN apv_form_table.source_field_key IS 'Source Field';
 
-CREATE UNIQUE INDEX IF NOT EXISTS uk_apv_form_table__version_id ON apv_form_table(version_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_apv_form_table__version_id_source_field_key ON apv_form_table(version_id, source_field_key);
 
 -- Form table column: column definitions projected from the form schema
 CREATE TABLE IF NOT EXISTS apv_form_table_column (

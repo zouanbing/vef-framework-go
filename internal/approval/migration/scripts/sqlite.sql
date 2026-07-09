@@ -51,6 +51,9 @@ CREATE TABLE IF NOT EXISTS apv_flow (
     business_table VARCHAR(64),
     business_pk_field VARCHAR(64),
     business_status_field VARCHAR(64),
+    business_instance_id_field VARCHAR(64),
+    business_started_at_field VARCHAR(64),
+    business_finished_at_field VARCHAR(64),
     -- Permission config
     admin_user_ids TEXT NOT NULL DEFAULT '[]',
     is_all_initiation_allowed BOOLEAN NOT NULL DEFAULT 1,
@@ -214,6 +217,7 @@ CREATE TABLE IF NOT EXISTS apv_instance (
     updated_by VARCHAR(32) NOT NULL DEFAULT 'system',
     tenant_id VARCHAR(32) NOT NULL,
     flow_id VARCHAR(32) NOT NULL,
+    flow_code VARCHAR(64) NOT NULL,
     flow_version_id VARCHAR(32) NOT NULL,
     -- Application info
     title VARCHAR(256) NOT NULL,
@@ -227,15 +231,18 @@ CREATE TABLE IF NOT EXISTS apv_instance (
     current_node_id VARCHAR(32),
     finished_at TIMESTAMP,
     -- Business association
-    business_record_id VARCHAR(128),
+    business_ref VARCHAR(512),
     -- Form data
     form_data TEXT,
+    -- Host-supplied global variables snapshotted at instance start
+    globals TEXT,
     CONSTRAINT fk_apv_instance__flow_id FOREIGN KEY (flow_id) REFERENCES apv_flow(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_apv_instance__flow_version_id FOREIGN KEY (flow_version_id) REFERENCES apv_flow_version(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT uk_apv_instance__instance_no UNIQUE (instance_no)
 );
 
 CREATE INDEX IF NOT EXISTS idx_apv_instance__tenant_id ON apv_instance(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_apv_instance__business_ref ON apv_instance(business_ref);
 CREATE INDEX IF NOT EXISTS idx_apv_instance__tenant_id_status_created_at ON apv_instance(tenant_id, status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_apv_instance__tenant_id_applicant_id_status ON apv_instance(tenant_id, applicant_id, status);
 CREATE INDEX IF NOT EXISTS idx_apv_instance__flow_id_status_created_at ON apv_instance(flow_id, status, created_at);
@@ -302,7 +309,9 @@ CREATE INDEX IF NOT EXISTS idx_apv_task__tenant_id ON apv_task(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_apv_task__tenant_id_assignee_id_status ON apv_task(tenant_id, assignee_id, status);
 CREATE INDEX IF NOT EXISTS idx_apv_task__instance_id_node_id_status ON apv_task(instance_id, node_id, status);
 CREATE INDEX IF NOT EXISTS idx_apv_task__assignee_id_status_created_at ON apv_task(assignee_id, status, created_at);
+CREATE INDEX IF NOT EXISTS idx_apv_task__assignee_id_status_finished_at ON apv_task(assignee_id, status, finished_at);
 CREATE INDEX IF NOT EXISTS idx_apv_task__instance_id_status_assignee_id ON apv_task(instance_id, status, assignee_id);
+CREATE INDEX IF NOT EXISTS idx_apv_task__visit_id ON apv_task(visit_id);
 CREATE INDEX IF NOT EXISTS idx_apv_task__deadline_active ON apv_task(deadline) WHERE deadline IS NOT NULL AND is_timeout = 0 AND status IN ('pending', 'waiting');
 CREATE UNIQUE INDEX IF NOT EXISTS uk_apv_task__instance_id_node_id_assignee_id_active ON apv_task(instance_id, node_id, assignee_id) WHERE status IN ('pending', 'waiting');
 
@@ -352,6 +361,8 @@ CREATE TABLE IF NOT EXISTS apv_cc_record (
     created_by VARCHAR(32) NOT NULL DEFAULT 'system',
     instance_id VARCHAR(32) NOT NULL,
     node_id VARCHAR(32),
+    -- One node traversal owns each record; nil for instance-level records
+    visit_id VARCHAR(32),
     task_id VARCHAR(32),
     cc_user_id VARCHAR(32) NOT NULL,
     cc_user_name VARCHAR(128) NOT NULL DEFAULT '',
@@ -364,7 +375,7 @@ CREATE TABLE IF NOT EXISTS apv_cc_record (
 
 CREATE INDEX IF NOT EXISTS idx_apv_cc_record__instance_id ON apv_cc_record(instance_id);
 CREATE INDEX IF NOT EXISTS idx_apv_cc_record__cc_user_id_read_at ON apv_cc_record(cc_user_id, read_at);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_apv_cc_record__instance_id_node_id_cc_user_id ON apv_cc_record(instance_id, node_id, cc_user_id) WHERE node_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_apv_cc_record__visit_id_cc_user_id ON apv_cc_record(visit_id, cc_user_id) WHERE visit_id IS NOT NULL;
 
 --------------------------------------------------------------------------------
 -- Extension Tables
@@ -453,10 +464,12 @@ CREATE TABLE IF NOT EXISTS apv_form_table (
     flow_id VARCHAR(32) NOT NULL,
     version_id VARCHAR(32) NOT NULL,
     physical_table_name VARCHAR(64) NOT NULL,
+    -- Detail-table field this child table projects; '' = the main table
+    source_field_key VARCHAR(64) NOT NULL DEFAULT '',
     CONSTRAINT fk_apv_form_table__version_id FOREIGN KEY (version_id) REFERENCES apv_flow_version(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS uk_apv_form_table__version_id ON apv_form_table(version_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_apv_form_table__version_id_source_field_key ON apv_form_table(version_id, source_field_key);
 
 -- Form table column: column definitions projected from the form schema
 CREATE TABLE IF NOT EXISTS apv_form_table_column (

@@ -93,6 +93,7 @@ func TestBuildInstanceFlowGraph(t *testing.T) {
 		assert.Equal(t, string(approval.TaskPending), byKey["kappr"].Data.Participants[0].Status, "Pending participant status")
 		assert.InDelta(t, 100.0, byKey["kappr"].Position.Y, 0, "Node position should come from the schema")
 		assert.Equal(t, "na", byKey["kappr"].NodeID, "Node must expose its persistent DB id for rollback targeting and action-log correlation")
+		assert.Equal(t, approval.NodeApproval, byKey["kappr"].Kind, "Node must carry its NodeKind, serialized as React Flow's type discriminator")
 	})
 
 	t.Run("FinalMarksTrailPassedIncludingEnd", func(t *testing.T) {
@@ -176,7 +177,7 @@ func TestBuildInstanceFlowGraph(t *testing.T) {
 		submit.ID = "l0"
 		b.ActionLogs = []approval.ActionLog{submit}
 
-		cc := approval.CCRecord{NodeID: new("na"), CCUserID: "cc-1", CCUserName: "CC One"}
+		cc := approval.CCRecord{NodeID: new("na"), VisitID: new("v2"), CCUserID: "cc-1", CCUserName: "CC One"}
 		cc.ID = "ccr-1"
 		b.CCRecords = []approval.CCRecord{cc}
 
@@ -212,6 +213,23 @@ func TestBuildInstanceFlowGraph(t *testing.T) {
 
 		assert.Equal(t, approval.NodeProgressActive, byKey["kstart"].Data.Status, "Rollback target of a returned instance should be active")
 		assert.Equal(t, approval.NodeProgressReturned, byKey["kappr"].Data.Status, "The node the flow was sent back from should be returned")
+	})
+
+	t.Run("WithdrawnFromReturnedKeepsRestingNodeActive", func(t *testing.T) {
+		b := linearBundle()
+		// Returned → Withdrawn closing path: the applicant abandoned instead of
+		// resubmitting; the instance still rests on the start node with no open
+		// visit there, and the graph must agree with instance.currentNodeId.
+		b.Instance.Status = approval.InstanceWithdrawn
+		b.Instance.CurrentNodeID = new("ns")
+		b.Visits = []approval.NodeVisit{
+			visit("v1", "ns", 1, approval.NodeVisitPassed),
+			visit("v2", "na", 2, approval.NodeVisitReturned),
+		}
+
+		byKey := nodesByKey(buildInstanceFlowGraph(b))
+
+		assert.Equal(t, approval.NodeProgressActive, byKey["kstart"].Data.Status, "Resting node of a withdrawn-from-returned instance should stay active")
 	})
 
 	t.Run("NilSchemaStillBuildsNodesWithoutEdges", func(t *testing.T) {

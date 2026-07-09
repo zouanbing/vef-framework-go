@@ -14,23 +14,25 @@ import (
 
 var logger = logx.Named("approval:binding")
 
-// Listener subscribes to InstanceCompletedEvent and runs the business
-// binding write-back asynchronously, decoupled from the approval transaction.
+// Listener subscribes to the instance-lifecycle events that drive the
+// asynchronous legs of the engine-owned business write-back — completed,
+// returned, withdrawn, resubmitted — decoupled from the approval
+// transaction. (The started leg runs synchronously inside the
+// start_instance transaction and never reaches this listener.)
 //
-// Failure semantics: if OnInstanceCompleted returns an error, the listener
+// Failure semantics: if the write-back returns an error, the listener
 // publishes InstanceBindingFailedEvent so operators (or compensating workers)
 // can retry. The approval status itself is never rolled back — the workflow
 // has already decided.
 type Listener struct {
-	db   orm.DB
-	bus  event.Bus
-	hook approval.BusinessBindingHook
+	db     orm.DB
+	bus    event.Bus
+	writer *Writer
 }
 
-// NewListener constructs the listener. The hook is the host-overridable
-// BusinessBindingHook bound via FX (defaults to DefaultHook).
-func NewListener(db orm.DB, bus event.Bus, hook approval.BusinessBindingHook) *Listener {
-	return &Listener{db: db, bus: bus, hook: hook}
+// NewListener constructs the listener around the engine-owned Writer.
+func NewListener(db orm.DB, bus event.Bus, writer *Writer) *Listener {
+	return &Listener{db: db, bus: bus, writer: writer}
 }
 
 // bindingConsumerGroup is the stable consumer group name for the binding
@@ -39,27 +41,56 @@ func NewListener(db orm.DB, bus event.Bus, hook approval.BusinessBindingHook) *L
 // identifier (which must remain stable across restarts).
 const bindingConsumerGroup = "approval:binding"
 
-// Start registers the event subscription. Called by FX Invoke during boot.
+// Start registers the event subscriptions. Called by FX Invoke during boot.
 func (l *Listener) Start() error {
-	_, err := event.SubscribeTyped(l.bus, l.handle, event.WithGroup(bindingConsumerGroup))
-	if err != nil {
+	group := event.WithGroup(bindingConsumerGroup)
+
+	if _, err := event.SubscribeTyped(l.bus, func(ctx context.Context, evt *approval.InstanceCompletedEvent, _ event.Envelope) error {
+		return l.handle(ctx, evt.InstanceID, approval.BindingTriggerCompleted)
+	}, group); err != nil {
 		return fmt.Errorf("subscribe instance completed: %w", err)
 	}
 
-	logger.Infof("Instance binding listener subscribed to %s (group=%s)",
-		new(approval.InstanceCompletedEvent).EventType(), bindingConsumerGroup)
+	if _, err := event.SubscribeTyped(l.bus, func(ctx context.Context, evt *approval.InstanceReturnedEvent, _ event.Envelope) error {
+		return l.handle(ctx, evt.InstanceID, approval.BindingTriggerReturned)
+	}, group); err != nil {
+		return fmt.Errorf("subscribe instance returned: %w", err)
+	}
+
+	if _, err := event.SubscribeTyped(l.bus, func(ctx context.Context, evt *approval.InstanceWithdrawnEvent, _ event.Envelope) error {
+		return l.handle(ctx, evt.InstanceID, approval.BindingTriggerWithdrawn)
+	}, group); err != nil {
+		return fmt.Errorf("subscribe instance withdrawn: %w", err)
+	}
+
+	if _, err := event.SubscribeTyped(l.bus, func(ctx context.Context, evt *approval.InstanceResubmittedEvent, _ event.Envelope) error {
+		return l.handle(ctx, evt.InstanceID, approval.BindingTriggerResubmitted)
+	}, group); err != nil {
+		return fmt.Errorf("subscribe instance resubmitted: %w", err)
+	}
+
+	logger.Infof("Instance binding listener subscribed to %s / %s / %s / %s (group=%s)",
+		new(approval.InstanceCompletedEvent).EventType(),
+		new(approval.InstanceReturnedEvent).EventType(),
+		new(approval.InstanceWithdrawnEvent).EventType(),
+		new(approval.InstanceResubmittedEvent).EventType(),
+		bindingConsumerGroup)
 
 	return nil
 }
 
-func (l *Listener) handle(ctx context.Context, evt *approval.InstanceCompletedEvent, _ event.Envelope) error {
-	if l.hook == nil {
+// handle loads the instance and flow fresh (the write-back projects current
+// state, so a late or redelivered event converges on the truth instead of
+// replaying a stale snapshot) and runs the engine-owned write-back for the
+// trigger.
+func (l *Listener) handle(ctx context.Context, instanceID string, trigger approval.BindingTrigger) error {
+	if l.writer == nil {
 		return nil
 	}
 
 	var instance approval.Instance
 
-	instance.ID = evt.InstanceID
+	instance.ID = instanceID
 
 	if err := l.db.NewSelect().
 		Model(&instance).
@@ -89,19 +120,19 @@ func (l *Listener) handle(ctx context.Context, evt *approval.InstanceCompletedEv
 		return nil
 	}
 
-	if err := l.hook.WriteBackStatus(ctx, l.db, &flow, &instance, evt.FinalStatus); err != nil {
+	if err := l.writer.WriteBack(ctx, l.db, &flow, &instance, trigger); err != nil {
 		// Surface as a domain event so operators / Saga workers can
 		// retry. Failed bindings on a misconfigured flow surface with
 		// ErrBindingMisconfigured; transient failures show their wrapped
 		// cause. Either way we do not propagate the error back to the
-		// event bus — the approval is final.
+		// event bus — the approval action is already committed.
 		businessTable := ""
 		if flow.BusinessTable != nil {
 			businessTable = *flow.BusinessTable
 		}
 
 		failureEvent := approval.NewInstanceBindingFailedEvent(
-			instance.ID, instance.TenantID, flow.ID, evt.FinalStatus, businessTable, err.Error(),
+			&instance, trigger, instance.Status, businessTable, err.Error(),
 		)
 
 		if pubErr := l.publishFailure(ctx, failureEvent); pubErr != nil {
@@ -118,7 +149,7 @@ func (l *Listener) handle(ctx context.Context, evt *approval.InstanceCompletedEv
 			return nil
 		}
 
-		return fmt.Errorf("binding hook for instance %s: %w", instance.ID, err)
+		return fmt.Errorf("binding write-back (%s) for instance %s: %w", trigger, instance.ID, err)
 	}
 
 	return nil
