@@ -183,18 +183,18 @@ func TestMergeFormData(t *testing.T) {
 func TestValidateFormData(t *testing.T) {
 	svc := NewValidationService(nil)
 
-	schema := &approval.FormDefinition{Fields: []approval.FormFieldDefinition{
+	fields := []approval.FormFieldDefinition{
 		{Key: "reason", Kind: approval.FieldInput, Label: "Reason", IsRequired: true, Validation: &approval.ValidationRule{MinLength: new(3)}},
 		{Key: "amount", Kind: approval.FieldNumber, Label: "Amount", Validation: &approval.ValidationRule{Min: new(10.0), Max: new(100.0)}},
-	}}
+	}
 
 	t.Run("ValidData", func(t *testing.T) {
-		err := svc.ValidateFormData(schema, map[string]any{"reason": "Travel", "amount": 20})
+		err := svc.ValidateFormData(fields, map[string]any{"reason": "Travel", "amount": 20})
 		assert.NoError(t, err, "Should accept valid form data")
 	})
 
 	t.Run("MissingRequiredField", func(t *testing.T) {
-		err := svc.ValidateFormData(schema, map[string]any{"amount": 20})
+		err := svc.ValidateFormData(fields, map[string]any{"amount": 20})
 
 		var re result.Error
 		require.ErrorAs(t, err, &re, "Should return business error")
@@ -202,7 +202,7 @@ func TestValidateFormData(t *testing.T) {
 	})
 
 	t.Run("UnknownField", func(t *testing.T) {
-		err := svc.ValidateFormData(schema, map[string]any{"reason": "Travel", "extra": true})
+		err := svc.ValidateFormData(fields, map[string]any{"reason": "Travel", "extra": true})
 
 		var re result.Error
 		require.ErrorAs(t, err, &re, "Should return business error")
@@ -210,7 +210,7 @@ func TestValidateFormData(t *testing.T) {
 	})
 
 	t.Run("InvalidStringLength", func(t *testing.T) {
-		err := svc.ValidateFormData(schema, map[string]any{"reason": "Go"})
+		err := svc.ValidateFormData(fields, map[string]any{"reason": "Go"})
 
 		var re result.Error
 		require.ErrorAs(t, err, &re, "Should return business error")
@@ -218,7 +218,7 @@ func TestValidateFormData(t *testing.T) {
 	})
 
 	t.Run("InvalidNumberType", func(t *testing.T) {
-		err := svc.ValidateFormData(schema, map[string]any{"reason": "Travel", "amount": "bad"})
+		err := svc.ValidateFormData(fields, map[string]any{"reason": "Travel", "amount": "bad"})
 
 		var re result.Error
 		require.ErrorAs(t, err, &re, "Should return business error")
@@ -226,7 +226,7 @@ func TestValidateFormData(t *testing.T) {
 	})
 
 	t.Run("RejectsPayloadOverTheAbsoluteCap", func(t *testing.T) {
-		err := svc.ValidateFormData(schema, map[string]any{"reason": "Travel", "amount": 20, "blob": strings.Repeat("x", FormDataMaxBytes+1)})
+		err := svc.ValidateFormData(fields, map[string]any{"reason": "Travel", "amount": 20, "blob": strings.Repeat("x", FormDataMaxBytes+1)})
 		require.ErrorIs(t, err, shared.ErrFormDataTooLarge, "Start / resubmit must reject a payload over the absolute size cap")
 	})
 
@@ -243,7 +243,7 @@ func TestValidateFormDataTableField(t *testing.T) {
 	svc := NewValidationService(nil)
 
 	minRows, maxRows := 1, 2
-	schema := &approval.FormDefinition{Fields: []approval.FormFieldDefinition{
+	fields := []approval.FormFieldDefinition{
 		{
 			Key: "items", Kind: approval.FieldTable, Label: "Items", IsRequired: true,
 			Validation: &approval.ValidationRule{MinLength: &minRows, MaxLength: &maxRows},
@@ -252,49 +252,155 @@ func TestValidateFormDataTableField(t *testing.T) {
 				{Key: "qty", Kind: approval.FieldNumber, Label: "Qty"},
 			},
 		},
-	}}
+	}
 
 	valid := func(rows ...any) map[string]any { return map[string]any{"items": rows} }
 
 	t.Run("AcceptsValidRows", func(t *testing.T) {
-		err := svc.ValidateFormData(schema, valid(map[string]any{"name": "hotel", "qty": 2}))
+		err := svc.ValidateFormData(fields, valid(map[string]any{"name": "hotel", "qty": 2}))
 		assert.NoError(t, err, "a well-shaped detail row should validate")
 	})
 
 	t.Run("RequiredMeansAtLeastOneRow", func(t *testing.T) {
-		err := svc.ValidateFormData(schema, map[string]any{"items": []any{}})
+		err := svc.ValidateFormData(fields, map[string]any{"items": []any{}})
 		assert.Error(t, err, "an empty list on a required table is an empty value")
 	})
 
 	t.Run("RejectsNonListValue", func(t *testing.T) {
-		err := svc.ValidateFormData(schema, map[string]any{"items": "oops"})
+		err := svc.ValidateFormData(fields, map[string]any{"items": "oops"})
 		assert.Error(t, err, "a non-list table value must be rejected")
 	})
 
 	t.Run("RejectsNonObjectRow", func(t *testing.T) {
-		err := svc.ValidateFormData(schema, valid("not-a-row"))
+		err := svc.ValidateFormData(fields, valid("not-a-row"))
 		assert.Error(t, err, "a non-object row must be rejected")
 	})
 
 	t.Run("EnforcesRowBounds", func(t *testing.T) {
-		err := svc.ValidateFormData(schema, valid(
+		err := svc.ValidateFormData(fields, valid(
 			map[string]any{"name": "a"}, map[string]any{"name": "b"}, map[string]any{"name": "c"},
 		))
 		assert.Error(t, err, "row count above MaxLength must be rejected")
 	})
 
 	t.Run("EnforcesRequiredColumns", func(t *testing.T) {
-		err := svc.ValidateFormData(schema, valid(map[string]any{"qty": 1}))
+		err := svc.ValidateFormData(fields, valid(map[string]any{"qty": 1}))
 		assert.Error(t, err, "a required column missing in a row must be rejected")
 	})
 
 	t.Run("RejectsUndeclaredRowKeys", func(t *testing.T) {
-		err := svc.ValidateFormData(schema, valid(map[string]any{"name": "ok", "ghost": 1}))
+		err := svc.ValidateFormData(fields, valid(map[string]any{"name": "ok", "ghost": 1}))
 		assert.Error(t, err, "rows are closed like the top-level form — undeclared keys must be rejected")
 	})
 
 	t.Run("ValidatesColumnValuesPerRow", func(t *testing.T) {
-		err := svc.ValidateFormData(schema, valid(map[string]any{"name": "ok", "qty": "NaN"}))
+		err := svc.ValidateFormData(fields, valid(map[string]any{"name": "ok", "qty": "NaN"}))
 		assert.Error(t, err, "a non-numeric value in a number column must be rejected")
 	})
+}
+
+func TestValidateRequiredPermissionFields(t *testing.T) {
+	svc := NewValidationService(nil)
+
+	fields := []approval.FormFieldDefinition{
+		{Key: "reason", Kind: approval.FieldInput, Label: "Reason"},
+		{Key: "items", Kind: approval.FieldTable, Label: "Items"},
+	}
+
+	required := func(keys ...string) map[string]approval.Permission {
+		perms := make(map[string]approval.Permission, len(keys))
+		for _, key := range keys {
+			perms[key] = approval.PermissionRequired
+		}
+
+		return perms
+	}
+
+	tests := []struct {
+		name        string
+		fields      []approval.FormFieldDefinition
+		permissions map[string]approval.Permission
+		formData    map[string]any
+		wantErr     bool
+	}{
+		{
+			name:        "RequiredButMissing",
+			fields:      fields,
+			permissions: required("reason"),
+			formData:    map[string]any{},
+			wantErr:     true,
+		},
+		{
+			name:        "RequiredButEmptyString",
+			fields:      fields,
+			permissions: required("reason"),
+			formData:    map[string]any{"reason": ""},
+			wantErr:     true,
+		},
+		{
+			name:        "RequiredButWhitespaceOnly",
+			fields:      fields,
+			permissions: required("reason"),
+			formData:    map[string]any{"reason": "   \t"},
+			wantErr:     true,
+		},
+		{
+			name:        "RequiredButEmptyList",
+			fields:      fields,
+			permissions: required("items"),
+			formData:    map[string]any{"items": []any{}},
+			wantErr:     true,
+		},
+		{
+			name:        "RequiredAndFilled",
+			fields:      fields,
+			permissions: required("reason"),
+			formData:    map[string]any{"reason": "Travel"},
+			wantErr:     false,
+		},
+		{
+			name:        "RequiredKeyAbsentFromFields",
+			fields:      fields,
+			permissions: required("ghost"),
+			formData:    map[string]any{},
+			wantErr:     false,
+		},
+		{
+			name:        "NoRequiredEntries",
+			fields:      fields,
+			permissions: map[string]approval.Permission{"reason": approval.PermissionEditable, "items": approval.PermissionVisible},
+			formData:    map[string]any{},
+			wantErr:     false,
+		},
+		{
+			name:        "NilFormDataWithRequired",
+			fields:      fields,
+			permissions: required("reason"),
+			formData:    nil,
+			wantErr:     true,
+		},
+		{
+			name:        "NilFormDataNoPermissions",
+			fields:      fields,
+			permissions: nil,
+			formData:    nil,
+			wantErr:     false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := svc.ValidateRequiredPermissionFields(tt.fields, tt.permissions, tt.formData)
+
+			if !tt.wantErr {
+				assert.NoError(t, err, "Should accept when every required-permission field is filled")
+
+				return
+			}
+
+			var re result.Error
+			require.ErrorAs(t, err, &re, "Should return a business validation error")
+			assert.Equal(t, shared.ErrCodeFormValidationFailed, re.Code, "Should carry the form validation error code")
+		})
+	}
 }

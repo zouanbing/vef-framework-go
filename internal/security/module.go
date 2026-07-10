@@ -48,6 +48,11 @@ var Module = fx.Module(
 	),
 	fx.Provide(
 		password.NewBcryptEncoder,
+		newLoginGuard,
+		fx.Annotate(
+			newPasswordValidator,
+			fx.ParamTags(``, ``, `optional:"true"`),
+		),
 		newJWT,
 		fx.Annotate(
 			NewJWTAuthenticator,
@@ -59,6 +64,14 @@ var Module = fx.Module(
 			fx.ResultTags(`group:"vef:security:authenticators"`),
 		),
 		NewJWTTokenGenerator,
+		NewOpaqueTokenGenerator,
+		newSessionStore,
+		newSessionPolicy,
+		newTokenGenerator,
+		fx.Annotate(
+			NewOpaqueTokenAuthenticator,
+			fx.ResultTags(`group:"vef:security:authenticators"`),
+		),
 		security.NewJWTChallengeTokenStore,
 		fx.Annotate(
 			NewSignatureAuthenticator,
@@ -67,7 +80,7 @@ var Module = fx.Module(
 		),
 		fx.Annotate(
 			NewPasswordAuthenticator,
-			fx.ParamTags(`optional:"true"`, `optional:"true"`),
+			fx.ParamTags(`optional:"true"`, `optional:"true"`, `optional:"true"`),
 			fx.ResultTags(`group:"vef:security:authenticators"`),
 		),
 		fx.Annotate(
@@ -88,6 +101,128 @@ var Module = fx.Module(
 		),
 	),
 )
+
+// newLoginGuard builds the default in-memory brute-force guard for the login
+// endpoint from configuration. It returns nil when lockout is disabled (the
+// AuthResource treats a nil guard as "no protection"), and fails fast on an
+// out-of-enum strategy or key so a config typo surfaces at boot. Multi-node
+// deployments override this with security.NewRedisLoginGuard via fx.Decorate so
+// the failure counters are shared across nodes.
+func newLoginGuard(cfg *config.SecurityConfig) (security.LoginGuard, error) {
+	// Validate unconditionally so a typo'd strategy/key surfaces at boot even
+	// when lockout is currently disabled (the operator may flip it on later).
+	if err := cfg.Lockout.Validate(); err != nil {
+		return nil, err
+	}
+
+	if !cfg.Lockout.IsEnabled() {
+		return nil, nil
+	}
+
+	return security.NewMemoryLoginGuard(security.LockoutPolicy{
+		MaxFailures:  cfg.Lockout.EffectiveMaxFailures(),
+		Window:       cfg.Lockout.EffectiveWindow(),
+		LockDuration: cfg.Lockout.EffectiveLockDuration(),
+		Strategy:     security.LockoutStrategy(cfg.Lockout.EffectiveStrategy()),
+		BackoffBase:  cfg.Lockout.EffectiveBackoffBase(),
+		BackoffMax:   cfg.Lockout.EffectiveBackoffMax(),
+		Key:          security.LockoutKey(cfg.Lockout.EffectiveKey()),
+	}), nil
+}
+
+// newPasswordValidator builds the config-backed password validator injected into
+// password-setting flows (e.g. the forced-change challenge): strength rules,
+// plus a history-reuse check when a PasswordHistoryStore is registered and
+// history_depth > 0. Every rule is opt-in, so with no policy configured the
+// validator accepts any password, preserving zero-config behavior. Applications
+// can inject the resulting security.PasswordValidator into their own flows.
+func newPasswordValidator(
+	cfg *config.SecurityConfig,
+	encoder password.Encoder,
+	historyStore security.PasswordHistoryStore,
+) security.PasswordValidator {
+	policy := cfg.PasswordPolicy
+
+	validators := []security.PasswordValidator{newStrengthValidator(policy)}
+
+	if historyStore != nil && policy.HistoryDepth > 0 {
+		validators = append(validators, security.NewHistoryValidator(historyStore, encoder, policy.HistoryDepth))
+	}
+
+	return security.NewChainValidator(validators...)
+}
+
+// newStrengthValidator assembles the opt-in strength rules from config.
+func newStrengthValidator(policy config.PasswordPolicyConfig) security.PasswordValidator {
+	var rules []security.PasswordRule
+	if policy.MinLength > 0 {
+		rules = append(rules, security.NewMinLengthRule(policy.MinLength))
+	}
+
+	if policy.MaxLength > 0 {
+		rules = append(rules, security.NewMaxLengthRule(policy.MaxLength))
+	}
+
+	if policy.RequireUpper || policy.RequireLower || policy.RequireDigit || policy.RequireSymbol || policy.MinCharClasses > 0 {
+		rules = append(rules, security.NewCharacterClassRule(
+			policy.RequireUpper,
+			policy.RequireLower,
+			policy.RequireDigit,
+			policy.RequireSymbol,
+			policy.MinCharClasses,
+		))
+	}
+
+	if policy.DisallowUsername {
+		rules = append(rules, security.NewDisallowIdentityRule())
+	}
+
+	if len(policy.Blocklist) > 0 {
+		rules = append(rules, security.NewBlocklistRule(policy.Blocklist))
+	}
+
+	return security.NewRuleBasedValidator(rules...)
+}
+
+// newSessionStore provides the default in-memory opaque-token session store.
+// Multi-node deployments override it with security.NewRedisSessionStore via
+// fx.Decorate so sessions are shared across nodes.
+func newSessionStore() security.SessionStore {
+	return security.NewMemorySessionStore()
+}
+
+// newSessionPolicy resolves the opaque-token session behavior from config.
+func newSessionPolicy(cfg *config.SecurityConfig) security.SessionPolicy {
+	session := cfg.Session
+
+	return security.SessionPolicy{
+		MaxConcurrent: session.MaxConcurrent,
+		OnExceed:      security.SessionExceedPolicy(session.EffectiveOnExceed()),
+		IdleTTL:       session.EffectiveIdleTTL(),
+		MaxLifetime:   session.EffectiveMaxLifetime(),
+		Sliding:       session.IsSliding(),
+	}
+}
+
+// newTokenGenerator selects the active login-token mechanism from
+// vef.security.token_type, validating the token-type and session config so a
+// typo fails fast at boot. Both underlying generators are always constructed;
+// only the configured one issues login tokens.
+func newTokenGenerator(
+	cfg *config.SecurityConfig,
+	jwtGenerator *JWTTokenGenerator,
+	opaqueGenerator *OpaqueTokenGenerator,
+) (security.TokenGenerator, error) {
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
+
+	if cfg.EffectiveTokenType() == config.TokenTypeOpaque {
+		return opaqueGenerator, nil
+	}
+
+	return jwtGenerator, nil
+}
 
 // newJWT builds the JWT signer from configuration. It never silently falls back
 // to the built-in public DefaultJWTSecret: an unset secret yields an ephemeral

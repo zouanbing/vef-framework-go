@@ -46,15 +46,16 @@ func (*ValidationService) ValidateOpinion(node *approval.FlowNode, opinion strin
 	return nil
 }
 
-// ValidateFormData validates submitted form data against the published form schema.
-func (*ValidationService) ValidateFormData(schema *approval.FormDefinition, formData map[string]any) error {
-	// Size guard runs first — applies even to flows without a schema so
-	// callers cannot bypass the cap by omitting the form definition.
+// ValidateFormData validates submitted form data against the version's parsed
+// form fields (nil = a flow without a form).
+func (*ValidationService) ValidateFormData(fields []approval.FormFieldDefinition, formData map[string]any) error {
+	// Size guard runs first — applies even to flows without a form so
+	// callers cannot bypass the cap by omitting the field list.
 	if err := validateFormDataSize(formData); err != nil {
 		return err
 	}
 
-	if schema == nil || len(schema.Fields) == 0 {
+	if len(fields) == 0 {
 		return nil
 	}
 
@@ -62,8 +63,8 @@ func (*ValidationService) ValidateFormData(schema *approval.FormDefinition, form
 		formData = map[string]any{}
 	}
 
-	fieldByKey := make(map[string]approval.FormFieldDefinition, len(schema.Fields))
-	for _, field := range schema.Fields {
+	fieldByKey := make(map[string]approval.FormFieldDefinition, len(fields))
+	for _, field := range fields {
 		fieldByKey[field.Key] = field
 	}
 
@@ -73,7 +74,7 @@ func (*ValidationService) ValidateFormData(schema *approval.FormDefinition, form
 		}
 	}
 
-	for _, field := range schema.Fields {
+	for _, field := range fields {
 		value, exists := formData[field.Key]
 		if !exists || isEmptyFormValue(value) {
 			if field.IsRequired {
@@ -85,6 +86,34 @@ func (*ValidationService) ValidateFormData(schema *approval.FormDefinition, form
 
 		if err := validateFormField(field, value); err != nil {
 			return err
+		}
+	}
+
+	return nil
+}
+
+// ValidateRequiredPermissionFields ensures every field the node marks
+// PermissionRequired holds a non-empty value by the time the task is
+// approved/handled — the decision-completing actions. Reject, transfer and
+// rollback stay exempt: a rejection must never be blocked by an unfilled
+// field, and transfer/rollback hand the obligation to the next actor.
+//
+// It checks the instance's merged form data, so a value filled by an earlier
+// participant satisfies the requirement — the semantic is "filled by the time
+// this node passes", not "resubmitted at this node". Permission keys with no
+// matching schema field are ignored; deploy validation owns that pairing.
+func (*ValidationService) ValidateRequiredPermissionFields(fields []approval.FormFieldDefinition, permissions map[string]approval.Permission, formData map[string]any) error {
+	if len(permissions) == 0 {
+		return nil
+	}
+
+	for _, field := range fields {
+		if permissions[field.Key] != approval.PermissionRequired {
+			continue
+		}
+
+		if value, exists := formData[field.Key]; !exists || isEmptyFormValue(value) {
+			return newFormValidationError(i18n.T(shared.ErrMessageFormFieldRequired, map[string]any{"field": fieldLabel(field)}))
 		}
 	}
 
@@ -561,6 +590,42 @@ func validateFormDataSize(formData map[string]any) error {
 
 	if size > FormDataMaxBytes {
 		return shared.ErrFormDataTooLarge
+	}
+
+	return nil
+}
+
+// validateEditableFormData validates the submitted editable subset against the
+// version's form schema. Only keys the node grants editable / required
+// permission are considered — the same subset MergeFormData will persist — so a
+// value the node does not expose for editing is never validated (or merged). A
+// submitted editable key with no schema field is rejected like an unknown
+// field; empty values are left to the required-permission check, since
+// emptiness is a fill obligation, not a value error.
+func validateEditableFormData(fields []approval.FormFieldDefinition, formData map[string]any, permissions map[string]approval.Permission) error {
+	editable := FilterEditableFormData(formData, permissions)
+	if len(editable) == 0 {
+		return nil
+	}
+
+	fieldByKey := make(map[string]approval.FormFieldDefinition, len(fields))
+	for _, field := range fields {
+		fieldByKey[field.Key] = field
+	}
+
+	for key, value := range editable {
+		field, ok := fieldByKey[key]
+		if !ok {
+			return newFormValidationError(i18n.T(shared.ErrMessageFormFieldNotDefined, map[string]any{"field": key}))
+		}
+
+		if isEmptyFormValue(value) {
+			continue
+		}
+
+		if err := validateFormField(field, value); err != nil {
+			return err
+		}
 	}
 
 	return nil
