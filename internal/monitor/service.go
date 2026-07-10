@@ -3,8 +3,10 @@ package monitor
 import (
 	"context"
 	"errors"
+	"math"
 	"os"
 	"regexp"
+	"runtime"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -123,10 +125,10 @@ func (s *DefaultService) Overview(ctx context.Context) (*monitor.SystemOverview,
 		}
 	}
 
-	if diskInfo, err := s.Disk(ctx); err != nil {
+	if diskSummary, err := s.rootDiskSummary(ctx); err != nil {
 		logger.Warnf("Overview: failed to collect disk info: %v", err)
 	} else {
-		overview.Disk = s.buildDiskSummary(diskInfo)
+		overview.Disk = diskSummary
 	}
 
 	if netInfo, err := s.Network(ctx); err != nil {
@@ -155,6 +157,39 @@ func (s *DefaultService) Overview(ctx context.Context) (*monitor.SystemOverview,
 	overview.Build = s.BuildInfo()
 
 	return &overview, nil
+}
+
+// rootDiskSummary reports usage of the root volume the process runs on. Under
+// Docker this is the container's writable layer (the disk the app can actually
+// use), which avoids the inflation caused by summing every mount point — overlay
+// plus host bind-mounts on Linux, or sibling APFS volumes on macOS. On bare
+// metal it reflects the server's own system volume.
+func (*DefaultService) rootDiskSummary(ctx context.Context) (*monitor.DiskSummary, error) {
+	usage, err := disk.UsageWithContext(ctx, rootDiskPath())
+	if err != nil {
+		return nil, err
+	}
+
+	return &monitor.DiskSummary{
+		Total:       usage.Total,
+		Used:        usage.Used,
+		UsedPercent: usage.UsedPercent,
+		Partitions:  1,
+	}, nil
+}
+
+// rootDiskPath returns the path whose filesystem represents the root volume:
+// "/" on Unix-like systems, the system drive on Windows.
+func rootDiskPath() string {
+	if runtime.GOOS == "windows" {
+		if drive := os.Getenv("SystemDrive"); drive != "" {
+			return drive + `\`
+		}
+
+		return `C:\`
+	}
+
+	return "/"
 }
 
 func (s *DefaultService) buildDiskSummary(diskInfo *monitor.DiskInfo) *monitor.DiskSummary {
@@ -312,11 +347,40 @@ func (*DefaultService) Memory(ctx context.Context) (*monitor.MemoryInfo, error) 
 		Virtual: convertVirtualMemory(vMem),
 	}
 
+	// Prefer the container's cgroup memory limit over the host total when one is
+	// in effect; otherwise the host figures are kept unchanged.
+	applyCgroupMemory(result.Virtual)
+
 	if swapMem, err := mem.SwapMemoryWithContext(ctx); err == nil {
 		result.Swap = convertSwapMemory(swapMem)
 	}
 
 	return result, nil
+}
+
+// applyCgroupMemory overrides host memory figures with the container's cgroup
+// limit and working-set usage, but only when a finite limit smaller than the
+// host total is configured. In every other case (bare metal, non-Linux, no
+// limit, or read/parse failure) it leaves the host figures untouched.
+func applyCgroupMemory(v *monitor.VirtualMemory) {
+	if v == nil {
+		return
+	}
+
+	limit, used, ok := cgroupMemoryLimit()
+	if !ok || limit == 0 || limit >= v.Total {
+		return
+	}
+
+	if used > limit {
+		used = limit
+	}
+
+	v.Total = limit
+	v.Used = used
+	v.Available = limit - used
+	v.Free = v.Available
+	v.UsedPercent = float64(used) / float64(limit) * 100
 }
 
 func convertVirtualMemory(v *mem.VirtualMemoryStat) *monitor.VirtualMemory {
@@ -633,6 +697,13 @@ func (s *DefaultService) collectCPUInfo(ctx context.Context) (*monitor.CPUInfo, 
 	cpuInfo.PhysicalCores, _ = cpu.CountsWithContext(ctx, false)
 	cpuInfo.LogicalCores, _ = cpu.CountsWithContext(ctx, true)
 
+	// Bracket the host sampling window with cgroup CPU-time readings so that,
+	// inside a CPU-limited container, the container's own utilisation can be
+	// derived from the same interval.
+	cgroupCores, coresOK := cgroupCPUCores()
+	usageStart, usageStartOK := cgroupCPUUsageMicros()
+	sampleStart := time.Now()
+
 	if perCorePercent, err := cpu.PercentWithContext(ctx, s.config.SampleDuration, true); err == nil {
 		cpuInfo.UsagePercent = perCorePercent
 	}
@@ -641,7 +712,39 @@ func (s *DefaultService) collectCPUInfo(ctx context.Context) (*monitor.CPUInfo, 
 		cpuInfo.TotalPercent = totalPercent[0]
 	}
 
+	// Only override when a real CPU quota exists; an unlimited container (or bare
+	// metal) keeps the host core count and host-wide utilisation unchanged.
+	if coresOK {
+		applyCgroupCPU(&cpuInfo, cgroupCores, usageStart, usageStartOK, sampleStart)
+	}
+
 	return &cpuInfo, nil
+}
+
+// applyCgroupCPU replaces the host core count with the container's effective
+// cores (CFS quota) and, when cgroup CPU accounting is available, recomputes the
+// total usage percent from the container's CPU-time delta over the sample window.
+func applyCgroupCPU(cpuInfo *monitor.CPUInfo, cores float64, usageStart uint64, usageStartOK bool, sampleStart time.Time) {
+	effective := int(math.Ceil(cores))
+	if effective > 0 {
+		cpuInfo.LogicalCores = effective
+		if cpuInfo.PhysicalCores == 0 || cpuInfo.PhysicalCores > effective {
+			cpuInfo.PhysicalCores = effective
+		}
+	}
+
+	if !usageStartOK {
+		return
+	}
+
+	usageEnd, usageEndOK := cgroupCPUUsageMicros()
+	elapsedMicros := float64(time.Since(sampleStart).Microseconds())
+	if !usageEndOK || usageEnd < usageStart || elapsedMicros <= 0 || cores <= 0 {
+		return
+	}
+
+	percent := float64(usageEnd-usageStart) / (elapsedMicros * cores) * 100
+	cpuInfo.TotalPercent = math.Max(0, math.Min(100, percent))
 }
 
 func (s *DefaultService) sampleProcess(ctx context.Context) {
