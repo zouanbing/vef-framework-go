@@ -3,6 +3,7 @@ package approval
 import (
 	"encoding/json"
 
+	"github.com/coldsmirk/vef-framework-go/config"
 	"github.com/coldsmirk/vef-framework-go/decimal"
 	"github.com/coldsmirk/vef-framework-go/orm"
 	"github.com/coldsmirk/vef-framework-go/timex"
@@ -28,30 +29,19 @@ type Flow struct {
 	orm.BaseModel `bun:"table:apv_flow,alias:af"`
 	orm.FullAuditedModel
 
-	TenantID            string      `json:"tenantId" bun:"tenant_id"`
-	CategoryID          string      `json:"categoryId" bun:"category_id"`
-	Code                string      `json:"code" bun:"code"`
-	Name                string      `json:"name" bun:"name"`
-	Icon                *string     `json:"icon" bun:"icon,nullzero"`
-	Description         *string     `json:"description" bun:"description,nullzero"`
-	BindingMode         BindingMode `json:"bindingMode" bun:"binding_mode"`
-	BusinessTable       *string     `json:"businessTable" bun:"business_table,nullzero"`
-	BusinessPKField     *string     `json:"businessPkField" bun:"business_pk_field,nullzero"`
-	BusinessStatusField *string     `json:"businessStatusField" bun:"business_status_field,nullzero"`
-	// BusinessInstanceIDField / BusinessStartedAtField / BusinessFinishedAtField
-	// are the optional legs of the engine-owned write-back: when set, the
-	// engine keeps the named business columns in sync with the instance
-	// (see BindingTrigger for the linkage matrix); when nil, that column is
-	// simply never touched. Only the status column is mandatory for a
-	// business-bound flow.
-	BusinessInstanceIDField *string  `json:"businessInstanceIdField" bun:"business_instance_id_field,nullzero"`
-	BusinessStartedAtField  *string  `json:"businessStartedAtField" bun:"business_started_at_field,nullzero"`
-	BusinessFinishedAtField *string  `json:"businessFinishedAtField" bun:"business_finished_at_field,nullzero"`
-	AdminUserIDs            []string `json:"adminUserIds" bun:"admin_user_ids,type:jsonb"`
-	IsAllInitiationAllowed  bool     `json:"isAllInitiationAllowed" bun:"is_all_initiation_allowed"`
-	InstanceTitleTemplate   string   `json:"instanceTitleTemplate" bun:"instance_title_template"`
-	IsActive                bool     `json:"isActive" bun:"is_active"`
-	CurrentVersion          int      `json:"currentVersion" bun:"current_version"`
+	TenantID               string                 `json:"tenantId" bun:"tenant_id"`
+	CategoryID             string                 `json:"categoryId" bun:"category_id"`
+	Code                   string                 `json:"code" bun:"code"`
+	Name                   string                 `json:"name" bun:"name"`
+	Icon                   *string                `json:"icon" bun:"icon,nullzero"`
+	Description            *string                `json:"description" bun:"description,nullzero"`
+	BindingMode            BindingMode            `json:"bindingMode" bun:"binding_mode"`
+	BusinessBinding        *BusinessBindingConfig `json:"businessBinding,omitempty" bun:"business_binding,type:jsonb,nullzero"`
+	AdminUserIDs           []string               `json:"adminUserIds" bun:"admin_user_ids,type:jsonb"`
+	IsAllInitiationAllowed bool                   `json:"isAllInitiationAllowed" bun:"is_all_initiation_allowed"`
+	InstanceTitleTemplate  string                 `json:"instanceTitleTemplate" bun:"instance_title_template"`
+	IsActive               bool                   `json:"isActive" bun:"is_active"`
+	CurrentVersion         int                    `json:"currentVersion" bun:"current_version"`
 }
 
 // FlowCategory represents a category for grouping flows.
@@ -91,6 +81,9 @@ type FlowVersion struct {
 	FormFields  []FormFieldDefinition `json:"formFields" bun:"form_fields,type:jsonb,nullzero"`
 	PublishedAt *timex.DateTime       `json:"publishedAt" bun:"published_at,nullzero"`
 	PublishedBy *string               `json:"publishedBy" bun:"published_by,nullzero"`
+	// BusinessBinding is the immutable binding snapshot captured when the
+	// version is deployed. Runtime instances never read the mutable Flow copy.
+	BusinessBinding *BusinessBindingConfig `json:"businessBinding,omitempty" bun:"business_binding,type:jsonb,nullzero"`
 }
 
 // FormTable records the dedicated physical table generated for a published
@@ -239,10 +232,9 @@ type Instance struct {
 	CurrentNodeID           *string         `json:"currentNodeId" bun:"current_node_id,nullzero"`
 	FinishedAt              *timex.DateTime `json:"finishedAt" bun:"finished_at,nullzero"`
 	// BusinessRef is the opaque reference to the bound business record. The
-	// engine never parses it — hosts choose the shape (single primary key,
-	// composite key as JSON, business number, …). The engine-owned write-back
-	// resolves it through BusinessRefResolver; non-single-key shapes register
-	// a custom resolver.
+	// engine only parses the default single-key / composite-JSON shapes — hosts
+	// remain free to choose another shape (business number, encoded tuple, …)
+	// by registering BusinessRefResolver.
 	BusinessRef *string        `json:"businessRef" bun:"business_ref,nullzero"`
 	FormData    map[string]any `json:"formData" bun:"form_data,type:jsonb,nullzero"`
 	// Globals is the host-supplied global-variable snapshot taken at instance
@@ -251,6 +243,40 @@ type Instance struct {
 	// routing stays deterministic across re-evaluation — like the applicant
 	// department, it reflects the world at initiation, not live state.
 	Globals map[string]any `json:"globals" bun:"globals,type:jsonb,nullzero"`
+	// BusinessProjectionID identifies the durable target state claimed at
+	// instance start. Every later transition writes through that state so flow
+	// edits and stale workers cannot redirect or overwrite the binding.
+	BusinessProjectionID *string `json:"businessProjectionId,omitempty" bun:"business_projection_id,nullzero"`
+}
+
+// BusinessProjection stores the latest desired business-table state for one
+// bound record. One row represents one physical target; OwnerInstanceID and
+// AppliedOwnerInstanceID fence stale instances when a later approval takes
+// ownership.
+type BusinessProjection struct {
+	orm.BaseModel `bun:"table:apv_business_projection,alias:abp"`
+	orm.FullAuditedModel
+
+	TenantID               string                            `json:"tenantId" bun:"tenant_id"`
+	FlowID                 string                            `json:"flowId" bun:"flow_id"`
+	FlowVersionID          string                            `json:"flowVersionId" bun:"flow_version_id"`
+	OwnerInstanceID        string                            `json:"ownerInstanceId" bun:"owner_instance_id"`
+	AppliedOwnerInstanceID *string                           `json:"appliedOwnerInstanceId,omitempty" bun:"applied_owner_instance_id,nullzero"`
+	TargetHash             string                            `json:"targetHash" bun:"target_hash"`
+	Consistency            config.ApprovalBindingConsistency `json:"consistency" bun:"consistency"`
+	Binding                *BusinessBindingConfig            `json:"binding" bun:"binding,type:jsonb"`
+	RecordKey              json.RawMessage                   `json:"recordKey" bun:"record_key,type:jsonb"`
+	DesiredStatus          InstanceStatus                    `json:"desiredStatus" bun:"desired_status"`
+	DesiredStartedAt       timex.DateTime                    `json:"desiredStartedAt" bun:"desired_started_at"`
+	DesiredFinishedAt      *timex.DateTime                   `json:"desiredFinishedAt,omitempty" bun:"desired_finished_at,nullzero"`
+	DesiredRevision        int64                             `json:"desiredRevision" bun:"desired_revision"`
+	AppliedRevision        int64                             `json:"appliedRevision" bun:"applied_revision"`
+	Status                 BindingProjectionStatus           `json:"status" bun:"status"`
+	AttemptCount           int                               `json:"attemptCount" bun:"attempt_count"`
+	NextAttemptAt          *timex.DateTime                   `json:"nextAttemptAt,omitempty" bun:"next_attempt_at,nullzero"`
+	LeaseUntil             *timex.DateTime                   `json:"leaseUntil,omitempty" bun:"lease_until,nullzero"`
+	LastError              *string                           `json:"lastError,omitempty" bun:"last_error,nullzero"`
+	AppliedAt              *timex.DateTime                   `json:"appliedAt,omitempty" bun:"applied_at,nullzero"`
 }
 
 // Applicant returns the applicant as a person snapshot.

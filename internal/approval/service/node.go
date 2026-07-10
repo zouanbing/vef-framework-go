@@ -43,8 +43,8 @@ func NewNodeService(
 // On PassRulePassed: advances to the next node and cancels remaining tasks.
 // On PassRuleRejected: marks instance as rejected, cancels remaining tasks, and resumes parent flow.
 //
-// This method mutates instance fields (Status, FinishedAt, CurrentNodeID) in memory.
-// The caller is responsible for persisting instance changes to the database.
+// This method persists status transitions and engine-driven node changes in the
+// caller's transaction while keeping the supplied instance in sync.
 func (s *NodeService) HandleNodeCompletion(
 	ctx context.Context,
 	db orm.DB,
@@ -92,7 +92,7 @@ func (s *NodeService) HandleNodeCompletion(
 		}
 
 		instance.FinishedAt = new(timex.Now())
-		// Final-status transition: route through the hooks helper so
+		// Route through the transition helper so the business projection and
 		// host-registered InstanceLifecycleHook implementations see the
 		// rejection (same as NodeActionComplete in the engine).
 		if err := engine.ApplyInstanceTransitionWithHooks(

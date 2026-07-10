@@ -32,39 +32,57 @@ type BusinessRefProvider interface {
 	OnInstanceCreated(ctx context.Context, db orm.DB, flow *Flow, instance *Instance) (businessRef string, err error)
 }
 
+// BusinessBindingConfig describes the business row targeted by a flow and the
+// columns that receive approval lifecycle state. KeyColumns must exactly match
+// a non-null primary or unique key on TableName.
+type BusinessBindingConfig struct {
+	TableName    string   `json:"tableName"`
+	KeyColumns   []string `json:"keyColumns"`
+	StatusColumn string   `json:"statusColumn"`
+	// InstanceIDColumn is mandatory for business bindings. The projector uses
+	// it as a compare-and-set fence so a stale instance cannot overwrite the
+	// state owned by a newer approval round.
+	InstanceIDColumn *string `json:"instanceIdColumn,omitempty"`
+	StartedAtColumn  *string `json:"startedAtColumn,omitempty"`
+	FinishedAtColumn *string `json:"finishedAtColumn,omitempty"`
+	// StatusMapping translates approval instance statuses into host business
+	// status values. Missing entries fall back to the InstanceStatus string.
+	StatusMapping map[InstanceStatus]string `json:"statusMapping,omitempty"`
+}
+
+// BusinessRecordKey maps every configured key column to the value resolved
+// from an instance's opaque BusinessRef.
+type BusinessRecordKey map[string]any
+
+// BindingProjectionStatus is the durable convergence state of one business
+// record projection.
+type BindingProjectionStatus string
+
+const (
+	BindingProjectionPending    BindingProjectionStatus = "pending"
+	BindingProjectionProcessing BindingProjectionStatus = "processing"
+	BindingProjectionApplied    BindingProjectionStatus = "applied"
+	BindingProjectionFailed     BindingProjectionStatus = "failed"
+)
+
 // BusinessRefResolver turns the opaque Instance.BusinessRef into the record
-// identifier the engine-owned write-back matches against
-// Flow.BusinessPKField (`WHERE pk_field = ?`). The default resolver returns
-// the ref verbatim — correct when the ref is the business primary key
-// itself. Hosts that encode composite refs (e.g. JSON) register a resolver
-// that extracts the key value, which keeps the built-in write-back
-// applicable to any ref shape.
+// key the engine-owned write-back matches against. The returned key must name
+// exactly the flow's configured BusinessBinding.KeyColumns. The default
+// resolver treats a single-column ref verbatim and decodes a multi-column ref
+// from a JSON object. Hosts with another ref shape register a custom resolver.
 //
 // Hosts register an implementation via vef.SupplyBusinessRefResolver.
 type BusinessRefResolver interface {
-	// ResolveRecordID extracts the business primary-key value from
-	// businessRef. Returning an error fails the write-back for this
-	// instance (surfaced through InstanceBindingFailedEvent and retried).
-	ResolveRecordID(ctx context.Context, flow *Flow, businessRef string) (string, error)
+	// ResolveRecordKey extracts the configured business record key from
+	// businessRef. Returning an error fails the write-back for this instance.
+	ResolveRecordKey(ctx context.Context, flow *Flow, businessRef string) (BusinessRecordKey, error)
 }
 
-// BindingTrigger identifies which instance-lifecycle moment drove an
-// engine-owned business write-back. Each trigger projects a fixed column
-// subset onto the business table — the status column always, the optional
-// columns per the linkage matrix below (a column is only ever written when
-// the flow configures it):
-//
-//	trigger      | status         | instance_id | started_at | finished_at
-//	started      | running        | instance.ID | now        | NULL
-//	completed    | final status   | —           | —          | FinishedAt
-//	returned     | returned       | —           | —          | —
-//	withdrawn    | withdrawn      | —           | —          | —
-//	resubmitted  | running        | —           | —          | NULL
-//
-// The started projection runs synchronously inside the start_instance
-// transaction (a failure rolls back the whole initiation); the other four
-// run asynchronously through the binding listener with
-// InstanceBindingFailedEvent compensation.
+// BindingTrigger identifies the lifecycle moment associated with a failed
+// business projection. Projection correctness does not depend on triggers:
+// every write applies the latest full desired state. The trigger remains part
+// of InstanceBindingFailedEvent so operators can identify the action that
+// produced that desired state.
 type BindingTrigger string
 
 const (
@@ -75,13 +93,9 @@ const (
 	BindingTriggerResubmitted BindingTrigger = "resubmitted"
 )
 
-// businessIdentifierPattern restricts business_table / business_pk_field /
-// business_status_field to safe SQL identifiers.
-// The engine-owned write-back interpolates these values into a raw
-// `UPDATE %s SET %s = ? WHERE %s = ?` template, so anything outside this
-// whitelist (spaces, quotes, semicolons, brackets, sub-selects) could open
-// a SQL injection vector. PostgreSQL allows up to 63 characters; we follow
-// the same bound.
+// businessIdentifierPattern restricts business binding table and column names
+// to simple SQL identifiers. PostgreSQL allows up to 63 characters; we follow
+// the same bound across supported databases.
 var businessIdentifierPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]{0,62}$`)
 
 // ErrInvalidBusinessIdentifier is returned by ValidateBusinessIdentifier
@@ -91,7 +105,7 @@ var businessIdentifierPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]{0,62}
 var ErrInvalidBusinessIdentifier = errors.New("approval: invalid business identifier (must match ^[A-Za-z_][A-Za-z0-9_]{0,62}$)")
 
 // ValidateBusinessIdentifier reports whether id is a safe SQL identifier
-// for use as a table or column name in business binding interpolation.
+// for use as a dynamic table or column name in business binding queries.
 // Empty / whitespace-only strings pass — the caller decides whether absence
 // is itself an error (see Flow validation paths for the policy).
 func ValidateBusinessIdentifier(id string) error {
