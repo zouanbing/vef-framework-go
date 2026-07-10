@@ -2,6 +2,7 @@ package query_test
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/stretchr/testify/suite"
 
@@ -30,6 +31,7 @@ type GetMyInstanceDetailTestSuite struct {
 
 	instanceID string
 	nodeID     string
+	formSchema json.RawMessage
 }
 
 func (s *GetMyInstanceDetailTestSuite) SetupSuite() {
@@ -38,16 +40,13 @@ func (s *GetMyInstanceDetailTestSuite) SetupSuite() {
 	fix := setupQueryFixture(s.T(), s.ctx, s.db, "mid-flow", 1)
 	s.nodeID = fix.NodeIDs[0]
 
-	// Pin a form schema on the instance's version so the detail can project the
-	// metadata the UI needs to render form data (labels, field kinds, order).
-	formSchema := &approval.FormDefinition{
-		Fields: []approval.FormFieldDefinition{
-			{Key: "reason", Kind: approval.FieldTextarea, Label: "Reason", IsRequired: true, SortOrder: 1},
-			{Key: "days", Kind: approval.FieldNumber, Label: "Days", SortOrder: 2},
-		},
-	}
+	// Pin a host form-designer document on the instance's version; the detail
+	// must return it verbatim — the framework never interprets it.
+	s.formSchema = json.RawMessage(`{"version":2,"presentations":{"pc":{"children":[` +
+		`{"id":"F1","type":"textarea","key":"reason","label":"Reason"},` +
+		`{"id":"F2","type":"number","key":"days","label":"Days"}]}}}`)
 	_, err := s.db.NewUpdate().Model((*approval.FlowVersion)(nil)).
-		Set("form_schema", formSchema).
+		Set("form_schema", s.formSchema).
 		Where(func(cb orm.ConditionBuilder) { cb.PKEquals(fix.VersionID) }).
 		Exec(s.ctx)
 	s.Require().NoError(err, "Should set form schema on version")
@@ -144,9 +143,10 @@ func (s *GetMyInstanceDetailTestSuite) TestApplicantAccess() {
 	s.Assert().Contains(detail.AvailableActions, "withdraw", "Applicant should be able to withdraw")
 	s.Assert().Contains(detail.AvailableActions, "urge", "Applicant should be able to urge when the instance has pending tasks")
 
-	// Form metadata must ship with the detail so the UI can render form data.
-	s.Require().NotNil(detail.FormSchema, "Detail should carry the version's form schema")
-	s.Assert().Len(detail.FormSchema.Fields, 2, "Form schema should carry both fields")
+	// The designer document must ship with the detail verbatim so the UI can
+	// render form data against the exact schema the instance was submitted under.
+	s.Require().NotEmpty(detail.FormSchema, "Detail should carry the version's form schema")
+	s.Assert().JSONEq(string(s.formSchema), string(detail.FormSchema), "Form schema should pass through verbatim")
 	s.Assert().Equal("user-a", detail.Instance.Applicant.ID, "Applicant snapshot should carry the id")
 	s.Require().NotNil(detail.Instance.Applicant.DepartmentName, "Applicant snapshot should carry the department")
 	s.Assert().Equal("Engineering", *detail.Instance.Applicant.DepartmentName, "Applicant department should pass through")
@@ -352,6 +352,161 @@ func (s *GetMyInstanceDetailTestSuite) TestHandleNodeShouldExposeHandleAction() 
 	s.Require().NoError(err, "Should get detail for handle assignee")
 	s.Assert().Contains(detail.AvailableActions, "handle", "Handle node should expose handle action")
 	s.Assert().NotContains(detail.AvailableActions, "approve", "Handle node should not expose approve action")
+}
+
+func (s *GetMyInstanceDetailTestSuite) TestFieldPermissionsProjection() {
+	// A dedicated flow whose version carries form fields and whose approval node
+	// declares field permissions — the fixture flow has neither, so the viewer
+	// projection needs its own isolated chain.
+	category := &approval.FlowCategory{TenantID: "default", Code: "perm-cat", Name: "Perm Category"}
+	_, err := s.db.NewInsert().Model(category).Exec(s.ctx)
+	s.Require().NoError(err, "Should insert category")
+
+	flow := &approval.Flow{
+		TenantID: "default", CategoryID: category.ID, Code: "perm-flow", Name: "Perm Flow",
+		BindingMode: approval.BindingStandalone, IsAllInitiationAllowed: true,
+		InstanceTitleTemplate: "Test", IsActive: true,
+	}
+	_, err = s.db.NewInsert().Model(flow).Exec(s.ctx)
+	s.Require().NoError(err, "Should insert flow")
+
+	version := &approval.FlowVersion{
+		FlowID: flow.ID, Version: 1, Status: approval.VersionPublished,
+		FormFields: []approval.FormFieldDefinition{{Key: "reason"}, {Key: "secret"}},
+	}
+	_, err = s.db.NewInsert().Model(version).Exec(s.ctx)
+	s.Require().NoError(err, "Should insert version with form fields")
+
+	node := &approval.FlowNode{
+		FlowVersionID: version.ID, Key: "perm-node", Kind: approval.NodeApproval, Name: "Perm Node",
+		FieldPermissions: map[string]approval.Permission{
+			"reason": approval.PermissionEditable,
+			"secret": approval.PermissionHidden,
+		},
+	}
+	_, err = s.db.NewInsert().Model(node).Exec(s.ctx)
+	s.Require().NoError(err, "Should insert node with field permissions")
+
+	inst := &approval.Instance{
+		TenantID: "default", FlowID: flow.ID, FlowVersionID: version.ID,
+		Title: "Perm Instance", InstanceNo: "PERM-001", ApplicantID: "perm-applicant",
+		Status: approval.InstanceRunning, CurrentNodeID: &node.ID,
+		FormData: map[string]any{"reason": "please approve", "secret": "confidential", "legacy": "kept"},
+	}
+	_, err = s.db.NewInsert().Model(inst).Exec(s.ctx)
+	s.Require().NoError(err, "Should insert instance with form data")
+
+	_, err = s.db.NewInsert().Model(&approval.Task{
+		TenantID: inst.TenantID, InstanceID: inst.ID, NodeID: node.ID,
+		VisitID:    ensureActiveVisit(s.T(), s.ctx, s.db, inst.TenantID, inst.ID, node.ID).ID,
+		AssigneeID: "perm-approver", SortOrder: 1, Status: approval.TaskPending,
+	}).Exec(s.ctx)
+	s.Require().NoError(err, "Should insert pending task")
+
+	detail, err := s.handler.Handle(s.ctx, query.GetMyInstanceDetailQuery{
+		InstanceID: inst.ID,
+		UserID:     "perm-approver",
+	})
+	s.Require().NoError(err, "Pending approver should get detail")
+
+	// The response carries the viewer projection over every top-level field: the
+	// pending approver edits "reason" (full strength from the node) and cannot
+	// see "secret".
+	s.Require().NotNil(detail.FieldPermissions, "Detail should carry the field-permission projection")
+	s.Assert().Equal(map[string]approval.Permission{
+		"reason": approval.PermissionEditable,
+		"secret": approval.PermissionHidden,
+	}, detail.FieldPermissions, "Projection should reflect the node's field permissions for a pending approver")
+
+	// The hidden field is stripped from the returned form data; the visible field
+	// and the schemaless legacy key both survive.
+	s.Assert().Contains(detail.Instance.FormData, "reason", "Visible field should reach the viewer")
+	s.Assert().Contains(detail.Instance.FormData, "legacy", "Schemaless legacy field should survive stripping")
+	s.Assert().NotContains(detail.Instance.FormData, "secret", "Hidden field must be stripped from the returned form data")
+
+	// The stored form data is untouched — stripping is a read-path projection.
+	var stored approval.Instance
+
+	stored.ID = inst.ID
+	err = s.db.NewSelect().Model(&stored).WherePK().Scan(s.ctx)
+	s.Require().NoError(err, "Should reload the stored instance")
+	s.Assert().Contains(stored.FormData, "secret", "Hidden field must remain in the database")
+}
+
+// TestTableFieldHiddenStripped pins that a table-kind form field resolved hidden
+// for the viewer has its whole row-array value stripped from the returned form
+// data — a table counts as one permission key, so hiding it drops the array
+// wholesale — while a visible scalar field on the same node survives.
+func (s *GetMyInstanceDetailTestSuite) TestTableFieldHiddenStripped() {
+	category := &approval.FlowCategory{TenantID: "default", Code: "tbl-hidden-cat", Name: "Table Hidden Category"}
+	_, err := s.db.NewInsert().Model(category).Exec(s.ctx)
+	s.Require().NoError(err, "Should insert category")
+
+	flow := &approval.Flow{
+		TenantID: "default", CategoryID: category.ID, Code: "tbl-hidden-flow", Name: "Table Hidden Flow",
+		BindingMode: approval.BindingStandalone, IsAllInitiationAllowed: true,
+		InstanceTitleTemplate: "Test", IsActive: true,
+	}
+	_, err = s.db.NewInsert().Model(flow).Exec(s.ctx)
+	s.Require().NoError(err, "Should insert flow")
+
+	version := &approval.FlowVersion{
+		FlowID: flow.ID, Version: 1, Status: approval.VersionPublished,
+		FormFields: []approval.FormFieldDefinition{
+			{Key: "items", Kind: approval.FieldTable, Columns: []approval.FormFieldDefinition{{Key: "qty", Kind: approval.FieldNumber}}},
+			{Key: "reason", Kind: approval.FieldInput},
+		},
+	}
+	_, err = s.db.NewInsert().Model(version).Exec(s.ctx)
+	s.Require().NoError(err, "Should insert version with a table and a scalar field")
+
+	node := &approval.FlowNode{
+		FlowVersionID: version.ID, Key: "tbl-hidden-node", Kind: approval.NodeApproval, Name: "Table Hidden Node",
+		FieldPermissions: map[string]approval.Permission{
+			"items":  approval.PermissionHidden,
+			"reason": approval.PermissionEditable,
+		},
+	}
+	_, err = s.db.NewInsert().Model(node).Exec(s.ctx)
+	s.Require().NoError(err, "Should insert node hiding the table field")
+
+	inst := &approval.Instance{
+		TenantID: "default", FlowID: flow.ID, FlowVersionID: version.ID,
+		Title: "Table Hidden Instance", InstanceNo: "TBLHID-001", ApplicantID: "tbl-applicant",
+		Status: approval.InstanceRunning, CurrentNodeID: &node.ID,
+		FormData: map[string]any{
+			"items":  []any{map[string]any{"qty": 2}, map[string]any{"qty": 5}},
+			"reason": "please approve",
+			"legacy": "kept",
+		},
+	}
+	_, err = s.db.NewInsert().Model(inst).Exec(s.ctx)
+	s.Require().NoError(err, "Should insert instance with table row data")
+
+	_, err = s.db.NewInsert().Model(&approval.Task{
+		TenantID: inst.TenantID, InstanceID: inst.ID, NodeID: node.ID,
+		VisitID:    ensureActiveVisit(s.T(), s.ctx, s.db, inst.TenantID, inst.ID, node.ID).ID,
+		AssigneeID: "tbl-approver", SortOrder: 1, Status: approval.TaskPending,
+	}).Exec(s.ctx)
+	s.Require().NoError(err, "Should insert pending task")
+
+	detail, err := s.handler.Handle(s.ctx, query.GetMyInstanceDetailQuery{
+		InstanceID: inst.ID,
+		UserID:     "tbl-approver",
+	})
+	s.Require().NoError(err, "Pending approver should get detail")
+
+	s.Assert().Equal(approval.PermissionHidden, detail.FieldPermissions["items"], "The table field should resolve hidden for the viewer")
+	s.Assert().NotContains(detail.Instance.FormData, "items", "The hidden table field's row-array value must be stripped wholesale")
+	s.Assert().Contains(detail.Instance.FormData, "reason", "The visible scalar field must survive stripping")
+	s.Assert().Contains(detail.Instance.FormData, "legacy", "A schemaless legacy field must survive stripping")
+
+	// Stripping is a read-path projection; the stored row-array is untouched.
+	var stored approval.Instance
+
+	stored.ID = inst.ID
+	s.Require().NoError(s.db.NewSelect().Model(&stored).WherePK().Scan(s.ctx), "Should reload stored instance")
+	s.Assert().Contains(stored.FormData, "items", "The table row data must remain in the database")
 }
 
 func (s *GetMyInstanceDetailTestSuite) TestAccessDenied() {

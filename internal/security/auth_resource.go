@@ -7,6 +7,7 @@ import (
 
 	"github.com/coldsmirk/go-streams"
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/extractors"
 	"go.uber.org/fx"
 
 	"github.com/coldsmirk/vef-framework-go/api"
@@ -26,7 +27,9 @@ type AuthResourceParams struct {
 	AuthManager         security.AuthManager
 	TokenGenerator      security.TokenGenerator
 	ChallengeTokenStore security.ChallengeTokenStore
-	UserInfoLoader      security.UserInfoLoader      `optional:"true"`
+	UserInfoLoader      security.UserInfoLoader `optional:"true"`
+	LoginGuard          security.LoginGuard     `optional:"true"`
+	SessionStore        security.SessionStore
 	ChallengeProviders  []security.ChallengeProvider `group:"vef:security:challenge_providers"`
 	Bus                 event.Bus
 	SecurityConfig      *config.SecurityConfig
@@ -43,6 +46,8 @@ func NewAuthResource(params AuthResourceParams) api.Resource {
 		tokenGenerator:      params.TokenGenerator,
 		challengeTokenStore: params.ChallengeTokenStore,
 		userInfoLoader:      params.UserInfoLoader,
+		loginGuard:          params.LoginGuard,
+		sessionStore:        params.SessionStore,
 		challengeProviders:  params.ChallengeProviders,
 		bus:                 params.Bus,
 
@@ -83,6 +88,8 @@ type AuthResource struct {
 	tokenGenerator      security.TokenGenerator
 	challengeTokenStore security.ChallengeTokenStore
 	userInfoLoader      security.UserInfoLoader
+	loginGuard          security.LoginGuard
+	sessionStore        security.SessionStore
 	challengeProviders  []security.ChallengeProvider
 	bus                 event.Bus
 }
@@ -100,16 +107,25 @@ type LoginParams struct {
 // When challenge providers are configured and applicable, the result contains
 // a challenge token and pending challenges instead of auth tokens.
 func (a *AuthResource) Login(ctx fiber.Ctx, params LoginParams) error {
+	attempt := security.LoginAttempt{Identity: params.Principal, ClientIP: httpx.GetIP(ctx)}
+
+	if locked := a.guardCheck(ctx, params.Type, attempt); locked != nil {
+		return locked
+	}
+
 	principal, err := a.authManager.Authenticate(ctx.Context(), security.Authentication{
 		Type:        params.Type,
 		Principal:   params.Principal,
 		Credentials: params.Credentials,
 	})
 	if err != nil {
+		a.guardRecordFailure(ctx, attempt)
 		a.publishLoginFailure(ctx, params.Type, params.Principal, err)
 
 		return err
 	}
+
+	a.guardRecordSuccess(ctx, attempt)
 
 	pending := streams.MapTo(
 		streams.FromSlice(a.challengeProviders),
@@ -133,7 +149,7 @@ func (a *AuthResource) Login(ctx fiber.Ctx, params LoginParams) error {
 		}).Response(ctx)
 	}
 
-	tokens, err := a.tokenGenerator.Generate(principal)
+	tokens, err := a.tokenGenerator.Generate(ctx.Context(), principal, sessionMeta(ctx))
 	if err != nil {
 		return err
 	}
@@ -161,7 +177,7 @@ func (a *AuthResource) Refresh(ctx fiber.Ctx, params RefreshParams) error {
 		return err
 	}
 
-	credentials, err := a.tokenGenerator.Generate(principal)
+	credentials, err := a.tokenGenerator.Generate(ctx.Context(), principal, sessionMeta(ctx))
 	if err != nil {
 		return err
 	}
@@ -169,10 +185,32 @@ func (a *AuthResource) Refresh(ctx fiber.Ctx, params RefreshParams) error {
 	return result.Ok(credentials).Response(ctx)
 }
 
-// Logout returns success immediately.
-// Token invalidation should be handled on the client side by removing stored tokens.
-func (*AuthResource) Logout(ctx fiber.Ctx) error {
+// Logout revokes the opaque session backing the presented token so it can no
+// longer authenticate. Under the stateless JWT mechanism no session exists, so
+// it is a no-op and clients must drop their stored tokens.
+func (a *AuthResource) Logout(ctx fiber.Ctx) error {
+	a.revokeCurrentSession(ctx)
+
 	return result.Ok().Response(ctx)
+}
+
+// revokeCurrentSession revokes the session for the presented bearer token, if
+// one exists. It is best-effort: a missing session (JWT, already expired) or a
+// store error never fails logout.
+func (a *AuthResource) revokeCurrentSession(ctx fiber.Ctx) {
+	token := extractBearerToken(ctx)
+	if token == "" {
+		return
+	}
+
+	session, err := a.sessionStore.Lookup(ctx.Context(), security.HashOpaqueToken(token))
+	if err != nil || session == nil {
+		return
+	}
+
+	if err := a.sessionStore.Revoke(ctx.Context(), session.ID); err != nil {
+		logger.Warnf("Failed to revoke session on logout: %v", err)
+	}
 }
 
 // ResolveChallengeParams represents the request for resolving a login challenge.
@@ -247,7 +285,7 @@ func (a *AuthResource) ResolveChallenge(ctx fiber.Ctx, params ResolveChallengePa
 		}).Response(ctx)
 	}
 
-	tokens, err := a.tokenGenerator.Generate(principal)
+	tokens, err := a.tokenGenerator.Generate(ctx.Context(), principal, sessionMeta(ctx))
 	if err != nil {
 		return err
 	}
@@ -313,6 +351,82 @@ func (a *AuthResource) publishLoginFailure(ctx fiber.Ctx, authType, username str
 		ErrorCode:  errorCode,
 	})
 	_ = a.bus.Publish(ctx.Context(), loginEvent, event.WithAsync())
+}
+
+// guardCheck consults the brute-force guard before authentication. It returns a
+// non-nil error to abort the login when the identity is currently locked out,
+// and nil to proceed. A nil guard (lockout disabled) or a guard backend failure
+// both fail open so an unavailable counter store never denies every login; the
+// backend error is logged.
+func (a *AuthResource) guardCheck(ctx fiber.Ctx, authType string, attempt security.LoginAttempt) error {
+	if a.loginGuard == nil {
+		return nil
+	}
+
+	decision, err := a.loginGuard.Check(ctx.Context(), attempt)
+	if err != nil {
+		logger.Warnf("Login guard check failed for %s, allowing attempt: %v", maskPrincipal(attempt.Identity), err)
+
+		return nil
+	}
+
+	if decision.Allowed {
+		return nil
+	}
+
+	lockErr := security.ErrAccountLocked(decision.RetryAfter)
+	a.publishLoginFailure(ctx, authType, attempt.Identity, lockErr)
+
+	return lockErr
+}
+
+// guardRecordFailure registers a failed attempt with the guard. Failures to
+// persist are logged but never surfaced: the guard is defense-in-depth, not the
+// authoritative auth result.
+func (a *AuthResource) guardRecordFailure(ctx fiber.Ctx, attempt security.LoginAttempt) {
+	if a.loginGuard == nil {
+		return
+	}
+
+	if _, err := a.loginGuard.RecordFailure(ctx.Context(), attempt); err != nil {
+		logger.Warnf("Login guard failed to record failure for %s: %v", maskPrincipal(attempt.Identity), err)
+	}
+}
+
+// guardRecordSuccess clears accumulated failures once the credential verifies.
+// It runs as soon as the password is accepted, before any second-factor
+// challenge, since the brute-forced credential has already succeeded.
+func (a *AuthResource) guardRecordSuccess(ctx fiber.Ctx, attempt security.LoginAttempt) {
+	if a.loginGuard == nil {
+		return
+	}
+
+	if err := a.loginGuard.RecordSuccess(ctx.Context(), attempt); err != nil {
+		logger.Warnf("Login guard failed to clear failures for %s: %v", maskPrincipal(attempt.Identity), err)
+	}
+}
+
+// sessionMeta captures the client context recorded on a session at token issue.
+func sessionMeta(ctx fiber.Ctx) security.SessionMeta {
+	return security.SessionMeta{
+		ClientIP:  httpx.GetIP(ctx),
+		UserAgent: ctx.Get(fiber.HeaderUserAgent),
+	}
+}
+
+// logoutTokenExtractor mirrors the bearer auth strategy's extraction exactly
+// (case-insensitive scheme match, header then query) so the token logout revokes
+// can never diverge from the token the request authenticated with.
+var logoutTokenExtractor = extractors.Chain(
+	extractors.FromAuthHeader(security.AuthSchemeBearer),
+	extractors.FromQuery(security.QueryKeyAccessToken),
+)
+
+// extractBearerToken reads the presented access token, or "" when absent.
+func extractBearerToken(ctx fiber.Ctx) string {
+	token, _ := logoutTokenExtractor.Extract(ctx)
+
+	return token
 }
 
 // findProvider returns the challenge provider matching the given type, or nil.
