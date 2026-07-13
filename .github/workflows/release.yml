@@ -1,29 +1,30 @@
 name: Release
 
 on:
-  workflow_run:
-    workflows: ["Test"]
-    types:
-      - completed
+  push:
+    tags:
+      - 'v*.*.*'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
+  quality:
+    name: Quality Gates
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
   release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    # Only run if: Test workflow succeeded AND triggered by a version tag
-    if: >
-      github.event.workflow_run.conclusion == 'success' &&
-      startsWith(github.event.workflow_run.head_branch, 'v') &&
-      contains(github.event.workflow_run.head_branch, '.')
+    needs: quality
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.workflow_run.head_branch }}
           fetch-depth: 0
           fetch-tags: true
 
@@ -31,7 +32,7 @@ jobs:
         id: changelog
         env:
           GH_TOKEN: ${{ github.token }}
-          CURRENT_TAG: ${{ github.event.workflow_run.head_branch }}
+          CURRENT_TAG: ${{ github.ref_name }}
         run: |
           git fetch --force --tags origin
 
@@ -110,8 +111,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.workflow_run.head_branch }}
-          name: Release ${{ github.event.workflow_run.head_branch }}
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
           body: ${{ steps.changelog.outputs.changelog }}
           generate_release_notes: true
           draft: false

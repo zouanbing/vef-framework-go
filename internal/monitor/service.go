@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"os"
-	"regexp"
-	"strings"
+	"runtime"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -23,13 +23,25 @@ import (
 )
 
 // DefaultService implements monitor.Service with background CPU and process sampling.
+//
+// CPU and memory metrics are container-aware: when the process runs under a
+// cgroup (v2 or v1) that actually limits the resource, the limit and the
+// cgroup's own usage replace the host-wide numbers; without a limit the host
+// view is reported unchanged. Process and network metrics are whatever procfs
+// exposes — the host's when reachable (host PID/network namespace), otherwise
+// the container's own namespace.
 type DefaultService struct {
 	buildInfo *monitor.BuildInfo
 	config    config.MonitorConfig
+	cgroups   *cgroupReader
 
 	cpuCache     atomic.Value // stores *monitor.CPUInfo
 	processCache atomic.Value // stores *monitor.ProcessInfo
 
+	// mu guards the sampler lifecycle fields so Init/Close are safe under
+	// concurrent or interleaved calls, and Close clears them so a later Init
+	// can start a fresh sampler.
+	mu            sync.Mutex
 	samplerCancel context.CancelFunc
 	samplerDone   chan struct{}
 }
@@ -41,12 +53,12 @@ func NewService(cfg *config.MonitorConfig, buildInfo *monitor.BuildInfo) monitor
 	return &DefaultService{
 		buildInfo: resolveBuildInfo(buildInfo),
 		config:    resolveConfig(cfg),
+		cgroups:   newCgroupReader(),
 	}
 }
 
 // resolveConfig applies DefaultConfig values for any unset (zero) sampling field so
-// the service always has a positive sample interval and duration, while preserving
-// the caller-provided mount exclusions.
+// the service always has a positive sample interval and duration.
 func resolveConfig(cfg *config.MonitorConfig) config.MonitorConfig {
 	resolved := DefaultConfig()
 	if cfg == nil {
@@ -60,8 +72,6 @@ func resolveConfig(cfg *config.MonitorConfig) config.MonitorConfig {
 	if cfg.SampleDuration > 0 {
 		resolved.SampleDuration = cfg.SampleDuration
 	}
-
-	resolved.ExcludedMounts = cfg.ExcludedMounts
 
 	return resolved
 }
@@ -107,9 +117,10 @@ func (s *DefaultService) Overview(ctx context.Context) (*monitor.SystemOverview,
 		logger.Warnf("Overview: failed to collect CPU info: %v", err)
 	} else {
 		overview.CPU = &monitor.CPUSummary{
-			PhysicalCores: cpuInfo.PhysicalCores,
-			LogicalCores:  cpuInfo.LogicalCores,
-			UsagePercent:  cpuInfo.TotalPercent,
+			PhysicalCores:  cpuInfo.PhysicalCores,
+			LogicalCores:   cpuInfo.LogicalCores,
+			UsagePercent:   cpuInfo.TotalPercent,
+			EffectiveCores: cpuInfo.EffectiveCores,
 		}
 	}
 
@@ -123,10 +134,10 @@ func (s *DefaultService) Overview(ctx context.Context) (*monitor.SystemOverview,
 		}
 	}
 
-	if diskInfo, err := s.Disk(ctx); err != nil {
+	if diskSummary, err := s.rootDiskSummary(ctx); err != nil {
 		logger.Warnf("Overview: failed to collect disk info: %v", err)
 	} else {
-		overview.Disk = s.buildDiskSummary(diskInfo)
+		overview.Disk = diskSummary
 	}
 
 	if netInfo, err := s.Network(ctx); err != nil {
@@ -157,43 +168,37 @@ func (s *DefaultService) Overview(ctx context.Context) (*monitor.SystemOverview,
 	return &overview, nil
 }
 
-func (s *DefaultService) buildDiskSummary(diskInfo *monitor.DiskInfo) *monitor.DiskSummary {
-	var (
-		total, used uint64
-		partitions  int
-		seenDevices = make(map[string]bool)
-	)
-
-	for _, part := range diskInfo.Partitions {
-		if s.shouldSkipMountPoint(part.MountPoint) {
-			continue
-		}
-
-		if part.Device != "" {
-			container := getDeviceContainer(part.Device)
-			if seenDevices[container] {
-				continue
-			}
-
-			seenDevices[container] = true
-		}
-
-		total += part.Total
-		used += part.Used
-		partitions++
-	}
-
-	var usedPercent float64
-	if total > 0 {
-		usedPercent = float64(used) / float64(total) * 100
+// rootDiskSummary reports the filesystem that bounds the process's root path.
+// This avoids treating remote mounts, disk images, and sibling volumes as
+// additional host capacity while retaining the raw mount inventory in Disk.
+func (*DefaultService) rootDiskSummary(ctx context.Context) (*monitor.DiskSummary, error) {
+	usage, err := disk.UsageWithContext(ctx, rootDiskPath())
+	if err != nil {
+		return nil, err
 	}
 
 	return &monitor.DiskSummary{
-		Total:       total,
-		Used:        used,
-		UsedPercent: usedPercent,
-		Partitions:  partitions,
+		Total:       usage.Total,
+		Used:        usage.Used,
+		UsedPercent: usage.UsedPercent,
+		Partitions:  1,
+	}, nil
+}
+
+func rootDiskPath() string {
+	return rootDiskPathForOS(runtime.GOOS, os.Getenv("SystemDrive"))
+}
+
+func rootDiskPathForOS(goos, systemDrive string) string {
+	if goos != "windows" {
+		return "/"
 	}
+
+	if systemDrive == "" {
+		systemDrive = "C:"
+	}
+
+	return systemDrive + "\\"
 }
 
 func (*DefaultService) buildNetworkSummary(netInfo *monitor.NetworkInfo) *monitor.NetworkSummary {
@@ -214,83 +219,6 @@ func (*DefaultService) buildNetworkSummary(netInfo *monitor.NetworkInfo) *monito
 	}
 }
 
-// excludedMountPrefixes are OS pseudo-filesystem mount points that never
-// represent real storage and are always excluded from disk statistics.
-var excludedMountPrefixes = []string{
-	// macOS special volumes
-	"/System/Volumes/",
-	"/Volumes/Recovery",
-	"/private/var/vm",
-	// Linux special mount points
-	"/snap/",
-	"/run/",
-	"/dev/",
-	"/sys/",
-	"/proc/",
-}
-
-// shouldSkipMountPoint checks if a mount point should be excluded from disk stats.
-// Built-in OS pseudo-mounts are always skipped; host- or vendor-specific volumes
-// are skipped only when their path contains a configured ExcludedMounts substring.
-func (s *DefaultService) shouldSkipMountPoint(mountPoint string) bool {
-	if mountPoint == "" {
-		return true
-	}
-
-	for _, prefix := range excludedMountPrefixes {
-		if strings.HasPrefix(mountPoint, prefix) {
-			return true
-		}
-	}
-
-	for _, substr := range s.config.ExcludedMounts {
-		if substr != "" && strings.Contains(mountPoint, substr) {
-			return true
-		}
-	}
-
-	return false
-}
-
-var (
-	// pPartitionSuffix strips a trailing "pN" partition from NVMe/eMMC devices
-	// (nvme0n1p2 -> nvme0n1, mmcblk0p1 -> mmcblk0). The nN namespace is part of
-	// the device identity and is preserved, so distinct namespaces such as
-	// nvme0n1 and nvme0n2 are NOT merged into one container.
-	pPartitionSuffix = regexp.MustCompile(`p[0-9]+$`)
-	// apfsSliceSuffix strips an APFS slice from a disk device (disk1s2 -> disk1).
-	apfsSliceSuffix = regexp.MustCompile(`s[0-9]+$`)
-	// wholeDeviceSuffix matches device families whose names legitimately end in a
-	// digit and have no sibling-partition concept; their suffix must never be
-	// stripped, or independent devices (dm-0/dm-1, loop0/loop1, md0/md1) collapse.
-	wholeDeviceSuffix = regexp.MustCompile(`(dm-|loop|md|ram|zram|sr|fd)[0-9]+$`)
-	// digitSuffix strips a trailing partition number from letter-named disks
-	// (sda1 -> sda, vdb2 -> vdb); applied only after the cases above are ruled out.
-	digitSuffix = regexp.MustCompile(`[0-9]+$`)
-)
-
-// getDeviceContainer extracts the base container device name from a partition
-// device so sibling partitions of one physical disk de-duplicate to a single
-// container, WITHOUT merging genuinely independent devices. Device families are
-// handled separately because a single trailing-digit rule cannot tell an NVMe
-// namespace (nvme0n2) or an LVM volume (dm-1) from a partition (sda2).
-func getDeviceContainer(device string) string {
-	if device == "" {
-		return ""
-	}
-
-	switch {
-	case strings.Contains(device, "nvme"), strings.Contains(device, "mmcblk"):
-		return pPartitionSuffix.ReplaceAllString(device, "")
-	case strings.Contains(device, "disk"):
-		return apfsSliceSuffix.ReplaceAllString(device, "")
-	case wholeDeviceSuffix.MatchString(device):
-		return device
-	default:
-		return digitSuffix.ReplaceAllString(device, "")
-	}
-}
-
 // CPU returns detailed CPU information including usage percentages.
 func (s *DefaultService) CPU(context.Context) (*monitor.CPUInfo, error) {
 	cached := s.cpuCache.Load()
@@ -301,15 +229,20 @@ func (s *DefaultService) CPU(context.Context) (*monitor.CPUInfo, error) {
 	return cached.(*monitor.CPUInfo), nil
 }
 
-// Memory returns memory usage information.
-func (*DefaultService) Memory(ctx context.Context) (*monitor.MemoryInfo, error) {
+// Memory returns memory usage information. Inside a memory-limited container
+// the headline figures describe the container's limit and working set rather
+// than the host's /proc/meminfo, which is not namespaced.
+func (s *DefaultService) Memory(ctx context.Context) (*monitor.MemoryInfo, error) {
 	vMem, err := mem.VirtualMemoryWithContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	virtual := convertVirtualMemory(vMem)
+	s.applyCgroupMemoryLimit(virtual)
+
 	result := &monitor.MemoryInfo{
-		Virtual: convertVirtualMemory(vMem),
+		Virtual: virtual,
 	}
 
 	if swapMem, err := mem.SwapMemoryWithContext(ctx); err == nil {
@@ -317,6 +250,27 @@ func (*DefaultService) Memory(ctx context.Context) (*monitor.MemoryInfo, error) 
 	}
 
 	return result, nil
+}
+
+// applyCgroupMemoryLimit overrides the headline memory figures (Total, Used,
+// Available, Free, UsedPercent) with the container's cgroup limit and
+// working-set usage when a real limit is set: inside a limited container the
+// host numbers describe the node, not what this process can allocate before
+// the OOM killer intervenes. Detail fields (buffers, cache breakdowns) keep
+// their host meaning. A limit at or above the host total constrains nothing
+// and is ignored, as is a limit whose usage counter cannot be read — a mixed
+// host/container view would be worse than either.
+func (s *DefaultService) applyCgroupMemoryLimit(virtual *monitor.VirtualMemory) {
+	limit, used, ok := s.cgroups.memorySample(virtual.Total)
+	if !ok {
+		return
+	}
+
+	virtual.Total = limit
+	virtual.Used = used
+	virtual.Available = limit - used
+	virtual.Free = limit - used
+	virtual.UsedPercent = float64(used) / float64(limit) * 100
 }
 
 func convertVirtualMemory(v *mem.VirtualMemoryStat) *monitor.VirtualMemory {
@@ -547,50 +501,70 @@ func (s *DefaultService) BuildInfo() *monitor.BuildInfo {
 }
 
 // Init starts background goroutines to periodically sample CPU and process metrics.
-// It is idempotent: a second call while a sampler is already running is a no-op, so
-// the running goroutine is never orphaned.
+// It is idempotent while a sampler is running, and restartable after Close.
 func (s *DefaultService) Init(context.Context) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if s.samplerCancel != nil {
 		return nil
 	}
 
 	samplerCtx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
 	s.samplerCancel = cancel
-	s.samplerDone = make(chan struct{})
+	s.samplerDone = done
 
-	go s.runBackgroundSampler(samplerCtx)
+	// Pass the channel explicitly so the goroutine closes the one it was
+	// started with, even after Close has cleared the field for a restart.
+	go s.runBackgroundSampler(samplerCtx, done)
 
 	return nil
 }
 
-func (s *DefaultService) runBackgroundSampler(ctx context.Context) {
-	defer close(s.samplerDone)
+func (s *DefaultService) runBackgroundSampler(ctx context.Context, done chan struct{}) {
+	defer close(done)
 
 	ticker := time.NewTicker(s.config.SampleInterval)
 	defer ticker.Stop()
 
-	s.sampleCPU(ctx)
-	s.sampleProcess(ctx)
+	s.sampleAll(ctx)
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			s.sampleCPU(ctx)
-			s.sampleProcess(ctx)
+			s.sampleAll(ctx)
 		}
 	}
 }
 
-// Close gracefully stops the background sampling goroutines.
+// sampleAll refreshes every cached metric for one tick. The CPU and process
+// samplers each block for SampleDuration to measure a utilization window, so
+// they run concurrently to keep the tick to roughly one window rather than two.
+func (s *DefaultService) sampleAll(ctx context.Context) {
+	var wg sync.WaitGroup
+
+	wg.Go(func() { s.sampleCPU(ctx) })
+	wg.Go(func() { s.sampleProcess(ctx) })
+	wg.Wait()
+}
+
+// Close gracefully stops the background sampling goroutines. It clears the
+// sampler handles so a later Init can start a fresh sampler.
 func (s *DefaultService) Close() error {
-	if s.samplerCancel != nil {
-		s.samplerCancel()
+	s.mu.Lock()
+	cancel, done := s.samplerCancel, s.samplerDone
+	s.samplerCancel, s.samplerDone = nil, nil
+	s.mu.Unlock()
+
+	if cancel != nil {
+		cancel()
 	}
 
-	if s.samplerDone != nil {
-		<-s.samplerDone
+	if done != nil {
+		<-done
 	}
 
 	return nil
@@ -632,16 +606,79 @@ func (s *DefaultService) collectCPUInfo(ctx context.Context) (*monitor.CPUInfo, 
 
 	cpuInfo.PhysicalCores, _ = cpu.CountsWithContext(ctx, false)
 	cpuInfo.LogicalCores, _ = cpu.CountsWithContext(ctx, true)
+	cpuInfo.EffectiveCores = float64(cpuInfo.LogicalCores)
 
-	if perCorePercent, err := cpu.PercentWithContext(ctx, s.config.SampleDuration, true); err == nil {
-		cpuInfo.UsagePercent = perCorePercent
+	scope, limited := s.cgroups.cpuScope(cpuInfo.LogicalCores)
+
+	var (
+		usageBefore   time.Duration
+		usageBeforeOK bool
+		sampleStart   time.Time
+	)
+
+	if limited {
+		usageBefore, usageBeforeOK = scope.sample()
+		sampleStart = time.Now()
 	}
 
-	if totalPercent, err := cpu.PercentWithContext(ctx, 0, false); err == nil && len(totalPercent) > 0 {
-		cpuInfo.TotalPercent = totalPercent[0]
+	// PercentWithContext with a positive duration sleeps the sampling window,
+	// which doubles as the measurement window for the cgroup usage delta. The
+	// total is derived from the same per-core sample rather than
+	// cpu.Percent(0, false), whose process-wide "since last call" state returns
+	// 0 on the first sample and is corrupted by any other caller in the process.
+	if perCorePercent, err := cpu.PercentWithContext(ctx, s.config.SampleDuration, true); err == nil {
+		cpuInfo.UsagePercent = perCorePercent
+		cpuInfo.TotalPercent = meanPercent(perCorePercent)
+	}
+
+	if limited {
+		s.applyCgroupCPUScope(&cpuInfo, scope, usageBefore, usageBeforeOK, sampleStart)
 	}
 
 	return &cpuInfo, nil
+}
+
+// meanPercent averages per-core utilization into a single total percentage;
+// an empty sample yields 0 rather than a division by zero.
+func meanPercent(perCore []float64) float64 {
+	if len(perCore) == 0 {
+		return 0
+	}
+
+	var sum float64
+	for _, percent := range perCore {
+		sum += percent
+	}
+
+	return sum / float64(len(perCore))
+}
+
+// applyCgroupCPUScope replaces host utilization with the share of the effective
+// cgroup CPU capacity consumed over the sample window. Host topology remains
+// intact; EffectiveCores carries the quota/cpuset capacity. An incomplete
+// cgroup sample leaves the entire host view unchanged.
+func (*DefaultService) applyCgroupCPUScope(
+	cpuInfo *monitor.CPUInfo,
+	scope cgroupCPUScope,
+	usageBefore time.Duration,
+	usageBeforeOK bool,
+	sampleStart time.Time,
+) {
+	if !usageBeforeOK {
+		return
+	}
+
+	usageAfter, ok := scope.sample()
+	elapsed := time.Since(sampleStart)
+
+	if !ok || usageAfter < usageBefore || elapsed <= 0 || scope.capacity <= 0 {
+		return
+	}
+
+	percent := (usageAfter - usageBefore).Seconds() / (elapsed.Seconds() * scope.capacity) * 100
+	cpuInfo.EffectiveCores = scope.capacity
+	cpuInfo.TotalPercent = min(percent, 100)
+	cpuInfo.UsagePercent = nil
 }
 
 func (s *DefaultService) sampleProcess(ctx context.Context) {

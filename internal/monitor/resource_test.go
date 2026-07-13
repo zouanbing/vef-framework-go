@@ -88,6 +88,12 @@ func (suite *MonitorResourceTestSuite) TestGetOverview() {
 		suite.Contains(data, "load", "Should have load info")
 		suite.Contains(data, "build", "Should have build info")
 
+		cpuInfo := suite.ReadDataAsMap(data["cpu"])
+		suite.Contains(cpuInfo, "effectiveCores", "CPU summary should have effective cores")
+		effectiveCores, ok := cpuInfo["effectiveCores"].(float64)
+		suite.True(ok, "CPU summary effective cores should be a number")
+		suite.Greater(effectiveCores, float64(0), "CPU summary effective cores should be positive")
+
 		buildInfo := suite.ReadDataAsMap(data["build"])
 		suite.Equal("v1.0.0-test", buildInfo["appVersion"], "AppVersion should match")
 		suite.NotEmpty(buildInfo["vefVersion"], "VEFVersion should be populated")
@@ -120,6 +126,11 @@ func (suite *MonitorResourceTestSuite) TestGetCPU() {
 		suite.Contains(data, "modelName", "Should have model name")
 		suite.Contains(data, "usagePercent", "Should have usage percent")
 		suite.Contains(data, "totalPercent", "Should have total percent")
+		suite.Contains(data, "effectiveCores", "Should have effective cores")
+
+		effectiveCores, ok := data["effectiveCores"].(float64)
+		suite.True(ok, "Effective cores should be a number")
+		suite.Greater(effectiveCores, float64(0), "Effective cores should be positive")
 
 		physicalCores, ok := data["physicalCores"].(float64)
 		suite.True(ok, "Physical cores should be a number")
@@ -495,12 +506,12 @@ func (suite *MonitorResourceErrorMappingSuite) TestNotReadyMapping() {
 
 	suite.Run("CPU", func() {
 		suite.Equal(monitor.ErrCodeNotReady, suite.requestCode("get_cpu"),
-			"get_cpu should map a failure to the not-ready code")
+			"The get_cpu operation should map a failure to the not-ready code")
 	})
 
 	suite.Run("Process", func() {
 		suite.Equal(monitor.ErrCodeNotReady, suite.requestCode("get_process"),
-			"get_process should map a failure to the not-ready code")
+			"The get_process operation should map a failure to the not-ready code")
 	})
 }
 
