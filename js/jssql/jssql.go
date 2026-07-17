@@ -16,18 +16,18 @@ const Name = "sql"
 
 // lib exposes parameterized SQL access to scripts as the global "sql" object:
 //
-//	sql.query('SELECT name FROM users WHERE age > ?', 18)  // → [{...}, ...]
-//	sql.queryOne('SELECT ... WHERE id = ?', id)            // → {...} | null
-//	sql.exec('UPDATE ...', args)                           // → { rowsAffected }
+//	sql.queryList('SELECT name FROM users WHERE age > ?', 18)  // → [{...}, ...]
+//	sql.queryOne('SELECT ... WHERE id = ?', id)                // → {...} | null
+//	sql.execute('UPDATE ...', args)                            // → { rowsAffected }
 //
 // Only placeholder binding is offered — there is deliberately no string
-// interpolation helper. The library is read-only unless built with WithExec;
+// interpolation helper. The library is read-only unless built with WithExecute;
 // failures are thrown as catchable exceptions.
 type lib struct {
-	db        orm.DB
-	kind      config.DBKind
-	maxRows   int
-	allowExec bool
+	db           orm.DB
+	kind         config.DBKind
+	maxRows      int
+	allowExecute bool
 }
 
 // New builds the sql library over db. The caller picks the data source —
@@ -42,7 +42,7 @@ func New(db orm.DB, kind config.DBKind, opts ...Option) js.Lib {
 		opt(&cfg)
 	}
 
-	return &lib{db: db, kind: kind, maxRows: cfg.maxRows, allowExec: cfg.allowExec}
+	return &lib{db: db, kind: kind, maxRows: cfg.maxRows, allowExecute: cfg.allowExecute}
 }
 
 func (*lib) Name() string {
@@ -51,7 +51,7 @@ func (*lib) Name() string {
 
 func (l *lib) Install(rt *js.Runtime) error {
 	return rt.Set(Name, map[string]any{
-		"query": func(query string, args ...any) ([]map[string]any, error) {
+		"queryList": func(query string, args ...any) ([]map[string]any, error) {
 			return l.query(rt, query, args)
 		},
 		"queryOne": func(query string, args ...any) (any, error) {
@@ -66,8 +66,8 @@ func (l *lib) Install(rt *js.Runtime) error {
 
 			return rows[0], nil
 		},
-		"exec": func(query string, args ...any) (map[string]any, error) {
-			return l.exec(rt, query, args)
+		"execute": func(query string, args ...any) (map[string]any, error) {
+			return l.execute(rt, query, args)
 		},
 	})
 }
@@ -93,13 +93,19 @@ func (l *lib) query(rt *js.Runtime, query string, args []any) ([]map[string]any,
 		return nil, fmt.Errorf("%w: %d rows over limit %d, constrain the query with LIMIT", ErrTooManyRows, len(rows), l.maxRows)
 	}
 
+	if rows == nil {
+		// Scan leaves the slice nil on no match, which would surface in the
+		// script (and its JSON output) as null instead of the documented [].
+		rows = []map[string]any{}
+	}
+
 	return rows, nil
 }
 
-// exec runs a mutating statement, guarded by the WithExec grant.
-func (l *lib) exec(rt *js.Runtime, query string, args []any) (map[string]any, error) {
-	if !l.allowExec {
-		return nil, ErrExecDisabled
+// execute runs a mutating statement, guarded by the WithExecute grant.
+func (l *lib) execute(rt *js.Runtime, query string, args []any) (map[string]any, error) {
+	if !l.allowExecute {
+		return nil, ErrExecuteDisabled
 	}
 
 	result, err := l.db.NewRaw(query, args...).Exec(rt.Context())

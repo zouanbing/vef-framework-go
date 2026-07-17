@@ -522,14 +522,14 @@ func ProvideDataSourceProvider(constructor any, paramTags ...string) fx.Option {
 //     (jssql.Name, jshttp.Name, ...) and it replaces the default, keeping the
 //     default's tier — an always-on utility stays always-on, an opt-in
 //     capability stays opt-in. Use it to supply your own policy: enable
-//     sql.exec, restrict HTTP hosts, back the cache with Redis, restrict
+//     sql.execute, restrict HTTP hosts, back the cache with Redis, restrict
 //     publishable event types.
 //
 //   - Adding a new library: return a library with a fresh name. New libraries
 //     join the opt-in catalog, seen only when a runtime is created with
 //     js.EnableLibs(...).
 //
-//     vef.ProvideJSLib(func(db orm.DB) js.Lib { return jssql.New(db, config.Postgres, jssql.WithExec()) })
+//     vef.ProvideJSLib(func(db orm.DB) js.Lib { return jssql.New(db, config.Postgres, jssql.WithExecute()) })
 //     vef.ProvideJSLib(func() js.Lib { return jshttp.New(jshttp.WithPublicNetworkOnly()) })
 //
 // constructor is an fx-style factory that returns a js.Lib.

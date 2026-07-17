@@ -32,6 +32,10 @@ func ValidateContract(contract *integration.Contract) error {
 		}
 	}
 
+	if err := orm.ValidateLabels(contract.Labels); err != nil {
+		return integration.ErrInvalidLabel
+	}
+
 	return nil
 }
 
