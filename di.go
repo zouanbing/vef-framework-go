@@ -5,6 +5,7 @@ import (
 	"go.uber.org/fx"
 
 	iapproval "github.com/coldsmirk/vef-framework-go/internal/approval"
+	iintegration "github.com/coldsmirk/vef-framework-go/internal/integration"
 	"github.com/coldsmirk/vef-framework-go/mcp"
 	"github.com/coldsmirk/vef-framework-go/middleware"
 )
@@ -17,6 +18,15 @@ import (
 // binding listener subscribes, so the host must route approval.* to a
 // transactional transport with a subscribable sink (see the approval docs).
 var ApprovalModule = iapproval.Module
+
+// IntegrationModule enables the optional integration engine: config- and
+// script-driven adapters that translate between external systems (HIS, LIS,
+// third-party APIs) and the application's standard contracts. It registers the
+// contract/system/adapter/route management resources, the invocation log,
+// the dry-run test console, and provides integration.Invoker for business
+// code. Absent from the default boot sequence so applications that do not
+// integrate pay nothing.
+var IntegrationModule = iintegration.Module
 
 var (
 	Provide    = fx.Provide
@@ -499,6 +509,93 @@ func ProvideDataSourceProvider(constructor any, paramTags ...string) fx.Option {
 			constructor,
 			fx.ParamTags(paramTags...),
 			fx.ResultTags(`group:"vef:datasource:providers"`),
+		),
+	)
+}
+
+// ProvideJSLib contributes a JavaScript library to the shared js.Engine. The
+// framework already seeds six libraries at safe defaults: the always-on
+// utilities console / crypto / cache, and the opt-in capabilities events /
+// http / sql. This is for either of two things:
+//
+//   - Overriding a default: return a library whose Name matches a built-in
+//     (jssql.Name, jshttp.Name, ...) and it replaces the default, keeping the
+//     default's tier — an always-on utility stays always-on, an opt-in
+//     capability stays opt-in. Use it to supply your own policy: enable
+//     sql.exec, restrict HTTP hosts, back the cache with Redis, restrict
+//     publishable event types.
+//
+//   - Adding a new library: return a library with a fresh name. New libraries
+//     join the opt-in catalog, seen only when a runtime is created with
+//     js.EnableLibs(...).
+//
+//     vef.ProvideJSLib(func(db orm.DB) js.Lib { return jssql.New(db, config.Postgres, jssql.WithExec()) })
+//     vef.ProvideJSLib(func() js.Lib { return jshttp.New(jshttp.WithPublicNetworkOnly()) })
+//
+// constructor is an fx-style factory that returns a js.Lib.
+func ProvideJSLib(constructor any, paramTags ...string) fx.Option {
+	return fx.Provide(
+		fx.Annotate(
+			constructor,
+			fx.ParamTags(paramTags...),
+			fx.ResultTags(`group:"vef:js:libs"`),
+		),
+	)
+}
+
+// ProvideIntegrationOutboundAuthScheme registers a custom auth scheme for the
+// integration engine (requires IntegrationModule). Systems reference schemes
+// by name in their auth config; a scheme whose Name matches a built-in
+// (none / http_basic / bearer / header / query / signature / script) replaces
+// it.
+//
+//	vef.ProvideIntegrationOutboundAuthScheme(func() integration.OutboundAuthScheme { return &hmacScheme{} })
+//
+// constructor is an fx-style factory that returns integration.OutboundAuthScheme.
+func ProvideIntegrationOutboundAuthScheme(constructor any, paramTags ...string) fx.Option {
+	return fx.Provide(
+		fx.Annotate(
+			constructor,
+			fx.ParamTags(paramTags...),
+			fx.ResultTags(`group:"vef:integration:outbound_auth_schemes"`),
+		),
+	)
+}
+
+// ProvideIntegrationInboundAuthScheme registers a custom inbound auth scheme
+// for the integration engine (requires IntegrationModule). Systems reference
+// schemes by name in their inbound auth config; a scheme whose Name matches a
+// built-in (none / ip / http_basic / bearer / header / query / signature /
+// script) replaces it.
+//
+//	vef.ProvideIntegrationInboundAuthScheme(func() integration.InboundAuthScheme { return &partnerTokenScheme{} })
+//
+// constructor is an fx-style factory that returns integration.InboundAuthScheme.
+func ProvideIntegrationInboundAuthScheme(constructor any, paramTags ...string) fx.Option {
+	return fx.Provide(
+		fx.Annotate(
+			constructor,
+			fx.ParamTags(paramTags...),
+			fx.ResultTags(`group:"vef:integration:inbound_auth_schemes"`),
+		),
+	)
+}
+
+// ProvideIntegrationInboundHandler registers the business handler serving one
+// inbound integration contract (requires IntegrationModule). Exactly one
+// handler may serve a contract; duplicates fail at start-up.
+//
+//	vef.ProvideIntegrationInboundHandler(func(db orm.DB) integration.InboundHandler {
+//	    return integration.NewInboundHandler("lab.report_result", func(ctx context.Context, report LabReport) (Ack, error) { ... })
+//	})
+//
+// constructor is an fx-style factory that returns integration.InboundHandler.
+func ProvideIntegrationInboundHandler(constructor any, paramTags ...string) fx.Option {
+	return fx.Provide(
+		fx.Annotate(
+			constructor,
+			fx.ParamTags(paramTags...),
+			fx.ResultTags(`group:"vef:integration:inbound_handlers"`),
 		),
 	)
 }

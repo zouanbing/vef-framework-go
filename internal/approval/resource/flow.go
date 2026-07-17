@@ -58,6 +58,7 @@ type CreateFlowParams struct {
 	CategoryID             string                          `json:"categoryId" validate:"required"`
 	Icon                   *string                         `json:"icon"`
 	Description            *string                         `json:"description"`
+	Labels                 map[string]string               `json:"labels"`
 	BindingMode            approval.BindingMode            `json:"bindingMode" validate:"required"`
 	BusinessBinding        *approval.BusinessBindingConfig `json:"businessBinding"`
 	AdminUserIDs           []string                        `json:"adminUserIds"`
@@ -97,6 +98,7 @@ func (r *FlowResource) Create(ctx fiber.Ctx, principal *security.Principal, para
 			CategoryID:             params.CategoryID,
 			Icon:                   params.Icon,
 			Description:            params.Description,
+			Labels:                 params.Labels,
 			BindingMode:            params.BindingMode,
 			BusinessBinding:        params.BusinessBinding,
 			AdminUserIDs:           params.AdminUserIDs,
@@ -190,9 +192,14 @@ type GetGraphParams struct {
 	// other flow params); the actual cross-tenant gate is Caller.Allows in the
 	// query handler, so this only narrows the lookup.
 	TenantID *string `json:"tenantId"`
+	// VersionID selects an explicit version (a designer resuming from the
+	// newest deployment, published or not); omitted resolves the latest
+	// published version.
+	VersionID *string `json:"versionId"`
 }
 
-// GetGraph returns the flow graph for the published version.
+// GetGraph returns the flow graph: the latest published version by default,
+// or an explicit version when versionId is given.
 func (r *FlowResource) GetGraph(ctx fiber.Ctx, principal *security.Principal, params GetGraphParams) error {
 	caller, err := resolveCaller(ctx.Context(), r.tenantResolver, principal)
 	if err != nil {
@@ -204,13 +211,19 @@ func (r *FlowResource) GetGraph(ctx fiber.Ctx, principal *security.Principal, pa
 		tenantID = *params.TenantID
 	}
 
+	versionID := ""
+	if params.VersionID != nil {
+		versionID = *params.VersionID
+	}
+
 	graph, err := cqrs.Send[query.GetFlowGraphQuery, *shared.FlowGraph](
 		ctx.Context(),
 		r.bus,
 		query.GetFlowGraphQuery{
-			FlowID:   params.FlowID,
-			TenantID: tenantID,
-			Caller:   caller,
+			FlowID:    params.FlowID,
+			TenantID:  tenantID,
+			VersionID: versionID,
+			Caller:    caller,
 		},
 	)
 	if err != nil {
@@ -224,12 +237,13 @@ func (r *FlowResource) GetGraph(ctx fiber.Ctx, principal *security.Principal, pa
 type FindFlowsParams struct {
 	api.P
 
-	TenantID   *string `json:"tenantId"`
-	CategoryID *string `json:"categoryId"`
-	Keyword    *string `json:"keyword"`
-	IsActive   *bool   `json:"isActive"`
-	Page       int     `json:"page"`
-	PageSize   int     `json:"pageSize"`
+	TenantID   *string           `json:"tenantId"`
+	CategoryID *string           `json:"categoryId"`
+	Keyword    *string           `json:"keyword"`
+	IsActive   *bool             `json:"isActive"`
+	Labels     map[string]string `json:"labels"`
+	Page       int               `json:"page"`
+	PageSize   int               `json:"pageSize"`
 }
 
 // FindFlows queries flows for admin management.
@@ -247,6 +261,7 @@ func (r *FlowResource) FindFlows(ctx fiber.Ctx, principal *security.Principal, p
 			CategoryID: params.CategoryID,
 			Keyword:    params.Keyword,
 			IsActive:   params.IsActive,
+			Labels:     params.Labels,
 			Pageable:   page.Pageable{Page: params.Page, Size: params.PageSize},
 			Caller:     caller,
 		},
@@ -258,14 +273,15 @@ func (r *FlowResource) FindFlows(ctx fiber.Ctx, principal *security.Principal, p
 	return result.Ok(res).Response(ctx)
 }
 
-// UpdateParams contains the parameters for updating a flow.
-type UpdateParams struct {
+// UpdateFlowParams contains the parameters for updating a flow.
+type UpdateFlowParams struct {
 	api.P
 
 	FlowID                 string                          `json:"flowId" validate:"required"`
 	Name                   string                          `json:"name" validate:"required"`
 	Icon                   *string                         `json:"icon"`
 	Description            *string                         `json:"description"`
+	Labels                 map[string]string               `json:"labels"`
 	BindingMode            approval.BindingMode            `json:"bindingMode" validate:"required"`
 	BusinessBinding        *approval.BusinessBindingConfig `json:"businessBinding"`
 	AdminUserIDs           []string                        `json:"adminUserIds"`
@@ -274,8 +290,8 @@ type UpdateParams struct {
 	Initiators             []CreateInitiatorParams         `json:"initiators"`
 }
 
-// UpdateFlow updates an existing flow.
-func (r *FlowResource) Update(ctx fiber.Ctx, principal *security.Principal, params UpdateParams) error {
+// Update updates an existing flow.
+func (r *FlowResource) Update(ctx fiber.Ctx, principal *security.Principal, params UpdateFlowParams) error {
 	caller, err := resolveCaller(ctx.Context(), r.tenantResolver, principal)
 	if err != nil {
 		return err
@@ -297,6 +313,7 @@ func (r *FlowResource) Update(ctx fiber.Ctx, principal *security.Principal, para
 			Name:                   params.Name,
 			Icon:                   params.Icon,
 			Description:            params.Description,
+			Labels:                 params.Labels,
 			BindingMode:            params.BindingMode,
 			BusinessBinding:        params.BusinessBinding,
 			AdminUserIDs:           params.AdminUserIDs,
@@ -358,7 +375,7 @@ func (r *FlowResource) FindVersions(ctx fiber.Ctx, principal *security.Principal
 		return err
 	}
 
-	versions, err := cqrs.Send[query.FindFlowVersionsQuery, []approval.FlowVersion](
+	versions, err := cqrs.Send[query.FindFlowVersionsQuery, []shared.FlowVersionSummary](
 		ctx.Context(),
 		r.bus,
 		query.FindFlowVersionsQuery{

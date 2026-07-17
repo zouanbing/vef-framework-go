@@ -29,12 +29,18 @@ type Flow struct {
 	orm.BaseModel `bun:"table:apv_flow,alias:af"`
 	orm.FullAuditedModel
 
-	TenantID               string                 `json:"tenantId" bun:"tenant_id"`
-	CategoryID             string                 `json:"categoryId" bun:"category_id"`
-	Code                   string                 `json:"code" bun:"code"`
-	Name                   string                 `json:"name" bun:"name"`
-	Icon                   *string                `json:"icon" bun:"icon,nullzero"`
-	Description            *string                `json:"description" bun:"description,nullzero"`
+	TenantID    string  `json:"tenantId" bun:"tenant_id"`
+	CategoryID  string  `json:"categoryId" bun:"category_id"`
+	Code        string  `json:"code" bun:"code"`
+	Name        string  `json:"name" bun:"name"`
+	Icon        *string `json:"icon" bun:"icon,nullzero"`
+	Description *string `json:"description" bun:"description,nullzero"`
+	// Labels are host-owned selection metadata (e.g. which app a flow belongs
+	// to, mobile availability). The framework stores them verbatim and offers
+	// equality filtering in the flow list queries; it never interprets values.
+	// Keys are restricted at save time to a JSON-path-safe charset — see
+	// validateFlowLabels.
+	Labels                 map[string]string      `json:"labels,omitempty" bun:"labels,type:jsonb,nullzero"`
 	BindingMode            BindingMode            `json:"bindingMode" bun:"binding_mode"`
 	BusinessBinding        *BusinessBindingConfig `json:"businessBinding,omitempty" bun:"business_binding,type:jsonb,nullzero"`
 	AdminUserIDs           []string               `json:"adminUserIds" bun:"admin_user_ids,type:jsonb"`
@@ -88,9 +94,10 @@ type FlowVersion struct {
 
 // FormTable records the dedicated physical table generated for a published
 // version whose StorageMode is StorageTable. It is the single source of truth
-// for what DDL the framework generated: the engine consults it (idempotency)
-// before creating a table for a version, and operators can map a version to
-// its projection table through it. One row per physical table: the main
+// for what DDL the framework generated: the publish path consults it so a
+// republish never re-records a version's metadata (the DDL itself is
+// idempotent via CREATE TABLE IF NOT EXISTS), and operators can map a version
+// to its projection table through it. One row per physical table: the main
 // projection table plus one child table per detail-table field, disambiguated
 // by SourceFieldKey ((version_id, source_field_key) is unique).
 type FormTable struct {

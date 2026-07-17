@@ -30,6 +30,10 @@ var (
 	// not parse as a Go text/template at flow create / update time, so a
 	// broken template cannot silently break every subsequent submission.
 	ErrInvalidTitleTemplate = result.Err(i18n.T("approval_invalid_title_template"), result.WithCode(ErrCodeInvalidTitleTemplate))
+	// ErrInvalidFlowLabel rejects a flow label whose key would silently break
+	// the label equality filter (see validateFlowLabels) or whose value blows
+	// past the storage bound, at flow create / update time.
+	ErrInvalidFlowLabel = result.Err(i18n.T("approval_invalid_flow_label"), result.WithCode(ErrCodeInvalidFlowLabel))
 	// ErrInvalidFormDesign rejects a structurally broken form schema at
 	// deploy time (duplicate keys, unknown field kind, uncompilable
 	// validation pattern) so configuration faults never surface as data
@@ -52,10 +56,6 @@ var (
 	// drives whether a dedicated physical form table is generated at publish,
 	// so an unrecognized value must be caught when the version is created.
 	ErrInvalidStorageMode = result.Err(i18n.T("approval_invalid_storage_mode"), result.WithCode(ErrCodeInvalidStorageMode))
-	// ErrFlowBindingLocked is retained as a stable error surface for older
-	// consumers. Version-pinned binding snapshots mean current flow commands no
-	// longer return it when a mutable flow binding changes.
-	ErrFlowBindingLocked = result.Err(i18n.T("approval_flow_binding_locked"), result.WithCode(ErrCodeFlowBindingLocked))
 	// ErrBindingColumnsConflict rejects duplicate key/write-back columns, which
 	// could otherwise mutate the lookup key or assign one column twice.
 	ErrBindingColumnsConflict = result.Err(i18n.T("approval_binding_columns_conflict"), result.WithCode(ErrCodeBindingColumnsConflict))

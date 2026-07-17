@@ -11,7 +11,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	collections "github.com/coldsmirk/go-collections"
+	"github.com/coldsmirk/go-collections"
 
 	"github.com/coldsmirk/vef-framework-go/approval"
 	"github.com/coldsmirk/vef-framework-go/i18n"
@@ -596,7 +596,7 @@ func validateFormDataSize(formData map[string]any) error {
 }
 
 // validateEditableFormData validates the submitted editable subset against the
-// version's form schema. Only keys the node grants editable / required
+// version's parsed form fields. Only keys the node grants editable / required
 // permission are considered — the same subset MergeFormData will persist — so a
 // value the node does not expose for editing is never validated (or merged). A
 // submitted editable key with no schema field is rejected like an unknown
