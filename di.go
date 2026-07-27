@@ -599,3 +599,44 @@ func ProvideIntegrationInboundHandler(constructor any, paramTags ...string) fx.O
 		),
 	)
 }
+
+// ProvideCronJobHandler registers a durable cron job handler with the
+// schedule store (vef.cron.store). Exactly one handler per job name;
+// duplicates fail at start-up. Persisted schedules reference the handler by
+// name, and a handler may ship a default schedule that is seeded when absent.
+//
+//	vef.ProvideCronJobHandler(func(svc *ReportService) cron.JobHandler {
+//	    return cron.NewJobHandler("report.daily", svc.GenerateDaily,
+//	        cron.WithDefaultSchedule(cron.ScheduleSpec{Trigger: cron.Expr("0 2 * * *", "Asia/Shanghai")}))
+//	})
+//
+// constructor is an fx-style factory that returns cron.JobHandler.
+func ProvideCronJobHandler(constructor any, paramTags ...string) fx.Option {
+	return fx.Provide(
+		fx.Annotate(
+			constructor,
+			fx.ParamTags(paramTags...),
+			fx.ResultTags(`group:"vef:cron:job_handlers"`),
+		),
+	)
+}
+
+// ProvideSessionRevocationListener registers a security.SessionRevocationListener
+// that observes login-session revocations (logout, concurrent-login eviction,
+// administrative kicks). The framework fires listeners synchronously from its
+// own revocation paths — implementations must be fast and non-blocking.
+//
+//	vef.ProvideSessionRevocationListener(func(audit *AuditService) security.SessionRevocationListener {
+//	    return audit
+//	})
+//
+// constructor is an fx-style factory that returns security.SessionRevocationListener.
+func ProvideSessionRevocationListener(constructor any, paramTags ...string) fx.Option {
+	return fx.Provide(
+		fx.Annotate(
+			constructor,
+			fx.ParamTags(paramTags...),
+			fx.ResultTags(`group:"vef:security:session_revocation_listeners"`),
+		),
+	)
+}

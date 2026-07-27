@@ -66,19 +66,22 @@ func (m *Auth) Process(ctx fiber.Ctx) error {
 		return err
 	}
 
+	// An auth strategy is an application extension point: never let one mint a
+	// framework-reserved identity (see security.Principal.IsReserved).
+	if principal == nil || principal.IsReserved() {
+		contextx.Logger(ctx).Errorf(
+			"Authentication rejected: strategy %q returned a nil or framework-reserved principal",
+			op.Auth.Strategy,
+		)
+
+		return security.ErrReservedPrincipal
+	}
+
 	contextx.SetPrincipal(ctx, principal)
 	ctx.SetContext(contextx.SetPrincipal(ctx.Context(), principal))
 
-	return m.checkPermission(ctx, op, principal)
-}
-
-func (m *Auth) checkPermission(ctx fiber.Ctx, op *api.Operation, principal *security.Principal) error {
-	if principal.Type == security.PrincipalTypeSystem {
-		return ctx.Next()
-	}
-
 	if permission := requiredPermissionFromOperation(op); permission != "" {
-		if err := m.doCheck(ctx.Context(), principal, permission); err != nil {
+		if err := m.checkPermission(ctx.Context(), principal, permission); err != nil {
 			return err
 		}
 	}
@@ -86,7 +89,7 @@ func (m *Auth) checkPermission(ctx fiber.Ctx, op *api.Operation, principal *secu
 	return ctx.Next()
 }
 
-func (m *Auth) doCheck(ctx context.Context, principal *security.Principal, permission string) error {
+func (m *Auth) checkPermission(ctx context.Context, principal *security.Principal, permission string) error {
 	if m.checker == nil {
 		return fmt.Errorf(
 			"%w: %w, permission=%q",

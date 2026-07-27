@@ -221,7 +221,20 @@ var (
 
 	// DataType is the factory for creating type-safe SQL data type definitions.
 	DataType = orm.DataType
+
+	// WithQuietSQLLog marks a context so the SQL log demotes successful
+	// statements to Debug — for polling loops whose steady-state queries
+	// would otherwise flood the log. Slow-query warnings and failures keep
+	// their level. WithoutQuietSQLLog lifts the mark again, for the work a
+	// marked loop hands to business code. IsQuietSQLLog reports the mark.
+	WithQuietSQLLog    = orm.WithQuietSQLLog
+	WithoutQuietSQLLog = orm.WithoutQuietSQLLog
+	IsQuietSQLLog      = orm.IsQuietSQLLog
 )
+
+// ErrRunOnConnectionInTx is returned when DB.RunOnConnection is invoked on a
+// transaction-scoped DB, whose transaction already owns its connection.
+var ErrRunOnConnectionInTx = orm.ErrRunOnConnectionInTx
 
 // DDL constraint constructors.
 var (

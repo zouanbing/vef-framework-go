@@ -47,6 +47,10 @@ func newMCPConfig(cfg config.Config) (*config.MCPConfig, error) {
 	return unmarshalConfig(cfg, "vef.mcp", new(config.MCPConfig))
 }
 
+func newPushConfig(cfg config.Config) (*config.PushConfig, error) {
+	return unmarshalConfig(cfg, "vef.push", new(config.PushConfig))
+}
+
 func newApprovalConfig(cfg config.Config) (*config.ApprovalConfig, error) {
 	approvalConfig, err := unmarshalConfig(cfg, "vef.approval", new(config.ApprovalConfig))
 	if err != nil {
@@ -77,4 +81,17 @@ func newIntegrationConfig(cfg config.Config) (*config.IntegrationConfig, error) 
 	}
 
 	return integrationConfig, nil
+}
+
+func newCronConfig(cfg config.Config) (*config.CronConfig, error) {
+	cronConfig, err := unmarshalConfig(cfg, "vef.cron", new(config.CronConfig))
+	if err != nil {
+		return nil, err
+	}
+
+	if err := cronConfig.Validate(); err != nil {
+		return nil, err
+	}
+
+	return cronConfig, nil
 }

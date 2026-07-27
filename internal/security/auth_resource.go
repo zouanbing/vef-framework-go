@@ -3,6 +3,7 @@ package security
 import (
 	"cmp"
 	"context"
+	"errors"
 	"slices"
 
 	"github.com/coldsmirk/go-collections"
@@ -31,7 +32,8 @@ type AuthResourceParams struct {
 	UserInfoLoader      security.UserInfoLoader `optional:"true"`
 	LoginGuard          security.LoginGuard     `optional:"true"`
 	SessionStore        security.SessionStore
-	ChallengeProviders  []security.ChallengeProvider `group:"vef:security:challenge_providers"`
+	RevocationNotifier  *security.SessionRevocationNotifier `optional:"true"`
+	ChallengeProviders  []security.ChallengeProvider        `group:"vef:security:challenge_providers"`
 	Bus                 event.Bus
 	SecurityConfig      *config.SecurityConfig
 }
@@ -81,6 +83,7 @@ func NewAuthResource(params AuthResourceParams) api.Resource {
 		userInfoLoader:      params.UserInfoLoader,
 		loginGuard:          params.LoginGuard,
 		sessionStore:        params.SessionStore,
+		revocationNotifier:  params.RevocationNotifier,
 		challengeProviders:  params.ChallengeProviders,
 		bus:                 params.Bus,
 
@@ -101,6 +104,7 @@ type AuthResource struct {
 	userInfoLoader      security.UserInfoLoader
 	loginGuard          security.LoginGuard
 	sessionStore        security.SessionStore
+	revocationNotifier  *security.SessionRevocationNotifier
 	challengeProviders  []security.ChallengeProvider
 	bus                 event.Bus
 }
@@ -140,7 +144,15 @@ func (a *AuthResource) Login(ctx fiber.Ctx, params LoginParams) error {
 		Credentials: params.Credentials,
 	})
 	if err != nil {
-		a.guardRecordFailure(ctx, attempt)
+		// A reserved-identity rejection means an authenticator resolved a
+		// framework-internal identity: the credential may well have been correct,
+		// so the fault is the authenticator's, not the caller's, and counting it
+		// would let a buggy extension lock the user out. Audited but not counted,
+		// exactly like the analogous gate in ResolveChallenge.
+		if !errors.Is(err, errReservedPrincipalRejected) {
+			a.guardRecordFailure(ctx, attempt)
+		}
+
 		a.publishLoginFailure(ctx, params.Type, params.Principal, err)
 
 		return err
@@ -231,7 +243,12 @@ func (a *AuthResource) revokeCurrentSession(ctx fiber.Ctx) {
 
 	if err := a.sessionStore.Revoke(ctx.Context(), session.ID); err != nil {
 		logger.Warnf("Failed to revoke session on logout: %v", err)
+
+		return
 	}
+
+	a.revocationNotifier.NotifyRevoked(ctx.Context(),
+		security.SessionRevocation{SessionID: session.ID, UserID: session.UserID})
 }
 
 // ResolveChallengeParams represents the request for resolving a login challenge.
@@ -294,6 +311,19 @@ func (a *AuthResource) ResolveChallenge(ctx fiber.Ctx, params ResolveChallengePa
 		a.publishLoginFailure(ctx, params.Type, state.Username, err)
 
 		return err
+	}
+
+	// A ChallengeProvider's result is vetted by no authenticator, so the resolve
+	// path needs its own reserved-identity gate (token issuance downstream stays
+	// as defense in depth). The rejection is audited but not counted toward
+	// lockout: the second factor was correct — the fault is the provider's, not
+	// the caller's.
+	if principal == nil || principal.IsReserved() {
+		logger.Errorf("Challenge rejected: provider %q resolved to a nil or framework-reserved principal", params.Type)
+
+		a.publishLoginFailure(ctx, params.Type, state.Username, security.ErrReservedPrincipal)
+
+		return security.ErrReservedPrincipal
 	}
 
 	a.guardRecordSuccess(ctx, attempt)

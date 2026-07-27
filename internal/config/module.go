@@ -17,8 +17,10 @@ var Module = fx.Module(
 		newStorageConfig,
 		newMonitorConfig,
 		newMCPConfig,
+		newPushConfig,
 		newApprovalConfig,
 		newEventConfig,
 		newIntegrationConfig,
+		newCronConfig,
 	),
 )

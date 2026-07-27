@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/coldsmirk/vef-framework-go/orm"
 	"github.com/coldsmirk/vef-framework-go/result"
 	"github.com/coldsmirk/vef-framework-go/security"
 )
@@ -85,6 +86,73 @@ func TestAuthManagerAuthenticate(t *testing.T) {
 		})
 		require.Error(t, err, "Authenticator generic error should be returned")
 		assert.Equal(t, "db connection failed", err.Error(), "Authenticator generic error message should be preserved")
+	})
+
+	// An authenticator's principal is untrusted input and must never carry a
+	// framework-reserved identity.
+	t.Run("RejectsAReservedPrincipal", func(t *testing.T) {
+		reserved := []struct {
+			name      string
+			principal *security.Principal
+		}{
+			{"SystemType", security.PrincipalSystem},
+			{"SystemID", security.NewUser(orm.OperatorSystem, "impostor")},
+			{"CronJobID", security.NewUser(orm.OperatorCronJob, "impostor")},
+			{"NilPrincipal", nil},
+		}
+
+		for _, tt := range reserved {
+			t.Run(tt.name, func(t *testing.T) {
+				auth := new(MockAuthenticator)
+				auth.On("Supports", "password").Return(true)
+				auth.On("Authenticate", mock.Anything, mock.Anything).Return(tt.principal, nil)
+
+				manager := NewAuthManager([]security.Authenticator{auth})
+
+				got, err := manager.Authenticate(ctx, security.Authentication{
+					Type:      "password",
+					Principal: "alice",
+				})
+				require.Error(t, err, "A reserved identity must not survive authentication")
+				assert.Nil(t, got, "A rejected authentication must return no principal")
+
+				resErr, ok := result.AsErr(err)
+				require.True(t, ok, "The rejection should be a result.Error")
+				assert.Equal(t, security.ErrCodePrincipalInvalid, resErr.Code,
+					"The rejection should carry the principal-invalid code")
+				assert.Equal(t, security.ErrReservedPrincipal.Message, resErr.Message,
+					"The outward message must stay the reserved-principal one")
+				assert.Equal(t, security.ErrReservedPrincipal.Status, resErr.Status,
+					"The outward status must stay the reserved-principal one")
+
+				// The internal marker is what lets the login path tell this
+				// server-side fault from a caller's bad credential: both share
+				// ErrCodePrincipalInvalid, and result.Error.Is compares codes alone.
+				assert.ErrorIs(t, err, errReservedPrincipalRejected,
+					"The rejection should carry the internal reserved-principal marker")
+				assert.ErrorIs(t, err, security.ErrReservedPrincipal,
+					"The rejection should stay matchable as the outward sentinel")
+			})
+		}
+
+		t.Run("CountableRejectionsStayUnmarked", func(t *testing.T) {
+			// ErrPrincipalInvalid shares the reserved sentinel's business code, so
+			// the marker — not the code — must be the discriminator.
+			auth := new(MockAuthenticator)
+			auth.On("Supports", "password").Return(true)
+			auth.On("Authenticate", mock.Anything, mock.Anything).
+				Return(nil, security.ErrPrincipalInvalid("username must not be empty"))
+
+			manager := NewAuthManager([]security.Authenticator{auth})
+
+			_, err := manager.Authenticate(ctx, security.Authentication{
+				Type:      "password",
+				Principal: "",
+			})
+			require.Error(t, err, "An invalid principal should be rejected")
+			assert.NotErrorIs(t, err, errReservedPrincipalRejected,
+				"A caller-caused principal rejection must not be marked as a framework fault")
+		})
 	})
 
 	t.Run("MultipleAuthenticatorsSelectsCorrect", func(t *testing.T) {

@@ -14,15 +14,21 @@ import (
 // token whose hash keys that session. It carries no refresh token, since the
 // session renews itself on use.
 type OpaqueTokenGenerator struct {
-	store  security.SessionStore
-	policy security.SessionPolicy
+	store    security.SessionStore
+	policy   security.SessionPolicy
+	notifier *security.SessionRevocationNotifier
 }
 
-func NewOpaqueTokenGenerator(store security.SessionStore, policy security.SessionPolicy) *OpaqueTokenGenerator {
-	return &OpaqueTokenGenerator{store: store, policy: policy}
+func NewOpaqueTokenGenerator(store security.SessionStore, policy security.SessionPolicy, notifier *security.SessionRevocationNotifier) *OpaqueTokenGenerator {
+	return &OpaqueTokenGenerator{store: store, policy: policy, notifier: notifier}
 }
 
 func (g *OpaqueTokenGenerator) Generate(ctx context.Context, principal *security.Principal, meta security.SessionMeta) (*security.AuthTokens, error) {
+	// Refuse before any store write: a session must never open for a rejected principal.
+	if principal == nil || principal.IsReserved() {
+		return nil, security.ErrReservedPrincipal
+	}
+
 	if err := g.enforceConcurrency(ctx, principal.ID); err != nil {
 		return nil, err
 	}
@@ -91,11 +97,17 @@ func (g *OpaqueTokenGenerator) enforceConcurrency(ctx context.Context, userID st
 		return a.CreatedAt.Compare(b.CreatedAt)
 	})
 
+	evicted := make([]security.SessionRevocation, 0, len(sessions)-g.policy.MaxConcurrent+1)
+
 	for _, stale := range sessions[:len(sessions)-g.policy.MaxConcurrent+1] {
 		if err := g.store.Revoke(ctx, stale.ID); err != nil {
 			return err
 		}
+
+		evicted = append(evicted, security.SessionRevocation{SessionID: stale.ID, UserID: stale.UserID})
 	}
+
+	g.notifier.NotifyRevoked(ctx, evicted...)
 
 	return nil
 }

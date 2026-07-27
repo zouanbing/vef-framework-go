@@ -105,6 +105,15 @@ var (
 		result.WithCode(ErrCodeTokenInvalidAudience),
 		result.WithStatus(fiber.StatusUnauthorized),
 	)
+
+	// ErrReservedPrincipal rejects a framework-internal identity at every entry
+	// point — authentication, challenge resolution, token issuance. See
+	// Principal.IsReserved.
+	ErrReservedPrincipal = result.Err(
+		i18n.T("security_reserved_principal_forbidden"),
+		result.WithCode(ErrCodePrincipalInvalid),
+		result.WithStatus(fiber.StatusUnauthorized),
+	)
 )
 
 // Predefined external app authentication errors (HTTP 401).

@@ -30,6 +30,10 @@ func NewJWTTokenGenerator(jwt *security.JWT, securityConfig *config.SecurityConf
 }
 
 func (g *JWTTokenGenerator) Generate(_ context.Context, principal *security.Principal, _ security.SessionMeta) (*security.AuthTokens, error) {
+	if principal == nil || principal.IsReserved() {
+		return nil, security.ErrReservedPrincipal
+	}
+
 	jwtID := id.GenerateUUID()
 
 	accessToken, err := g.generateAccessToken(jwtID, principal)

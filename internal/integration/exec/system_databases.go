@@ -27,12 +27,56 @@ type systemDatabases struct {
 	registry datasource.Registry
 	codec    *definition.SecretCodec
 
-	mu     sync.Mutex
-	hashes map[string]string
+	mu      sync.Mutex
+	sources map[string]*systemSource
+}
+
+// systemSource serializes registration per system: dialing one system's
+// database (which can block for seconds when it is unreachable) must never
+// stall invocations against other systems. Hash is the content hash of the
+// registered definition, guarded by the same per-system lock.
+type systemSource struct {
+	mu   sync.Mutex
+	hash string
 }
 
 func newSystemDatabases(registry datasource.Registry, codec *definition.SecretCodec) *systemDatabases {
-	return &systemDatabases{registry: registry, codec: codec, hashes: make(map[string]string)}
+	return &systemDatabases{registry: registry, codec: codec, sources: make(map[string]*systemSource)}
+}
+
+// sourceFor returns the per-system lock entry, creating it on first sight.
+func (v *systemDatabases) sourceFor(code string) *systemSource {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+
+	source, ok := v.sources[code]
+	if !ok {
+		source = new(systemSource)
+		v.sources[code] = source
+	}
+
+	return source
+}
+
+// lockSource returns the system's lock entry with its mutex held. Because
+// Release reclaims entries, a caller that waited on a lock can wake up holding
+// one the map has already dropped; only the entry the map currently holds
+// serializes callers, so the entry is re-read after the lock is taken and a
+// stale one is released and retried. Without that re-check, a release racing a
+// registration would leave two callers serializing on different locks for the
+// same system.
+func (v *systemDatabases) lockSource(code string) *systemSource {
+	for {
+		source := v.sourceFor(code)
+
+		source.mu.Lock()
+
+		if v.sourceFor(code) == source {
+			return source
+		}
+
+		source.mu.Unlock()
+	}
 }
 
 // DBFor returns the connection and dialect for system's data source,
@@ -43,10 +87,12 @@ func (v *systemDatabases) DBFor(ctx context.Context, system *integration.System)
 	name := systemSourcePrefix + system.Code
 	hash := dataSourceHash(system.DataSource)
 
-	v.mu.Lock()
-	defer v.mu.Unlock()
+	source := v.lockSource(system.Code)
+	defer source.mu.Unlock()
 
-	if v.hashes[system.Code] == hash && v.registry.Has(name) {
+	if source.hash == hash && v.registry.Has(name) {
+		// A Get miss here means the entry raced away (an unmanaged
+		// Unregister) between Has and Get; falling through re-registers it.
 		db, err := v.registry.Get(name)
 		if err == nil {
 			return db, system.DataSource.Kind, nil
@@ -71,19 +117,28 @@ func (v *systemDatabases) DBFor(ctx context.Context, system *integration.System)
 		return nil, "", &transportError{err: err}
 	}
 
-	v.hashes[system.Code] = hash
+	source.hash = hash
 
 	return db, cfg.Kind, nil
 }
 
 // Release drops the registry entry of a deleted system (or one whose data
 // source was removed); the connection closes asynchronously per the
-// registry's grace handling. Releasing an unknown system is a no-op.
+// registry's grace handling. Releasing an unknown system is a no-op. It
+// holds the system's lock, so a concurrent DBFor either completes before the
+// release or re-registers after it, and it reclaims the lock entry itself so
+// the map tracks only systems still in play.
 func (v *systemDatabases) Release(ctx context.Context, systemCode string) error {
 	name := systemSourcePrefix + systemCode
 
+	source := v.lockSource(systemCode)
+	defer source.mu.Unlock()
+
+	// Dropping the entry under its own lock is what makes lockSource's
+	// re-check both necessary and sufficient: a caller already waiting on this
+	// lock observes the removal and retries against the fresh entry.
 	v.mu.Lock()
-	delete(v.hashes, systemCode)
+	delete(v.sources, systemCode)
 	v.mu.Unlock()
 
 	if !v.registry.Has(name) {

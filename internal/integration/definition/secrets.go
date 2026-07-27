@@ -19,16 +19,18 @@ var logger = logx.Named("integration")
 // is detectable.
 const encryptedPrefix = "enc:"
 
-// SecretCodec encrypts sensitive auth parameter values at rest with the
-// AES-GCM key from vef.integration.secret_key. Without a configured key it
-// degrades to plaintext storage — NewSecretCodec logs the warning once at
-// boot — but still refuses to load values a previous configuration encrypted.
+// SecretCodec encrypts sensitive auth parameter values at rest with the key
+// from vef.integration.secret_key, using the cipher selected by
+// vef.integration.secret_algorithm (AES-GCM by default, SM4-GCM for 国密
+// deployments). Without a configured key it degrades to plaintext storage —
+// NewSecretCodec logs the warning once at boot — but still refuses to load
+// values a previous configuration encrypted.
 type SecretCodec struct {
 	cipher cryptox.Cipher
 }
 
-// NewSecretCodec builds the codec from the configured secret key, failing
-// fast on a malformed key.
+// NewSecretCodec builds the codec from the configured secret key and
+// algorithm, failing fast on a malformed key.
 func NewSecretCodec(cfg *config.IntegrationConfig) (*SecretCodec, error) {
 	if cfg.SecretKey == "" {
 		logger.Warn("vef.integration.secret_key is not configured; sensitive auth parameters are stored in plaintext")
@@ -36,12 +38,22 @@ func NewSecretCodec(cfg *config.IntegrationConfig) (*SecretCodec, error) {
 		return new(SecretCodec), nil
 	}
 
-	cipher, err := cryptox.NewAESFromBase64(cfg.SecretKey)
+	cipher, err := newSecretCipher(cfg.EffectiveSecretAlgorithm(), cfg.SecretKey)
 	if err != nil {
 		return nil, fmt.Errorf("integration: invalid vef.integration.secret_key: %w", err)
 	}
 
 	return &SecretCodec{cipher: cipher}, nil
+}
+
+// newSecretCipher builds the sealing cipher for the configured algorithm;
+// both run in GCM mode so tampered stored values fail closed on load.
+func newSecretCipher(algorithm config.IntegrationSecretAlgorithm, key string) (cryptox.Cipher, error) {
+	if algorithm == config.IntegrationSecretAlgorithmSM4 {
+		return cryptox.NewSM4FromBase64(key)
+	}
+
+	return cryptox.NewAESFromBase64(key)
 }
 
 // secretScheme is the codec's view of an auth scheme — outbound or inbound —
@@ -52,21 +64,15 @@ type secretScheme interface {
 	SensitiveParams() []string
 }
 
-// sensitiveNames resolves a scheme's sensitivity declaration against the
-// actual parameters: a nil scheme (no longer registered) and the SensitiveAll
-// wildcard both select every parameter — fail closed.
+// sensitiveNames resolves a scheme's sensitivity declaration into the
+// concrete parameter names: a nil scheme (no longer registered) and the
+// SensitiveAll wildcard both select every parameter — fail closed.
 func sensitiveNames(scheme secretScheme, params map[string]string) []string {
 	declared := []string{integration.SensitiveAll}
 	if scheme != nil {
 		declared = scheme.SensitiveParams()
 	}
 
-	return resolveSensitiveNames(declared, params)
-}
-
-// resolveSensitiveNames turns a sensitivity declaration into the concrete
-// parameter names present: the SensitiveAll wildcard selects every parameter.
-func resolveSensitiveNames(declared []string, params map[string]string) []string {
 	if slices.Contains(declared, integration.SensitiveAll) {
 		return slices.Collect(maps.Keys(params))
 	}
@@ -74,13 +80,13 @@ func resolveSensitiveNames(declared []string, params map[string]string) []string
 	return declared
 }
 
-// SensitiveValues returns the non-empty values of the parameters declared
-// sensitive (SensitiveAll selecting every parameter). Wire captures scrub
-// these values so a credential never lands in the invocation log or dry-run
-// trace under whatever header or query name a scheme carries it — the point
-// masking by a fixed name set cannot reach.
-func SensitiveValues(declared []string, params map[string]string) []string {
-	names := resolveSensitiveNames(declared, params)
+// SensitiveValues returns the non-empty values of the parameters the scheme
+// declares sensitive (a nil scheme selecting every parameter — fail closed).
+// Wire captures scrub these values so a credential never lands in the
+// invocation log or dry-run trace under whatever header or query name a
+// scheme carries it — the point masking by a fixed name set cannot reach.
+func SensitiveValues(scheme secretScheme, params map[string]string) []string {
+	names := sensitiveNames(scheme, params)
 	values := make([]string, 0, len(names))
 
 	for _, name := range names {
@@ -193,8 +199,8 @@ func (c *SecretCodec) encryptParams(scheme secretScheme, params, prior map[strin
 		}
 
 		if value == integration.MaskedSecret {
-			stored, ok := priorParam(prior, name)
-			if !ok {
+			stored := prior[name]
+			if stored == "" {
 				return fmt.Errorf("%w: %s", ErrMaskedSecretWithoutPrior, name)
 			}
 
@@ -329,7 +335,9 @@ func (c *SecretCodec) encryptValue(value string) (string, error) {
 }
 
 // decryptValue opens one stored value; values without the encryption marker
-// (plaintext from key-less deployments) pass through.
+// (plaintext from key-less deployments) pass through. Both ciphers seal in
+// GCM mode, so a value stored under a different algorithm or key fails
+// authentication instead of decrypting to garbage.
 func (c *SecretCodec) decryptValue(value string) (string, error) {
 	payload, ok := strings.CutPrefix(value, encryptedPrefix)
 	if !ok {
@@ -341,14 +349,4 @@ func (c *SecretCodec) decryptValue(value string) (string, error) {
 	}
 
 	return c.cipher.Decrypt(payload)
-}
-
-// priorParam looks up a stored parameter value on the prior params.
-func priorParam(prior map[string]string, name string) (string, bool) {
-	value, ok := prior[name]
-	if !ok || value == "" {
-		return "", false
-	}
-
-	return value, true
 }

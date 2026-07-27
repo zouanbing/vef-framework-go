@@ -74,15 +74,16 @@ func (s *JWTChallengeTokenStore) Parse(_ context.Context, token string) (*Challe
 		principal = NewUser(principalID, principalName, claimsAccessor.Roles()...)
 	case PrincipalTypeExternalApp:
 		principal = NewExternalApp(principalID, principalName, claimsAccessor.Roles()...)
-	case PrincipalTypeSystem:
-		principal = &Principal{
-			Type:  PrincipalTypeSystem,
-			ID:    principalID,
-			Name:  principalName,
-			Roles: claimsAccessor.Roles(),
-		}
 
+	// PrincipalTypeSystem is deliberately absent: a challenge token carrying the
+	// framework's internal identity has no legitimate origin, since no
+	// authenticator may produce one to start a challenge with.
 	default:
+		return nil, ErrTokenInvalid
+	}
+
+	// Catches reserved ids smuggled under a user or external-app type.
+	if principal.IsReserved() {
 		return nil, ErrTokenInvalid
 	}
 

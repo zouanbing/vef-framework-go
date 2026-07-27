@@ -40,6 +40,9 @@ func NewWorker(db orm.DB, bus event.Bus, writer *Writer, cfg *config.ApprovalCon
 // Run processes one configured batch. Failures are persisted and scheduled for
 // retry; they never escape into an approval transaction.
 func (w *Worker) Run(ctx context.Context) {
+	// Polling bookkeeping logs at Debug; failures keep their level.
+	ctx = orm.WithQuietSQLLog(ctx)
+
 	processed, err := w.ProcessPending(ctx)
 	if err != nil {
 		logger.Errorf("process pending business projections: %v", err)
@@ -245,13 +248,17 @@ func (w *Worker) applyClaim(ctx context.Context, claimed *approval.BusinessProje
 // writeProjection isolates host-table SQL in a savepoint. PostgreSQL aborts a
 // transaction after a statement error; rolling back the savepoint keeps the
 // outer transaction usable so the durable failed state can still be recorded.
+//
+// The write itself targets the host's business row, so it drops the polling
+// loop's quiet mark: the eventual lane must log that statement exactly like
+// the synchronous lane logs it from a request handler.
 func (w *Worker) writeProjection(
 	ctx context.Context,
 	db orm.DB,
 	projection *approval.BusinessProjection,
 ) error {
 	return db.RunInTx(ctx, func(ctx context.Context, tx orm.DB) error {
-		return w.writer.Write(ctx, tx, projection)
+		return w.writer.Write(orm.WithoutQuietSQLLog(ctx), tx, projection)
 	})
 }
 

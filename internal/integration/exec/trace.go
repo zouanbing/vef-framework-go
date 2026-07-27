@@ -63,12 +63,27 @@ func newTraceCollector(capturer *capturer, redact []string) *traceCollector {
 }
 
 // record captures one exchange; safe for concurrent use.
+//
+// Credential values are scrubbed off the raw capture first, before any
+// transform that rewrites or drops parts of it: truncation splitting a
+// credential would otherwise leave an unmatchable head in the capture, and the
+// body's JSON round-trip re-escapes characters (& < >) so a credential
+// carrying one would no longer match its own literal. Scrubbing by value must
+// not depend on where a limit lands or on how a codec spells a byte. The
+// transforms tolerate the MaskedSecret literal: it is a run of sub-delims,
+// valid inside a URL, a header value, and a JSON string alike.
 func (t *traceCollector) record(exchange integration.HTTPExchange) {
-	exchange.URL = redactSecrets(t.capturer.maskURL(exchange.URL), t.redact)
-	exchange.RequestHeaders = redactHeaderSecrets(t.capturer.maskHeaderMap(exchange.RequestHeaders), t.redact)
-	exchange.ResponseHeaders = redactHeaderSecrets(t.capturer.maskHeaderMap(exchange.ResponseHeaders), t.redact)
-	exchange.RequestBody = redactSecrets(t.capturer.captureBody(exchange.RequestBody), t.redact)
-	exchange.ResponseBody = redactSecrets(t.capturer.captureBody(exchange.ResponseBody), t.redact)
+	exchange.URL = t.capturer.maskURL(redactSecrets(exchange.URL, t.redact))
+	exchange.RequestHeaders = t.capturer.maskHeaderMap(redactHeaderSecrets(exchange.RequestHeaders, t.redact))
+	exchange.ResponseHeaders = t.capturer.maskHeaderMap(redactHeaderSecrets(exchange.ResponseHeaders, t.redact))
+	exchange.RequestBody = t.capturer.captureBody(redactSecrets(exchange.RequestBody, t.redact))
+	exchange.ResponseBody = t.capturer.captureBody(redactSecrets(exchange.ResponseBody, t.redact))
+	// A transport error embeds the request URL, query string included, so it
+	// carries whatever credential the query auth scheme injected there. It is
+	// diagnostic prose rather than a payload: only the length bound applies,
+	// never captureBody's JSON round-trip, which would rewrite an error
+	// message that happens to parse as JSON.
+	exchange.Error = t.capturer.truncate(redactSecrets(exchange.Error, t.redact))
 
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -92,18 +107,21 @@ func redactSecrets(value string, secrets []string) string {
 	return value
 }
 
-// redactHeaderSecrets scrubs credential values from an already name-masked
-// header map, in place.
+// redactHeaderSecrets returns headers with every credential value scrubbed. It
+// copies rather than editing in place: it runs ahead of the name-based masking,
+// on a map the caller still owns — an inbound delivery hands over the request's
+// own headers.
 func redactHeaderSecrets(headers map[string]string, secrets []string) map[string]string {
 	if len(headers) == 0 || len(secrets) == 0 {
 		return headers
 	}
 
+	redacted := make(map[string]string, len(headers))
 	for name, value := range headers {
-		headers[name] = redactSecrets(value, secrets)
+		redacted[name] = redactSecrets(value, secrets)
 	}
 
-	return headers
+	return redacted
 }
 
 // Exchanges returns the captured exchanges in arrival order.
@@ -142,6 +160,9 @@ func (c *capturer) captureValue(value any) json.RawMessage {
 		return nil
 	}
 
+	// Values reaching a capture are post-canonicalize JSON shapes, so a
+	// marshal failure is not expected; dropping the capture (never the
+	// invocation) is the acceptable fallback for the best-effort log.
 	data, err := json.Marshal(c.maskValue(value))
 	if err != nil {
 		return nil
@@ -170,11 +191,16 @@ func (c *capturer) captureBody(body string) string {
 		}
 	}
 
-	if len(body) > c.limit {
-		return body[:c.limit] + "…(truncated)"
+	return c.truncate(body)
+}
+
+// truncate bounds a captured string to the configured capture limit.
+func (c *capturer) truncate(value string) string {
+	if len(value) > c.limit {
+		return value[:c.limit] + "…(truncated)"
 	}
 
-	return body
+	return value
 }
 
 // maskValue walks a JSON-shaped value, replacing the values of masked field
@@ -254,8 +280,9 @@ func (c *capturer) maskURL(rawURL string) string {
 	return parsed.String()
 }
 
-// flattenHeader collapses an http.Header into a single-valued map for
-// capture.
+// flattenHeader collapses an http.Header into the single-valued lowercase
+// map shared by captures and script bindings, multi-values joined with ", "
+// per fetch Headers semantics.
 func flattenHeader(header http.Header) map[string]string {
 	if len(header) == 0 {
 		return nil
@@ -263,7 +290,7 @@ func flattenHeader(header http.Header) map[string]string {
 
 	flat := make(map[string]string, len(header))
 	for name, values := range header {
-		flat[name] = strings.Join(values, ", ")
+		flat[strings.ToLower(name)] = strings.Join(values, ", ")
 	}
 
 	return flat

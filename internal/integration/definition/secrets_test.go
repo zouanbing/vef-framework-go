@@ -13,12 +13,12 @@ import (
 	"github.com/coldsmirk/vef-framework-go/integration"
 )
 
-// stubScheme is the codec's view of a scheme, declaring one sensitive param.
-type stubScheme struct {
+// StubScheme is the codec's view of a scheme, declaring one sensitive param.
+type StubScheme struct {
 	sensitive []string
 }
 
-func (s *stubScheme) SensitiveParams() []string {
+func (s *StubScheme) SensitiveParams() []string {
 	return s.sensitive
 }
 
@@ -36,15 +36,28 @@ func newTestCodec(t *testing.T) *SecretCodec {
 	return codec
 }
 
+// newAlgorithmCodec builds a codec sealing with the given algorithm and key.
+func newAlgorithmCodec(t *testing.T, algorithm config.IntegrationSecretAlgorithm, key []byte) *SecretCodec {
+	t.Helper()
+
+	codec, err := NewSecretCodec(&config.IntegrationConfig{
+		SecretKey:       base64.StdEncoding.EncodeToString(key),
+		SecretAlgorithm: algorithm,
+	})
+	require.NoError(t, err, "Codec construction should succeed")
+
+	return codec
+}
+
 // bearerScheme mimics the built-in bearer scheme's sensitivity declaration
 // (sensitive param: token).
-func bearerScheme(*testing.T) *stubScheme {
-	return &stubScheme{sensitive: []string{"token"}}
+func bearerScheme() *StubScheme {
+	return &StubScheme{sensitive: []string{"token"}}
 }
 
 func TestSecretCodec(t *testing.T) {
 	codec := newTestCodec(t)
-	scheme := bearerScheme(t)
+	scheme := bearerScheme()
 
 	t.Run("EncryptDecryptRoundTrip", func(t *testing.T) {
 		cfg := &integration.OutboundAuthConfig{Scheme: "bearer", Params: map[string]string{"token": "top-secret"}}
@@ -93,11 +106,56 @@ func TestSecretCodec(t *testing.T) {
 	})
 }
 
+func TestSecretCodecAlgorithms(t *testing.T) {
+	scheme := bearerScheme()
+
+	// One shared 16-byte key is valid for both AES-128 and SM4, so the
+	// mismatch failure below comes from the algorithm, never from key sizing.
+	key := make([]byte, 16)
+	_, err := rand.Read(key)
+	require.NoError(t, err, "Key generation should succeed")
+
+	aesCodec := newAlgorithmCodec(t, config.IntegrationSecretAlgorithmAES, key)
+	sm4Codec := newAlgorithmCodec(t, config.IntegrationSecretAlgorithmSM4, key)
+
+	t.Run("SM4RoundTrip", func(t *testing.T) {
+		cfg := &integration.OutboundAuthConfig{Scheme: "bearer", Params: map[string]string{"token": "top-secret"}}
+
+		require.NoError(t, sm4Codec.EncryptOutboundAuth(scheme, cfg, nil), "SM4 encryption should succeed")
+		assert.True(t, strings.HasPrefix(cfg.Params["token"], "enc:"), "Stored value should carry the encryption marker")
+		assert.NotContains(t, cfg.Params["token"], "top-secret", "Stored value should not contain the plaintext")
+
+		decrypted, err := sm4Codec.DecryptOutboundAuth(scheme, cfg)
+		require.NoError(t, err, "SM4 decryption should succeed")
+		assert.Equal(t, "top-secret", decrypted.Params["token"], "Decrypted value should match the original")
+	})
+
+	t.Run("MismatchedAlgorithmFailsClosed", func(t *testing.T) {
+		cfg := &integration.OutboundAuthConfig{Scheme: "bearer", Params: map[string]string{"token": "top-secret"}}
+		require.NoError(t, aesCodec.EncryptOutboundAuth(scheme, cfg, nil), "AES encryption should succeed")
+
+		_, err := sm4Codec.DecryptOutboundAuth(scheme, cfg)
+		require.Error(t, err, "AES-sealed value should fail GCM authentication under SM4 instead of decrypting to garbage")
+	})
+
+	t.Run("SM4RejectsNon16ByteKey", func(t *testing.T) {
+		longKey := make([]byte, 32)
+		_, err := rand.Read(longKey)
+		require.NoError(t, err, "Key generation should succeed")
+
+		_, err = NewSecretCodec(&config.IntegrationConfig{
+			SecretKey:       base64.StdEncoding.EncodeToString(longKey),
+			SecretAlgorithm: config.IntegrationSecretAlgorithmSM4,
+		})
+		require.Error(t, err, "SM4 should reject a key that is not 16 bytes")
+	})
+}
+
 func TestSecretCodecWithoutKey(t *testing.T) {
 	codec, err := NewSecretCodec(new(config.IntegrationConfig))
 	require.NoError(t, err, "Key-less codec construction should succeed")
 
-	scheme := bearerScheme(t)
+	scheme := bearerScheme()
 
 	t.Run("StoresPlaintext", func(t *testing.T) {
 		cfg := &integration.OutboundAuthConfig{Scheme: "bearer", Params: map[string]string{"token": "plain"}}
@@ -185,7 +243,7 @@ func TestMaskDataSource(t *testing.T) {
 }
 
 func TestMaskAuth(t *testing.T) {
-	scheme := bearerScheme(t)
+	scheme := bearerScheme()
 
 	t.Run("MasksSensitiveOnly", func(t *testing.T) {
 		masked := MaskOutboundAuth(scheme, &integration.OutboundAuthConfig{

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"slices"
 
 	"github.com/coldsmirk/vef-framework-go/mapx"
 	"github.com/coldsmirk/vef-framework-go/reflectx"
@@ -35,9 +36,31 @@ func (p *Params) UnmarshalJSON(data []byte) error {
 	return unmarshalNumberPreserving(data, (*map[string]any)(p))
 }
 
-// Decode decodes params into a struct.
+// Decode decodes params into a struct. Request keys the target does not
+// declare are ignored, so a client still sending a retired field keeps
+// working; DecodeReportingUnmapped surfaces them instead of dropping them in
+// silence.
 func (p Params) Decode(out any) error {
-	return decodeMap(p, out, ErrInvalidParamsType)
+	_, err := p.DecodeReportingUnmapped(out)
+
+	return err
+}
+
+// DecodeReportingUnmapped decodes exactly like Decode and additionally reports
+// the request keys the target struct does not declare, sorted. The framework's
+// request pipeline logs them once per operation, which keeps a misspelled or
+// retired field visible without failing a request older clients still send.
+func (p Params) DecodeReportingUnmapped(out any) ([]string, error) {
+	var metadata mapx.Metadata
+
+	if err := decodeMapWithOptions(p, out, ErrInvalidParamsType, mapx.WithMetadata(&metadata)); err != nil {
+		return nil, err
+	}
+
+	// Map iteration leaves Unused unordered; sort so callers can key on it.
+	slices.Sort(metadata.Unused)
+
+	return metadata.Unused, nil
 }
 
 // Meta holds API request metadata.
@@ -66,11 +89,15 @@ func unmarshalNumberPreserving(data []byte, out *map[string]any) error {
 
 // decodeMap decodes a map into a struct with type validation.
 func decodeMap(data map[string]any, out any, typeErr error) error {
+	return decodeMapWithOptions(data, out, typeErr)
+}
+
+func decodeMapWithOptions(data map[string]any, out any, typeErr error, options ...mapx.DecoderOption) error {
 	if !reflectx.IsPointerToStruct(reflect.TypeOf(out)) {
 		return fmt.Errorf("%w, got %T", typeErr, out)
 	}
 
-	decoder, err := mapx.NewDecoder(out)
+	decoder, err := mapx.NewDecoder(out, options...)
 	if err != nil {
 		return err
 	}

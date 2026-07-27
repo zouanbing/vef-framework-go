@@ -63,8 +63,29 @@ type decodable interface {
 	Decode(out any) error
 }
 
+// paramsDecoder decodes request params and reports the keys the target struct
+// declares no field for. It carries the operation so the report names which
+// endpoint the drift reached.
+type paramsDecoder struct {
+	params     api.Params
+	identifier api.Identifier
+}
+
+func (d paramsDecoder) Decode(out any) error {
+	unmapped, err := d.params.DecodeReportingUnmapped(out)
+	if err != nil {
+		return err
+	}
+
+	warnUnmappedParams(d.identifier, unmapped)
+
+	return nil
+}
+
 func buildParamsResolver(paramType reflect.Type) HandlerParamResolverFunc {
-	return buildRequestFieldResolver(paramType, func(req *api.Request) decodable { return req.Params }, api.ErrInvalidRequestParams)
+	return buildRequestFieldResolver(paramType, func(req *api.Request) decodable {
+		return paramsDecoder{params: req.Params, identifier: req.Identifier}
+	}, api.ErrInvalidRequestParams)
 }
 
 func buildMetaResolver(metaType reflect.Type) HandlerParamResolverFunc {
