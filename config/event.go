@@ -34,12 +34,26 @@ type EventConfig struct {
 // EventTransportsConfig groups per-transport configuration blocks.
 type EventTransportsConfig struct {
 	Memory      EventMemoryTransportConfig      `config:"memory"`
+	TxMemory    EventTxMemoryTransportConfig    `config:"tx_memory"`
 	Outbox      EventOutboxTransportConfig      `config:"outbox"`
 	RedisStream EventRedisStreamTransportConfig `config:"redis_stream"`
 }
 
 // EventMemoryTransportConfig configures the in-process transport.
 type EventMemoryTransportConfig struct {
+	QueueSize      int           `config:"queue_size"`
+	FullPolicy     string        `config:"full_policy"` // error | block | drop_oldest
+	PublishTimeout time.Duration `config:"publish_timeout"`
+}
+
+// EventTxMemoryTransportConfig configures the in-process transactional
+// transport. Disabled by default: it satisfies the transactional-route
+// requirement of the approval and storage modules without persisting
+// anything, which is right for development against a shared database and
+// wrong for production. The delivery knobs mirror the memory transport,
+// whose machinery it drives on a private instance.
+type EventTxMemoryTransportConfig struct {
+	Enabled        bool          `config:"enabled"`
 	QueueSize      int           `config:"queue_size"`
 	FullPolicy     string        `config:"full_policy"` // error | block | drop_oldest
 	PublishTimeout time.Duration `config:"publish_timeout"`
@@ -175,7 +189,8 @@ func (c *EventInboxConfig) EffectiveCleanupInterval() time.Duration {
 // delivery from the outbox could arrive after its inbox dedupe entry
 // has already been pruned, producing double-execution.
 var ErrInboxRetentionTooShort = errors.New(
-	"event: inbox.retention is shorter than the outbox exponential-backoff horizon")
+	"event: inbox.retention is shorter than the outbox exponential-backoff horizon",
+)
 
 // Validate checks invariants that cross multiple subtrees of the
 // EventConfig. Called once at fx Start. Currently enforced:

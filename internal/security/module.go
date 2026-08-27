@@ -1,6 +1,7 @@
 package security
 
 import (
+	"github.com/redis/go-redis/v9"
 	"github.com/samber/lo"
 	"go.uber.org/fx"
 
@@ -66,10 +67,25 @@ var Module = fx.Module(
 			fx.ParamTags(`group:"vef:security:session_revocation_listeners"`),
 		),
 		newSessionStore,
-		newNonceStore,
+		fx.Annotate(
+			newNonceStore,
+			fx.ParamTags(`optional:"true"`),
+		),
+		fx.Annotate(
+			newTrustCodeStore,
+			fx.ParamTags(`optional:"true"`),
+		),
 		newSessionPolicy,
 		newTokenGenerator,
 		security.NewJWTChallengeTokenStore,
+		fx.Annotate(
+			newTrustLoginAuthenticators,
+			fx.ResultTags(`group:"vef:security:authenticators,flatten"`),
+		),
+		fx.Annotate(
+			NewTrustLoginMiddleware,
+			fx.ResultTags(`group:"vef:app:middlewares"`),
+		),
 		fx.Annotate(
 			NewSignatureAuthenticator,
 			fx.ParamTags(`optional:"true"`, `optional:"true"`),
@@ -188,14 +204,63 @@ func newSessionStore() security.SessionStore {
 	return security.NewMemorySessionStore()
 }
 
-// newNonceStore provides the default in-memory replay-protection nonce store,
-// shared by every framework signature verifier (the API signature
-// authenticator and the integration inbound signature scheme). Multi-node
-// deployments override it with security.NewRedisNonceStore via fx.Decorate so
-// nonces are shared across nodes and a request cannot be replayed against a
-// second node inside the timestamp tolerance.
-func newNonceStore() security.NonceStore {
+// newNonceStore selects the replay-protection nonce store by deployment
+// topology, the same way newTrustCodeStore and lock.Locker do, rather than
+// defaulting to memory and waiting to be decorated. The store is shared by
+// every framework signature verifier — the API signature authenticator, the
+// integration inbound signature scheme, and the trust-login gateway.
+//
+// A per-process store means a signed request is replayable once per replica
+// inside the timestamp tolerance. That is a weakened guarantee for a server-to-
+// server API call, but trust login changes what is at stake: its signed URL is
+// a browser-visible credential that lands in history, Referer chains and
+// reverse-proxy logs, and each replay mints a fresh code bound to whichever
+// browser redeemed it. Hence the warning is raised while the gateway is on.
+func newNonceStore(client *redis.Client, cfg *config.SecurityConfig) security.NonceStore {
+	if client != nil {
+		return security.NewRedisNonceStore(client)
+	}
+
+	if cfg.TrustLogin.Enabled {
+		logger.Warnf(
+			"vef.redis is disabled; signature replay protection is using the in-process memory nonce store, so one signed trust login URL can be navigated once per replica — enable vef.redis before scaling beyond one replica.",
+		)
+	}
+
 	return security.NewMemoryNonceStore()
+}
+
+// newTrustCodeStore selects the trust-login code store by deployment topology
+// rather than defaulting to memory and waiting to be decorated. The in-memory
+// store cannot serve a second replica at all — a code issued on one node is
+// unknown to every other, so the exchange fails outright — which makes a silent
+// memory default a broken login rather than a weakened one. This is the same
+// reasoning that governs lock.Locker.
+func newTrustCodeStore(client *redis.Client, cfg *config.SecurityConfig) security.TrustCodeStore {
+	if client != nil {
+		return security.NewRedisTrustCodeStore(client)
+	}
+
+	if cfg.TrustLogin.Enabled {
+		logger.Warnf(
+			"vef.redis is disabled; trust login is using the in-process memory code store, so a code issued on one replica cannot be redeemed on another — enable vef.redis before scaling beyond one replica.",
+		)
+	}
+
+	return security.NewMemoryTrustCodeStore()
+}
+
+// newTrustLoginAuthenticators registers the code-exchange authenticator only
+// while the gateway is enabled, mirroring newTokenAuthenticators: with the
+// feature off no code can exist, so presenting the mechanism as available and
+// answering "invalid code" forever would only obscure the misconfiguration.
+// Unregistered, a trust_code login is refused as an unsupported type.
+func newTrustLoginAuthenticators(store security.TrustCodeStore, cfg *config.SecurityConfig) []security.Authenticator {
+	if !cfg.TrustLogin.Enabled {
+		return nil
+	}
+
+	return []security.Authenticator{NewTrustCodeAuthenticator(store, cfg.TrustLogin)}
 }
 
 // newSessionPolicy resolves the opaque-token session behavior from config.

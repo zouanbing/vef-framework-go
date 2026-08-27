@@ -408,6 +408,25 @@ func (s *ScannerTestSuite) TestTransferAdminTimeoutShouldAlignCreatedTasksWithTr
 		"Should emit one task-created event per admin task",
 	)
 
+	// Each admin now holds actionable work, so each must be announced — this is
+	// the event a to-do notification subscribes to.
+	activated := s.bus.CapturedByType(approval.EventTypeTaskActivated)
+	s.Require().Len(activated, 2, "Should announce one activation per admin task")
+
+	activatedAdmins := make([]string, 0, len(activated))
+
+	for _, evt := range activated {
+		a, ok := evt.(*approval.TaskActivatedEvent)
+		s.Require().True(ok, "Captured event should be *TaskActivatedEvent")
+		s.Assert().Equal(approval.TaskActivationTransferred, a.Reason,
+			"An auto-transferred task is activated by the transfer")
+
+		activatedAdmins = append(activatedAdmins, a.Assignee.ID)
+	}
+
+	s.Assert().ElementsMatch([]string{"admin-1", "admin-2"}, activatedAdmins,
+		"Each admin receiving a task should be announced by name")
+
 	var logs []approval.ActionLog
 	s.Require().NoError(
 		s.db.NewSelect().
@@ -479,9 +498,9 @@ func (s *ScannerTestSuite) TestScanTimeoutsShouldLockInstanceBeforeTask() {
 
 	go func() {
 		lockDone <- s.db.RunInTx(s.ctx, func(ctx context.Context, tx orm.DB) error {
-			lockedTask := approval.Task{}
-
-			lockedTask.ID = task.ID
+			lockedTask := approval.Task{
+				ID: task.ID,
+			}
 			if err := tx.NewSelect().
 				Model(&lockedTask).
 				WherePK().
@@ -509,8 +528,9 @@ func (s *ScannerTestSuite) TestScanTimeoutsShouldLockInstanceBeforeTask() {
 	for range 20 {
 		lockCtx, cancel := context.WithTimeout(s.ctx, 120*time.Millisecond)
 		err := s.db.RunInTx(lockCtx, func(ctx context.Context, tx orm.DB) error {
-			lockedInstance := approval.Instance{}
-			lockedInstance.ID = instance.ID
+			lockedInstance := approval.Instance{
+				ID: instance.ID,
+			}
 
 			return tx.NewSelect().
 				Model(&lockedInstance).

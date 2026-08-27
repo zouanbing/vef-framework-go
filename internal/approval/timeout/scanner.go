@@ -10,6 +10,7 @@ import (
 	"github.com/coldsmirk/vef-framework-go/approval"
 	"github.com/coldsmirk/vef-framework-go/config"
 	"github.com/coldsmirk/vef-framework-go/event"
+	"github.com/coldsmirk/vef-framework-go/internal/approval/behavior"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/engine"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/service"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/shared"
@@ -266,23 +267,45 @@ func (s *Scanner) autoFinishTask(
 		return nil, fmt.Errorf("finish task: %w", err)
 	}
 
+	// The timeout decision is announced before the node evaluation it triggers.
+	// There is no CQRS pipeline here, so this publishes straight into tx —
+	// which is exactly why it cannot wait for the caller's batch: the node
+	// evaluation below publishes the same way, and a completed instance would
+	// otherwise reach subscribers ahead of the timeout that completed it.
+	if err := behavior.EmitEvents(ctx, s.bus, tx,
+		resolution.newEvent(instance, task, node, resolution.opinion),
+	); err != nil {
+		return nil, fmt.Errorf("emit timeout resolution event: %w", err)
+	}
+
 	// Unblock whatever this task's completion enables — the next task in a
 	// sequential queue, or a suspended "before" parent / queued "after" child
 	// on a parallel node — before evaluating node completion. If the node
 	// completes, HandleNodeCompletion cancels all remaining tasks anyway.
-	if err := s.taskSvc.ActivateDependentTasks(ctx, tx, instance, node, task); err != nil {
+	activationEvents, err := s.taskSvc.ActivateDependentTasks(ctx, tx, instance, node, task)
+	if err != nil {
 		return nil, fmt.Errorf("activate dependent tasks: %w", err)
 	}
 
-	events := make([]approval.DomainEvent, 0, 2)
-	events = append(events, resolution.newEvent(instance, task, node, resolution.opinion))
+	// Queue-advance decisions (same-applicant auto-passes) happened before the
+	// node evaluation below and may be its cause, so they publish straight into
+	// tx like the timeout resolution above; only the provisional activations
+	// wait for reconciliation.
+	decisionEvents, activationEvents := service.SplitQueueAdvanceDecisions(activationEvents)
+	if err := behavior.EmitEvents(ctx, s.bus, tx, decisionEvents...); err != nil {
+		return nil, fmt.Errorf("emit queue-advance decision events: %w", err)
+	}
 
+	// HandleNodeCompletion has already emitted what it produced; the return
+	// value is only the reconciliation input for the activations above.
 	completionEvents, err := s.nodeSvc.HandleNodeCompletion(ctx, tx, instance, node)
 	if err != nil {
 		return nil, fmt.Errorf("handle node completion: %w", err)
 	}
 
-	events = append(events, completionEvents...)
+	// Activations precede completion in the lifecycle, but only those the
+	// completion did not cancel actually happened.
+	events := service.SuppressSupersededActivations(activationEvents, completionEvents)
 
 	// HandleNodeCompletion already persisted any status / current_node_id /
 	// finished_at change through the state machine — no extra UPDATE is
@@ -407,7 +430,10 @@ func (s *Scanner) transferToAdmin(ctx context.Context, tx orm.DB, task *approval
 			"任务处理超时，系统自动转交管理员",
 		))
 
-		events = append(events, approval.NewTaskCreatedEvent(instance, newTask, node))
+		events = append(events,
+			approval.NewTaskCreatedEvent(instance, newTask, node),
+			approval.NewTaskActivatedEvent(instance, newTask, node, approval.TaskActivationTransferred),
+		)
 
 		actionLog := shared.SystemOperator.NewActionLog(task.InstanceID, approval.ActionTransfer)
 		actionLog.NodeID = new(task.NodeID)

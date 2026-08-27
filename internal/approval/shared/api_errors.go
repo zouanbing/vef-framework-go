@@ -51,6 +51,19 @@ var (
 	// ErrInvalidInitiatorKind rejects an out-of-enum initiator kind at save
 	// time — an unknown value would silently never match any user.
 	ErrInvalidInitiatorKind = result.Err(i18n.T("approval_invalid_initiator_kind"), result.WithCode(ErrCodeInvalidInitiatorKind))
+
+	// ErrInitiatorsNotAllowed rejects saving initiator rules on a flow open to
+	// everyone. The two settings are mutually exclusive: initiation permission
+	// short-circuits on isAllInitiationAllowed and never consults the rules, so
+	// storing them would show a restriction in the admin UI that does not hold.
+	ErrInitiatorsNotAllowed = result.Err(i18n.T("approval_initiators_not_allowed"), result.WithCode(ErrCodeInitiatorsNotAllowed))
+
+	// ErrInitiatorsRequired rejects a restricted flow that names nobody who may
+	// start it — no rules at all, or a rule selecting nothing, which matches no
+	// applicant and leaves the flow just as unstartable. It also keeps an empty
+	// initiator list unambiguous: it means exactly "open to everyone", so one
+	// query answers who may start a flow.
+	ErrInitiatorsRequired = result.Err(i18n.T("approval_initiators_required"), result.WithCode(ErrCodeInitiatorsRequired))
 	// ErrInvalidStorageMode rejects a deploy whose storage mode is neither
 	// "json" nor "table". The mode is fixed for the version's lifetime and
 	// drives whether a dedicated physical form table is generated at publish,

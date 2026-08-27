@@ -17,6 +17,8 @@ import (
 	"github.com/coldsmirk/vef-framework-go/api"
 	"github.com/coldsmirk/vef-framework-go/config"
 	"github.com/coldsmirk/vef-framework-go/internal/apptest"
+	"github.com/coldsmirk/vef-framework-go/internal/storage/store"
+	"github.com/coldsmirk/vef-framework-go/orm"
 	"github.com/coldsmirk/vef-framework-go/result"
 	"github.com/coldsmirk/vef-framework-go/security"
 	"github.com/coldsmirk/vef-framework-go/storage"
@@ -52,6 +54,7 @@ type StorageResourceTestSuite struct {
 	apptest.Suite
 
 	ctx     context.Context
+	db      orm.DB
 	service storage.Service
 
 	// ownerToken belongs to the principal that drives every chunked
@@ -77,6 +80,7 @@ func (s *StorageResourceTestSuite) SetupSuite() {
 			},
 		),
 		fx.Populate(&s.service),
+		fx.Populate(&s.db),
 	)
 
 	s.ownerToken = s.GenerateToken(&security.Principal{ID: "test-owner", Name: "owner"})
@@ -147,7 +151,9 @@ func (s *StorageResourceTestSuite) uploadPart(token, claimID string, partNumber 
 // data; tests asserting the failure case ignore data.
 func (s *StorageResourceTestSuite) initUpload(filename string, size int64) (map[string]any, result.Result) {
 	resp := s.MakeRPCRequestWithToken(api.Request{
-		Identifier: api.Identifier{Resource: "sys/storage", Action: "init_upload", Version: "v1"},
+		Resource: "sys/storage",
+		Action:   "init_upload",
+		Version:  "v1",
 		Params: map[string]any{
 			"filename": filename,
 			"size":     size,
@@ -171,6 +177,37 @@ func (s *StorageResourceTestSuite) requireString(data map[string]any, key string
 	return value
 }
 
+// completeChunkedUpload drives the whole init → upload_part ×2 →
+// complete protocol for a two-part payload and returns the claim ID and
+// the final object key.
+func (s *StorageResourceTestSuite) completeChunkedUpload(filename string) (claimID, key string) {
+	s.T().Helper()
+
+	data, body := s.initUpload(filename, chunkedSize)
+	s.Require().True(body.IsOk(), "Init upload should succeed: %s", body.Message)
+
+	claimID = s.requireString(data, "claimId")
+	key = s.requireString(data, "key")
+
+	part1 := bytes.Repeat([]byte{'a'}, int(memoryPartSize))
+	part2 := bytes.Repeat([]byte{'b'}, int(chunkedSize-memoryPartSize))
+
+	s.Require().True(s.ReadResult(s.uploadPart(s.ownerToken, claimID, 1, part1)).IsOk(),
+		"Upload part 1 should succeed")
+	s.Require().True(s.ReadResult(s.uploadPart(s.ownerToken, claimID, 2, part2)).IsOk(),
+		"Upload part 2 should succeed")
+
+	resp := s.MakeRPCRequestWithToken(api.Request{
+		Resource: "sys/storage",
+		Action:   "complete_upload",
+		Version:  "v1",
+		Params:   map[string]any{"claimId": claimID},
+	}, s.ownerToken)
+	s.Require().True(s.ReadResult(resp).IsOk(), "Complete upload should succeed")
+
+	return claimID, key
+}
+
 // ── init_upload ─────────────────────────────────────────────────────────
 
 func (s *StorageResourceTestSuite) TestInitUploadHappyPath() {
@@ -184,6 +221,52 @@ func (s *StorageResourceTestSuite) TestInitUploadHappyPath() {
 	s.Equal("video.mp4", data["originalFilename"], "Original filename should be echoed back")
 	s.Equal(float64(memoryPartSize), data["partSize"], "Part size should mirror the backend's authoritative value")
 	s.Equal(float64(2), data["partCount"], "80 KiB / 64 KiB → 2 parts")
+}
+
+// TestInitUploadSanitizesTheFilename covers the single validation point
+// for a value that ends up in the registry, in business UIs, and in a
+// response header. Driven through the RPC rather than against the helper
+// so it also proves the sanitizer is actually wired into the flow.
+func (s *StorageResourceTestSuite) TestInitUploadSanitizesTheFilename() {
+	accepted := []struct {
+		name     string
+		filename string
+		expected string
+	}{
+		{"KeepsAPlainName", "report.pdf", "report.pdf"},
+		{"KeepsNonASCII", "季度报告 v2.pdf", "季度报告 v2.pdf"},
+		{"TrimsSurroundingWhitespace", "  report.pdf  ", "report.pdf"},
+		{"StripsAWindowsPath", `C:\Users\me\Desktop\report.pdf`, "report.pdf"},
+		{"StripsAPosixPath", "/home/me/report.pdf", "report.pdf"},
+	}
+
+	for _, tc := range accepted {
+		s.Run(tc.name, func() {
+			data, body := s.initUpload(tc.filename, singleShotSize)
+			s.Require().True(body.IsOk(), "Init upload should accept %q: %s", tc.filename, body.Message)
+			s.Equal(tc.expected, data["originalFilename"], "Stored filename should be the sanitized form")
+		})
+	}
+
+	rejected := []struct {
+		name     string
+		filename string
+	}{
+		{"RejectsCRLF", "evil\r\nX-Injected: yes.pdf"},
+		{"RejectsControlCharacters", "report\x00.pdf"},
+		{"RejectsWhitespaceOnly", "   "},
+		{"RejectsBareDot", "."},
+		{"RejectsParentDirectory", ".."},
+		{"RejectsAPathWithNoFinalSegment", "some/directory/"},
+	}
+
+	for _, tc := range rejected {
+		s.Run(tc.name, func() {
+			_, body := s.initUpload(tc.filename, singleShotSize)
+			s.False(body.IsOk(), "Init upload must reject %q", tc.filename)
+			s.Equal(storage.ErrCodeInvalidFilename, body.Code, "Rejection should carry the invalid-filename code")
+		})
+	}
 }
 
 func (s *StorageResourceTestSuite) TestInitUploadRejectsOversizedFile() {
@@ -263,8 +346,10 @@ func (s *StorageResourceTestSuite) TestCompleteUploadHappyPath() {
 	s.Require().True(s.ReadResult(s.uploadPart(s.ownerToken, claimID, 2, part2)).IsOk(), "Upload part should accept part 2")
 
 	resp := s.MakeRPCRequestWithToken(api.Request{
-		Identifier: api.Identifier{Resource: "sys/storage", Action: "complete_upload", Version: "v1"},
-		Params:     map[string]any{"claimId": claimID},
+		Resource: "sys/storage",
+		Action:   "complete_upload",
+		Version:  "v1",
+		Params:   map[string]any{"claimId": claimID},
 	}, s.ownerToken)
 
 	body = s.ReadResult(resp)
@@ -290,8 +375,10 @@ func (s *StorageResourceTestSuite) TestCompleteUploadHappyPathSinglePart() {
 	s.Require().True(s.ReadResult(s.uploadPart(s.ownerToken, claimID, 1, payload)).IsOk(), "Upload part should accept the only part")
 
 	resp := s.MakeRPCRequestWithToken(api.Request{
-		Identifier: api.Identifier{Resource: "sys/storage", Action: "complete_upload", Version: "v1"},
-		Params:     map[string]any{"claimId": claimID},
+		Resource: "sys/storage",
+		Action:   "complete_upload",
+		Version:  "v1",
+		Params:   map[string]any{"claimId": claimID},
 	}, s.ownerToken)
 
 	body = s.ReadResult(resp)
@@ -320,8 +407,10 @@ func (s *StorageResourceTestSuite) TestCompleteUploadDeletesObjectOnSizeMismatch
 	s.Require().True(s.ReadResult(s.uploadPart(s.ownerToken, claimID, 1, actualPayload)).IsOk(), "Upload part should accept the undersized payload")
 
 	resp := s.MakeRPCRequestWithToken(api.Request{
-		Identifier: api.Identifier{Resource: "sys/storage", Action: "complete_upload", Version: "v1"},
-		Params:     map[string]any{"claimId": claimID},
+		Resource: "sys/storage",
+		Action:   "complete_upload",
+		Version:  "v1",
+		Params:   map[string]any{"claimId": claimID},
 	}, s.ownerToken)
 
 	body = s.ReadResult(resp)
@@ -344,8 +433,10 @@ func (s *StorageResourceTestSuite) TestCompleteUploadRejectsIncompleteParts() {
 		"Upload part should accept the first chunk before incomplete complete_upload")
 
 	resp := s.MakeRPCRequestWithToken(api.Request{
-		Identifier: api.Identifier{Resource: "sys/storage", Action: "complete_upload", Version: "v1"},
-		Params:     map[string]any{"claimId": claimID},
+		Resource: "sys/storage",
+		Action:   "complete_upload",
+		Version:  "v1",
+		Params:   map[string]any{"claimId": claimID},
 	}, s.ownerToken)
 
 	body = s.ReadResult(resp)
@@ -361,18 +452,145 @@ func (s *StorageResourceTestSuite) TestAbortUploadHappyPath() {
 	claimID := s.requireString(data, "claimId")
 
 	resp := s.MakeRPCRequestWithToken(api.Request{
-		Identifier: api.Identifier{Resource: "sys/storage", Action: "abort_upload", Version: "v1"},
-		Params:     map[string]any{"claimId": claimID},
+		Resource: "sys/storage",
+		Action:   "abort_upload",
+		Version:  "v1",
+		Params:   map[string]any{"claimId": claimID},
 	}, s.ownerToken)
 
 	body = s.ReadResult(resp)
 	s.True(body.IsOk(), "Abort upload should succeed: %s", body.Message)
 }
 
+// TestAbortUploadSchedulesBackendCleanup pins the crash-safety property
+// of the abort flow: the handler never touches the backend itself, it
+// hands the object (and its multipart session) to the durable delete
+// queue inside the same transaction that removes the claim. A process
+// death right after the commit therefore cannot strand object bytes
+// that nothing remembers.
+func (s *StorageResourceTestSuite) TestAbortUploadSchedulesBackendCleanup() {
+	data, body := s.initUpload("video.mp4", chunkedSize)
+	s.Require().True(body.IsOk(), "Init upload should prepare a claim before abort_upload: %s", body.Message)
+
+	claimID := s.requireString(data, "claimId")
+	key := s.requireString(data, "key")
+
+	resp := s.MakeRPCRequestWithToken(api.Request{
+		Resource: "sys/storage",
+		Action:   "abort_upload",
+		Version:  "v1",
+		Params:   map[string]any{"claimId": claimID},
+	}, s.ownerToken)
+	s.Require().True(s.ReadResult(resp).IsOk(), "Abort upload should succeed before the queue check")
+
+	queued := s.pendingDeletes(key)
+	s.Require().Len(queued, 1, "Abort must enqueue exactly one pending delete for the aborted key")
+	s.Equal(storage.DeleteReasonAborted, queued[0].Reason, "Queue row should carry the aborted reason")
+	s.NotEmpty(queued[0].UploadID, "Multipart session must ride along so the worker aborts it before deleting")
+}
+
+// TestAbortUploadOnCompletedClaimLeavesObjectAlone is the regression
+// fence for the abort-versus-complete race: once a claim reaches
+// 'uploaded' the object is finalized business state, so abort must stay
+// a silent no-op instead of scheduling the finalized object's deletion.
+func (s *StorageResourceTestSuite) TestAbortUploadOnCompletedClaimLeavesObjectAlone() {
+	claimID, key := s.completeChunkedUpload("report.pdf")
+
+	resp := s.MakeRPCRequestWithToken(api.Request{
+		Resource: "sys/storage",
+		Action:   "abort_upload",
+		Version:  "v1",
+		Params:   map[string]any{"claimId": claimID},
+	}, s.ownerToken)
+	s.Require().True(s.ReadResult(resp).IsOk(), "Abort on a completed claim must be a silent no-op")
+
+	s.Empty(s.pendingDeletes(key), "A completed upload must never be scheduled for deletion by abort")
+
+	_, err := s.service.StatObject(s.ctx, storage.StatObjectOptions{Key: key})
+	s.NoError(err, "The finalized object must still exist after a losing abort")
+}
+
+// ── file registry ───────────────────────────────────────────────────────
+
+// TestCompleteUploadRecordsTheFile is the end-to-end proof of the
+// feature: the original filename must survive the claim row, which
+// Consume deletes the moment a business transaction adopts the file.
+func (s *StorageResourceTestSuite) TestCompleteUploadRecordsTheFile() {
+	claimID, key := s.completeChunkedUpload("季度报告 v2.mp4")
+
+	records := s.fileRecords(key)
+	s.Require().Len(records, 1, "A finalized upload must produce exactly one registry record")
+
+	record := records[0]
+	s.Equal(claimID, record.ID, "The record should be keyed by the originating claim ID")
+	s.Equal("季度报告 v2.mp4", record.OriginalFilename, "The original filename must be recorded verbatim")
+	s.Equal(chunkedSize, record.Size, "The recorded size should match the uploaded object")
+	s.Equal(storage.FileStatusUploaded, record.Status, "A finalized but unadopted file is uploaded, not claimed")
+	s.Equal("test-owner", record.CreatedBy, "The record should attribute the file to the uploading principal")
+	s.False(record.Public, "A default-visibility upload should be recorded as private")
+}
+
+// TestCompleteUploadIdempotentRetryRecordsOnce fences the fast path at
+// the top of complete_upload: it opens no transaction, so a retry must
+// not produce a second record.
+func (s *StorageResourceTestSuite) TestCompleteUploadIdempotentRetryRecordsOnce() {
+	claimID, key := s.completeChunkedUpload("retried.mp4")
+
+	resp := s.MakeRPCRequestWithToken(api.Request{
+		Resource: "sys/storage",
+		Action:   "complete_upload",
+		Version:  "v1",
+		Params:   map[string]any{"claimId": claimID},
+	}, s.ownerToken)
+	s.Require().True(s.ReadResult(resp).IsOk(), "The idempotent retry should succeed")
+
+	s.Len(s.fileRecords(key), 1, "An idempotent complete_upload retry must not duplicate the registry record")
+}
+
+// TestInitUploadRecordsNothing fences the other end: nothing is
+// materialized until complete_upload, so an open session must leave the
+// registry empty.
+func (s *StorageResourceTestSuite) TestInitUploadRecordsNothing() {
+	data, body := s.initUpload("never-finished.mp4", chunkedSize)
+	s.Require().True(body.IsOk(), "Init upload should succeed: %s", body.Message)
+
+	s.Empty(s.fileRecords(s.requireString(data, "key")), "An unfinished upload must not be recorded")
+}
+
+// fileRecords returns the registry rows for key.
+func (s *StorageResourceTestSuite) fileRecords(key string) []storage.FileRecord {
+	s.T().Helper()
+
+	var records []storage.FileRecord
+
+	err := s.db.NewSelect().Model(&records).Where(func(cb orm.ConditionBuilder) {
+		cb.Equals("object_key", key)
+	}).Scan(s.ctx)
+	s.Require().NoError(err, "File registry lookup should succeed")
+
+	return records
+}
+
+// pendingDeletes returns the delete-queue rows targeting key.
+func (s *StorageResourceTestSuite) pendingDeletes(key string) []store.PendingDelete {
+	s.T().Helper()
+
+	var queued []store.PendingDelete
+
+	err := s.db.NewSelect().Model(&queued).Where(func(cb orm.ConditionBuilder) {
+		cb.Equals("object_key", key)
+	}).Scan(s.ctx)
+	s.Require().NoError(err, "Pending-delete lookup should succeed")
+
+	return queued
+}
+
 func (s *StorageResourceTestSuite) TestAbortUploadIdempotentOnMissingClaim() {
 	resp := s.MakeRPCRequestWithToken(api.Request{
-		Identifier: api.Identifier{Resource: "sys/storage", Action: "abort_upload", Version: "v1"},
-		Params:     map[string]any{"claimId": "non-existent-claim"},
+		Resource: "sys/storage",
+		Action:   "abort_upload",
+		Version:  "v1",
+		Params:   map[string]any{"claimId": "non-existent-claim"},
 	}, s.ownerToken)
 
 	body := s.ReadResult(resp)
@@ -387,8 +605,10 @@ func (s *StorageResourceTestSuite) TestAbortUploadIdempotentOnMissingClaim() {
 // dispatch path as the production client (MakeRPCRequestWithToken).
 func (s *StorageResourceTestSuite) listParts(token, claimID string) result.Result {
 	resp := s.MakeRPCRequestWithToken(api.Request{
-		Identifier: api.Identifier{Resource: "sys/storage", Action: "list_parts", Version: "v1"},
-		Params:     map[string]any{"claimId": claimID},
+		Resource: "sys/storage",
+		Action:   "list_parts",
+		Version:  "v1",
+		Params:   map[string]any{"claimId": claimID},
 	}, token)
 
 	return s.ReadResult(resp)
@@ -452,8 +672,10 @@ func (s *StorageResourceTestSuite) TestListPartsRejectsCompletedClaim() {
 		"Upload part should accept part 2 before completing the claim")
 
 	completeResp := s.MakeRPCRequestWithToken(api.Request{
-		Identifier: api.Identifier{Resource: "sys/storage", Action: "complete_upload", Version: "v1"},
-		Params:     map[string]any{"claimId": claimID},
+		Resource: "sys/storage",
+		Action:   "complete_upload",
+		Version:  "v1",
+		Params:   map[string]any{"claimId": claimID},
 	}, s.ownerToken)
 	s.Require().True(s.ReadResult(completeResp).IsOk(), "Complete upload should succeed before the rejection check")
 
@@ -468,8 +690,10 @@ func (s *StorageResourceTestSuite) TestListPartsAfterAbortReturnsClaimNotFound()
 	claimID := s.requireString(data, "claimId")
 
 	abortResp := s.MakeRPCRequestWithToken(api.Request{
-		Identifier: api.Identifier{Resource: "sys/storage", Action: "abort_upload", Version: "v1"},
-		Params:     map[string]any{"claimId": claimID},
+		Resource: "sys/storage",
+		Action:   "abort_upload",
+		Version:  "v1",
+		Params:   map[string]any{"claimId": claimID},
 	}, s.ownerToken)
 	s.Require().True(s.ReadResult(abortResp).IsOk(), "Abort upload should succeed before the lookup check")
 
@@ -504,7 +728,9 @@ func (s *StorageResourceTestSuite) TestInitUploadRejectsFilenameTooLong() {
 // init_upload params. Used only to exercise the AllowPublicUploads gate.
 func (s *StorageResourceTestSuite) initUploadPublic(filename string, size int64) (map[string]any, result.Result) {
 	resp := s.MakeRPCRequestWithToken(api.Request{
-		Identifier: api.Identifier{Resource: "sys/storage", Action: "init_upload", Version: "v1"},
+		Resource: "sys/storage",
+		Action:   "init_upload",
+		Version:  "v1",
 		Params: map[string]any{
 			"filename": filename,
 			"size":     size,
@@ -551,8 +777,10 @@ func (s *StorageResourceTestSuite) TestCompleteUploadIdempotentOnAlreadyComplete
 
 	// First complete: normal path.
 	firstResp := s.MakeRPCRequestWithToken(api.Request{
-		Identifier: api.Identifier{Resource: "sys/storage", Action: "complete_upload", Version: "v1"},
-		Params:     map[string]any{"claimId": claimID},
+		Resource: "sys/storage",
+		Action:   "complete_upload",
+		Version:  "v1",
+		Params:   map[string]any{"claimId": claimID},
 	}, s.ownerToken)
 
 	firstBody := s.ReadResult(firstResp)
@@ -560,8 +788,10 @@ func (s *StorageResourceTestSuite) TestCompleteUploadIdempotentOnAlreadyComplete
 
 	// Second complete: idempotent fast-path via ClaimStatusUploaded branch.
 	secondResp := s.MakeRPCRequestWithToken(api.Request{
-		Identifier: api.Identifier{Resource: "sys/storage", Action: "complete_upload", Version: "v1"},
-		Params:     map[string]any{"claimId": claimID},
+		Resource: "sys/storage",
+		Action:   "complete_upload",
+		Version:  "v1",
+		Params:   map[string]any{"claimId": claimID},
 	}, s.ownerToken)
 
 	secondBody := s.ReadResult(secondResp)

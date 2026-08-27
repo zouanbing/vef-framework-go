@@ -169,8 +169,15 @@ func (s *TaskServiceTestSuite) TestActivateNextSequentialTask() {
 		node := &approval.FlowNode{}
 		node.ID = nodeID
 
-		err := s.svc.ActivateNextSequentialTask(s.ctx, s.db, instance, node)
+		events, err := s.svc.ActivateNextSequentialTask(s.ctx, s.db, instance, node)
 		s.Require().NoError(err, "Should activate next sequential task without error")
+
+		s.Require().Len(events, 1, "Advancing the queue should announce exactly one activation")
+
+		activated, ok := events[0].(*approval.TaskActivatedEvent)
+		s.Require().True(ok, "Activation event should be *TaskActivatedEvent")
+		s.Assert().Equal(approval.TaskActivationQueueAdvanced, activated.Reason,
+			"A promoted queue task is activated because the queue advanced")
 
 		var tasks []approval.Task
 		s.Require().NoError(s.db.NewSelect().
@@ -193,8 +200,9 @@ func (s *TaskServiceTestSuite) TestActivateNextSequentialTask() {
 		node := &approval.FlowNode{}
 		node.ID = s.fixture.NodeIDs[1]
 
-		err := s.svc.ActivateNextSequentialTask(s.ctx, s.db, instance, node)
+		events, err := s.svc.ActivateNextSequentialTask(s.ctx, s.db, instance, node)
 		s.Assert().NoError(err, "Should not error when no waiting tasks exist")
+		s.Assert().Empty(events, "Nothing was activated, so nothing should be announced")
 	})
 
 	s.Run("ActivatedTaskShouldStartTimeoutFromPending", func() {
@@ -216,7 +224,7 @@ func (s *TaskServiceTestSuite) TestActivateNextSequentialTask() {
 		node := &approval.FlowNode{TimeoutHours: 2}
 		node.ID = nodeID
 
-		err = s.svc.ActivateNextSequentialTask(s.ctx, s.db, instance, node)
+		_, err = s.svc.ActivateNextSequentialTask(s.ctx, s.db, instance, node)
 		s.Require().NoError(err, "Should activate next sequential task with timeout")
 
 		var reloaded approval.Task
@@ -239,6 +247,86 @@ func (s *TaskServiceTestSuite) TestActivateNextSequentialTask() {
 			"Activated task deadline should be recalculated from activation time",
 		)
 	})
+
+	s.Run("AutoPassesApplicantSeatAndAdvances", func() {
+		inst := s.fixture.createInstance(s.T(), s.ctx, s.db, approval.InstanceRunning)
+		nodeID := s.fixture.NodeIDs[0]
+		applicantTask := insertTaskWithAssignee(s.T(), s.ctx, s.db, inst.ID, nodeID, approval.TaskWaiting, 1, "applicant")
+		insertTaskWithAssignee(s.T(), s.ctx, s.db, inst.ID, nodeID, approval.TaskWaiting, 2, "user-b")
+
+		instance := &approval.Instance{}
+		instance.ID = inst.ID
+		instance.ApplicantID = inst.ApplicantID
+		node := &approval.FlowNode{
+			Kind:                approval.NodeApproval,
+			SameApplicantAction: approval.SameApplicantAutoPass,
+		}
+		node.ID = nodeID
+
+		events, err := s.svc.ActivateNextSequentialTask(s.ctx, s.db, instance, node)
+		s.Require().NoError(err, "Should advance the queue without error")
+
+		s.Require().Len(events, 2, "Should announce the system approval and the next activation")
+
+		approved, ok := events[0].(*approval.TaskApprovedEvent)
+		s.Require().True(ok, "First event should be the applicant seat's system approval")
+		s.Assert().Equal(applicantTask.ID, approved.TaskID, "System approval should target the applicant's seat")
+
+		activated, ok := events[1].(*approval.TaskActivatedEvent)
+		s.Require().True(ok, "Second event should be the next seat's activation")
+		s.Assert().Equal("user-b", activated.Assignee.ID, "Queue should advance past the applicant to the next approver")
+
+		s.Assert().Equal(approval.TaskApproved, s.loadTaskStatus(inst.ID, "applicant"), "Applicant's seat should be approved without action")
+		s.Assert().Equal(approval.TaskPending, s.loadTaskStatus(inst.ID, "user-b"), "Next seat should become pending")
+	})
+
+	s.Run("AutoPassSkipsExplicitlyAddedApplicantSeat", func() {
+		inst := s.fixture.createInstance(s.T(), s.ctx, s.db, approval.InstanceRunning)
+		nodeID := s.fixture.NodeIDs[0]
+		added := insertTaskWithAssignee(s.T(), s.ctx, s.db, inst.ID, nodeID, approval.TaskWaiting, 1, "applicant")
+
+		addType := approval.AddAssigneeAfter
+		_, err := s.db.NewUpdate().
+			Model((*approval.Task)(nil)).
+			Set("add_assignee_type", addType).
+			Where(func(cb orm.ConditionBuilder) { cb.PKEquals(added.ID) }).
+			Exec(s.ctx)
+		s.Require().NoError(err, "Should mark the seat as an add-assignee addition")
+
+		instance := &approval.Instance{}
+		instance.ID = inst.ID
+		instance.ApplicantID = inst.ApplicantID
+		node := &approval.FlowNode{
+			Kind:                approval.NodeApproval,
+			SameApplicantAction: approval.SameApplicantAutoPass,
+		}
+		node.ID = nodeID
+
+		events, err := s.svc.ActivateNextSequentialTask(s.ctx, s.db, instance, node)
+		s.Require().NoError(err, "Should advance the queue without error")
+
+		s.Require().Len(events, 1, "An explicitly added applicant seat should activate normally")
+		_, ok := events[0].(*approval.TaskActivatedEvent)
+		s.Assert().True(ok, "The only event should be the activation")
+		s.Assert().Equal(approval.TaskPending, s.loadTaskStatus(inst.ID, "applicant"), "Explicitly added seat should stay manual")
+	})
+}
+
+// loadTaskStatus reloads a task's status by instance and assignee.
+func (s *TaskServiceTestSuite) loadTaskStatus(instanceID, assigneeID string) approval.TaskStatus {
+	var task approval.Task
+
+	s.Require().NoError(
+		s.db.NewSelect().Model(&task).
+			Where(func(cb orm.ConditionBuilder) {
+				cb.Equals("instance_id", instanceID).Equals("assignee_id", assigneeID)
+			}).
+			Limit(1).
+			Scan(s.ctx),
+		"Should load task for assignee "+assigneeID,
+	)
+
+	return task.Status
 }
 
 // --- PrepareOperation ---
@@ -519,6 +607,82 @@ func (s *TaskServiceTestSuite) TestIsAuthorizedForNodeOperation() {
 		result, err := s.svc.IsAuthorizedForNodeOperation(s.ctx, s.db, "non-existent", "non-existent-node", "random-user")
 		s.Require().NoError(err, "A non-existent instance is a denial, not an error")
 		s.Assert().False(result, "Random user should not be authorized")
+	})
+}
+
+// --- IsUrgeAuthorized ---
+
+// TestIsUrgeAuthorized pins the whole vocabulary of who may nudge the people
+// deciding an instance. The rule is "on the hook for the decision": the
+// applicant and everyone a task was ever opened on, however the work was
+// handed around, and nobody who is merely watching.
+func (s *TaskServiceTestSuite) TestIsUrgeAuthorized() {
+	s.Run("Applicant", func() {
+		inst := s.fixture.createInstance(s.T(), s.ctx, s.db, approval.InstanceRunning)
+
+		authorized, err := s.svc.IsUrgeAuthorized(s.ctx, s.db, inst.ID, "applicant")
+		s.Require().NoError(err, "Authorization check should not error")
+		s.Assert().True(authorized, "The applicant is waiting on the decision and may urge")
+	})
+
+	s.Run("CurrentAssignee", func() {
+		inst := s.fixture.createInstance(s.T(), s.ctx, s.db, approval.InstanceRunning)
+		insertTaskWithAssignee(s.T(), s.ctx, s.db, inst.ID, s.fixture.NodeIDs[0], approval.TaskPending, 1, "holder")
+
+		authorized, err := s.svc.IsUrgeAuthorized(s.ctx, s.db, inst.ID, "holder")
+		s.Require().NoError(err, "Authorization check should not error")
+		s.Assert().True(authorized, "A pending assignee may urge peers on the same instance")
+	})
+
+	s.Run("PastAssignee", func() {
+		inst := s.fixture.createInstance(s.T(), s.ctx, s.db, approval.InstanceRunning)
+		insertTaskWithAssignee(s.T(), s.ctx, s.db, inst.ID, s.fixture.NodeIDs[0], approval.TaskApproved, 1, "earlier")
+
+		authorized, err := s.svc.IsUrgeAuthorized(s.ctx, s.db, inst.ID, "earlier")
+		s.Require().NoError(err, "Authorization check should not error")
+		s.Assert().True(authorized,
+			"Someone who already approved still waits on the instance and may ask why it is stuck")
+	})
+
+	s.Run("Delegator", func() {
+		inst := s.fixture.createInstance(s.T(), s.ctx, s.db, approval.InstanceRunning)
+		task := insertTaskWithAssignee(s.T(), s.ctx, s.db, inst.ID, s.fixture.NodeIDs[0],
+			approval.TaskPending, 1, "delegate")
+
+		_, err := s.db.NewUpdate().
+			Model((*approval.Task)(nil)).
+			Set("delegator_id", "original-approver").
+			Where(func(cb orm.ConditionBuilder) { cb.Equals("id", task.ID) }).
+			Exec(s.ctx)
+		s.Require().NoError(err, "Delegating the task away should succeed")
+
+		authorized, err := s.svc.IsUrgeAuthorized(s.ctx, s.db, inst.ID, "original-approver")
+		s.Require().NoError(err, "Authorization check should not error")
+		s.Assert().True(authorized,
+			"The slot is still the delegator's; handing execution to a delegate must not cost them the right to urge")
+	})
+
+	s.Run("CCRecipientDenied", func() {
+		inst := s.fixture.createInstance(s.T(), s.ctx, s.db, approval.InstanceRunning)
+		insertTaskWithAssignee(s.T(), s.ctx, s.db, inst.ID, s.fixture.NodeIDs[0], approval.TaskPending, 1, "holder")
+
+		_, err := s.db.NewInsert().
+			Model(&approval.CCRecord{InstanceID: inst.ID, CCUserID: "observer"}).
+			Exec(s.ctx)
+		s.Require().NoError(err, "Inserting the CC record should succeed")
+
+		authorized, err := s.svc.IsUrgeAuthorized(s.ctx, s.db, inst.ID, "observer")
+		s.Require().NoError(err, "Authorization check should not error")
+		s.Assert().False(authorized,
+			"A CC recipient only watches: this is the one leg that separates urging from reading the instance")
+	})
+
+	s.Run("StrangerDenied", func() {
+		inst := s.fixture.createInstance(s.T(), s.ctx, s.db, approval.InstanceRunning)
+
+		authorized, err := s.svc.IsUrgeAuthorized(s.ctx, s.db, inst.ID, "nobody")
+		s.Require().NoError(err, "Authorization check should not error")
+		s.Assert().False(authorized, "An unrelated user may not urge")
 	})
 }
 

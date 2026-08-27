@@ -100,7 +100,8 @@ func TestWorkerPublishFailure(t *testing.T) {
 		worker := NewWorker(testx.NewTestDB(t), bus, NewWriter(), nil)
 
 		err := worker.publishFailure(t.Context(), approval.NewInstanceBindingFailedEvent(
-			bindingFailureInstance(), approval.BindingTriggerCompleted, approval.InstanceApproved, "biz_table", "boom"))
+			bindingFailureInstance(), approval.BindingTriggerCompleted, approval.InstanceApproved, "biz_table", "boom",
+		))
 
 		require.NoError(t, err, "Binding failure should publish through a short transaction when DB is available")
 		require.Len(t, bus.publishCalls, 1, "Binding failure should publish once to avoid outbox plus memory double delivery")
@@ -112,7 +113,8 @@ func TestWorkerPublishFailure(t *testing.T) {
 		worker := NewWorker(testx.NewTestDB(t), bus, NewWriter(), nil)
 
 		err := worker.publishFailure(t.Context(), approval.NewInstanceBindingFailedEvent(
-			bindingFailureInstance(), approval.BindingTriggerCompleted, approval.InstanceApproved, "biz_table", "boom"))
+			bindingFailureInstance(), approval.BindingTriggerCompleted, approval.InstanceApproved, "biz_table", "boom",
+		))
 
 		require.NoError(t, err, "Binding failure should fall back to non-transactional publish when no Tx route exists")
 		require.Len(t, bus.publishCalls, 2, "Binding failure should retry once without Tx after ErrTxRequired")
@@ -125,7 +127,8 @@ func TestWorkerPublishFailure(t *testing.T) {
 		worker := NewWorker(nil, bus, NewWriter(), nil)
 
 		err := worker.publishFailure(t.Context(), approval.NewInstanceBindingFailedEvent(
-			bindingFailureInstance(), approval.BindingTriggerCompleted, approval.InstanceApproved, "biz_table", "boom"))
+			bindingFailureInstance(), approval.BindingTriggerCompleted, approval.InstanceApproved, "biz_table", "boom",
+		))
 
 		require.NoError(t, err, "Binding failure should publish directly when DB is unavailable")
 		require.Len(t, bus.publishCalls, 1, "Binding failure should publish exactly once")
@@ -315,7 +318,8 @@ func TestWorkerClaimBatchUsesDialectIndependentAttemptOrder(t *testing.T) {
 		}
 
 		failed := &approval.BusinessProjection{
-			FullAuditedModel: orm.FullAuditedModel{CreatedAt: failedCreated, UpdatedAt: failedCreated},
+			CreatedAt:        failedCreated,
+			UpdatedAt:        failedCreated,
 			TenantID:         "tenant-1",
 			FlowID:           "flow-1",
 			FlowVersionID:    "version-1",
@@ -334,7 +338,8 @@ func TestWorkerClaimBatchUsesDialectIndependentAttemptOrder(t *testing.T) {
 		require.NoError(t, err, "Test setup should insert the due failed projection")
 
 		pending := &approval.BusinessProjection{
-			FullAuditedModel: orm.FullAuditedModel{CreatedAt: pendingCreated, UpdatedAt: pendingCreated},
+			CreatedAt:        pendingCreated,
+			UpdatedAt:        pendingCreated,
 			TenantID:         "tenant-1",
 			FlowID:           "flow-1",
 			FlowVersionID:    "version-1",

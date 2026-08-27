@@ -22,9 +22,15 @@ const (
 	autoPassReasonExecutionType       = "节点执行类型为自动通过"
 	autoRejectReasonExecutionType     = "节点执行类型为自动拒绝"
 	autoPassReasonEmptyAssignee       = "无审批人，按节点配置自动通过"
-	autoPassReasonSameApplicant       = "审批人与发起人相同，按节点配置自动通过"
 	autoPassReasonConsecutiveApprover = "审批人在上一节点已通过，自动通过"
+	excludeReasonSameApplicant        = "审批人与发起人相同，按节点配置回避"
+	cancelReasonEntryNodePassed       = "节点已通过，剩余任务无需处理"
 )
+
+// AutoPassReasonSameApplicant is exported (unlike its siblings above) because
+// the sequential queue-advance path in the service layer stamps the same
+// reason when it auto-passes the applicant's seat as the queue reaches it.
+const AutoPassReasonSameApplicant = "审批人与发起人相同，按节点配置自动通过"
 
 // resolveAutoExecution short-circuits task nodes whose ExecutionType decides
 // the outcome without human input. AutoPass advances past the node and emits
@@ -321,22 +327,64 @@ func buildTask(pc *ProcessContext, assignee approval.ResolvedAssignee, deadline 
 	return task
 }
 
-// newTaskCreatedEvent returns the TaskCreatedEvent describing a just-
-// inserted task row. The event reports the physical creation of the task,
-// not the moment it becomes actionable: under sequential approval, tasks
-// after the first start as TaskWaiting and a nil Deadline, which is how
-// downstream consumers can distinguish "queued behind a predecessor" from
-// "immediately actionable" without an extra event type.
-func newTaskCreatedEvent(pc *ProcessContext, task *approval.Task) approval.DomainEvent {
-	return approval.NewTaskCreatedEvent(pc.Instance, task, pc.Node)
+// taskInsertedEvents returns the events describing a just-inserted task row:
+// always the TaskCreatedEvent reporting the row's physical creation, followed
+// by a TaskActivatedEvent when the task is actionable straight away. A
+// sequential node's queued tasks are inserted as TaskWaiting and get their
+// activation event later, when the queue reaches them.
+func taskInsertedEvents(pc *ProcessContext, task *approval.Task) []approval.DomainEvent {
+	events := []approval.DomainEvent{approval.NewTaskCreatedEvent(pc.Instance, task, pc.Node)}
+
+	if task.Status == approval.TaskPending {
+		events = append(events, approval.NewTaskActivatedEvent(
+			pc.Instance, task, pc.Node, approval.TaskActivationAssigned,
+		))
+	}
+
+	return events
 }
 
-// taskCreatedEventsFor returns the slice of TaskCreatedEvents corresponding
-// to a batch of just-inserted tasks, preserving input order.
+// suppressActivationsForClearedTasks drops activation events for tasks that no
+// longer await their assignee, judged by the tasks' final in-memory state. It
+// exists for the consecutive-approver cascade, where promoting the next queued
+// task and clearing it can both happen while the loop runs: the promotion is
+// real, but nobody was ever asked to act on it.
+func suppressActivationsForClearedTasks(events []approval.DomainEvent, tasks []approval.Task) []approval.DomainEvent {
+	if len(events) == 0 {
+		return events
+	}
+
+	cleared := collections.NewHashSet[string]()
+
+	for i := range tasks {
+		if tasks[i].Status != approval.TaskPending {
+			cleared.Add(tasks[i].ID)
+		}
+	}
+
+	if cleared.IsEmpty() {
+		return events
+	}
+
+	kept := make([]approval.DomainEvent, 0, len(events))
+
+	for _, evt := range events {
+		if a, ok := evt.(*approval.TaskActivatedEvent); ok && cleared.Contains(a.TaskID) {
+			continue
+		}
+
+		kept = append(kept, evt)
+	}
+
+	return kept
+}
+
+// taskCreatedEventsFor returns the events for a batch of just-inserted tasks,
+// preserving input order.
 func taskCreatedEventsFor(pc *ProcessContext, tasks []*approval.Task) []approval.DomainEvent {
-	events := make([]approval.DomainEvent, len(tasks))
-	for i, t := range tasks {
-		events[i] = newTaskCreatedEvent(pc, t)
+	events := make([]approval.DomainEvent, 0, len(tasks)*2)
+	for _, t := range tasks {
+		events = append(events, taskInsertedEvents(pc, t)...)
 	}
 
 	return events

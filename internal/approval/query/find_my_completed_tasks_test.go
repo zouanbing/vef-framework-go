@@ -9,7 +9,6 @@ import (
 	"github.com/coldsmirk/vef-framework-go/internal/approval/query"
 	"github.com/coldsmirk/vef-framework-go/internal/testx"
 	"github.com/coldsmirk/vef-framework-go/orm"
-	"github.com/coldsmirk/vef-framework-go/page"
 	"github.com/coldsmirk/vef-framework-go/timex"
 )
 
@@ -34,11 +33,24 @@ func (s *FindMyCompletedTasksTestSuite) SetupSuite() {
 	fix := setupQueryFixture(s.T(), s.ctx, s.db, "mct-flow", 1)
 
 	inst := &approval.Instance{
-		TenantID: "t1", FlowID: fix.FlowID, FlowVersionID: fix.VersionID,
-		Title: "Completed Instance", InstanceNo: "MCT-001", ApplicantID: "user-x", Status: approval.InstanceApproved,
+		TenantID:      "t1",
+		FlowID:        fix.FlowID,
+		FlowVersionID: fix.VersionID,
+		Title:         "Completed Instance",
+		InstanceNo:    "MCT-001",
+		ApplicantID:   "user-x",
+		Status:        approval.InstanceApproved,
 	}
 	_, err := s.db.NewInsert().Model(inst).Exec(s.ctx)
 	s.Require().NoError(err, "Should insert instance")
+
+	_, err = s.db.NewUpdate().Model(new(approval.Flow)).
+		Set("labels", map[string]string{"app": "smp"}).
+		Where(func(cb orm.ConditionBuilder) {
+			cb.Equals("id", fix.FlowID)
+		}).
+		Exec(s.ctx)
+	s.Require().NoError(err, "Should set flow labels")
 
 	now := timex.Now()
 
@@ -63,8 +75,9 @@ func (s *FindMyCompletedTasksTestSuite) TearDownSuite() {
 
 func (s *FindMyCompletedTasksTestSuite) TestFindCompletedForUser() {
 	result, err := s.handler.Handle(s.ctx, query.FindMyCompletedTasksQuery{
-		UserID:   "user-a",
-		Pageable: page.Pageable{Page: 1, Size: 10},
+		UserID: "user-a",
+		Page:   1,
+		Size:   10,
 	})
 	s.Require().NoError(err, "Should query without error")
 	s.Assert().Equal(int64(4), result.Total, "Should include approved, rejected, handled, and rolled-back tasks for user-a")
@@ -72,8 +85,9 @@ func (s *FindMyCompletedTasksTestSuite) TestFindCompletedForUser() {
 
 func (s *FindMyCompletedTasksTestSuite) TestExcludesPendingTasks() {
 	result, err := s.handler.Handle(s.ctx, query.FindMyCompletedTasksQuery{
-		UserID:   "user-a",
-		Pageable: page.Pageable{Page: 1, Size: 10},
+		UserID: "user-a",
+		Page:   1,
+		Size:   10,
 	})
 	s.Require().NoError(err, "Should query without error")
 
@@ -82,10 +96,41 @@ func (s *FindMyCompletedTasksTestSuite) TestExcludesPendingTasks() {
 	}
 }
 
+func (s *FindMyCompletedTasksTestSuite) TestProjectsInstanceStatus() {
+	result, err := s.handler.Handle(s.ctx, query.FindMyCompletedTasksQuery{
+		UserID: "user-a",
+		Page:   1,
+		Size:   10,
+	})
+	s.Require().NoError(err, "Should query without error")
+	s.Require().Len(result.Items, 4, "All four completed tasks should be projected")
+
+	for _, item := range result.Items {
+		s.Assert().Equal(approval.InstanceApproved, item.InstanceStatus,
+			"Each row should carry the instance's current status")
+	}
+}
+
+func (s *FindMyCompletedTasksTestSuite) TestProjectsFlowLabels() {
+	result, err := s.handler.Handle(s.ctx, query.FindMyCompletedTasksQuery{
+		UserID: "user-a",
+		Page:   1,
+		Size:   10,
+	})
+	s.Require().NoError(err, "Should query without error")
+	s.Require().NotEmpty(result.Items, "Completed tasks should be projected")
+
+	for _, item := range result.Items {
+		s.Assert().Equal(map[string]string{"app": "smp"}, item.Labels,
+			"Each row should carry the flow's labels")
+	}
+}
+
 func (s *FindMyCompletedTasksTestSuite) TestNoResults() {
 	result, err := s.handler.Handle(s.ctx, query.FindMyCompletedTasksQuery{
-		UserID:   "non-existent-user",
-		Pageable: page.Pageable{Page: 1, Size: 10},
+		UserID: "non-existent-user",
+		Page:   1,
+		Size:   10,
 	})
 	s.Require().NoError(err, "Should query without error")
 	s.Assert().Equal(int64(0), result.Total, "Should find 0 completed tasks")

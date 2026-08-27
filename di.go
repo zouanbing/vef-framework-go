@@ -13,7 +13,7 @@ import (
 // ApprovalModule enables the optional approval (workflow) feature: pass it to
 // vef.Run(...) to register the approval API resources, CQRS handlers, engine,
 // binding listener, and timeout scanner. It is intentionally absent from the
-// default boot sequence (bootmodules.Core) so applications that do not need
+// default boot sequence (internal/bootmodules) so applications that do not need
 // workflows pay nothing. Approval events publish with event.WithTx and the
 // binding listener subscribes, so the host must route approval.* to a
 // transactional transport with a subscribable sink (see the approval docs).
@@ -87,8 +87,32 @@ func ProvideAPIResource(constructor any, paramTags ...string) fx.Option {
 }
 
 // ProvideMiddleware provides a middleware to the dependency injection container.
-// The middleware will be registered in the "vef:app:middlewares" group.
-// The constructor must return app.Middleware (not a concrete type).
+// The middleware will be registered in the "vef:app:middlewares" group and
+// mounted on the router in Order() sequence. It is how an application adds a
+// real route outside the /api surface.
+//
+// The constructor must return app.Middleware (not a concrete type). fx matches
+// a group by exact type, so a concrete return value is not rejected — it is
+// collected under its own type and never reaches the router.
+//
+// Example:
+//
+//	type ssoGateway struct{ /* ... */ }
+//
+//	func (*ssoGateway) Name() string { return "sso-gateway" }
+//
+//	func (*ssoGateway) Order() int { return 460 }
+//
+//	func (g *ssoGateway) Apply(router fiber.Router) {
+//	    router.Get("/sso/callback", g.handle)
+//	}
+//
+//	func newSSOGateway(db orm.DB) app.Middleware { return &ssoGateway{ /* ... */ } }
+//
+//	fx.New(
+//	    vef.Module,
+//	    vef.ProvideMiddleware(newSSOGateway),
+//	)
 func ProvideMiddleware(constructor any, paramTags ...string) fx.Option {
 	return fx.Provide(
 		fx.Annotate(
@@ -181,6 +205,44 @@ func ProvideCQRSBehavior(constructor any, paramTags ...string) fx.Option {
 			constructor,
 			fx.ParamTags(paramTags...),
 			fx.ResultTags(`group:"vef:cqrs:behaviors"`),
+		),
+	)
+}
+
+// ProvideAuthenticator registers a custom login authenticator. It joins the
+// "vef:security:authenticators" group, and security/auth.login dispatches to it
+// by the credential type it accepts from Supports.
+//
+// Routing a custom mechanism through the login endpoint is what earns it the
+// rest of the pipeline: the brute-force guard, the full challenge chain, token
+// issuance under the configured mechanism, session concurrency, and the login
+// audit event. An authenticator that resolves identities from an external
+// identity provider is the usual reason to add one.
+//
+// The constructor must return security.Authenticator (not a concrete type).
+//
+// Example:
+//
+//	type ssoAuthenticator struct{ /* ... */ }
+//
+//	func (*ssoAuthenticator) Supports(authType string) bool { return authType == "sso" }
+//
+//	func (a *ssoAuthenticator) Authenticate(ctx context.Context, authentication security.Authentication) (*security.Principal, error) {
+//	    /* redeem the credential with the identity provider and map it to a local principal */
+//	}
+//
+//	func newSSOAuthenticator(db orm.DB) security.Authenticator { return &ssoAuthenticator{ /* ... */ } }
+//
+//	fx.New(
+//	    vef.Module,
+//	    vef.ProvideAuthenticator(newSSOAuthenticator),
+//	)
+func ProvideAuthenticator(constructor any, paramTags ...string) fx.Option {
+	return fx.Provide(
+		fx.Annotate(
+			constructor,
+			fx.ParamTags(paramTags...),
+			fx.ResultTags(`group:"vef:security:authenticators"`),
 		),
 	)
 }
@@ -441,6 +503,43 @@ func ProvideApprovalAggregator(constructor any, paramTags ...string) fx.Option {
 //	    vef.ProvideApprovalFormSchemaParser(newMyDesignerParser),
 //	)
 func ProvideApprovalFormSchemaParser(constructor any, paramTags ...string) fx.Option {
+	return fx.Decorate(
+		fx.Annotate(
+			constructor,
+			fx.ParamTags(paramTags...),
+		),
+	)
+}
+
+// ProvideApprovalGlobalsResolver overrides the framework's default
+// approval.InstanceGlobalsResolver — which resolves nothing — with a host
+// implementation, so flows can route on variables beyond the form data and the
+// built-in applicant subjects: tenant attributes, applicant roles, business
+// limits, and so on. The constructor must return
+// approval.InstanceGlobalsResolver.
+//
+// Resolution runs server-side at instance start, from the authenticated
+// principal, and the result is snapshotted onto Instance.Globals. It is
+// deliberately not a request parameter: globals steer condition branches, so an
+// applicant who could supply them could steer their own approval. Being a
+// snapshot also means a flow re-evaluates the same way on every traversal —
+// like the applicant's department, the values describe the world at initiation,
+// not live state.
+//
+// Condition evaluation then resolves a field condition's subject against the
+// snapshot before the form data (so a global shadows a same-named form field,
+// exactly as the applicant subjects do), and binds every entry as a top-level
+// name for expression conditions (where the built-in formData / applicantId /
+// applicantDepartmentId bindings win a collision).
+//
+// Example:
+//
+//	fx.New(
+//	    vef.Module,
+//	    vef.ApprovalModule,
+//	    vef.ProvideApprovalGlobalsResolver(newMyGlobalsResolver),
+//	)
+func ProvideApprovalGlobalsResolver(constructor any, paramTags ...string) fx.Option {
 	return fx.Decorate(
 		fx.Annotate(
 			constructor,

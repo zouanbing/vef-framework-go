@@ -13,8 +13,64 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
+	"github.com/coldsmirk/vef-framework-go/config"
+	"github.com/coldsmirk/vef-framework-go/internal/app"
+	"github.com/coldsmirk/vef-framework-go/security"
 	"github.com/coldsmirk/vef-framework-go/storage"
 )
+
+// StubAuthManager stands in for the framework's token dispatch: it records
+// the credential it was handed and answers with a fixed outcome.
+type StubAuthManager struct {
+	principal *security.Principal
+	err       error
+	seenToken string
+	called    bool
+}
+
+func (m *StubAuthManager) Authenticate(_ context.Context, authentication security.Authentication) (*security.Principal, error) {
+	m.called = true
+	m.seenToken = authentication.Principal
+
+	return m.principal, m.err
+}
+
+// RecordingFileACL captures the principal the proxy handed it and grants
+// every read, so a test can assert on identity rather than on the verdict.
+type RecordingFileACL struct {
+	seen   *security.Principal
+	called bool
+}
+
+func (a *RecordingFileACL) CanRead(_ context.Context, principal *security.Principal, _ string) (bool, error) {
+	a.called = true
+	a.seen = principal
+
+	return true, nil
+}
+
+// newProxy builds the download proxy, defaulting to an auth manager no test
+// request ever reaches (the token extractor short-circuits without a
+// credential). Pass one explicitly to exercise the authenticated path.
+func newProxy(
+	service storage.Service,
+	acl storage.FileACL,
+	registry storage.FileRegistry,
+	auth ...security.AuthManager,
+) app.Middleware {
+	manager := security.AuthManager(new(StubAuthManager))
+	if len(auth) > 0 {
+		manager = auth[0]
+	}
+
+	return NewProxyMiddleware(ProxyMiddlewareParams{
+		Service:  service,
+		ACL:      acl,
+		Registry: registry,
+		Auth:     manager,
+		Security: new(config.SecurityConfig),
+	})
+}
 
 // MockStorageService is a mock implementation of storage.Service for testing.
 type MockStorageService struct {
@@ -81,6 +137,36 @@ func (*MockStorageService) AbortMultipart(context.Context, storage.AbortMultipar
 	return nil
 }
 
+// StubFileRegistry serves canned registry records, or fails outright so
+// the proxy's best-effort filename resolution can be exercised.
+type StubFileRegistry struct {
+	records map[string]storage.FileRecord
+	err     error
+}
+
+func (s *StubFileRegistry) Lookup(_ context.Context, keys []string) (map[string]storage.FileRecord, error) {
+	if s.err != nil {
+		return nil, s.err
+	}
+
+	found := make(map[string]storage.FileRecord, len(keys))
+
+	for _, key := range keys {
+		if record, ok := s.records[key]; ok {
+			found[key] = record
+		}
+	}
+
+	return found, nil
+}
+
+// registryWith returns a stub holding one record for key.
+func registryWith(key, filename string) *StubFileRegistry {
+	return &StubFileRegistry{
+		records: map[string]storage.FileRecord{key: {Key: key, OriginalFilename: filename}},
+	}
+}
+
 func TestProxyMiddleware(t *testing.T) {
 	// Helper function to create a configured Fiber app with error handler
 	createApp := func() *fiber.App {
@@ -105,7 +191,7 @@ func TestProxyMiddleware(t *testing.T) {
 		}, nil)
 
 		app := createApp()
-		middleware := NewProxyMiddleware(mockService, new(storage.DefaultFileACL))
+		middleware := newProxy(mockService, new(storage.DefaultFileACL), new(StubFileRegistry))
 		middleware.Apply(app)
 
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/storage/files/pub/2025/01/15/test.jpg", nil)
@@ -123,6 +209,59 @@ func TestProxyMiddleware(t *testing.T) {
 		mockService.AssertExpectations(t)
 	})
 
+	t.Run("AdvertisesTheOriginalFilename", func(t *testing.T) {
+		mockService := new(MockStorageService)
+
+		const key = "pub/2026/08/04/9f3c.pdf"
+
+		mockService.On("GetObject", storage.GetObjectOptions{Key: key}).
+			Return(io.NopCloser(bytes.NewReader([]byte("pdf"))), &storage.ObjectInfo{ContentType: "application/pdf"}, nil)
+
+		app := createApp()
+		newProxy(mockService, new(storage.DefaultFileACL), registryWith(key, "季度报告.pdf")).Apply(app)
+
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/storage/files/"+key, nil)
+		resp, err := app.Test(req)
+
+		assert.NoError(t, err, "TestProxyMiddleware should complete without error")
+		assert.Equal(t, `inline; filename*=utf-8''%E5%AD%A3%E5%BA%A6%E6%8A%A5%E5%91%8A.pdf`,
+			resp.Header.Get(fiber.HeaderContentDisposition),
+			"A recorded upload should be served under its original filename")
+
+		mockService.AssertExpectations(t)
+	})
+
+	// Filename resolution is decoration; losing it must never cost the
+	// caller their download.
+	t.Run("RegistryFailureStillServesTheFile", func(t *testing.T) {
+		mockService := new(MockStorageService)
+
+		const key = "pub/2026/08/04/degraded.jpg"
+
+		fileContent := []byte("jpeg bytes")
+
+		mockService.On("GetObject", storage.GetObjectOptions{Key: key}).
+			Return(io.NopCloser(bytes.NewReader(fileContent)), &storage.ObjectInfo{ContentType: "image/jpeg"}, nil)
+
+		registry := &StubFileRegistry{err: errors.New("registry unavailable")}
+
+		app := createApp()
+		newProxy(mockService, new(storage.DefaultFileACL), registry).Apply(app)
+
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/storage/files/"+key, nil)
+		resp, err := app.Test(req)
+
+		assert.NoError(t, err, "TestProxyMiddleware should complete without error")
+		assert.Equal(t, http.StatusOK, resp.StatusCode, "A registry failure must not fail the download")
+		assert.Empty(t, resp.Header.Get(fiber.HeaderContentDisposition),
+			"Without a resolved name the header is omitted rather than guessed")
+
+		body, _ := io.ReadAll(resp.Body)
+		assert.Equal(t, fileContent, body, "The body should still stream in full")
+
+		mockService.AssertExpectations(t)
+	})
+
 	t.Run("FileNotFound", func(t *testing.T) {
 		mockService := new(MockStorageService)
 
@@ -131,7 +270,7 @@ func TestProxyMiddleware(t *testing.T) {
 		}).Return(nil, nil, storage.ErrObjectNotFound)
 
 		app := createApp()
-		middleware := NewProxyMiddleware(mockService, new(storage.DefaultFileACL))
+		middleware := newProxy(mockService, new(storage.DefaultFileACL), new(StubFileRegistry))
 		middleware.Apply(app)
 
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/storage/files/pub/nonexistent.jpg", nil)
@@ -147,7 +286,7 @@ func TestProxyMiddleware(t *testing.T) {
 		mockService := new(MockStorageService)
 
 		app := createApp()
-		middleware := NewProxyMiddleware(mockService, new(storage.DefaultFileACL))
+		middleware := newProxy(mockService, new(storage.DefaultFileACL), new(StubFileRegistry))
 		middleware.Apply(app)
 
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/storage/files/priv/2025/01/15/secret.bin", nil)
@@ -158,6 +297,130 @@ func TestProxyMiddleware(t *testing.T) {
 
 		// GetObject should NOT be called — ACL rejects before reaching backend
 		mockService.AssertNotCalled(t, "GetObject")
+	})
+
+	// This route is registered outside the /api pipeline, so nothing else
+	// resolves the caller's identity. Without the proxy dispatching the
+	// token itself, every FileACL that consults the principal sees nil no
+	// matter what credential the request carried.
+	t.Run("PrivateKeyAuthenticatesTheCaller", func(t *testing.T) {
+		const key = "priv/2026/08/06/owned.bin"
+
+		expected := &security.Principal{ID: "u-1", Name: "alice"}
+
+		for name, target := range map[string]struct {
+			url    string
+			header bool
+		}{
+			// The header is the primary channel...
+			"AuthorizationHeader": {url: "/storage/files/" + key, header: true},
+			// ...and the query parameter is what an <img> or a download
+			// link can actually carry.
+			"AccessTokenQueryParameter": {
+				url: "/storage/files/" + key + "?" + security.QueryKeyAccessToken + "=tok-abc",
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				mockService := new(MockStorageService)
+				mockService.On("GetObject", storage.GetObjectOptions{Key: key}).
+					Return(io.NopCloser(bytes.NewReader([]byte("bytes"))), &storage.ObjectInfo{}, nil)
+
+				auth := &StubAuthManager{principal: expected}
+				acl := new(RecordingFileACL)
+
+				app := createApp()
+				newProxy(mockService, acl, new(StubFileRegistry), auth).Apply(app)
+
+				req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, target.url, nil)
+				if target.header {
+					req.Header.Set(fiber.HeaderAuthorization, security.AuthSchemeBearer+" tok-abc")
+				}
+
+				_, err := app.Test(req)
+
+				assert.NoError(t, err, "Request should complete")
+				assert.Equal(t, "tok-abc", auth.seenToken, "The proxy should dispatch the credential it was sent")
+				assert.Same(t, expected, acl.seen, "The ACL should receive the authenticated principal")
+
+				mockService.AssertExpectations(t)
+			})
+		}
+	})
+
+	// FileACL is the authority on private keys and may grant an anonymous
+	// read (a share link, a tenant-wide asset), so a request with no
+	// credential reaches it as nobody rather than being turned away.
+	t.Run("PrivateKeyWithoutTokenReachesTheACLAnonymously", func(t *testing.T) {
+		mockService := new(MockStorageService)
+		auth := &StubAuthManager{principal: &security.Principal{ID: "u-1"}}
+		acl := new(RecordingFileACL)
+
+		app := createApp()
+		newProxy(mockService, acl, new(StubFileRegistry), auth).Apply(app)
+
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet,
+			"/storage/files/priv/2026/08/06/anon.bin", nil)
+
+		mockService.On("GetObject", mock.Anything).
+			Return(io.NopCloser(bytes.NewReader([]byte("bytes"))), &storage.ObjectInfo{}, nil)
+
+		_, err := app.Test(req)
+
+		assert.NoError(t, err, "Request should complete")
+		assert.False(t, auth.called, "A request carrying no credential should not reach the token dispatch")
+		assert.True(t, acl.called, "The ACL should still decide")
+		assert.Nil(t, acl.seen, "An unauthenticated caller reaches the ACL as nil")
+	})
+
+	// A caller who offered a credential and had it refused is told so;
+	// degrading them to anonymous would report an expired token as an
+	// opaque access-denied.
+	t.Run("PrivateKeyWithInvalidTokenIsRejected", func(t *testing.T) {
+		mockService := new(MockStorageService)
+		auth := &StubAuthManager{err: security.ErrTokenInvalid}
+		acl := new(RecordingFileACL)
+
+		app := createApp()
+		newProxy(mockService, acl, new(StubFileRegistry), auth).Apply(app)
+
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet,
+			"/storage/files/priv/2026/08/06/secret.bin", nil)
+		req.Header.Set(fiber.HeaderAuthorization, security.AuthSchemeBearer+" expired")
+
+		_, err := app.Test(req)
+
+		assert.NoError(t, err, "Request should complete")
+		assert.False(t, acl.called, "A rejected credential should not reach the ACL")
+
+		mockService.AssertNotCalled(t, "GetObject")
+	})
+
+	// Authentication sits inside the private branch: pub/ never consults
+	// the ACL, so paying for token dispatch there would buy nothing and
+	// would let a stale token in a long-lived tab break public images.
+	t.Run("PublicKeySkipsAuthentication", func(t *testing.T) {
+		mockService := new(MockStorageService)
+
+		const key = "pub/2026/08/06/logo.png"
+
+		mockService.On("GetObject", storage.GetObjectOptions{Key: key}).
+			Return(io.NopCloser(bytes.NewReader([]byte("png"))), &storage.ObjectInfo{}, nil)
+
+		auth := &StubAuthManager{err: security.ErrTokenInvalid}
+
+		app := createApp()
+		newProxy(mockService, new(storage.DefaultFileACL), new(StubFileRegistry), auth).Apply(app)
+
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/storage/files/"+key, nil)
+		req.Header.Set(fiber.HeaderAuthorization, security.AuthSchemeBearer+" expired")
+
+		resp, err := app.Test(req)
+
+		assert.NoError(t, err, "Request should complete")
+		assert.Equal(t, http.StatusOK, resp.StatusCode, "An expired token must not break a public file")
+		assert.False(t, auth.called, "A public key should never reach the token dispatch")
+
+		mockService.AssertExpectations(t)
 	})
 
 	t.Run("URLEncodedFileKey", func(t *testing.T) {
@@ -171,7 +434,7 @@ func TestProxyMiddleware(t *testing.T) {
 		}, nil)
 
 		app := createApp()
-		middleware := NewProxyMiddleware(mockService, new(storage.DefaultFileACL))
+		middleware := newProxy(mockService, new(storage.DefaultFileACL), new(StubFileRegistry))
 		middleware.Apply(app)
 
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/storage/files/pub/%E6%B5%8B%E8%AF%95%E6%96%87%E4%BB%B6.jpg", nil)
@@ -191,7 +454,7 @@ func TestProxyMiddleware(t *testing.T) {
 		}).Return(nil, nil, errors.New("storage error"))
 
 		app := createApp()
-		middleware := NewProxyMiddleware(mockService, new(storage.DefaultFileACL))
+		middleware := newProxy(mockService, new(storage.DefaultFileACL), new(StubFileRegistry))
 		middleware.Apply(app)
 
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/storage/files/pub/error.jpg", nil)
@@ -215,7 +478,7 @@ func TestProxyMiddleware(t *testing.T) {
 		}).Return(io.NopCloser(bytes.NewReader(fileContent)), nil, nil)
 
 		app := createApp()
-		middleware := NewProxyMiddleware(mockService, new(storage.DefaultFileACL))
+		middleware := newProxy(mockService, new(storage.DefaultFileACL), new(StubFileRegistry))
 		middleware.Apply(app)
 
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/storage/files/pub/test.png", nil)
@@ -240,7 +503,7 @@ func TestProxyMiddleware(t *testing.T) {
 		}, nil)
 
 		app := createApp()
-		middleware := NewProxyMiddleware(mockService, new(storage.DefaultFileACL))
+		middleware := newProxy(mockService, new(storage.DefaultFileACL), new(StubFileRegistry))
 		middleware.Apply(app)
 
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/storage/files/pub/document.pdf", nil)
@@ -428,4 +691,83 @@ func TestDetectContentType(t *testing.T) {
 				"detectContentType(stat, %q) should return %q", tt.key, tt.expected)
 		})
 	}
+}
+
+// TestContentDisposition covers the header the download proxy builds
+// from the registry's original filename — the whole reason the registry
+// is consulted on the read path.
+func TestContentDisposition(t *testing.T) {
+	tests := []struct {
+		name        string
+		contentType string
+		filename    string
+		expected    string
+	}{
+		{
+			name:        "NoFilenameOmitsTheHeader",
+			contentType: "image/jpeg",
+			filename:    "",
+			expected:    "",
+		},
+		{
+			name:        "RenderableMediaStaysInline",
+			contentType: "image/jpeg",
+			filename:    "photo.jpg",
+			expected:    `inline; filename=photo.jpg`,
+		},
+		{
+			name:        "OctetStreamIsAnAttachment",
+			contentType: "application/octet-stream",
+			filename:    "report.pdf",
+			expected:    `attachment; filename=report.pdf`,
+		},
+		{
+			// The upload sanitizer collapses anything unsafe to
+			// octet-stream, but the disposition must not depend on that.
+			name:        "UnsafeTypeIsAnAttachment",
+			contentType: "text/html",
+			filename:    "page.html",
+			expected:    `attachment; filename=page.html`,
+		},
+		{
+			name:        "PDFStaysInlineSoPreviewsKeepWorking",
+			contentType: "application/pdf",
+			filename:    "report.pdf",
+			expected:    `inline; filename=report.pdf`,
+		},
+		{
+			name:        "ArchiveIsAnAttachment",
+			contentType: "application/zip",
+			filename:    "bundle.zip",
+			expected:    `attachment; filename=bundle.zip`,
+		},
+		{
+			name:        "NonASCIIUsesTheExtendedForm",
+			contentType: "application/octet-stream",
+			filename:    "季度报告.pdf",
+			expected:    `attachment; filename*=utf-8''%E5%AD%A3%E5%BA%A6%E6%8A%A5%E5%91%8A.pdf`,
+		},
+		{
+			name:        "SpacesAreQuoted",
+			contentType: "application/octet-stream",
+			filename:    "my report (1).pdf",
+			expected:    `attachment; filename="my report (1).pdf"`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, contentDisposition(tt.contentType, tt.filename),
+				"contentDisposition(%q, %q) should render the RFC 6266 header", tt.contentType, tt.filename)
+		})
+	}
+
+	// A filename can never inject a header: sanitizeFilename rejects
+	// control characters at upload, and the encoder percent-escapes
+	// anything left over.
+	t.Run("NeverEmitsRawCRLF", func(t *testing.T) {
+		got := contentDisposition("application/octet-stream", "evil\r\nX-Injected: yes.pdf")
+		assert.NotContains(t, got, "\r", "The rendered header must not carry a raw CR")
+		assert.NotContains(t, got, "\n", "The rendered header must not carry a raw LF")
+	})
 }

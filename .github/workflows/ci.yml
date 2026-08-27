@@ -22,7 +22,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.26'
+          go-version: '1.27'
           cache: true
           cache-dependency-path: go.sum
 
@@ -75,14 +75,16 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.26'
+          go-version: '1.27'
           cache: true
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
           version: latest
-          args: --timeout=5m
+          # The 5m default was exceeded on a cold cache (318s) as the repo grew,
+          # which fails the run regardless of findings.
+          args: --timeout=15m
 
   modernize:
     name: Modernize
@@ -95,7 +97,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.26'
+          go-version: '1.27'
           cache: true
 
       - name: Run modernize analyzer
