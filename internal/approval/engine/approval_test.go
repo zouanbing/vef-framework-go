@@ -244,7 +244,7 @@ func (s *ApprovalProcessorTestSuite) TestProcessEmptyAssignee() {
 		}))
 
 		_, err := s.processor.Process(s.Ctx, pc)
-		s.Require().ErrorIs(err, shared.ErrNoAssignee, "Should return ErrNoAssignee for unknown empty handler action")
+		s.Require().ErrorIs(err, approval.ErrNoAssignee, "Should return ErrNoAssignee for unknown empty handler action")
 	})
 }
 
@@ -813,12 +813,11 @@ func (s *ApprovalProcessorTestSuite) TestDBError() {
 	cancel()
 
 	pc := &engine.ProcessContext{
-		DB:          s.DB,
-		Instance:    instance,
-		Node:        s.NewNode(),
-		FormData:    approval.NewFormData(nil),
-		ApplicantID: instance.ApplicantID,
-		Registry:    s.Registry,
+		DB:       s.DB,
+		Instance: instance,
+		Node:     s.NewNode(),
+		FormData: approval.NewFormData(nil),
+		Registry: s.Registry,
 	}
 
 	_, err := s.processor.Process(canceledCtx, pc)

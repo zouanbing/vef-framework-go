@@ -17,6 +17,7 @@ import (
 	"github.com/coldsmirk/vef-framework-go/config"
 	"github.com/coldsmirk/vef-framework-go/i18n"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/shared"
+	"github.com/coldsmirk/vef-framework-go/internal/approval/strategy"
 	"github.com/coldsmirk/vef-framework-go/orm"
 	"github.com/coldsmirk/vef-framework-go/result"
 )
@@ -52,14 +53,14 @@ func resolveOptions(opts []Option) options {
 
 // ValidationService provides validation operations.
 type ValidationService struct {
-	assigneeService  approval.AssigneeService
+	initiators       *strategy.CompositeInitiatorResolver
 	formDataMaxBytes int
 }
 
 // NewValidationService creates a new ValidationService.
-func NewValidationService(assigneeSvc approval.AssigneeService, opts ...Option) *ValidationService {
+func NewValidationService(initiators *strategy.CompositeInitiatorResolver, opts ...Option) *ValidationService {
 	return &ValidationService{
-		assigneeService:  assigneeSvc,
+		initiators:       initiators,
 		formDataMaxBytes: resolveOptions(opts).formDataMaxBytes,
 	}
 }
@@ -67,7 +68,7 @@ func NewValidationService(assigneeSvc approval.AssigneeService, opts ...Option) 
 // ValidateOpinion checks if an opinion is required but missing.
 func (*ValidationService) ValidateOpinion(node *approval.FlowNode, opinion string) error {
 	if node.IsOpinionRequired && strings.TrimSpace(opinion) == "" {
-		return shared.ErrOpinionRequired
+		return approval.ErrOpinionRequired
 	}
 
 	return nil
@@ -150,14 +151,14 @@ func (*ValidationService) ValidateRequiredPermissionFields(fields []approval.For
 // ValidateRollbackTarget validates the rollback target node based on the node's RollbackType.
 func (*ValidationService) ValidateRollbackTarget(ctx context.Context, db orm.DB, instance *approval.Instance, currentNode *approval.FlowNode, targetNodeID string) error {
 	if targetNodeID == currentNode.ID {
-		return shared.ErrInvalidRollbackTarget
+		return approval.ErrInvalidRollbackTarget
 	}
 
 	// RollbackNone denies by configuration; an out-of-enum value (deploy
 	// normalization resolves omitted values, so this means corrupt data)
 	// must also deny rather than silently behaving like "any".
 	if currentNode.RollbackType == approval.RollbackNone || !currentNode.RollbackType.IsValid() {
-		return shared.ErrRollbackNotAllowed
+		return approval.ErrRollbackNotAllowed
 	}
 
 	switch currentNode.RollbackType {
@@ -175,7 +176,7 @@ func (*ValidationService) ValidateRollbackTarget(ctx context.Context, db orm.DB,
 		}
 
 		if count == 0 {
-			return shared.ErrInvalidRollbackTarget
+			return approval.ErrInvalidRollbackTarget
 		}
 
 	case approval.RollbackStart:
@@ -190,14 +191,14 @@ func (*ValidationService) ValidateRollbackTarget(ctx context.Context, db orm.DB,
 			}).
 			Scan(ctx); err != nil {
 			if result.IsRecordNotFound(err) {
-				return shared.ErrInvalidRollbackTarget
+				return approval.ErrInvalidRollbackTarget
 			}
 
 			return fmt.Errorf("find start node: %w", err)
 		}
 
 		if startNode.ID != targetNodeID {
-			return shared.ErrInvalidRollbackTarget
+			return approval.ErrInvalidRollbackTarget
 		}
 
 	case approval.RollbackAny:
@@ -218,7 +219,7 @@ func (*ValidationService) ValidateRollbackTarget(ctx context.Context, db orm.DB,
 			}).
 			Scan(ctx); err != nil {
 			if result.IsRecordNotFound(err) {
-				return shared.ErrInvalidRollbackTarget
+				return approval.ErrInvalidRollbackTarget
 			}
 
 			return fmt.Errorf("find rollback target node: %w", err)
@@ -227,7 +228,7 @@ func (*ValidationService) ValidateRollbackTarget(ctx context.Context, db orm.DB,
 		switch targetNode.Kind {
 		case approval.NodeApproval, approval.NodeHandle, approval.NodeStart:
 		default:
-			return shared.ErrInvalidRollbackTarget
+			return approval.ErrInvalidRollbackTarget
 		}
 
 		if err := requireConcludedVisit(ctx, db, instance.ID, targetNodeID); err != nil {
@@ -246,14 +247,14 @@ func (*ValidationService) ValidateRollbackTarget(ctx context.Context, db orm.DB,
 			}).
 			Scan(ctx); err != nil {
 			if result.IsRecordNotFound(err) {
-				return shared.ErrInvalidRollbackTarget
+				return approval.ErrInvalidRollbackTarget
 			}
 
 			return fmt.Errorf("find rollback target: %w", err)
 		}
 
 		if !slices.Contains(currentNode.RollbackTargetKeys, targetNode.Key) {
-			return shared.ErrInvalidRollbackTarget
+			return approval.ErrInvalidRollbackTarget
 		}
 
 		// Deploy validation pins the keys to approval/handle nodes; at
@@ -288,7 +289,7 @@ func requireConcludedVisit(ctx context.Context, db orm.DB, instanceID, nodeID st
 	}
 
 	if !visited {
-		return shared.ErrInvalidRollbackTarget
+		return approval.ErrInvalidRollbackTarget
 	}
 
 	return nil
@@ -554,7 +555,7 @@ func validateSelectField(field approval.FormFieldDefinition, value any) error {
 }
 
 func newFormValidationError(message string) error {
-	return result.Err(message, result.WithCode(shared.ErrCodeFormValidationFailed))
+	return result.Err(message, result.WithCode(approval.ErrCodeFormValidationFailed))
 }
 
 func fieldLabel(field approval.FormFieldDefinition) string {
@@ -616,7 +617,7 @@ func validateFormDataSize(formData map[string]any, maxBytes int) error {
 	}
 
 	if size > maxBytes {
-		return shared.ErrFormDataTooLarge
+		return approval.ErrFormDataTooLarge
 	}
 
 	return nil
@@ -699,15 +700,27 @@ func FilterEditableFormData(formData map[string]any, permissions map[string]appr
 	return filtered
 }
 
-// CheckInitiationPermission checks if the applicant is allowed to initiate the flow.
-func (s *ValidationService) CheckInitiationPermission(ctx context.Context, db orm.DB, flowID, applicantID string, applicantDepartmentID *string) (bool, error) {
+// CheckInitiationPermission reports whether the applicant may start the flow.
+// Rules are evaluated in stored order and the first match admits; an empty
+// rule set admits nobody, which is the fail-closed half of the invariant that
+// makes "no rules" mean "open to everyone" only via Flow.IsAllInitiationAllowed
+// (validateInitiatorRules enforces the other half at save time).
+//
+// Each rule is dispatched to the resolver registered for its kind, so a host
+// initiator kind is checked here exactly like a built-in one.
+func (s *ValidationService) CheckInitiationPermission(
+	ctx context.Context,
+	db orm.DB,
+	flow *approval.Flow,
+	applicant approval.UserInfo,
+) (bool, error) {
 	var initiators []approval.FlowInitiator
 
 	if err := db.NewSelect().
 		Model(&initiators).
 		Select("kind", "ids").
 		Where(func(cb orm.ConditionBuilder) {
-			cb.Equals("flow_id", flowID)
+			cb.Equals("flow_id", flow.ID)
 		}).
 		Scan(ctx); err != nil {
 		return false, fmt.Errorf("query flow initiators: %w", err)
@@ -717,39 +730,9 @@ func (s *ValidationService) CheckInitiationPermission(ctx context.Context, db or
 		return false, nil
 	}
 
-	for _, initiator := range initiators {
-		switch initiator.Kind {
-		case approval.InitiatorUser:
-			if slices.Contains(initiator.IDs, applicantID) {
-				return true, nil
-			}
-
-		case approval.InitiatorDepartment:
-			if applicantDepartmentID == nil {
-				continue
-			}
-
-			if slices.Contains(initiator.IDs, *applicantDepartmentID) {
-				return true, nil
-			}
-
-		case approval.InitiatorRole:
-			if s.assigneeService == nil {
-				continue
-			}
-
-			for _, roleID := range initiator.IDs {
-				member, err := shared.UserHasRole(ctx, s.assigneeService, applicantID, roleID)
-				if err != nil {
-					return false, err
-				}
-
-				if member {
-					return true, nil
-				}
-			}
-		}
-	}
-
-	return false, nil
+	return s.initiators.PermitsAny(ctx, initiators, &approval.InitiatorResolveContext{
+		FlowID:    flow.ID,
+		TenantID:  flow.TenantID,
+		Applicant: applicant,
+	})
 }

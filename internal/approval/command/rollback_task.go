@@ -10,7 +10,6 @@ import (
 	"github.com/coldsmirk/vef-framework-go/internal/approval/behavior"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/engine"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/service"
-	"github.com/coldsmirk/vef-framework-go/internal/approval/shared"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/storage"
 	"github.com/coldsmirk/vef-framework-go/internal/cqrs"
 	"github.com/coldsmirk/vef-framework-go/orm"
@@ -20,14 +19,7 @@ import (
 // RollbackTaskCmd rolls back a task to a previous node.
 type RollbackTaskCmd struct {
 	cqrs.BaseCommand
-
-	TaskID       string
-	Operator     approval.UserInfo
-	Opinion      string
-	FormData     map[string]any
-	TargetNodeID string
-	Attachments  []string
-	Caller       approval.CallerContext
+	approval.RollbackTaskInput
 }
 
 // RollbackTaskHandler handles the RollbackTaskCmd command.
@@ -76,12 +68,12 @@ func (h *RollbackTaskHandler) Handle(ctx context.Context, cmd RollbackTaskCmd) (
 	instance, task, node := tc.Instance, tc.Task, tc.Node
 
 	if !node.IsRollbackAllowed {
-		return cqrs.Unit{}, shared.ErrRollbackNotAllowed
+		return cqrs.Unit{}, approval.ErrRollbackNotAllowed
 	}
 
 	targetNodeID := strings.TrimSpace(cmd.TargetNodeID)
 	if targetNodeID == "" {
-		return cqrs.Unit{}, shared.ErrInvalidRollbackTarget
+		return cqrs.Unit{}, approval.ErrInvalidRollbackTarget
 	}
 
 	if err := h.validationSvc.ValidateRollbackTarget(ctx, db, instance, node, targetNodeID); err != nil {

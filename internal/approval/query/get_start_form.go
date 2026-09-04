@@ -10,7 +10,6 @@ import (
 	"github.com/coldsmirk/vef-framework-go/approval/my"
 	"github.com/coldsmirk/vef-framework-go/contextx"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/service"
-	"github.com/coldsmirk/vef-framework-go/internal/approval/shared"
 	"github.com/coldsmirk/vef-framework-go/internal/cqrs"
 	"github.com/coldsmirk/vef-framework-go/orm"
 	"github.com/coldsmirk/vef-framework-go/result"
@@ -55,24 +54,27 @@ func (h *GetStartFormHandler) Handle(ctx context.Context, query GetStartFormQuer
 		}).
 		Scan(ctx); err != nil {
 		if result.IsRecordNotFound(err) {
-			return nil, shared.ErrFlowNotFound
+			return nil, approval.ErrFlowNotFound
 		}
 
 		return nil, fmt.Errorf("load flow: %w", err)
 	}
 
 	if !flow.IsActive {
-		return nil, shared.ErrFlowNotActive
+		return nil, approval.ErrFlowNotActive
 	}
 
 	if !flow.IsAllInitiationAllowed {
-		allowed, err := h.validationSvc.CheckInitiationPermission(ctx, db, flow.ID, query.UserID, query.ApplicantDepartmentID)
+		allowed, err := h.validationSvc.CheckInitiationPermission(ctx, db, &flow, approval.UserInfo{
+			ID:           query.UserID,
+			DepartmentID: query.ApplicantDepartmentID,
+		})
 		if err != nil {
 			return nil, fmt.Errorf("check initiation permission: %w", err)
 		}
 
 		if !allowed {
-			return nil, shared.ErrNotAllowedInitiate
+			return nil, approval.ErrNotAllowedInitiate
 		}
 	}
 
@@ -86,7 +88,7 @@ func (h *GetStartFormHandler) Handle(ctx context.Context, query GetStartFormQuer
 		}).
 		Scan(ctx); err != nil {
 		if result.IsRecordNotFound(err) {
-			return nil, shared.ErrNoPublishedVersion
+			return nil, approval.ErrNoPublishedVersion
 		}
 
 		return nil, fmt.Errorf("load published version: %w", err)

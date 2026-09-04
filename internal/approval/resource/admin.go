@@ -8,19 +8,23 @@ import (
 	"github.com/coldsmirk/vef-framework-go/api"
 	"github.com/coldsmirk/vef-framework-go/approval"
 	"github.com/coldsmirk/vef-framework-go/approval/admin"
-	"github.com/coldsmirk/vef-framework-go/internal/approval/command"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/query"
 	"github.com/coldsmirk/vef-framework-go/internal/cqrs"
+	"github.com/coldsmirk/vef-framework-go/orm"
 	"github.com/coldsmirk/vef-framework-go/page"
 	"github.com/coldsmirk/vef-framework-go/result"
 	"github.com/coldsmirk/vef-framework-go/security"
 )
 
-// AdminResource exposes admin-level approval management endpoints.
+// AdminResource exposes admin-level approval management endpoints. Queries
+// dispatch on the bus directly; every runtime operation goes through
+// approval.Service, so the request path and a programmatic caller stay one
+// code path.
 type AdminResource struct {
 	api.Resource
 
 	bus                cqrs.Bus
+	svc                approval.Service
 	departmentResolver approval.PrincipalDepartmentResolver
 	tenantResolver     approval.PrincipalTenantResolver
 }
@@ -28,11 +32,13 @@ type AdminResource struct {
 // NewAdminResource creates a new admin resource.
 func NewAdminResource(
 	bus cqrs.Bus,
+	svc approval.Service,
 	departmentResolver approval.PrincipalDepartmentResolver,
 	tenantResolver approval.PrincipalTenantResolver,
 ) api.Resource {
 	return &AdminResource{
 		bus:                bus,
+		svc:                svc,
 		departmentResolver: departmentResolver,
 		tenantResolver:     tenantResolver,
 		Resource: api.NewRPCResource(
@@ -207,13 +213,13 @@ type AdminTerminateInstanceParams struct {
 }
 
 // TerminateInstance terminates a running approval instance.
-func (r *AdminResource) TerminateInstance(ctx fiber.Ctx, principal *security.Principal, params AdminTerminateInstanceParams) error {
+func (r *AdminResource) TerminateInstance(ctx fiber.Ctx, db orm.DB, principal *security.Principal, params AdminTerminateInstanceParams) error {
 	actor, err := resolveActor(ctx.Context(), r.departmentResolver, r.tenantResolver, principal)
 	if err != nil {
 		return err
 	}
 
-	if _, err := cqrs.Send[command.TerminateInstanceCmd, cqrs.Unit](ctx.Context(), r.bus, command.TerminateInstanceCmd{
+	if err := r.svc.TerminateInstance(ctx.Context(), db, approval.TerminateInstanceInput{
 		InstanceID: params.InstanceID,
 		Operator:   actor.Operator,
 		Reason:     params.Reason,
@@ -235,13 +241,13 @@ type AdminReassignTaskParams struct {
 }
 
 // ReassignTask reassigns a pending task to a different user.
-func (r *AdminResource) ReassignTask(ctx fiber.Ctx, principal *security.Principal, params AdminReassignTaskParams) error {
+func (r *AdminResource) ReassignTask(ctx fiber.Ctx, db orm.DB, principal *security.Principal, params AdminReassignTaskParams) error {
 	actor, err := resolveActor(ctx.Context(), r.departmentResolver, r.tenantResolver, principal)
 	if err != nil {
 		return err
 	}
 
-	if _, err := cqrs.Send[command.ReassignTaskCmd, cqrs.Unit](ctx.Context(), r.bus, command.ReassignTaskCmd{
+	if err := r.svc.ReassignTask(ctx.Context(), db, approval.ReassignTaskInput{
 		TaskID:        params.TaskID,
 		NewAssigneeID: params.NewAssigneeID,
 		Operator:      actor.Operator,
@@ -331,6 +337,7 @@ type AdminRetryBusinessProjectionParams struct {
 // RetryBusinessProjection immediately retries one eventual projection.
 func (r *AdminResource) RetryBusinessProjection(
 	ctx fiber.Ctx,
+	db orm.DB,
 	principal *security.Principal,
 	params AdminRetryBusinessProjectionParams,
 ) error {
@@ -339,11 +346,10 @@ func (r *AdminResource) RetryBusinessProjection(
 		return err
 	}
 
-	if _, err := cqrs.Send[command.RetryBusinessProjectionCmd, cqrs.Unit](
-		ctx.Context(),
-		r.bus,
-		command.RetryBusinessProjectionCmd{ProjectionID: params.ProjectionID, Caller: caller},
-	); err != nil {
+	if err := r.svc.RetryBusinessProjection(ctx.Context(), db, approval.RetryBusinessProjectionInput{
+		ProjectionID: params.ProjectionID,
+		Caller:       caller,
+	}); err != nil {
 		return err
 	}
 

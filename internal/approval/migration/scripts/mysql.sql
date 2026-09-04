@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS apv_flow (
 CREATE TABLE IF NOT EXISTS apv_flow_initiator (
     id VARCHAR(32) NOT NULL COMMENT 'ID',
     flow_id VARCHAR(32) NOT NULL COMMENT 'Flow',
-    kind VARCHAR(16) NOT NULL COMMENT 'Kind',
+    kind VARCHAR(64) NOT NULL COMMENT 'Kind',
     ids JSON NOT NULL DEFAULT (JSON_ARRAY()) COMMENT 'Subjects',
     CONSTRAINT pk_apv_flow_initiator PRIMARY KEY (id),
     CONSTRAINT fk_apv_flow_initiator__flow_id FOREIGN KEY (flow_id) REFERENCES apv_flow(id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -162,7 +162,7 @@ CREATE TABLE IF NOT EXISTS apv_flow_node (
 CREATE TABLE IF NOT EXISTS apv_flow_node_assignee (
     id VARCHAR(32) NOT NULL COMMENT 'ID',
     node_id VARCHAR(32) NOT NULL COMMENT 'Node',
-    kind VARCHAR(16) NOT NULL COMMENT 'Kind',
+    kind VARCHAR(64) NOT NULL COMMENT 'Kind',
     ids JSON NOT NULL DEFAULT (JSON_ARRAY()) COMMENT 'Subjects',
     form_field VARCHAR(64) COMMENT 'Form Field',
     sort_order INTEGER NOT NULL DEFAULT 0 COMMENT 'Sort',
@@ -175,7 +175,7 @@ CREATE TABLE IF NOT EXISTS apv_flow_node_assignee (
 CREATE TABLE IF NOT EXISTS apv_flow_node_cc (
     id VARCHAR(32) NOT NULL COMMENT 'ID',
     node_id VARCHAR(32) NOT NULL COMMENT 'Node',
-    kind VARCHAR(16) NOT NULL COMMENT 'Kind',
+    kind VARCHAR(64) NOT NULL COMMENT 'Kind',
     ids JSON NOT NULL DEFAULT (JSON_ARRAY()) COMMENT 'Subjects',
     form_field VARCHAR(64) COMMENT 'Form Field',
     timing VARCHAR(16) NOT NULL DEFAULT 'always' COMMENT 'Timing',
@@ -188,7 +188,8 @@ CREATE TABLE IF NOT EXISTS apv_flow_node_cc (
 CREATE TABLE IF NOT EXISTS apv_flow_edge (
     id VARCHAR(32) NOT NULL COMMENT 'ID',
     flow_version_id VARCHAR(32) NOT NULL COMMENT 'Version',
-    `key` VARCHAR(64) COMMENT 'Key',
+    -- Composed edge id (xy-edge__<source><handle>-<target>): holds two node keys, not one.
+    `key` VARCHAR(256) COMMENT 'Key',
     source_node_id VARCHAR(32) NOT NULL COMMENT 'Source',
     source_node_key VARCHAR(64) NOT NULL COMMENT 'Source Key',
     target_node_id VARCHAR(32) NOT NULL COMMENT 'Target',

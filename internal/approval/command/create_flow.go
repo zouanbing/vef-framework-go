@@ -11,6 +11,7 @@ import (
 	"github.com/coldsmirk/vef-framework-go/internal/approval/behavior"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/binding"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/shared"
+	"github.com/coldsmirk/vef-framework-go/internal/approval/strategy"
 	"github.com/coldsmirk/vef-framework-go/internal/cqrs"
 	"github.com/coldsmirk/vef-framework-go/orm"
 )
@@ -39,11 +40,20 @@ type CreateFlowCmd struct {
 type CreateFlowHandler struct {
 	db               orm.DB
 	bindingValidator *binding.ConfigValidator
+	// initiatorKinds is the boot-registered initiator vocabulary with the
+	// input each kind requires. Save-time validation accepts exactly this set,
+	// so a host kind registered through vef.ProvideApprovalInitiatorResolver
+	// becomes configurable with no framework change.
+	initiatorKinds map[approval.InitiatorKind]approval.SelectionMode
 }
 
 // NewCreateFlowHandler creates a new CreateFlowHandler.
-func NewCreateFlowHandler(db orm.DB, bindingValidator *binding.ConfigValidator) *CreateFlowHandler {
-	return &CreateFlowHandler{db: db, bindingValidator: bindingValidator}
+func NewCreateFlowHandler(db orm.DB, bindingValidator *binding.ConfigValidator, initiators *strategy.CompositeInitiatorResolver) *CreateFlowHandler {
+	return &CreateFlowHandler{
+		db:               db,
+		bindingValidator: bindingValidator,
+		initiatorKinds:   shared.SelectionIndex(initiators.Descriptors()),
+	}
 }
 
 func (h *CreateFlowHandler) Handle(ctx context.Context, cmd CreateFlowCmd) (*approval.Flow, error) {
@@ -51,14 +61,14 @@ func (h *CreateFlowHandler) Handle(ctx context.Context, cmd CreateFlowCmd) (*app
 	tenantID := lo.CoalesceOrEmpty(cmd.TenantID, approval.DefaultTenantID)
 
 	if err := cmd.Caller.Authorize(tenantID); err != nil {
-		return nil, shared.ErrFlowNotFound
+		return nil, approval.ErrFlowNotFound
 	}
 
-	if err := validateFlowEnums(cmd.BindingMode, cmd.Initiators); err != nil {
+	if err := validateBindingMode(cmd.BindingMode); err != nil {
 		return nil, err
 	}
 
-	if err := validateInitiatorPolicy(cmd.IsAllInitiationAllowed, cmd.Initiators); err != nil {
+	if err := validateInitiatorRules(cmd.IsAllInitiationAllowed, cmd.Initiators, h.initiatorKinds); err != nil {
 		return nil, err
 	}
 
@@ -93,7 +103,7 @@ func (h *CreateFlowHandler) Handle(ctx context.Context, cmd CreateFlowCmd) (*app
 	}
 
 	if exists {
-		return nil, shared.ErrFlowCodeExists
+		return nil, approval.ErrFlowCodeExists
 	}
 
 	flow := approval.Flow{

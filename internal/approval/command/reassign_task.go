@@ -17,12 +17,7 @@ import (
 // ReassignTaskCmd reassigns a pending task to a different user (admin operation).
 type ReassignTaskCmd struct {
 	cqrs.BaseCommand
-
-	TaskID        string
-	NewAssigneeID string
-	Operator      approval.UserInfo
-	Reason        string
-	Caller        approval.CallerContext
+	approval.ReassignTaskInput
 }
 
 // ReassignTaskHandler handles the ReassignTaskCmd command.
@@ -61,7 +56,7 @@ func (h *ReassignTaskHandler) Handle(ctx context.Context, cmd ReassignTaskCmd) (
 
 	newAssigneeID := strings.TrimSpace(cmd.NewAssigneeID)
 	if newAssigneeID == "" || newAssigneeID == task.AssigneeID {
-		return cqrs.Unit{}, shared.ErrInvalidTransferTarget
+		return cqrs.Unit{}, approval.ErrInvalidTransferTarget
 	}
 
 	duplicate, err := hasActiveTaskForAssignee(ctx, db, task.InstanceID, task.NodeID, newAssigneeID)
@@ -70,7 +65,7 @@ func (h *ReassignTaskHandler) Handle(ctx context.Context, cmd ReassignTaskCmd) (
 	}
 
 	if duplicate {
-		return cqrs.Unit{}, shared.ErrInvalidTransferTarget
+		return cqrs.Unit{}, approval.ErrInvalidTransferTarget
 	}
 
 	oldAssignee := task.Assignee()

@@ -69,7 +69,7 @@ CREATE INDEX IF NOT EXISTS idx_apv_flow__tenant_id ON apv_flow(tenant_id);
 CREATE TABLE IF NOT EXISTS apv_flow_initiator (
     id VARCHAR(32) CONSTRAINT pk_apv_flow_initiator PRIMARY KEY,
     flow_id VARCHAR(32) NOT NULL,
-    kind VARCHAR(16) NOT NULL,
+    kind VARCHAR(64) NOT NULL,
     ids TEXT NOT NULL DEFAULT '[]',
     CONSTRAINT fk_apv_flow_initiator__flow_id FOREIGN KEY (flow_id) REFERENCES apv_flow(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
@@ -161,7 +161,7 @@ CREATE TABLE IF NOT EXISTS apv_flow_node (
 CREATE TABLE IF NOT EXISTS apv_flow_node_assignee (
     id VARCHAR(32) CONSTRAINT pk_apv_flow_node_assignee PRIMARY KEY,
     node_id VARCHAR(32) NOT NULL,
-    kind VARCHAR(16) NOT NULL,
+    kind VARCHAR(64) NOT NULL,
     ids TEXT NOT NULL DEFAULT '[]',
     form_field VARCHAR(64),
     sort_order INTEGER NOT NULL DEFAULT 0,
@@ -174,7 +174,7 @@ CREATE INDEX IF NOT EXISTS idx_apv_flow_node_assignee__node_id ON apv_flow_node_
 CREATE TABLE IF NOT EXISTS apv_flow_node_cc (
     id VARCHAR(32) CONSTRAINT pk_apv_flow_node_cc PRIMARY KEY,
     node_id VARCHAR(32) NOT NULL,
-    kind VARCHAR(16) NOT NULL,
+    kind VARCHAR(64) NOT NULL,
     ids TEXT NOT NULL DEFAULT '[]',
     form_field VARCHAR(64),
     timing VARCHAR(16) NOT NULL DEFAULT 'always',
@@ -187,7 +187,8 @@ CREATE INDEX IF NOT EXISTS idx_apv_flow_node_cc__node_id ON apv_flow_node_cc(nod
 CREATE TABLE IF NOT EXISTS apv_flow_edge (
     id VARCHAR(32) CONSTRAINT pk_apv_flow_edge PRIMARY KEY,
     flow_version_id VARCHAR(32) NOT NULL,
-    key VARCHAR(64),
+    -- Composed edge id (xy-edge__<source><handle>-<target>): holds two node keys, not one.
+    key VARCHAR(256),
     source_node_id VARCHAR(32) NOT NULL,
     source_node_key VARCHAR(64) NOT NULL,
     target_node_id VARCHAR(32) NOT NULL,

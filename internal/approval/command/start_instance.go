@@ -16,7 +16,6 @@ import (
 	"github.com/coldsmirk/vef-framework-go/internal/approval/binding"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/engine"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/service"
-	"github.com/coldsmirk/vef-framework-go/internal/approval/shared"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/storage"
 	"github.com/coldsmirk/vef-framework-go/internal/cqrs"
 	"github.com/coldsmirk/vef-framework-go/orm"
@@ -26,18 +25,7 @@ import (
 // StartInstanceCmd starts a new approval flow instance.
 type StartInstanceCmd struct {
 	cqrs.BaseCommand
-
-	TenantID    string
-	FlowCode    string
-	Applicant   approval.UserInfo
-	BusinessRef *string
-	FormData    map[string]any
-	// Globals is the host-supplied global-variable snapshot persisted onto the
-	// instance (Instance.Globals) and resolved by condition evaluation — field
-	// subjects and expression bindings alike. Snapshotting at start keeps
-	// routing deterministic across re-evaluation.
-	Globals map[string]any
-	Caller  approval.CallerContext
+	approval.StartInstanceInput
 }
 
 // StartInstanceHandler handles the StartInstanceCmd command.
@@ -91,7 +79,7 @@ func (h *StartInstanceHandler) Handle(ctx context.Context, cmd StartInstanceCmd)
 		}).
 		Scan(ctx); err != nil {
 		if result.IsRecordNotFound(err) {
-			return nil, shared.ErrFlowNotFound
+			return nil, approval.ErrFlowNotFound
 		}
 
 		return nil, fmt.Errorf("load flow: %w", err)
@@ -102,21 +90,21 @@ func (h *StartInstanceHandler) Handle(ctx context.Context, cmd StartInstanceCmd)
 	// CrossTenantAccess) so a probing caller cannot distinguish "no such
 	// flow in your tenant" from "exists but belongs to another tenant".
 	if !cmd.Caller.Allows(flow.TenantID) {
-		return nil, shared.ErrFlowNotFound
+		return nil, approval.ErrFlowNotFound
 	}
 
 	if !flow.IsActive {
-		return nil, shared.ErrFlowNotActive
+		return nil, approval.ErrFlowNotActive
 	}
 
 	if !flow.IsAllInitiationAllowed {
-		allowed, err := h.validationSvc.CheckInitiationPermission(ctx, db, flow.ID, cmd.Applicant.ID, cmd.Applicant.DepartmentID)
+		allowed, err := h.validationSvc.CheckInitiationPermission(ctx, db, &flow, cmd.Applicant)
 		if err != nil {
 			return nil, fmt.Errorf("check initiation permission: %w", err)
 		}
 
 		if !allowed {
-			return nil, shared.ErrNotAllowedInitiate
+			return nil, approval.ErrNotAllowedInitiate
 		}
 	}
 
@@ -129,7 +117,7 @@ func (h *StartInstanceHandler) Handle(ctx context.Context, cmd StartInstanceCmd)
 		}).
 		Scan(ctx); err != nil {
 		if result.IsRecordNotFound(err) {
-			return nil, shared.ErrNoPublishedVersion
+			return nil, approval.ErrNoPublishedVersion
 		}
 
 		return nil, fmt.Errorf("load published version: %w", err)

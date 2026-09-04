@@ -9,7 +9,6 @@ import (
 	"github.com/coldsmirk/vef-framework-go/approval"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/behavior"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/shared"
-	"github.com/coldsmirk/vef-framework-go/internal/approval/strategy"
 	"github.com/coldsmirk/vef-framework-go/orm"
 	"github.com/coldsmirk/vef-framework-go/result"
 	"github.com/coldsmirk/vef-framework-go/timex"
@@ -152,14 +151,7 @@ func resolveAssignees(ctx context.Context, pc *ProcessContext) ([]approval.Resol
 		return nil, fmt.Errorf("load node assignees: %w", err)
 	}
 
-	return pc.Registry.CompositeAssigneeResolver().ResolveAll(ctx, assignees, &strategy.ResolveContext{
-		ApplicantID:             pc.ApplicantID,
-		ApplicantName:           pc.ApplicantName,
-		ApplicantDepartmentID:   pc.Instance.ApplicantDepartmentID,
-		ApplicantDepartmentName: pc.Instance.ApplicantDepartmentName,
-		FormData:                pc.FormData,
-		UserResolver:            pc.UserResolver,
-	})
+	return pc.Registry.Assignees().ResolveAll(ctx, assignees, pc.NodeResolveContext())
 }
 
 // deduplicateAssignees removes duplicate assignees based on the receiving
@@ -393,11 +385,11 @@ func taskCreatedEventsFor(pc *ProcessContext, tasks []*approval.Task) []approval
 // createTasksForUsers creates pending tasks for a list of user IDs with sortOrder=0.
 // User names are resolved via pc.UserResolver. Returns a Wait result whose
 // Events field carries one TaskCreatedEvent per inserted task, or
-// shared.ErrNoAssignee if the list is empty.
+// approval.ErrNoAssignee if the list is empty.
 func createTasksForUsers(ctx context.Context, pc *ProcessContext, userIDs []string) (*ProcessResult, error) {
 	normalizedIDs := shared.NormalizeUniqueIDs(userIDs)
 	if len(normalizedIDs) == 0 {
-		return nil, shared.ErrNoAssignee
+		return nil, approval.ErrNoAssignee
 	}
 
 	infos, err := shared.ResolveUserInfoMap(ctx, pc.UserResolver, normalizedIDs)
@@ -433,25 +425,25 @@ func handleEmptyAssignee(ctx context.Context, pc *ProcessContext, assigneeServic
 		return createTasksForUsers(ctx, pc, pc.Node.AdminUserIDs)
 
 	case approval.EmptyAssigneeTransferApplicant:
-		return createTasksForUsers(ctx, pc, []string{pc.ApplicantID})
+		return createTasksForUsers(ctx, pc, []string{pc.Instance.ApplicantID})
 
 	case approval.EmptyAssigneeTransferSpecified:
 		return createTasksForUsers(ctx, pc, pc.Node.FallbackUserIDs)
 
 	case approval.EmptyAssigneeTransferSuperior:
-		superiorInfo, err := getSuperior(ctx, assigneeService, pc.ApplicantID)
+		superiorInfo, err := getSuperior(ctx, assigneeService, pc.Instance.ApplicantID)
 		if err != nil {
 			return nil, err
 		}
 
 		if superiorInfo == nil || superiorInfo.ID == "" {
-			return nil, shared.ErrNoAssignee
+			return nil, approval.ErrNoAssignee
 		}
 
 		return createTasksForUsers(ctx, pc, []string{superiorInfo.ID})
 
 	default:
-		return nil, shared.ErrNoAssignee
+		return nil, approval.ErrNoAssignee
 	}
 }
 

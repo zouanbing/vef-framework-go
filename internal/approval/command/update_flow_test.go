@@ -64,7 +64,7 @@ func (s *UpdateFlowTestSuite) SetupSuite() {
 	_, err = s.db.NewInsert().Model(initiator).Exec(s.ctx)
 	s.Require().NoError(err, "Should insert test initiator")
 
-	s.handler = command.NewUpdateFlowHandler(s.db, newTestBindingValidator())
+	s.handler = command.NewUpdateFlowHandler(s.db, newTestBindingValidator(), mustInitiatorComposite(nil))
 }
 
 func (s *UpdateFlowTestSuite) TearDownTest() {
@@ -190,7 +190,7 @@ func (s *UpdateFlowTestSuite) TestUpdateFlowLabels() {
 		cmd := baseCmd()
 		cmd.Labels = map[string]string{"app.id": "crm"}
 		_, err := s.handler.Handle(s.ctx, cmd)
-		s.Require().ErrorIs(err, shared.ErrInvalidFlowLabel,
+		s.Require().ErrorIs(err, approval.ErrInvalidFlowLabel,
 			"A dotted label key must be rejected at save time — it would silently escape the label filter")
 	})
 }
@@ -207,7 +207,7 @@ func (s *UpdateFlowTestSuite) TestUpdateFlowNotFound() {
 
 	_, err := s.handler.Handle(s.ctx, cmd)
 	s.Require().Error(err, "Should return error for non-existent flow")
-	s.Assert().ErrorIs(err, shared.ErrFlowNotFound, "Should return ErrFlowNotFound")
+	s.Assert().ErrorIs(err, approval.ErrFlowNotFound, "Should return ErrFlowNotFound")
 }
 
 func (s *UpdateFlowTestSuite) TestUpdateFlowBindingDoesNotMutateRunningVersion() {
@@ -353,7 +353,7 @@ func (s *UpdateFlowTestSuite) TestUpdateFlowBusinessBindingIncomplete() {
 		Caller:                 approval.SystemCaller,
 	})
 	s.Require().Error(err, "An incomplete business binding on update should be rejected")
-	s.Assert().ErrorIs(err, shared.ErrBindingIncomplete)
+	s.Assert().ErrorIs(err, approval.ErrBindingIncomplete)
 }
 
 func (s *UpdateFlowTestSuite) TestUpdateFlowBusinessToStandaloneClearsFields() {
@@ -412,23 +412,24 @@ func (s *UpdateFlowTestSuite) TestUpdateFlowRejectsInvalidEnums() {
 			InstanceTitleTemplate:  "t",
 			Caller:                 approval.SystemCaller,
 		})
-		s.Require().ErrorIs(err, shared.ErrInvalidBindingMode,
+		s.Require().ErrorIs(err, approval.ErrInvalidBindingMode,
 			"An out-of-enum binding mode would silently disable the business write-back and must be rejected")
 	})
 
+	// A restricted flow is what reaches the per-rule checks: rules alongside
+	// open initiation are refused as incoherent before any kind is examined.
 	s.Run("InitiatorKind", func() {
 		_, err := s.handler.Handle(s.ctx, command.UpdateFlowCmd{
-			FlowID:                 s.flowID,
-			BindingMode:            approval.BindingStandalone,
-			Name:                   "Enum Guard Flow",
-			IsAllInitiationAllowed: true,
-			InstanceTitleTemplate:  "t",
+			FlowID:                s.flowID,
+			BindingMode:           approval.BindingStandalone,
+			Name:                  "Enum Guard Flow",
+			InstanceTitleTemplate: "t",
 			Initiators: []shared.CreateFlowInitiatorCmd{
 				{Kind: "sideways", IDs: []string{"u1"}},
 			},
 			Caller: approval.SystemCaller,
 		})
-		s.Require().ErrorIs(err, shared.ErrInvalidInitiatorKind,
-			"An out-of-enum initiator kind would silently never match and must be rejected")
+		s.Require().ErrorIs(err, approval.ErrInvalidInitiatorKind,
+			"An initiator kind no resolver is registered for would silently never match and must be rejected")
 	})
 }

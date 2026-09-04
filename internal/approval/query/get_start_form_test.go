@@ -9,10 +9,22 @@ import (
 	"github.com/coldsmirk/vef-framework-go/approval"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/query"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/service"
-	"github.com/coldsmirk/vef-framework-go/internal/approval/shared"
+	"github.com/coldsmirk/vef-framework-go/internal/approval/strategy"
 	"github.com/coldsmirk/vef-framework-go/internal/testx"
 	"github.com/coldsmirk/vef-framework-go/orm"
 )
+
+// mustInitiatorComposite builds the framework's own initiator vocabulary.
+// Registration is static, so a failure here is a programming error rather than
+// a test condition.
+func mustInitiatorComposite(svc approval.AssigneeService) *strategy.CompositeInitiatorResolver {
+	composite, err := strategy.NewCompositeInitiatorResolver(strategy.BuiltinInitiatorResolvers(svc), nil)
+	if err != nil {
+		panic(err)
+	}
+
+	return composite
+}
 
 func init() {
 	registry.Add(func(env *testx.DBEnv) suite.TestingSuite {
@@ -30,7 +42,7 @@ type GetStartFormTestSuite struct {
 }
 
 func (s *GetStartFormTestSuite) SetupSuite() {
-	s.handler = query.NewGetStartFormHandler(s.db, service.NewValidationService(nil))
+	s.handler = query.NewGetStartFormHandler(s.db, service.NewValidationService(mustInitiatorComposite(nil)))
 
 	category := &approval.FlowCategory{
 		TenantID: "default",
@@ -163,7 +175,7 @@ func (s *GetStartFormTestSuite) TestGetStartForm() {
 			FlowCode: "gsf-restricted",
 			UserID:   "user-z",
 		})
-		s.Require().ErrorIs(err, shared.ErrNotAllowedInitiate, "Non-initiator should be denied")
+		s.Require().ErrorIs(err, approval.ErrNotAllowedInitiate, "Non-initiator should be denied")
 	})
 
 	s.Run("RejectsInactiveFlow", func() {
@@ -172,7 +184,7 @@ func (s *GetStartFormTestSuite) TestGetStartForm() {
 			FlowCode: "gsf-inactive",
 			UserID:   "user-z",
 		})
-		s.Require().ErrorIs(err, shared.ErrFlowNotActive, "Inactive flow should be rejected")
+		s.Require().ErrorIs(err, approval.ErrFlowNotActive, "Inactive flow should be rejected")
 	})
 
 	s.Run("RejectsUnpublishedFlow", func() {
@@ -181,7 +193,7 @@ func (s *GetStartFormTestSuite) TestGetStartForm() {
 			FlowCode: "gsf-unpublished",
 			UserID:   "user-z",
 		})
-		s.Require().ErrorIs(err, shared.ErrNoPublishedVersion, "Flow without a published version should be rejected")
+		s.Require().ErrorIs(err, approval.ErrNoPublishedVersion, "Flow without a published version should be rejected")
 	})
 
 	s.Run("RejectsUnknownFlow", func() {
@@ -190,7 +202,7 @@ func (s *GetStartFormTestSuite) TestGetStartForm() {
 			FlowCode: "gsf-missing",
 			UserID:   "user-z",
 		})
-		s.Require().ErrorIs(err, shared.ErrFlowNotFound, "Unknown flow code should be rejected")
+		s.Require().ErrorIs(err, approval.ErrFlowNotFound, "Unknown flow code should be rejected")
 	})
 
 	s.Run("RejectsCrossTenantCode", func() {
@@ -199,6 +211,6 @@ func (s *GetStartFormTestSuite) TestGetStartForm() {
 			FlowCode: "gsf-open",
 			UserID:   "user-z",
 		})
-		s.Require().ErrorIs(err, shared.ErrFlowNotFound, "Flow lookup should be tenant-scoped")
+		s.Require().ErrorIs(err, approval.ErrFlowNotFound, "Flow lookup should be tenant-scoped")
 	})
 }

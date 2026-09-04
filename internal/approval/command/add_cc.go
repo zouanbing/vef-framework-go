@@ -18,11 +18,7 @@ import (
 // AddCCCmd adds CC records for an instance.
 type AddCCCmd struct {
 	cqrs.BaseCommand
-
-	InstanceID string
-	CCUserIDs  []string
-	Operator   approval.UserInfo
-	Caller     approval.CallerContext
+	approval.AddCCInput
 }
 
 // AddCCHandler handles the AddCCCmd command.
@@ -47,7 +43,7 @@ func (h *AddCCHandler) Handle(ctx context.Context, cmd AddCCCmd) (cqrs.Unit, err
 	}
 
 	if instance.Status != approval.InstanceRunning || instance.CurrentNodeID == nil {
-		return cqrs.Unit{}, shared.ErrInstanceCompleted
+		return cqrs.Unit{}, approval.ErrInstanceCompleted
 	}
 
 	var node approval.FlowNode
@@ -63,12 +59,12 @@ func (h *AddCCHandler) Handle(ctx context.Context, cmd AddCCCmd) (cqrs.Unit, err
 	}
 
 	if !node.IsManualCCAllowed {
-		return cqrs.Unit{}, shared.ErrManualCcNotAllowed
+		return cqrs.Unit{}, approval.ErrManualCcNotAllowed
 	}
 
 	operatorID := strings.TrimSpace(cmd.Operator.ID)
 	if operatorID == "" {
-		return cqrs.Unit{}, shared.ErrNotAssignee
+		return cqrs.Unit{}, approval.ErrNotAssignee
 	}
 
 	authorized, err := h.taskSvc.IsAuthorizedForNodeOperation(ctx, db, instance.ID, *instance.CurrentNodeID, operatorID)
@@ -77,7 +73,7 @@ func (h *AddCCHandler) Handle(ctx context.Context, cmd AddCCCmd) (cqrs.Unit, err
 	}
 
 	if !authorized {
-		return cqrs.Unit{}, shared.ErrNotAssignee
+		return cqrs.Unit{}, approval.ErrNotAssignee
 	}
 
 	userIDs := shared.NormalizeUniqueIDs(cmd.CCUserIDs)
