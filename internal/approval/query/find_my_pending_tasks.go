@@ -10,18 +10,25 @@ import (
 	"github.com/coldsmirk/vef-framework-go/internal/cqrs"
 	"github.com/coldsmirk/vef-framework-go/orm"
 	"github.com/coldsmirk/vef-framework-go/page"
+	"github.com/coldsmirk/vef-framework-go/timex"
 )
 
 // FindMyPendingTasksQuery queries pending tasks assigned to the current user.
 type FindMyPendingTasksQuery struct {
 	cqrs.BaseQuery
 	page.Pageable
+	MyTaskFilter
 
 	UserID string
 	// TenantID is a self-scoped narrowing filter, NOT an authorization
 	// boundary: rows are already pinned to UserID, so it only narrows the
 	// caller's own tasks and does not gate access.
 	TenantID *string
+	// IsTimeout keeps only tasks past (true) or within (false) their deadline.
+	IsTimeout *bool
+	// CreatedAtFrom and CreatedAtTo bound when the task arrived, both inclusive.
+	CreatedAtFrom *timex.DateTime
+	CreatedAtTo   *timex.DateTime
 }
 
 // FindMyPendingTasksHandler handles the FindMyPendingTasksQuery.
@@ -40,12 +47,23 @@ func (h *FindMyPendingTasksHandler) Handle(ctx context.Context, query FindMyPend
 	var tasks []approval.Task
 
 	sq := db.NewSelect().Model(&tasks).
+		Apply(joinTaskInstance).
 		Where(func(cb orm.ConditionBuilder) {
 			cb.Equals("assignee_id", query.UserID).
 				Equals("status", string(approval.TaskPending)).
 				ApplyIf(query.TenantID != nil, func(cb orm.ConditionBuilder) {
 					cb.Equals("tenant_id", *query.TenantID)
-				})
+				}).
+				ApplyIf(query.IsTimeout != nil, func(cb orm.ConditionBuilder) {
+					cb.Equals("is_timeout", *query.IsTimeout)
+				}).
+				ApplyIf(query.CreatedAtFrom != nil, func(cb orm.ConditionBuilder) {
+					cb.GreaterThanOrEqual("created_at", *query.CreatedAtFrom)
+				}).
+				ApplyIf(query.CreatedAtTo != nil, func(cb orm.ConditionBuilder) {
+					cb.LessThanOrEqual("created_at", *query.CreatedAtTo)
+				}).
+				Apply(query.MyTaskFilter.apply)
 		}).
 		OrderByDesc("created_at", "id")
 

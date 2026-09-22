@@ -11,6 +11,7 @@ import (
 	"github.com/coldsmirk/vef-framework-go/page"
 	"github.com/coldsmirk/vef-framework-go/result"
 	"github.com/coldsmirk/vef-framework-go/security"
+	"github.com/coldsmirk/vef-framework-go/timex"
 )
 
 // MyResource exposes self-service approval queries for the current user.
@@ -134,21 +135,36 @@ func (r *MyResource) FindInitiated(ctx fiber.Ctx, principal *security.Principal,
 }
 
 // FindPendingTasksParams contains the parameters for querying pending tasks.
+// The time bounds are inclusive.
 type FindPendingTasksParams struct {
 	api.P
 
-	TenantID *string `json:"tenantId"`
-	Page     int     `json:"page"`
-	PageSize int     `json:"pageSize"`
+	TenantID      *string         `json:"tenantId"`
+	Keyword       *string         `json:"keyword"`
+	ApplicantID   *string         `json:"applicantId"`
+	ApplicantName *string         `json:"applicantName"`
+	FlowID        *string         `json:"flowId"`
+	IsTimeout     *bool           `json:"isTimeout"`
+	CreatedAtFrom *timex.DateTime `json:"createdAtFrom"`
+	CreatedAtTo   *timex.DateTime `json:"createdAtTo"`
+	Page          int             `json:"page"`
+	PageSize      int             `json:"pageSize"`
 }
 
 // FindPendingTasks queries pending tasks assigned to the current user.
 func (r *MyResource) FindPendingTasks(ctx fiber.Ctx, principal *security.Principal, params FindPendingTasksParams) error {
 	res, err := cqrs.Send[query.FindMyPendingTasksQuery, *page.Page[my.PendingTask]](ctx.Context(), r.bus, query.FindMyPendingTasksQuery{
-		UserID:   principal.ID,
-		TenantID: params.TenantID,
-		Page:     params.Page,
-		Size:     params.PageSize,
+		UserID:        principal.ID,
+		TenantID:      params.TenantID,
+		Keyword:       params.Keyword,
+		ApplicantID:   params.ApplicantID,
+		ApplicantName: params.ApplicantName,
+		FlowID:        params.FlowID,
+		IsTimeout:     params.IsTimeout,
+		CreatedAtFrom: params.CreatedAtFrom,
+		CreatedAtTo:   params.CreatedAtTo,
+		Page:          params.Page,
+		Size:          params.PageSize,
 	})
 	if err != nil {
 		return err
@@ -158,21 +174,38 @@ func (r *MyResource) FindPendingTasks(ctx fiber.Ctx, principal *security.Princip
 }
 
 // FindCompletedTasksParams contains the parameters for querying completed tasks.
+// The time bounds are inclusive.
 type FindCompletedTasksParams struct {
 	api.P
 
-	TenantID *string `json:"tenantId"`
-	Page     int     `json:"page"`
-	PageSize int     `json:"pageSize"`
+	TenantID       *string                  `json:"tenantId"`
+	Keyword        *string                  `json:"keyword"`
+	ApplicantID    *string                  `json:"applicantId"`
+	ApplicantName  *string                  `json:"applicantName"`
+	FlowID         *string                  `json:"flowId"`
+	Status         *approval.TaskStatus     `json:"status"`
+	InstanceStatus *approval.InstanceStatus `json:"instanceStatus"`
+	FinishedAtFrom *timex.DateTime          `json:"finishedAtFrom"`
+	FinishedAtTo   *timex.DateTime          `json:"finishedAtTo"`
+	Page           int                      `json:"page"`
+	PageSize       int                      `json:"pageSize"`
 }
 
 // FindCompletedTasks queries tasks already processed by the current user.
 func (r *MyResource) FindCompletedTasks(ctx fiber.Ctx, principal *security.Principal, params FindCompletedTasksParams) error {
 	res, err := cqrs.Send[query.FindMyCompletedTasksQuery, *page.Page[my.CompletedTask]](ctx.Context(), r.bus, query.FindMyCompletedTasksQuery{
-		UserID:   principal.ID,
-		TenantID: params.TenantID,
-		Page:     params.Page,
-		Size:     params.PageSize,
+		UserID:         principal.ID,
+		TenantID:       params.TenantID,
+		Keyword:        params.Keyword,
+		ApplicantID:    params.ApplicantID,
+		ApplicantName:  params.ApplicantName,
+		FlowID:         params.FlowID,
+		Status:         params.Status,
+		InstanceStatus: params.InstanceStatus,
+		FinishedAtFrom: params.FinishedAtFrom,
+		FinishedAtTo:   params.FinishedAtTo,
+		Page:           params.Page,
+		Size:           params.PageSize,
 	})
 	if err != nil {
 		return err

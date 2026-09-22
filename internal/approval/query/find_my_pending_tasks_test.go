@@ -24,6 +24,8 @@ type FindMyPendingTasksTestSuite struct {
 	ctx     context.Context
 	db      orm.DB
 	handler *query.FindMyPendingTasksHandler
+	// purchaseFlowID is the flow of the filter fixture's second instance.
+	purchaseFlowID string
 }
 
 func (s *FindMyPendingTasksTestSuite) SetupSuite() {
@@ -53,6 +55,51 @@ func (s *FindMyPendingTasksTestSuite) SetupSuite() {
 		_, err := s.db.NewInsert().Model(&tasks[i]).Exec(s.ctx)
 		s.Require().NoError(err, "Should insert task")
 	}
+
+	s.seedFilterFixture(fix)
+}
+
+// seedFilterFixture gives user-f one pending task on each of two instances
+// that differ in every filtered attribute, so each filter keeps exactly one.
+// A separate assignee keeps the user-a assertions exact.
+func (s *FindMyPendingTasksTestSuite) seedFilterFixture(travelFix *QueryFixture) {
+	purchaseFix := setupQueryFixture(s.T(), s.ctx, s.db, "mpt-flow-b", 1)
+	s.purchaseFlowID = purchaseFix.FlowID
+
+	travel := &approval.Instance{
+		TenantID:      "t1",
+		FlowID:        travelFix.FlowID,
+		FlowVersionID: travelFix.VersionID,
+		Title:         "Travel reimbursement",
+		InstanceNo:    "MPT-101",
+		ApplicantID:   "user-p",
+		ApplicantName: "Alice Wang",
+		Status:        approval.InstanceRunning,
+	}
+	purchase := &approval.Instance{
+		TenantID:      "t1",
+		FlowID:        purchaseFix.FlowID,
+		FlowVersionID: purchaseFix.VersionID,
+		Title:         "Purchase request",
+		InstanceNo:    "MPT-102",
+		ApplicantID:   "user-q",
+		ApplicantName: "Bob Li",
+		Status:        approval.InstanceRunning,
+	}
+
+	for _, inst := range []*approval.Instance{travel, purchase} {
+		_, err := s.db.NewInsert().Model(inst).Exec(s.ctx)
+		s.Require().NoError(err, "Should insert filter fixture instance")
+	}
+
+	insertTask(s.T(), s.ctx, s.db, &approval.Task{
+		TenantID: "t1", InstanceID: travel.ID, NodeID: travelFix.NodeIDs[0], AssigneeID: "user-f",
+		SortOrder: 1, Status: approval.TaskPending, CreatedAt: septemberAt(1, 10),
+	})
+	insertTask(s.T(), s.ctx, s.db, &approval.Task{
+		TenantID: "t1", InstanceID: purchase.ID, NodeID: purchaseFix.NodeIDs[0], AssigneeID: "user-f",
+		SortOrder: 1, Status: approval.TaskPending, IsTimeout: true, CreatedAt: septemberAt(10, 10),
+	})
 }
 
 func (s *FindMyPendingTasksTestSuite) TearDownSuite() {
@@ -90,6 +137,78 @@ func (s *FindMyPendingTasksTestSuite) TestNoResults() {
 	s.Require().NoError(err, "Should query without error")
 	s.Assert().Equal(int64(0), result.Total, "Should find 0 pending tasks")
 	s.Assert().Empty(result.Items, "Should return empty slice")
+}
+
+func (s *FindMyPendingTasksTestSuite) TestFilters() {
+	const travel, purchase = "Travel reimbursement", "Purchase request"
+
+	// titles runs the query for user-f and returns the matched instance titles,
+	// checking that the count agrees with the rows the join returned.
+	titles := func(q query.FindMyPendingTasksQuery) []string {
+		q.UserID, q.Page, q.Size = "user-f", 1, 10
+
+		result, err := s.handler.Handle(s.ctx, q)
+		s.Require().NoError(err, "Should query without error")
+		s.Require().Equal(int64(len(result.Items)), result.Total, "Total should count exactly the filtered rows")
+
+		matched := make([]string, len(result.Items))
+		for i, item := range result.Items {
+			matched[i] = item.InstanceTitle
+		}
+
+		return matched
+	}
+
+	s.Run("NoFilter", func() {
+		s.ElementsMatch([]string{travel, purchase}, titles(query.FindMyPendingTasksQuery{}),
+			"Joining the instance should keep every pending task")
+	})
+
+	s.Run("Keyword", func() {
+		s.Equal([]string{travel}, titles(query.FindMyPendingTasksQuery{Keyword: new("reimburse")}),
+			"Keyword should match the instance title by substring")
+	})
+
+	s.Run("ApplicantID", func() {
+		s.Equal([]string{purchase}, titles(query.FindMyPendingTasksQuery{ApplicantID: new("user-q")}),
+			"ApplicantID should match the applicant exactly")
+	})
+
+	s.Run("ApplicantName", func() {
+		s.Equal([]string{travel}, titles(query.FindMyPendingTasksQuery{ApplicantName: new("Alice")}),
+			"ApplicantName should match the applicant name by substring")
+	})
+
+	s.Run("FlowID", func() {
+		s.Equal([]string{purchase}, titles(query.FindMyPendingTasksQuery{FlowID: new(s.purchaseFlowID)}),
+			"FlowID should match the instance's flow")
+	})
+
+	s.Run("IsTimeout", func() {
+		s.Equal([]string{purchase}, titles(query.FindMyPendingTasksQuery{IsTimeout: new(true)}),
+			"IsTimeout true should keep only timed-out tasks")
+		s.Equal([]string{travel}, titles(query.FindMyPendingTasksQuery{IsTimeout: new(false)}),
+			"IsTimeout false should keep only tasks within their deadline")
+	})
+
+	s.Run("CreatedAtRange", func() {
+		s.Equal([]string{purchase}, titles(query.FindMyPendingTasksQuery{CreatedAtFrom: new(septemberAt(5, 0))}),
+			"CreatedAtFrom should drop tasks that arrived earlier")
+		s.Equal([]string{travel}, titles(query.FindMyPendingTasksQuery{CreatedAtTo: new(septemberAt(5, 0))}),
+			"CreatedAtTo should drop tasks that arrived later")
+	})
+
+	s.Run("CreatedAtBoundsAreInclusive", func() {
+		arrivedAt := septemberAt(10, 10)
+
+		s.Equal([]string{purchase}, titles(query.FindMyPendingTasksQuery{CreatedAtFrom: &arrivedAt, CreatedAtTo: &arrivedAt}),
+			"A task arriving exactly on both bounds should be kept")
+	})
+
+	s.Run("FiltersCombineWithAnd", func() {
+		s.Empty(titles(query.FindMyPendingTasksQuery{Keyword: new("reimburse"), ApplicantID: new("user-q")}),
+			"Filters matching different tasks should together match none")
+	})
 }
 
 func (s *FindMyPendingTasksTestSuite) TestExcludesNonPendingTasks() {

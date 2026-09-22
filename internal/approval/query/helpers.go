@@ -193,6 +193,45 @@ func scopeCCByTenant(tenantID *string) func(orm.SelectQuery) {
 	}
 }
 
+// MyTaskFilter holds the filters the my-pending and my-completed task lists
+// share. Each reads the task's instance, so a handler applies it after
+// joinTaskInstance. Every field is optional; set fields AND together.
+type MyTaskFilter struct {
+	// Keyword matches the instance title by substring.
+	Keyword *string
+	// ApplicantID matches the applicant exactly — the value a user picker yields.
+	ApplicantID *string
+	// ApplicantName matches the applicant name snapshot by substring, for
+	// callers that take free text rather than a picked user.
+	ApplicantName *string
+	// FlowID matches the flow the instance was started from.
+	FlowID *string
+}
+
+// apply adds the set filters as predicates on the joined instance (alias "i").
+func (f MyTaskFilter) apply(cb orm.ConditionBuilder) {
+	cb.ApplyIf(f.Keyword != nil, func(cb orm.ConditionBuilder) {
+		cb.Contains("i.title", *f.Keyword)
+	}).
+		ApplyIf(f.ApplicantID != nil, func(cb orm.ConditionBuilder) {
+			cb.Equals("i.applicant_id", *f.ApplicantID)
+		}).
+		ApplyIf(f.ApplicantName != nil, func(cb orm.ConditionBuilder) {
+			cb.Contains("i.applicant_name", *f.ApplicantName)
+		}).
+		ApplyIf(f.FlowID != nil, func(cb orm.ConditionBuilder) {
+			cb.Equals("i.flow_id", *f.FlowID)
+		})
+}
+
+// joinTaskInstance joins each task's instance as alias "i". Every task belongs
+// to exactly one instance, so the inner join neither drops nor repeats a row.
+func joinTaskInstance(sq orm.SelectQuery) {
+	sq.Join((*approval.Instance)(nil), func(cb orm.ConditionBuilder) {
+		cb.EqualsColumn("instance_id", "i.id")
+	}, "i")
+}
+
 // dedup returns a deduplicated copy of the given string slice.
 func dedup(ids []string) []string {
 	s := slices.Clone(ids)
