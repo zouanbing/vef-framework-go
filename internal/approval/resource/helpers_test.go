@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"sync/atomic"
 
 	"go.uber.org/fx"
@@ -44,12 +45,23 @@ func (*MockAssigneeService) GetRoleUsers(context.Context, string) ([]approval.Us
 	return nil, errors.New("not implemented")
 }
 
-// MockUserInfoResolver is a no-op implementation of approval.UserInfoResolver for testing.
+// unknownUserPrefix marks IDs MockUserInfoResolver does not know as users.
+const unknownUserPrefix = "unknown-"
+
+// MockUserInfoResolver names every user after its ID, except IDs carrying
+// unknownUserPrefix, which it answers the way a host answers an ID with no
+// matching account: present, with an empty name.
 type MockUserInfoResolver struct{}
 
 func (*MockUserInfoResolver) ResolveUsers(_ context.Context, userIDs []string) (map[string]approval.UserInfo, error) {
 	result := make(map[string]approval.UserInfo, len(userIDs))
 	for _, id := range userIDs {
+		if strings.HasPrefix(id, unknownUserPrefix) {
+			result[id] = approval.UserInfo{ID: id}
+
+			continue
+		}
+
 		result[id] = approval.UserInfo{ID: id, Name: id}
 	}
 
@@ -355,6 +367,35 @@ func parallelApprovalFlowDef() approval.FlowDefinition {
 					ExecutionType:       approval.ExecutionManual,
 					EmptyAssigneeAction: approval.EmptyAssigneeAutoPass,
 					ApprovalMethod:      approval.ApprovalParallel,
+					PassRule:            approval.PassAll,
+				}),
+			},
+			{ID: "end-1", Kind: approval.NodeEnd, Data: mustMarshal(approval.EndNodeData{Name: "结束"})},
+		},
+		Edges: []approval.EdgeDefinition{
+			{ID: "edge-1", Source: "start-1", Target: "approval-1"},
+			{ID: "edge-2", Source: "approval-1", Target: "end-1"},
+		},
+	}
+}
+
+// formFieldFlowDef returns a flow whose approver the applicant picks:
+// Start → Approval(assignees read from the "approver" form field) → End.
+func formFieldFlowDef() approval.FlowDefinition {
+	return approval.FlowDefinition{
+		Nodes: []approval.NodeDefinition{
+			{ID: "start-1", Kind: approval.NodeStart, Data: mustMarshal(approval.StartNodeData{Name: "开始"})},
+			{
+				ID:   "approval-1",
+				Kind: approval.NodeApproval,
+				Data: mustMarshal(approval.ApprovalNodeData{
+					Name: "审批",
+					Assignees: []approval.AssigneeDefinition{
+						{Kind: approval.AssigneeFormField, FormField: new("approver"), SortOrder: 1},
+					},
+					ExecutionType:       approval.ExecutionManual,
+					EmptyAssigneeAction: approval.EmptyAssigneeAutoPass,
+					ApprovalMethod:      approval.ApprovalSequential,
 					PassRule:            approval.PassAll,
 				}),
 			},

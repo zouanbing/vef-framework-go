@@ -10,6 +10,7 @@ import (
 	"github.com/coldsmirk/vef-framework-go/approval"
 	"github.com/coldsmirk/vef-framework-go/i18n"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/shared"
+	"github.com/coldsmirk/vef-framework-go/result"
 )
 
 // NewUserAssigneeResolver creates a new UserAssigneeResolver.
@@ -218,6 +219,11 @@ func (*FormFieldAssigneeResolver) Describe() approval.KindDescriptor[approval.As
 	}
 }
 
+// Resolve reads the assignee IDs from the rule's form field. Unlike the IDs a
+// designer picks, these are the applicant's input, so each must name a user
+// the host's UserInfoResolver knows: an ID it returns no name for — per the
+// resolver contract, one it could not find — fails the action with
+// ErrCodeAssigneeResolveFailed instead of becoming a task nobody can see.
 func (*FormFieldAssigneeResolver) Resolve(ctx context.Context, rc *approval.AssigneeResolveContext) ([]approval.ResolvedAssignee, error) {
 	ids, err := approval.FormFieldIDs(rc.FormData, rc.FormField)
 	if err != nil {
@@ -228,7 +234,30 @@ func (*FormFieldAssigneeResolver) Resolve(ctx context.Context, rc *approval.Assi
 		return []approval.ResolvedAssignee{}, nil
 	}
 
-	return resolveAssigneesByIDs(ctx, rc, ids, "form field assignee resolver")
+	assignees, err := resolveAssigneesByIDs(ctx, rc, ids, "form field assignee resolver")
+	if err != nil {
+		return nil, err
+	}
+
+	var unresolved []string
+
+	for _, assignee := range assignees {
+		if strings.TrimSpace(assignee.User.Name) == "" {
+			unresolved = append(unresolved, assignee.User.ID)
+		}
+	}
+
+	if len(unresolved) > 0 {
+		return nil, result.Err(
+			i18n.T(shared.ErrMessageFormFieldAssigneeUnresolved, map[string]any{
+				"field": strings.TrimSpace(*rc.FormField),
+				"ids":   strings.Join(unresolved, ", "),
+			}),
+			result.WithCode(approval.ErrCodeAssigneeResolveFailed),
+		)
+	}
+
+	return assignees, nil
 }
 
 // normalizeIDs trims each entry and drops the blanks, preserving order.

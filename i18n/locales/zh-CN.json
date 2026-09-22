@@ -198,6 +198,7 @@
   "approval_invalid_transfer_target": "非法的转交目标审批人",
   "approval_no_assignee": "无可用审批人",
   "approval_assignee_resolve_failed": "解析审批人失败",
+  "approval_form_field_assignee_unresolved": "表单字段 {{.field}} 中的审批人无法识别为系统用户：{{.ids}}",
   "approval_form_validation_failed": "表单验证失败",
   "approval_form_data_too_large": "表单数据超过最大允许大小",
   "approval_urge_too_frequent": "催办操作过于频繁，请 {{.minutes}} 分钟后再试",

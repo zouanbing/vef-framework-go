@@ -99,6 +99,19 @@ func assertResolvedAssignees(t *testing.T, result []approval.ResolvedAssignee, e
 	}
 }
 
+// stubUserInfoResolver names the IDs it knows and, per the UserInfoResolver
+// contract, returns every other requested ID with an empty name.
+type stubUserInfoResolver map[string]string
+
+func (s stubUserInfoResolver) ResolveUsers(_ context.Context, userIDs []string) (map[string]approval.UserInfo, error) {
+	infos := make(map[string]approval.UserInfo, len(userIDs))
+	for _, id := range userIDs {
+		infos[id] = approval.UserInfo{ID: id, Name: s[id]}
+	}
+
+	return infos, nil
+}
+
 // --- UserAssigneeResolver ---
 
 func TestUserAssigneeResolver(t *testing.T) {
@@ -313,74 +326,50 @@ func TestFormFieldAssigneeResolver(t *testing.T) {
 	r := NewFormFieldAssigneeResolver()
 	assert.Equal(t, approval.AssigneeFormField, r.Describe().Kind, "Kind should be AssigneeFormField")
 
-	// Success cases: supported value types that resolve correctly.
-	successTests := []struct {
-		name     string
-		field    string
-		formData approval.FormData
-		expected []string
-	}{
-		{"StringValue", "approver", approval.FormData{"approver": "user1"}, []string{"user1"}},
-		{"StringValueWithWhitespace", "approver", approval.FormData{"approver": " user1 "}, []string{"user1"}},
-		{"StringSlice", "approvers", approval.FormData{"approvers": []string{"u1", "u2"}}, []string{"u1", "u2"}},
-		{"StringSliceWithEmptyElement", "approvers", approval.FormData{"approvers": []string{"u1", "", "u2"}}, []string{"u1", "u2"}},
-		{"StringSliceWithWhitespaceElement", "approvers", approval.FormData{"approvers": []string{" u1 ", " ", "u2"}}, []string{"u1", "u2"}},
-		{"AnySlice", "approvers", approval.FormData{"approvers": []any{"u1", "u2"}}, []string{"u1", "u2"}},
-		{"AnySliceWithEmptyElement", "approvers", approval.FormData{"approvers": []any{"u1", "", "u2"}}, []string{"u1", "u2"}},
-		{"AnySliceWithWhitespaceElement", "approvers", approval.FormData{"approvers": []any{" u1 ", " ", "u2"}}, []string{"u1", "u2"}},
-		{"NilValue", "missing", approval.FormData{}, nil},
-		{"EmptyStringValue", "approver", approval.FormData{"approver": ""}, nil},
-		{"WhitespaceStringValue", "approver", approval.FormData{"approver": "   "}, nil},
-	}
-
-	for _, tt := range successTests {
-		t.Run(tt.name, func(t *testing.T) {
-			rc := &approval.AssigneeResolveContext{FormField: new(tt.field), FormData: tt.formData}
-			result, err := r.Resolve(context.Background(), rc)
-			require.NoError(t, err, "Should resolve without error")
-			assertUserIDs(t, result, tt.expected...)
+	users := stubUserInfoResolver{"u1": "Alice", "u2": "Bob"}
+	resolve := func(field *string, formData approval.FormData) ([]approval.ResolvedAssignee, error) {
+		return r.Resolve(context.Background(), &approval.AssigneeResolveContext{
+			FormData:     formData,
+			UserResolver: users,
+			FormField:    field,
 		})
 	}
 
-	// Error cases: invalid field name, empty values, unsupported types.
-	errorTests := []struct {
-		name      string
-		rc        *approval.AssigneeResolveContext
-		wantError error
-	}{
-		{
-			"NilFormFieldName",
-			&approval.AssigneeResolveContext{FormData: approval.FormData{"approver": "user1"}},
-			approval.ErrFormFieldNameEmpty,
-		},
-		{
-			"EmptyFormFieldName",
-			&approval.AssigneeResolveContext{FormField: new(""), FormData: approval.FormData{"approver": "user1"}},
-			approval.ErrFormFieldNameEmpty,
-		},
-		{
-			"WhitespaceFormFieldName",
-			&approval.AssigneeResolveContext{FormField: new("   "), FormData: approval.FormData{"approver": "user1"}},
-			approval.ErrFormFieldNameEmpty,
-		},
-		{
-			"UnsupportedValueType",
-			&approval.AssigneeResolveContext{FormField: new("count"), FormData: approval.FormData{"count": 42}},
-			approval.ErrUnsupportedFieldValueType,
-		},
-		{
-			"UnsupportedMapType",
-			&approval.AssigneeResolveContext{FormField: new("meta"), FormData: approval.FormData{"meta": map[string]string{"k": "v"}}},
-			approval.ErrUnsupportedFieldValueType,
-		},
-	}
+	t.Run("ResolvesTheFieldUsersWithNames", func(t *testing.T) {
+		result, err := resolve(new("approvers"), approval.FormData{"approvers": []any{" u1 ", "", "u2"}})
+		require.NoError(t, err, "Should resolve without error")
+		assertResolvedAssignees(t, result, []approval.UserInfo{{ID: "u1", Name: "Alice"}, {ID: "u2", Name: "Bob"}})
+	})
 
-	for _, tt := range errorTests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, err := r.Resolve(context.Background(), tt.rc)
-			require.ErrorIs(t, err, tt.wantError, "Should return %v", tt.wantError)
-		})
-	}
+	t.Run("BlankValueResolvesToNobody", func(t *testing.T) {
+		result, err := resolve(new("approver"), approval.FormData{"approver": "   "})
+		require.NoError(t, err, "A blank field should not be an error")
+		assert.Empty(t, result, "A blank field should leave the node's EmptyAssigneeAction to decide")
+	})
+
+	t.Run("MissingValueResolvesToNobody", func(t *testing.T) {
+		result, err := resolve(new("approver"), approval.FormData{})
+		require.NoError(t, err, "An absent field should not be an error")
+		assert.Empty(t, result, "An absent field should leave the node's EmptyAssigneeAction to decide")
+	})
+
+	t.Run("UnknownIDFailsTheAction", func(t *testing.T) {
+		_, err := resolve(new("approvers"), approval.FormData{"approvers": []any{"u1", "staff-9"}})
+		require.ErrorIs(t, err, approval.ErrAssigneeResolveFailed, "An ID the host does not know as a user should fail the action")
+		assert.ErrorContains(t, err, "approvers", "The error should name the form field")
+		assert.ErrorContains(t, err, "staff-9", "The error should name the unrecognized ID")
+		assert.NotContains(t, err.Error(), "u1", "The error should not list IDs that did resolve")
+	})
+
+	t.Run("MissingFieldNameIsAnError", func(t *testing.T) {
+		_, err := resolve(nil, approval.FormData{"approver": "u1"})
+		require.ErrorIs(t, err, approval.ErrFormFieldNameEmpty, "A rule without a field name should fail")
+	})
+
+	t.Run("UnsupportedValueTypeIsAnError", func(t *testing.T) {
+		_, err := resolve(new("count"), approval.FormData{"count": 42})
+		require.ErrorIs(t, err, approval.ErrUnsupportedFieldValueType, "A value that cannot carry IDs should fail")
+	})
 }
 
 // --- CompositeAssigneeResolver ---

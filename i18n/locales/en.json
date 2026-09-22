@@ -198,6 +198,7 @@
   "approval_invalid_transfer_target": "Invalid transfer target assignee",
   "approval_no_assignee": "No available assignee",
   "approval_assignee_resolve_failed": "Failed to resolve assignee",
+  "approval_form_field_assignee_unresolved": "The assignees in form field {{.field}} are not recognized as users: {{.ids}}",
   "approval_form_validation_failed": "Form validation failed",
   "approval_form_data_too_large": "Form data exceeds the maximum allowed size",
   "approval_urge_too_frequent": "Urge is too frequent; please try again in {{.minutes}} minutes",

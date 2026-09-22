@@ -11,6 +11,11 @@ const (
 	//   {{.minutes}} — cooldown window in minutes
 	ErrMessageUrgeTooFrequent = "approval_urge_too_frequent"
 
+	// Assignee resolution errors. Template parameters:
+	//   {{.field}} — form field key the assignee IDs were read from
+	//   {{.ids}}   — the IDs the host's UserInfoResolver did not know
+	ErrMessageFormFieldAssigneeUnresolved = "approval_form_field_assignee_unresolved"
+
 	// Form field validation errors. Template parameters:
 	//   {{.field}} — field label or key
 	//   {{.min}}   — minimum length / value
