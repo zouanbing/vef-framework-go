@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/spf13/cast"
-
 	streams "github.com/coldsmirk/go-streams"
 
 	"github.com/coldsmirk/vef-framework-go/approval"
@@ -221,7 +219,7 @@ func (*FormFieldAssigneeResolver) Describe() approval.KindDescriptor[approval.As
 }
 
 func (*FormFieldAssigneeResolver) Resolve(ctx context.Context, rc *approval.AssigneeResolveContext) ([]approval.ResolvedAssignee, error) {
-	ids, err := formFieldUserIDs(rc.FormField, rc.FormData)
+	ids, err := approval.FormFieldIDs(rc.FormData, rc.FormField)
 	if err != nil {
 		return nil, err
 	}
@@ -231,39 +229,6 @@ func (*FormFieldAssigneeResolver) Resolve(ctx context.Context, rc *approval.Assi
 	}
 
 	return resolveAssigneesByIDs(ctx, rc, ids, "form field assignee resolver")
-}
-
-// formFieldUserIDs reads the user IDs a form field carries. It is shared by
-// the assignee and CC form-field resolvers so the two cannot disagree about
-// which value shapes a form field may hold.
-//
-// A blank value means the field was left empty — the same as an absent key —
-// and resolves to no IDs rather than an error, so the node's
-// EmptyAssigneeAction (or, for CC, an empty recipient list) decides instead of
-// the whole step failing.
-func formFieldUserIDs(field *string, formData approval.FormData) ([]string, error) {
-	if field == nil || strings.TrimSpace(*field) == "" {
-		return nil, ErrFormFieldNameEmpty
-	}
-
-	switch v := formData.Get(strings.TrimSpace(*field)).(type) {
-	case nil:
-		return nil, nil
-	case string:
-		return normalizeIDs([]string{v}), nil
-	case []string:
-		return normalizeIDs(v), nil
-	case []any:
-		ids := make([]string, 0, len(v))
-		for _, item := range v {
-			ids = append(ids, cast.ToString(item))
-		}
-
-		return normalizeIDs(ids), nil
-
-	default:
-		return nil, fmt.Errorf("%w: %T", ErrUnsupportedFieldValueType, v)
-	}
 }
 
 // normalizeIDs trims each entry and drops the blanks, preserving order.

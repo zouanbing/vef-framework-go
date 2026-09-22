@@ -351,27 +351,27 @@ func TestFormFieldAssigneeResolver(t *testing.T) {
 		{
 			"NilFormFieldName",
 			&approval.AssigneeResolveContext{FormData: approval.FormData{"approver": "user1"}},
-			ErrFormFieldNameEmpty,
+			approval.ErrFormFieldNameEmpty,
 		},
 		{
 			"EmptyFormFieldName",
 			&approval.AssigneeResolveContext{FormField: new(""), FormData: approval.FormData{"approver": "user1"}},
-			ErrFormFieldNameEmpty,
+			approval.ErrFormFieldNameEmpty,
 		},
 		{
 			"WhitespaceFormFieldName",
 			&approval.AssigneeResolveContext{FormField: new("   "), FormData: approval.FormData{"approver": "user1"}},
-			ErrFormFieldNameEmpty,
+			approval.ErrFormFieldNameEmpty,
 		},
 		{
 			"UnsupportedValueType",
 			&approval.AssigneeResolveContext{FormField: new("count"), FormData: approval.FormData{"count": 42}},
-			ErrUnsupportedFieldValueType,
+			approval.ErrUnsupportedFieldValueType,
 		},
 		{
 			"UnsupportedMapType",
 			&approval.AssigneeResolveContext{FormField: new("meta"), FormData: approval.FormData{"meta": map[string]string{"k": "v"}}},
-			ErrUnsupportedFieldValueType,
+			approval.ErrUnsupportedFieldValueType,
 		},
 	}
 

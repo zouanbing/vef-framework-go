@@ -108,3 +108,56 @@ func TestFormDataClone(t *testing.T) {
 		assert.Equal(t, "item1", origFirst["name"], "Modifying cloned nested data should not affect the original")
 	})
 }
+
+func TestFormFieldIDs(t *testing.T) {
+	successTests := []struct {
+		name     string
+		field    string
+		formData approval.FormData
+		expected []string
+	}{
+		{"StringValue", "approver", approval.FormData{"approver": "user1"}, []string{"user1"}},
+		{"StringValueWithWhitespace", "approver", approval.FormData{"approver": " user1 "}, []string{"user1"}},
+		{"FieldNameWithWhitespace", " approver ", approval.FormData{"approver": "user1"}, []string{"user1"}},
+		{"StringSlice", "approvers", approval.FormData{"approvers": []string{"u1", "u2"}}, []string{"u1", "u2"}},
+		{"StringSliceWithEmptyElement", "approvers", approval.FormData{"approvers": []string{"u1", "", "u2"}}, []string{"u1", "u2"}},
+		{"StringSliceWithWhitespaceElement", "approvers", approval.FormData{"approvers": []string{" u1 ", " ", "u2"}}, []string{"u1", "u2"}},
+		{"AnySlice", "approvers", approval.FormData{"approvers": []any{"u1", "u2"}}, []string{"u1", "u2"}},
+		{"AnySliceWithEmptyElement", "approvers", approval.FormData{"approvers": []any{"u1", "", "u2"}}, []string{"u1", "u2"}},
+		{"AnySliceWithWhitespaceElement", "approvers", approval.FormData{"approvers": []any{" u1 ", " ", "u2"}}, []string{"u1", "u2"}},
+		{"AnySliceWithNumericElement", "approvers", approval.FormData{"approvers": []any{"u1", 42}}, []string{"u1", "42"}},
+		{"KeepsDuplicatesInOrder", "approvers", approval.FormData{"approvers": []any{"u2", "u1", "u2"}}, []string{"u2", "u1", "u2"}},
+		{"MissingField", "missing", approval.FormData{}, nil},
+		{"EmptyStringValue", "approver", approval.FormData{"approver": ""}, []string{}},
+		{"WhitespaceStringValue", "approver", approval.FormData{"approver": "   "}, []string{}},
+		{"EmptySlice", "approvers", approval.FormData{"approvers": []any{}}, []string{}},
+	}
+
+	for _, tt := range successTests {
+		t.Run(tt.name, func(t *testing.T) {
+			ids, err := approval.FormFieldIDs(tt.formData, new(tt.field))
+			require.NoError(t, err, "Should read the field without error")
+			assert.Equal(t, tt.expected, ids, "Should return the trimmed, non-blank IDs in order")
+		})
+	}
+
+	errorTests := []struct {
+		name      string
+		field     *string
+		formData  approval.FormData
+		wantError error
+	}{
+		{"NilFieldName", nil, approval.FormData{"approver": "user1"}, approval.ErrFormFieldNameEmpty},
+		{"EmptyFieldName", new(""), approval.FormData{"approver": "user1"}, approval.ErrFormFieldNameEmpty},
+		{"WhitespaceFieldName", new("   "), approval.FormData{"approver": "user1"}, approval.ErrFormFieldNameEmpty},
+		{"NumberValue", new("count"), approval.FormData{"count": 42}, approval.ErrUnsupportedFieldValueType},
+		{"MapValue", new("meta"), approval.FormData{"meta": map[string]string{"k": "v"}}, approval.ErrUnsupportedFieldValueType},
+	}
+
+	for _, tt := range errorTests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := approval.FormFieldIDs(tt.formData, tt.field)
+			require.ErrorIs(t, err, tt.wantError, "Should return %v", tt.wantError)
+		})
+	}
+}
