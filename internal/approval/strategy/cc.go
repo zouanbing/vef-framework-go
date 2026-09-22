@@ -102,7 +102,7 @@ func (*FormFieldCCResolver) Describe() approval.KindDescriptor[approval.CCKind] 
 }
 
 func (*FormFieldCCResolver) Resolve(_ context.Context, rc *approval.CCResolveContext) ([]string, error) {
-	ids, err := formFieldUserIDs(rc.FormField, rc.FormData)
+	ids, err := approval.FormFieldIDs(rc.FormData, rc.FormField)
 	if err != nil {
 		return nil, err
 	}

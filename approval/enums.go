@@ -457,6 +457,52 @@ func (c ColumnDataType) IsValid() bool {
 	}
 }
 
+// OptionSourceKind classifies where a selection field's options come from when
+// the projection could not enumerate them into FieldOption values.
+//
+// The designer's schema union also carries "static" and "ref", but neither
+// survives projection: a static source — inline or reached through a ref — is
+// enumerated into FormFieldDefinition.Options, and a ref is dereferenced to
+// whatever it points at. Only a source that stays unresolved reaches a consumer
+// as a FieldOptionSource, so this vocabulary is deliberately narrower than the
+// designer's.
+type OptionSourceKind string
+
+const (
+	// OptionSourceRemote resolves through an RPC the host performs: at render
+	// time to populate the control, and at display time to render a stored
+	// value as its label.
+	OptionSourceRemote OptionSourceKind = "remote"
+)
+
+// IsValid reports whether the option source kind is one of the defined values.
+func (k OptionSourceKind) IsValid() bool {
+	return k == OptionSourceRemote
+}
+
+// DynamicParamKind classifies a remote option request's parameter: a value the
+// designer typed, or an expression the form runtime evaluates against the live
+// form before the request is issued.
+type DynamicParamKind string
+
+const (
+	// DynamicParamLiteral is a fixed value, identical for every evaluation.
+	DynamicParamLiteral DynamicParamKind = "literal"
+	// DynamicParamExpression is bound to the form's current values — what makes
+	// a cascading select work ("the wards of the department picked above").
+	DynamicParamExpression DynamicParamKind = "expression"
+)
+
+// IsValid reports whether the dynamic parameter kind is one of the defined values.
+func (k DynamicParamKind) IsValid() bool {
+	switch k {
+	case DynamicParamLiteral, DynamicParamExpression:
+		return true
+	default:
+		return false
+	}
+}
+
 // TimeoutAction represents the action to take when a task times out.
 type TimeoutAction string
 

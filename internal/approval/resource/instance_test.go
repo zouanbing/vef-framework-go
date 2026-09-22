@@ -53,6 +53,8 @@ type InstanceResourceTestSuite struct {
 	complex  FlowSetup // Start → Condition → [Approval/Handle] → End
 	parallel FlowSetup // Start → Approval(parallel, passAll) → End
 	noCC     FlowSetup // Start → Approval(no manual CC) → End
+	// Start → Approval(assignees read from the "approver" form field) → End
+	formField FlowSetup
 
 	// Multi-user tokens
 	approver2Token string // approver-2
@@ -86,6 +88,7 @@ func (s *InstanceResourceTestSuite) SetupSuite() {
 	s.complex = s.createAndPublishFlow("res-complex", "Complex Flow", complexFlowDef())
 	s.parallel = s.createAndPublishFlow("res-parallel", "Parallel Flow", parallelApprovalFlowDef())
 	s.noCC = s.createAndPublishFlow("res-no-cc", "No CC Flow", noManualCCFlowDef())
+	s.formField = s.createAndPublishFlow("res-form-field", "Form Field Flow", formFieldFlowDef())
 
 	// Generate tokens for multiple users
 	s.approver2Token = s.GenerateToken(newTenantUser("approver-2", "Approver 2"))
@@ -314,6 +317,39 @@ func (s *InstanceResourceTestSuite) TestStartWithFormData() {
 	instance := s.loadInstance(instanceID)
 	s.Assert().Equal(approval.InstanceRunning, instance.Status, "Approval flow should keep running after start with form data")
 	s.Assert().NotNil(instance.FormData, "Start should persist submitted form data")
+}
+
+func (s *InstanceResourceTestSuite) TestStartFormFieldAssignee() {
+	countInstances := func() int64 {
+		count, err := s.db.NewSelect().Model((*approval.Instance)(nil)).
+			Where(func(cb orm.ConditionBuilder) { cb.Equals("flow_id", s.formField.FlowID) }).
+			Count(s.ctx)
+		s.Require().NoError(err, "Should count the flow's instances")
+
+		return count
+	}
+
+	s.Run("KnownUserReceivesTheTask", func() {
+		data := s.startInstance(s.formField.FlowCode, map[string]any{"approver": "approver-2"})
+
+		tasks := s.findPendingTasks(data["id"].(string))
+		s.Require().Len(tasks, 1, "The picked approver should receive one task")
+		s.Assert().Equal("approver-2", tasks[0]["assigneeId"], "The task should go to the user the form field names")
+	})
+
+	s.Run("UnknownUserFailsTheStart", func() {
+		before := countInstances()
+
+		res := s.rpcCall("start", map[string]any{
+			"tenantId": "default",
+			"flowCode": s.formField.FlowCode,
+			"formData": map[string]any{"approver": unknownUserPrefix + "staff-1"},
+		})
+
+		s.assertErrorCode(res, approval.ErrCodeAssigneeResolveFailed, "An approver the host does not know should fail the start")
+		s.Assert().Contains(res.Message, unknownUserPrefix+"staff-1", "The message should name the unrecognized ID")
+		s.Assert().Equal(before, countInstances(), "A failed start should leave no instance behind")
+	})
 }
 
 func (s *InstanceResourceTestSuite) TestProcessTask() {

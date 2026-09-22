@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/spf13/cast"
-
 	streams "github.com/coldsmirk/go-streams"
 
 	"github.com/coldsmirk/vef-framework-go/approval"
 	"github.com/coldsmirk/vef-framework-go/i18n"
 	"github.com/coldsmirk/vef-framework-go/internal/approval/shared"
+	"github.com/coldsmirk/vef-framework-go/result"
 )
 
 // NewUserAssigneeResolver creates a new UserAssigneeResolver.
@@ -220,8 +219,13 @@ func (*FormFieldAssigneeResolver) Describe() approval.KindDescriptor[approval.As
 	}
 }
 
+// Resolve reads the assignee IDs from the rule's form field. Unlike the IDs a
+// designer picks, these are the applicant's input, so each must name a user
+// the host's UserInfoResolver knows: an ID it returns no name for — per the
+// resolver contract, one it could not find — fails the action with
+// ErrCodeAssigneeResolveFailed instead of becoming a task nobody can see.
 func (*FormFieldAssigneeResolver) Resolve(ctx context.Context, rc *approval.AssigneeResolveContext) ([]approval.ResolvedAssignee, error) {
-	ids, err := formFieldUserIDs(rc.FormField, rc.FormData)
+	ids, err := approval.FormFieldIDs(rc.FormData, rc.FormField)
 	if err != nil {
 		return nil, err
 	}
@@ -230,40 +234,30 @@ func (*FormFieldAssigneeResolver) Resolve(ctx context.Context, rc *approval.Assi
 		return []approval.ResolvedAssignee{}, nil
 	}
 
-	return resolveAssigneesByIDs(ctx, rc, ids, "form field assignee resolver")
-}
-
-// formFieldUserIDs reads the user IDs a form field carries. It is shared by
-// the assignee and CC form-field resolvers so the two cannot disagree about
-// which value shapes a form field may hold.
-//
-// A blank value means the field was left empty — the same as an absent key —
-// and resolves to no IDs rather than an error, so the node's
-// EmptyAssigneeAction (or, for CC, an empty recipient list) decides instead of
-// the whole step failing.
-func formFieldUserIDs(field *string, formData approval.FormData) ([]string, error) {
-	if field == nil || strings.TrimSpace(*field) == "" {
-		return nil, ErrFormFieldNameEmpty
+	assignees, err := resolveAssigneesByIDs(ctx, rc, ids, "form field assignee resolver")
+	if err != nil {
+		return nil, err
 	}
 
-	switch v := formData.Get(strings.TrimSpace(*field)).(type) {
-	case nil:
-		return nil, nil
-	case string:
-		return normalizeIDs([]string{v}), nil
-	case []string:
-		return normalizeIDs(v), nil
-	case []any:
-		ids := make([]string, 0, len(v))
-		for _, item := range v {
-			ids = append(ids, cast.ToString(item))
+	var unresolved []string
+
+	for _, assignee := range assignees {
+		if strings.TrimSpace(assignee.User.Name) == "" {
+			unresolved = append(unresolved, assignee.User.ID)
 		}
-
-		return normalizeIDs(ids), nil
-
-	default:
-		return nil, fmt.Errorf("%w: %T", ErrUnsupportedFieldValueType, v)
 	}
+
+	if len(unresolved) > 0 {
+		return nil, result.Err(
+			i18n.T(shared.ErrMessageFormFieldAssigneeUnresolved, map[string]any{
+				"field": strings.TrimSpace(*rc.FormField),
+				"ids":   strings.Join(unresolved, ", "),
+			}),
+			result.WithCode(approval.ErrCodeAssigneeResolveFailed),
+		)
+	}
+
+	return assignees, nil
 }
 
 // normalizeIDs trims each entry and drops the blanks, preserving order.

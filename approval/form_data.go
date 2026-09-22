@@ -3,6 +3,9 @@ package approval
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+
+	"github.com/spf13/cast"
 )
 
 // FormData wraps a map to provide helper methods for form data operations.
@@ -40,4 +43,49 @@ func (f FormData) Clone() (FormData, error) {
 	}
 
 	return FormData(cloned), nil
+}
+
+// FormFieldIDs reads the IDs a form field carries, for resolvers of a
+// SelectionFormField kind — field is the rule's FormField. The value may be a
+// single string or a list of them (a multi-select submits []any); entries are
+// trimmed and blanks dropped, preserving order.
+//
+// The IDs are whatever the field holds, not necessarily user IDs: a host kind
+// whose form stores, say, staff IDs maps them to the user accounts tasks are
+// assigned to. A missing or blank value resolves to no IDs rather than an
+// error, so the node's EmptyAssigneeAction (or, for CC, an empty recipient
+// list) decides; a nil or blank field name returns ErrFormFieldNameEmpty and
+// any other value type ErrUnsupportedFieldValueType.
+func FormFieldIDs(formData FormData, field *string) ([]string, error) {
+	if field == nil || strings.TrimSpace(*field) == "" {
+		return nil, ErrFormFieldNameEmpty
+	}
+
+	var raw []string
+
+	switch v := formData.Get(strings.TrimSpace(*field)).(type) {
+	case nil:
+		return nil, nil
+	case string:
+		raw = []string{v}
+	case []string:
+		raw = v
+	case []any:
+		raw = make([]string, 0, len(v))
+		for _, item := range v {
+			raw = append(raw, cast.ToString(item))
+		}
+
+	default:
+		return nil, fmt.Errorf("%w: %T", ErrUnsupportedFieldValueType, v)
+	}
+
+	ids := make([]string, 0, len(raw))
+	for _, value := range raw {
+		if id := strings.TrimSpace(value); id != "" {
+			ids = append(ids, id)
+		}
+	}
+
+	return ids, nil
 }

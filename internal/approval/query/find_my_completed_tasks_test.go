@@ -25,6 +25,8 @@ type FindMyCompletedTasksTestSuite struct {
 	ctx     context.Context
 	db      orm.DB
 	handler *query.FindMyCompletedTasksHandler
+	// purchaseFlowID is the flow of the filter fixture's second instance.
+	purchaseFlowID string
 }
 
 func (s *FindMyCompletedTasksTestSuite) SetupSuite() {
@@ -67,6 +69,58 @@ func (s *FindMyCompletedTasksTestSuite) SetupSuite() {
 		_, err := s.db.NewInsert().Model(&tasks[i]).Exec(s.ctx)
 		s.Require().NoError(err, "Should insert task")
 	}
+
+	s.seedFilterFixture(fix)
+}
+
+// seedFilterFixture gives user-f one completed task on each of two instances
+// that differ in every filtered attribute, so each filter keeps exactly one.
+// A still-pending task on the second instance must never surface. A separate
+// assignee keeps the user-a assertions exact.
+func (s *FindMyCompletedTasksTestSuite) seedFilterFixture(travelFix *QueryFixture) {
+	purchaseFix := setupQueryFixture(s.T(), s.ctx, s.db, "mct-flow-b", 1)
+	s.purchaseFlowID = purchaseFix.FlowID
+
+	travel := &approval.Instance{
+		TenantID:      "t1",
+		FlowID:        travelFix.FlowID,
+		FlowVersionID: travelFix.VersionID,
+		Title:         "Travel reimbursement",
+		InstanceNo:    "MCT-101",
+		ApplicantID:   "user-p",
+		ApplicantName: "Alice Wang",
+		Status:        approval.InstanceApproved,
+	}
+	purchase := &approval.Instance{
+		TenantID:      "t1",
+		FlowID:        purchaseFix.FlowID,
+		FlowVersionID: purchaseFix.VersionID,
+		Title:         "Purchase request",
+		InstanceNo:    "MCT-102",
+		ApplicantID:   "user-q",
+		ApplicantName: "Bob Li",
+		Status:        approval.InstanceRunning,
+	}
+
+	for _, inst := range []*approval.Instance{travel, purchase} {
+		_, err := s.db.NewInsert().Model(inst).Exec(s.ctx)
+		s.Require().NoError(err, "Should insert filter fixture instance")
+	}
+
+	travelFinishedAt, purchaseFinishedAt := septemberAt(1, 10), septemberAt(10, 10)
+
+	insertTask(s.T(), s.ctx, s.db, &approval.Task{
+		TenantID: "t1", InstanceID: travel.ID, NodeID: travelFix.NodeIDs[0], AssigneeID: "user-f",
+		SortOrder: 1, Status: approval.TaskApproved, FinishedAt: &travelFinishedAt,
+	})
+	insertTask(s.T(), s.ctx, s.db, &approval.Task{
+		TenantID: "t1", InstanceID: purchase.ID, NodeID: purchaseFix.NodeIDs[0], AssigneeID: "user-f",
+		SortOrder: 1, Status: approval.TaskTransferred, FinishedAt: &purchaseFinishedAt,
+	})
+	insertTask(s.T(), s.ctx, s.db, &approval.Task{
+		TenantID: "t1", InstanceID: purchase.ID, NodeID: purchaseFix.NodeIDs[0], AssigneeID: "user-f",
+		SortOrder: 2, Status: approval.TaskPending,
+	})
 }
 
 func (s *FindMyCompletedTasksTestSuite) TearDownSuite() {
@@ -124,6 +178,86 @@ func (s *FindMyCompletedTasksTestSuite) TestProjectsFlowLabels() {
 		s.Assert().Equal(map[string]string{"app": "smp"}, item.Labels,
 			"Each row should carry the flow's labels")
 	}
+}
+
+func (s *FindMyCompletedTasksTestSuite) TestFilters() {
+	const travel, purchase = "Travel reimbursement", "Purchase request"
+
+	// titles runs the query for user-f and returns the matched instance titles,
+	// checking that the count agrees with the rows the join returned.
+	titles := func(q query.FindMyCompletedTasksQuery) []string {
+		q.UserID, q.Page, q.Size = "user-f", 1, 10
+
+		result, err := s.handler.Handle(s.ctx, q)
+		s.Require().NoError(err, "Should query without error")
+		s.Require().Equal(int64(len(result.Items)), result.Total, "Total should count exactly the filtered rows")
+
+		matched := make([]string, len(result.Items))
+		for i, item := range result.Items {
+			matched[i] = item.InstanceTitle
+		}
+
+		return matched
+	}
+
+	s.Run("NoFilter", func() {
+		s.ElementsMatch([]string{travel, purchase}, titles(query.FindMyCompletedTasksQuery{}),
+			"Joining the instance should keep every completed task and still drop the pending one")
+	})
+
+	s.Run("Keyword", func() {
+		s.Equal([]string{purchase}, titles(query.FindMyCompletedTasksQuery{Keyword: new("request")}),
+			"Keyword should match the instance title by substring")
+	})
+
+	s.Run("ApplicantID", func() {
+		s.Equal([]string{travel}, titles(query.FindMyCompletedTasksQuery{ApplicantID: new("user-p")}),
+			"ApplicantID should match the applicant exactly")
+	})
+
+	s.Run("ApplicantName", func() {
+		s.Equal([]string{purchase}, titles(query.FindMyCompletedTasksQuery{ApplicantName: new("Bob")}),
+			"ApplicantName should match the applicant name by substring")
+	})
+
+	s.Run("FlowID", func() {
+		s.Equal([]string{purchase}, titles(query.FindMyCompletedTasksQuery{FlowID: new(s.purchaseFlowID)}),
+			"FlowID should match the instance's flow")
+	})
+
+	s.Run("Status", func() {
+		s.Equal([]string{travel}, titles(query.FindMyCompletedTasksQuery{Status: new(approval.TaskApproved)}),
+			"Status should match how the caller finished the task")
+	})
+
+	s.Run("NonCompletedStatusMatchesNothing", func() {
+		s.Empty(titles(query.FindMyCompletedTasksQuery{Status: new(approval.TaskPending)}),
+			"Status should narrow within the completed statuses, never widen to pending tasks")
+	})
+
+	s.Run("InstanceStatus", func() {
+		s.Equal([]string{purchase}, titles(query.FindMyCompletedTasksQuery{InstanceStatus: new(approval.InstanceRunning)}),
+			"InstanceStatus should match the instance's current status")
+	})
+
+	s.Run("FinishedAtRange", func() {
+		s.Equal([]string{purchase}, titles(query.FindMyCompletedTasksQuery{FinishedAtFrom: new(septemberAt(5, 0))}),
+			"FinishedAtFrom should drop tasks finished earlier")
+		s.Equal([]string{travel}, titles(query.FindMyCompletedTasksQuery{FinishedAtTo: new(septemberAt(5, 0))}),
+			"FinishedAtTo should drop tasks finished later")
+	})
+
+	s.Run("FinishedAtBoundsAreInclusive", func() {
+		finishedAt := septemberAt(1, 10)
+
+		s.Equal([]string{travel}, titles(query.FindMyCompletedTasksQuery{FinishedAtFrom: &finishedAt, FinishedAtTo: &finishedAt}),
+			"A task finished exactly on both bounds should be kept")
+	})
+
+	s.Run("FiltersCombineWithAnd", func() {
+		s.Empty(titles(query.FindMyCompletedTasksQuery{Keyword: new("request"), Status: new(approval.TaskApproved)}),
+			"Filters matching different tasks should together match none")
+	})
 }
 
 func (s *FindMyCompletedTasksTestSuite) TestNoResults() {

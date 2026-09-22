@@ -6,8 +6,6 @@ var (
 	// Assignee resolver and aggregator errors.
 	ErrAssigneeServiceNil        = errors.New("assignee service is nil")
 	ErrApplicantIDEmpty          = errors.New("applicant ID is empty")
-	ErrFormFieldNameEmpty        = errors.New("form field name is empty")
-	ErrUnsupportedFieldValueType = errors.New("unsupported form field value type")
 	ErrAggregatorNotFound        = errors.New("aggregator not found")
 	errBuiltinAggregatorMissing  = errors.New("built-in aggregate kind has no registered aggregator")
 	ErrAssigneeResolverNotFound  = errors.New("assignee resolver not found")

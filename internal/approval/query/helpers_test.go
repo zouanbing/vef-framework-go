@@ -3,13 +3,32 @@ package query_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/coldsmirk/vef-framework-go/approval"
 	"github.com/coldsmirk/vef-framework-go/orm"
 	"github.com/coldsmirk/vef-framework-go/result"
+	"github.com/coldsmirk/vef-framework-go/timex"
 )
+
+// septemberAt returns a fixed local instant in September 2026, giving the
+// time-range filter tests deterministic timestamps.
+func septemberAt(day, hour int) timex.DateTime {
+	return timex.Of(time.Date(2026, time.September, day, hour, 0, 0, 0, time.Local))
+}
+
+// insertTask binds the task to its node's open visit and inserts it.
+//
+//nolint:revive // t testing.TB is conventionally the first parameter in test helpers
+func insertTask(t testing.TB, ctx context.Context, db orm.DB, task *approval.Task) {
+	t.Helper()
+
+	task.VisitID = ensureActiveVisit(t, ctx, db, task.TenantID, task.InstanceID, task.NodeID).ID
+	_, err := db.NewInsert().Model(task).Exec(ctx)
+	require.NoError(t, err, "Should insert task")
+}
 
 // QueryFixture holds the minimal set of records (category, flow, version)
 // needed to satisfy FK constraints when directly inserting instances and tasks.
