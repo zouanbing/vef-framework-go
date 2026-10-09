@@ -54,6 +54,38 @@ func TestValidateNodeConfig(t *testing.T) {
 		})
 	})
 
+	t.Run("PassCount", func(t *testing.T) {
+		tests := []struct {
+			name    string
+			count   int
+			wantErr error
+		}{
+			{"RejectsZero", 0, errPassCountOutOfRange},
+			{"RejectsNegative", -1, errPassCountOutOfRange},
+			{"AcceptsOne", 1, nil},
+			// The resolved panel may be smaller; the engine caps the count.
+			{"AcceptsAboveAnyPanel", 100, nil},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				data := &approval.ApprovalNodeData{PassRule: approval.PassFixedCount, PassCount: tt.count}
+
+				err := NewFlowDefinitionService().validateNodeConfig("n1", data)
+				if tt.wantErr != nil {
+					assert.ErrorIs(t, err, tt.wantErr, "Count %d should be rejected as not positive", tt.count)
+				} else {
+					assert.NoError(t, err, "Count %d should be a valid threshold", tt.count)
+				}
+			})
+		}
+
+		t.Run("IgnoredForOtherRules", func(t *testing.T) {
+			data := &approval.ApprovalNodeData{PassRule: approval.PassRatio, PassRatio: decimal.NewFromInt(50)}
+			assert.NoError(t, NewFlowDefinitionService().validateNodeConfig("n1", data), "Pass count should not be required outside the fixed_count rule")
+		})
+	})
+
 	t.Run("SameApplicantAction", func(t *testing.T) {
 		for _, action := range []approval.SameApplicantAction{
 			approval.SameApplicantAutoPass,

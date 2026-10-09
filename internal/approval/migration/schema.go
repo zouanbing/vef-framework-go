@@ -5,17 +5,18 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/coldsmirk/vef-framework-go/config"
 	"github.com/coldsmirk/vef-framework-go/internal/sqlmigration"
 	"github.com/coldsmirk/vef-framework-go/orm"
 )
 
-// ErrSchemaOutdated means the approval tables exist but lack a structure the
-// module's correctness depends on. It is fatal at start-up by design: the
-// missing structure cannot be repaired forward (the migration is
-// CREATE TABLE IF NOT EXISTS and never alters an existing table), and running
-// on top of it corrupts data silently rather than loudly.
+// ErrSchemaOutdated means the approval tables lack a structure the module's
+// correctness depends on — one the migration did not supply, either because it
+// is disabled or because the defect cannot be repaired in place. It is fatal at
+// start-up by design: running on top of such a schema fails, or corrupts data,
+// at the first write that relies on the missing structure instead of at boot.
 var ErrSchemaOutdated = errors.New("approval schema is outdated")
 
 // primaryKeyColumns is the primary key every approval table must declare.
@@ -82,7 +83,38 @@ func Verify(ctx context.Context, db orm.DB, kind config.DBKind) error {
 		}
 	}
 
+	if err := verifyAddedColumns(ctx, db, kind); err != nil {
+		return err
+	}
+
 	return verifyKindColumns(ctx, db, kind)
+}
+
+// verifyAddedColumns asserts every addedColumns entry is present. Unlike the
+// primary-key check the remedy is forward — the migration adds a missing column
+// in place — so the message names both ways to apply it.
+func verifyAddedColumns(ctx context.Context, db orm.DB, kind config.DBKind) error {
+	missing, err := sqlmigration.MissingColumns(ctx, db, kind, addedColumns)
+	if err != nil {
+		return err
+	}
+
+	if len(missing) == 0 {
+		return nil
+	}
+
+	names := make([]string, 0, len(missing))
+	statements := make([]string, 0, len(missing))
+
+	for _, column := range missing {
+		names = append(names, column.Table+"."+column.Name)
+		statements = append(statements, column.Statements(kind)...)
+	}
+
+	return fmt.Errorf(
+		"%w: missing %s; enable vef.approval.auto_migrate, or run: %s",
+		ErrSchemaOutdated, strings.Join(names, ", "), strings.Join(statements, "; "),
+	)
 }
 
 // verifyKindColumns asserts the open-vocabulary kind columns are wide enough
@@ -125,11 +157,11 @@ func verifyKindColumns(ctx context.Context, db orm.DB, kind config.DBKind) error
 	return nil
 }
 
-// outdated builds an ErrSchemaOutdated with the recreation hint appended once,
-// so every diagnostic names the same remedy.
+// outdated builds an ErrSchemaOutdated with the recreation hint appended once
+// for schema defects the migration cannot repair in place.
 func outdated(format string, args ...any) error {
 	return fmt.Errorf(
-		"%w: %s; recreate the approval tables (the migration never alters an existing schema)",
+		"%w: %s; recreate the approval tables (the migration cannot repair this schema in place)",
 		ErrSchemaOutdated,
 		fmt.Sprintf(format, args...),
 	)

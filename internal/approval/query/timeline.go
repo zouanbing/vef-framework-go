@@ -43,8 +43,11 @@ func buildInstanceTimeline(bundle *instanceDetailBundle) []approval.TimelineEntr
 			entry.ApprovalMethod = string(node.ApprovalMethod)
 			entry.PassRule = string(node.PassRule)
 
-			if node.PassRule == approval.PassRatio {
+			switch node.PassRule {
+			case approval.PassRatio:
 				entry.PassRatio = new(node.PassRatio)
+			case approval.PassFixedCount:
+				entry.PassCount = new(node.PassCount)
 			}
 
 			entry.Participants = buildParticipants(idx.tasksByVisit[visit.ID], idx.finisherLogs)

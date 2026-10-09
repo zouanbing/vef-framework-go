@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 	"testing"
@@ -8,8 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/coldsmirk/vef-framework-go/approval"
 	"github.com/coldsmirk/vef-framework-go/config"
 	"github.com/coldsmirk/vef-framework-go/internal/sqlmigration"
+	"github.com/coldsmirk/vef-framework-go/internal/testx"
 )
 
 // TestMigrationScripts is a smoke check that this module's embedded DDL resolves
@@ -35,6 +38,50 @@ func TestMigrationScripts(t *testing.T) {
 		_, err := sqlmigration.LoadScript(scripts, "unknown")
 		require.Error(t, err, "Should error for unsupported database kind")
 		assert.Contains(t, err.Error(), "unsupported database kind", "Should include kind info in error")
+	})
+}
+
+// TestAddedColumns emulates a schema an earlier release created — every
+// addedColumn missing from a table that already holds rows — and asserts that
+// Verify refuses it with the forward remedy, Migrate restores the columns
+// without disturbing the rows, and a repeated Migrate is a no-op.
+func TestAddedColumns(t *testing.T) {
+	testx.ForEachDB(t, func(t *testing.T, env *testx.DBEnv) {
+		require.NoError(t, Migrate(env.Ctx, env.DB, env.DS.Kind), "Schema should provision")
+		require.NoError(t, Verify(env.Ctx, env.DB, env.DS.Kind), "A fresh schema should declare every added column")
+
+		keyColumn := "key"
+		if env.DS.Kind == config.MySQL {
+			keyColumn = "`key`"
+		}
+
+		for _, statement := range []string{
+			"INSERT INTO apv_flow_category (id, tenant_id, code, name) VALUES ('category-1', 'tenant-1', 'category', 'Category')",
+			"INSERT INTO apv_flow (id, tenant_id, category_id, code, name) VALUES ('flow-1', 'tenant-1', 'category-1', 'flow', 'Flow')",
+			"INSERT INTO apv_flow_version (id, flow_id, version) VALUES ('version-1', 'flow-1', 1)",
+			fmt.Sprintf("INSERT INTO apv_flow_node (id, flow_version_id, %s, kind, name) VALUES ('node-1', 'version-1', 'approval-1', 'approval', 'Review')", keyColumn),
+		} {
+			_, err := env.DB.NewRaw(statement).Exec(env.Ctx)
+			require.NoError(t, err, "Fixture row should insert")
+		}
+
+		for _, column := range addedColumns {
+			_, err := env.DB.NewRaw(fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", column.Table, column.Name)).Exec(env.Ctx)
+			require.NoError(t, err, "Dropping %s.%s should emulate an older schema", column.Table, column.Name)
+		}
+
+		err := Verify(env.Ctx, env.DB, env.DS.Kind)
+		require.ErrorIs(t, err, ErrSchemaOutdated, "An older schema should fail verification")
+		assert.ErrorContains(t, err, "auto_migrate", "The error should name the forward remedy, not a recreate")
+
+		require.NoError(t, Migrate(env.Ctx, env.DB, env.DS.Kind), "Migration should add the missing columns")
+		require.NoError(t, Migrate(env.Ctx, env.DB, env.DS.Kind), "Migration should be idempotent")
+		require.NoError(t, Verify(env.Ctx, env.DB, env.DS.Kind), "The upgraded schema should verify")
+
+		node := approval.FlowNode{ID: "node-1"}
+		require.NoError(t, env.DB.NewSelect().Model(&node).WherePK().Scan(env.Ctx), "The existing node should survive the upgrade")
+		assert.Equal(t, "Review", node.Name, "Existing node data should be unchanged")
+		assert.Zero(t, node.PassCount, "Existing rows should take the column default")
 	})
 }
 

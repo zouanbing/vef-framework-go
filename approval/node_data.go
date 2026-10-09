@@ -171,6 +171,7 @@ type ApprovalNodeData struct {
 	ApprovalMethod            ApprovalMethod            `json:"approvalMethod,omitempty"`
 	PassRule                  PassRule                  `json:"passRule,omitempty"`
 	PassRatio                 decimal.Decimal           `json:"passRatio"`
+	PassCount                 int                       `json:"passCount,omitempty"`
 	SameApplicantAction       SameApplicantAction       `json:"sameApplicantAction,omitempty"`
 	ConsecutiveApproverAction ConsecutiveApproverAction `json:"consecutiveApproverAction,omitempty"`
 	RollbackType              RollbackType              `json:"rollbackType,omitempty"`
@@ -197,6 +198,7 @@ func (d *ApprovalNodeData) ApplyTo(node *FlowNode) {
 	node.ApprovalMethod = cmp.Or(d.ApprovalMethod, DefaultApprovalMethod)
 	node.PassRule = cmp.Or(d.PassRule, DefaultPassRule)
 	node.PassRatio = d.PassRatio
+	node.PassCount = d.PassCount
 	node.SameApplicantAction = cmp.Or(d.SameApplicantAction, DefaultSameApplicantAction)
 	node.ConsecutiveApproverAction = cmp.Or(d.ConsecutiveApproverAction, DefaultConsecutiveApproverAction)
 	node.RollbackType = cmp.Or(d.RollbackType, DefaultRollbackType)
